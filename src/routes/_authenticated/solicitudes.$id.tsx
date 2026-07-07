@@ -24,7 +24,7 @@ function DetalleSolicitud() {
 
   const updateEstado = useMutation({
     mutationFn: async (estado: string) => {
-      const { error } = await supabase.from("solicitudes").update({ estado }).eq("id", id);
+      const { error } = await supabase.from("solicitudes").update({ estado: estado as any }).eq("id", id);
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "solicitudes", entidad_id: id, accion: `cambio_estado:${estado}` });
     },

@@ -16,6 +16,7 @@ import { Route as AuthenticatedSolicitudesRouteImport } from './routes/_authenti
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedSolicitudesNuevaRouteImport } from './routes/_authenticated/solicitudes.nueva'
+import { Route as AuthenticatedSolicitudesIdRouteImport } from './routes/_authenticated/solicitudes.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -53,6 +54,12 @@ const AuthenticatedSolicitudesNuevaRoute =
     path: '/nueva',
     getParentRoute: () => AuthenticatedSolicitudesRoute,
   } as any)
+const AuthenticatedSolicitudesIdRoute =
+  AuthenticatedSolicitudesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedSolicitudesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -60,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/clientes': typeof AuthenticatedClientesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/solicitudes': typeof AuthenticatedSolicitudesRouteWithChildren
+  '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
   '/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
 }
 export interface FileRoutesByTo {
@@ -68,6 +76,7 @@ export interface FileRoutesByTo {
   '/clientes': typeof AuthenticatedClientesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/solicitudes': typeof AuthenticatedSolicitudesRouteWithChildren
+  '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
   '/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
 }
 export interface FileRoutesById {
@@ -78,6 +87,7 @@ export interface FileRoutesById {
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/solicitudes': typeof AuthenticatedSolicitudesRouteWithChildren
+  '/_authenticated/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
   '/_authenticated/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
 }
 export interface FileRouteTypes {
@@ -88,6 +98,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/dashboard'
     | '/solicitudes'
+    | '/solicitudes/$id'
     | '/solicitudes/nueva'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -96,6 +107,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/dashboard'
     | '/solicitudes'
+    | '/solicitudes/$id'
     | '/solicitudes/nueva'
   id:
     | '__root__'
@@ -105,6 +117,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clientes'
     | '/_authenticated/dashboard'
     | '/_authenticated/solicitudes'
+    | '/_authenticated/solicitudes/$id'
     | '/_authenticated/solicitudes/nueva'
   fileRoutesById: FileRoutesById
 }
@@ -165,15 +178,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSolicitudesNuevaRouteImport
       parentRoute: typeof AuthenticatedSolicitudesRoute
     }
+    '/_authenticated/solicitudes/$id': {
+      id: '/_authenticated/solicitudes/$id'
+      path: '/$id'
+      fullPath: '/solicitudes/$id'
+      preLoaderRoute: typeof AuthenticatedSolicitudesIdRouteImport
+      parentRoute: typeof AuthenticatedSolicitudesRoute
+    }
   }
 }
 
 interface AuthenticatedSolicitudesRouteChildren {
+  AuthenticatedSolicitudesIdRoute: typeof AuthenticatedSolicitudesIdRoute
   AuthenticatedSolicitudesNuevaRoute: typeof AuthenticatedSolicitudesNuevaRoute
 }
 
 const AuthenticatedSolicitudesRouteChildren: AuthenticatedSolicitudesRouteChildren =
   {
+    AuthenticatedSolicitudesIdRoute: AuthenticatedSolicitudesIdRoute,
     AuthenticatedSolicitudesNuevaRoute: AuthenticatedSolicitudesNuevaRoute,
   }
 
