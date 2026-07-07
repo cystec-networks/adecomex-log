@@ -18,6 +18,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedSolicitudesNuevaRouteImport } from './routes/_authenticated/solicitudes.nueva'
 import { Route as AuthenticatedSolicitudesIdRouteImport } from './routes/_authenticated/solicitudes.$id'
+import { Route as AuthenticatedExpedientesIdRouteImport } from './routes/_authenticated/expedientes.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -67,14 +68,21 @@ const AuthenticatedSolicitudesIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedSolicitudesRoute,
   } as any)
+const AuthenticatedExpedientesIdRoute =
+  AuthenticatedExpedientesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedExpedientesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/expedientes': typeof AuthenticatedExpedientesRoute
+  '/expedientes': typeof AuthenticatedExpedientesRouteWithChildren
   '/solicitudes': typeof AuthenticatedSolicitudesRouteWithChildren
+  '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
   '/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
 }
@@ -83,8 +91,9 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/expedientes': typeof AuthenticatedExpedientesRoute
+  '/expedientes': typeof AuthenticatedExpedientesRouteWithChildren
   '/solicitudes': typeof AuthenticatedSolicitudesRouteWithChildren
+  '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
   '/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
 }
@@ -95,8 +104,9 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/expedientes': typeof AuthenticatedExpedientesRoute
+  '/_authenticated/expedientes': typeof AuthenticatedExpedientesRouteWithChildren
   '/_authenticated/solicitudes': typeof AuthenticatedSolicitudesRouteWithChildren
+  '/_authenticated/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/_authenticated/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
   '/_authenticated/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
 }
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/expedientes'
     | '/solicitudes'
+    | '/expedientes/$id'
     | '/solicitudes/$id'
     | '/solicitudes/nueva'
   fileRoutesByTo: FileRoutesByTo
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/expedientes'
     | '/solicitudes'
+    | '/expedientes/$id'
     | '/solicitudes/$id'
     | '/solicitudes/nueva'
   id:
@@ -130,6 +142,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/expedientes'
     | '/_authenticated/solicitudes'
+    | '/_authenticated/expedientes/$id'
     | '/_authenticated/solicitudes/$id'
     | '/_authenticated/solicitudes/nueva'
   fileRoutesById: FileRoutesById
@@ -205,8 +218,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSolicitudesIdRouteImport
       parentRoute: typeof AuthenticatedSolicitudesRoute
     }
+    '/_authenticated/expedientes/$id': {
+      id: '/_authenticated/expedientes/$id'
+      path: '/$id'
+      fullPath: '/expedientes/$id'
+      preLoaderRoute: typeof AuthenticatedExpedientesIdRouteImport
+      parentRoute: typeof AuthenticatedExpedientesRoute
+    }
   }
 }
+
+interface AuthenticatedExpedientesRouteChildren {
+  AuthenticatedExpedientesIdRoute: typeof AuthenticatedExpedientesIdRoute
+}
+
+const AuthenticatedExpedientesRouteChildren: AuthenticatedExpedientesRouteChildren =
+  {
+    AuthenticatedExpedientesIdRoute: AuthenticatedExpedientesIdRoute,
+  }
+
+const AuthenticatedExpedientesRouteWithChildren =
+  AuthenticatedExpedientesRoute._addFileChildren(
+    AuthenticatedExpedientesRouteChildren,
+  )
 
 interface AuthenticatedSolicitudesRouteChildren {
   AuthenticatedSolicitudesIdRoute: typeof AuthenticatedSolicitudesIdRoute
@@ -227,14 +261,14 @@ const AuthenticatedSolicitudesRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedExpedientesRoute: typeof AuthenticatedExpedientesRoute
+  AuthenticatedExpedientesRoute: typeof AuthenticatedExpedientesRouteWithChildren
   AuthenticatedSolicitudesRoute: typeof AuthenticatedSolicitudesRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedExpedientesRoute: AuthenticatedExpedientesRoute,
+  AuthenticatedExpedientesRoute: AuthenticatedExpedientesRouteWithChildren,
   AuthenticatedSolicitudesRoute: AuthenticatedSolicitudesRouteWithChildren,
 }
 
