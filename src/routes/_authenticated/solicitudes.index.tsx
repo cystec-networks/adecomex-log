@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
-export const Route = createFileRoute("/_authenticated/solicitudes")({
+export const Route = createFileRoute("/_authenticated/solicitudes/")({
   component: Solicitudes,
 });
 
