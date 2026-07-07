@@ -14,16 +14,508 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      auditoria: {
+        Row: {
+          accion: string
+          cambios: Json | null
+          created_at: string
+          entidad: string
+          entidad_id: string | null
+          id: string
+          usuario_id: string | null
+        }
+        Insert: {
+          accion: string
+          cambios?: Json | null
+          created_at?: string
+          entidad: string
+          entidad_id?: string | null
+          id?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          accion?: string
+          cambios?: Json | null
+          created_at?: string
+          entidad?: string
+          entidad_id?: string | null
+          id?: string
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
+      clientes: {
+        Row: {
+          activo: boolean
+          contacto: string | null
+          created_at: string
+          created_by: string | null
+          direccion: string | null
+          email: string | null
+          id: string
+          nombre: string
+          rnc: string | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          contacto?: string | null
+          created_at?: string
+          created_by?: string | null
+          direccion?: string | null
+          email?: string | null
+          id?: string
+          nombre: string
+          rnc?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          contacto?: string | null
+          created_at?: string
+          created_by?: string | null
+          direccion?: string | null
+          email?: string | null
+          id?: string
+          nombre?: string
+          rnc?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      costos: {
+        Row: {
+          concepto: string
+          created_at: string
+          estado_cobro: string
+          estado_facturacion: string
+          expediente_id: string
+          id: string
+          monto_estimado: number
+          monto_real: number
+          observaciones: string | null
+        }
+        Insert: {
+          concepto: string
+          created_at?: string
+          estado_cobro?: string
+          estado_facturacion?: string
+          expediente_id: string
+          id?: string
+          monto_estimado?: number
+          monto_real?: number
+          observaciones?: string | null
+        }
+        Update: {
+          concepto?: string
+          created_at?: string
+          estado_cobro?: string
+          estado_facturacion?: string
+          expediente_id?: string
+          id?: string
+          monto_estimado?: number
+          monto_real?: number
+          observaciones?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "costos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documentos: {
+        Row: {
+          created_at: string
+          estado: Database["public"]["Enums"]["doc_estado"]
+          expediente_id: string
+          fecha_recepcion: string | null
+          fecha_vencimiento: string | null
+          id: string
+          observaciones: string | null
+          responsable_id: string | null
+          storage_path: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          estado?: Database["public"]["Enums"]["doc_estado"]
+          expediente_id: string
+          fecha_recepcion?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          observaciones?: string | null
+          responsable_id?: string | null
+          storage_path?: string | null
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          estado?: Database["public"]["Enums"]["doc_estado"]
+          expediente_id?: string
+          fecha_recepcion?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          observaciones?: string | null
+          responsable_id?: string | null
+          storage_path?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      etapas: {
+        Row: {
+          comentario: string | null
+          created_at: string
+          estado: Database["public"]["Enums"]["etapa_estado"]
+          evidencia_path: string | null
+          expediente_id: string
+          fecha_cierre: string | null
+          fecha_inicio: string | null
+          id: string
+          nombre: string
+          orden: number
+          responsable_id: string | null
+        }
+        Insert: {
+          comentario?: string | null
+          created_at?: string
+          estado?: Database["public"]["Enums"]["etapa_estado"]
+          evidencia_path?: string | null
+          expediente_id: string
+          fecha_cierre?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          nombre: string
+          orden: number
+          responsable_id?: string | null
+        }
+        Update: {
+          comentario?: string | null
+          created_at?: string
+          estado?: Database["public"]["Enums"]["etapa_estado"]
+          evidencia_path?: string | null
+          expediente_id?: string
+          fecha_cierre?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          nombre?: string
+          orden?: number
+          responsable_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "etapas_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expedientes: {
+        Row: {
+          bl_awb: string | null
+          cliente_id: string | null
+          created_at: string
+          created_by: string | null
+          estado: Database["public"]["Enums"]["expediente_estado"]
+          etapa_actual: number
+          factura_comercial: string | null
+          fecha_cierre: string | null
+          fecha_compromiso: string | null
+          id: string
+          numero: string
+          observaciones: string | null
+          responsable_id: string | null
+          sla_dias: number | null
+          solicitud_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          bl_awb?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado?: Database["public"]["Enums"]["expediente_estado"]
+          etapa_actual?: number
+          factura_comercial?: string | null
+          fecha_cierre?: string | null
+          fecha_compromiso?: string | null
+          id?: string
+          numero?: string
+          observaciones?: string | null
+          responsable_id?: string | null
+          sla_dias?: number | null
+          solicitud_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bl_awb?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado?: Database["public"]["Enums"]["expediente_estado"]
+          etapa_actual?: number
+          factura_comercial?: string | null
+          fecha_cierre?: string | null
+          fecha_compromiso?: string | null
+          id?: string
+          numero?: string
+          observaciones?: string | null
+          responsable_id?: string | null
+          sla_dias?: number | null
+          solicitud_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expedientes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expedientes_solicitud_id_fkey"
+            columns: ["solicitud_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incidencias: {
+        Row: {
+          accion_correctiva: string | null
+          created_by: string | null
+          descripcion: string | null
+          estado: Database["public"]["Enums"]["incidencia_estado"]
+          expediente_id: string
+          fecha_apertura: string
+          fecha_resolucion: string | null
+          id: string
+          responsable_id: string | null
+          severidad: Database["public"]["Enums"]["incidencia_severidad"]
+          tipo: string
+        }
+        Insert: {
+          accion_correctiva?: string | null
+          created_by?: string | null
+          descripcion?: string | null
+          estado?: Database["public"]["Enums"]["incidencia_estado"]
+          expediente_id: string
+          fecha_apertura?: string
+          fecha_resolucion?: string | null
+          id?: string
+          responsable_id?: string | null
+          severidad?: Database["public"]["Enums"]["incidencia_severidad"]
+          tipo: string
+        }
+        Update: {
+          accion_correctiva?: string | null
+          created_by?: string | null
+          descripcion?: string | null
+          estado?: Database["public"]["Enums"]["incidencia_estado"]
+          expediente_id?: string
+          fecha_apertura?: string
+          fecha_resolucion?: string | null
+          id?: string
+          responsable_id?: string | null
+          severidad?: Database["public"]["Enums"]["incidencia_severidad"]
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incidencias_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          activo: boolean
+          created_at: string
+          email: string | null
+          id: string
+          nombre: string
+          telefono: string | null
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          email?: string | null
+          id: string
+          nombre?: string
+          telefono?: string | null
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          nombre?: string
+          telefono?: string | null
+        }
+        Relationships: []
+      }
+      solicitudes: {
+        Row: {
+          cliente_id: string | null
+          contacto: string | null
+          created_at: string
+          created_by: string | null
+          estado: Database["public"]["Enums"]["solicitud_estado"]
+          fecha_arribo_est: string | null
+          id: string
+          incoterm: string | null
+          medio_transporte: string | null
+          numero: string
+          observaciones: string | null
+          origen: string | null
+          prioridad: Database["public"]["Enums"]["prioridad"]
+          puerto_llegada: string | null
+          responsable_id: string | null
+          tipo_carga: string | null
+          tipo_operacion: string | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          contacto?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado?: Database["public"]["Enums"]["solicitud_estado"]
+          fecha_arribo_est?: string | null
+          id?: string
+          incoterm?: string | null
+          medio_transporte?: string | null
+          numero?: string
+          observaciones?: string | null
+          origen?: string | null
+          prioridad?: Database["public"]["Enums"]["prioridad"]
+          puerto_llegada?: string | null
+          responsable_id?: string | null
+          tipo_carga?: string | null
+          tipo_operacion?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          contacto?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado?: Database["public"]["Enums"]["solicitud_estado"]
+          fecha_arribo_est?: string | null
+          id?: string
+          incoterm?: string | null
+          medio_transporte?: string | null
+          numero?: string
+          observaciones?: string | null
+          origen?: string | null
+          prioridad?: Database["public"]["Enums"]["prioridad"]
+          puerto_llegada?: string | null
+          responsable_id?: string | null
+          tipo_carga?: string | null
+          tipo_operacion?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitudes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "admin"
+        | "operaciones"
+        | "ejecutivo"
+        | "agente_aduanal"
+        | "documentacion"
+        | "transporte"
+        | "finanzas"
+      doc_estado:
+        | "pendiente"
+        | "recibido"
+        | "observado"
+        | "aprobado"
+        | "vencido"
+      etapa_estado: "pendiente" | "en_curso" | "completada" | "bloqueada"
+      expediente_estado:
+        | "abierto"
+        | "en_proceso"
+        | "retenido"
+        | "cerrado"
+        | "cancelado"
+      incidencia_estado: "abierta" | "en_gestion" | "resuelta" | "cerrada"
+      incidencia_severidad: "baja" | "media" | "alta" | "critica"
+      prioridad: "baja" | "media" | "alta" | "urgente"
+      solicitud_estado:
+        | "recibida"
+        | "en_revision"
+        | "aprobada"
+        | "rechazada"
+        | "convertida"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +642,35 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "admin",
+        "operaciones",
+        "ejecutivo",
+        "agente_aduanal",
+        "documentacion",
+        "transporte",
+        "finanzas",
+      ],
+      doc_estado: ["pendiente", "recibido", "observado", "aprobado", "vencido"],
+      etapa_estado: ["pendiente", "en_curso", "completada", "bloqueada"],
+      expediente_estado: [
+        "abierto",
+        "en_proceso",
+        "retenido",
+        "cerrado",
+        "cancelado",
+      ],
+      incidencia_estado: ["abierta", "en_gestion", "resuelta", "cerrada"],
+      incidencia_severidad: ["baja", "media", "alta", "critica"],
+      prioridad: ["baja", "media", "alta", "urgente"],
+      solicitud_estado: [
+        "recibida",
+        "en_revision",
+        "aprobada",
+        "rechazada",
+        "convertida",
+      ],
+    },
   },
 } as const
