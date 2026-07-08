@@ -7,11 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 
+type TipoFilter = "importacion" | "exportacion" | "todos";
+
 export const Route = createFileRoute("/_authenticated/expedientes/")({
+  validateSearch: (s: Record<string, unknown>): { tipo?: TipoFilter } => {
+    const t = s.tipo;
+    return t === "importacion" || t === "exportacion" || t === "todos" ? { tipo: t } : {};
+  },
   component: Expedientes,
 });
 
 function Expedientes() {
+  const { tipo = "todos" } = Route.useSearch();
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState("todos");
 
@@ -19,15 +26,21 @@ function Expedientes() {
     queryKey: ["expedientes"],
     queryFn: async () => (await supabase
       .from("expedientes")
-      .select("*, clientes(nombre)")
+      .select("*, clientes(nombre), solicitudes(tipo_operacion)")
       .order("created_at", { ascending: false })).data ?? [],
   });
 
   const filtered = (data ?? []).filter((e: any) => {
     if (estado !== "todos" && e.estado !== estado) return false;
+    if (tipo !== "todos") {
+      const t = (e.solicitudes?.tipo_operacion ?? "").toLowerCase();
+      if (!t.includes(tipo)) return false;
+    }
     if (q && !JSON.stringify(e).toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
+
+  const tipoLabel = tipo === "importacion" ? "Importaciones" : tipo === "exportacion" ? "Exportaciones" : "Todos los expedientes";
 
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
