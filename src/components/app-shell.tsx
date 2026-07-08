@@ -84,7 +84,7 @@ function AppSidebarInner() {
                 {!collapsed && (
                   <SidebarMenuSub>
                     {expedientesSub.map((sub) => {
-                      const activeSub = pathname.startsWith("/expedientes") && search.includes(`tipo=${sub.search.tipo}`);
+                      const activeSub = pathname.startsWith("/expedientes") && search?.tipo === sub.search.tipo;
                       return (
                         <SidebarMenuSubItem key={sub.label}>
                           <SidebarMenuSubButton asChild isActive={activeSub}>
