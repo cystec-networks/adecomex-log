@@ -44,9 +44,16 @@ function Expedientes() {
 
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
-      <div>
-        <h1 className="font-display text-2xl font-bold">Expedientes</h1>
-        <p className="text-sm text-muted-foreground">Expedientes aduanales activos y cerrados.</p>
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex-1">
+          <h1 className="font-display text-2xl font-bold">Expedientes · {tipoLabel}</h1>
+          <p className="text-sm text-muted-foreground">Expedientes aduanales activos y cerrados.</p>
+        </div>
+        <div className="flex gap-1 rounded-md border p-1 bg-card">
+          <Link to="/expedientes" search={{ tipo: "todos" }} className={`px-3 py-1 text-xs rounded ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos</Link>
+          <Link to="/expedientes" search={{ tipo: "importacion" }} className={`px-3 py-1 text-xs rounded ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación</Link>
+          <Link to="/expedientes" search={{ tipo: "exportacion" }} className={`px-3 py-1 text-xs rounded ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación</Link>
+        </div>
       </div>
 
       <Card>
