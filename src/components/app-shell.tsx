@@ -59,7 +59,47 @@ function AppSidebarInner() {
           <SidebarGroupLabel>Operación</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {nav.map((item) => {
+              {nav.slice(0, 2).map((item) => {
+                const active = pathname === item.to || pathname.startsWith(item.to + "/");
+                return (
+                  <SidebarMenuItem key={item.to}>
+                    <SidebarMenuButton asChild isActive={active}>
+                      <Link to={item.to} className="flex items-center gap-2">
+                        <item.icon className="h-4 w-4" />
+                        {!collapsed && <span>{item.label}</span>}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/expedientes" || pathname.startsWith("/expedientes/")}>
+                  <Link to="/expedientes" className="flex items-center gap-2">
+                    <FolderKanban className="h-4 w-4" />
+                    {!collapsed && <span>Expedientes</span>}
+                  </Link>
+                </SidebarMenuButton>
+                {!collapsed && (
+                  <SidebarMenuSub>
+                    {expedientesSub.map((sub) => {
+                      const activeSub = pathname.startsWith("/expedientes") && search.includes(`tipo=${sub.search.tipo}`);
+                      return (
+                        <SidebarMenuSubItem key={sub.label}>
+                          <SidebarMenuSubButton asChild isActive={activeSub}>
+                            <Link to={sub.to} search={sub.search} className="flex items-center gap-2">
+                              <sub.icon className="h-3.5 w-3.5" />
+                              <span>{sub.label}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      );
+                    })}
+                  </SidebarMenuSub>
+                )}
+              </SidebarMenuItem>
+
+              {nav.slice(2).map((item) => {
                 const active = pathname === item.to || pathname.startsWith(item.to + "/");
                 return (
                   <SidebarMenuItem key={item.to}>
