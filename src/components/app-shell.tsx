@@ -1,10 +1,12 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, Inbox, FolderKanban, Users, UserCog, LogOut, Ship, Search,
+  PackageOpen, PackageCheck,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton,
+  SidebarMenuSubItem, SidebarProvider, SidebarTrigger,
   SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
@@ -20,8 +22,12 @@ import { toast } from "sonner";
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/solicitudes", label: "Solicitudes", icon: Inbox },
-  { to: "/expedientes", label: "Expedientes", icon: FolderKanban },
   { to: "/clientes", label: "Clientes", icon: Users },
+];
+
+const expedientesSub = [
+  { to: "/expedientes", search: { tipo: "importacion" as const }, label: "Importaciones", icon: PackageOpen },
+  { to: "/expedientes", search: { tipo: "exportacion" as const }, label: "Exportaciones", icon: PackageCheck },
 ];
 
 function AppSidebarInner() {
