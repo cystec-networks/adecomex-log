@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 
-export const Route = createFileRoute("/_authenticated/expedientes")({
+export const Route = createFileRoute("/_authenticated/expedientes/")({
   component: Expedientes,
 });
 
