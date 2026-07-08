@@ -32,7 +32,7 @@ const expedientesSub = [
 
 function AppSidebarInner() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const search = useRouterState({ select: (r) => (r.location.search as any) ?? {} });
+  const search = useRouterState({ select: (r) => (r.location.search as any) ?? {} }) as { tipo?: string };
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { data: profile } = useMyProfile();
