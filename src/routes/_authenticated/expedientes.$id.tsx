@@ -98,10 +98,12 @@ function DetalleExpediente() {
 function TabInfo({ exp }: { exp: any }) {
   const qc = useQueryClient();
   const [form, setForm] = useState({
+    numero: exp.numero ?? "",
     bl_awb: exp.bl_awb ?? "",
     factura_comercial: exp.factura_comercial ?? "",
     sla_dias: exp.sla_dias ?? 15,
     fecha_compromiso: exp.fecha_compromiso ?? "",
+    etapa_actual: exp.etapa_actual ?? 1,
     observaciones: exp.observaciones ?? "",
   });
   const save = useMutation({
@@ -110,18 +112,22 @@ function TabInfo({ exp }: { exp: any }) {
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
       const { error } = await supabase.from("expedientes").update(payload).eq("id", exp.id);
       if (error) throw error;
+      await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
     },
-    onSuccess: () => { toast.success("Guardado"); qc.invalidateQueries({ queryKey: ["expediente", exp.id] }); },
+    onSuccess: () => { toast.success("Guardado"); qc.invalidateQueries({ queryKey: ["expediente", exp.id] }); qc.invalidateQueries({ queryKey: ["expedientes"] }); },
+    onError: (e: any) => toast.error(e.message),
   });
 
   return (
     <Card>
       <CardHeader><CardTitle className="text-base">Datos del expediente</CardTitle></CardHeader>
       <CardContent className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-1.5"><Label>Número / ID</Label><Input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} /></div>
         <div className="grid gap-1.5"><Label>BL / AWB / Guía terrestre</Label><Input value={form.bl_awb} onChange={(e) => setForm({ ...form, bl_awb: e.target.value })} /></div>
         <div className="grid gap-1.5"><Label>Factura comercial</Label><Input value={form.factura_comercial} onChange={(e) => setForm({ ...form, factura_comercial: e.target.value })} /></div>
         <div className="grid gap-1.5"><Label>SLA (días)</Label><Input type="number" value={form.sla_dias} onChange={(e) => setForm({ ...form, sla_dias: Number(e.target.value) })} /></div>
         <div className="grid gap-1.5"><Label>Fecha compromiso</Label><Input type="date" value={form.fecha_compromiso ?? ""} onChange={(e) => setForm({ ...form, fecha_compromiso: e.target.value })} /></div>
+        <div className="grid gap-1.5"><Label>Etapa actual (1-14)</Label><Input type="number" min={1} max={14} value={form.etapa_actual} onChange={(e) => setForm({ ...form, etapa_actual: Number(e.target.value) })} /></div>
         <div className="grid gap-1.5 md:col-span-2"><Label>Observaciones</Label><Textarea rows={3} value={form.observaciones} onChange={(e) => setForm({ ...form, observaciones: e.target.value })} /></div>
         <div className="md:col-span-2 flex justify-end"><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></div>
       </CardContent>
