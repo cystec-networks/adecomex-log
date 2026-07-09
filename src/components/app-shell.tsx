@@ -19,11 +19,6 @@ import type { ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-const nav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/clientes", label: "Clientes", icon: Users },
-];
-
 const solicitudesSub = [
   { to: "/solicitudes/ocr", label: "OCR de documentos", icon: ScanText },
 ];
