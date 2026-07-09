@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, Inbox, FolderKanban, Users, UserCog, LogOut, Ship, Search,
-  PackageOpen, PackageCheck,
+  PackageOpen, PackageCheck, ScanText, Sparkles,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
