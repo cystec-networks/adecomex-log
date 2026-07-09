@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, Inbox, FolderKanban, Users, UserCog, LogOut, Ship, Search,
-  PackageOpen, PackageCheck,
+  PackageOpen, PackageCheck, ScanText, Sparkles,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -19,10 +19,8 @@ import type { ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-const nav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/solicitudes", label: "Solicitudes", icon: Inbox },
-  { to: "/clientes", label: "Clientes", icon: Users },
+const solicitudesSub = [
+  { to: "/solicitudes/ocr", label: "OCR de documentos", icon: ScanText },
 ];
 
 const expedientesSub = [
@@ -60,20 +58,44 @@ function AppSidebarInner() {
           <SidebarGroupLabel>Operación</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {nav.slice(0, 2).map((item) => {
-                const active = pathname === item.to || pathname.startsWith(item.to + "/");
-                return (
-                  <SidebarMenuItem key={item.to}>
-                    <SidebarMenuButton asChild isActive={active}>
-                      <Link to={item.to} className="flex items-center gap-2">
-                        <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.label}</span>}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+              {/* Dashboard */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/dashboard"}>
+                  <Link to="/dashboard" className="flex items-center gap-2">
+                    <LayoutDashboard className="h-4 w-4" />
+                    {!collapsed && <span>Dashboard</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
 
+              {/* Solicitudes con OCR */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/solicitudes" || (pathname.startsWith("/solicitudes/") && pathname !== "/solicitudes/ocr")}>
+                  <Link to="/solicitudes" className="flex items-center gap-2">
+                    <Inbox className="h-4 w-4" />
+                    {!collapsed && <span>Solicitudes</span>}
+                  </Link>
+                </SidebarMenuButton>
+                {!collapsed && (
+                  <SidebarMenuSub>
+                    {solicitudesSub.map((sub) => {
+                      const activeSub = pathname === sub.to;
+                      return (
+                        <SidebarMenuSubItem key={sub.to}>
+                          <SidebarMenuSubButton asChild isActive={activeSub}>
+                            <Link to={sub.to} className="flex items-center gap-2">
+                              <sub.icon className="h-3.5 w-3.5" />
+                              <span>{sub.label}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      );
+                    })}
+                  </SidebarMenuSub>
+                )}
+              </SidebarMenuItem>
+
+              {/* Expedientes */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/expedientes" || pathname.startsWith("/expedientes/")}>
                   <Link to="/expedientes" className="flex items-center gap-2">
@@ -100,20 +122,27 @@ function AppSidebarInner() {
                 )}
               </SidebarMenuItem>
 
-              {nav.slice(2).map((item) => {
-                const active = pathname === item.to || pathname.startsWith(item.to + "/");
-                return (
-                  <SidebarMenuItem key={item.to}>
-                    <SidebarMenuButton asChild isActive={active}>
-                      <Link to={item.to} className="flex items-center gap-2">
-                        <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.label}</span>}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+              {/* Clientes */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/clientes" || pathname.startsWith("/clientes/")}>
+                  <Link to="/clientes" className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    {!collapsed && <span>Clientes</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Copiloto arancelario */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/copiloto")}>
+                  <Link to="/copiloto" className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    {!collapsed && <span>Copiloto IA</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
+
           </SidebarGroupContent>
         </SidebarGroup>
 
