@@ -21,8 +21,11 @@ import { toast } from "sonner";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/solicitudes", label: "Solicitudes", icon: Inbox },
   { to: "/clientes", label: "Clientes", icon: Users },
+];
+
+const solicitudesSub = [
+  { to: "/solicitudes/ocr", label: "OCR de documentos", icon: ScanText },
 ];
 
 const expedientesSub = [
