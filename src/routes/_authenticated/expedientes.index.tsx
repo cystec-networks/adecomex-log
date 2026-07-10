@@ -224,6 +224,23 @@ function Expedientes() {
                         <td className="text-xs">{e.numero_dua ?? "—"}</td>
                         <td className="text-muted-foreground">{e.bl_awb ?? "—"}</td>
                         <td>{e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO") : "—"}</td>
+                        <td>
+                          {(() => {
+                            const d = diasRestantes(e);
+                            if (!d) return <span className="text-muted-foreground">—</span>;
+                            const toneClass = d.tone === "success"
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : d.tone === "warning"
+                                ? "text-amber-600 dark:text-amber-400"
+                                : "text-destructive";
+                            return (
+                              <span className={`inline-flex items-center gap-1 font-medium ${toneClass}`}>
+                                {d.icon && <AlertTriangle className="h-3 w-3" />}
+                                {d.text}
+                              </span>
+                            );
+                          })()}
+                        </td>
                         <td className="text-xs">{e.puerto_arribo ?? "—"}</td>
                         <td className="text-xs">{e.numero_vuce ?? "—"}</td>
                         <td><Badge className="bg-primary/10 text-primary border-transparent">{e.estado?.replace("_"," ")}</Badge></td>
