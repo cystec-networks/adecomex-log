@@ -265,7 +265,7 @@ function Expedientes() {
                           <td className="px-2.5 py-2.5 align-middle">
                             <TruncatedCell value={e.clientes?.nombre} maxClass="max-w-full" className="text-foreground/90" />
                           </td>
-                          <td className="px-2.5 py-2.5 align-middle text-right tabular-nums hidden xl:table-cell">
+                          <td className="px-2.5 py-2.5 align-middle text-right tabular-nums">
                             <TruncatedCell value={e.numero_dua} maxClass="max-w-full ml-auto" className="text-muted-foreground text-xs" />
                           </td>
                           <td className="px-2.5 py-2.5 align-middle">
@@ -294,7 +294,7 @@ function Expedientes() {
                           <td className="px-2.5 py-2.5 align-middle">
                             <TruncatedCell value={e.puerto_arribo} maxClass="max-w-full" className="text-muted-foreground text-xs" />
                           </td>
-                          <td className="px-2.5 py-2.5 align-middle text-right hidden xl:table-cell">
+                          <td className="px-2.5 py-2.5 align-middle text-right">
                             <TruncatedCell value={e.numero_vuce} maxClass="max-w-full ml-auto" className="text-muted-foreground text-xs tabular-nums" />
                           </td>
                           <td className="px-2 py-2.5 align-middle text-center">
