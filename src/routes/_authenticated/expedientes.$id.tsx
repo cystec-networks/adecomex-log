@@ -167,7 +167,7 @@ function TabInfo({ exp }: { exp: any }) {
         <Field label="Medio de transporte" k="medio_transporte" />
         <Field label="Naviera" k="naviera" />
         <Field label="SLA (días)" k="sla_dias" type="number" />
-        <Field label="Fecha compromiso" k="fecha_compromiso" type="date" />
+        <Field label="ETA / Fecha de llegada" k="fecha_compromiso" type="date" />
         <Field label="Etapa actual (1-14)" k="etapa_actual" type="number" />
       </Section>
 
