@@ -59,6 +59,58 @@ function Solicitudes() {
     return true;
   });
 
+  type SortKey = "numero" | "cliente" | "tipo_operacion" | "origen" | "fecha_arribo_est" | "prioridad" | "estado" | "created_at";
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
+  const toggleSort = (key: SortKey) => {
+    setSort((s) => {
+      if (!s || s.key !== key) return { key, dir: "asc" };
+      if (s.dir === "asc") return { key, dir: "desc" };
+      return null;
+    });
+  };
+  const activeSort = sort ?? { key: "fecha_arribo_est" as SortKey, dir: "asc" as const };
+  const getVal = (s: any, k: SortKey) => k === "cliente" ? (s.clientes?.nombre ?? "") : (s[k] ?? "");
+  const sorted = [...filtered].sort((a, b) => {
+    const aC = a.estado === "convertida" ? 1 : 0;
+    const bC = b.estado === "convertida" ? 1 : 0;
+    if (aC !== bC) return aC - bC;
+    const av = getVal(a, activeSort.key);
+    const bv = getVal(b, activeSort.key);
+    const aEmpty = av === "" || av == null;
+    const bEmpty = bv === "" || bv == null;
+    if (aEmpty && bEmpty) return 0;
+    if (aEmpty) return 1;
+    if (bEmpty) return -1;
+    let r = 0;
+    if (activeSort.key === "fecha_arribo_est" || activeSort.key === "created_at") {
+      r = new Date(av).getTime() - new Date(bv).getTime();
+    } else {
+      r = String(av).localeCompare(String(bv), "es", { numeric: true });
+    }
+    return activeSort.dir === "asc" ? r : -r;
+  });
+
+  const isActive = (k: SortKey) => !!sort && sort.key === k;
+  const isDefault = (k: SortKey) => !sort && k === "fecha_arribo_est";
+  const Th = ({ k, children, className = "" }: { k: SortKey; children: React.ReactNode; className?: string }) => {
+    const active = isActive(k);
+    const def = isDefault(k);
+    const icon = active ? (sort!.dir === "asc" ? "▲" : "▼") : def ? "▲" : "↕";
+    return (
+      <th className={`text-left ${className}`}>
+        <button
+          type="button"
+          onClick={() => toggleSort(k)}
+          title={active ? `Ordenado ${sort!.dir === "asc" ? "ascendente" : "descendente"} · clic para ${sort!.dir === "asc" ? "descendente" : "quitar orden"}` : def ? "Orden por defecto: Arribo ascendente · clic para cambiar" : "Clic para ordenar"}
+          className={`inline-flex items-center gap-1 uppercase transition-colors ${active ? "text-primary font-semibold" : def ? "text-foreground/70" : "hover:text-foreground"}`}
+        >
+          {children}
+          <span className={`text-[10px] ${active ? "opacity-100" : def ? "opacity-70" : "opacity-30"}`}>{icon}</span>
+        </button>
+      </th>
+    );
+  };
+
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       <div className="flex items-center justify-between">
