@@ -120,6 +120,16 @@ function AppSidebarInner() {
                         </SidebarMenuSubItem>
                       );
                     })}
+                    {isAdmin && (
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild isActive={pathname === "/expedientes/papelera"}>
+                          <Link to="/expedientes/papelera" className="flex items-center gap-2">
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span>Papelera</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    )}
                   </SidebarMenuSub>
                 )}
               </SidebarMenuItem>
