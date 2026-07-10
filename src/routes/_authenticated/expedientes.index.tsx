@@ -197,6 +197,7 @@ function Expedientes() {
                       <Th k="puerto_arribo">Puerto Arribo</Th>
                       <Th k="numero_vuce">Solicitud de Permiso</Th>
                       <Th k="estado">Estado</Th>
+                      <th className="text-right px-4 py-2 text-xs uppercase text-muted-foreground">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -212,6 +213,17 @@ function Expedientes() {
                         <td className="text-xs">{e.puerto_arribo ?? "—"}</td>
                         <td className="text-xs">{e.numero_vuce ?? "—"}</td>
                         <td><Badge className="bg-primary/10 text-primary border-transparent">{e.estado?.replace("_"," ")}</Badge></td>
+                        <td className="px-4 py-2 text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => setToTrash({ id: e.id, numero: e.numero })}
+                            title="Mover a papelera"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -222,7 +234,29 @@ function Expedientes() {
           })}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!toTrash} onOpenChange={(o) => !o && setToTrash(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mover a la papelera</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que deseas mover el expediente <strong>{toTrash?.numero}</strong> a la papelera?
+              Podrás restaurarlo más adelante desde la sección Papelera.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={trashMut.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={trashMut.isPending}
+              onClick={(ev) => { ev.preventDefault(); if (toTrash) trashMut.mutate(toTrash.id); }}
+            >
+              {trashMut.isPending ? "Moviendo…" : "Mover a papelera"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
 
