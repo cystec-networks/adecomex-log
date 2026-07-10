@@ -144,11 +144,11 @@ function EstadoBadge({ value }: { value: string }) {
     aprobada: "bg-[var(--success)]/15 text-[var(--success)] border-transparent",
     rechazada: "bg-destructive/15 text-destructive border-transparent",
     convertida: "bg-primary/15 text-primary border-transparent",
-    abierto: "bg-[var(--info)]/15 text-[var(--info)] border-transparent",
-    en_proceso: "bg-[var(--warning)]/25 text-[var(--warning-foreground)] border-transparent",
-    retenido: "bg-destructive/15 text-destructive border-transparent",
-    cerrado: "bg-[var(--success)]/15 text-[var(--success)] border-transparent",
-    cancelado: "bg-muted text-muted-foreground border-transparent",
+    digitar: "bg-[var(--info)]/15 text-[var(--info)] border-transparent",
+    presentar: "bg-[var(--warning)]/25 text-[var(--warning-foreground)] border-transparent",
+    verificar: "bg-primary/15 text-primary border-transparent",
+    facturar: "bg-accent/20 text-accent-foreground border-transparent",
+    despachado: "bg-[var(--success)]/15 text-[var(--success)] border-transparent",
   };
   return <Badge className={map[value] ?? "bg-muted text-muted-foreground border-transparent"}>{value?.replace("_", " ")}</Badge>;
 }
