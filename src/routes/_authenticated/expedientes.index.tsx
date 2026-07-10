@@ -64,33 +64,37 @@ function Expedientes() {
     otros: "Otros",
   };
 
+  const countAll = (data ?? []).length;
+  const countImp = (data ?? []).filter((e: any) => (e.solicitudes?.tipo_operacion ?? "").toLowerCase().includes("import")).length;
+  const countExp = (data ?? []).filter((e: any) => (e.solicitudes?.tipo_operacion ?? "").toLowerCase().includes("export")).length;
+
   return (
-    <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+    <div className="p-4 md:p-6 space-y-6 max-w-[1600px] mx-auto">
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex-1">
+        <div className="flex-1 min-w-[240px]">
           <h1 className="font-display text-2xl font-bold">Expedientes · {tipoLabel}</h1>
           <p className="text-sm text-muted-foreground">Expedientes aduanales agrupados por tipo de solicitud.</p>
         </div>
         <div className="flex gap-1 rounded-md border p-1 bg-card">
-          <Link to="/expedientes" search={{ tipo: "todos" }} className={`px-3 py-1 text-xs rounded ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos</Link>
-          <Link to="/expedientes" search={{ tipo: "importacion" }} className={`px-3 py-1 text-xs rounded ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación</Link>
-          <Link to="/expedientes" search={{ tipo: "exportacion" }} className={`px-3 py-1 text-xs rounded ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación</Link>
+          <Link to="/expedientes" search={{ tipo: "todos" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos <Badge variant="secondary" className="text-[10px] h-4 px-1">{countAll}</Badge></Link>
+          <Link to="/expedientes" search={{ tipo: "importacion" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
+          <Link to="/expedientes" search={{ tipo: "exportacion" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
         </div>
       </div>
 
       <Card>
-        <CardHeader className="flex-row items-center gap-3">
-          <CardTitle className="text-base flex-1">{filtered.length} expedientes</CardTitle>
+        <CardHeader className="flex-row items-center gap-3 flex-wrap">
+          <CardTitle className="text-base flex-1 min-w-[160px]">{filtered.length} expedientes</CardTitle>
           <Select value={estado} onValueChange={setEstado}>
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="todos">Todos los estados</SelectItem>
               {["abierto","en_proceso","retenido","cerrado","cancelado"].map((e) => <SelectItem key={e} value={e}>{e.replace("_"," ")}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Input placeholder="Buscar por BL/AWB, número…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
+          <Input placeholder="Buscar por BL/AWB, expediente o cliente…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           {filtered.length === 0 && (
             <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin expedientes. Crea uno desde una solicitud aprobada.</div>
           )}
