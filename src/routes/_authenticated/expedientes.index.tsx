@@ -67,10 +67,10 @@ function Expedientes() {
     const eta = new Date(e.fecha_compromiso);
     eta.setHours(0, 0, 0, 0);
     const diff = Math.round((eta.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (diff === 0) return { text: "Hoy", tone: "warning" as const };
-    if (diff > 5) return { text: `${diff} días`, tone: "success" as const };
-    if (diff > 0) return { text: `${diff} días`, tone: "warning" as const };
-    return { text: `${Math.abs(diff)} días atraso`, tone: "danger" as const, icon: true };
+    if (diff === 0) return { text: "Hoy", full: "Hoy", tone: "warning" as const };
+    if (diff > 5) return { text: `${diff}d`, full: `${diff} días`, tone: "success" as const };
+    if (diff > 0) return { text: `${diff}d`, full: `${diff} días`, tone: "warning" as const };
+    return { text: `${Math.abs(diff)}d atraso`, full: `${Math.abs(diff)} días de atraso`, tone: "danger" as const, icon: true };
   };
 
   const detectTipo = (e: any): "importacion" | "exportacion" | "otros" => {
