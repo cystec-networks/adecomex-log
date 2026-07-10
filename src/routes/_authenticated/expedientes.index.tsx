@@ -148,14 +148,14 @@ function Expedientes() {
                 <table className="w-full text-sm">
                   <thead className="text-xs text-muted-foreground border-b bg-muted/20">
                     <tr>
-                      <th className="text-left px-4 py-2">Expediente</th>
-                      <th className="text-left">Cliente</th>
-                      <th className="text-left">DUA</th>
-                      <th className="text-left">BL / AWB</th>
-                      <th className="text-left">ETA</th>
-                      <th className="text-left">Puerto Arribo</th>
-                      <th className="text-left">Solicitud de Permiso</th>
-                      <th className="text-left">Estado</th>
+                      <Th k="numero" className="px-4 py-2">Expediente</Th>
+                      <Th k="cliente">Cliente</Th>
+                      <Th k="numero_dua">DUA</Th>
+                      <Th k="bl_awb">BL / AWB</Th>
+                      <Th k="fecha_compromiso">ETA</Th>
+                      <Th k="puerto_arribo">Puerto Arribo</Th>
+                      <Th k="numero_vuce">Solicitud de Permiso</Th>
+                      <Th k="estado">Estado</Th>
                     </tr>
                   </thead>
                   <tbody>
