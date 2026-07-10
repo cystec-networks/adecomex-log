@@ -211,35 +211,47 @@ function Expedientes() {
           {filtered.length === 0 && (
             <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin expedientes. Crea uno desde una solicitud aprobada.</div>
           )}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto xl:overflow-x-visible">
             {gruposVisibles.map((g) => {
               const rows = grupos[g];
               if (rows.length === 0) return null;
               return (
-                <div key={g} className="min-w-[1100px]">
-                  <div className="px-4 py-2 bg-muted/60 border-y flex items-center gap-2 sticky top-0 z-10">
+                <div key={g} className="min-w-[980px] xl:min-w-0">
+                  <div className="px-3 py-2 bg-muted/60 border-y flex items-center gap-2 sticky top-0 z-10">
                     <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">{grupoLabel[g]}</span>
                     <Badge variant="secondary" className="text-[10px]">{rows.length}</Badge>
                   </div>
-                  <table className="w-full text-sm border-collapse">
+                  <table className="w-full text-[13px] border-collapse table-fixed">
+                    <colgroup>
+                      <col className="w-[92px]" />
+                      <col />
+                      <col className="hidden xl:table-column xl:w-[100px]" />
+                      <col className="w-[124px]" />
+                      <col className="w-[86px]" />
+                      <col className="w-[104px]" />
+                      <col className="w-[110px]" />
+                      <col className="hidden xl:table-column xl:w-[120px]" />
+                      <col className="w-[102px]" />
+                      <col className="w-[48px]" />
+                    </colgroup>
                     <thead className="bg-muted/30 border-b">
                       <tr>
-                        <Th k="numero" className="w-28">Expediente</Th>
+                        <Th k="numero">Expediente</Th>
                         <Th k="cliente">Cliente</Th>
-                        <Th k="numero_dua" align="right">DUA</Th>
+                        <Th k="numero_dua" align="right" className="hidden xl:table-cell">DUA</Th>
                         <Th k="bl_awb">BL / AWB</Th>
                         <Th k="fecha_compromiso" align="right">ETA</Th>
-                        <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Días Restantes</th>
-                        <Th k="puerto_arribo">Puerto Arribo</Th>
-                        <Th k="numero_vuce" align="right">Solicitud de Permiso</Th>
+                        <th className="px-2.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Días Rest.</th>
+                        <Th k="puerto_arribo">Puerto</Th>
+                        <Th k="numero_vuce" align="right" className="hidden xl:table-cell">Permiso</Th>
                         <Th k="estado" align="center">Estado</Th>
-                        <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Acciones</th>
+                        <th className="px-2 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
                       {rows.map((e: any) => (
                         <tr key={e.id} className="hover:bg-muted/30 transition-colors">
-                          <td className="px-4 py-3 align-middle">
+                          <td className="px-2.5 py-2.5 align-middle">
                             <Link
                               to="/expedientes/$id"
                               params={{ id: e.id }}
@@ -249,19 +261,19 @@ function Expedientes() {
                               {e.numero}
                             </Link>
                           </td>
-                          <td className="px-4 py-3 align-middle">
-                            <TruncatedCell value={e.clientes?.nombre} maxClass="max-w-[180px]" className="text-foreground/90" />
+                          <td className="px-2.5 py-2.5 align-middle">
+                            <TruncatedCell value={e.clientes?.nombre} maxClass="max-w-full" className="text-foreground/90" />
                           </td>
-                          <td className="px-4 py-3 align-middle text-right tabular-nums">
-                            <TruncatedCell value={e.numero_dua} maxClass="max-w-[110px] ml-auto" className="text-muted-foreground text-xs" />
+                          <td className="px-2.5 py-2.5 align-middle text-right tabular-nums hidden xl:table-cell">
+                            <TruncatedCell value={e.numero_dua} maxClass="max-w-full ml-auto" className="text-muted-foreground text-xs" />
                           </td>
-                          <td className="px-4 py-3 align-middle">
-                            <TruncatedCell value={e.bl_awb} maxClass="max-w-[130px]" className="text-muted-foreground" />
+                          <td className="px-2.5 py-2.5 align-middle">
+                            <TruncatedCell value={e.bl_awb} maxClass="max-w-full" className="text-muted-foreground" />
                           </td>
-                          <td className="px-4 py-3 align-middle text-right tabular-nums text-muted-foreground">
-                            {e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO") : "—"}
+                          <td className="px-2.5 py-2.5 align-middle text-right tabular-nums text-muted-foreground whitespace-nowrap">
+                            {e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"}
                           </td>
-                          <td className="px-4 py-3 align-middle">
+                          <td className="px-2.5 py-2.5 align-middle">
                             {(() => {
                               const d = diasRestantes(e);
                               if (!d) return <span className="text-muted-foreground">—</span>;
@@ -271,23 +283,24 @@ function Expedientes() {
                                   ? "text-amber-600 dark:text-amber-400"
                                   : "text-destructive";
                               return (
-                                <span className={`inline-flex items-center gap-1 text-xs font-medium ${toneClass}`}>
-                                  {d.icon && <AlertTriangle className="h-3 w-3" />}
+                                <span title={d.full} className={`inline-flex items-center gap-1 text-xs font-medium whitespace-nowrap ${toneClass}`}>
+                                  {d.icon && <AlertTriangle className="h-3 w-3 shrink-0" />}
                                   {d.text}
                                 </span>
                               );
                             })()}
                           </td>
-                          <td className="px-4 py-3 align-middle">
-                            <TruncatedCell value={e.puerto_arribo} maxClass="max-w-[110px]" className="text-muted-foreground text-xs" />
+                          <td className="px-2.5 py-2.5 align-middle">
+                            <TruncatedCell value={e.puerto_arribo} maxClass="max-w-full" className="text-muted-foreground text-xs" />
                           </td>
-                          <td className="px-4 py-3 align-middle text-right">
-                            <TruncatedCell value={e.numero_vuce} maxClass="max-w-[130px] ml-auto" className="text-muted-foreground text-xs tabular-nums" />
+                          <td className="px-2.5 py-2.5 align-middle text-right hidden xl:table-cell">
+                            <TruncatedCell value={e.numero_vuce} maxClass="max-w-full ml-auto" className="text-muted-foreground text-xs tabular-nums" />
                           </td>
-                          <td className="px-4 py-3 align-middle text-center">
+                          <td className="px-2 py-2.5 align-middle text-center">
                             {estadoBadge(e.estado)}
                           </td>
-                          <td className="px-4 py-3 align-middle text-right">
+                          <td className="px-1 py-2.5 align-middle text-right">
+
                             <Button
                               variant="ghost"
                               size="icon"
