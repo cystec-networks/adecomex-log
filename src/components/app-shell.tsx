@@ -23,10 +23,6 @@ const solicitudesSub = [
   { to: "/solicitudes/ocr", label: "OCR", icon: ScanText },
 ];
 
-const expedientesSub = [
-  { to: "/expedientes", search: { tipo: "importacion" as const }, label: "Importaciones", icon: PackageOpen },
-  { to: "/expedientes", search: { tipo: "exportacion" as const }, label: "Exportaciones", icon: PackageCheck },
-];
 
 function AppSidebarInner() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
@@ -97,30 +93,34 @@ function AppSidebarInner() {
 
               {/* Expedientes */}
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === "/expedientes" || pathname.startsWith("/expedientes/")}>
+                <SidebarMenuButton asChild isActive={(pathname === "/expedientes" || pathname.startsWith("/expedientes/")) && !search?.tipo}>
                   <Link to="/expedientes" className="flex items-center gap-2">
                     <FolderKanban className="h-4 w-4" />
                     {!collapsed && <span>Expedientes</span>}
                   </Link>
                 </SidebarMenuButton>
-                {!collapsed && (
-                  <SidebarMenuSub>
-                    {expedientesSub.map((sub) => {
-                      const activeSub = pathname.startsWith("/expedientes") && search?.tipo === sub.search.tipo;
-                      return (
-                        <SidebarMenuSubItem key={sub.label}>
-                          <SidebarMenuSubButton asChild isActive={activeSub}>
-                            <Link to={sub.to} search={sub.search} className="flex items-center gap-2">
-                              <sub.icon className="h-3.5 w-3.5" />
-                              <span>{sub.label}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      );
-                    })}
-                  </SidebarMenuSub>
-                )}
               </SidebarMenuItem>
+
+              {/* Importaciones */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/expedientes") && search?.tipo === "importacion"}>
+                  <Link to="/expedientes" search={{ tipo: "importacion" as const }} className="flex items-center gap-2">
+                    <PackageOpen className="h-4 w-4" />
+                    {!collapsed && <span>Importaciones</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Exportaciones */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/expedientes") && search?.tipo === "exportacion"}>
+                  <Link to="/expedientes" search={{ tipo: "exportacion" as const }} className="flex items-center gap-2">
+                    <PackageCheck className="h-4 w-4" />
+                    {!collapsed && <span>Exportaciones</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
 
               {/* Clientes */}
               <SidebarMenuItem>
