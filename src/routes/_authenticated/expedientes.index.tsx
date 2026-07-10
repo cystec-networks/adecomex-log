@@ -81,14 +81,27 @@ function Expedientes() {
   filtered.forEach((e: any) => grupos[detectTipo(e)].push(e));
   (Object.keys(grupos) as Array<keyof typeof grupos>).forEach((k) => grupos[k].sort(cmp));
 
-  const arrow = (k: SortKey) => sort && sort.key === k ? (sort.dir === "asc" ? " ▲" : " ▼") : "";
-  const Th = ({ k, children, className = "" }: { k: SortKey; children: React.ReactNode; className?: string }) => (
-    <th className={`text-left ${className}`}>
-      <button type="button" onClick={() => toggleSort(k)} className="inline-flex items-center gap-1 hover:text-foreground uppercase">
-        {children}<span className="text-[10px]">{arrow(k)}</span>
-      </button>
-    </th>
-  );
+  const isActive = (k: SortKey) => !!sort && sort.key === k;
+  const isDefault = (k: SortKey) => !sort && k === "fecha_compromiso";
+  const Th = ({ k, children, className = "" }: { k: SortKey; children: React.ReactNode; className?: string }) => {
+    const active = isActive(k);
+    const def = isDefault(k);
+    const icon = active ? (sort!.dir === "asc" ? "▲" : "▼") : def ? "▲" : "↕";
+    return (
+      <th className={`text-left ${className}`}>
+        <button
+          type="button"
+          onClick={() => toggleSort(k)}
+          title={active ? `Ordenado ${sort!.dir === "asc" ? "ascendente" : "descendente"} · clic para ${sort!.dir === "asc" ? "descendente" : "quitar orden"}` : def ? "Orden por defecto: ETA ascendente · clic para cambiar" : "Clic para ordenar"}
+          className={`inline-flex items-center gap-1 uppercase transition-colors ${active ? "text-primary font-semibold" : def ? "text-foreground/70" : "hover:text-foreground"}`}
+        >
+          {children}
+          <span className={`text-[10px] ${active ? "opacity-100" : def ? "opacity-70" : "opacity-30"}`}>{icon}</span>
+        </button>
+      </th>
+    );
+  };
+
 
   const gruposVisibles = (
     tipo === "importacion" ? ["importacion"] :
