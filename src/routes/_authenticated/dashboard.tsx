@@ -55,8 +55,8 @@ function Dashboard() {
   });
 
   const solicitudesActivas = stats?.solicitudes.filter((s) => s.estado !== "rechazada").length ?? 0;
-  const expedientesEnProceso = stats?.expedientes.filter((e) => e.estado === "en_proceso" || e.estado === "abierto").length ?? 0;
-  const expedientesCerrados = stats?.expedientes.filter((e) => e.estado === "cerrado").length ?? 0;
+  const expedientesEnProceso = stats?.expedientes.filter((e) => e.estado === "digitar" || e.estado === "presentar" || e.estado === "verificar" || e.estado === "facturar").length ?? 0;
+  const expedientesCerrados = stats?.expedientes.filter((e) => e.estado === "despachado").length ?? 0;
   const incidenciasAbiertas = stats?.incidencias.filter((i) => i.estado !== "cerrada" && i.estado !== "resuelta").length ?? 0;
   const urgentes = stats?.solicitudes.filter((s) => s.prioridad === "urgente" || s.prioridad === "alta").length ?? 0;
   const docsVencidos = stats?.documentos.filter((d) => d.fecha_vencimiento && new Date(d.fecha_vencimiento) < new Date()).length ?? 0;
@@ -144,11 +144,11 @@ function EstadoBadge({ value }: { value: string }) {
     aprobada: "bg-[var(--success)]/15 text-[var(--success)] border-transparent",
     rechazada: "bg-destructive/15 text-destructive border-transparent",
     convertida: "bg-primary/15 text-primary border-transparent",
-    abierto: "bg-[var(--info)]/15 text-[var(--info)] border-transparent",
-    en_proceso: "bg-[var(--warning)]/25 text-[var(--warning-foreground)] border-transparent",
-    retenido: "bg-destructive/15 text-destructive border-transparent",
-    cerrado: "bg-[var(--success)]/15 text-[var(--success)] border-transparent",
-    cancelado: "bg-muted text-muted-foreground border-transparent",
+    digitar: "bg-[var(--info)]/15 text-[var(--info)] border-transparent",
+    presentar: "bg-[var(--warning)]/25 text-[var(--warning-foreground)] border-transparent",
+    verificar: "bg-primary/15 text-primary border-transparent",
+    facturar: "bg-accent/20 text-accent-foreground border-transparent",
+    despachado: "bg-[var(--success)]/15 text-[var(--success)] border-transparent",
   };
   return <Badge className={map[value] ?? "bg-muted text-muted-foreground border-transparent"}>{value?.replace("_", " ")}</Badge>;
 }

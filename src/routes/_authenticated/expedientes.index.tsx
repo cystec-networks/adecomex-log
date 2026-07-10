@@ -88,7 +88,7 @@ function Expedientes() {
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos los estados</SelectItem>
-              {["abierto","en_proceso","retenido","cerrado","cancelado"].map((e) => <SelectItem key={e} value={e}>{e.replace("_"," ")}</SelectItem>)}
+              {["digitar","presentar","verificar","facturar","despachado"].map((e) => <SelectItem key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1)}</SelectItem>)}
             </SelectContent>
           </Select>
           <Input placeholder="Buscar por BL/AWB, expediente o cliente…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
