@@ -72,9 +72,9 @@ function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <KPI icon={Inbox} label="Solicitudes activas" value={solicitudesActivas} tone="primary" />
-        <KPI icon={FolderKanban} label="Expedientes en curso" value={expedientesEnProceso} tone="info" />
-        <KPI icon={CheckCircle2} label="Cerrados" value={expedientesCerrados} tone="success" />
+        <KPI icon={Inbox} label="SOLICITUDES RECIBIDAS" value={solicitudesActivas} tone="primary" />
+        <KPI icon={FolderKanban} label="EXPEDIENTES EN PROCESOS" value={expedientesEnProceso} tone="info" />
+        <KPI icon={CheckCircle2} label="DESPACHADOS" value={expedientesCerrados} tone="success" />
         <KPI icon={AlertTriangle} label="Incidencias abiertas" value={incidenciasAbiertas} tone="danger" />
         <KPI icon={Clock} label="Prioridad alta" value={urgentes} tone="warning" />
         <KPI icon={FileWarning} label="Docs vencidos" value={docsVencidos} tone="danger" />
