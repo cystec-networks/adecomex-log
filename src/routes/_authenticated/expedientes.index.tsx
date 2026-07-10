@@ -42,12 +42,34 @@ function Expedientes() {
 
   const tipoLabel = tipo === "importacion" ? "Importaciones" : tipo === "exportacion" ? "Exportaciones" : "Todos los expedientes";
 
+  const detectTipo = (e: any): "importacion" | "exportacion" | "otros" => {
+    const t = (e.solicitudes?.tipo_operacion ?? "").toLowerCase();
+    if (t.includes("import")) return "importacion";
+    if (t.includes("export")) return "exportacion";
+    return "otros";
+  };
+
+  const grupos: Record<string, any[]> = { importacion: [], exportacion: [], otros: [] };
+  filtered.forEach((e: any) => grupos[detectTipo(e)].push(e));
+
+  const gruposVisibles = (
+    tipo === "importacion" ? ["importacion"] :
+    tipo === "exportacion" ? ["exportacion"] :
+    ["importacion", "exportacion", "otros"]
+  ) as Array<keyof typeof grupos>;
+
+  const grupoLabel: Record<string, string> = {
+    importacion: "Importaciones",
+    exportacion: "Exportaciones",
+    otros: "Otros",
+  };
+
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex-1">
           <h1 className="font-display text-2xl font-bold">Expedientes · {tipoLabel}</h1>
-          <p className="text-sm text-muted-foreground">Expedientes aduanales activos y cerrados.</p>
+          <p className="text-sm text-muted-foreground">Expedientes aduanales agrupados por tipo de solicitud.</p>
         </div>
         <div className="flex gap-1 rounded-md border p-1 bg-card">
           <Link to="/expedientes" search={{ tipo: "todos" }} className={`px-3 py-1 text-xs rounded ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos</Link>
@@ -69,46 +91,59 @@ function Expedientes() {
           <Input placeholder="Buscar por BL/AWB, número…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
         </CardHeader>
         <CardContent className="p-0">
-          <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground border-b bg-muted/30">
-              <tr>
-                <th className="text-left px-4 py-2">Expediente</th>
-                <th className="text-left">Cliente</th>
-                <th className="text-left">BL / AWB</th>
-                <th className="text-left">Etapa</th>
-                <th className="text-left">Estado</th>
-                <th className="text-left">Compromiso</th>
-                <th className="text-left">Creado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((e: any) => (
-                <tr key={e.id} className="border-b last:border-0 hover:bg-muted/40">
-                  <td className="px-4 py-2 font-medium">
-                    <Link to="/expedientes/$id" params={{ id: e.id }} className="text-primary hover:underline">{e.numero}</Link>
-                  </td>
-                  <td>{e.clientes?.nombre ?? "—"}</td>
-                  <td className="text-muted-foreground">{e.bl_awb ?? "—"}</td>
-                  <td className="text-xs">
-                    <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-24 rounded-full bg-muted overflow-hidden">
-                        <div className="h-full bg-primary" style={{ width: `${(e.etapa_actual / 14) * 100}%` }} />
-                      </div>
-                      <span>{e.etapa_actual}/14</span>
-                    </div>
-                  </td>
-                  <td><Badge className="bg-primary/10 text-primary border-transparent">{e.estado?.replace("_"," ")}</Badge></td>
-                  <td>{e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO") : "—"}</td>
-                  <td className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleDateString("es-DO")}</td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Sin expedientes. Crea uno desde una solicitud aprobada.</td></tr>
-              )}
-            </tbody>
-          </table>
+          {filtered.length === 0 && (
+            <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin expedientes. Crea uno desde una solicitud aprobada.</div>
+          )}
+          {gruposVisibles.map((g) => {
+            const rows = grupos[g];
+            if (rows.length === 0) return null;
+            return (
+              <div key={g} className="border-b last:border-0">
+                <div className="px-4 py-2 bg-muted/50 flex items-center gap-2 sticky top-0">
+                  <span className="text-xs font-semibold uppercase tracking-wide">{grupoLabel[g]}</span>
+                  <Badge variant="secondary" className="text-[10px]">{rows.length}</Badge>
+                </div>
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-muted-foreground border-b bg-muted/20">
+                    <tr>
+                      <th className="text-left px-4 py-2">Expediente</th>
+                      <th className="text-left">Cliente</th>
+                      <th className="text-left">BL / AWB</th>
+                      <th className="text-left">Etapa</th>
+                      <th className="text-left">Estado</th>
+                      <th className="text-left">Compromiso</th>
+                      <th className="text-left">Creado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((e: any) => (
+                      <tr key={e.id} className="border-b last:border-0 hover:bg-muted/40">
+                        <td className="px-4 py-2 font-medium">
+                          <Link to="/expedientes/$id" params={{ id: e.id }} className="text-primary hover:underline">{e.numero}</Link>
+                        </td>
+                        <td>{e.clientes?.nombre ?? "—"}</td>
+                        <td className="text-muted-foreground">{e.bl_awb ?? "—"}</td>
+                        <td className="text-xs">
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 w-24 rounded-full bg-muted overflow-hidden">
+                              <div className="h-full bg-primary" style={{ width: `${(e.etapa_actual / 14) * 100}%` }} />
+                            </div>
+                            <span>{e.etapa_actual}/14</span>
+                          </div>
+                        </td>
+                        <td><Badge className="bg-primary/10 text-primary border-transparent">{e.estado?.replace("_"," ")}</Badge></td>
+                        <td>{e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO") : "—"}</td>
+                        <td className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleDateString("es-DO")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
     </div>
   );
 }
+
