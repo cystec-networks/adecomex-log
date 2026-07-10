@@ -20,6 +20,7 @@ import { Route as AuthenticatedExpedientesIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedSolicitudesOcrRouteImport } from './routes/_authenticated/solicitudes.ocr'
 import { Route as AuthenticatedSolicitudesNuevaRouteImport } from './routes/_authenticated/solicitudes.nueva'
 import { Route as AuthenticatedSolicitudesIdRouteImport } from './routes/_authenticated/solicitudes.$id'
+import { Route as AuthenticatedExpedientesPapeleraRouteImport } from './routes/_authenticated/expedientes.papelera'
 import { Route as AuthenticatedExpedientesIdRouteImport } from './routes/_authenticated/expedientes.$id'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 
@@ -82,6 +83,12 @@ const AuthenticatedSolicitudesIdRoute =
     path: '/solicitudes/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedExpedientesPapeleraRoute =
+  AuthenticatedExpedientesPapeleraRouteImport.update({
+    id: '/expedientes/papelera',
+    path: '/expedientes/papelera',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedExpedientesIdRoute =
   AuthenticatedExpedientesIdRouteImport.update({
     id: '/expedientes/$id',
@@ -103,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
+  '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
   '/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
   '/solicitudes/ocr': typeof AuthenticatedSolicitudesOcrRoute
@@ -117,6 +125,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
+  '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
   '/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
   '/solicitudes/ocr': typeof AuthenticatedSolicitudesOcrRoute
@@ -133,6 +142,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
+  '/_authenticated/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/_authenticated/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
   '/_authenticated/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
   '/_authenticated/solicitudes/ocr': typeof AuthenticatedSolicitudesOcrRoute
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/admin/usuarios'
     | '/expedientes/$id'
+    | '/expedientes/papelera'
     | '/solicitudes/$id'
     | '/solicitudes/nueva'
     | '/solicitudes/ocr'
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/admin/usuarios'
     | '/expedientes/$id'
+    | '/expedientes/papelera'
     | '/solicitudes/$id'
     | '/solicitudes/nueva'
     | '/solicitudes/ocr'
@@ -178,6 +190,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/expedientes/$id'
+    | '/_authenticated/expedientes/papelera'
     | '/_authenticated/solicitudes/$id'
     | '/_authenticated/solicitudes/nueva'
     | '/_authenticated/solicitudes/ocr'
@@ -270,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSolicitudesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/expedientes/papelera': {
+      id: '/_authenticated/expedientes/papelera'
+      path: '/expedientes/papelera'
+      fullPath: '/expedientes/papelera'
+      preLoaderRoute: typeof AuthenticatedExpedientesPapeleraRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/expedientes/$id': {
       id: '/_authenticated/expedientes/$id'
       path: '/expedientes/$id'
@@ -293,6 +313,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedExpedientesIdRoute: typeof AuthenticatedExpedientesIdRoute
+  AuthenticatedExpedientesPapeleraRoute: typeof AuthenticatedExpedientesPapeleraRoute
   AuthenticatedSolicitudesIdRoute: typeof AuthenticatedSolicitudesIdRoute
   AuthenticatedSolicitudesNuevaRoute: typeof AuthenticatedSolicitudesNuevaRoute
   AuthenticatedSolicitudesOcrRoute: typeof AuthenticatedSolicitudesOcrRoute
@@ -306,6 +327,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedExpedientesIdRoute: AuthenticatedExpedientesIdRoute,
+  AuthenticatedExpedientesPapeleraRoute: AuthenticatedExpedientesPapeleraRoute,
   AuthenticatedSolicitudesIdRoute: AuthenticatedSolicitudesIdRoute,
   AuthenticatedSolicitudesNuevaRoute: AuthenticatedSolicitudesNuevaRoute,
   AuthenticatedSolicitudesOcrRoute: AuthenticatedSolicitudesOcrRoute,

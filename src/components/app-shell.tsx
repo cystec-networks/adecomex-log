@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, Inbox, FolderKanban, Users, UserCog, LogOut, Ship, Search,
-  PackageOpen, PackageCheck, ScanText, Sparkles,
+  PackageOpen, PackageCheck, ScanText, Sparkles, Trash2,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -120,6 +120,16 @@ function AppSidebarInner() {
                         </SidebarMenuSubItem>
                       );
                     })}
+                    {isAdmin && (
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild isActive={pathname === "/expedientes/papelera"}>
+                          <Link to="/expedientes/papelera" className="flex items-center gap-2">
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span>Papelera</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    )}
                   </SidebarMenuSub>
                 )}
               </SidebarMenuItem>

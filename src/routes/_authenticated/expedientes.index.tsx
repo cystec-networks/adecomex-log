@@ -1,11 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 type TipoFilter = "importacion" | "exportacion" | "todos";
 
@@ -21,13 +28,34 @@ function Expedientes() {
   const { tipo = "todos" } = Route.useSearch();
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState("todos");
+  const [toTrash, setToTrash] = useState<{ id: string; numero: string } | null>(null);
+  const qc = useQueryClient();
 
   const { data } = useQuery({
     queryKey: ["expedientes"],
     queryFn: async () => (await supabase
       .from("expedientes")
       .select("*, clientes(nombre), solicitudes(tipo_operacion)")
+      .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
+  });
+
+  const trashMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("expedientes")
+        .update({ eliminado_en: new Date().toISOString(), eliminado_por: u.user?.id ?? null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Expediente movido a la papelera");
+      qc.invalidateQueries({ queryKey: ["expedientes"] });
+      qc.invalidateQueries({ queryKey: ["expedientes-papelera"] });
+      setToTrash(null);
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo mover a papelera"),
   });
 
   const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -169,6 +197,7 @@ function Expedientes() {
                       <Th k="puerto_arribo">Puerto Arribo</Th>
                       <Th k="numero_vuce">Solicitud de Permiso</Th>
                       <Th k="estado">Estado</Th>
+                      <th className="text-right px-4 py-2 text-xs uppercase text-muted-foreground">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -184,6 +213,17 @@ function Expedientes() {
                         <td className="text-xs">{e.puerto_arribo ?? "—"}</td>
                         <td className="text-xs">{e.numero_vuce ?? "—"}</td>
                         <td><Badge className="bg-primary/10 text-primary border-transparent">{e.estado?.replace("_"," ")}</Badge></td>
+                        <td className="px-4 py-2 text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => setToTrash({ id: e.id, numero: e.numero })}
+                            title="Mover a papelera"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -194,7 +234,29 @@ function Expedientes() {
           })}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!toTrash} onOpenChange={(o) => !o && setToTrash(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mover a la papelera</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que deseas mover el expediente <strong>{toTrash?.numero}</strong> a la papelera?
+              Podrás restaurarlo más adelante desde la sección Papelera.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={trashMut.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={trashMut.isPending}
+              onClick={(ev) => { ev.preventDefault(); if (toTrash) trashMut.mutate(toTrash.id); }}
+            >
+              {trashMut.isPending ? "Moviendo…" : "Mover a papelera"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
 
