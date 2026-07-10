@@ -216,35 +216,23 @@ function Expedientes() {
               const rows = grupos[g];
               if (rows.length === 0) return null;
               return (
-                <div key={g} className="min-w-[900px]">
+                <div key={g}>
                   <div className="px-3 py-2 bg-muted/60 border-y flex items-center gap-2 sticky top-0 z-10">
                     <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">{grupoLabel[g]}</span>
                     <Badge variant="secondary" className="text-[10px]">{rows.length}</Badge>
                   </div>
-                  <table className="w-full text-[13px] border-collapse table-fixed">
-                    <colgroup>
-                      <col className="w-[96px]" />
-                      <col />
-                      <col className="w-[100px]" />
-                      <col className="w-[150px]" />
-                      <col className="w-[78px]" />
-                      <col className="w-[82px]" />
-                      <col className="w-[110px]" />
-                      <col className="w-[110px]" />
-                      <col className="w-[100px]" />
-                      <col className="w-[36px]" />
-                    </colgroup>
+                  <table className="w-full text-[13px] border-collapse">
                     <thead className="bg-muted/30 border-b">
                       <tr>
-                        <Th k="numero" className="px-2">Expediente</Th>
-                        <Th k="cliente" className="px-2">Cliente</Th>
-                        <Th k="numero_dua" align="right" className="px-2">DUA</Th>
-                        <Th k="bl_awb" className="px-2">BL / AWB</Th>
-                        <Th k="fecha_compromiso" align="right" className="px-2">ETA</Th>
-                        <th className="px-2 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Días Rest.</th>
-                        <Th k="puerto_arribo" className="px-2">Puerto</Th>
-                        <Th k="numero_vuce" align="right" className="px-2">Permiso</Th>
-                        <Th k="estado" align="center" className="px-2">Estado</Th>
+                        <Th k="numero" className="px-2 whitespace-nowrap">Expediente</Th>
+                        <Th k="cliente" className="px-2 whitespace-nowrap">Cliente</Th>
+                        <Th k="numero_dua" align="right" className="px-2 whitespace-nowrap">DUA</Th>
+                        <Th k="bl_awb" className="px-2 whitespace-nowrap">BL / AWB</Th>
+                        <Th k="fecha_compromiso" align="right" className="px-2 whitespace-nowrap">ETA</Th>
+                        <th className="px-2 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Días Rest.</th>
+                        <Th k="puerto_arribo" className="px-2 whitespace-nowrap">Puerto</Th>
+                        <Th k="numero_vuce" align="right" className="px-2 whitespace-nowrap">Permiso</Th>
+                        <Th k="estado" align="center" className="px-2 whitespace-nowrap">Estado</Th>
                         <th className="px-1 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"></th>
                       </tr>
                     </thead>
@@ -252,29 +240,29 @@ function Expedientes() {
                     <tbody className="divide-y">
                       {rows.map((e: any) => (
                         <tr key={e.id} className="hover:bg-muted/30 transition-colors">
-                          <td className="px-2 py-2 align-middle">
+                          <td className="px-2 py-2 align-middle whitespace-nowrap">
                             <Link
                               to="/expedientes/$id"
                               params={{ id: e.id }}
-                              className="font-semibold text-primary hover:underline underline-offset-2 decoration-primary/40 whitespace-nowrap"
+                              className="font-semibold text-primary hover:underline underline-offset-2 decoration-primary/40"
                               title={`Abrir expediente ${e.numero}`}
                             >
                               {e.numero}
                             </Link>
                           </td>
-                          <td className="px-2 py-2 align-middle">
-                            <span className="block break-words text-foreground/90 leading-snug">{e.clientes?.nombre ?? "—"}</span>
+                          <td className="px-2 py-2 align-middle whitespace-nowrap text-foreground/90">
+                            {e.clientes?.nombre ?? "—"}
                           </td>
                           <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground text-xs whitespace-nowrap">
                             {e.numero_dua ?? "—"}
                           </td>
-                          <td className="px-2 py-2 align-middle text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">
-                            <span title={e.bl_awb ?? undefined}>{e.bl_awb ?? "—"}</span>
+                          <td className="px-2 py-2 align-middle text-muted-foreground whitespace-nowrap">
+                            {e.bl_awb ?? "—"}
                           </td>
                           <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground whitespace-nowrap">
                             {e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"}
                           </td>
-                          <td className="px-2 py-2 align-middle">
+                          <td className="px-2 py-2 align-middle whitespace-nowrap">
                             {(() => {
                               const d = diasRestantes(e);
                               if (!d) return <span className="text-muted-foreground">—</span>;
@@ -284,23 +272,23 @@ function Expedientes() {
                                   ? "text-amber-600 dark:text-amber-400"
                                   : "text-destructive";
                               return (
-                                <span title={d.full} className={`inline-flex items-center gap-1 text-xs font-medium whitespace-nowrap ${toneClass}`}>
+                                <span title={d.full} className={`inline-flex items-center gap-1 text-xs font-medium ${toneClass}`}>
                                   {d.icon && <AlertTriangle className="h-3 w-3 shrink-0" />}
                                   {d.text}
                                 </span>
                               );
                             })()}
                           </td>
-                          <td className="px-2 py-2 align-middle text-muted-foreground text-xs whitespace-nowrap overflow-hidden text-ellipsis">
-                            <span title={e.puerto_arribo ?? undefined}>{e.puerto_arribo ?? "—"}</span>
+                          <td className="px-2 py-2 align-middle text-muted-foreground text-xs whitespace-nowrap">
+                            {e.puerto_arribo ?? "—"}
                           </td>
                           <td className="px-2 py-2 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
                             {e.numero_vuce ?? "—"}
                           </td>
-                          <td className="px-2 py-2 align-middle text-center">
+                          <td className="px-2 py-2 align-middle text-center whitespace-nowrap">
                             {estadoBadge(e.estado)}
                           </td>
-                          <td className="px-1 py-2 align-middle text-right">
+                          <td className="px-1 py-2 align-middle text-right whitespace-nowrap">
 
                             <Button
                               variant="ghost"
@@ -308,6 +296,7 @@ function Expedientes() {
                               className="h-8 w-8 text-muted-foreground hover:text-destructive"
                               onClick={() => setToTrash({ id: e.id, numero: e.numero })}
                               title="Mover a papelera"
+
 
                             >
                               <Trash2 className="h-4 w-4" />
