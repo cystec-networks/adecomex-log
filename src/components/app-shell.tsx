@@ -23,10 +23,6 @@ const solicitudesSub = [
   { to: "/solicitudes/ocr", label: "OCR", icon: ScanText },
 ];
 
-const expedientesSub = [
-  { to: "/expedientes", search: { tipo: "importacion" as const }, label: "Importaciones", icon: PackageOpen },
-  { to: "/expedientes", search: { tipo: "exportacion" as const }, label: "Exportaciones", icon: PackageCheck },
-];
 
 function AppSidebarInner() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
