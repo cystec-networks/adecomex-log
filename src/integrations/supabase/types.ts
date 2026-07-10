@@ -238,6 +238,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           descripcion_mercancia: string | null
+          eliminado_en: string | null
+          eliminado_por: string | null
           estado: Database["public"]["Enums"]["expediente_estado"]
           etapa_actual: number
           factura_comercial: string | null
@@ -272,6 +274,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           descripcion_mercancia?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["expediente_estado"]
           etapa_actual?: number
           factura_comercial?: string | null
@@ -306,6 +310,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           descripcion_mercancia?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["expediente_estado"]
           etapa_actual?: number
           factura_comercial?: string | null
