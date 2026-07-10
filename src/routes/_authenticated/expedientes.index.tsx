@@ -10,7 +10,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -67,10 +67,9 @@ function Expedientes() {
     const eta = new Date(e.fecha_compromiso);
     eta.setHours(0, 0, 0, 0);
     const diff = Math.round((eta.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (diff === 0) return { text: "Hoy", full: "Hoy", tone: "warning" as const };
-    if (diff > 5) return { text: `${diff}d`, full: `${diff} días`, tone: "success" as const };
-    if (diff > 0) return { text: `${diff}d`, full: `${diff} días`, tone: "warning" as const };
-    return { text: `${Math.abs(diff)}d atraso`, full: `${Math.abs(diff)} días de atraso`, tone: "danger" as const, icon: true };
+    if (diff > 5) return { text: `${diff}`, full: `${diff} días`, tone: "success" as const };
+    if (diff >= 0) return { text: `${diff}`, full: diff === 0 ? "Hoy" : `${diff} días`, tone: "warning" as const };
+    return { text: `${diff}`, full: `${Math.abs(diff)} días de atraso`, tone: "danger" as const };
   };
 
   const detectTipo = (e: any): "importacion" | "exportacion" | "otros" => {
@@ -229,7 +228,7 @@ function Expedientes() {
                         <Th k="numero_dua" align="right" className="px-2 whitespace-nowrap">DUA</Th>
                         <Th k="bl_awb" className="px-2 whitespace-nowrap">BL / AWB</Th>
                         <Th k="fecha_compromiso" align="right" className="px-2 whitespace-nowrap">ETA</Th>
-                        <th className="px-2 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Días Rest.</th>
+                        <th className="px-2 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap w-12 min-w-12">Días</th>
                         <Th k="puerto_arribo" className="px-2 whitespace-nowrap">Puerto</Th>
                         <Th k="numero_vuce" align="right" className="px-2 whitespace-nowrap">Permiso</Th>
                         <Th k="estado" align="center" className="px-2 whitespace-nowrap">Estado</Th>
@@ -262,7 +261,7 @@ function Expedientes() {
                           <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground whitespace-nowrap">
                             {e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"}
                           </td>
-                          <td className="px-2 py-2 align-middle whitespace-nowrap">
+                          <td className="px-2 py-2 align-middle text-center whitespace-nowrap w-12 min-w-12">
                             {(() => {
                               const d = diasRestantes(e);
                               if (!d) return <span className="text-muted-foreground">—</span>;
@@ -272,8 +271,7 @@ function Expedientes() {
                                   ? "text-amber-600 dark:text-amber-400"
                                   : "text-destructive";
                               return (
-                                <span title={d.full} className={`inline-flex items-center gap-1 text-xs font-medium ${toneClass}`}>
-                                  {d.icon && <AlertTriangle className="h-3 w-3 shrink-0" />}
+                                <span title={d.full} className={`text-xs font-medium tabular-nums ${toneClass}`}>
                                   {d.text}
                                 </span>
                               );
