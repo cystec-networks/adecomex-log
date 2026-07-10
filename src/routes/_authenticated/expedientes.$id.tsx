@@ -234,14 +234,20 @@ function TabInfo({ exp }: { exp: any }) {
         <AutoField label="Factura comercial" k="factura_comercial" />
         <AutoField label="Incoterm" k="incoterm" />
         <AutoField label="Puerto de salida" k="puerto_salida" />
-        <AutoField label="Puerto de arribo" k="puerto_arribo" />
       </Section>
 
-      <Section title="3. Declaración" subtitle="Documentos oficiales ante DGA y VUCE">
-        <AutoField label="Número de declaración (DUA)" k="numero_dua" />
-        <AutoField label="Número de permiso (VUCE)" k="numero_vuce" />
-        <AutoField label="Número de despacho (IGRA)" k="numero_igra" />
-      </Section>
+      <Card>
+        <CardHeader className="pb-3 border-b">
+          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">3. Declaración</CardTitle>
+          <p className="text-xs text-muted-foreground">Documentos oficiales ante DGA y VUCE</p>
+        </CardHeader>
+        <CardContent className="pt-5 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <AutoField label="Declaración DUA" k="numero_dua" />
+          <AutoField label="Número de despacho" k="numero_igra" />
+          <AutoField label="Número de permiso" k="numero_vuce" />
+          <AutoField label="Puerto de arribo" k="puerto_arribo" />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="pb-3 border-b">
