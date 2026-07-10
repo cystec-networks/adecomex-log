@@ -20,7 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 const solicitudesSub = [
-  { to: "/solicitudes/ocr", label: "OCR de documentos", icon: ScanText },
+  { to: "/solicitudes/ocr", label: "OCR", icon: ScanText },
 ];
 
 const expedientesSub = [
@@ -46,8 +46,8 @@ function AppSidebarInner() {
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <div className="font-display font-bold text-sidebar-foreground leading-tight">ADECOMEX</div>
-              <div className="text-[10px] uppercase tracking-wider text-sidebar-foreground/60">Aduanas · RD</div>
+              <div className="font-display font-bold text-sidebar-foreground leading-tight">ADECOMEX SRL</div>
+              <div className="text-[10px] uppercase tracking-wider text-sidebar-foreground/60">GESTION Y LOGISTICA</div>
             </div>
           )}
         </div>
@@ -55,7 +55,7 @@ function AppSidebarInner() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Operación</SidebarGroupLabel>
+          <SidebarGroupLabel>OPERACIONES</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {/* Dashboard */}
