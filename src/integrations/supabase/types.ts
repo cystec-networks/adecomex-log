@@ -233,56 +233,104 @@ export type Database = {
       expedientes: {
         Row: {
           bl_awb: string | null
+          canal_riesgo: string | null
           cliente_id: string | null
           created_at: string
           created_by: string | null
+          descripcion_mercancia: string | null
           estado: Database["public"]["Enums"]["expediente_estado"]
           etapa_actual: number
           factura_comercial: string | null
           fecha_cierre: string | null
           fecha_compromiso: string | null
           id: string
+          incoterm: string | null
+          medio_transporte: string | null
+          naviera: string | null
           numero: string
+          numero_dua: string | null
+          numero_igra: string | null
+          numero_vuce: string | null
+          numeros_contenedores: string | null
           observaciones: string | null
+          pais_origen: string | null
+          peso_bruto: number | null
+          peso_neto: number | null
+          preferencia_comercial: string | null
+          puerto_arribo: string | null
+          puerto_salida: string | null
           responsable_id: string | null
           sla_dias: number | null
           solicitud_id: string | null
+          suplidor: string | null
           updated_at: string
         }
         Insert: {
           bl_awb?: string | null
+          canal_riesgo?: string | null
           cliente_id?: string | null
           created_at?: string
           created_by?: string | null
+          descripcion_mercancia?: string | null
           estado?: Database["public"]["Enums"]["expediente_estado"]
           etapa_actual?: number
           factura_comercial?: string | null
           fecha_cierre?: string | null
           fecha_compromiso?: string | null
           id?: string
+          incoterm?: string | null
+          medio_transporte?: string | null
+          naviera?: string | null
           numero?: string
+          numero_dua?: string | null
+          numero_igra?: string | null
+          numero_vuce?: string | null
+          numeros_contenedores?: string | null
           observaciones?: string | null
+          pais_origen?: string | null
+          peso_bruto?: number | null
+          peso_neto?: number | null
+          preferencia_comercial?: string | null
+          puerto_arribo?: string | null
+          puerto_salida?: string | null
           responsable_id?: string | null
           sla_dias?: number | null
           solicitud_id?: string | null
+          suplidor?: string | null
           updated_at?: string
         }
         Update: {
           bl_awb?: string | null
+          canal_riesgo?: string | null
           cliente_id?: string | null
           created_at?: string
           created_by?: string | null
+          descripcion_mercancia?: string | null
           estado?: Database["public"]["Enums"]["expediente_estado"]
           etapa_actual?: number
           factura_comercial?: string | null
           fecha_cierre?: string | null
           fecha_compromiso?: string | null
           id?: string
+          incoterm?: string | null
+          medio_transporte?: string | null
+          naviera?: string | null
           numero?: string
+          numero_dua?: string | null
+          numero_igra?: string | null
+          numero_vuce?: string | null
+          numeros_contenedores?: string | null
           observaciones?: string | null
+          pais_origen?: string | null
+          peso_bruto?: number | null
+          peso_neto?: number | null
+          preferencia_comercial?: string | null
+          puerto_arribo?: string | null
+          puerto_salida?: string | null
           responsable_id?: string | null
           sla_dias?: number | null
           solicitud_id?: string | null
+          suplidor?: string | null
           updated_at?: string
         }
         Relationships: [

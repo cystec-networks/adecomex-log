@@ -100,16 +100,40 @@ function TabInfo({ exp }: { exp: any }) {
   const [form, setForm] = useState({
     numero: exp.numero ?? "",
     bl_awb: exp.bl_awb ?? "",
-    factura_comercial: exp.factura_comercial ?? "",
     sla_dias: exp.sla_dias ?? 15,
     fecha_compromiso: exp.fecha_compromiso ?? "",
     etapa_actual: exp.etapa_actual ?? 1,
+    // General
+    medio_transporte: exp.medio_transporte ?? "",
+    naviera: exp.naviera ?? "",
+    // Importación
+    suplidor: exp.suplidor ?? "",
+    pais_origen: exp.pais_origen ?? "",
+    factura_comercial: exp.factura_comercial ?? "",
+    incoterm: exp.incoterm ?? "",
+    puerto_salida: exp.puerto_salida ?? "",
+    puerto_arribo: exp.puerto_arribo ?? "",
+    // Declaración
+    numero_dua: exp.numero_dua ?? "",
+    numero_vuce: exp.numero_vuce ?? "",
+    numero_igra: exp.numero_igra ?? "",
+    // Mercancía
+    descripcion_mercancia: exp.descripcion_mercancia ?? "",
+    peso_neto: exp.peso_neto ?? "",
+    peso_bruto: exp.peso_bruto ?? "",
+    numeros_contenedores: exp.numeros_contenedores ?? "",
+    preferencia_comercial: exp.preferencia_comercial ?? "",
+    canal_riesgo: exp.canal_riesgo ?? "",
     observaciones: exp.observaciones ?? "",
   });
+  const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
+
   const save = useMutation({
     mutationFn: async () => {
       const payload: any = { ...form };
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
+      payload.peso_neto = payload.peso_neto === "" ? null : Number(payload.peso_neto);
+      payload.peso_bruto = payload.peso_bruto === "" ? null : Number(payload.peso_bruto);
       const { error } = await supabase.from("expedientes").update(payload).eq("id", exp.id);
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
@@ -118,20 +142,89 @@ function TabInfo({ exp }: { exp: any }) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  return (
+  const Field = ({ label, k, type = "text", className = "" }: { label: string; k: keyof typeof form; type?: string; className?: string }) => (
+    <div className={`grid gap-1.5 ${className}`}>
+      <Label>{label}</Label>
+      <Input type={type} value={form[k] as any} onChange={(e) => set(k as string, e.target.value)} />
+    </div>
+  );
+
+  const Section = ({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) => (
     <Card>
-      <CardHeader><CardTitle className="text-base">Datos del expediente</CardTitle></CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-2">
-        <div className="grid gap-1.5"><Label>Número / ID</Label><Input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} /></div>
-        <div className="grid gap-1.5"><Label>BL / AWB / Guía terrestre</Label><Input value={form.bl_awb} onChange={(e) => setForm({ ...form, bl_awb: e.target.value })} /></div>
-        <div className="grid gap-1.5"><Label>Factura comercial</Label><Input value={form.factura_comercial} onChange={(e) => setForm({ ...form, factura_comercial: e.target.value })} /></div>
-        <div className="grid gap-1.5"><Label>SLA (días)</Label><Input type="number" value={form.sla_dias} onChange={(e) => setForm({ ...form, sla_dias: Number(e.target.value) })} /></div>
-        <div className="grid gap-1.5"><Label>Fecha compromiso</Label><Input type="date" value={form.fecha_compromiso ?? ""} onChange={(e) => setForm({ ...form, fecha_compromiso: e.target.value })} /></div>
-        <div className="grid gap-1.5"><Label>Etapa actual (1-14)</Label><Input type="number" min={1} max={14} value={form.etapa_actual} onChange={(e) => setForm({ ...form, etapa_actual: Number(e.target.value) })} /></div>
-        <div className="grid gap-1.5 md:col-span-2"><Label>Observaciones</Label><Textarea rows={3} value={form.observaciones} onChange={(e) => setForm({ ...form, observaciones: e.target.value })} /></div>
-        <div className="md:col-span-2 flex justify-end"><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></div>
-      </CardContent>
+      <CardHeader className="pb-3 border-b">
+        <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">{title}</CardTitle>
+        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+      </CardHeader>
+      <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{children}</CardContent>
     </Card>
+  );
+
+  return (
+    <div className="space-y-5">
+      <Section title="1. Información general" subtitle="Identificación y logística base del expediente">
+        <Field label="Número / ID" k="numero" />
+        <Field label="BL / AWB / Guía" k="bl_awb" />
+        <Field label="Medio de transporte" k="medio_transporte" />
+        <Field label="Naviera" k="naviera" />
+        <Field label="SLA (días)" k="sla_dias" type="number" />
+        <Field label="Fecha compromiso" k="fecha_compromiso" type="date" />
+        <Field label="Etapa actual (1-14)" k="etapa_actual" type="number" />
+      </Section>
+
+      <Section title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
+        <Field label="Suplidor" k="suplidor" />
+        <Field label="País de origen" k="pais_origen" />
+        <Field label="Factura comercial" k="factura_comercial" />
+        <Field label="Incoterm" k="incoterm" />
+        <Field label="Puerto de salida" k="puerto_salida" />
+        <Field label="Puerto de arribo" k="puerto_arribo" />
+      </Section>
+
+      <Section title="3. Declaración" subtitle="Documentos oficiales ante DGA y VUCE">
+        <Field label="Número de declaración (DUA)" k="numero_dua" />
+        <Field label="Número de permiso (VUCE)" k="numero_vuce" />
+        <Field label="Número de despacho (IGRA)" k="numero_igra" />
+      </Section>
+
+      <Card>
+        <CardHeader className="pb-3 border-b">
+          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">4. Descripción de mercancía</CardTitle>
+          <p className="text-xs text-muted-foreground">Detalle físico y clasificación de la carga</p>
+        </CardHeader>
+        <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
+            <Label>Descripción</Label>
+            <Textarea rows={3} value={form.descripcion_mercancia} onChange={(e) => set("descripcion_mercancia", e.target.value)} />
+          </div>
+          <Field label="Peso neto (kg)" k="peso_neto" type="number" />
+          <Field label="Peso bruto (kg)" k="peso_bruto" type="number" />
+          <Field label="Preferencia comercial" k="preferencia_comercial" />
+          <div className="grid gap-1.5 md:col-span-2">
+            <Label>Números de contenedores</Label>
+            <Input value={form.numeros_contenedores} onChange={(e) => set("numeros_contenedores", e.target.value)} placeholder="MSKU1234567, TCLU7654321…" />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Canal de riesgo</Label>
+            <Select value={form.canal_riesgo || undefined} onValueChange={(v) => set("canal_riesgo", v)}>
+              <SelectTrigger><SelectValue placeholder="Selecciona canal" /></SelectTrigger>
+              <SelectContent>
+                {["Verde","Amarillo","Rojo"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
+            <Label>Observaciones</Label>
+            <Textarea rows={3} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end sticky bottom-4">
+        <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
+          {save.isPending ? "Guardando…" : "Guardar cambios"}
+        </Button>
+      </div>
+    </div>
   );
 }
 
