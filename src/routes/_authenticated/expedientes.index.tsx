@@ -115,6 +115,9 @@ function Expedientes() {
                       <th className="text-left">Etapa</th>
                       <th className="text-left">Estado</th>
                       <th className="text-left">ETA</th>
+                      <th className="text-left">DUA</th>
+                      <th className="text-left">Nº Despacho</th>
+                      <th className="text-left">Puerto arribo</th>
                       <th className="text-left">Creado</th>
                     </tr>
                   </thead>
@@ -136,11 +139,15 @@ function Expedientes() {
                         </td>
                         <td><Badge className="bg-primary/10 text-primary border-transparent">{e.estado?.replace("_"," ")}</Badge></td>
                         <td>{e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO") : "—"}</td>
+                        <td className="text-xs">{e.numero_dua ?? "—"}</td>
+                        <td className="text-xs">{e.numero_igra ?? "—"}</td>
+                        <td className="text-xs">{e.puerto_arribo ?? "—"}</td>
                         <td className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleDateString("es-DO")}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+
               </div>
             );
           })}
