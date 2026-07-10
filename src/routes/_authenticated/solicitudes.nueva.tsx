@@ -86,10 +86,38 @@ function NuevaSolicitud() {
         <Card>
           <CardHeader><CardTitle className="text-base">Datos de la operación</CardTitle></CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
-            <div className="grid gap-1.5"><Label>Tipo de operación</Label><Input value={form.tipo_operacion} onChange={(e) => setForm({ ...form, tipo_operacion: e.target.value })} /></div>
-            <div className="grid gap-1.5"><Label>Tipo de carga</Label><Input placeholder="FCL / LCL / Aéreo…" value={form.tipo_carga} onChange={(e) => setForm({ ...form, tipo_carga: e.target.value })} /></div>
-            <div className="grid gap-1.5"><Label>Origen</Label><Input placeholder="País / Puerto de origen" value={form.origen} onChange={(e) => setForm({ ...form, origen: e.target.value })} /></div>
-            <div className="grid gap-1.5"><Label>Puerto / Aeropuerto de llegada</Label><Input placeholder="Ej. Haina, Caucedo, AILA…" value={form.puerto_llegada} onChange={(e) => setForm({ ...form, puerto_llegada: e.target.value })} /></div>
+            <div className="grid gap-1.5"><Label>Tipo de operación</Label>
+              <Select value={form.tipo_operacion} onValueChange={(v) => setForm({ ...form, tipo_operacion: v })}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
+                <SelectContent>
+                  {["Importación","Exportación","Otros"].map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5"><Label>Tipo de carga</Label>
+              <Select value={form.tipo_carga} onValueChange={(v) => setForm({ ...form, tipo_carga: v })}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
+                <SelectContent>
+                  {["FCL","LCL","Aéreo","Granel","RoRo","Courier","Consolidado"].map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5"><Label>Origen</Label>
+              <Select value={form.origen} onValueChange={(v) => setForm({ ...form, origen: v })}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
+                <SelectContent>
+                  {["China","Estados Unidos","España","México","Panamá","Colombia","Brasil","Alemania","India","Turquía","Italia","Países Bajos","Corea del Sur","Japón"].map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5"><Label>Puerto / Aeropuerto de llegada</Label>
+              <Select value={form.puerto_llegada} onValueChange={(v) => setForm({ ...form, puerto_llegada: v })}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
+                <SelectContent>
+                  {["Puerto de Haina","Puerto de Caucedo","Puerto Multimodal Caucedo","Puerto de Río Haina","Puerto de Puerto Plata","Puerto de Manzanillo","Puerto de Boca Chica","AILA (Las Américas)","Aeropuerto del Cibao (STI)","Aeropuerto de Punta Cana","Aeropuerto de Puerto Plata","Frontera Jimaní","Frontera Dajabón"].map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid gap-1.5"><Label>Fecha estimada de arribo</Label><Input type="date" value={form.fecha_arribo_est} onChange={(e) => setForm({ ...form, fecha_arribo_est: e.target.value })} /></div>
             <div className="grid gap-1.5"><Label>Incoterm</Label>
               <Select value={form.incoterm} onValueChange={(v) => setForm({ ...form, incoterm: v })}>
