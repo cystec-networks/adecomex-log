@@ -111,14 +111,12 @@ function Expedientes() {
                     <tr>
                       <th className="text-left px-4 py-2">Expediente</th>
                       <th className="text-left">Cliente</th>
-                      <th className="text-left">BL / AWB</th>
-                      <th className="text-left">Etapa</th>
-                      <th className="text-left">Estado</th>
-                      <th className="text-left">ETA</th>
                       <th className="text-left">DUA</th>
-                      <th className="text-left">Nº Despacho</th>
-                      <th className="text-left">Puerto arribo</th>
-                      <th className="text-left">Creado</th>
+                      <th className="text-left">BL / AWB</th>
+                      <th className="text-left">ETA</th>
+                      <th className="text-left">Puerto Arribo</th>
+                      <th className="text-left">Solicitud de Permiso</th>
+                      <th className="text-left">Estado</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -128,21 +126,12 @@ function Expedientes() {
                           <Link to="/expedientes/$id" params={{ id: e.id }} className="text-primary hover:underline">{e.numero}</Link>
                         </td>
                         <td>{e.clientes?.nombre ?? "—"}</td>
-                        <td className="text-muted-foreground">{e.bl_awb ?? "—"}</td>
-                        <td className="text-xs">
-                          <div className="flex items-center gap-2">
-                            <div className="h-1.5 w-24 rounded-full bg-muted overflow-hidden">
-                              <div className="h-full bg-primary" style={{ width: `${(e.etapa_actual / 14) * 100}%` }} />
-                            </div>
-                            <span>{e.etapa_actual}/14</span>
-                          </div>
-                        </td>
-                        <td><Badge className="bg-primary/10 text-primary border-transparent">{e.estado?.replace("_"," ")}</Badge></td>
-                        <td>{e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO") : "—"}</td>
                         <td className="text-xs">{e.numero_dua ?? "—"}</td>
-                        <td className="text-xs">{e.numero_igra ?? "—"}</td>
+                        <td className="text-muted-foreground">{e.bl_awb ?? "—"}</td>
+                        <td>{e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO") : "—"}</td>
                         <td className="text-xs">{e.puerto_arribo ?? "—"}</td>
-                        <td className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleDateString("es-DO")}</td>
+                        <td className="text-xs">{e.numero_vuce ?? "—"}</td>
+                        <td><Badge className="bg-primary/10 text-primary border-transparent">{e.estado?.replace("_"," ")}</Badge></td>
                       </tr>
                     ))}
                   </tbody>
