@@ -30,24 +30,23 @@ function Expedientes() {
       .order("created_at", { ascending: false })).data ?? [],
   });
 
-  const filtered = (data ?? []).filter((e: any) => {
-    if (estado !== "todos" && e.estado !== estado) return false;
-    if (tipo !== "todos") {
-      const t = (e.solicitudes?.tipo_operacion ?? "").toLowerCase();
-      if (!t.includes(tipo)) return false;
-    }
-    if (q && !JSON.stringify(e).toLowerCase().includes(q.toLowerCase())) return false;
-    return true;
-  });
-
-  const tipoLabel = tipo === "importacion" ? "Importaciones" : tipo === "exportacion" ? "Exportaciones" : "Todos los expedientes";
+  const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
   const detectTipo = (e: any): "importacion" | "exportacion" | "otros" => {
-    const t = (e.solicitudes?.tipo_operacion ?? "").toLowerCase();
+    const t = norm(e.solicitudes?.tipo_operacion ?? "");
     if (t.includes("import")) return "importacion";
     if (t.includes("export")) return "exportacion";
     return "otros";
   };
+
+  const filtered = (data ?? []).filter((e: any) => {
+    if (estado !== "todos" && e.estado !== estado) return false;
+    if (tipo !== "todos" && detectTipo(e) !== tipo) return false;
+    if (q && !norm(JSON.stringify(e)).includes(norm(q))) return false;
+    return true;
+  });
+
+  const tipoLabel = tipo === "importacion" ? "Importaciones" : tipo === "exportacion" ? "Exportaciones" : "Todos los expedientes";
 
   const grupos: Record<string, any[]> = { importacion: [], exportacion: [], otros: [] };
   filtered.forEach((e: any) => grupos[detectTipo(e)].push(e));
@@ -65,8 +64,8 @@ function Expedientes() {
   };
 
   const countAll = (data ?? []).length;
-  const countImp = (data ?? []).filter((e: any) => (e.solicitudes?.tipo_operacion ?? "").toLowerCase().includes("import")).length;
-  const countExp = (data ?? []).filter((e: any) => (e.solicitudes?.tipo_operacion ?? "").toLowerCase().includes("export")).length;
+  const countImp = (data ?? []).filter((e: any) => detectTipo(e) === "importacion").length;
+  const countExp = (data ?? []).filter((e: any) => detectTipo(e) === "exportacion").length;
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-[1600px] mx-auto">
