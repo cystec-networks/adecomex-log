@@ -112,21 +112,17 @@ function TabInfo({ exp }: { exp: any }) {
     sla_dias: exp.sla_dias ?? 15,
     fecha_compromiso: exp.fecha_compromiso ?? "",
     etapa_actual: exp.etapa_actual ?? 1,
-    // General
     medio_transporte: exp.medio_transporte ?? "",
     naviera: exp.naviera ?? "",
-    // Importación
     suplidor: exp.suplidor ?? "",
     pais_origen: exp.pais_origen ?? "",
     factura_comercial: exp.factura_comercial ?? "",
     incoterm: exp.incoterm ?? "",
     puerto_salida: exp.puerto_salida ?? "",
     puerto_arribo: exp.puerto_arribo ?? "",
-    // Declaración
     numero_dua: exp.numero_dua ?? "",
     numero_vuce: exp.numero_vuce ?? "",
     numero_igra: exp.numero_igra ?? "",
-    // Mercancía
     descripcion_mercancia: exp.descripcion_mercancia ?? "",
     peso_neto: exp.peso_neto ?? "",
     peso_bruto: exp.peso_bruto ?? "",
@@ -136,6 +132,46 @@ function TabInfo({ exp }: { exp: any }) {
     observaciones: exp.observaciones ?? "",
   });
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
+
+  // Pull existing values across expedientes to feed suggestions dynamically
+  const { data: histDb } = useQuery({
+    queryKey: ["expedientes-hist"],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("expedientes")
+          .select(
+            "medio_transporte, naviera, suplidor, pais_origen, factura_comercial, incoterm, puerto_salida, puerto_arribo, numero_dua, numero_vuce, numero_igra, preferencia_comercial, numeros_contenedores"
+          )
+          .limit(500)
+      ).data ?? [],
+  });
+
+  const sug = useMemo(() => {
+    const uniq = (key: string, base: string[] = []) => {
+      const set = new Set<string>(base);
+      (histDb ?? []).forEach((r: any) => {
+        const v = (r?.[key] ?? "").toString().trim();
+        if (v) set.add(v);
+      });
+      return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
+    };
+    return {
+      medio_transporte: uniq("medio_transporte", SUG_MEDIO),
+      naviera: uniq("naviera", SUG_NAVIERA),
+      suplidor: uniq("suplidor"),
+      pais_origen: uniq("pais_origen", SUG_PAIS),
+      factura_comercial: uniq("factura_comercial"),
+      incoterm: uniq("incoterm", SUG_INCOTERM),
+      puerto_salida: uniq("puerto_salida", SUG_PUERTO_SALIDA),
+      puerto_arribo: uniq("puerto_arribo", SUG_PUERTO_ARRIBO),
+      numero_dua: uniq("numero_dua"),
+      numero_vuce: uniq("numero_vuce"),
+      numero_igra: uniq("numero_igra"),
+      preferencia_comercial: uniq("preferencia_comercial", SUG_PREFERENCIA),
+      numeros_contenedores: uniq("numeros_contenedores"),
+    };
+  }, [histDb]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -147,7 +183,7 @@ function TabInfo({ exp }: { exp: any }) {
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
     },
-    onSuccess: () => { toast.success("Guardado"); qc.invalidateQueries({ queryKey: ["expediente", exp.id] }); qc.invalidateQueries({ queryKey: ["expedientes"] }); },
+    onSuccess: () => { toast.success("Guardado"); qc.invalidateQueries({ queryKey: ["expediente", exp.id] }); qc.invalidateQueries({ queryKey: ["expedientes"] }); qc.invalidateQueries({ queryKey: ["expedientes-hist"] }); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -155,6 +191,18 @@ function TabInfo({ exp }: { exp: any }) {
     <div className={`grid gap-1.5 ${className}`}>
       <Label>{label}</Label>
       <Input type={type} value={form[k] as any} onChange={(e) => set(k as string, e.target.value)} />
+    </div>
+  );
+
+  const AutoField = ({ label, k, className = "" }: { label: string; k: keyof typeof sug; className?: string }) => (
+    <div className={`grid gap-1.5 ${className}`}>
+      <Label>{label}</Label>
+      <AutocompleteInput
+        value={(form as any)[k] ?? ""}
+        onChange={(v) => set(k as string, v)}
+        suggestions={sug[k] ?? []}
+        placeholder={`Escribe para buscar ${label.toLowerCase()}…`}
+      />
     </div>
   );
 
@@ -173,26 +221,26 @@ function TabInfo({ exp }: { exp: any }) {
       <Section title="1. Información general" subtitle="Identificación y logística base del expediente">
         <Field label="Número / ID" k="numero" />
         <Field label="BL / AWB / Guía" k="bl_awb" />
-        <Field label="Medio de transporte" k="medio_transporte" />
-        <Field label="Naviera" k="naviera" />
+        <AutoField label="Medio de transporte" k="medio_transporte" />
+        <AutoField label="Naviera" k="naviera" />
         <Field label="SLA (días)" k="sla_dias" type="number" />
         <Field label="ETA / Fecha de llegada" k="fecha_compromiso" type="date" />
         <Field label="Etapa actual (1-14)" k="etapa_actual" type="number" />
       </Section>
 
       <Section title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
-        <Field label="Suplidor" k="suplidor" />
-        <Field label="País de origen" k="pais_origen" />
-        <Field label="Factura comercial" k="factura_comercial" />
-        <Field label="Incoterm" k="incoterm" />
-        <Field label="Puerto de salida" k="puerto_salida" />
-        <Field label="Puerto de arribo" k="puerto_arribo" />
+        <AutoField label="Suplidor" k="suplidor" />
+        <AutoField label="País de origen" k="pais_origen" />
+        <AutoField label="Factura comercial" k="factura_comercial" />
+        <AutoField label="Incoterm" k="incoterm" />
+        <AutoField label="Puerto de salida" k="puerto_salida" />
+        <AutoField label="Puerto de arribo" k="puerto_arribo" />
       </Section>
 
       <Section title="3. Declaración" subtitle="Documentos oficiales ante DGA y VUCE">
-        <Field label="Número de declaración (DUA)" k="numero_dua" />
-        <Field label="Número de permiso (VUCE)" k="numero_vuce" />
-        <Field label="Número de despacho (IGRA)" k="numero_igra" />
+        <AutoField label="Número de declaración (DUA)" k="numero_dua" />
+        <AutoField label="Número de permiso (VUCE)" k="numero_vuce" />
+        <AutoField label="Número de despacho (IGRA)" k="numero_igra" />
       </Section>
 
       <Card>
@@ -207,10 +255,15 @@ function TabInfo({ exp }: { exp: any }) {
           </div>
           <Field label="Peso neto (kg)" k="peso_neto" type="number" />
           <Field label="Peso bruto (kg)" k="peso_bruto" type="number" />
-          <Field label="Preferencia comercial" k="preferencia_comercial" />
+          <AutoField label="Preferencia comercial" k="preferencia_comercial" />
           <div className="grid gap-1.5 md:col-span-2">
             <Label>Números de contenedores</Label>
-            <Input value={form.numeros_contenedores} onChange={(e) => set("numeros_contenedores", e.target.value)} placeholder="MSKU1234567, TCLU7654321…" />
+            <AutocompleteInput
+              value={form.numeros_contenedores}
+              onChange={(v) => set("numeros_contenedores", v)}
+              suggestions={sug.numeros_contenedores}
+              placeholder="MSKU1234567, TCLU7654321…"
+            />
           </div>
           <div className="grid gap-1.5">
             <Label>Canal de riesgo</Label>
