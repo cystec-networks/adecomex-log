@@ -253,8 +253,32 @@ function TabInfo({ exp }: { exp: any }) {
             <Label>Descripción</Label>
             <Textarea rows={3} value={form.descripcion_mercancia} onChange={(e) => set("descripcion_mercancia", e.target.value)} />
           </div>
-          <Field label="Peso neto (kg)" k="peso_neto" type="number" />
-          <Field label="Peso bruto (kg)" k="peso_bruto" type="number" />
+          <div className="grid gap-1.5">
+            <Label>Peso neto (kg)</Label>
+            <Input
+              type="text"
+              inputMode="decimal"
+              value={form.peso_neto ?? ""}
+              onChange={(e) => {
+                const v = e.target.value.replace(",", ".");
+                if (v === "" || /^\d*\.?\d*$/.test(v)) set("peso_neto", v);
+              }}
+              placeholder="0.00"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Peso bruto (kg)</Label>
+            <Input
+              type="text"
+              inputMode="decimal"
+              value={form.peso_bruto ?? ""}
+              onChange={(e) => {
+                const v = e.target.value.replace(",", ".");
+                if (v === "" || /^\d*\.?\d*$/.test(v)) set("peso_bruto", v);
+              }}
+              placeholder="0.00"
+            />
+          </div>
           <AutoField label="Preferencia comercial" k="preferencia_comercial" />
           <div className="grid gap-1.5 md:col-span-2">
             <Label>Números de contenedores</Label>
