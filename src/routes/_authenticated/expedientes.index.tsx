@@ -10,7 +10,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
+import { AlertTriangle, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -59,6 +59,19 @@ function Expedientes() {
   });
 
   const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  const diasRestantes = (e: any) => {
+    if (e.estado === "despachado" || !e.fecha_compromiso) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eta = new Date(e.fecha_compromiso);
+    eta.setHours(0, 0, 0, 0);
+    const diff = Math.round((eta.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (diff === 0) return { text: "Hoy", tone: "warning" as const };
+    if (diff > 5) return { text: `${diff} días`, tone: "success" as const };
+    if (diff > 0) return { text: `${diff} días`, tone: "warning" as const };
+    return { text: `${Math.abs(diff)} días atraso`, tone: "danger" as const, icon: true };
+  };
 
   const detectTipo = (e: any): "importacion" | "exportacion" | "otros" => {
     const t = norm(e.solicitudes?.tipo_operacion ?? "");
