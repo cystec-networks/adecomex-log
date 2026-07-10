@@ -137,19 +137,19 @@ function Solicitudes() {
           <table className="w-full text-sm">
             <thead className="text-xs text-muted-foreground border-b bg-muted/30">
               <tr>
-                <th className="text-left px-4 py-2">Número</th>
-                <th className="text-left">Cliente</th>
-                <th className="text-left">Tipo</th>
-                <th className="text-left">Origen</th>
-                <th className="text-left">Arribo</th>
-                <th className="text-left">Prioridad</th>
-                <th className="text-left">Estado</th>
-                <th className="text-left">Registrado</th>
-                <th className="text-right px-4 py-2">Acciones</th>
+                <Th k="numero" className="px-4 py-2">Número</Th>
+                <Th k="cliente">Cliente</Th>
+                <Th k="tipo_operacion">Tipo</Th>
+                <Th k="origen">Origen</Th>
+                <Th k="fecha_arribo_est">Arribo</Th>
+                <Th k="prioridad">Prioridad</Th>
+                <Th k="estado">Estado</Th>
+                <Th k="created_at">Registrado</Th>
+                <th className="text-right px-4 py-2 text-xs uppercase text-muted-foreground">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((s: any) => (
+              {sorted.map((s: any) => (
                 <tr key={s.id} className="border-b last:border-0 hover:bg-muted/40">
                   <td className="px-4 py-2 font-medium">
                     <Link to="/solicitudes/$id" params={{ id: s.id }} className="hover:underline text-primary">{s.numero}</Link>
