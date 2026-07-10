@@ -48,8 +48,47 @@ function Expedientes() {
 
   const tipoLabel = tipo === "importacion" ? "Importaciones" : tipo === "exportacion" ? "Exportaciones" : "Todos los expedientes";
 
+  type SortKey = "numero" | "cliente" | "numero_dua" | "bl_awb" | "fecha_compromiso" | "puerto_arribo" | "numero_vuce" | "estado";
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
+  const toggleSort = (key: SortKey) => {
+    setSort((s) => {
+      if (!s || s.key !== key) return { key, dir: "asc" };
+      if (s.dir === "asc") return { key, dir: "desc" };
+      return null;
+    });
+  };
+  const activeSort = sort ?? { key: "fecha_compromiso" as SortKey, dir: "asc" as const };
+  const getVal = (e: any, k: SortKey) => k === "cliente" ? (e.clientes?.nombre ?? "") : (e[k] ?? "");
+  const cmp = (a: any, b: any) => {
+    // Regla fija: despachado siempre al final
+    const aD = a.estado === "despachado" ? 1 : 0;
+    const bD = b.estado === "despachado" ? 1 : 0;
+    if (aD !== bD) return aD - bD;
+    const av = getVal(a, activeSort.key);
+    const bv = getVal(b, activeSort.key);
+    const aEmpty = av === "" || av == null;
+    const bEmpty = bv === "" || bv == null;
+    if (aEmpty && bEmpty) return 0;
+    if (aEmpty) return 1;
+    if (bEmpty) return -1;
+    let r = 0;
+    if (activeSort.key === "fecha_compromiso") r = new Date(av).getTime() - new Date(bv).getTime();
+    else r = String(av).localeCompare(String(bv), "es", { numeric: true });
+    return activeSort.dir === "asc" ? r : -r;
+  };
+
   const grupos: Record<string, any[]> = { importacion: [], exportacion: [], otros: [] };
   filtered.forEach((e: any) => grupos[detectTipo(e)].push(e));
+  (Object.keys(grupos) as Array<keyof typeof grupos>).forEach((k) => grupos[k].sort(cmp));
+
+  const arrow = (k: SortKey) => sort && sort.key === k ? (sort.dir === "asc" ? " ▲" : " ▼") : "";
+  const Th = ({ k, children, className = "" }: { k: SortKey; children: React.ReactNode; className?: string }) => (
+    <th className={`text-left ${className}`}>
+      <button type="button" onClick={() => toggleSort(k)} className="inline-flex items-center gap-1 hover:text-foreground uppercase">
+        {children}<span className="text-[10px]">{arrow(k)}</span>
+      </button>
+    </th>
+  );
 
   const gruposVisibles = (
     tipo === "importacion" ? ["importacion"] :
