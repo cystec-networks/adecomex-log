@@ -207,6 +207,7 @@ function Expedientes() {
                       <Th k="numero_dua">DUA</Th>
                       <Th k="bl_awb">BL / AWB</Th>
                       <Th k="fecha_compromiso">ETA</Th>
+                      <th className="text-left px-4 py-2 text-xs uppercase text-muted-foreground">Días Restantes</th>
                       <Th k="puerto_arribo">Puerto Arribo</Th>
                       <Th k="numero_vuce">Solicitud de Permiso</Th>
                       <Th k="estado">Estado</Th>
