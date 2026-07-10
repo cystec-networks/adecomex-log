@@ -1,11 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 type TipoFilter = "importacion" | "exportacion" | "todos";
 
@@ -21,13 +28,34 @@ function Expedientes() {
   const { tipo = "todos" } = Route.useSearch();
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState("todos");
+  const [toTrash, setToTrash] = useState<{ id: string; numero: string } | null>(null);
+  const qc = useQueryClient();
 
   const { data } = useQuery({
     queryKey: ["expedientes"],
     queryFn: async () => (await supabase
       .from("expedientes")
       .select("*, clientes(nombre), solicitudes(tipo_operacion)")
+      .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
+  });
+
+  const trashMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("expedientes")
+        .update({ eliminado_en: new Date().toISOString(), eliminado_por: u.user?.id ?? null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Expediente movido a la papelera");
+      qc.invalidateQueries({ queryKey: ["expedientes"] });
+      qc.invalidateQueries({ queryKey: ["expedientes-papelera"] });
+      setToTrash(null);
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo mover a papelera"),
   });
 
   const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
