@@ -543,11 +543,11 @@ export type Database = {
         | "vencido"
       etapa_estado: "pendiente" | "en_curso" | "completada" | "bloqueada"
       expediente_estado:
-        | "abierto"
-        | "en_proceso"
-        | "retenido"
-        | "cerrado"
-        | "cancelado"
+        | "digitar"
+        | "presentar"
+        | "verificar"
+        | "facturar"
+        | "despachado"
       incidencia_estado: "abierta" | "en_gestion" | "resuelta" | "cerrada"
       incidencia_severidad: "baja" | "media" | "alta" | "critica"
       prioridad: "baja" | "media" | "alta" | "urgente"
@@ -696,11 +696,11 @@ export const Constants = {
       doc_estado: ["pendiente", "recibido", "observado", "aprobado", "vencido"],
       etapa_estado: ["pendiente", "en_curso", "completada", "bloqueada"],
       expediente_estado: [
-        "abierto",
-        "en_proceso",
-        "retenido",
-        "cerrado",
-        "cancelado",
+        "digitar",
+        "presentar",
+        "verificar",
+        "facturar",
+        "despachado",
       ],
       incidencia_estado: ["abierta", "en_gestion", "resuelta", "cerrada"],
       incidencia_severidad: ["baja", "media", "alta", "critica"],
