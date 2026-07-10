@@ -114,7 +114,7 @@ function Expedientes() {
                       <th className="text-left">BL / AWB</th>
                       <th className="text-left">Etapa</th>
                       <th className="text-left">Estado</th>
-                      <th className="text-left">Compromiso</th>
+                      <th className="text-left">ETA</th>
                       <th className="text-left">Creado</th>
                     </tr>
                   </thead>

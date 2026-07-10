@@ -224,7 +224,7 @@ function TabInfo({ exp }: { exp: any }) {
         <AutoField label="Medio de transporte" k="medio_transporte" />
         <AutoField label="Naviera" k="naviera" />
         <Field label="SLA (días)" k="sla_dias" type="number" />
-        <Field label="ETA / Fecha de llegada" k="fecha_compromiso" type="date" />
+        <Field label="Fecha Estimada de Llegada (ETA)" k="fecha_compromiso" type="date" />
         <Field label="Etapa actual (1-14)" k="etapa_actual" type="number" />
       </Section>
 
