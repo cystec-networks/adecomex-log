@@ -10,7 +10,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
+import { AlertTriangle, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -59,6 +59,19 @@ function Expedientes() {
   });
 
   const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  const diasRestantes = (e: any) => {
+    if (e.estado === "despachado" || !e.fecha_compromiso) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eta = new Date(e.fecha_compromiso);
+    eta.setHours(0, 0, 0, 0);
+    const diff = Math.round((eta.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (diff === 0) return { text: "Hoy", tone: "warning" as const };
+    if (diff > 5) return { text: `${diff} días`, tone: "success" as const };
+    if (diff > 0) return { text: `${diff} días`, tone: "warning" as const };
+    return { text: `${Math.abs(diff)} días atraso`, tone: "danger" as const, icon: true };
+  };
 
   const detectTipo = (e: any): "importacion" | "exportacion" | "otros" => {
     const t = norm(e.solicitudes?.tipo_operacion ?? "");
@@ -194,6 +207,7 @@ function Expedientes() {
                       <Th k="numero_dua">DUA</Th>
                       <Th k="bl_awb">BL / AWB</Th>
                       <Th k="fecha_compromiso">ETA</Th>
+                      <th className="text-left px-4 py-2 text-xs uppercase text-muted-foreground">Días Restantes</th>
                       <Th k="puerto_arribo">Puerto Arribo</Th>
                       <Th k="numero_vuce">Solicitud de Permiso</Th>
                       <Th k="estado">Estado</Th>
@@ -210,6 +224,23 @@ function Expedientes() {
                         <td className="text-xs">{e.numero_dua ?? "—"}</td>
                         <td className="text-muted-foreground">{e.bl_awb ?? "—"}</td>
                         <td>{e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO") : "—"}</td>
+                        <td>
+                          {(() => {
+                            const d = diasRestantes(e);
+                            if (!d) return <span className="text-muted-foreground">—</span>;
+                            const toneClass = d.tone === "success"
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : d.tone === "warning"
+                                ? "text-amber-600 dark:text-amber-400"
+                                : "text-destructive";
+                            return (
+                              <span className={`inline-flex items-center gap-1 font-medium ${toneClass}`}>
+                                {d.icon && <AlertTriangle className="h-3 w-3" />}
+                                {d.text}
+                              </span>
+                            );
+                          })()}
+                        </td>
                         <td className="text-xs">{e.puerto_arribo ?? "—"}</td>
                         <td className="text-xs">{e.numero_vuce ?? "—"}</td>
                         <td><Badge className="bg-primary/10 text-primary border-transparent">{e.estado?.replace("_"," ")}</Badge></td>
