@@ -439,6 +439,8 @@ export type Database = {
           contacto: string | null
           created_at: string
           created_by: string | null
+          eliminado_en: string | null
+          eliminado_por: string | null
           estado: Database["public"]["Enums"]["solicitud_estado"]
           fecha_arribo_est: string | null
           id: string
@@ -459,6 +461,8 @@ export type Database = {
           contacto?: string | null
           created_at?: string
           created_by?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["solicitud_estado"]
           fecha_arribo_est?: string | null
           id?: string
@@ -479,6 +483,8 @@ export type Database = {
           contacto?: string | null
           created_at?: string
           created_by?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["solicitud_estado"]
           fecha_arribo_est?: string | null
           id?: string
