@@ -55,8 +55,8 @@ function Dashboard() {
   });
 
   const solicitudesActivas = stats?.solicitudes.filter((s) => s.estado !== "rechazada").length ?? 0;
-  const expedientesEnProceso = stats?.expedientes.filter((e) => e.estado === "en_proceso" || e.estado === "abierto").length ?? 0;
-  const expedientesCerrados = stats?.expedientes.filter((e) => e.estado === "cerrado").length ?? 0;
+  const expedientesEnProceso = stats?.expedientes.filter((e) => e.estado === "digitar" || e.estado === "presentar" || e.estado === "verificar" || e.estado === "facturar").length ?? 0;
+  const expedientesCerrados = stats?.expedientes.filter((e) => e.estado === "despachado").length ?? 0;
   const incidenciasAbiertas = stats?.incidencias.filter((i) => i.estado !== "cerrada" && i.estado !== "resuelta").length ?? 0;
   const urgentes = stats?.solicitudes.filter((s) => s.prioridad === "urgente" || s.prioridad === "alta").length ?? 0;
   const docsVencidos = stats?.documentos.filter((d) => d.fecha_vencimiento && new Date(d.fecha_vencimiento) < new Date()).length ?? 0;
