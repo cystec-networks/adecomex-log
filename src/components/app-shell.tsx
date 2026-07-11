@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, Inbox, FolderKanban, Users, UserCog, LogOut, Ship, Search,
-  PackageOpen, PackageCheck, ScanText, Sparkles, Trash2,
+  PackageOpen, PackageCheck, ScanText, Sparkles, Trash2, FileCheck2, Truck,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -134,6 +134,26 @@ function AppSidebarInner() {
                 )}
               </SidebarMenuItem>
 
+
+              {/* Permisos */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/permisos" || pathname.startsWith("/permisos/")}>
+                  <Link to="/permisos" className="flex items-center gap-2">
+                    <FileCheck2 className="h-4 w-4" />
+                    {!collapsed && <span>Permisos</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Transportes */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/transportes" || pathname.startsWith("/transportes/")}>
+                  <Link to="/transportes" className="flex items-center gap-2">
+                    <Truck className="h-4 w-4" />
+                    {!collapsed && <span>Transportes</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
 
 
               {/* Clientes */}
