@@ -235,6 +235,7 @@ export type Database = {
           bl_awb: string | null
           canal_riesgo: string | null
           cliente_id: string | null
+          contacto_solicitud: string | null
           created_at: string
           created_by: string | null
           descripcion_mercancia: string | null
@@ -265,12 +266,15 @@ export type Database = {
           sla_dias: number | null
           solicitud_id: string | null
           suplidor: string | null
+          tipo_carga: string | null
+          tipo_operacion: string | null
           updated_at: string
         }
         Insert: {
           bl_awb?: string | null
           canal_riesgo?: string | null
           cliente_id?: string | null
+          contacto_solicitud?: string | null
           created_at?: string
           created_by?: string | null
           descripcion_mercancia?: string | null
@@ -301,12 +305,15 @@ export type Database = {
           sla_dias?: number | null
           solicitud_id?: string | null
           suplidor?: string | null
+          tipo_carga?: string | null
+          tipo_operacion?: string | null
           updated_at?: string
         }
         Update: {
           bl_awb?: string | null
           canal_riesgo?: string | null
           cliente_id?: string | null
+          contacto_solicitud?: string | null
           created_at?: string
           created_by?: string | null
           descripcion_mercancia?: string | null
@@ -337,6 +344,8 @@ export type Database = {
           sla_dias?: number | null
           solicitud_id?: string | null
           suplidor?: string | null
+          tipo_carga?: string | null
+          tipo_operacion?: string | null
           updated_at?: string
         }
         Relationships: [
