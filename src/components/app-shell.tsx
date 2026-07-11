@@ -2,7 +2,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   Inbox, FolderKanban, Users, UserCog, LogOut, Ship,
   PackageOpen, PackageCheck, ScanText, Sparkles, Trash2, FileCheck2, Truck,
-  ChevronDown, Wrench, FileText, Bot, LayoutDashboard,
+  ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3,
 } from "lucide-react";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { GlobalSearch } from "@/components/global-search";
@@ -88,6 +88,8 @@ const GROUPS: Group[] = [
 const SIMPLE_ITEMS: SimpleItem[] = [
   { id: "transportes", to: "/transportes", label: "Transportes", icon: Truck,
     match: (p) => p === "/transportes" || p.startsWith("/transportes/") },
+  { id: "reportes", to: "/reportes", label: "Reportes", icon: BarChart3,
+    match: (p) => p === "/reportes" || p.startsWith("/reportes/") },
   { id: "clientes", to: "/clientes", label: "Clientes", icon: Users,
     match: (p) => p === "/clientes" || p.startsWith("/clientes/") },
   { id: "usuarios", to: "/admin/usuarios", label: "Usuarios y roles", icon: UserCog, adminOnly: true,
