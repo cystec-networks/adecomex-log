@@ -40,20 +40,26 @@ function Dashboard() {
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
-      const [sol, exp, inc, docs] = await Promise.all([
-        supabase.from("solicitudes").select("id,estado,prioridad,created_at"),
-        supabase.from("expedientes").select("id,estado,etapa_actual,fecha_compromiso,created_at"),
+      const [sol, exp, inc, docs, per, tra] = await Promise.all([
+        supabase.from("solicitudes").select("id,numero,estado,prioridad,created_at").is("eliminado_en", null),
+        supabase.from("expedientes").select("id,numero,estado,etapa_actual,fecha_compromiso,created_at,updated_at").is("eliminado_en", null),
         supabase.from("incidencias").select("id,estado,severidad"),
         supabase.from("documentos").select("id,estado,fecha_vencimiento"),
+        supabase.from("permisos").select("id,estado,fecha_vencimiento").is("eliminado_en", null),
+        supabase.from("transportes").select("id,estado,eta").is("eliminado_en", null),
       ]);
       return {
         solicitudes: sol.data ?? [],
         expedientes: exp.data ?? [],
         incidencias: inc.data ?? [],
         documentos: docs.data ?? [],
+        permisos: per.data ?? [],
+        transportes: tra.data ?? [],
       };
     },
   });
+
+  const { visible: reminders } = useReminders();
 
   const solicitudesActivas = stats?.solicitudes.filter((s) => s.estado !== "rechazada").length ?? 0;
   const expedientesEnProceso = stats?.expedientes.filter((e) => e.estado === "digitar" || e.estado === "presentar" || e.estado === "verificar" || e.estado === "facturar").length ?? 0;
