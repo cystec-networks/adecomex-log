@@ -47,16 +47,11 @@ const GROUPS: Group[] = [
     items: [
       { to: "/solicitudes", label: "Solicitudes", icon: FileText,
         match: (p) => p === "/solicitudes" || (p.startsWith("/solicitudes/") && p !== "/solicitudes/ocr") },
-      { to: "/solicitudes/ocr", label: "OCR", icon: ScanText },
-    ],
-  },
-  {
-    id: "permisos",
-    label: "PERMISOS",
-    icon: FileCheck2,
-    items: [
       { to: "/permisos", label: "Permisos", icon: FileCheck2,
         match: (p) => p === "/permisos" || p.startsWith("/permisos/") },
+      { to: "/solicitudes/ocr", label: "OCR", icon: ScanText },
+      { to: "/copiloto", label: "Copiloto IA", icon: Bot,
+        match: (p) => p.startsWith("/copiloto") },
     ],
   },
   {
@@ -70,15 +65,6 @@ const GROUPS: Group[] = [
         match: (p, s) => p.startsWith("/expedientes") && s?.tipo === "importacion" },
       { to: "/expedientes", search: { tipo: "exportacion" }, label: "Exportaciones", icon: PackageCheck,
         match: (p, s) => p.startsWith("/expedientes") && s?.tipo === "exportacion" },
-    ],
-  },
-  {
-    id: "copiloto",
-    label: "COPILOTO IA",
-    icon: Sparkles,
-    items: [
-      { to: "/copiloto", label: "Copiloto IA", icon: Bot,
-        match: (p) => p.startsWith("/copiloto") },
     ],
   },
   {
