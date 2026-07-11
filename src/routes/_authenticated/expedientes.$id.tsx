@@ -424,7 +424,7 @@ function TabInfo({ exp }: { exp: any }) {
             const fob = sumFob;
             const cif = fob + toN(form.seguro) + toN(form.flete) + toN(form.otros);
             const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const MoneyField = ({ label, k }: { label: string; k: "seguro" | "flete" | "otros" }) => {
+            const renderMoney = (label: string, k: "seguro" | "flete" | "otros") => {
               const raw = (form as any)[k];
               const rawStr = raw === "" || raw == null ? "" : String(raw);
               const isFocused = focusedMoney === k;
@@ -434,7 +434,7 @@ function TabInfo({ exp }: { exp: any }) {
                   ? ""
                   : `$${Number(rawStr).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
               return (
-                <div className="grid gap-1.5">
+                <div className="grid gap-1.5" key={k}>
                   <Label>{label} (US$)</Label>
                   <Input
                     type="text"
@@ -456,6 +456,7 @@ function TabInfo({ exp }: { exp: any }) {
                 </div>
               );
             };
+
 
 
             const REGIMENES = [
@@ -483,9 +484,10 @@ function TabInfo({ exp }: { exp: any }) {
                       {fmt(fob)}
                     </div>
                   </div>
-                  <MoneyField label="Seguro" k="seguro" />
-                  <MoneyField label="Flete" k="flete" />
-                  <MoneyField label="Otros" k="otros" />
+                  {renderMoney("Seguro", "seguro")}
+                  {renderMoney("Flete", "flete")}
+                  {renderMoney("Otros", "otros")}
+
                 </div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   <div className="grid gap-1.5">
