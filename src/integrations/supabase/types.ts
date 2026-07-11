@@ -365,6 +365,118 @@ export type Database = {
           },
         ]
       }
+      facturas: {
+        Row: {
+          concepto: string
+          created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          estado: string
+          expediente_id: string
+          fecha_emision: string | null
+          fecha_pago: string | null
+          id: string
+          monto: number
+          notas: string | null
+          referencia: string | null
+          updated_at: string
+        }
+        Insert: {
+          concepto: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          estado?: string
+          expediente_id: string
+          fecha_emision?: string | null
+          fecha_pago?: string | null
+          id?: string
+          monto?: number
+          notas?: string | null
+          referencia?: string | null
+          updated_at?: string
+        }
+        Update: {
+          concepto?: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          estado?: string
+          expediente_id?: string
+          fecha_emision?: string | null
+          fecha_pago?: string | null
+          id?: string
+          monto?: number
+          notas?: string | null
+          referencia?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facturas_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gastos: {
+        Row: {
+          adjunto_path: string | null
+          concepto: string
+          created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          es_reembolso: boolean
+          expediente_id: string
+          fecha: string | null
+          id: string
+          monto: number
+          notas: string | null
+          proveedor: string | null
+          updated_at: string
+        }
+        Insert: {
+          adjunto_path?: string | null
+          concepto: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          es_reembolso?: boolean
+          expediente_id: string
+          fecha?: string | null
+          id?: string
+          monto?: number
+          notas?: string | null
+          proveedor?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adjunto_path?: string | null
+          concepto?: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          es_reembolso?: boolean
+          expediente_id?: string
+          fecha?: string | null
+          id?: string
+          monto?: number
+          notas?: string | null
+          proveedor?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gastos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incidencias: {
         Row: {
           accion_correctiva: string | null
