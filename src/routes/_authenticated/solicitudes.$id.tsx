@@ -93,11 +93,20 @@ function DetalleSolicitud() {
           <p className="text-sm text-muted-foreground">Registrada el {new Date(s.created_at).toLocaleString("es-DO")}</p>
         </div>
         <Button onClick={() => save.mutate()} disabled={save.isPending}><Save className="h-4 w-4 mr-1" />Guardar cambios</Button>
-        {form.estado !== "convertida" && (
-          <Button variant="outline" onClick={() => crearExpediente.mutate()} disabled={crearExpediente.isPending}>
-            <FolderPlus className="h-4 w-4 mr-1" />Crear expediente
+        {form.estado === "convertida" && expedienteVinculado ? (
+          <Button variant="outline" asChild>
+            <Link to="/expedientes/$id" params={{ id: expedienteVinculado.id }}>
+              <FolderPlus className="h-4 w-4 mr-1" />Ver expediente {expedienteVinculado.numero} ↗
+            </Link>
           </Button>
-        )}
+        ) : form.estado !== "convertida" ? (
+          <Button variant="outline" asChild>
+            <Link to="/expedientes/nuevo" search={{ solicitud: id }}>
+              <FolderPlus className="h-4 w-4 mr-1" />Convertir en Expediente
+            </Link>
+          </Button>
+        ) : null}
+
       </div>
 
       <Card>
