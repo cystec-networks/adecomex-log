@@ -484,9 +484,10 @@ function TabInfo({ exp }: { exp: any }) {
                       {fmt(fob)}
                     </div>
                   </div>
-                  <MoneyField label="Seguro" k="seguro" />
-                  <MoneyField label="Flete" k="flete" />
-                  <MoneyField label="Otros" k="otros" />
+                  {renderMoney("Seguro", "seguro")}
+                  {renderMoney("Flete", "flete")}
+                  {renderMoney("Otros", "otros")}
+
                 </div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   <div className="grid gap-1.5">
