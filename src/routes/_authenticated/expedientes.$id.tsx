@@ -128,7 +128,9 @@ function DetalleExpediente() {
 
 function TabInfo({ exp }: { exp: any }) {
   const qc = useQueryClient();
+  const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState({
+
     numero: exp.numero ?? "",
     bl_awb: exp.bl_awb ?? "",
     sla_dias: exp.sla_dias ?? 15,
@@ -422,25 +424,40 @@ function TabInfo({ exp }: { exp: any }) {
             const fob = sumFob;
             const cif = fob + toN(form.seguro) + toN(form.flete) + toN(form.otros);
             const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const MoneyField = ({ label, k }: { label: string; k: "seguro" | "flete" | "otros" }) => (
-              <div className="grid gap-1.5">
-                <Label>{label} (US$)</Label>
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  value={(form as any)[k] ?? ""}
-                  onChange={(e) => {
-                    const v = e.target.value.replace(/,/g, "");
-                    if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set(k, v);
-                  }}
-                  onBlur={(e) => {
-                    const v = e.target.value;
-                    if (v !== "" && !isNaN(Number(v))) set(k, Number(v).toFixed(2));
-                  }}
-                  placeholder="0.00"
-                />
-              </div>
-            );
+            const MoneyField = ({ label, k }: { label: string; k: "seguro" | "flete" | "otros" }) => {
+              const raw = (form as any)[k];
+              const rawStr = raw === "" || raw == null ? "" : String(raw);
+              const isFocused = focusedMoney === k;
+              const display = isFocused
+                ? rawStr
+                : rawStr === "" || isNaN(Number(rawStr))
+                  ? ""
+                  : `$${Number(rawStr).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              return (
+                <div className="grid gap-1.5">
+                  <Label>{label} (US$)</Label>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    value={display}
+                    onFocus={() => setFocusedMoney(k)}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/[$,\s]/g, "");
+                      if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set(k, v);
+                    }}
+                    onBlur={(e) => {
+                      const v = e.target.value.replace(/[$,\s]/g, "");
+                      if (v !== "" && !isNaN(Number(v))) set(k, Number(v).toFixed(2));
+                      setFocusedMoney(null);
+                    }}
+                    placeholder="$0.00"
+                    className="tabular-nums"
+                  />
+                </div>
+              );
+            };
+
+
             const REGIMENES = [
               "Admisión Temporal",
               "Admisión Temporal sin Transformación",
