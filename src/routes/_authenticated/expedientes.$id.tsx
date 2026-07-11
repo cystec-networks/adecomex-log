@@ -154,6 +154,11 @@ function TabInfo({ exp }: { exp: any }) {
     rectificacion_tecnica: !!exp.rectificacion_tecnica,
     numero_tramite_rectificacion: exp.numero_tramite_rectificacion ?? "",
     canal_riesgo: exp.canal_riesgo ?? "",
+    total_fob: exp.total_fob ?? "",
+    seguro: exp.seguro ?? "",
+    flete: exp.flete ?? "",
+    otros: exp.otros ?? "",
+    regimen_aduanero: exp.regimen_aduanero ?? "",
     observaciones: exp.observaciones ?? "",
   });
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
@@ -204,6 +209,13 @@ function TabInfo({ exp }: { exp: any }) {
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
       payload.peso_neto = payload.peso_neto === "" ? null : Number(payload.peso_neto);
       payload.peso_bruto = payload.peso_bruto === "" ? null : Number(payload.peso_bruto);
+      const toNum = (v: any) => (v === "" || v == null ? null : Number(v));
+      payload.total_fob = toNum(payload.total_fob);
+      payload.seguro = toNum(payload.seguro);
+      payload.flete = toNum(payload.flete);
+      payload.otros = toNum(payload.otros);
+      payload.total_cif = (payload.total_fob ?? 0) + (payload.seguro ?? 0) + (payload.flete ?? 0) + (payload.otros ?? 0);
+      if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       const { error } = await supabase.from("expedientes").update(payload).eq("id", exp.id);
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
@@ -392,6 +404,73 @@ function TabInfo({ exp }: { exp: any }) {
               </SelectContent>
             </Select>
           </div>
+          {(() => {
+            const toN = (v: any) => (v === "" || v == null ? 0 : Number(v) || 0);
+            const cif = toN(form.total_fob) + toN(form.seguro) + toN(form.flete) + toN(form.otros);
+            const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const MoneyField = ({ label, k }: { label: string; k: "total_fob" | "seguro" | "flete" | "otros" }) => (
+              <div className="grid gap-1.5">
+                <Label>{label} (US$)</Label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={(form as any)[k] ?? ""}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/,/g, "");
+                    if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set(k, v);
+                  }}
+                  onBlur={(e) => {
+                    const v = e.target.value;
+                    if (v !== "" && !isNaN(Number(v))) set(k, Number(v).toFixed(2));
+                  }}
+                  placeholder="0.00"
+                />
+              </div>
+            );
+            const REGIMENES = [
+              "Admisión Temporal",
+              "Admisión Temporal sin Transformación",
+              "Depósito de Reexportación",
+              "Depósito Fiscal",
+              "Depósito Logístico",
+              "Depósito Particular",
+              "Despacho a Consumo",
+              "Reimportación",
+              "Zona Franca Comercial",
+              "Zonas Francas Industrial y Especiales",
+            ];
+            return (
+              <div className="md:col-span-2 lg:col-span-3 grid gap-4 pt-2 border-t">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-2">Valores CIF</div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <MoneyField label="Total FOB" k="total_fob" />
+                  <MoneyField label="Seguro" k="seguro" />
+                  <MoneyField label="Flete" k="flete" />
+                  <MoneyField label="Otros" k="otros" />
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-1.5">
+                    <Label className="flex items-center gap-1.5">
+                      Total CIF (US$)
+                      <span className="text-xs text-muted-foreground font-normal">🔒 calculado</span>
+                    </Label>
+                    <div className="h-9 px-3 rounded-md border bg-muted/50 flex items-center text-sm font-semibold tabular-nums">
+                      {fmt(cif)}
+                    </div>
+                  </div>
+                  <div className="grid gap-1.5 md:col-span-2">
+                    <Label>Régimen Aduanero</Label>
+                    <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => set("regimen_aduanero", v)}>
+                      <SelectTrigger><SelectValue placeholder="Selecciona régimen" /></SelectTrigger>
+                      <SelectContent>
+                        {REGIMENES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
             <Label>Observaciones</Label>
             <Textarea rows={3} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} />
