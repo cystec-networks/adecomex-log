@@ -203,6 +203,15 @@ function TabInfo({ exp }: { exp: any }) {
     };
   }, [histDb]);
 
+  const { data: mercItems } = useQuery({
+    queryKey: ["mercancia-items", exp.id],
+    queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
+  });
+  const sumFob = useMemo(
+    () => (mercItems ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0),
+    [mercItems],
+  );
+
   const save = useMutation({
     mutationFn: async () => {
       const payload: any = { ...form };
@@ -210,7 +219,7 @@ function TabInfo({ exp }: { exp: any }) {
       payload.peso_neto = payload.peso_neto === "" ? null : Number(payload.peso_neto);
       payload.peso_bruto = payload.peso_bruto === "" ? null : Number(payload.peso_bruto);
       const toNum = (v: any) => (v === "" || v == null ? null : Number(v));
-      payload.total_fob = toNum(payload.total_fob);
+      payload.total_fob = sumFob || 0;
       payload.seguro = toNum(payload.seguro);
       payload.flete = toNum(payload.flete);
       payload.otros = toNum(payload.otros);
@@ -223,6 +232,7 @@ function TabInfo({ exp }: { exp: any }) {
     onSuccess: () => { toast.success("Guardado"); qc.invalidateQueries({ queryKey: ["expediente", exp.id] }); qc.invalidateQueries({ queryKey: ["expedientes"] }); qc.invalidateQueries({ queryKey: ["expedientes-hist"] }); },
     onError: (e: any) => toast.error(e.message),
   });
+
 
   const Field = ({ label, k, type = "text", className = "" }: { label: string; k: keyof typeof form; type?: string; className?: string }) => (
     <div className={`grid gap-1.5 ${className}`}>
@@ -404,11 +414,15 @@ function TabInfo({ exp }: { exp: any }) {
               </SelectContent>
             </Select>
           </div>
+          <div className="md:col-span-2 lg:col-span-3">
+            <MercanciaItemsBlock expedienteId={exp.id} />
+          </div>
           {(() => {
             const toN = (v: any) => (v === "" || v == null ? 0 : Number(v) || 0);
-            const cif = toN(form.total_fob) + toN(form.seguro) + toN(form.flete) + toN(form.otros);
+            const fob = sumFob;
+            const cif = fob + toN(form.seguro) + toN(form.flete) + toN(form.otros);
             const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const MoneyField = ({ label, k }: { label: string; k: "total_fob" | "seguro" | "flete" | "otros" }) => (
+            const MoneyField = ({ label, k }: { label: string; k: "seguro" | "flete" | "otros" }) => (
               <div className="grid gap-1.5">
                 <Label>{label} (US$)</Label>
                 <Input
@@ -443,7 +457,15 @@ function TabInfo({ exp }: { exp: any }) {
               <div className="md:col-span-2 lg:col-span-3 grid gap-4 pt-2 border-t">
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-2">Valores CIF</div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                  <MoneyField label="Total FOB" k="total_fob" />
+                  <div className="grid gap-1.5">
+                    <Label className="flex items-center gap-1.5">
+                      Total FOB (US$)
+                      <span className="text-xs text-muted-foreground font-normal">🔒 calculado</span>
+                    </Label>
+                    <div className="h-9 px-3 rounded-md border bg-muted/50 flex items-center text-sm font-semibold tabular-nums">
+                      {fmt(fob)}
+                    </div>
+                  </div>
                   <MoneyField label="Seguro" k="seguro" />
                   <MoneyField label="Flete" k="flete" />
                   <MoneyField label="Otros" k="otros" />
@@ -471,6 +493,7 @@ function TabInfo({ exp }: { exp: any }) {
               </div>
             );
           })()}
+
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
             <Label>Observaciones</Label>
             <Textarea rows={3} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} />
@@ -1330,4 +1353,171 @@ function TabTransportesExp({ expedienteId }: { expedienteId: string }) {
     </Card>
   );
 }
+
+const UNIDADES_MEDIDA = ["Kilogramos", "Unidades", "Litros", "Toneladas", "Metros", "Cajas", "Sacos", "Otros"];
+
+function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
+  const qc = useQueryClient();
+  const { data: items } = useQuery({
+    queryKey: ["mercancia-items", expedienteId],
+    queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", expedienteId).is("deleted_at", null).order("item_no")).data ?? [],
+  });
+
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const emptyForm = { codigo_arancelario: "", detalle_producto: "", unidad_medida: "", cantidad: "", peso: "", valor_fob: "" };
+  const [f, setF] = useState(emptyForm);
+
+  const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
+  const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["mercancia-items", expedienteId] });
+  };
+
+  const guardar = useMutation({
+    mutationFn: async () => {
+      const payload: any = {
+        codigo_arancelario: f.codigo_arancelario || null,
+        detalle_producto: f.detalle_producto || null,
+        unidad_medida: f.unidad_medida || null,
+        cantidad: f.cantidad === "" ? 0 : Number(f.cantidad),
+        peso: f.peso === "" ? 0 : Number(f.peso),
+        valor_fob: f.valor_fob === "" ? 0 : Number(f.valor_fob),
+      };
+      if (editingId) {
+        const { error } = await supabase.from("mercancia_items").update(payload).eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const nextNo = ((items ?? []).reduce((m: number, it: any) => Math.max(m, it.item_no || 0), 0)) + 1;
+        const { error } = await supabase.from("mercancia_items").insert({ ...payload, expediente_id: expedienteId, item_no: nextNo });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { toast.success(editingId ? "Ítem actualizado" : "Ítem agregado"); setOpen(false); setEditingId(null); setF(emptyForm); invalidate(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const eliminar = useMutation({
+    mutationFn: async (id: string) => {
+      const { data: userRes } = await supabase.auth.getUser();
+      const { error } = await supabase.from("mercancia_items").update({ deleted_at: new Date().toISOString(), deleted_by: userRes.user?.id ?? null }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Ítem movido a papelera"); invalidate(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const startNew = () => { setEditingId(null); setF(emptyForm); setOpen(true); };
+  const startEdit = (it: any) => {
+    setEditingId(it.id);
+    setF({
+      codigo_arancelario: it.codigo_arancelario ?? "",
+      detalle_producto: it.detalle_producto ?? "",
+      unidad_medida: it.unidad_medida ?? "",
+      cantidad: it.cantidad != null ? String(it.cantidad) : "",
+      peso: it.peso != null ? String(it.peso) : "",
+      valor_fob: it.valor_fob != null ? String(it.valor_fob) : "",
+    });
+    setOpen(true);
+  };
+
+  return (
+    <div className="grid gap-3 pt-2 border-t">
+      <div className="flex items-center justify-between pt-2">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Detalle de mercancía</div>
+        <Button size="sm" variant="outline" onClick={startNew}><Plus className="h-4 w-4 mr-1" />Agregar ítem</Button>
+      </div>
+      <div className="rounded-md border overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2 text-left w-12">#</th>
+              <th className="px-3 py-2 text-left">Cód. Arancel</th>
+              <th className="px-3 py-2 text-left">Detalle Producto</th>
+              <th className="px-3 py-2 text-left">Unidad</th>
+              <th className="px-3 py-2 text-right">Cantidad</th>
+              <th className="px-3 py-2 text-right">Peso</th>
+              <th className="px-3 py-2 text-right">Valor FOB (US$)</th>
+              <th className="px-3 py-2 text-right w-24"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {(items ?? []).length === 0 ? (
+              <tr><td colSpan={8} className="px-3 py-6 text-center text-xs text-muted-foreground">Sin ítems. Agrega el primero.</td></tr>
+            ) : (items ?? []).map((it: any) => (
+              <tr key={it.id} className="border-t">
+                <td className="px-3 py-2 tabular-nums text-muted-foreground">{it.item_no}</td>
+                <td className="px-3 py-2 tabular-nums">{it.codigo_arancelario || "—"}</td>
+                <td className="px-3 py-2">{it.detalle_producto || "—"}</td>
+                <td className="px-3 py-2">{it.unidad_medida || "—"}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{Number(it.cantidad || 0).toLocaleString("en-US")}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{Number(it.peso || 0).toLocaleString("en-US")}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{fmt(Number(it.valor_fob || 0))}</td>
+                <td className="px-3 py-2 text-right">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(it)}><Pencil className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => eliminar.mutate(it.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          {(items ?? []).length > 0 && (
+            <tfoot>
+              <tr className="border-t bg-muted/30">
+                <td colSpan={6} className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Suma FOB</td>
+                <td className="px-3 py-2 text-right tabular-nums font-semibold">US$ {fmt(totalFob)}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>{editingId ? "Editar ítem" : "Nuevo ítem"}</DialogTitle></DialogHeader>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label>Código Arancelario</Label>
+              <Input value={f.codigo_arancelario} onChange={(e) => setF({ ...f, codigo_arancelario: e.target.value })} placeholder="0402.10.90" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Unidad de Medida</Label>
+              <Select value={f.unidad_medida || undefined} onValueChange={(v) => setF({ ...f, unidad_medida: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecciona unidad" /></SelectTrigger>
+                <SelectContent>
+                  {UNIDADES_MEDIDA.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5 md:col-span-2">
+              <Label>Detalle del Producto</Label>
+              <Textarea rows={2} value={f.detalle_producto} onChange={(e) => setF({ ...f, detalle_producto: e.target.value })} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Cantidad</Label>
+              <Input type="text" inputMode="decimal" value={f.cantidad} onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, cantidad: v }); }} placeholder="0" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Peso</Label>
+              <Input type="text" inputMode="decimal" value={f.peso} onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, peso: v }); }} placeholder="0" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Valor FOB (US$)</Label>
+              <Input type="text" inputMode="decimal" value={f.valor_fob}
+                onChange={(e) => { const v = e.target.value.replace(/,/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) setF({ ...f, valor_fob: v }); }}
+                onBlur={(e) => { const v = e.target.value; if (v !== "" && !isNaN(Number(v))) setF({ ...f, valor_fob: Number(v).toFixed(2) }); }}
+                placeholder="0.00" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={() => guardar.mutate()} disabled={guardar.isPending}>{guardar.isPending ? "Guardando…" : (editingId ? "Actualizar" : "Agregar")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 

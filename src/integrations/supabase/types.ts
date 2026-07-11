@@ -554,6 +554,62 @@ export type Database = {
           },
         ]
       }
+      mercancia_items: {
+        Row: {
+          cantidad: number | null
+          codigo_arancelario: string | null
+          created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          detalle_producto: string | null
+          expediente_id: string
+          id: string
+          item_no: number
+          peso: number | null
+          unidad_medida: string | null
+          updated_at: string
+          valor_fob: number | null
+        }
+        Insert: {
+          cantidad?: number | null
+          codigo_arancelario?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          detalle_producto?: string | null
+          expediente_id: string
+          id?: string
+          item_no: number
+          peso?: number | null
+          unidad_medida?: string | null
+          updated_at?: string
+          valor_fob?: number | null
+        }
+        Update: {
+          cantidad?: number | null
+          codigo_arancelario?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          detalle_producto?: string | null
+          expediente_id?: string
+          id?: string
+          item_no?: number
+          peso?: number | null
+          unidad_medida?: string | null
+          updated_at?: string
+          valor_fob?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mercancia_items_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permisos: {
         Row: {
           cliente_id: string | null
