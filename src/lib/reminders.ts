@@ -67,11 +67,11 @@ export function useReminders() {
       const [sol, exp, per, tra] = await Promise.all([
         supabase
           .from("solicitudes")
-          .select("id,numero,estado,created_at,cliente_id, cliente:clientes(nombre_comercial)")
+          .select("id,numero,estado,created_at,cliente_id, cliente:clientes(nombre)")
           .is("eliminado_en", null),
         supabase
           .from("expedientes")
-          .select("id,numero,estado,updated_at,fecha_compromiso,cliente_id, cliente:clientes(nombre_comercial)")
+          .select("id,numero,estado,updated_at,fecha_compromiso,cliente_id, cliente:clientes(nombre)")
           .is("eliminado_en", null),
         supabase
           .from("permisos")
@@ -97,7 +97,7 @@ export function useReminders() {
             kind: "solicitud_sin_convertir",
             severity: age >= cfg.solicitudSinConvertirDias * 2 ? "alta" : "media",
             title: `Solicitud ${s.numero ?? s.id.slice(0, 8)} sin convertir`,
-            detail: `${(s as any).cliente?.nombre_comercial ?? "Sin cliente"} · ${age} días sin actividad`,
+            detail: `${(s as any).cliente?.nombre ?? "Sin cliente"} · ${age} días sin actividad`,
             href: `/solicitudes/${s.id}`,
             createdAt: s.created_at,
           });
@@ -116,7 +116,7 @@ export function useReminders() {
               kind: "eta_proximo",
               severity: "critica",
               title: `Expediente ${e.numero} atrasado`,
-              detail: `${(e as any).cliente?.nombre_comercial ?? ""} · ETA vencida hace ${Math.abs(dias)} días`,
+              detail: `${(e as any).cliente?.nombre ?? ""} · ETA vencida hace ${Math.abs(dias)} días`,
               href: `/expedientes/${e.id}`,
               createdAt: e.updated_at,
             });
@@ -126,7 +126,7 @@ export function useReminders() {
               kind: "eta_proximo",
               severity: dias <= 1 ? "alta" : "media",
               title: `Expediente ${e.numero} · ETA en ${dias} días`,
-              detail: `${(e as any).cliente?.nombre_comercial ?? ""}`,
+              detail: `${(e as any).cliente?.nombre ?? ""}`,
               href: `/expedientes/${e.id}`,
               createdAt: e.updated_at,
             });

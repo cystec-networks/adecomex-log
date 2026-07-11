@@ -53,13 +53,13 @@ export function GlobalSearch() {
       const [exp, sol, per, tra, cli] = await Promise.all([
         supabase
           .from("expedientes")
-          .select("id,numero,bl_awb,numero_dua,numero_vuce, cliente:clientes(nombre_comercial)")
+          .select("id,numero,bl_awb,numero_dua,numero_vuce, cliente:clientes(nombre)")
           .is("eliminado_en", null)
           .or(`numero.ilike.${q},bl_awb.ilike.${q},numero_dua.ilike.${q},numero_vuce.ilike.${q}`)
           .limit(5),
         supabase
           .from("solicitudes")
-          .select("id,numero,origen,puerto_llegada, cliente:clientes(nombre_comercial)")
+          .select("id,numero,origen,puerto_llegada, cliente:clientes(nombre)")
           .is("eliminado_en", null)
           .or(`numero.ilike.${q},origen.ilike.${q},puerto_llegada.ilike.${q}`)
           .limit(5),
@@ -77,8 +77,8 @@ export function GlobalSearch() {
           .limit(5),
         supabase
           .from("clientes")
-          .select("id,nombre_comercial,rnc")
-          .or(`nombre_comercial.ilike.${q},rnc.ilike.${q}`)
+          .select("id,nombre,rnc")
+          .or(`nombre.ilike.${q},rnc.ilike.${q}`)
           .limit(5),
       ]);
 
@@ -88,7 +88,7 @@ export function GlobalSearch() {
           id: e.id,
           kind: "expediente",
           primary: e.numero,
-          secondary: [(e as any).cliente?.nombre_comercial, e.bl_awb, e.numero_dua].filter(Boolean).join(" · "),
+          secondary: [(e as any).cliente?.nombre, e.bl_awb, e.numero_dua].filter(Boolean).join(" · "),
           href: `/expedientes/${e.id}`,
         });
       }
@@ -97,7 +97,7 @@ export function GlobalSearch() {
           id: s.id,
           kind: "solicitud",
           primary: s.numero,
-          secondary: [(s as any).cliente?.nombre_comercial, s.origen, s.puerto_llegada].filter(Boolean).join(" · "),
+          secondary: [(s as any).cliente?.nombre, s.origen, s.puerto_llegada].filter(Boolean).join(" · "),
           href: `/solicitudes/${s.id}`,
         });
       }
@@ -123,7 +123,7 @@ export function GlobalSearch() {
         out.push({
           id: c.id,
           kind: "cliente",
-          primary: c.nombre_comercial,
+          primary: c.nombre,
           secondary: c.rnc ?? undefined,
           href: `/clientes`,
         });
