@@ -88,6 +88,8 @@ const GROUPS: Group[] = [
 const SIMPLE_ITEMS: SimpleItem[] = [
   { id: "transportes", to: "/transportes", label: "Transportes", icon: Truck,
     match: (p) => p === "/transportes" || p.startsWith("/transportes/") },
+  { id: "reportes", to: "/reportes", label: "Reportes", icon: BarChart3,
+    match: (p) => p === "/reportes" || p.startsWith("/reportes/") },
   { id: "clientes", to: "/clientes", label: "Clientes", icon: Users,
     match: (p) => p === "/clientes" || p.startsWith("/clientes/") },
   { id: "usuarios", to: "/admin/usuarios", label: "Usuarios y roles", icon: UserCog, adminOnly: true,
