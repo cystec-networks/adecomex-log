@@ -750,3 +750,112 @@ function TabAuditoria({ expedienteId }: { expedienteId: string }) {
     </Card>
   );
 }
+
+function TabPermisosExp({ expedienteId }: { expedienteId: string }) {
+  const { data } = useQuery({
+    queryKey: ["permisos-por-expediente", expedienteId],
+    queryFn: async () => (await supabase.from("permisos").select("*").eq("expediente_id", expedienteId).is("eliminado_en", null).order("created_at", { ascending: false })).data ?? [],
+  });
+  const TIPOS: Record<string, string> = { sanitario:"Sanitario", fitosanitario:"Fitosanitario", zoosanitario:"Zoosanitario", indocal:"INDOCAL", ambiental:"Ambiental", agricola:"Agrícola", ministerio_salud:"Ministerio de Salud", otro:"Otro" };
+  const ESTADOS: Record<string, string> = { solicitado:"Solicitado", en_tramite:"En trámite", aprobado:"Aprobado", rechazado:"Rechazado", vencido:"Vencido" };
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-base">Permisos vinculados ({data?.length ?? 0})</CardTitle>
+        <Button asChild size="sm"><Link to="/permisos/nuevo" search={{ expediente: expedienteId }}><Plus className="h-4 w-4 mr-1" /> Agregar Permiso</Link></Button>
+      </CardHeader>
+      <CardContent className="p-0">
+        {(!data || data.length === 0) ? (
+          <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin permisos vinculados.</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="text-xs text-muted-foreground border-b bg-muted/20">
+              <tr>
+                <th className="text-left px-4 py-2">N° Permiso</th>
+                <th className="text-left">Tipo</th>
+                <th className="text-left">Institución</th>
+                <th className="text-left">Estado</th>
+                <th className="text-left">Emisión</th>
+                <th className="text-left">Vence</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((p: any) => (
+                <tr key={p.id} className="border-b last:border-0 hover:bg-muted/40">
+                  <td className="px-4 py-2 font-medium">
+                    <Link to="/permisos/$id" params={{ id: p.id }} className="text-primary hover:underline">{p.numero}</Link>
+                  </td>
+                  <td className="text-muted-foreground">{TIPOS[p.tipo] ?? "—"}</td>
+                  <td className="text-muted-foreground">{p.institucion_emisora ?? "—"}</td>
+                  <td><Badge variant="outline">{ESTADOS[p.estado] ?? p.estado}</Badge></td>
+                  <td className="text-xs text-muted-foreground">{p.fecha_emision ? new Date(p.fecha_emision).toLocaleDateString("es-DO") : "—"}</td>
+                  <td className="text-xs text-muted-foreground">{p.fecha_vencimiento ? new Date(p.fecha_vencimiento).toLocaleDateString("es-DO") : "—"}</td>
+                  <td className="px-4 py-2 text-right">
+                    <Button variant="ghost" size="sm" asChild><Link to="/permisos/$id" params={{ id: p.id }}>Editar</Link></Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TabTransportesExp({ expedienteId }: { expedienteId: string }) {
+  const { data } = useQuery({
+    queryKey: ["transportes-por-expediente", expedienteId],
+    queryFn: async () => (await supabase.from("transportes").select("*").eq("expediente_id", expedienteId).is("eliminado_en", null).order("created_at", { ascending: false })).data ?? [],
+  });
+  const TIPOS: Record<string, string> = { maritimo:"Marítimo", aereo:"Aéreo", terrestre:"Terrestre" };
+  const ESTADOS: Record<string, string> = { programado:"Programado", en_transito:"En tránsito", entregado:"Entregado", retrasado:"Retrasado" };
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-base">Transportes vinculados ({data?.length ?? 0})</CardTitle>
+        <Button asChild size="sm"><Link to="/transportes/nuevo" search={{ expediente: expedienteId }}><Plus className="h-4 w-4 mr-1" /> Agregar Transporte</Link></Button>
+      </CardHeader>
+      <CardContent className="p-0">
+        {(!data || data.length === 0) ? (
+          <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin transportes vinculados.</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="text-xs text-muted-foreground border-b bg-muted/20">
+              <tr>
+                <th className="text-left px-4 py-2">N° Viaje</th>
+                <th className="text-left">Tipo</th>
+                <th className="text-left">Transportista</th>
+                <th className="text-left">Placa / Ctn</th>
+                <th className="text-left">Salida</th>
+                <th className="text-left">ETA</th>
+                <th className="text-left">Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((t: any) => (
+                <tr key={t.id} className="border-b last:border-0 hover:bg-muted/40">
+                  <td className="px-4 py-2 font-medium">
+                    <Link to="/transportes/$id" params={{ id: t.id }} className="text-primary hover:underline">{t.numero_viaje}</Link>
+                  </td>
+                  <td className="text-muted-foreground">{TIPOS[t.tipo] ?? "—"}</td>
+                  <td>{t.transportista ?? "—"}</td>
+                  <td className="text-xs text-muted-foreground tabular-nums">{t.placa_contenedor ?? "—"}</td>
+                  <td className="text-xs text-muted-foreground">{t.fecha_salida ? new Date(t.fecha_salida).toLocaleDateString("es-DO") : "—"}</td>
+                  <td className="text-xs">{t.eta ? new Date(t.eta).toLocaleDateString("es-DO") : "—"}</td>
+                  <td><Badge variant="outline">{ESTADOS[t.estado] ?? t.estado}</Badge></td>
+                  <td className="px-4 py-2 text-right">
+                    <Button variant="ghost" size="sm" asChild><Link to="/transportes/$id" params={{ id: t.id }}>Editar</Link></Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
