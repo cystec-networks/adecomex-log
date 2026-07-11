@@ -251,8 +251,10 @@ export type Database = {
           medio_transporte: string | null
           naviera: string | null
           numero: string
+          numero_certificado_origen: string | null
           numero_dua: string | null
           numero_igra: string | null
+          numero_tramite_rectificacion: string | null
           numero_vuce: string | null
           numeros_contenedores: string | null
           observaciones: string | null
@@ -262,6 +264,7 @@ export type Database = {
           preferencia_comercial: string | null
           puerto_arribo: string | null
           puerto_salida: string | null
+          rectificacion_tecnica: boolean
           responsable_id: string | null
           sla_dias: number | null
           solicitud_id: string | null
@@ -290,8 +293,10 @@ export type Database = {
           medio_transporte?: string | null
           naviera?: string | null
           numero?: string
+          numero_certificado_origen?: string | null
           numero_dua?: string | null
           numero_igra?: string | null
+          numero_tramite_rectificacion?: string | null
           numero_vuce?: string | null
           numeros_contenedores?: string | null
           observaciones?: string | null
@@ -301,6 +306,7 @@ export type Database = {
           preferencia_comercial?: string | null
           puerto_arribo?: string | null
           puerto_salida?: string | null
+          rectificacion_tecnica?: boolean
           responsable_id?: string | null
           sla_dias?: number | null
           solicitud_id?: string | null
@@ -329,8 +335,10 @@ export type Database = {
           medio_transporte?: string | null
           naviera?: string | null
           numero?: string
+          numero_certificado_origen?: string | null
           numero_dua?: string | null
           numero_igra?: string | null
+          numero_tramite_rectificacion?: string | null
           numero_vuce?: string | null
           numeros_contenedores?: string | null
           observaciones?: string | null
@@ -340,6 +348,7 @@ export type Database = {
           preferencia_comercial?: string | null
           puerto_arribo?: string | null
           puerto_salida?: string | null
+          rectificacion_tecnica?: boolean
           responsable_id?: string | null
           sla_dias?: number | null
           solicitud_id?: string | null
