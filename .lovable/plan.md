@@ -1,99 +1,128 @@
-# MVP Sistema ADECOMEX SRL
+# Módulos Permisos y Transportes
 
-Aplicación interna para recepción, gestión y seguimiento de expedientes de importación y trámites aduanales en R.D.
+Antes de aplicar, este es el plan visual y técnico. Confirma para ejecutar.
 
-## Alcance de esta primera versión
+## 1. Sidebar (OPERACIONES)
 
-**Incluido (funcional end-to-end):**
-1. Autenticación email/password + Google
-2. Roles (Administrador, Operaciones, Ejecutivo, Agente Aduanal, Documentación, Transporte, Finanzas)
-3. Dashboard con KPIs y alertas
-4. Solicitudes: alta, listado, filtros, detalle
-5. Expedientes: creación desde solicitud, detalle con tabs
-6. Documentos: carga, estados, vencimientos (Lovable Cloud Storage)
-7. Flujo/Timeline: 14 etapas con semáforo, avance manual, responsable, fecha, comentario, evidencia
-8. Incidencias: alta, severidad, resolución
-9. Finanzas básicas: registro de costos por expediente (estimado/real/diferencia)
-10. Administración de usuarios y asignación de roles
-11. Bitácora de auditoría de cambios de estado
-
-**Diferido a siguientes iteraciones (stubs o pendiente):**
-- Portal externo de cliente (usuario decidió "después")
-- Reportes avanzados/exportación PDF (solo Excel/CSV básico en MVP)
-- Notificaciones por email (in-app en MVP)
-- Kanban view (solo tabla + timeline en MVP)
-
-## Diseño
-
-Corporativo azul marino serio y confiable. Tokens en `src/styles.css`:
-- Primary #13315C (navy)
-- Primary-deep #0B2545
-- Accent #F59E0B (naranja, alertas/prioridad)
-- Muted #8DA9C4
-- Background #EEF4ED (light warm)
-- Estados semáforo: verde/ámbar/rojo/azul/gris
-Tipografía: Inter (body) + Manrope (headings) vía @fontsource. Layout con sidebar fijo tipo panel operativo, tablas densas, cards de KPI.
-
-## Arquitectura técnica
-
-- TanStack Start + TanStack Query
-- Lovable Cloud (Supabase): DB + Auth (email/password + Google) + Storage
-- Rutas protegidas bajo `_authenticated/`
-- Server functions con `requireSupabaseAuth` para todas las lecturas/escrituras
-- RLS por rol usando `user_roles` + `has_role()`
-- Storage bucket privado `documentos` con RLS
-
-## Esquema de base de datos
-
-```
-app_role (enum): admin, operaciones, ejecutivo, agente_aduanal, documentacion, transporte, finanzas
-user_roles(user_id, role)
-profiles(id, nombre, telefono, activo)
-
-clientes(id, nombre, rnc, contacto, email, telefono, direccion)
-solicitudes(id, numero, fecha, cliente_id, tipo_operacion, tipo_carga,
-  origen, puerto_llegada, fecha_arribo_est, incoterm, medio_transporte,
-  prioridad, estado, responsable_id, observaciones)
-expedientes(id, numero, solicitud_id, bl_awb, factura_comercial,
-  estado, etapa_actual, responsable_id, sla_dias, fecha_compromiso)
-documentos(id, expediente_id, tipo, estado, fecha_recepcion,
-  fecha_vencimiento, storage_path, observaciones, responsable_id)
-etapas(id, expediente_id, orden, nombre, estado, fecha_inicio,
-  fecha_cierre, responsable_id, comentario, evidencia_path)
-incidencias(id, expediente_id, tipo, severidad, estado, descripcion,
-  accion_correctiva, fecha_apertura, fecha_resolucion, responsable_id)
-costos(id, expediente_id, concepto, monto_estimado, monto_real,
-  estado_facturacion, estado_cobro)
-auditoria(id, entidad, entidad_id, accion, usuario_id, timestamp, cambios)
+```text
+OPERACIONES
+  ├─ Dashboard
+  ├─ Solicitudes
+  ├─ Expedientes ▾
+  │    ├─ Importaciones
+  │    └─ Exportaciones
+  ├─ Permisos          ← nuevo (icono FileCheck2)
+  ├─ Transportes       ← nuevo (icono Truck)
+  ├─ Clientes
+  └─ OCR
 ```
 
-Cada tabla con RLS: operaciones/admin/agente_aduanal ven todo; documentacion sobre documentos; finanzas sobre costos; ejecutivo sobre sus asignaciones. Admin gestiona `user_roles`.
+## 2. Tabla Permisos `/permisos`
 
-## Pantallas
-
+```text
+┌──────────┬─────────┬────────────┬───────────┬────────────┬────────────┬───────────┬────────┬────────┬────────┬─────────┐
+│ N° Perm. │ N° Res. │ Expediente │ Cliente   │ Tipo       │ Institución│ Estado    │ Solic. │ Emisión│ Vence  │ Acciones│
+├──────────┼─────────┼────────────┼───────────┼────────────┼────────────┼───────────┼────────┼────────┼────────┼─────────┤
+│ PER-001  │ R-2025..│ EXP-0034 ↗ │ ACME SRL  │ Sanitario  │ MSP        │ [aprobado]│ 01/11  │ 05/11  │ 05/12  │ ✎ 🗑    │
+└──────────┴─────────┴────────────┴───────────┴────────────┴────────────┴───────────┴────────┴────────┴────────┴─────────┘
 ```
-/auth              login/signup + Google
-/                  Dashboard (KPIs, alertas, tareas)
-/solicitudes       Lista + filtros
-/solicitudes/nueva Formulario rápido
-/solicitudes/$id   Detalle
-/expedientes       Lista + filtros
-/expedientes/$id   Detalle con tabs: Info | Documentos | Timeline | Incidencias | Costos | Auditoría
-/clientes          CRUD clientes
-/admin/usuarios    Gestión usuarios y roles (solo admin)
+- Búsqueda global + filtros Estado / Cliente + orden por fechas.
+- Estados con Badge de color: `solicitado` (gris), `en_tramite` (azul), `aprobado` (verde), `rechazado` (rojo), `vencido` (ámbar).
+- Vencimiento cercano (<15 días) resaltado en ámbar.
+
+## 3. Formulario Permiso `/permisos/nuevo` y `/permisos/$id`
+
+```text
+┌──────────────────────────────────────────────────────────┐
+│ Vinculación                                              │
+│  Expediente [EXP-0034 ▾]   Cliente: ACME SRL (auto)     │
+├──────────────────────────────────────────────────────────┤
+│ Datos del Permiso                                        │
+│  N° Permiso [___]  N° Resolución [___]                  │
+│  Tipo [Sanitario ▾]  Institución [MSP ▾]                │
+│  Estado [en_tramite ▾]                                   │
+├──────────────────────────────────────────────────────────┤
+│ Fechas                                                   │
+│  Solicitud [__]  Emisión [__]  Vencimiento [__]         │
+├──────────────────────────────────────────────────────────┤
+│ Documento adjunto  [ Subir PDF/imagen ]  (bucket documentos)│
+│ Observaciones      [ área de texto ]                     │
+└──────────────────────────────────────────────────────────┘
 ```
 
-## Entregables por orden
+## 4. Tabla Transportes `/transportes`
 
-1. Habilitar Lovable Cloud
-2. Migración de esquema + RLS + trigger auto-perfil + trigger admin al primer usuario
-3. Storage bucket `documentos` privado + RLS
-4. Configurar Google OAuth
-5. Design system (styles.css) + fuentes
-6. Auth pages + gate `_authenticated`
-7. Layout sidebar + navegación por rol
-8. Módulos en orden: Dashboard → Clientes → Solicitudes → Expedientes (+tabs) → Admin usuarios
-9. Auditoría y alertas en dashboard
-10. Datos semilla mínimos (tipos de documento, catálogos)
+```text
+┌──────────┬────────────┬──────────┬──────────┬─────────────┬──────────┬───────┬────────┬──────┬──────────┬───────────┬─────────┐
+│ N° Viaje │ Expediente │ Cliente  │ Tipo     │ Transportist│ Placa/Ctn│ Origen│ Destino│Salida│ ETA      │ Flete     │ Estado  │
+├──────────┼────────────┼──────────┼──────────┼─────────────┼──────────┼───────┼────────┼──────┼──────────┼───────────┼─────────┤
+│ TR-0012  │ EXP-0034 ↗ │ ACME SRL │ Marítimo │ MAERSK      │ MSKU1234 │ Miami │ SDQ    │ 01/11│ 10/11    │ USD 3,200 │ tránsito│
+└──────────┴────────────┴──────────┴──────────┴─────────────┴──────────┴───────┴────────┴──────┴──────────┴───────────┴─────────┘
+```
+- Mismo patrón de búsqueda/filtros/orden que Expedientes.
+- Estados: `programado`, `en_transito`, `entregado`, `retrasado`.
 
-Estimo ~15-20 archivos nuevos. Cuando apruebes, ejecuto todo en un solo pase y luego iteramos sobre lo que quieras profundizar (portal cliente, notificaciones email, reportes PDF, kanban).
+## 5. Formulario Transporte
+
+```text
+┌──────────────────────────────────────────────────────────┐
+│ Vinculación                                              │
+│  Expediente [EXP-0034 ▾]  Cliente: ACME SRL (auto)      │
+├──────────────────────────────────────────────────────────┤
+│ Datos del Viaje                                          │
+│  N° Viaje/Ref [__]  Tipo [Marítimo ▾]                   │
+│  Transportista/Naviera [__]  Placa/Unidad/Contenedor [__]│
+│  Origen [__]  Destino [__]                              │
+├──────────────────────────────────────────────────────────┤
+│ Fechas                                                   │
+│  Salida [__]   ETA [__]                                  │
+├──────────────────────────────────────────────────────────┤
+│ Flete   [monto __] [moneda USD/DOP/EUR ▾]                │
+│ Estado  [programado ▾]                                   │
+│ Observaciones [__]                                       │
+└──────────────────────────────────────────────────────────┘
+```
+
+## 6. En el detalle de Expediente
+
+Nuevas dos secciones dentro de las pestañas existentes (o nuevas pestañas "Permisos" y "Transportes"):
+
+```text
+┌── Permisos vinculados ──────────────────── [+ Agregar Permiso] ┐
+│ PER-001 · Sanitario · MSP · [aprobado] · Vence 05/12/2026  ✎ │
+│ PER-002 · Fitosanitario · MA · [en_trámite] · —            ✎ │
+└──────────────────────────────────────────────────────────────┘
+
+┌── Transportes vinculados ─────────────── [+ Agregar Transporte] ┐
+│ TR-0012 · Marítimo · MAERSK · MSKU1234 · ETA 10/11 · tránsito ✎│
+└──────────────────────────────────────────────────────────────┘
+```
+El botón `+ Agregar` navega a `/permisos/nuevo?expediente=<id>` o `/transportes/nuevo?expediente=<id>`, con el expediente y cliente precargados.
+
+## 7. Detalles técnicos
+
+**Migración SQL** (una sola):
+- ENUMs: `permiso_estado`, `permiso_tipo`, `transporte_tipo`, `transporte_estado`, `moneda`.
+- Tabla `public.permisos`: numero, numero_resolucion, expediente_id (FK), cliente_id (FK), tipo, institucion_emisora, estado, fecha_solicitud, fecha_emision, fecha_vencimiento, documento_url, observaciones, created_by, created_at, updated_at, eliminado_en, eliminado_por.
+- Tabla `public.transportes`: numero_viaje, expediente_id (FK), cliente_id (FK), tipo, transportista, placa_contenedor, origen, destino, fecha_salida, eta, flete_monto, flete_moneda, estado, observaciones, created_by, created_at, updated_at, eliminado_en, eliminado_por.
+- GRANTs a `authenticated`/`service_role`, RLS ON, políticas equivalentes a expedientes (staff full access, resto lectura).
+- Triggers `updated_at`.
+- Indices por `expediente_id`, `estado`, `eliminado_en`.
+
+**Rutas nuevas** (TanStack file-based):
+- `src/routes/_authenticated/permisos.index.tsx`
+- `src/routes/_authenticated/permisos.nuevo.tsx`
+- `src/routes/_authenticated/permisos.$id.tsx`
+- `src/routes/_authenticated/transportes.index.tsx`
+- `src/routes/_authenticated/transportes.nuevo.tsx`
+- `src/routes/_authenticated/transportes.$id.tsx`
+
+**Modificaciones**:
+- `src/components/app-shell.tsx`: dos entradas de sidebar.
+- `src/routes/_authenticated/expedientes.$id.tsx`: dos secciones nuevas (Permisos, Transportes) con listado y botón Agregar.
+- `src/routes/_authenticated/expedientes.papelera.tsx`: dos pestañas más (Permisos, Transportes) con Restaurar / Eliminar permanente.
+- Upload de documento del permiso al bucket `documentos` existente (privado, signed URL para visualizar).
+
+**Consistencia**: se reutiliza el componente `Th` con indicadores ▲▼, el patrón de ordenamiento con "cerrados/entregados al final", filtros y estilo `Refined semantic table` idéntico a Expedientes.
+
+¿Aplico todo tal cual?

@@ -415,6 +415,84 @@ export type Database = {
           },
         ]
       }
+      permisos: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          created_by: string | null
+          documento_url: string | null
+          eliminado_en: string | null
+          eliminado_por: string | null
+          estado: Database["public"]["Enums"]["permiso_estado"]
+          expediente_id: string | null
+          fecha_emision: string | null
+          fecha_solicitud: string | null
+          fecha_vencimiento: string | null
+          id: string
+          institucion_emisora: string | null
+          numero: string
+          numero_resolucion: string | null
+          observaciones: string | null
+          tipo: Database["public"]["Enums"]["permiso_tipo"] | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          documento_url?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
+          estado?: Database["public"]["Enums"]["permiso_estado"]
+          expediente_id?: string | null
+          fecha_emision?: string | null
+          fecha_solicitud?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          institucion_emisora?: string | null
+          numero?: string
+          numero_resolucion?: string | null
+          observaciones?: string | null
+          tipo?: Database["public"]["Enums"]["permiso_tipo"] | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          documento_url?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
+          estado?: Database["public"]["Enums"]["permiso_estado"]
+          expediente_id?: string | null
+          fecha_emision?: string | null
+          fecha_solicitud?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          institucion_emisora?: string | null
+          numero?: string
+          numero_resolucion?: string | null
+          observaciones?: string | null
+          tipo?: Database["public"]["Enums"]["permiso_tipo"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permisos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permisos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           activo: boolean
@@ -519,6 +597,90 @@ export type Database = {
           },
         ]
       }
+      transportes: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          created_by: string | null
+          destino: string | null
+          eliminado_en: string | null
+          eliminado_por: string | null
+          estado: Database["public"]["Enums"]["transporte_estado"]
+          eta: string | null
+          expediente_id: string | null
+          fecha_salida: string | null
+          flete_moneda: Database["public"]["Enums"]["moneda"] | null
+          flete_monto: number | null
+          id: string
+          numero_viaje: string
+          observaciones: string | null
+          origen: string | null
+          placa_contenedor: string | null
+          tipo: Database["public"]["Enums"]["transporte_tipo"] | null
+          transportista: string | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          destino?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
+          estado?: Database["public"]["Enums"]["transporte_estado"]
+          eta?: string | null
+          expediente_id?: string | null
+          fecha_salida?: string | null
+          flete_moneda?: Database["public"]["Enums"]["moneda"] | null
+          flete_monto?: number | null
+          id?: string
+          numero_viaje?: string
+          observaciones?: string | null
+          origen?: string | null
+          placa_contenedor?: string | null
+          tipo?: Database["public"]["Enums"]["transporte_tipo"] | null
+          transportista?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          destino?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
+          estado?: Database["public"]["Enums"]["transporte_estado"]
+          eta?: string | null
+          expediente_id?: string | null
+          fecha_salida?: string | null
+          flete_moneda?: Database["public"]["Enums"]["moneda"] | null
+          flete_monto?: number | null
+          id?: string
+          numero_viaje?: string
+          observaciones?: string | null
+          origen?: string | null
+          placa_contenedor?: string | null
+          tipo?: Database["public"]["Enums"]["transporte_tipo"] | null
+          transportista?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transportes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transportes_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -571,6 +733,22 @@ export type Database = {
         | "despachado"
       incidencia_estado: "abierta" | "en_gestion" | "resuelta" | "cerrada"
       incidencia_severidad: "baja" | "media" | "alta" | "critica"
+      moneda: "USD" | "DOP" | "EUR"
+      permiso_estado:
+        | "solicitado"
+        | "en_tramite"
+        | "aprobado"
+        | "rechazado"
+        | "vencido"
+      permiso_tipo:
+        | "sanitario"
+        | "fitosanitario"
+        | "indocal"
+        | "ambiental"
+        | "agricola"
+        | "zoosanitario"
+        | "ministerio_salud"
+        | "otro"
       prioridad: "baja" | "media" | "alta" | "urgente"
       solicitud_estado:
         | "recibida"
@@ -578,6 +756,12 @@ export type Database = {
         | "aprobada"
         | "rechazada"
         | "convertida"
+      transporte_estado:
+        | "programado"
+        | "en_transito"
+        | "entregado"
+        | "retrasado"
+      transporte_tipo: "maritimo" | "aereo" | "terrestre"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -725,6 +909,24 @@ export const Constants = {
       ],
       incidencia_estado: ["abierta", "en_gestion", "resuelta", "cerrada"],
       incidencia_severidad: ["baja", "media", "alta", "critica"],
+      moneda: ["USD", "DOP", "EUR"],
+      permiso_estado: [
+        "solicitado",
+        "en_tramite",
+        "aprobado",
+        "rechazado",
+        "vencido",
+      ],
+      permiso_tipo: [
+        "sanitario",
+        "fitosanitario",
+        "indocal",
+        "ambiental",
+        "agricola",
+        "zoosanitario",
+        "ministerio_salud",
+        "otro",
+      ],
       prioridad: ["baja", "media", "alta", "urgente"],
       solicitud_estado: [
         "recibida",
@@ -733,6 +935,13 @@ export const Constants = {
         "rechazada",
         "convertida",
       ],
+      transporte_estado: [
+        "programado",
+        "en_transito",
+        "entregado",
+        "retrasado",
+      ],
+      transporte_tipo: ["maritimo", "aereo", "terrestre"],
     },
   },
 } as const
