@@ -1,9 +1,11 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  Inbox, FolderKanban, Users, UserCog, LogOut, Ship, Search,
+  Inbox, FolderKanban, Users, UserCog, LogOut, Ship,
   PackageOpen, PackageCheck, ScanText, Sparkles, Trash2, FileCheck2, Truck,
-  ChevronDown, Wrench, FileText, Bot,
+  ChevronDown, Wrench, FileText, Bot, LayoutDashboard,
 } from "lucide-react";
+import { NotificationsBell } from "@/components/notifications-bell";
+import { GlobalSearch } from "@/components/global-search";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -156,6 +158,10 @@ function AppSidebarInner() {
           </SidebarGroup>
         )}
 
+        {/* Dashboard (item simple, primero) */}
+        {renderSimpleItem({ id: "dashboard", to: "/dashboard", label: "Dashboard", icon: LayoutDashboard,
+          match: (p) => p === "/dashboard" })}
+
         {/* Solicitudes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "solicitudes")!)}
 
@@ -301,11 +307,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-14 border-b bg-card/50 backdrop-blur flex items-center gap-3 px-4">
             <SidebarTrigger />
-            <div className="relative flex-1 max-w-md">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Buscar expediente, BL/AWB, solicitud, cliente…" className="pl-9 h-9 bg-background" />
-            </div>
+            <GlobalSearch />
             <div className="flex-1" />
+            <NotificationsBell />
             <Button variant="ghost" size="sm" onClick={signOut}>
               <LogOut className="h-4 w-4 mr-1" /> Salir
             </Button>

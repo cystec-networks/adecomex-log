@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Inbox, FolderKanban, CheckCircle2, Clock, FileWarning, TrendingUp } from "lucide-react";
+import { AlertTriangle, Inbox, FolderKanban, CheckCircle2, Clock, FileWarning, TrendingUp, Bell, Truck } from "lucide-react";
+import { useReminders } from "@/lib/reminders";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -39,20 +40,26 @@ function Dashboard() {
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
-      const [sol, exp, inc, docs] = await Promise.all([
-        supabase.from("solicitudes").select("id,estado,prioridad,created_at"),
-        supabase.from("expedientes").select("id,estado,etapa_actual,fecha_compromiso,created_at"),
+      const [sol, exp, inc, docs, per, tra] = await Promise.all([
+        supabase.from("solicitudes").select("id,numero,estado,prioridad,created_at").is("eliminado_en", null),
+        supabase.from("expedientes").select("id,numero,estado,etapa_actual,fecha_compromiso,created_at,updated_at").is("eliminado_en", null),
         supabase.from("incidencias").select("id,estado,severidad"),
         supabase.from("documentos").select("id,estado,fecha_vencimiento"),
+        supabase.from("permisos").select("id,estado,fecha_vencimiento").is("eliminado_en", null),
+        supabase.from("transportes").select("id,estado,eta").is("eliminado_en", null),
       ]);
       return {
         solicitudes: sol.data ?? [],
         expedientes: exp.data ?? [],
         incidencias: inc.data ?? [],
         documentos: docs.data ?? [],
+        permisos: per.data ?? [],
+        transportes: tra.data ?? [],
       };
     },
   });
+
+  const { visible: reminders } = useReminders();
 
   const solicitudesActivas = stats?.solicitudes.filter((s) => s.estado !== "rechazada").length ?? 0;
   const expedientesEnProceso = stats?.expedientes.filter((e) => e.estado === "digitar" || e.estado === "presentar" || e.estado === "verificar" || e.estado === "facturar").length ?? 0;
@@ -60,6 +67,12 @@ function Dashboard() {
   const incidenciasAbiertas = stats?.incidencias.filter((i) => i.estado !== "cerrada" && i.estado !== "resuelta").length ?? 0;
   const urgentes = stats?.solicitudes.filter((s) => s.prioridad === "urgente" || s.prioridad === "alta").length ?? 0;
   const docsVencidos = stats?.documentos.filter((d) => d.fecha_vencimiento && new Date(d.fecha_vencimiento) < new Date()).length ?? 0;
+  const permisosPorVencer = stats?.permisos.filter((p) => {
+    if (!p.fecha_vencimiento || p.estado === "rechazado" || p.estado === "vencido") return false;
+    const d = (new Date(p.fecha_vencimiento).getTime() - Date.now()) / 86400000;
+    return d >= 0 && d <= 15;
+  }).length ?? 0;
+  const transportesEnTransito = stats?.transportes.filter((t) => t.estado === "en_transito" || t.estado === "programado").length ?? 0;
 
   const ultimasSol = [...(stats?.solicitudes ?? [])].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? "")).slice(0, 5);
   const ultimosExp = [...(stats?.expedientes ?? [])].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? "")).slice(0, 5);
@@ -75,10 +88,37 @@ function Dashboard() {
         <KPI icon={Inbox} label="SOLICITUDES RECIBIDAS" value={solicitudesActivas} tone="primary" />
         <KPI icon={FolderKanban} label="EXPEDIENTES EN PROCESOS" value={expedientesEnProceso} tone="info" />
         <KPI icon={CheckCircle2} label="DESPACHADOS" value={expedientesCerrados} tone="success" />
-        <KPI icon={AlertTriangle} label="Incidencias abiertas" value={incidenciasAbiertas} tone="danger" />
-        <KPI icon={Clock} label="Prioridad alta" value={urgentes} tone="warning" />
-        <KPI icon={FileWarning} label="Docs vencidos" value={docsVencidos} tone="danger" />
+        <KPI icon={FileWarning} label="Permisos por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" />
+        <KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" />
+        <KPI icon={AlertTriangle} label="Alertas activas" value={reminders.length} tone="danger" />
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base font-display flex items-center gap-2">
+            <Bell className="h-4 w-4" /> Atención requerida
+          </CardTitle>
+          <Badge variant="outline">{reminders.length}</Badge>
+        </CardHeader>
+        <CardContent className="p-0">
+          {reminders.length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">Sin alertas pendientes</div>
+          ) : (
+            <ul className="divide-y">
+              {reminders.slice(0, 8).map((r) => (
+                <li key={r.id} className="px-4 py-2.5 flex items-center gap-3 hover:bg-muted/40">
+                  <span className={`h-2 w-2 rounded-full ${r.severity === "critica" ? "bg-destructive" : r.severity === "alta" ? "bg-[var(--warning)]" : "bg-[var(--info)]"}`} />
+                  <div className="min-w-0 flex-1">
+                    <Link to={r.href} className="text-sm font-medium hover:underline block truncate">{r.title}</Link>
+                    <div className="text-xs text-muted-foreground truncate">{r.detail}</div>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] uppercase">{r.severity}</Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
