@@ -23,6 +23,7 @@ import type { ReactNode, ComponentType } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import logoAsset from "@/assets/logo-adecomex.jpg.asset.json";
 
 type SubItem = {
   to: string;
