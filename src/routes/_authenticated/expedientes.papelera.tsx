@@ -15,7 +15,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useMyRoles } from "@/lib/auth-hooks";
 
-type Kind = "expedientes" | "solicitudes";
+type Kind = "expedientes" | "solicitudes" | "permisos" | "transportes";
 
 export const Route = createFileRoute("/_authenticated/expedientes/papelera")({
   component: Papelera,
@@ -51,6 +51,26 @@ function Papelera() {
       .order("eliminado_en", { ascending: false })).data ?? [],
   });
 
+  const permisos = useQuery({
+    queryKey: ["papelera-permisos"],
+    enabled: !!isAdmin,
+    queryFn: async () => (await supabase
+      .from("permisos")
+      .select("*, clientes(nombre), expedientes(numero)")
+      .not("eliminado_en", "is", null)
+      .order("eliminado_en", { ascending: false })).data ?? [],
+  });
+
+  const transportes = useQuery({
+    queryKey: ["papelera-transportes"],
+    enabled: !!isAdmin,
+    queryFn: async () => (await supabase
+      .from("transportes")
+      .select("*, clientes(nombre), expedientes(numero)")
+      .not("eliminado_en", "is", null)
+      .order("eliminado_en", { ascending: false })).data ?? [],
+  });
+
   const restoreMut = useMutation({
     mutationFn: async ({ kind, id }: { kind: Kind; id: string }) => {
       const { error } = await supabase
@@ -60,7 +80,13 @@ function Papelera() {
       if (error) throw error;
     },
     onSuccess: (_d, vars) => {
-      toast.success(vars.kind === "expedientes" ? "Expediente restaurado" : "Solicitud restaurada");
+      const label: Record<Kind, string> = {
+        expedientes: "Expediente restaurado",
+        solicitudes: "Solicitud restaurada",
+        permisos: "Permiso restaurado",
+        transportes: "Transporte restaurado",
+      };
+      toast.success(label[vars.kind]);
       qc.invalidateQueries({ queryKey: [vars.kind] });
       qc.invalidateQueries({ queryKey: [`papelera-${vars.kind}`] });
       setToRestore(null);
