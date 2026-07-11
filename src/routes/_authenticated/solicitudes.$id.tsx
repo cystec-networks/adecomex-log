@@ -68,24 +68,13 @@ function DetalleSolicitud() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const crearExpediente = useMutation({
-    mutationFn: async () => {
-      if (!s) throw new Error("No hay solicitud");
-      const { data, error } = await supabase.from("expedientes").insert({
-        solicitud_id: s.id,
-        cliente_id: s.cliente_id,
-        responsable_id: s.responsable_id,
-      }).select().single();
-      if (error) throw error;
-      await supabase.from("solicitudes").update({ estado: "convertida" }).eq("id", s.id);
-      return data;
-    },
-    onSuccess: (exp) => {
-      toast.success(`Expediente ${exp.numero} creado`);
-      nav({ to: "/expedientes/$id", params: { id: exp.id } });
-    },
-    onError: (e: any) => toast.error(e.message),
+  const { data: expedienteVinculado } = useQuery({
+    queryKey: ["expediente-de-solicitud", id],
+    queryFn: async () => (await supabase.from("expedientes").select("id,numero").eq("solicitud_id", id).maybeSingle()).data,
+    enabled: !!s,
   });
+
+
 
   if (!s || !form) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
