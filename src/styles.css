@@ -1,7 +1,3 @@
-#lovable-badge {
-  display: none !important;
-}
-
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
