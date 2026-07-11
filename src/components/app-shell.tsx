@@ -158,6 +158,10 @@ function AppSidebarInner() {
           </SidebarGroup>
         )}
 
+        {/* Dashboard (item simple, primero) */}
+        {renderSimpleItem({ id: "dashboard", to: "/dashboard", label: "Dashboard", icon: LayoutDashboard,
+          match: (p) => p === "/dashboard" })}
+
         {/* Solicitudes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "solicitudes")!)}
 
