@@ -130,6 +130,8 @@ function Papelera() {
 
   const expRows = expedientes.data ?? [];
   const solRows = solicitudes.data ?? [];
+  const perRows = permisos.data ?? [];
+  const trRows = transportes.data ?? [];
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-[1600px] mx-auto">
@@ -146,6 +148,8 @@ function Papelera() {
         <TabsList>
           <TabsTrigger value="expedientes">Expedientes ({expRows.length})</TabsTrigger>
           <TabsTrigger value="solicitudes">Solicitudes ({solRows.length})</TabsTrigger>
+          <TabsTrigger value="permisos">Permisos ({perRows.length})</TabsTrigger>
+          <TabsTrigger value="transportes">Transportes ({trRows.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="expedientes">
