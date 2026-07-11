@@ -148,6 +148,14 @@ function AppSidebarInner() {
       </SidebarHeader>
 
       <SidebarContent>
+        {!collapsed && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-sidebar-foreground/50 font-semibold mt-1">
+              Operaciones
+            </SidebarGroupLabel>
+          </SidebarGroup>
+        )}
+
         {/* Solicitudes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "solicitudes")!)}
 
