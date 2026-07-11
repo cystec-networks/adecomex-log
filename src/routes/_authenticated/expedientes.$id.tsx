@@ -43,6 +43,14 @@ const CONCEPTOS_COSTO = [
   "Aranceles","ITBIS","Transporte local","Otros",
 ];
 
+const CONCEPTOS_FACTURA = [
+  "Honorarios","Transporte","Gestión aduanal","Reembolso de gastos","Servicios adicionales","Otros",
+];
+const ESTADOS_FACTURA = ["pendiente","cobrada","anulada"];
+const CONCEPTOS_GASTO = [
+  "Flete","Aranceles","ITBIS","Gastos portuarios","Transporte","Honorarios de terceros","Reembolsos","Otros",
+];
+
 function ReadOnlyField({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="grid gap-1.5">
