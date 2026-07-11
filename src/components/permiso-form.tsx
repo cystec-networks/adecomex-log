@@ -124,10 +124,10 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
   const save = useMutation({
     mutationFn: async () => {
       const payload: any = { ...form };
-      ["expediente_id","cliente_id","tipo","fecha_solicitud","fecha_emision","fecha_vencimiento","documento_url","numero_resolucion","institucion_emisora","observaciones"]
+      ["expediente_id","cliente_id","tipo","fecha_solicitud","fecha_emision","fecha_vencimiento","documento_url","numero_resolucion","institucion_emisora","observaciones","numero"]
         .forEach((k) => { if (payload[k] === "") payload[k] = null; });
       if (mode === "new") {
-        delete payload.numero; // auto-generated
+        if (payload.numero == null) delete payload.numero; // auto-generated when empty
         const { data: u } = await supabase.auth.getUser();
         payload.created_by = u.user?.id ?? null;
         const { data, error } = await supabase.from("permisos").insert(payload).select().single();
@@ -215,9 +215,14 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
           <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Datos del Permiso</CardTitle>
         </CardHeader>
         <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {mode === "edit" && (
-            <div className="grid gap-1.5"><Label>N° Permiso</Label><Input value={form.numero} disabled /></div>
-          )}
+          <div className="grid gap-1.5">
+            <Label>N° Permiso</Label>
+            <Input
+              value={form.numero}
+              onChange={(e) => set("numero", e.target.value)}
+              placeholder={mode === "new" ? "Auto (ej. PER-0007) o escribe uno" : ""}
+            />
+          </div>
           <div className="grid gap-1.5"><Label>N° Resolución</Label><Input value={form.numero_resolucion} onChange={(e) => set("numero_resolucion", e.target.value)} /></div>
           <div className="grid gap-1.5">
             <Label>Tipo de Permiso</Label>
