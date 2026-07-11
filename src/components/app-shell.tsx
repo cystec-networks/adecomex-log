@@ -6,8 +6,8 @@ import {
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton,
-  SidebarMenuSubItem, SidebarProvider, SidebarTrigger,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+  SidebarProvider, SidebarTrigger,
   SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -39,6 +39,20 @@ type Group = {
   adminOnly?: boolean;
 };
 
+type SimpleItem = {
+  id: string;
+  to: string;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  search?: Record<string, unknown>;
+  match?: (pathname: string, search: Record<string, unknown>) => boolean;
+  adminOnly?: boolean;
+};
+
+type MenuEntry =
+  | { type: "group"; data: Group }
+  | { type: "simple"; data: SimpleItem };
+
 const GROUPS: Group[] = [
   {
     id: "solicitudes",
@@ -50,8 +64,6 @@ const GROUPS: Group[] = [
       { to: "/permisos", label: "Permisos", icon: FileCheck2,
         match: (p) => p === "/permisos" || p.startsWith("/permisos/") },
       { to: "/solicitudes/ocr", label: "OCR", icon: ScanText },
-      { to: "/copiloto", label: "Copiloto IA", icon: Bot,
-        match: (p) => p.startsWith("/copiloto") },
     ],
   },
   {
@@ -67,44 +79,19 @@ const GROUPS: Group[] = [
         match: (p, s) => p.startsWith("/expedientes") && s?.tipo === "exportacion" },
     ],
   },
-  {
-    id: "transporte",
-    label: "TRANSPORTE",
-    icon: Truck,
-    items: [
-      { to: "/transportes", label: "Transportes", icon: Truck,
-        match: (p) => p === "/transportes" || p.startsWith("/transportes/") },
-    ],
-  },
-  {
-    id: "clientes",
-    label: "CLIENTES",
-    icon: Users,
-    items: [
-      { to: "/clientes", label: "Clientes", icon: Users,
-        match: (p) => p === "/clientes" || p.startsWith("/clientes/") },
-    ],
-  },
-  {
-    id: "usuarios",
-    label: "USUARIOS",
-    icon: UserCog,
-    adminOnly: true,
-    items: [
-      { to: "/admin/usuarios", label: "Usuarios y roles", icon: UserCog, adminOnly: true,
-        match: (p) => p.startsWith("/admin/usuarios") },
-    ],
-  },
-  {
-    id: "admin",
-    label: "ADMINISTRACIÓN",
-    icon: Wrench,
-    adminOnly: true,
-    items: [
-      { to: "/expedientes/papelera", label: "Papelera de Reciclaje", icon: Trash2, adminOnly: true,
-        match: (p) => p === "/expedientes/papelera" },
-    ],
-  },
+];
+
+const SIMPLE_ITEMS: SimpleItem[] = [
+  { id: "copiloto", to: "/copiloto", label: "Copiloto IA", icon: Bot,
+    match: (p) => p.startsWith("/copiloto") },
+  { id: "transportes", to: "/transportes", label: "Transportes", icon: Truck,
+    match: (p) => p === "/transportes" || p.startsWith("/transportes/") },
+  { id: "clientes", to: "/clientes", label: "Clientes", icon: Users,
+    match: (p) => p === "/clientes" || p.startsWith("/clientes/") },
+  { id: "usuarios", to: "/admin/usuarios", label: "Usuarios y roles", icon: UserCog, adminOnly: true,
+    match: (p) => p.startsWith("/admin/usuarios") },
+  { id: "papelera", to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
+    match: (p) => p === "/expedientes/papelera" },
 ];
 
 function AppSidebarInner() {
@@ -121,7 +108,9 @@ function AppSidebarInner() {
     items: g.items.filter((it) => !it.adminOnly || isAdmin),
   })).filter((g) => g.items.length > 0);
 
-  const isItemActive = (it: SubItem) =>
+  const visibleSimpleItems = SIMPLE_ITEMS.filter((it) => !it.adminOnly || isAdmin);
+
+  const isItemActive = (it: SubItem | SimpleItem) =>
     it.match ? it.match(pathname, search) : pathname === it.to;
 
   const groupHasActive = (g: Group) => g.items.some(isItemActive);
@@ -159,74 +148,19 @@ function AppSidebarInner() {
       </SidebarHeader>
 
       <SidebarContent>
-        {visibleGroups.map((g) => {
-          const open = openMap[g.id] ?? false;
-          const hasActive = groupHasActive(g);
+        {/* Solicitudes group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "solicitudes")!)}
 
-          // Collapsed sidebar: render icon-only shortcut to first item
-          if (collapsed) {
-            const first = g.items[0];
-            return (
-              <SidebarGroup key={g.id}>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={hasActive} tooltip={g.label}>
-                        <Link to={first.to} search={first.search as any} className="flex items-center gap-2">
-                          <g.icon className="h-4 w-4" />
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            );
-          }
+        {/* Copiloto IA simple item */}
+        {renderSimpleItem(visibleSimpleItems.find((it) => it.id === "copiloto")!)}
 
-          return (
-            <Collapsible
-              key={g.id}
-              open={open}
-              onOpenChange={(v) => setOpenMap((prev) => ({ ...prev, [g.id]: v }))}
-              asChild
-            >
-              <SidebarGroup>
-                <CollapsibleTrigger asChild>
-                  <SidebarGroupLabel
-                    className="group/label cursor-pointer flex items-center justify-between hover:text-sidebar-foreground transition-colors"
-                  >
-                    <span className="flex items-center gap-2">
-                      <g.icon className="h-3.5 w-3.5" />
-                      {g.label}
-                    </span>
-                    <ChevronDown
-                      className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-                    />
-                  </SidebarGroupLabel>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      {g.items.map((it) => {
-                        const active = isItemActive(it);
-                        return (
-                          <SidebarMenuItem key={`${it.to}-${it.label}`}>
-                            <SidebarMenuButton asChild isActive={active}>
-                              <Link to={it.to} search={it.search as any} className="flex items-center gap-2">
-                                <it.icon className="h-4 w-4" />
-                                <span>{it.label}</span>
-                              </Link>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        );
-                      })}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </CollapsibleContent>
-              </SidebarGroup>
-            </Collapsible>
-          );
-        })}
+        {/* Expedientes group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "expedientes")!)}
+
+        {/* Remaining simple items */}
+        {visibleSimpleItems
+          .filter((it) => it.id !== "copiloto")
+          .map((it) => renderSimpleItem(it))}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
@@ -252,6 +186,97 @@ function AppSidebarInner() {
       </SidebarFooter>
     </Sidebar>
   );
+
+  function renderGroup(g: Group | undefined) {
+    if (!g) return null;
+    const open = openMap[g.id] ?? false;
+    const hasActive = groupHasActive(g);
+
+    if (collapsed) {
+      const first = g.items[0];
+      return (
+        <SidebarGroup key={g.id}>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={hasActive} tooltip={g.label}>
+                  <Link to={first.to} search={first.search as any} className="flex items-center gap-2">
+                    <g.icon className="h-4 w-4" />
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      );
+    }
+
+    return (
+      <Collapsible
+        key={g.id}
+        open={open}
+        onOpenChange={(v) => setOpenMap((prev) => ({ ...prev, [g.id]: v }))}
+        asChild
+      >
+        <SidebarGroup>
+          <CollapsibleTrigger asChild>
+            <SidebarGroupLabel
+              className="group/label cursor-pointer flex items-center justify-between hover:text-sidebar-foreground transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <g.icon className="h-3.5 w-3.5" />
+                {g.label}
+              </span>
+              <ChevronDown
+                className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+              />
+            </SidebarGroupLabel>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {g.items.map((it) => {
+                  const active = isItemActive(it);
+                  return (
+                    <SidebarMenuItem key={`${it.to}-${it.label}`}>
+                      <SidebarMenuButton asChild isActive={active}>
+                        <Link to={it.to} search={it.search as any} className="flex items-center gap-2">
+                          <it.icon className="h-4 w-4" />
+                          <span>{it.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </CollapsibleContent>
+        </SidebarGroup>
+      </Collapsible>
+    );
+  }
+
+  function renderSimpleItem(it: SimpleItem | undefined) {
+    if (!it) return null;
+    const active = isItemActive(it);
+
+    return (
+      <SidebarGroup key={it.id}>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={active} tooltip={it.label}>
+                <Link to={it.to} search={it.search as any} className="flex items-center gap-2">
+                  <it.icon className="h-4 w-4" />
+                  {!collapsed && <span>{it.label}</span>}
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  }
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
