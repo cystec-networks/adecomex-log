@@ -149,6 +149,151 @@ function ReportesPage() {
       .sort((a, b) => b.cif - a.cif);
   }, [filtered, agrupar, fechaBase]);
 
+  const agruparLabel = AGRUPAR_POR.find((a) => a.v === agrupar)?.l ?? agrupar;
+  const timestamp = () => new Date().toISOString().slice(0, 10);
+
+  const exportExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    // Hoja 1: Resumen por grupo
+    const resumen: any[][] = [
+      ["Reporte Resumen de Expedientes"],
+      [`Generado: ${new Date().toLocaleString("es-DO")}`],
+      [`Agrupado por: ${agruparLabel}`],
+      [],
+      [agruparLabel, "Expedientes", "Total FOB (US$)", "Total CIF (US$)", "Peso (kg)"],
+    ];
+    groups.forEach((g) => resumen.push([g.key, g.count, g.fob, g.cif, g.peso]));
+    resumen.push([]);
+    resumen.push(["TOTAL GENERAL", totales.count, totales.fob, totales.cif, totales.peso]);
+    const wsResumen = XLSX.utils.aoa_to_sheet(resumen);
+    wsResumen["!cols"] = [{ wch: 40 }, { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 16 }];
+    XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen");
+
+    // Hoja 2: Detalle expedientes
+    const detHeader = [
+      "Grupo", "Expediente", "Cliente", "BL/AWB", "Puerto Arribo", "País Origen", "ETA",
+      "Régimen Aduanero", "Preferencia", "N° Cert. Origen", "Contenedores",
+      "Total FOB", "Seguro", "Flete", "Otros", "Total CIF", "Peso (kg)", "Estado",
+    ];
+    const detalle: any[][] = [detHeader];
+    groups.forEach((g) => {
+      g.items.forEach((e: any) => {
+        detalle.push([
+          g.key, e.numero, e.clientes?.nombre ?? "", e.bl_awb ?? "",
+          e.puerto_arribo ?? "", e.pais_origen ?? "",
+          e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO") : "",
+          e.regimen_aduanero ?? "", e.preferencia_comercial ?? "Ninguna",
+          e.numero_certificado_origen ?? "", e.numeros_contenedores ?? "",
+          Number(e.total_fob) || 0, Number(e.seguro) || 0, Number(e.flete) || 0,
+          Number(e.otros) || 0, Number(e.total_cif) || 0, pesoDe(e), e.estado ?? "",
+        ]);
+      });
+    });
+    const wsDetalle = XLSX.utils.aoa_to_sheet(detalle);
+    wsDetalle["!cols"] = detHeader.map(() => ({ wch: 16 }));
+    XLSX.utils.book_append_sheet(wb, wsDetalle, "Expedientes");
+
+    // Hoja 3: Detalle de mercancía
+    const mercHeader = ["Expediente", "Cliente", "#", "Cód. Arancel", "Producto", "Unidad", "Cantidad", "Peso (kg)", "Valor FOB"];
+    const merc: any[][] = [mercHeader];
+    filtered.forEach((e: any) => {
+      const items = (e.mercancia_items ?? []).filter((i: any) => !i.deleted_at);
+      items.forEach((it: any) => {
+        merc.push([
+          e.numero, e.clientes?.nombre ?? "", it.item_no,
+          it.codigo_arancelario ?? "", it.detalle_producto ?? "", it.unidad_medida ?? "",
+          Number(it.cantidad) || 0, Number(it.peso) || 0, Number(it.valor_fob) || 0,
+        ]);
+      });
+    });
+    const wsMerc = XLSX.utils.aoa_to_sheet(merc);
+    wsMerc["!cols"] = [{ wch: 14 }, { wch: 28 }, { wch: 6 }, { wch: 16 }, { wch: 34 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, wsMerc, "Mercancía");
+
+    XLSX.writeFile(wb, `Reporte_Expedientes_${timestamp()}.xlsx`);
+  };
+
+  const exportPDF = () => {
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+
+    // Encabezado
+    doc.setFontSize(16); doc.setFont("helvetica", "bold");
+    doc.text("Reporte Resumen de Expedientes", 40, 40);
+    doc.setFontSize(9); doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.text(`ADECOMEX SRL — Gestión y Logística`, 40, 56);
+    doc.text(`Generado: ${new Date().toLocaleString("es-DO")}   |   Agrupado por: ${agruparLabel}`, 40, 70);
+    doc.setTextColor(0);
+
+    // Totales
+    autoTable(doc, {
+      startY: 84,
+      head: [["Expedientes", "Total FOB", "Total CIF", "Peso Total"]],
+      body: [[totales.count, fmtUSD(totales.fob), fmtUSD(totales.cif), `${fmtNum(totales.peso)} kg`]],
+      theme: "grid",
+      headStyles: { fillColor: [30, 58, 138], fontSize: 9 },
+      bodyStyles: { fontSize: 10, fontStyle: "bold" },
+      margin: { left: 40, right: 40 },
+    });
+
+    // Resumen por grupo
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 14,
+      head: [[agruparLabel, "Exp.", "FOB (US$)", "CIF (US$)", "Peso (kg)"]],
+      body: groups.map((g) => [g.key, g.count, fmtNum(g.fob), fmtNum(g.cif), fmtNum(g.peso)]),
+      foot: [["TOTAL", totales.count, fmtNum(totales.fob), fmtNum(totales.cif), fmtNum(totales.peso)]],
+      theme: "striped",
+      headStyles: { fillColor: [30, 58, 138], fontSize: 9 },
+      footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold" },
+      bodyStyles: { fontSize: 9 },
+      margin: { left: 40, right: 40 },
+    });
+
+    // Detalle por grupo
+    groups.forEach((g) => {
+      doc.addPage();
+      doc.setFontSize(11); doc.setFont("helvetica", "bold");
+      doc.text(`${agruparLabel}: ${g.key}`, 40, 40);
+      doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
+      doc.text(`${g.count} expediente(s)  |  FOB ${fmtUSD(g.fob)}  |  CIF ${fmtUSD(g.cif)}  |  Peso ${fmtNum(g.peso)} kg`, 40, 56);
+      doc.setTextColor(0);
+
+      autoTable(doc, {
+        startY: 68,
+        head: [["Expediente", "Cliente", "BL/AWB", "Puerto", "ETA", "Régimen", "Pref.", "FOB", "CIF", "Estado"]],
+        body: g.items.map((e: any) => [
+          e.numero,
+          e.clientes?.nombre ?? "—",
+          e.bl_awb ?? "—",
+          e.puerto_arribo ?? "—",
+          e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO") : "—",
+          e.regimen_aduanero ?? "—",
+          e.preferencia_comercial ?? "Ninguna",
+          fmtNum(Number(e.total_fob) || 0),
+          fmtNum(Number(e.total_cif) || 0),
+          e.estado ?? "—",
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
+        bodyStyles: { fontSize: 8 },
+        columnStyles: { 7: { halign: "right" }, 8: { halign: "right" } },
+        margin: { left: 40, right: 40 },
+      });
+    });
+
+    // Pie con paginación
+    const pages = doc.getNumberOfPages();
+    for (let i = 1; i <= pages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8); doc.setTextColor(120);
+      doc.text(`Página ${i} de ${pages}`, pageW - 40, doc.internal.pageSize.getHeight() - 20, { align: "right" });
+    }
+
+    doc.save(`Reporte_Expedientes_${timestamp()}.pdf`);
+  };
+
   const resetFilters = () => {
     setCliente("todos"); setTipo("todos"); setEstado("todos"); setRegimen("todos");
     setPref("todas"); setDesde(""); setHasta(""); setFechaBase("eta"); setAgrupar("cliente");
@@ -166,10 +311,10 @@ function ReportesPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" disabled title="Próximamente">
+          <Button variant="outline" size="sm" onClick={exportExcel} disabled={filtered.length === 0}>
             <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel
           </Button>
-          <Button variant="outline" size="sm" disabled title="Próximamente">
+          <Button variant="outline" size="sm" onClick={exportPDF} disabled={filtered.length === 0}>
             <FileText className="h-4 w-4 mr-1" /> PDF
           </Button>
         </div>
