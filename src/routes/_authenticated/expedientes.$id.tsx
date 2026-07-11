@@ -203,6 +203,15 @@ function TabInfo({ exp }: { exp: any }) {
     };
   }, [histDb]);
 
+  const { data: mercItems } = useQuery({
+    queryKey: ["mercancia-items", exp.id],
+    queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
+  });
+  const sumFob = useMemo(
+    () => (mercItems ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0),
+    [mercItems],
+  );
+
   const save = useMutation({
     mutationFn: async () => {
       const payload: any = { ...form };
@@ -210,7 +219,7 @@ function TabInfo({ exp }: { exp: any }) {
       payload.peso_neto = payload.peso_neto === "" ? null : Number(payload.peso_neto);
       payload.peso_bruto = payload.peso_bruto === "" ? null : Number(payload.peso_bruto);
       const toNum = (v: any) => (v === "" || v == null ? null : Number(v));
-      payload.total_fob = toNum(payload.total_fob);
+      payload.total_fob = sumFob || 0;
       payload.seguro = toNum(payload.seguro);
       payload.flete = toNum(payload.flete);
       payload.otros = toNum(payload.otros);
@@ -223,6 +232,7 @@ function TabInfo({ exp }: { exp: any }) {
     onSuccess: () => { toast.success("Guardado"); qc.invalidateQueries({ queryKey: ["expediente", exp.id] }); qc.invalidateQueries({ queryKey: ["expedientes"] }); qc.invalidateQueries({ queryKey: ["expedientes-hist"] }); },
     onError: (e: any) => toast.error(e.message),
   });
+
 
   const Field = ({ label, k, type = "text", className = "" }: { label: string; k: keyof typeof form; type?: string; className?: string }) => (
     <div className={`grid gap-1.5 ${className}`}>
