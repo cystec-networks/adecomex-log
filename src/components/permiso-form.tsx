@@ -124,10 +124,10 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
   const save = useMutation({
     mutationFn: async () => {
       const payload: any = { ...form };
-      ["expediente_id","cliente_id","tipo","fecha_solicitud","fecha_emision","fecha_vencimiento","documento_url","numero_resolucion","institucion_emisora","observaciones"]
+      ["expediente_id","cliente_id","tipo","fecha_solicitud","fecha_emision","fecha_vencimiento","documento_url","numero_resolucion","institucion_emisora","observaciones","numero"]
         .forEach((k) => { if (payload[k] === "") payload[k] = null; });
       if (mode === "new") {
-        delete payload.numero; // auto-generated
+        if (payload.numero == null) delete payload.numero; // auto-generated when empty
         const { data: u } = await supabase.auth.getUser();
         payload.created_by = u.user?.id ?? null;
         const { data, error } = await supabase.from("permisos").insert(payload).select().single();
