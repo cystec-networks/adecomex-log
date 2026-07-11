@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  Inbox, FolderKanban, Users, UserCog, LogOut, Ship,
+  Inbox, FolderKanban, Users, UserCog, LogOut,
   PackageOpen, PackageCheck, ScanText, Sparkles, Trash2, FileCheck2, Truck,
   ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3,
 } from "lucide-react";
