@@ -263,7 +263,106 @@ function Papelera() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="permisos">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Permisos eliminados: {perRows.length}</CardTitle></CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              {perRows.length === 0 ? (
+                <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin permisos en papelera.</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-muted-foreground border-b bg-muted/20">
+                    <tr>
+                      <th className="text-left px-4 py-2">N° Permiso</th>
+                      <th className="text-left">Expediente</th>
+                      <th className="text-left">Cliente</th>
+                      <th className="text-left">Tipo</th>
+                      <th className="text-left">Estado</th>
+                      <th className="text-left">Vence</th>
+                      <th className="text-left">Eliminado el</th>
+                      <th className="text-right px-4 py-2">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {perRows.map((p: any) => (
+                      <tr key={p.id} className="border-b last:border-0 hover:bg-muted/40">
+                        <td className="px-4 py-2 font-medium">{p.numero}</td>
+                        <td className="text-xs">{p.expedientes?.numero ?? "—"}</td>
+                        <td>{p.clientes?.nombre ?? "—"}</td>
+                        <td className="text-muted-foreground">{p.tipo ?? "—"}</td>
+                        <td><Badge variant="outline">{p.estado?.replace("_"," ")}</Badge></td>
+                        <td className="text-xs">{p.fecha_vencimiento ? new Date(p.fecha_vencimiento).toLocaleDateString("es-DO") : "—"}</td>
+                        <td className="text-xs text-muted-foreground">{p.eliminado_en ? new Date(p.eliminado_en).toLocaleString("es-DO") : "—"}</td>
+                        <td className="px-4 py-2 text-right whitespace-nowrap">
+                          <Button variant="ghost" size="sm" onClick={() => setToRestore({ kind: "permisos", id: p.id, numero: p.numero })}>
+                            <RotateCcw className="h-4 w-4 mr-1" /> Restaurar
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                            onClick={() => { setToDelete({ kind: "permisos", id: p.id, numero: p.numero }); setConfirmText(""); }}>
+                            <Trash2 className="h-4 w-4 mr-1" /> Eliminar
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="transportes">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Transportes eliminados: {trRows.length}</CardTitle></CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              {trRows.length === 0 ? (
+                <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin transportes en papelera.</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-muted-foreground border-b bg-muted/20">
+                    <tr>
+                      <th className="text-left px-4 py-2">N° Viaje</th>
+                      <th className="text-left">Expediente</th>
+                      <th className="text-left">Cliente</th>
+                      <th className="text-left">Tipo</th>
+                      <th className="text-left">Transportista</th>
+                      <th className="text-left">ETA</th>
+                      <th className="text-left">Estado</th>
+                      <th className="text-left">Eliminado el</th>
+                      <th className="text-right px-4 py-2">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trRows.map((t: any) => (
+                      <tr key={t.id} className="border-b last:border-0 hover:bg-muted/40">
+                        <td className="px-4 py-2 font-medium">{t.numero_viaje}</td>
+                        <td className="text-xs">{t.expedientes?.numero ?? "—"}</td>
+                        <td>{t.clientes?.nombre ?? "—"}</td>
+                        <td className="text-muted-foreground">{t.tipo ?? "—"}</td>
+                        <td>{t.transportista ?? "—"}</td>
+                        <td className="text-xs">{t.eta ? new Date(t.eta).toLocaleDateString("es-DO") : "—"}</td>
+                        <td><Badge variant="outline">{t.estado?.replace("_"," ")}</Badge></td>
+                        <td className="text-xs text-muted-foreground">{t.eliminado_en ? new Date(t.eliminado_en).toLocaleString("es-DO") : "—"}</td>
+                        <td className="px-4 py-2 text-right whitespace-nowrap">
+                          <Button variant="ghost" size="sm" onClick={() => setToRestore({ kind: "transportes", id: t.id, numero: t.numero_viaje })}>
+                            <RotateCcw className="h-4 w-4 mr-1" /> Restaurar
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                            onClick={() => { setToDelete({ kind: "transportes", id: t.id, numero: t.numero_viaje }); setConfirmText(""); }}>
+                            <Trash2 className="h-4 w-4 mr-1" /> Eliminar
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
 
       <AlertDialog open={!!toRestore} onOpenChange={(o) => !o && setToRestore(null)}>
         <AlertDialogContent>
