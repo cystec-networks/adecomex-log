@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  Inbox, FolderKanban, Users, UserCog, LogOut, Ship,
+  Inbox, FolderKanban, Users, UserCog, LogOut,
   PackageOpen, PackageCheck, ScanText, Sparkles, Trash2, FileCheck2, Truck,
   ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3,
 } from "lucide-react";
@@ -23,6 +23,7 @@ import type { ReactNode, ComponentType } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import logoAsset from "@/assets/logo-adecomex.jpg.asset.json";
 
 type SubItem = {
   to: string;
@@ -139,8 +140,8 @@ function AppSidebarInner() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2 px-2 py-2">
-          <div className="h-9 w-9 grid place-items-center rounded-md bg-accent text-accent-foreground shrink-0">
-            <Ship className="h-5 w-5" />
+          <div className="h-9 w-9 grid place-items-center rounded-md bg-white shrink-0 overflow-hidden">
+            <img src={logoAsset.url} alt="ADECOMEX SRL" className="h-full w-full object-contain" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
