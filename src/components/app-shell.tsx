@@ -64,6 +64,8 @@ const GROUPS: Group[] = [
       { to: "/permisos", label: "Permisos", icon: FileCheck2,
         match: (p) => p === "/permisos" || p.startsWith("/permisos/") },
       { to: "/solicitudes/ocr", label: "OCR", icon: ScanText },
+      { to: "/copiloto", label: "Copiloto IA", icon: Bot,
+        match: (p) => p.startsWith("/copiloto") },
     ],
   },
   {
@@ -82,8 +84,6 @@ const GROUPS: Group[] = [
 ];
 
 const SIMPLE_ITEMS: SimpleItem[] = [
-  { id: "copiloto", to: "/copiloto", label: "Copiloto IA", icon: Bot,
-    match: (p) => p.startsWith("/copiloto") },
   { id: "transportes", to: "/transportes", label: "Transportes", icon: Truck,
     match: (p) => p === "/transportes" || p.startsWith("/transportes/") },
   { id: "clientes", to: "/clientes", label: "Clientes", icon: Users,
