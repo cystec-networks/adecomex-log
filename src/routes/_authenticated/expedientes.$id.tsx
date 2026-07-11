@@ -209,6 +209,13 @@ function TabInfo({ exp }: { exp: any }) {
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
       payload.peso_neto = payload.peso_neto === "" ? null : Number(payload.peso_neto);
       payload.peso_bruto = payload.peso_bruto === "" ? null : Number(payload.peso_bruto);
+      const toNum = (v: any) => (v === "" || v == null ? null : Number(v));
+      payload.total_fob = toNum(payload.total_fob);
+      payload.seguro = toNum(payload.seguro);
+      payload.flete = toNum(payload.flete);
+      payload.otros = toNum(payload.otros);
+      payload.total_cif = (payload.total_fob ?? 0) + (payload.seguro ?? 0) + (payload.flete ?? 0) + (payload.otros ?? 0);
+      if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       const { error } = await supabase.from("expedientes").update(payload).eq("id", exp.id);
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
