@@ -149,6 +149,9 @@ function TabInfo({ exp }: { exp: any }) {
     peso_bruto: exp.peso_bruto ?? "",
     numeros_contenedores: exp.numeros_contenedores ?? "",
     preferencia_comercial: exp.preferencia_comercial ?? "",
+    numero_certificado_origen: exp.numero_certificado_origen ?? "",
+    rectificacion_tecnica: !!exp.rectificacion_tecnica,
+    numero_tramite_rectificacion: exp.numero_tramite_rectificacion ?? "",
     canal_riesgo: exp.canal_riesgo ?? "",
     observaciones: exp.observaciones ?? "",
   });
