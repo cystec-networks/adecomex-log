@@ -43,6 +43,15 @@ const CONCEPTOS_COSTO = [
   "Aranceles","ITBIS","Transporte local","Otros",
 ];
 
+function ReadOnlyField({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="grid gap-1.5">
+      <Label className="text-muted-foreground">{label}</Label>
+      <div className="h-9 px-3 rounded-md border bg-background/50 flex items-center text-sm">{value || <span className="text-muted-foreground">—</span>}</div>
+    </div>
+  );
+}
+
 function DetalleExpediente() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
