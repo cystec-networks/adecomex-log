@@ -246,6 +246,7 @@ export type Database = {
           factura_comercial: string | null
           fecha_cierre: string | null
           fecha_compromiso: string | null
+          flete: number | null
           id: string
           incoterm: string | null
           medio_transporte: string | null
@@ -258,6 +259,7 @@ export type Database = {
           numero_vuce: string | null
           numeros_contenedores: string | null
           observaciones: string | null
+          otros: number | null
           pais_origen: string | null
           peso_bruto: number | null
           peso_neto: number | null
@@ -265,12 +267,16 @@ export type Database = {
           puerto_arribo: string | null
           puerto_salida: string | null
           rectificacion_tecnica: boolean
+          regimen_aduanero: string | null
           responsable_id: string | null
+          seguro: number | null
           sla_dias: number | null
           solicitud_id: string | null
           suplidor: string | null
           tipo_carga: string | null
           tipo_operacion: string | null
+          total_cif: number | null
+          total_fob: number | null
           updated_at: string
         }
         Insert: {
@@ -288,6 +294,7 @@ export type Database = {
           factura_comercial?: string | null
           fecha_cierre?: string | null
           fecha_compromiso?: string | null
+          flete?: number | null
           id?: string
           incoterm?: string | null
           medio_transporte?: string | null
@@ -300,6 +307,7 @@ export type Database = {
           numero_vuce?: string | null
           numeros_contenedores?: string | null
           observaciones?: string | null
+          otros?: number | null
           pais_origen?: string | null
           peso_bruto?: number | null
           peso_neto?: number | null
@@ -307,12 +315,16 @@ export type Database = {
           puerto_arribo?: string | null
           puerto_salida?: string | null
           rectificacion_tecnica?: boolean
+          regimen_aduanero?: string | null
           responsable_id?: string | null
+          seguro?: number | null
           sla_dias?: number | null
           solicitud_id?: string | null
           suplidor?: string | null
           tipo_carga?: string | null
           tipo_operacion?: string | null
+          total_cif?: number | null
+          total_fob?: number | null
           updated_at?: string
         }
         Update: {
@@ -330,6 +342,7 @@ export type Database = {
           factura_comercial?: string | null
           fecha_cierre?: string | null
           fecha_compromiso?: string | null
+          flete?: number | null
           id?: string
           incoterm?: string | null
           medio_transporte?: string | null
@@ -342,6 +355,7 @@ export type Database = {
           numero_vuce?: string | null
           numeros_contenedores?: string | null
           observaciones?: string | null
+          otros?: number | null
           pais_origen?: string | null
           peso_bruto?: number | null
           peso_neto?: number | null
@@ -349,12 +363,16 @@ export type Database = {
           puerto_arribo?: string | null
           puerto_salida?: string | null
           rectificacion_tecnica?: boolean
+          regimen_aduanero?: string | null
           responsable_id?: string | null
+          seguro?: number | null
           sla_dias?: number | null
           solicitud_id?: string | null
           suplidor?: string | null
           tipo_carga?: string | null
           tipo_operacion?: string | null
+          total_cif?: number | null
+          total_fob?: number | null
           updated_at?: string
         }
         Relationships: [
