@@ -97,6 +97,8 @@ function DetalleExpediente() {
           <TabsTrigger value="info">Información</TabsTrigger>
           <TabsTrigger value="timeline">Flujo / Timeline</TabsTrigger>
           <TabsTrigger value="docs">Documentos</TabsTrigger>
+          <TabsTrigger value="permisos">Permisos</TabsTrigger>
+          <TabsTrigger value="transportes">Transportes</TabsTrigger>
           <TabsTrigger value="inc">Incidencias</TabsTrigger>
           <TabsTrigger value="cost">Finanzas</TabsTrigger>
           <TabsTrigger value="aud">Auditoría</TabsTrigger>
@@ -105,6 +107,8 @@ function DetalleExpediente() {
         <TabsContent value="info"><TabInfo exp={exp} /></TabsContent>
         <TabsContent value="timeline"><TabTimeline expedienteId={id} /></TabsContent>
         <TabsContent value="docs"><TabDocumentos expedienteId={id} /></TabsContent>
+        <TabsContent value="permisos"><TabPermisosExp expedienteId={id} /></TabsContent>
+        <TabsContent value="transportes"><TabTransportesExp expedienteId={id} /></TabsContent>
         <TabsContent value="inc"><TabIncidencias expedienteId={id} /></TabsContent>
         <TabsContent value="cost"><TabCostos expedienteId={id} /></TabsContent>
         <TabsContent value="aud"><TabAuditoria expedienteId={id} /></TabsContent>
