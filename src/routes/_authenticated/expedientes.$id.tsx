@@ -755,7 +755,317 @@ function TabCostos({ expedienteId }: { expedienteId: string }) {
           </table>
         </CardContent>
       </Card>
+
+      <LiquidacionSection expedienteId={expedienteId} />
     </div>
+  );
+}
+
+function fmtDOP(n: number) {
+  return new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
+}
+
+function LiquidacionSection({ expedienteId }: { expedienteId: string }) {
+  const { data: facturas } = useQuery({
+    queryKey: ["facturas", expedienteId],
+    queryFn: async () => (await supabase.from("facturas").select("*").eq("expediente_id", expedienteId).is("deleted_at", null).order("created_at")).data ?? [],
+  });
+  const { data: gastos } = useQuery({
+    queryKey: ["gastos", expedienteId],
+    queryFn: async () => (await supabase.from("gastos").select("*").eq("expediente_id", expedienteId).is("deleted_at", null).order("created_at")).data ?? [],
+  });
+
+  const totalFact = (facturas ?? []).reduce((s: number, f: any) => s + Number(f.monto || 0), 0);
+  const totalGastos = (gastos ?? []).reduce((s: number, g: any) => s + (g.es_reembolso ? -Number(g.monto || 0) : Number(g.monto || 0)), 0);
+  const utilidad = totalFact - totalGastos;
+  const margen = totalFact > 0 ? (utilidad / totalFact) * 100 : 0;
+
+  const marginColor = margen < 0 ? "text-destructive" : margen < 15 ? "text-amber-600" : "text-[var(--success)]";
+
+  return (
+    <div className="space-y-4 pt-4 border-t">
+      <div className="flex items-center gap-2">
+        <DollarSign className="h-5 w-5 text-primary" />
+        <h3 className="font-display font-semibold text-lg">Liquidación del expediente</h3>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total facturado</div><div className="text-xl font-display font-bold mt-1">{fmtDOP(totalFact)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total gastos</div><div className="text-xl font-display font-bold mt-1">{fmtDOP(totalGastos)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Utilidad</div><div className={`text-xl font-display font-bold mt-1 ${marginColor}`}>{fmtDOP(utilidad)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Margen</div><div className={`text-xl font-display font-bold mt-1 ${marginColor}`}>{margen.toFixed(1)}%</div></CardContent></Card>
+      </div>
+
+      <FacturasBlock expedienteId={expedienteId} facturas={facturas ?? []} />
+      <GastosBlock expedienteId={expedienteId} gastos={gastos ?? []} />
+    </div>
+  );
+}
+
+function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; facturas: any[] }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const empty = { concepto: CONCEPTOS_FACTURA[0], monto: 0, fecha_emision: "", fecha_pago: "", estado: "pendiente", referencia: "", notas: "" };
+  const [f, setF] = useState<any>(empty);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        concepto: f.concepto, monto: Number(f.monto || 0),
+        fecha_emision: f.fecha_emision || null, fecha_pago: f.fecha_pago || null,
+        estado: f.estado, referencia: f.referencia || null, notas: f.notas || null,
+      };
+      if (editingId) {
+        const { error } = await supabase.from("facturas").update(payload).eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("facturas").insert({ expediente_id: expedienteId, ...payload });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success(editingId ? "Factura actualizada" : "Factura registrada");
+      qc.invalidateQueries({ queryKey: ["facturas", expedienteId] });
+      setOpen(false); setEditingId(null); setF(empty);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const softDel = useMutation({
+    mutationFn: async (id: string) => {
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await supabase.from("facturas").update({ deleted_at: new Date().toISOString(), deleted_by: u.user?.id }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Enviada a papelera"); qc.invalidateQueries({ queryKey: ["facturas", expedienteId] }); },
+  });
+
+  const openEdit = (r: any) => {
+    setEditingId(r.id);
+    setF({ concepto: r.concepto, monto: Number(r.monto || 0), fecha_emision: r.fecha_emision ?? "", fecha_pago: r.fecha_pago ?? "", estado: r.estado ?? "pendiente", referencia: r.referencia ?? "", notas: r.notas ?? "" });
+    setOpen(true);
+  };
+  const openNew = () => { setEditingId(null); setF(empty); setOpen(true); };
+
+  const subtotal = facturas.reduce((s, r) => s + Number(r.monto || 0), 0);
+  const estadoBadge = (e: string) => e === "cobrada" ? "bg-[var(--success)]/15 text-[var(--success)]" : e === "anulada" ? "bg-muted text-muted-foreground" : "bg-amber-500/15 text-amber-700";
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-base">Facturación (cobros)</CardTitle>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); } }}>
+          <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar factura</Button>
+          <DialogContent>
+            <DialogHeader><DialogTitle>{editingId ? "Editar factura" : "Nueva factura"}</DialogTitle></DialogHeader>
+            <div className="grid gap-3">
+              <div className="grid gap-1.5"><Label>Concepto</Label>
+                <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{CONCEPTOS_FACTURA.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1.5"><Label>Monto (DOP)</Label><Input type="number" step="0.01" value={f.monto} onChange={(e) => setF({ ...f, monto: e.target.value })} /></div>
+                <div className="grid gap-1.5"><Label>Estado</Label>
+                  <Select value={f.estado} onValueChange={(v) => setF({ ...f, estado: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{ESTADOS_FACTURA.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1.5"><Label>Fecha emisión</Label><Input type="date" value={f.fecha_emision} onChange={(e) => setF({ ...f, fecha_emision: e.target.value })} /></div>
+                <div className="grid gap-1.5"><Label>Fecha pago</Label><Input type="date" value={f.fecha_pago} onChange={(e) => setF({ ...f, fecha_pago: e.target.value })} /></div>
+              </div>
+              <div className="grid gap-1.5"><Label>Referencia / N° factura</Label><Input value={f.referencia} onChange={(e) => setF({ ...f, referencia: e.target.value })} /></div>
+              <div className="grid gap-1.5"><Label>Notas</Label><Textarea rows={2} value={f.notas} onChange={(e) => setF({ ...f, notas: e.target.value })} /></div>
+            </div>
+            <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent className="p-0">
+        <table className="w-full text-sm">
+          <thead className="text-xs text-muted-foreground border-b bg-muted/30">
+            <tr>
+              <th className="text-left px-4 py-2">Concepto</th>
+              <th className="text-left">Referencia</th>
+              <th className="text-left">Emisión</th>
+              <th className="text-left">Pago</th>
+              <th className="text-left">Estado</th>
+              <th className="text-right">Monto</th>
+              <th className="text-right pr-4 w-24">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {facturas.map((r) => (
+              <tr key={r.id} className="border-b last:border-0">
+                <td className="px-4 py-2">{r.concepto}</td>
+                <td className="text-xs text-muted-foreground">{r.referencia || "—"}</td>
+                <td className="text-xs">{r.fecha_emision ? new Date(r.fecha_emision).toLocaleDateString("es-DO") : "—"}</td>
+                <td className="text-xs">{r.fecha_pago ? new Date(r.fecha_pago).toLocaleDateString("es-DO") : "—"}</td>
+                <td><Badge variant="outline" className={estadoBadge(r.estado)}>{r.estado}</Badge></td>
+                <td className="text-right font-medium">{fmtDOP(Number(r.monto))}</td>
+                <td className="text-right pr-4">
+                  <div className="inline-flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("¿Enviar esta factura a la papelera?")) softDel.mutate(r.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {facturas.length === 0 && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Sin facturas registradas.</td></tr>}
+            {facturas.length > 0 && (
+              <tr className="bg-muted/20 font-medium">
+                <td colSpan={5} className="px-4 py-2 text-right">Subtotal</td>
+                <td className="text-right">{fmtDOP(subtotal)}</td>
+                <td></td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: any[] }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const empty = { concepto: CONCEPTOS_GASTO[0], monto: 0, fecha: "", proveedor: "", es_reembolso: false, notas: "" };
+  const [f, setF] = useState<any>(empty);
+  const [file, setFile] = useState<File | null>(null);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      let adjunto_path: string | null | undefined = undefined;
+      if (file) {
+        const path = `expedientes/${expedienteId}/gastos/${Date.now()}-${file.name}`;
+        const { error: upErr } = await supabase.storage.from("documentos").upload(path, file);
+        if (upErr) throw upErr;
+        adjunto_path = path;
+      }
+      const payload: any = {
+        concepto: f.concepto, monto: Number(f.monto || 0),
+        fecha: f.fecha || null, proveedor: f.proveedor || null,
+        es_reembolso: !!f.es_reembolso, notas: f.notas || null,
+      };
+      if (adjunto_path !== undefined) payload.adjunto_path = adjunto_path;
+      if (editingId) {
+        const { error } = await supabase.from("gastos").update(payload).eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("gastos").insert({ expediente_id: expedienteId, ...payload });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success(editingId ? "Gasto actualizado" : "Gasto registrado");
+      qc.invalidateQueries({ queryKey: ["gastos", expedienteId] });
+      setOpen(false); setEditingId(null); setF(empty); setFile(null);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const softDel = useMutation({
+    mutationFn: async (id: string) => {
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await supabase.from("gastos").update({ deleted_at: new Date().toISOString(), deleted_by: u.user?.id }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Enviado a papelera"); qc.invalidateQueries({ queryKey: ["gastos", expedienteId] }); },
+  });
+
+  const openEdit = (r: any) => {
+    setEditingId(r.id);
+    setF({ concepto: r.concepto, monto: Number(r.monto || 0), fecha: r.fecha ?? "", proveedor: r.proveedor ?? "", es_reembolso: !!r.es_reembolso, notas: r.notas ?? "" });
+    setFile(null);
+    setOpen(true);
+  };
+  const openNew = () => { setEditingId(null); setF(empty); setFile(null); setOpen(true); };
+
+  const subtotal = gastos.reduce((s, r) => s + (r.es_reembolso ? -Number(r.monto || 0) : Number(r.monto || 0)), 0);
+
+  const openAdjunto = async (path: string) => {
+    const { data, error } = await supabase.storage.from("documentos").createSignedUrl(path, 60);
+    if (error) return toast.error(error.message);
+    window.open(data.signedUrl, "_blank");
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-base">Gastos operativos</CardTitle>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); setFile(null); } }}>
+          <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar gasto</Button>
+          <DialogContent>
+            <DialogHeader><DialogTitle>{editingId ? "Editar gasto" : "Nuevo gasto"}</DialogTitle></DialogHeader>
+            <div className="grid gap-3">
+              <div className="grid gap-1.5"><Label>Concepto</Label>
+                <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v, es_reembolso: v === "Reembolsos" ? true : f.es_reembolso })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{CONCEPTOS_GASTO.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1.5"><Label>Monto (DOP)</Label><Input type="number" step="0.01" value={f.monto} onChange={(e) => setF({ ...f, monto: e.target.value })} /></div>
+                <div className="grid gap-1.5"><Label>Fecha</Label><Input type="date" value={f.fecha} onChange={(e) => setF({ ...f, fecha: e.target.value })} /></div>
+              </div>
+              <div className="grid gap-1.5"><Label>Proveedor</Label><Input value={f.proveedor} onChange={(e) => setF({ ...f, proveedor: e.target.value })} /></div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={f.es_reembolso} onChange={(e) => setF({ ...f, es_reembolso: e.target.checked })} />
+                Es reembolso (resta del total)
+              </label>
+              <div className="grid gap-1.5"><Label>Adjunto</Label><Input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></div>
+              <div className="grid gap-1.5"><Label>Notas</Label><Textarea rows={2} value={f.notas} onChange={(e) => setF({ ...f, notas: e.target.value })} /></div>
+            </div>
+            <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent className="p-0">
+        <table className="w-full text-sm">
+          <thead className="text-xs text-muted-foreground border-b bg-muted/30">
+            <tr>
+              <th className="text-left px-4 py-2">Concepto</th>
+              <th className="text-left">Proveedor</th>
+              <th className="text-left">Fecha</th>
+              <th className="text-left">Adjunto</th>
+              <th className="text-right">Monto</th>
+              <th className="text-right pr-4 w-24">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {gastos.map((r) => (
+              <tr key={r.id} className="border-b last:border-0">
+                <td className="px-4 py-2">{r.concepto}{r.es_reembolso && <Badge variant="outline" className="ml-2 text-xs">reembolso</Badge>}</td>
+                <td className="text-xs text-muted-foreground">{r.proveedor || "—"}</td>
+                <td className="text-xs">{r.fecha ? new Date(r.fecha).toLocaleDateString("es-DO") : "—"}</td>
+                <td>{r.adjunto_path ? <Button variant="link" size="sm" className="h-auto p-0" onClick={() => openAdjunto(r.adjunto_path)}><FileText className="h-3.5 w-3.5 mr-1" />Ver</Button> : <span className="text-xs text-muted-foreground">—</span>}</td>
+                <td className={`text-right font-medium ${r.es_reembolso ? "text-[var(--success)]" : ""}`}>{r.es_reembolso ? "−" : ""}{fmtDOP(Number(r.monto))}</td>
+                <td className="text-right pr-4">
+                  <div className="inline-flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("¿Enviar este gasto a la papelera?")) softDel.mutate(r.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {gastos.length === 0 && <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">Sin gastos registrados.</td></tr>}
+            {gastos.length > 0 && (
+              <tr className="bg-muted/20 font-medium">
+                <td colSpan={4} className="px-4 py-2 text-right">Subtotal (neto)</td>
+                <td className="text-right">{fmtDOP(subtotal)}</td>
+                <td></td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </CardContent>
+    </Card>
   );
 }
 
