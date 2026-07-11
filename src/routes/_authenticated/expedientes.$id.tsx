@@ -128,7 +128,9 @@ function DetalleExpediente() {
 
 function TabInfo({ exp }: { exp: any }) {
   const qc = useQueryClient();
+  const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState({
+
     numero: exp.numero ?? "",
     bl_awb: exp.bl_awb ?? "",
     sla_dias: exp.sla_dias ?? 15,
