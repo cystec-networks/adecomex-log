@@ -367,7 +367,7 @@ function Papelera() {
       <AlertDialog open={!!toRestore} onOpenChange={(o) => !o && setToRestore(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Restaurar {toRestore?.kind === "solicitudes" ? "solicitud" : "expediente"}</AlertDialogTitle>
+            <AlertDialogTitle>Restaurar registro</AlertDialogTitle>
             <AlertDialogDescription>
               El registro <strong>{toRestore?.numero}</strong> volverá a la lista principal.
             </AlertDialogDescription>
