@@ -123,7 +123,7 @@ const GROUPS: Group[] = [
 
 function AppSidebarInner() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const search = useRouterState({ select: (r) => (r.location.search as any) ?? {} }) as Record<string, unknown>;
+  const search = useRouterState({ select: (r) => (r.location.search as any) ?? {} }) as unknown as Record<string, unknown>;
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { data: profile } = useMyProfile();
