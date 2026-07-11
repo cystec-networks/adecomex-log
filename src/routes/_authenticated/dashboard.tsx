@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Inbox, FolderKanban, CheckCircle2, Clock, FileWarning, TrendingUp } from "lucide-react";
+import { AlertTriangle, Inbox, FolderKanban, CheckCircle2, Clock, FileWarning, TrendingUp, Bell, Truck } from "lucide-react";
+import { useReminders } from "@/lib/reminders";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
