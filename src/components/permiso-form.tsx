@@ -101,7 +101,7 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
     if (!form.expediente_id) return;
     const exp = (expedientes ?? []).find((e: any) => e.id === form.expediente_id);
     if (exp && exp.cliente_id && !form.cliente_id) {
-      setForm((f) => ({ ...f, cliente_id: exp.cliente_id }));
+      setForm((f) => ({ ...f, cliente_id: exp.cliente_id as string }));
     }
   }, [form.expediente_id, expedientes]); // eslint-disable-line react-hooks/exhaustive-deps
 

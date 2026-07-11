@@ -13,7 +13,8 @@ import {
 import { Trash2, Plus, FileCheck2, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { PERMISO_ESTADOS, PERMISO_TIPOS, estadoBadgePermiso } from "@/components/transporte-form";
+import { PERMISO_ESTADOS, PERMISO_TIPOS } from "@/components/permiso-form";
+import { estadoBadgePermiso } from "@/components/transporte-form";
 
 export const Route = createFileRoute("/_authenticated/permisos/")({
   component: Permisos,
@@ -129,7 +130,7 @@ function Permisos() {
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos los estados</SelectItem>
-              {PERMISO_ESTADOS.map((s) => <SelectItem key={s.v} value={s.v}>{s.l}</SelectItem>)}
+              {PERMISO_ESTADOS.map((s: { v: string; l: string }) => <SelectItem key={s.v} value={s.v}>{s.l}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={cliente} onValueChange={setCliente}>
@@ -175,7 +176,7 @@ function Permisos() {
                         ) : "—"}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap">{p.clientes?.nombre ?? "—"}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{PERMISO_TIPOS.find((t) => t.v === p.tipo)?.l ?? "—"}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{PERMISO_TIPOS.find((t: { v: string; l: string }) => t.v === p.tipo)?.l ?? "—"}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{p.institucion_emisora ?? "—"}</td>
                       <td className="px-3 py-2 text-center whitespace-nowrap">{estadoBadgePermiso(p.estado)}</td>
                       <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">{fmt(p.fecha_solicitud)}</td>
