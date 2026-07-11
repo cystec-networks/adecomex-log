@@ -154,6 +154,11 @@ function TabInfo({ exp }: { exp: any }) {
     rectificacion_tecnica: !!exp.rectificacion_tecnica,
     numero_tramite_rectificacion: exp.numero_tramite_rectificacion ?? "",
     canal_riesgo: exp.canal_riesgo ?? "",
+    total_fob: exp.total_fob ?? "",
+    seguro: exp.seguro ?? "",
+    flete: exp.flete ?? "",
+    otros: exp.otros ?? "",
+    regimen_aduanero: exp.regimen_aduanero ?? "",
     observaciones: exp.observaciones ?? "",
   });
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
