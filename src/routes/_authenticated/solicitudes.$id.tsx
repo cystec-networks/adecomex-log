@@ -22,7 +22,7 @@ const PRIORIDADES = ["baja", "media", "alta", "urgente"];
 function DetalleSolicitud() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
-  const nav = useNavigate();
+  
 
   const { data: s } = useQuery({
     queryKey: ["solicitud", id],
