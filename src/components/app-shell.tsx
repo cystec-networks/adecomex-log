@@ -151,16 +151,11 @@ function AppSidebarInner() {
         {/* Solicitudes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "solicitudes")!)}
 
-        {/* Copiloto IA simple item */}
-        {renderSimpleItem(visibleSimpleItems.find((it) => it.id === "copiloto")!)}
-
         {/* Expedientes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "expedientes")!)}
 
-        {/* Remaining simple items */}
-        {visibleSimpleItems
-          .filter((it) => it.id !== "copiloto")
-          .map((it) => renderSimpleItem(it))}
+        {/* Simple items */}
+        {visibleSimpleItems.map((it) => renderSimpleItem(it))}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
