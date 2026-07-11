@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AutocompleteInput } from "@/components/autocomplete-input";
@@ -640,20 +640,48 @@ function TabIncidencias({ expedienteId }: { expedienteId: string }) {
 function TabCostos({ expedienteId }: { expedienteId: string }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [f, setF] = useState({ concepto: CONCEPTOS_COSTO[0], monto_estimado: 0, monto_real: 0 });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const emptyForm = { concepto: CONCEPTOS_COSTO[0], monto_estimado: 0, monto_real: 0 };
+  const [f, setF] = useState<{ concepto: string; monto_estimado: number; monto_real: number }>(emptyForm);
 
   const { data: costos } = useQuery({
     queryKey: ["costos", expedienteId],
     queryFn: async () => (await supabase.from("costos").select("*").eq("expediente_id", expedienteId).order("created_at")).data ?? [],
   });
 
-  const add = useMutation({
+  const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("costos").insert({ expediente_id: expedienteId, ...f });
+      if (editingId) {
+        const { error } = await supabase.from("costos").update({ concepto: f.concepto, monto_estimado: f.monto_estimado, monto_real: f.monto_real }).eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("costos").insert({ expediente_id: expedienteId, ...f });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success(editingId ? "Costo actualizado" : "Costo registrado");
+      qc.invalidateQueries({ queryKey: ["costos", expedienteId] });
+      setOpen(false);
+      setEditingId(null);
+      setF(emptyForm);
+    },
+  });
+
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("costos").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Costo registrado"); qc.invalidateQueries({ queryKey: ["costos", expedienteId] }); setOpen(false); setF({ concepto: CONCEPTOS_COSTO[0], monto_estimado: 0, monto_real: 0 }); },
+    onSuccess: () => { toast.success("Costo eliminado"); qc.invalidateQueries({ queryKey: ["costos", expedienteId] }); },
   });
+
+  const openNew = () => { setEditingId(null); setF(emptyForm); setOpen(true); };
+  const openEdit = (c: any) => {
+    setEditingId(c.id);
+    setF({ concepto: c.concepto, monto_estimado: Number(c.monto_estimado ?? 0), monto_real: Number(c.monto_real ?? 0) });
+    setOpen(true);
+  };
 
   const totalEst = (costos ?? []).reduce((s: number, c: any) => s + Number(c.monto_estimado || 0), 0);
   const totalReal = (costos ?? []).reduce((s: number, c: any) => s + Number(c.monto_real || 0), 0);
@@ -671,10 +699,10 @@ function TabCostos({ expedienteId }: { expedienteId: string }) {
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costos del expediente</CardTitle>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />Agregar</Button></DialogTrigger>
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
+            <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar</Button>
             <DialogContent>
-              <DialogHeader><DialogTitle>Nuevo costo</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{editingId ? "Editar costo" : "Nuevo costo"}</DialogTitle></DialogHeader>
               <div className="grid gap-3">
                 <div className="grid gap-1.5"><Label>Concepto</Label>
                   <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v })}>
@@ -687,14 +715,14 @@ function TabCostos({ expedienteId }: { expedienteId: string }) {
                   <div className="grid gap-1.5"><Label>Monto real (DOP)</Label><Input type="number" step="0.01" value={f.monto_real} onChange={(e) => setF({ ...f, monto_real: Number(e.target.value) })} /></div>
                 </div>
               </div>
-              <DialogFooter><Button onClick={() => add.mutate()} disabled={add.isPending}>Guardar</Button></DialogFooter>
+              <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
             </DialogContent>
           </Dialog>
         </CardHeader>
         <CardContent className="p-0">
           <table className="w-full text-sm">
             <thead className="text-xs text-muted-foreground border-b bg-muted/30">
-              <tr><th className="text-left px-4 py-2">Concepto</th><th className="text-right">Estimado</th><th className="text-right">Real</th><th className="text-right pr-4">Δ</th></tr>
+              <tr><th className="text-left px-4 py-2">Concepto</th><th className="text-right">Estimado</th><th className="text-right">Real</th><th className="text-right">Δ</th><th className="text-right pr-4 w-24">Acciones</th></tr>
             </thead>
             <tbody>
               {(costos ?? []).map((c: any) => {
@@ -704,11 +732,17 @@ function TabCostos({ expedienteId }: { expedienteId: string }) {
                     <td className="px-4 py-2">{c.concepto}</td>
                     <td className="text-right">{fmt(Number(c.monto_estimado))}</td>
                     <td className="text-right">{fmt(Number(c.monto_real))}</td>
-                    <td className={`text-right pr-4 ${diff > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(diff)}</td>
+                    <td className={`text-right ${diff > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(diff)}</td>
+                    <td className="text-right pr-4">
+                      <div className="inline-flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(c)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("¿Eliminar este costo?")) del.mutate(c.id); }} title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></Button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
-              {(!costos || costos.length === 0) && <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">Sin costos registrados.</td></tr>}
+              {(!costos || costos.length === 0) && <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Sin costos registrados.</td></tr>}
             </tbody>
           </table>
         </CardContent>
@@ -716,6 +750,7 @@ function TabCostos({ expedienteId }: { expedienteId: string }) {
     </div>
   );
 }
+
 
 function TabAuditoria({ expedienteId }: { expedienteId: string }) {
   const { data } = useQuery({
