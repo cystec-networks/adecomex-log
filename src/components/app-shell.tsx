@@ -1,9 +1,11 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  Inbox, FolderKanban, Users, UserCog, LogOut, Ship, Search,
+  Inbox, FolderKanban, Users, UserCog, LogOut, Ship,
   PackageOpen, PackageCheck, ScanText, Sparkles, Trash2, FileCheck2, Truck,
-  ChevronDown, Wrench, FileText, Bot,
+  ChevronDown, Wrench, FileText, Bot, LayoutDashboard,
 } from "lucide-react";
+import { NotificationsBell } from "@/components/notifications-bell";
+import { GlobalSearch } from "@/components/global-search";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem,
