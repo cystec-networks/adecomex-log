@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -149,6 +150,9 @@ function TabInfo({ exp }: { exp: any }) {
     peso_bruto: exp.peso_bruto ?? "",
     numeros_contenedores: exp.numeros_contenedores ?? "",
     preferencia_comercial: exp.preferencia_comercial ?? "",
+    numero_certificado_origen: exp.numero_certificado_origen ?? "",
+    rectificacion_tecnica: !!exp.rectificacion_tecnica,
+    numero_tramite_rectificacion: exp.numero_tramite_rectificacion ?? "",
     canal_riesgo: exp.canal_riesgo ?? "",
     observaciones: exp.observaciones ?? "",
   });
@@ -334,6 +338,20 @@ function TabInfo({ exp }: { exp: any }) {
             />
           </div>
           <AutoField label="Preferencia comercial" k="preferencia_comercial" />
+          {(() => {
+            const p = (form.preferencia_comercial || "").trim().toLowerCase();
+            const showCert = p !== "" && p !== "ninguna" && p !== "no aplica" && p !== "n/a";
+            return showCert ? (
+              <div className="grid gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                <Label>N° Certificado de Origen</Label>
+                <Input
+                  value={form.numero_certificado_origen}
+                  onChange={(e) => set("numero_certificado_origen", e.target.value)}
+                  placeholder="CO-2026-00123"
+                />
+              </div>
+            ) : null;
+          })()}
           <div className="grid gap-1.5 md:col-span-2">
             <Label>Números de contenedores</Label>
             <AutocompleteInput
@@ -343,6 +361,28 @@ function TabInfo({ exp }: { exp: any }) {
               placeholder="MSKU1234567, TCLU7654321…"
             />
           </div>
+          <div className="grid gap-1.5">
+            <Label>Rectificación técnica</Label>
+            <div className="h-9 flex items-center gap-3">
+              <Switch
+                checked={form.rectificacion_tecnica}
+                onCheckedChange={(v) => set("rectificacion_tecnica", v)}
+              />
+              <span className="text-sm text-muted-foreground">
+                {form.rectificacion_tecnica ? "Sí" : "No"}
+              </span>
+            </div>
+          </div>
+          {form.rectificacion_tecnica && (
+            <div className="grid gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+              <Label>N° de Trámite</Label>
+              <Input
+                value={form.numero_tramite_rectificacion}
+                onChange={(e) => set("numero_tramite_rectificacion", e.target.value)}
+                placeholder="RT-2026-0456"
+              />
+            </div>
+          )}
           <div className="grid gap-1.5">
             <Label>Canal de riesgo</Label>
             <Select value={form.canal_riesgo || undefined} onValueChange={(v) => set("canal_riesgo", v)}>
