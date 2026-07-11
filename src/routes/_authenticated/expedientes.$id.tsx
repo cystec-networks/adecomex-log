@@ -43,6 +43,15 @@ const CONCEPTOS_COSTO = [
   "Aranceles","ITBIS","Transporte local","Otros",
 ];
 
+function ReadOnlyField({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="grid gap-1.5">
+      <Label className="text-muted-foreground">{label}</Label>
+      <div className="h-9 px-3 rounded-md border bg-background/50 flex items-center text-sm">{value || <span className="text-muted-foreground">—</span>}</div>
+    </div>
+  );
+}
+
 function DetalleExpediente() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
@@ -216,8 +225,34 @@ function TabInfo({ exp }: { exp: any }) {
     </Card>
   );
 
+  const hasSolicitud = !!(exp.solicitud_id || exp.tipo_operacion || exp.tipo_carga || exp.contacto_solicitud);
+
   return (
     <div className="space-y-5">
+      {hasSolicitud && (
+        <Card className="bg-muted/30 border-dashed">
+          <CardHeader className="pb-3 border-b">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center justify-between">
+              <span>Datos de la Solicitud Original</span>
+              {exp.solicitudes?.numero && exp.solicitud_id && (
+                <Link to="/solicitudes/$id" params={{ id: exp.solicitud_id }} className="text-xs font-normal text-primary underline">
+                  {exp.solicitudes.numero} ↗
+                </Link>
+              )}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Referencia conservada al momento de la conversión (solo lectura).</p>
+          </CardHeader>
+          <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <ReadOnlyField label="Tipo de operación" value={exp.tipo_operacion} />
+            <ReadOnlyField label="Tipo de carga" value={exp.tipo_carga} />
+            <ReadOnlyField label="Origen" value={exp.pais_origen} />
+            <ReadOnlyField label="Incoterm" value={exp.incoterm} />
+            <ReadOnlyField label="Medio de transporte" value={exp.medio_transporte} />
+            <ReadOnlyField label="Contacto" value={exp.contacto_solicitud} />
+          </CardContent>
+        </Card>
+      )}
+
       <Section title="1. Información general" subtitle="Identificación y logística base del expediente">
         <Field label="Número / ID" k="numero" />
         <Field label="BL / AWB / Guía" k="bl_awb" />
@@ -227,6 +262,7 @@ function TabInfo({ exp }: { exp: any }) {
         <Field label="Fecha Estimada de Llegada (ETA)" k="fecha_compromiso" type="date" />
         <Field label="Etapa actual (1-14)" k="etapa_actual" type="number" />
       </Section>
+
 
       <Section title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
         <AutoField label="Suplidor" k="suplidor" />

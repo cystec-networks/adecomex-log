@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ const PRIORIDADES = ["baja", "media", "alta", "urgente"];
 function DetalleSolicitud() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
-  const nav = useNavigate();
+  
 
   const { data: s } = useQuery({
     queryKey: ["solicitud", id],
@@ -68,24 +68,13 @@ function DetalleSolicitud() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const crearExpediente = useMutation({
-    mutationFn: async () => {
-      if (!s) throw new Error("No hay solicitud");
-      const { data, error } = await supabase.from("expedientes").insert({
-        solicitud_id: s.id,
-        cliente_id: s.cliente_id,
-        responsable_id: s.responsable_id,
-      }).select().single();
-      if (error) throw error;
-      await supabase.from("solicitudes").update({ estado: "convertida" }).eq("id", s.id);
-      return data;
-    },
-    onSuccess: (exp) => {
-      toast.success(`Expediente ${exp.numero} creado`);
-      nav({ to: "/expedientes/$id", params: { id: exp.id } });
-    },
-    onError: (e: any) => toast.error(e.message),
+  const { data: expedienteVinculado } = useQuery({
+    queryKey: ["expediente-de-solicitud", id],
+    queryFn: async () => (await supabase.from("expedientes").select("id,numero").eq("solicitud_id", id).maybeSingle()).data,
+    enabled: !!s,
   });
+
+
 
   if (!s || !form) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
@@ -104,11 +93,20 @@ function DetalleSolicitud() {
           <p className="text-sm text-muted-foreground">Registrada el {new Date(s.created_at).toLocaleString("es-DO")}</p>
         </div>
         <Button onClick={() => save.mutate()} disabled={save.isPending}><Save className="h-4 w-4 mr-1" />Guardar cambios</Button>
-        {form.estado !== "convertida" && (
-          <Button variant="outline" onClick={() => crearExpediente.mutate()} disabled={crearExpediente.isPending}>
-            <FolderPlus className="h-4 w-4 mr-1" />Crear expediente
+        {form.estado === "convertida" && expedienteVinculado ? (
+          <Button variant="outline" asChild>
+            <Link to="/expedientes/$id" params={{ id: expedienteVinculado.id }}>
+              <FolderPlus className="h-4 w-4 mr-1" />Ver expediente {expedienteVinculado.numero} ↗
+            </Link>
           </Button>
-        )}
+        ) : form.estado !== "convertida" ? (
+          <Button variant="outline" asChild>
+            <Link to="/expedientes/nuevo" search={{ solicitud: id }}>
+              <FolderPlus className="h-4 w-4 mr-1" />Convertir en Expediente
+            </Link>
+          </Button>
+        ) : null}
+
       </div>
 
       <Card>
