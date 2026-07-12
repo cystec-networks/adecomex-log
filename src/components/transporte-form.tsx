@@ -76,7 +76,7 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
 
   const { data: clientes } = useQuery({
     queryKey: ["clientes-lite"],
-    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc").order("nombre")).data ?? [],
+    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc,telefono").order("nombre")).data ?? [],
   });
 
   const [newClientOpen, setNewClientOpen] = useState(false);
