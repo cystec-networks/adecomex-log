@@ -44,6 +44,141 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_acuerdos: {
+        Row: {
+          codigo: string
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_areas: {
+        Row: {
+          codigo: string
+          created_at: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_documentos_requeridos: {
+        Row: {
+          codigo: string
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_estados_producto: {
+        Row: {
+          codigo: string
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_metodos_transporte: {
+        Row: {
+          codigo: string
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+          nombre_eng: string | null
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+          nombre_eng?: string | null
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre?: string
+          nombre_eng?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       catalogo_paises: {
         Row: {
           activo: boolean
@@ -94,6 +229,84 @@ export type Database = {
           created_at?: string
           nombre?: string
           pais?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_regimenes: {
+        Row: {
+          codigo: string
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_tipos_despacho: {
+        Row: {
+          codigo: string
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_tipos_documento_id: {
+        Row: {
+          codigo: string
+          created_at: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          id?: string
+          nombre?: string
           updated_at?: string
         }
         Relationships: []
@@ -316,6 +529,8 @@ export type Database = {
       }
       expedientes: {
         Row: {
+          acuerdo_codigo: string | null
+          area_aduanera_codigo: string | null
           bl_awb: string | null
           canal_riesgo: string | null
           cliente_id: string | null
@@ -334,6 +549,7 @@ export type Database = {
           id: string
           incoterm: string | null
           medio_transporte: string | null
+          metodo_transporte_codigo: string | null
           naviera: string | null
           numero: string
           numero_certificado_origen: string | null
@@ -355,18 +571,23 @@ export type Database = {
           puerto_salida: string | null
           rectificacion_tecnica: boolean
           regimen_aduanero: string | null
+          regimen_codigo: string | null
           responsable_id: string | null
           seguro: number | null
+          sin_codigo_dga: boolean
           sla_dias: number | null
           solicitud_id: string | null
           suplidor: string | null
           tipo_carga: string | null
+          tipo_despacho_codigo: string | null
           tipo_operacion: string | null
           total_cif: number | null
           total_fob: number | null
           updated_at: string
         }
         Insert: {
+          acuerdo_codigo?: string | null
+          area_aduanera_codigo?: string | null
           bl_awb?: string | null
           canal_riesgo?: string | null
           cliente_id?: string | null
@@ -385,6 +606,7 @@ export type Database = {
           id?: string
           incoterm?: string | null
           medio_transporte?: string | null
+          metodo_transporte_codigo?: string | null
           naviera?: string | null
           numero?: string
           numero_certificado_origen?: string | null
@@ -406,18 +628,23 @@ export type Database = {
           puerto_salida?: string | null
           rectificacion_tecnica?: boolean
           regimen_aduanero?: string | null
+          regimen_codigo?: string | null
           responsable_id?: string | null
           seguro?: number | null
+          sin_codigo_dga?: boolean
           sla_dias?: number | null
           solicitud_id?: string | null
           suplidor?: string | null
           tipo_carga?: string | null
+          tipo_despacho_codigo?: string | null
           tipo_operacion?: string | null
           total_cif?: number | null
           total_fob?: number | null
           updated_at?: string
         }
         Update: {
+          acuerdo_codigo?: string | null
+          area_aduanera_codigo?: string | null
           bl_awb?: string | null
           canal_riesgo?: string | null
           cliente_id?: string | null
@@ -436,6 +663,7 @@ export type Database = {
           id?: string
           incoterm?: string | null
           medio_transporte?: string | null
+          metodo_transporte_codigo?: string | null
           naviera?: string | null
           numero?: string
           numero_certificado_origen?: string | null
@@ -457,12 +685,15 @@ export type Database = {
           puerto_salida?: string | null
           rectificacion_tecnica?: boolean
           regimen_aduanero?: string | null
+          regimen_codigo?: string | null
           responsable_id?: string | null
           seguro?: number | null
+          sin_codigo_dga?: boolean
           sla_dias?: number | null
           solicitud_id?: string | null
           suplidor?: string | null
           tipo_carga?: string | null
+          tipo_despacho_codigo?: string | null
           tipo_operacion?: string | null
           total_cif?: number | null
           total_fob?: number | null
