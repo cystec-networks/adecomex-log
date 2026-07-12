@@ -87,6 +87,11 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
     estado: "programado",
     observaciones: "",
     // Terrestre financials (RD$)
+    costo_viaje: "",
+    descuento_cxc: "",
+    pago_referencia: "",
+    factura_costo_numero: "",
+    factura_costo_fecha: "",
     costo_combustible: "",
     costo_peajes: "",
     costo_chofer: "",
@@ -95,6 +100,8 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
     factura_numero: "",
     factura_fecha: "",
     pago_estado: "pendiente",
+    contenedores_cantidad: "",
+    contenedores_detalle: "",
   });
   const [loaded, setLoaded] = useState(false);
 
@@ -115,6 +122,11 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         flete_moneda: existing.flete_moneda ?? "USD",
         estado: existing.estado ?? "programado",
         observaciones: existing.observaciones ?? "",
+        costo_viaje: existing.costo_viaje?.toString() ?? "",
+        descuento_cxc: existing.descuento_cxc?.toString() ?? "",
+        pago_referencia: existing.pago_referencia ?? "",
+        factura_costo_numero: existing.factura_costo_numero ?? "",
+        factura_costo_fecha: existing.factura_costo_fecha ?? "",
         costo_combustible: existing.costo_combustible?.toString() ?? "",
         costo_peajes: existing.costo_peajes?.toString() ?? "",
         costo_chofer: existing.costo_chofer?.toString() ?? "",
@@ -123,6 +135,8 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         factura_numero: existing.factura_numero ?? "",
         factura_fecha: existing.factura_fecha ?? "",
         pago_estado: existing.pago_estado ?? "pendiente",
+        contenedores_cantidad: existing.contenedores_cantidad?.toString() ?? "",
+        contenedores_detalle: existing.contenedores_detalle ?? "",
       });
       setLoaded(true);
     }
@@ -142,12 +156,15 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
 
   const totales = useMemo(() => {
     const n = (s: string) => (s === "" || s == null ? 0 : Number(s) || 0);
-    const costos = n(form.costo_combustible) + n(form.costo_peajes) + n(form.costo_chofer) + n(form.costo_otros);
+    const costoViaje = n(form.costo_viaje);
+    const cxc = n(form.descuento_cxc);
+    const netoPagar = Math.max(0, costoViaje - cxc);
+    const costos = costoViaje + n(form.costo_combustible) + n(form.costo_peajes) + n(form.costo_chofer) + n(form.costo_otros);
     const ingreso = n(form.ingreso_facturado);
     const margen = ingreso - costos;
     const pct = ingreso > 0 ? (margen / ingreso) * 100 : 0;
-    return { costos, ingreso, margen, pct };
-  }, [form.costo_combustible, form.costo_peajes, form.costo_chofer, form.costo_otros, form.ingreso_facturado]);
+    return { costos, ingreso, margen, pct, costoViaje, cxc, netoPagar };
+  }, [form.costo_viaje, form.descuento_cxc, form.costo_combustible, form.costo_peajes, form.costo_chofer, form.costo_otros, form.ingreso_facturado]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -155,13 +172,19 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
       const nullableStr = [
         "expediente_id","cliente_id","tipo","transportista","placa_contenedor","origen","destino",
         "fecha_salida","eta","observaciones","factura_numero","factura_fecha","numero_viaje",
+        "pago_referencia","factura_costo_numero","factura_costo_fecha","contenedores_detalle",
       ];
       nullableStr.forEach((k) => { if (payload[k] === "") payload[k] = null; });
-      const nullableNum = ["flete_monto","costo_combustible","costo_peajes","costo_chofer","costo_otros","ingreso_facturado"];
+      const nullableNum = ["flete_monto","costo_viaje","descuento_cxc","costo_combustible","costo_peajes","costo_chofer","costo_otros","ingreso_facturado","contenedores_cantidad"];
       nullableNum.forEach((k) => { payload[k] = payload[k] === "" || payload[k] == null ? null : Number(payload[k]); });
 
       // Clear terrestre-only fields when not terrestre
       if (payload.tipo !== "terrestre") {
+        payload.costo_viaje = null;
+        payload.descuento_cxc = null;
+        payload.pago_referencia = null;
+        payload.factura_costo_numero = null;
+        payload.factura_costo_fecha = null;
         payload.costo_combustible = null;
         payload.costo_peajes = null;
         payload.costo_chofer = null;
@@ -170,6 +193,8 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         payload.factura_numero = null;
         payload.factura_fecha = null;
         payload.pago_estado = "pendiente";
+        payload.contenedores_cantidad = null;
+        payload.contenedores_detalle = null;
       }
 
       if (mode === "new") {
@@ -314,60 +339,153 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
       </Card>
 
       {isTerrestre && (
-        <Card className="border-primary/30">
-          <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">
-              Control financiero · Transporte terrestre (RD$)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-5 space-y-5">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <div className="grid gap-1.5"><Label>Combustible</Label><MoneyDOP value={form.costo_combustible} onChange={(v) => set("costo_combustible", v)} /></div>
-              <div className="grid gap-1.5"><Label>Peajes</Label><MoneyDOP value={form.costo_peajes} onChange={(v) => set("costo_peajes", v)} /></div>
-              <div className="grid gap-1.5"><Label>Chofer / Ayudante</Label><MoneyDOP value={form.costo_chofer} onChange={(v) => set("costo_chofer", v)} /></div>
-              <div className="grid gap-1.5"><Label>Otros costos</Label><MoneyDOP value={form.costo_otros} onChange={(v) => set("costo_otros", v)} /></div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <div className="grid gap-1.5">
-                <Label>Ingreso facturado al cliente</Label>
-                <MoneyDOP value={form.ingreso_facturado} onChange={(v) => set("ingreso_facturado", v)} />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>N° Factura</Label>
-                <Input value={form.factura_numero} onChange={(e) => set("factura_numero", e.target.value)} placeholder="B01…" />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Fecha de factura</Label>
-                <Input type="date" value={form.factura_fecha} onChange={(e) => set("factura_fecha", e.target.value)} />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Estado de pago</Label>
-                <Select value={form.pago_estado} onValueChange={(v) => set("pago_estado", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{PAGO_ESTADOS.map((p) => <SelectItem key={p.v} value={p.v}>{p.l}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-3 rounded-lg border bg-muted/30 p-4">
+        <>
+          {/* Bloque A · Pago al Transportista */}
+          <Card className="border-primary/30">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">
+                Pago al Transportista (Costo) · RD$
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-5 space-y-5">
+              {/* Servicio del tercero */}
               <div>
-                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Total costos</div>
-                <div className="text-lg font-semibold tabular-nums">{fmtDOP(totales.costos)}</div>
-              </div>
-              <div>
-                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Ingreso</div>
-                <div className="text-lg font-semibold tabular-nums">{fmtDOP(totales.ingreso)}</div>
-              </div>
-              <div>
-                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Margen</div>
-                <div className={`text-lg font-semibold tabular-nums ${totales.margen < 0 ? "text-red-600" : "text-emerald-700"}`}>
-                  {fmtDOP(totales.margen)} <span className="text-xs font-normal text-muted-foreground">({totales.pct.toFixed(1)}%)</span>
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">Servicio del tercero</div>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="grid gap-1.5">
+                    <Label>Costo del Viaje</Label>
+                    <MoneyDOP value={form.costo_viaje} onChange={(v) => set("costo_viaje", v)} />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>Descuento por CxC</Label>
+                    <MoneyDOP value={form.descuento_cxc} onChange={(v) => set("descuento_cxc", v)} />
+                    <p className="text-[11px] text-muted-foreground">Compensación por deudas del transportista. No afecta el margen.</p>
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>Monto Neto a Pagar</Label>
+                    <div className="h-9 px-3 rounded-md border bg-muted/40 flex items-center justify-end text-sm font-semibold tabular-nums">
+                      {fmtDOP(totales.netoPagar)}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">Costo del Viaje − Descuento por CxC</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+
+              {/* Gastos operativos */}
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">Gastos operativos del viaje</div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <div className="grid gap-1.5"><Label>Combustible</Label><MoneyDOP value={form.costo_combustible} onChange={(v) => set("costo_combustible", v)} /></div>
+                  <div className="grid gap-1.5"><Label>Peajes</Label><MoneyDOP value={form.costo_peajes} onChange={(v) => set("costo_peajes", v)} /></div>
+                  <div className="grid gap-1.5"><Label>Chofer / Ayudante</Label><MoneyDOP value={form.costo_chofer} onChange={(v) => set("costo_chofer", v)} /></div>
+                  <div className="grid gap-1.5"><Label>Otros costos</Label><MoneyDOP value={form.costo_otros} onChange={(v) => set("costo_otros", v)} /></div>
+                </div>
+              </div>
+
+              {/* Datos del pago */}
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">Datos del pago al transportista</div>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="grid gap-1.5">
+                    <Label>N° Ref. Pago (transf./cheque)</Label>
+                    <Input value={form.pago_referencia} onChange={(e) => set("pago_referencia", e.target.value)} placeholder="TRF-000123" />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>N° Factura de Costo</Label>
+                    <Input value={form.factura_costo_numero} onChange={(e) => set("factura_costo_numero", e.target.value)} placeholder="Factura del transportista" />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>Fecha Factura de Costo</Label>
+                    <Input type="date" value={form.factura_costo_fecha} onChange={(e) => set("factura_costo_fecha", e.target.value)} />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Bloque B · Facturación al Cliente */}
+          <Card className="border-emerald-500/30">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+                Facturación al Cliente (Venta) · RD$
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-5 space-y-5">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-1.5">
+                  <Label>Ingreso facturado al cliente</Label>
+                  <MoneyDOP value={form.ingreso_facturado} onChange={(v) => set("ingreso_facturado", v)} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>N° Factura</Label>
+                  <Input value={form.factura_numero} onChange={(e) => set("factura_numero", e.target.value)} placeholder="B01…" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Fecha de factura</Label>
+                  <Input type="date" value={form.factura_fecha} onChange={(e) => set("factura_fecha", e.target.value)} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Estado de pago</Label>
+                  <Select value={form.pago_estado} onValueChange={(v) => set("pago_estado", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{PAGO_ESTADOS.map((p) => <SelectItem key={p.v} value={p.v}>{p.l}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-4">
+                <div className="grid gap-1.5">
+                  <Label>Cant. Contenedores a Facturar</Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    value={form.contenedores_cantidad}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "" || /^\d+$/.test(v)) set("contenedores_cantidad", v);
+                    }}
+                    placeholder="0"
+                    className="text-right tabular-nums"
+                  />
+                </div>
+                <div className="grid gap-1.5 md:col-span-3">
+                  <Label>Detalle de Contenedores</Label>
+                  <Textarea
+                    rows={2}
+                    value={form.contenedores_detalle}
+                    onChange={(e) => set("contenedores_detalle", e.target.value)}
+                    placeholder="MSKU1234567, TCLU9876543…"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Resumen */}
+          <Card>
+            <CardContent className="pt-5">
+              <div className="grid gap-3 md:grid-cols-3 rounded-lg border bg-muted/30 p-4">
+                <div>
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Total costos</div>
+                  <div className="text-lg font-semibold tabular-nums">{fmtDOP(totales.costos)}</div>
+                </div>
+                <div>
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Ingreso</div>
+                  <div className="text-lg font-semibold tabular-nums">{fmtDOP(totales.ingreso)}</div>
+                </div>
+                <div>
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Margen</div>
+                  <div className={`text-lg font-semibold tabular-nums ${totales.margen < 0 ? "text-red-600" : "text-emerald-700"}`}>
+                    {fmtDOP(totales.margen)} <span className="text-xs font-normal text-muted-foreground">({totales.pct.toFixed(1)}%)</span>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-3 text-[11px] text-muted-foreground">
+                ⓘ Total Costos = Costo del Viaje + Combustible + Peajes + Chofer + Otros. El Descuento por CxC <b>no</b> reduce el costo real ni afecta el margen; solo reduce el Monto Neto transferido al transportista.
+              </p>
+            </CardContent>
+          </Card>
+        </>
       )}
 
       <div className="flex justify-end gap-2">
