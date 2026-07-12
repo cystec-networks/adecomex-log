@@ -1,0 +1,274 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useMyRoles } from "@/lib/auth-hooks";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Pencil, Trash2, ArrowLeft, Search } from "lucide-react";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/_authenticated/admin/catalogos")({
+  component: CatalogosAdmin,
+});
+
+type TableKey = "catalogo_paises" | "catalogo_puertos" | "catalogo_unidades";
+
+function CatalogosAdmin() {
+  const { data: roles } = useMyRoles();
+  const isAdmin = roles?.includes("admin");
+
+  return (
+    <div className="p-6 max-w-[1400px] mx-auto space-y-5">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" asChild>
+          <Link to="/dashboard"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link>
+        </Button>
+        <div>
+          <h1 className="font-display text-2xl font-bold">Catálogos oficiales DGA</h1>
+          <p className="text-sm text-muted-foreground">
+            Tablas maestras usadas en Expedientes y en la futura exportación XML de la Declaración.
+          </p>
+        </div>
+      </div>
+
+      <Tabs defaultValue="paises">
+        <TabsList>
+          <TabsTrigger value="paises">Países</TabsTrigger>
+          <TabsTrigger value="puertos">Puertos</TabsTrigger>
+          <TabsTrigger value="unidades">Unidades</TabsTrigger>
+        </TabsList>
+        <TabsContent value="paises" className="mt-4">
+          <CatalogTable table="catalogo_paises" isAdmin={!!isAdmin} />
+        </TabsContent>
+        <TabsContent value="puertos" className="mt-4">
+          <CatalogTable table="catalogo_puertos" isAdmin={!!isAdmin} />
+        </TabsContent>
+        <TabsContent value="unidades" className="mt-4">
+          <CatalogTable table="catalogo_unidades" isAdmin={!!isAdmin} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+const FIELDS: Record<TableKey, Array<{ k: string; label: string; required?: boolean; type?: "text" | "select"; options?: string[] }>> = {
+  catalogo_paises: [
+    { k: "codigo", label: "Código", required: true },
+    { k: "nombre", label: "Nombre", required: true },
+  ],
+  catalogo_puertos: [
+    { k: "codigo", label: "Código", required: true },
+    { k: "nombre", label: "Nombre", required: true },
+    { k: "cod_pais", label: "Cód. País" },
+    { k: "pais", label: "País" },
+  ],
+  catalogo_unidades: [
+    { k: "codigo", label: "Código", required: true },
+    { k: "nombre", label: "Nombre", required: true },
+    { k: "nombre_eng", label: "Nombre (Eng)" },
+    { k: "tipo", label: "Tipo", type: "select", options: ["medida", "embalaje"] },
+  ],
+};
+
+function CatalogTable({ table, isAdmin }: { table: TableKey; isAdmin: boolean }) {
+  const qc = useQueryClient();
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 50;
+
+  const { data, isFetching } = useQuery({
+    queryKey: [table, q, page],
+    queryFn: async () => {
+      let query: any = supabase.from(table).select("*", { count: "exact" });
+      if (q.trim()) query = query.or(`nombre.ilike.%${q}%,codigo.ilike.%${q}%`);
+      query = query.order("nombre").range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+      const { data, count, error } = await query;
+      if (error) throw error;
+      return { rows: data ?? [], count: count ?? 0 };
+    },
+  });
+
+  const { data: totalCount } = useQuery({
+    queryKey: [table, "total-count"],
+    queryFn: async () => {
+      const { count } = await supabase.from(table).select("codigo", { count: "exact", head: true });
+      return count ?? 0;
+    },
+  });
+
+  const fields = FIELDS[table];
+  const [dialog, setDialog] = useState<{ mode: "new" | "edit"; row?: any } | null>(null);
+
+  const upsert = useMutation({
+    mutationFn: async (payload: any) => {
+      const cleaned: any = {};
+      fields.forEach((f) => { cleaned[f.k] = payload[f.k] || null; });
+      if (dialog?.mode === "edit") {
+        const { error } = await supabase.from(table).update(cleaned).eq("codigo", dialog.row.codigo);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from(table).insert(cleaned);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success(dialog?.mode === "edit" ? "Registro actualizado" : "Registro agregado");
+      setDialog(null);
+      qc.invalidateQueries({ queryKey: [table] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const eliminar = useMutation({
+    mutationFn: async (codigo: string) => {
+      const { error } = await supabase.from(table).delete().eq("codigo", codigo);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Eliminado"); qc.invalidateQueries({ queryKey: [table] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const totalPages = Math.max(1, Math.ceil((data?.count ?? 0) / PAGE_SIZE));
+
+  return (
+    <Card>
+      <CardHeader className="pb-3 border-b flex-row items-center gap-3 space-y-0">
+        <CardTitle className="text-base flex items-center gap-2">
+          {table === "catalogo_paises" && "Países"}
+          {table === "catalogo_puertos" && "Puertos"}
+          {table === "catalogo_unidades" && "Unidades"}
+          <Badge variant="outline" className="text-xs font-normal">
+            {totalCount?.toLocaleString("en-US") ?? "…"} registros
+          </Badge>
+        </CardTitle>
+        <div className="flex-1" />
+        <div className="relative w-64">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nombre o código…"
+            className="pl-8 h-9"
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setPage(0); }}
+          />
+        </div>
+        {isAdmin && (
+          <Button size="sm" onClick={() => setDialog({ mode: "new" })}>
+            <Plus className="h-4 w-4 mr-1" />Agregar
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="rounded-md border overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+              <tr>
+                {fields.map((f) => <th key={f.k} className="px-3 py-2 text-left">{f.label}</th>)}
+                {isAdmin && <th className="w-24"></th>}
+              </tr>
+            </thead>
+            <tbody>
+              {(data?.rows ?? []).length === 0 && !isFetching && (
+                <tr><td colSpan={fields.length + 1} className="px-3 py-8 text-center text-muted-foreground">Sin resultados.</td></tr>
+              )}
+              {(data?.rows ?? []).map((r: any) => (
+                <tr key={r.codigo} className="border-t">
+                  {fields.map((f) => (
+                    <td key={f.k} className="px-3 py-2 tabular-nums">{r[f.k] ?? "—"}</td>
+                  ))}
+                  {isAdmin && (
+                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDialog({ mode: "edit", row: r })}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                        onClick={() => { if (confirm(`Eliminar ${r.codigo}?`)) eliminar.mutate(r.codigo); }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-3 text-xs text-muted-foreground">
+            <span>Página {page + 1} de {totalPages}</span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}>Anterior</Button>
+              <Button size="sm" variant="outline" disabled={page + 1 >= totalPages} onClick={() => setPage(p => p + 1)}>Siguiente</Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+
+      {dialog && (
+        <CatalogEditDialog
+          fields={fields}
+          initial={dialog.row ?? {}}
+          mode={dialog.mode}
+          onClose={() => setDialog(null)}
+          onSave={(v) => upsert.mutate(v)}
+          saving={upsert.isPending}
+        />
+      )}
+    </Card>
+  );
+}
+
+function CatalogEditDialog({ fields, initial, mode, onClose, onSave, saving }: any) {
+  const [f, setF] = useState<any>(() => {
+    const base: any = {};
+    fields.forEach((fd: any) => { base[fd.k] = initial[fd.k] ?? ""; });
+    return base;
+  });
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{mode === "edit" ? "Editar registro" : "Agregar registro"}</DialogTitle></DialogHeader>
+        <div className="grid gap-3">
+          {fields.map((fd: any) => (
+            <div key={fd.k} className="grid gap-1.5">
+              <Label>{fd.label}{fd.required && <span className="text-destructive"> *</span>}</Label>
+              {fd.type === "select" ? (
+                <Select value={f[fd.k] || undefined} onValueChange={(v) => setF({ ...f, [fd.k]: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecciona…" /></SelectTrigger>
+                  <SelectContent>
+                    {fd.options.map((o: string) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  value={f[fd.k]}
+                  onChange={(e) => setF({ ...f, [fd.k]: e.target.value })}
+                  disabled={fd.k === "codigo" && mode === "edit"}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button
+            onClick={() => {
+              const missing = fields.filter((fd: any) => fd.required && !f[fd.k]);
+              if (missing.length) return toast.error(`Falta: ${missing.map((m: any) => m.label).join(", ")}`);
+              onSave(f);
+            }}
+            disabled={saving}
+          >{saving ? "Guardando…" : "Guardar"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
