@@ -19,6 +19,7 @@ import { CatalogCombobox } from "@/components/catalog-combobox";
 import { GenerarXmlSigaButton } from "@/components/generar-xml-siga";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
+import { RastrearEmbarqueButton } from "@/components/rastrear-embarque-button";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
