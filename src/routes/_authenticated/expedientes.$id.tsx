@@ -120,7 +120,6 @@ function DetalleExpediente() {
               containerNumber={exp.numeros_contenedores}
               blNumber={exp.bl_awb}
               expedienteNumber={exp.numero}
-              variant="icon"
             />
             <span>· BL/AWB: {exp.bl_awb ?? "—"}</span>
           </p>
