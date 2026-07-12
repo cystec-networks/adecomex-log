@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { FileCode2, AlertTriangle, Download, Settings2, CheckCircle2 } from "lucide-react";
+import { FileCode2, AlertTriangle, Download, Settings2, CheckCircle2, Info } from "lucide-react";
 import { toast } from "sonner";
 import {
   buildImportDUAXml,
@@ -14,6 +14,7 @@ import {
   loadBrokerConfig,
   saveBrokerConfig,
   validateExpediente,
+  pendingDgaCodes,
   type BrokerConfig,
 } from "@/lib/siga-xml";
 
