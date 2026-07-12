@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ArrowLeft, Check, X, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { WhatsAppButton } from "@/components/whatsapp-button";
 
 const NO_EXPEDIENTE = "__none__";
 
