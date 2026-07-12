@@ -163,6 +163,13 @@ function Solicitudes() {
                   <td><Badge className="bg-primary/10 text-primary border-transparent">{s.estado?.replace("_", " ")}</Badge></td>
                   <td className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString("es-DO")}</td>
                   <td className="px-4 py-2 text-right whitespace-nowrap">
+                    <WhatsAppButton
+                      phone={s.clientes?.telefono}
+                      clientName={s.clientes?.nombre}
+                      recordType="Solicitud"
+                      recordNumber={s.numero}
+                      variant="icon"
+                    />
                     <Button
                       variant="ghost"
                       size="sm"
