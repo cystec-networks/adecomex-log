@@ -13,6 +13,7 @@ import { ArrowLeft, Check, X, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
+import { SearchEmailButton } from "@/components/search-email-button";
 
 const NO_EXPEDIENTE = "__none__";
 
@@ -284,6 +285,11 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
                       <EmailButton
                         email={c.email}
                         clientName={c.nombre}
+                        recordType="Transporte"
+                        recordNumber={form.numero_viaje}
+                        variant="icon"
+                      />
+                      <SearchEmailButton
                         recordType="Transporte"
                         recordNumber={form.numero_viaje}
                         variant="icon"
