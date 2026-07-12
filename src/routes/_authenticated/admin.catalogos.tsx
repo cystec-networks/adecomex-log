@@ -201,12 +201,15 @@ function CatalogTable({ table, isAdmin }: { table: TableKey; isAdmin: boolean })
     <Card>
       <CardHeader className="pb-3 border-b flex-row items-center gap-3 space-y-0">
         <CardTitle className="text-base flex items-center gap-2">
-          {table === "catalogo_paises" && "Países"}
-          {table === "catalogo_puertos" && "Puertos"}
-          {table === "catalogo_unidades" && "Unidades"}
+          {TABLE_LABELS[table]}
           <Badge variant="outline" className="text-xs font-normal">
             {totalCount?.toLocaleString("en-US") ?? "…"} registros
           </Badge>
+          {PENDING_TABLES.includes(table) && (
+            <Badge variant="outline" className="text-xs font-normal border-amber-500 text-amber-600">
+              Pendiente de completar con la DGA
+            </Badge>
+          )}
         </CardTitle>
         <div className="flex-1" />
         <div className="relative w-64">
