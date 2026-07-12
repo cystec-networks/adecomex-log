@@ -11,6 +11,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Trash2 } from "lucide-react";
+import { WhatsAppButton } from "@/components/whatsapp-button";
 import { useState } from "react";
 import { toast } from "sonner";
 
