@@ -18,11 +18,50 @@ export const Route = createFileRoute("/_authenticated/admin/catalogos")({
   component: CatalogosAdmin,
 });
 
-type TableKey = "catalogo_paises" | "catalogo_puertos" | "catalogo_unidades";
+type TableKey =
+  | "catalogo_paises"
+  | "catalogo_puertos"
+  | "catalogo_unidades"
+  | "catalogo_areas"
+  | "catalogo_tipos_documento_id"
+  | "catalogo_metodos_transporte"
+  | "catalogo_regimenes"
+  | "catalogo_acuerdos"
+  | "catalogo_tipos_despacho"
+  | "catalogo_estados_producto"
+  | "catalogo_documentos_requeridos";
+
+const TABLE_LABELS: Record<TableKey, string> = {
+  catalogo_paises: "Países",
+  catalogo_puertos: "Puertos",
+  catalogo_unidades: "Unidades",
+  catalogo_areas: "Áreas Aduaneras",
+  catalogo_tipos_documento_id: "Tipos Doc. Identidad",
+  catalogo_metodos_transporte: "Métodos de Transporte",
+  catalogo_regimenes: "Regímenes",
+  catalogo_acuerdos: "Acuerdos Comerciales",
+  catalogo_tipos_despacho: "Tipos de Despacho",
+  catalogo_estados_producto: "Estados de Producto",
+  catalogo_documentos_requeridos: "Documentos Requeridos",
+};
+
+const PENDING_TABLES: TableKey[] = [
+  "catalogo_metodos_transporte",
+  "catalogo_regimenes",
+  "catalogo_acuerdos",
+  "catalogo_tipos_despacho",
+  "catalogo_estados_producto",
+  "catalogo_documentos_requeridos",
+];
 
 function CatalogosAdmin() {
   const { data: roles } = useMyRoles();
   const isAdmin = roles?.includes("admin");
+  const tabs: TableKey[] = [
+    "catalogo_paises","catalogo_puertos","catalogo_unidades","catalogo_areas",
+    "catalogo_tipos_documento_id","catalogo_metodos_transporte","catalogo_regimenes",
+    "catalogo_acuerdos","catalogo_tipos_despacho","catalogo_estados_producto","catalogo_documentos_requeridos",
+  ];
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto space-y-5">
@@ -38,31 +77,38 @@ function CatalogosAdmin() {
         </div>
       </div>
 
-      <Tabs defaultValue="paises">
-        <TabsList>
-          <TabsTrigger value="paises">Países</TabsTrigger>
-          <TabsTrigger value="puertos">Puertos</TabsTrigger>
-          <TabsTrigger value="unidades">Unidades</TabsTrigger>
+      <Tabs defaultValue="catalogo_paises">
+        <TabsList className="flex-wrap h-auto">
+          {tabs.map((t) => (
+            <TabsTrigger key={t} value={t} className="gap-1.5">
+              {TABLE_LABELS[t]}
+              {PENDING_TABLES.includes(t) && (
+                <Badge variant="outline" className="text-[10px] px-1 py-0 border-amber-500 text-amber-600">Pdte</Badge>
+              )}
+            </TabsTrigger>
+          ))}
         </TabsList>
-        <TabsContent value="paises" className="mt-4">
-          <CatalogTable table="catalogo_paises" isAdmin={!!isAdmin} />
-        </TabsContent>
-        <TabsContent value="puertos" className="mt-4">
-          <CatalogTable table="catalogo_puertos" isAdmin={!!isAdmin} />
-        </TabsContent>
-        <TabsContent value="unidades" className="mt-4">
-          <CatalogTable table="catalogo_unidades" isAdmin={!!isAdmin} />
-        </TabsContent>
+        {tabs.map((t) => (
+          <TabsContent key={t} value={t} className="mt-4">
+            <CatalogTable table={t} isAdmin={!!isAdmin} />
+          </TabsContent>
+        ))}
       </Tabs>
     </div>
   );
 }
 
+const BASIC_FIELDS = [
+  { k: "codigo", label: "Código", required: true },
+  { k: "nombre", label: "Nombre", required: true },
+];
+const BASIC_WITH_ESTADO = [
+  ...BASIC_FIELDS,
+  { k: "estado", label: "Estado", type: "select" as const, options: ["confirmado", "pendiente"] },
+];
+
 const FIELDS: Record<TableKey, Array<{ k: string; label: string; required?: boolean; type?: "text" | "select"; options?: string[] }>> = {
-  catalogo_paises: [
-    { k: "codigo", label: "Código", required: true },
-    { k: "nombre", label: "Nombre", required: true },
-  ],
+  catalogo_paises: BASIC_FIELDS,
   catalogo_puertos: [
     { k: "codigo", label: "Código", required: true },
     { k: "nombre", label: "Nombre", required: true },
@@ -75,7 +121,21 @@ const FIELDS: Record<TableKey, Array<{ k: string; label: string; required?: bool
     { k: "nombre_eng", label: "Nombre (Eng)" },
     { k: "tipo", label: "Tipo", type: "select", options: ["medida", "embalaje"] },
   ],
+  catalogo_areas: BASIC_FIELDS,
+  catalogo_tipos_documento_id: BASIC_FIELDS,
+  catalogo_metodos_transporte: [
+    { k: "codigo", label: "Código", required: true },
+    { k: "nombre", label: "Nombre", required: true },
+    { k: "nombre_eng", label: "Nombre (Eng)" },
+    { k: "estado", label: "Estado", type: "select", options: ["confirmado", "pendiente_validar"] },
+  ],
+  catalogo_regimenes: BASIC_WITH_ESTADO,
+  catalogo_acuerdos: BASIC_WITH_ESTADO,
+  catalogo_tipos_despacho: BASIC_WITH_ESTADO,
+  catalogo_estados_producto: BASIC_WITH_ESTADO,
+  catalogo_documentos_requeridos: BASIC_WITH_ESTADO,
 };
+
 
 function CatalogTable({ table, isAdmin }: { table: TableKey; isAdmin: boolean }) {
   const qc = useQueryClient();
@@ -141,12 +201,15 @@ function CatalogTable({ table, isAdmin }: { table: TableKey; isAdmin: boolean })
     <Card>
       <CardHeader className="pb-3 border-b flex-row items-center gap-3 space-y-0">
         <CardTitle className="text-base flex items-center gap-2">
-          {table === "catalogo_paises" && "Países"}
-          {table === "catalogo_puertos" && "Puertos"}
-          {table === "catalogo_unidades" && "Unidades"}
+          {TABLE_LABELS[table]}
           <Badge variant="outline" className="text-xs font-normal">
             {totalCount?.toLocaleString("en-US") ?? "…"} registros
           </Badge>
+          {PENDING_TABLES.includes(table) && (
+            <Badge variant="outline" className="text-xs font-normal border-amber-500 text-amber-600">
+              Pendiente de completar con la DGA
+            </Badge>
+          )}
         </CardTitle>
         <div className="flex-1" />
         <div className="relative w-64">
