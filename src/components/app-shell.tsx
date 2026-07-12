@@ -86,7 +86,7 @@ const GROUPS: Group[] = [
   },
   {
     id: "transporte",
-    label: "TRANSPORTE",
+    label: "TRANSPORTES",
     icon: Truck,
     items: [
       { to: "/transportes/dashboard", label: "Dashboard", icon: LayoutDashboard,
