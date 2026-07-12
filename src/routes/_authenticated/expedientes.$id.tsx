@@ -334,7 +334,16 @@ function TabInfo({ exp }: { exp: any }) {
           <AutoField label="Declaración DUA" k="numero_dua" />
           <AutoField label="Número de despacho" k="numero_igra" />
           <AutoField label="Número de permiso" k="numero_vuce" />
-          <AutoField label="Puerto de arribo" k="puerto_arribo" />
+          <div className="grid gap-1.5">
+            <Label>Puerto de arribo</Label>
+            <CatalogCombobox
+              table="catalogo_puertos"
+              value={form.puerto_arribo}
+              codigo={form.puerto_arribo_codigo}
+              onChange={(nombre, codigo) => setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo }))}
+              placeholder="Buscar puerto (catálogo DGA)"
+            />
+          </div>
         </CardContent>
       </Card>
 
