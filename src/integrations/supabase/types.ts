@@ -1122,18 +1122,24 @@ export type Database = {
       transportes: {
         Row: {
           cliente_id: string | null
+          contenedores_cantidad: number | null
+          contenedores_detalle: string | null
           costo_chofer: number | null
           costo_combustible: number | null
           costo_otros: number | null
           costo_peajes: number | null
+          costo_viaje: number | null
           created_at: string
           created_by: string | null
+          descuento_cxc: number | null
           destino: string | null
           eliminado_en: string | null
           eliminado_por: string | null
           estado: Database["public"]["Enums"]["transporte_estado"]
           eta: string | null
           expediente_id: string | null
+          factura_costo_fecha: string | null
+          factura_costo_numero: string | null
           factura_fecha: string | null
           factura_numero: string | null
           fecha_salida: string | null
@@ -1147,6 +1153,7 @@ export type Database = {
           pago_estado:
             | Database["public"]["Enums"]["transporte_pago_estado"]
             | null
+          pago_referencia: string | null
           placa_contenedor: string | null
           tipo: Database["public"]["Enums"]["transporte_tipo"] | null
           transportista: string | null
@@ -1154,18 +1161,24 @@ export type Database = {
         }
         Insert: {
           cliente_id?: string | null
+          contenedores_cantidad?: number | null
+          contenedores_detalle?: string | null
           costo_chofer?: number | null
           costo_combustible?: number | null
           costo_otros?: number | null
           costo_peajes?: number | null
+          costo_viaje?: number | null
           created_at?: string
           created_by?: string | null
+          descuento_cxc?: number | null
           destino?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["transporte_estado"]
           eta?: string | null
           expediente_id?: string | null
+          factura_costo_fecha?: string | null
+          factura_costo_numero?: string | null
           factura_fecha?: string | null
           factura_numero?: string | null
           fecha_salida?: string | null
@@ -1179,6 +1192,7 @@ export type Database = {
           pago_estado?:
             | Database["public"]["Enums"]["transporte_pago_estado"]
             | null
+          pago_referencia?: string | null
           placa_contenedor?: string | null
           tipo?: Database["public"]["Enums"]["transporte_tipo"] | null
           transportista?: string | null
@@ -1186,18 +1200,24 @@ export type Database = {
         }
         Update: {
           cliente_id?: string | null
+          contenedores_cantidad?: number | null
+          contenedores_detalle?: string | null
           costo_chofer?: number | null
           costo_combustible?: number | null
           costo_otros?: number | null
           costo_peajes?: number | null
+          costo_viaje?: number | null
           created_at?: string
           created_by?: string | null
+          descuento_cxc?: number | null
           destino?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["transporte_estado"]
           eta?: string | null
           expediente_id?: string | null
+          factura_costo_fecha?: string | null
+          factura_costo_numero?: string | null
           factura_fecha?: string | null
           factura_numero?: string | null
           fecha_salida?: string | null
@@ -1211,6 +1231,7 @@ export type Database = {
           pago_estado?:
             | Database["public"]["Enums"]["transporte_pago_estado"]
             | null
+          pago_referencia?: string | null
           placa_contenedor?: string | null
           tipo?: Database["public"]["Enums"]["transporte_tipo"] | null
           transportista?: string | null
