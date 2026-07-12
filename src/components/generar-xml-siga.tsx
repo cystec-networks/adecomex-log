@@ -41,6 +41,7 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
   const valid = issues.length === 0;
 
   const handleDownload = () => {
+    if (!exp) return;
     if (!valid) return toast.error("Corrige los errores antes de descargar");
     downloadXml(`SIGA_${exp.numero}.xml`, xml);
     toast.success("XML descargado");
