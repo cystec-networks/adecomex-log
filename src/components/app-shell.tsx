@@ -86,7 +86,7 @@ const GROUPS: Group[] = [
   },
   {
     id: "transporte",
-    label: "TRANSPORTE",
+    label: "TRANSPORTES",
     icon: Truck,
     items: [
       { to: "/transportes/dashboard", label: "Dashboard", icon: LayoutDashboard,
@@ -184,7 +184,7 @@ function AppSidebarInner() {
         {/* Expedientes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "expedientes")!)}
 
-        {/* Transporte group */}
+        {/* Transportes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "transporte")!)}
 
         {/* Simple items */}
