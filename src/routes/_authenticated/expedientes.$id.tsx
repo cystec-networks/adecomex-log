@@ -1526,12 +1526,13 @@ function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
             </div>
             <div className="grid gap-1.5">
               <Label>Unidad de Medida</Label>
-              <Select value={f.unidad_medida || undefined} onValueChange={(v) => setF({ ...f, unidad_medida: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecciona unidad" /></SelectTrigger>
-                <SelectContent>
-                  {UNIDADES_MEDIDA.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <CatalogCombobox
+                table="catalogo_unidades"
+                value={f.unidad_medida}
+                codigo={f.unidad_codigo}
+                onChange={(nombre, codigo) => setF({ ...f, unidad_medida: nombre, unidad_codigo: codigo })}
+                placeholder="Selecciona unidad (catálogo DGA)"
+              />
             </div>
             <div className="grid gap-1.5 md:col-span-2">
               <Label>Detalle del Producto</Label>
