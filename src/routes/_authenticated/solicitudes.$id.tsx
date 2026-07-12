@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, FolderPlus, Save } from "lucide-react";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
+import { SearchEmailButton } from "@/components/search-email-button";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 
@@ -108,6 +109,11 @@ function DetalleSolicitud() {
                 <EmailButton
                   email={(s.clientes as any).email}
                   clientName={s.clientes.nombre}
+                  recordType="Solicitud"
+                  recordNumber={form.numero || s.numero}
+                  variant="icon"
+                />
+                <SearchEmailButton
                   recordType="Solicitud"
                   recordNumber={form.numero || s.numero}
                   variant="icon"

@@ -115,6 +115,11 @@ function DetalleExpediente() {
                   recordNumber={exp.numero}
                   variant="icon"
                 />
+                <SearchEmailButton
+                  recordType="Expediente"
+                  recordNumber={exp.numero}
+                  variant="icon"
+                />
               </>
             )}
             <RastrearEmbarqueButton
