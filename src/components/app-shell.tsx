@@ -84,11 +84,20 @@ const GROUPS: Group[] = [
         match: (p, s) => p.startsWith("/expedientes") && s?.tipo === "exportacion" },
     ],
   },
+  {
+    id: "transporte",
+    label: "TRANSPORTE",
+    icon: Truck,
+    items: [
+      { to: "/transportes/dashboard", label: "Dashboard", icon: LayoutDashboard,
+        match: (p) => p === "/transportes/dashboard" },
+      { to: "/transportes", label: "Transportes", icon: Truck,
+        match: (p) => (p === "/transportes" || p.startsWith("/transportes/")) && p !== "/transportes/dashboard" },
+    ],
+  },
 ];
 
 const SIMPLE_ITEMS: SimpleItem[] = [
-  { id: "transportes", to: "/transportes", label: "Transportes", icon: Truck,
-    match: (p) => p === "/transportes" || p.startsWith("/transportes/") },
   { id: "reportes", to: "/reportes", label: "Reportes", icon: BarChart3,
     match: (p) => p === "/reportes" || p.startsWith("/reportes/") },
   { id: "clientes", to: "/clientes", label: "Clientes", icon: Users,
