@@ -16,6 +16,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AutocompleteInput } from "@/components/autocomplete-input";
 import { CatalogCombobox } from "@/components/catalog-combobox";
+import { GenerarXmlSigaButton } from "@/components/generar-xml-siga";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
@@ -94,6 +95,7 @@ function DetalleExpediente() {
           </h1>
           <p className="text-sm text-muted-foreground">{exp.clientes?.nombre ?? "Sin cliente"} · BL/AWB: {exp.bl_awb ?? "—"}</p>
         </div>
+        <GenerarXmlSigaButton expedienteId={id} />
         <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>
           <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
