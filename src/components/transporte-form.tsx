@@ -122,6 +122,11 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         flete_moneda: existing.flete_moneda ?? "USD",
         estado: existing.estado ?? "programado",
         observaciones: existing.observaciones ?? "",
+        costo_viaje: existing.costo_viaje?.toString() ?? "",
+        descuento_cxc: existing.descuento_cxc?.toString() ?? "",
+        pago_referencia: existing.pago_referencia ?? "",
+        factura_costo_numero: existing.factura_costo_numero ?? "",
+        factura_costo_fecha: existing.factura_costo_fecha ?? "",
         costo_combustible: existing.costo_combustible?.toString() ?? "",
         costo_peajes: existing.costo_peajes?.toString() ?? "",
         costo_chofer: existing.costo_chofer?.toString() ?? "",
@@ -130,6 +135,8 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         factura_numero: existing.factura_numero ?? "",
         factura_fecha: existing.factura_fecha ?? "",
         pago_estado: existing.pago_estado ?? "pendiente",
+        contenedores_cantidad: existing.contenedores_cantidad?.toString() ?? "",
+        contenedores_detalle: existing.contenedores_detalle ?? "",
       });
       setLoaded(true);
     }
