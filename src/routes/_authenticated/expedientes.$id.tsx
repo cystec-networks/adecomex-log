@@ -95,6 +95,7 @@ function DetalleExpediente() {
           </h1>
           <p className="text-sm text-muted-foreground">{exp.clientes?.nombre ?? "Sin cliente"} · BL/AWB: {exp.bl_awb ?? "—"}</p>
         </div>
+        <GenerarXmlSigaButton expedienteId={id} />
         <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>
           <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
