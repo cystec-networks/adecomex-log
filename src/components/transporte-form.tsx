@@ -87,6 +87,11 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
     estado: "programado",
     observaciones: "",
     // Terrestre financials (RD$)
+    costo_viaje: "",
+    descuento_cxc: "",
+    pago_referencia: "",
+    factura_costo_numero: "",
+    factura_costo_fecha: "",
     costo_combustible: "",
     costo_peajes: "",
     costo_chofer: "",
@@ -95,6 +100,8 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
     factura_numero: "",
     factura_fecha: "",
     pago_estado: "pendiente",
+    contenedores_cantidad: "",
+    contenedores_detalle: "",
   });
   const [loaded, setLoaded] = useState(false);
 
