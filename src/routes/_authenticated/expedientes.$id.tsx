@@ -310,7 +310,16 @@ function TabInfo({ exp }: { exp: any }) {
 
       <Section title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
         <AutoField label="Suplidor" k="suplidor" />
-        <AutoField label="País de origen" k="pais_origen" />
+        <div className="grid gap-1.5">
+          <Label>País de origen</Label>
+          <CatalogCombobox
+            table="catalogo_paises"
+            value={form.pais_origen}
+            codigo={form.pais_origen_codigo}
+            onChange={(nombre, codigo) => setForm((f) => ({ ...f, pais_origen: nombre, pais_origen_codigo: codigo }))}
+            placeholder="Selecciona país (catálogo DGA)"
+          />
+        </div>
         <AutoField label="Factura comercial" k="factura_comercial" />
         <AutoField label="Incoterm" k="incoterm" />
         <AutoField label="Puerto de salida" k="puerto_salida" />
