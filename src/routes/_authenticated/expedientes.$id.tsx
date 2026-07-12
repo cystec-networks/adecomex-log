@@ -15,6 +15,7 @@ import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AutocompleteInput } from "@/components/autocomplete-input";
+import { CatalogCombobox } from "@/components/catalog-combobox";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
@@ -162,6 +163,9 @@ function TabInfo({ exp }: { exp: any }) {
     otros: exp.otros ?? "",
     regimen_aduanero: exp.regimen_aduanero ?? "",
     observaciones: exp.observaciones ?? "",
+    pais_origen_codigo: exp.pais_origen_codigo ?? "",
+    pais_procedencia_codigo: exp.pais_procedencia_codigo ?? "",
+    puerto_arribo_codigo: exp.puerto_arribo_codigo ?? "",
   });
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -306,7 +310,16 @@ function TabInfo({ exp }: { exp: any }) {
 
       <Section title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
         <AutoField label="Suplidor" k="suplidor" />
-        <AutoField label="País de origen" k="pais_origen" />
+        <div className="grid gap-1.5">
+          <Label>País de origen</Label>
+          <CatalogCombobox
+            table="catalogo_paises"
+            value={form.pais_origen}
+            codigo={form.pais_origen_codigo}
+            onChange={(nombre, codigo) => setForm((f) => ({ ...f, pais_origen: nombre, pais_origen_codigo: codigo }))}
+            placeholder="Selecciona país (catálogo DGA)"
+          />
+        </div>
         <AutoField label="Factura comercial" k="factura_comercial" />
         <AutoField label="Incoterm" k="incoterm" />
         <AutoField label="Puerto de salida" k="puerto_salida" />
@@ -321,7 +334,16 @@ function TabInfo({ exp }: { exp: any }) {
           <AutoField label="Declaración DUA" k="numero_dua" />
           <AutoField label="Número de despacho" k="numero_igra" />
           <AutoField label="Número de permiso" k="numero_vuce" />
-          <AutoField label="Puerto de arribo" k="puerto_arribo" />
+          <div className="grid gap-1.5">
+            <Label>Puerto de arribo</Label>
+            <CatalogCombobox
+              table="catalogo_puertos"
+              value={form.puerto_arribo}
+              codigo={form.puerto_arribo_codigo}
+              onChange={(nombre, codigo) => setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo }))}
+              placeholder="Buscar puerto (catálogo DGA)"
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -1384,7 +1406,7 @@ function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
 
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const emptyForm = { codigo_arancelario: "", detalle_producto: "", unidad_medida: "", cantidad: "", peso: "", valor_fob: "" };
+  const emptyForm = { codigo_arancelario: "", detalle_producto: "", unidad_medida: "", unidad_codigo: "", cantidad: "", peso: "", valor_fob: "" };
   const [f, setF] = useState(emptyForm);
 
   const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
@@ -1400,6 +1422,7 @@ function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
         codigo_arancelario: f.codigo_arancelario || null,
         detalle_producto: f.detalle_producto || null,
         unidad_medida: f.unidad_medida || null,
+        unidad_codigo: f.unidad_codigo || null,
         cantidad: f.cantidad === "" ? 0 : Number(f.cantidad),
         peso: f.peso === "" ? 0 : Number(f.peso),
         valor_fob: f.valor_fob === "" ? 0 : Number(f.valor_fob),
@@ -1434,6 +1457,7 @@ function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
       codigo_arancelario: it.codigo_arancelario ?? "",
       detalle_producto: it.detalle_producto ?? "",
       unidad_medida: it.unidad_medida ?? "",
+      unidad_codigo: it.unidad_codigo ?? "",
       cantidad: it.cantidad != null ? String(it.cantidad) : "",
       peso: it.peso != null ? String(it.peso) : "",
       valor_fob: it.valor_fob != null ? String(it.valor_fob) : "",
@@ -1502,12 +1526,13 @@ function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
             </div>
             <div className="grid gap-1.5">
               <Label>Unidad de Medida</Label>
-              <Select value={f.unidad_medida || undefined} onValueChange={(v) => setF({ ...f, unidad_medida: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecciona unidad" /></SelectTrigger>
-                <SelectContent>
-                  {UNIDADES_MEDIDA.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <CatalogCombobox
+                table="catalogo_unidades"
+                value={f.unidad_medida}
+                codigo={f.unidad_codigo}
+                onChange={(nombre, codigo) => setF({ ...f, unidad_medida: nombre, unidad_codigo: codigo })}
+                placeholder="Selecciona unidad (catálogo DGA)"
+              />
             </div>
             <div className="grid gap-1.5 md:col-span-2">
               <Label>Detalle del Producto</Label>

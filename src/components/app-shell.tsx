@@ -2,7 +2,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   Inbox, FolderKanban, Users, UserCog, LogOut,
   PackageOpen, PackageCheck, ScanText, Sparkles, Trash2, FileCheck2, Truck,
-  ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3,
+  ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3, Library,
 } from "lucide-react";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { GlobalSearch } from "@/components/global-search";
@@ -95,6 +95,8 @@ const SIMPLE_ITEMS: SimpleItem[] = [
     match: (p) => p === "/clientes" || p.startsWith("/clientes/") },
   { id: "usuarios", to: "/admin/usuarios", label: "Usuarios y roles", icon: UserCog, adminOnly: true,
     match: (p) => p.startsWith("/admin/usuarios") },
+  { id: "catalogos", to: "/admin/catalogos", label: "Catálogos DGA", icon: Library, adminOnly: true,
+    match: (p) => p.startsWith("/admin/catalogos") },
   { id: "papelera", to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
     match: (p) => p === "/expedientes/papelera" },
 ];
