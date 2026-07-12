@@ -21,6 +21,7 @@ import { Route as AuthenticatedSolicitudesIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedPermisosIndexRouteImport } from './routes/_authenticated/permisos.index'
 import { Route as AuthenticatedExpedientesIndexRouteImport } from './routes/_authenticated/expedientes.index'
 import { Route as AuthenticatedTransportesNuevoRouteImport } from './routes/_authenticated/transportes.nuevo'
+import { Route as AuthenticatedTransportesDashboardRouteImport } from './routes/_authenticated/transportes.dashboard'
 import { Route as AuthenticatedTransportesIdRouteImport } from './routes/_authenticated/transportes.$id'
 import { Route as AuthenticatedSolicitudesOcrRouteImport } from './routes/_authenticated/solicitudes.ocr'
 import { Route as AuthenticatedSolicitudesNuevaRouteImport } from './routes/_authenticated/solicitudes.nueva'
@@ -96,6 +97,12 @@ const AuthenticatedTransportesNuevoRoute =
   AuthenticatedTransportesNuevoRouteImport.update({
     id: '/transportes/nuevo',
     path: '/transportes/nuevo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTransportesDashboardRoute =
+  AuthenticatedTransportesDashboardRouteImport.update({
+    id: '/transportes/dashboard',
+    path: '/transportes/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedTransportesIdRoute =
@@ -189,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
   '/solicitudes/ocr': typeof AuthenticatedSolicitudesOcrRoute
   '/transportes/$id': typeof AuthenticatedTransportesIdRoute
+  '/transportes/dashboard': typeof AuthenticatedTransportesDashboardRoute
   '/transportes/nuevo': typeof AuthenticatedTransportesNuevoRoute
   '/expedientes/': typeof AuthenticatedExpedientesIndexRoute
   '/permisos/': typeof AuthenticatedPermisosIndexRoute
@@ -214,6 +222,7 @@ export interface FileRoutesByTo {
   '/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
   '/solicitudes/ocr': typeof AuthenticatedSolicitudesOcrRoute
   '/transportes/$id': typeof AuthenticatedTransportesIdRoute
+  '/transportes/dashboard': typeof AuthenticatedTransportesDashboardRoute
   '/transportes/nuevo': typeof AuthenticatedTransportesNuevoRoute
   '/expedientes': typeof AuthenticatedExpedientesIndexRoute
   '/permisos': typeof AuthenticatedPermisosIndexRoute
@@ -241,6 +250,7 @@ export interface FileRoutesById {
   '/_authenticated/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
   '/_authenticated/solicitudes/ocr': typeof AuthenticatedSolicitudesOcrRoute
   '/_authenticated/transportes/$id': typeof AuthenticatedTransportesIdRoute
+  '/_authenticated/transportes/dashboard': typeof AuthenticatedTransportesDashboardRoute
   '/_authenticated/transportes/nuevo': typeof AuthenticatedTransportesNuevoRoute
   '/_authenticated/expedientes/': typeof AuthenticatedExpedientesIndexRoute
   '/_authenticated/permisos/': typeof AuthenticatedPermisosIndexRoute
@@ -268,6 +278,7 @@ export interface FileRouteTypes {
     | '/solicitudes/nueva'
     | '/solicitudes/ocr'
     | '/transportes/$id'
+    | '/transportes/dashboard'
     | '/transportes/nuevo'
     | '/expedientes/'
     | '/permisos/'
@@ -293,6 +304,7 @@ export interface FileRouteTypes {
     | '/solicitudes/nueva'
     | '/solicitudes/ocr'
     | '/transportes/$id'
+    | '/transportes/dashboard'
     | '/transportes/nuevo'
     | '/expedientes'
     | '/permisos'
@@ -319,6 +331,7 @@ export interface FileRouteTypes {
     | '/_authenticated/solicitudes/nueva'
     | '/_authenticated/solicitudes/ocr'
     | '/_authenticated/transportes/$id'
+    | '/_authenticated/transportes/dashboard'
     | '/_authenticated/transportes/nuevo'
     | '/_authenticated/expedientes/'
     | '/_authenticated/permisos/'
@@ -416,6 +429,13 @@ declare module '@tanstack/react-router' {
       path: '/transportes/nuevo'
       fullPath: '/transportes/nuevo'
       preLoaderRoute: typeof AuthenticatedTransportesNuevoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/transportes/dashboard': {
+      id: '/_authenticated/transportes/dashboard'
+      path: '/transportes/dashboard'
+      fullPath: '/transportes/dashboard'
+      preLoaderRoute: typeof AuthenticatedTransportesDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/transportes/$id': {
@@ -522,6 +542,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSolicitudesNuevaRoute: typeof AuthenticatedSolicitudesNuevaRoute
   AuthenticatedSolicitudesOcrRoute: typeof AuthenticatedSolicitudesOcrRoute
   AuthenticatedTransportesIdRoute: typeof AuthenticatedTransportesIdRoute
+  AuthenticatedTransportesDashboardRoute: typeof AuthenticatedTransportesDashboardRoute
   AuthenticatedTransportesNuevoRoute: typeof AuthenticatedTransportesNuevoRoute
   AuthenticatedExpedientesIndexRoute: typeof AuthenticatedExpedientesIndexRoute
   AuthenticatedPermisosIndexRoute: typeof AuthenticatedPermisosIndexRoute
@@ -546,6 +567,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSolicitudesNuevaRoute: AuthenticatedSolicitudesNuevaRoute,
   AuthenticatedSolicitudesOcrRoute: AuthenticatedSolicitudesOcrRoute,
   AuthenticatedTransportesIdRoute: AuthenticatedTransportesIdRoute,
+  AuthenticatedTransportesDashboardRoute:
+    AuthenticatedTransportesDashboardRoute,
   AuthenticatedTransportesNuevoRoute: AuthenticatedTransportesNuevoRoute,
   AuthenticatedExpedientesIndexRoute: AuthenticatedExpedientesIndexRoute,
   AuthenticatedPermisosIndexRoute: AuthenticatedPermisosIndexRoute,
