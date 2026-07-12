@@ -1122,6 +1122,10 @@ export type Database = {
       transportes: {
         Row: {
           cliente_id: string | null
+          costo_chofer: number | null
+          costo_combustible: number | null
+          costo_otros: number | null
+          costo_peajes: number | null
           created_at: string
           created_by: string | null
           destino: string | null
@@ -1130,13 +1134,19 @@ export type Database = {
           estado: Database["public"]["Enums"]["transporte_estado"]
           eta: string | null
           expediente_id: string | null
+          factura_fecha: string | null
+          factura_numero: string | null
           fecha_salida: string | null
           flete_moneda: Database["public"]["Enums"]["moneda"] | null
           flete_monto: number | null
           id: string
+          ingreso_facturado: number | null
           numero_viaje: string
           observaciones: string | null
           origen: string | null
+          pago_estado:
+            | Database["public"]["Enums"]["transporte_pago_estado"]
+            | null
           placa_contenedor: string | null
           tipo: Database["public"]["Enums"]["transporte_tipo"] | null
           transportista: string | null
@@ -1144,6 +1154,10 @@ export type Database = {
         }
         Insert: {
           cliente_id?: string | null
+          costo_chofer?: number | null
+          costo_combustible?: number | null
+          costo_otros?: number | null
+          costo_peajes?: number | null
           created_at?: string
           created_by?: string | null
           destino?: string | null
@@ -1152,13 +1166,19 @@ export type Database = {
           estado?: Database["public"]["Enums"]["transporte_estado"]
           eta?: string | null
           expediente_id?: string | null
+          factura_fecha?: string | null
+          factura_numero?: string | null
           fecha_salida?: string | null
           flete_moneda?: Database["public"]["Enums"]["moneda"] | null
           flete_monto?: number | null
           id?: string
+          ingreso_facturado?: number | null
           numero_viaje?: string
           observaciones?: string | null
           origen?: string | null
+          pago_estado?:
+            | Database["public"]["Enums"]["transporte_pago_estado"]
+            | null
           placa_contenedor?: string | null
           tipo?: Database["public"]["Enums"]["transporte_tipo"] | null
           transportista?: string | null
@@ -1166,6 +1186,10 @@ export type Database = {
         }
         Update: {
           cliente_id?: string | null
+          costo_chofer?: number | null
+          costo_combustible?: number | null
+          costo_otros?: number | null
+          costo_peajes?: number | null
           created_at?: string
           created_by?: string | null
           destino?: string | null
@@ -1174,13 +1198,19 @@ export type Database = {
           estado?: Database["public"]["Enums"]["transporte_estado"]
           eta?: string | null
           expediente_id?: string | null
+          factura_fecha?: string | null
+          factura_numero?: string | null
           fecha_salida?: string | null
           flete_moneda?: Database["public"]["Enums"]["moneda"] | null
           flete_monto?: number | null
           id?: string
+          ingreso_facturado?: number | null
           numero_viaje?: string
           observaciones?: string | null
           origen?: string | null
+          pago_estado?:
+            | Database["public"]["Enums"]["transporte_pago_estado"]
+            | null
           placa_contenedor?: string | null
           tipo?: Database["public"]["Enums"]["transporte_tipo"] | null
           transportista?: string | null
@@ -1284,6 +1314,8 @@ export type Database = {
         | "en_transito"
         | "entregado"
         | "retrasado"
+        | "facturado"
+      transporte_pago_estado: "pendiente" | "parcial" | "pagado"
       transporte_tipo: "maritimo" | "aereo" | "terrestre"
     }
     CompositeTypes: {
@@ -1463,7 +1495,9 @@ export const Constants = {
         "en_transito",
         "entregado",
         "retrasado",
+        "facturado",
       ],
+      transporte_pago_estado: ["pendiente", "parcial", "pagado"],
       transporte_tipo: ["maritimo", "aereo", "terrestre"],
     },
   },
