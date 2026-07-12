@@ -72,8 +72,8 @@ function Transportes() {
     k === "expediente" ? (t.expedientes?.numero ?? "") :
     (t[k] ?? "");
   const cmp = (a: any, b: any) => {
-    const closedA = a.estado === "entregado" ? 1 : 0;
-    const closedB = b.estado === "entregado" ? 1 : 0;
+    const closed = (s: string) => (s === "entregado" || s === "facturado" ? 1 : 0);
+    const closedA = closed(a.estado); const closedB = closed(b.estado);
     if (closedA !== closedB) return closedA - closedB;
     const av = getVal(a, activeSort.key); const bv = getVal(b, activeSort.key);
     const aE = av === "" || av == null; const bE = bv === "" || bv == null;
