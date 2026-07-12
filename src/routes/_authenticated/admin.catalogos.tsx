@@ -218,7 +218,7 @@ function CatalogTable({ table, isAdmin }: { table: TableKey; isAdmin: boolean })
           initial={dialog.row ?? {}}
           mode={dialog.mode}
           onClose={() => setDialog(null)}
-          onSave={(v) => upsert.mutate(v)}
+          onSave={(v: any) => upsert.mutate(v)}
           saving={upsert.isPending}
         />
       )}
