@@ -31,6 +31,7 @@ import { Route as AuthenticatedExpedientesPapeleraRouteImport } from './routes/_
 import { Route as AuthenticatedExpedientesNuevoRouteImport } from './routes/_authenticated/expedientes.nuevo'
 import { Route as AuthenticatedExpedientesIdRouteImport } from './routes/_authenticated/expedientes.$id'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
+import { Route as AuthenticatedAdminCatalogosRouteImport } from './routes/_authenticated/admin.catalogos'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -155,6 +156,12 @@ const AuthenticatedAdminUsuariosRoute =
     path: '/admin/usuarios',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminCatalogosRoute =
+  AuthenticatedAdminCatalogosRouteImport.update({
+    id: '/admin/catalogos',
+    path: '/admin/catalogos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/copiloto': typeof AuthenticatedCopilotoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/reportes': typeof AuthenticatedReportesRoute
+  '/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
@@ -186,6 +194,7 @@ export interface FileRoutesByTo {
   '/copiloto': typeof AuthenticatedCopilotoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/reportes': typeof AuthenticatedReportesRoute
+  '/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
@@ -211,6 +220,7 @@ export interface FileRoutesById {
   '/_authenticated/copiloto': typeof AuthenticatedCopilotoRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/reportes': typeof AuthenticatedReportesRoute
+  '/_authenticated/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/_authenticated/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/copiloto'
     | '/dashboard'
     | '/reportes'
+    | '/admin/catalogos'
     | '/admin/usuarios'
     | '/expedientes/$id'
     | '/expedientes/nuevo'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/copiloto'
     | '/dashboard'
     | '/reportes'
+    | '/admin/catalogos'
     | '/admin/usuarios'
     | '/expedientes/$id'
     | '/expedientes/nuevo'
@@ -283,6 +295,7 @@ export interface FileRouteTypes {
     | '/_authenticated/copiloto'
     | '/_authenticated/dashboard'
     | '/_authenticated/reportes'
+    | '/_authenticated/admin/catalogos'
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/expedientes/$id'
     | '/_authenticated/expedientes/nuevo'
@@ -462,6 +475,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/catalogos': {
+      id: '/_authenticated/admin/catalogos'
+      path: '/admin/catalogos'
+      fullPath: '/admin/catalogos'
+      preLoaderRoute: typeof AuthenticatedAdminCatalogosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -470,6 +490,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCopilotoRoute: typeof AuthenticatedCopilotoRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedReportesRoute: typeof AuthenticatedReportesRoute
+  AuthenticatedAdminCatalogosRoute: typeof AuthenticatedAdminCatalogosRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedExpedientesIdRoute: typeof AuthenticatedExpedientesIdRoute
   AuthenticatedExpedientesNuevoRoute: typeof AuthenticatedExpedientesNuevoRoute
@@ -492,6 +513,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCopilotoRoute: AuthenticatedCopilotoRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedReportesRoute: AuthenticatedReportesRoute,
+  AuthenticatedAdminCatalogosRoute: AuthenticatedAdminCatalogosRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedExpedientesIdRoute: AuthenticatedExpedientesIdRoute,
   AuthenticatedExpedientesNuevoRoute: AuthenticatedExpedientesNuevoRoute,
