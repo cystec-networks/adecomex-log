@@ -44,6 +44,90 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_paises: {
+        Row: {
+          activo: boolean
+          codigo: string
+          created_at: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          created_at?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          created_at?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_puertos: {
+        Row: {
+          activo: boolean
+          cod_pais: string | null
+          codigo: string
+          created_at: string
+          nombre: string
+          pais: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          cod_pais?: string | null
+          codigo: string
+          created_at?: string
+          nombre: string
+          pais?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          cod_pais?: string | null
+          codigo?: string
+          created_at?: string
+          nombre?: string
+          pais?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_unidades: {
+        Row: {
+          activo: boolean
+          codigo: string
+          created_at: string
+          nombre: string
+          nombre_eng: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          created_at?: string
+          nombre: string
+          nombre_eng?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          created_at?: string
+          nombre?: string
+          nombre_eng?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clientes: {
         Row: {
           activo: boolean
@@ -261,10 +345,13 @@ export type Database = {
           observaciones: string | null
           otros: number | null
           pais_origen: string | null
+          pais_origen_codigo: string | null
+          pais_procedencia_codigo: string | null
           peso_bruto: number | null
           peso_neto: number | null
           preferencia_comercial: string | null
           puerto_arribo: string | null
+          puerto_arribo_codigo: string | null
           puerto_salida: string | null
           rectificacion_tecnica: boolean
           regimen_aduanero: string | null
@@ -309,10 +396,13 @@ export type Database = {
           observaciones?: string | null
           otros?: number | null
           pais_origen?: string | null
+          pais_origen_codigo?: string | null
+          pais_procedencia_codigo?: string | null
           peso_bruto?: number | null
           peso_neto?: number | null
           preferencia_comercial?: string | null
           puerto_arribo?: string | null
+          puerto_arribo_codigo?: string | null
           puerto_salida?: string | null
           rectificacion_tecnica?: boolean
           regimen_aduanero?: string | null
@@ -357,10 +447,13 @@ export type Database = {
           observaciones?: string | null
           otros?: number | null
           pais_origen?: string | null
+          pais_origen_codigo?: string | null
+          pais_procedencia_codigo?: string | null
           peso_bruto?: number | null
           peso_neto?: number | null
           preferencia_comercial?: string | null
           puerto_arribo?: string | null
+          puerto_arribo_codigo?: string | null
           puerto_salida?: string | null
           rectificacion_tecnica?: boolean
           regimen_aduanero?: string | null
@@ -566,6 +659,7 @@ export type Database = {
           id: string
           item_no: number
           peso: number | null
+          unidad_codigo: string | null
           unidad_medida: string | null
           updated_at: string
           valor_fob: number | null
@@ -581,6 +675,7 @@ export type Database = {
           id?: string
           item_no: number
           peso?: number | null
+          unidad_codigo?: string | null
           unidad_medida?: string | null
           updated_at?: string
           valor_fob?: number | null
@@ -596,6 +691,7 @@ export type Database = {
           id?: string
           item_no?: number
           peso?: number | null
+          unidad_codigo?: string | null
           unidad_medida?: string | null
           updated_at?: string
           valor_fob?: number | null
@@ -902,7 +998,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role:
