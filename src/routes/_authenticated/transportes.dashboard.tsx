@@ -16,9 +16,9 @@ import {
 export const Route = createFileRoute("/_authenticated/transportes/dashboard")({
   component: TransporteDashboard,
   errorComponent: ({ error }) => (
-    <AppShell title="Dashboard Transporte"><div className="p-6 text-destructive">{error.message}</div></AppShell>
+    <AppShell><div className="p-6 text-destructive">{error.message}</div></AppShell>
   ),
-  notFoundComponent: () => <AppShell title="Dashboard Transporte"><div className="p-6">No disponible</div></AppShell>,
+  notFoundComponent: () => <AppShell><div className="p-6">No disponible</div></AppShell>,
 });
 
 type Periodo = "semanal" | "mensual";
@@ -190,7 +190,7 @@ function TransporteDashboard() {
   const goNext = () => setAnchor(a => periodo === "semanal" ? addDays(a, 7) : addMonths(a, 1));
 
   return (
-    <AppShell title="Dashboard · Transporte">
+    <AppShell>
       <div className="p-4 md:p-6 space-y-4">
         {/* Header controls */}
         <div className="flex flex-wrap items-center gap-3 justify-between">
