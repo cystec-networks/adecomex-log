@@ -184,6 +184,9 @@ function AppSidebarInner() {
         {/* Expedientes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "expedientes")!)}
 
+        {/* Transporte group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "transporte")!)}
+
         {/* Simple items */}
         {visibleSimpleItems.map((it) => renderSimpleItem(it))}
       </SidebarContent>
