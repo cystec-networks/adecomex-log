@@ -95,6 +95,8 @@ const SIMPLE_ITEMS: SimpleItem[] = [
     match: (p) => p === "/clientes" || p.startsWith("/clientes/") },
   { id: "usuarios", to: "/admin/usuarios", label: "Usuarios y roles", icon: UserCog, adminOnly: true,
     match: (p) => p.startsWith("/admin/usuarios") },
+  { id: "catalogos", to: "/admin/catalogos", label: "Catálogos DGA", icon: Library, adminOnly: true,
+    match: (p) => p.startsWith("/admin/catalogos") },
   { id: "papelera", to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
     match: (p) => p === "/expedientes/papelera" },
 ];
