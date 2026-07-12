@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { ArrowLeft, Check, X, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { WhatsAppButton } from "@/components/whatsapp-button";
+import { EmailButton } from "@/components/email-button";
 
 const NO_EXPEDIENTE = "__none__";
 
@@ -77,7 +78,7 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
 
   const { data: clientes } = useQuery({
     queryKey: ["clientes-lite"],
-    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc,telefono").order("nombre")).data ?? [],
+    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc,telefono,email").order("nombre")).data ?? [],
   });
 
   const [newClientOpen, setNewClientOpen] = useState(false);
@@ -272,13 +273,22 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
                 {(() => {
                   const c = (clientes ?? []).find((x: any) => x.id === form.cliente_id);
                   return c ? (
-                    <WhatsAppButton
-                      phone={c.telefono}
-                      clientName={c.nombre}
-                      recordType="Transporte"
-                      recordNumber={form.numero_viaje}
-                      variant="icon"
-                    />
+                    <>
+                      <WhatsAppButton
+                        phone={c.telefono}
+                        clientName={c.nombre}
+                        recordType="Transporte"
+                        recordNumber={form.numero_viaje}
+                        variant="icon"
+                      />
+                      <EmailButton
+                        email={c.email}
+                        clientName={c.nombre}
+                        recordType="Transporte"
+                        recordNumber={form.numero_viaje}
+                        variant="icon"
+                      />
+                    </>
                   ) : null;
                 })()}
                 <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setNewClientOpen(true)}>
