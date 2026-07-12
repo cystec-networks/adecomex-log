@@ -156,12 +156,15 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
 
   const totales = useMemo(() => {
     const n = (s: string) => (s === "" || s == null ? 0 : Number(s) || 0);
-    const costos = n(form.costo_combustible) + n(form.costo_peajes) + n(form.costo_chofer) + n(form.costo_otros);
+    const costoViaje = n(form.costo_viaje);
+    const cxc = n(form.descuento_cxc);
+    const netoPagar = Math.max(0, costoViaje - cxc);
+    const costos = costoViaje + n(form.costo_combustible) + n(form.costo_peajes) + n(form.costo_chofer) + n(form.costo_otros);
     const ingreso = n(form.ingreso_facturado);
     const margen = ingreso - costos;
     const pct = ingreso > 0 ? (margen / ingreso) * 100 : 0;
-    return { costos, ingreso, margen, pct };
-  }, [form.costo_combustible, form.costo_peajes, form.costo_chofer, form.costo_otros, form.ingreso_facturado]);
+    return { costos, ingreso, margen, pct, costoViaje, cxc, netoPagar };
+  }, [form.costo_viaje, form.descuento_cxc, form.costo_combustible, form.costo_peajes, form.costo_chofer, form.costo_otros, form.ingreso_facturado]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -169,13 +172,19 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
       const nullableStr = [
         "expediente_id","cliente_id","tipo","transportista","placa_contenedor","origen","destino",
         "fecha_salida","eta","observaciones","factura_numero","factura_fecha","numero_viaje",
+        "pago_referencia","factura_costo_numero","factura_costo_fecha","contenedores_detalle",
       ];
       nullableStr.forEach((k) => { if (payload[k] === "") payload[k] = null; });
-      const nullableNum = ["flete_monto","costo_combustible","costo_peajes","costo_chofer","costo_otros","ingreso_facturado"];
+      const nullableNum = ["flete_monto","costo_viaje","descuento_cxc","costo_combustible","costo_peajes","costo_chofer","costo_otros","ingreso_facturado","contenedores_cantidad"];
       nullableNum.forEach((k) => { payload[k] = payload[k] === "" || payload[k] == null ? null : Number(payload[k]); });
 
       // Clear terrestre-only fields when not terrestre
       if (payload.tipo !== "terrestre") {
+        payload.costo_viaje = null;
+        payload.descuento_cxc = null;
+        payload.pago_referencia = null;
+        payload.factura_costo_numero = null;
+        payload.factura_costo_fecha = null;
         payload.costo_combustible = null;
         payload.costo_peajes = null;
         payload.costo_chofer = null;
@@ -184,6 +193,8 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         payload.factura_numero = null;
         payload.factura_fecha = null;
         payload.pago_estado = "pendiente";
+        payload.contenedores_cantidad = null;
+        payload.contenedores_detalle = null;
       }
 
       if (mode === "new") {
