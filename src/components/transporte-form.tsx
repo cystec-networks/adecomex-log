@@ -261,31 +261,76 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
 
       <Card>
         <CardHeader className="pb-3 border-b">
-          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Vinculación</CardTitle>
+          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Cliente y Expediente</CardTitle>
         </CardHeader>
         <CardContent className="pt-5 grid gap-4 md:grid-cols-2">
           <div className="grid gap-1.5">
-            <Label>Expediente vinculado</Label>
-            <Select value={form.expediente_id || undefined} onValueChange={(v) => set("expediente_id", v)}>
-              <SelectTrigger><SelectValue placeholder="Selecciona expediente" /></SelectTrigger>
+            <div className="flex items-center justify-between">
+              <Label>Cliente *</Label>
+              <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setNewClientOpen(true)}>
+                <Plus className="h-3 w-3 mr-1" />Nuevo
+              </Button>
+            </div>
+            <Select value={form.cliente_id || undefined} onValueChange={(v) => set("cliente_id", v)}>
+              <SelectTrigger><SelectValue placeholder="Selecciona cliente" /></SelectTrigger>
               <SelectContent>
+                {(clientes ?? []).map((c: any) => (
+                  <SelectItem key={c.id} value={c.id}>{c.nombre}{c.rnc ? ` · ${c.rnc}` : ""}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground">Independiente del expediente. Requerido para todo viaje.</p>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Expediente vinculado (opcional)</Label>
+            <Select
+              value={form.expediente_id || NO_EXPEDIENTE}
+              onValueChange={(v) => set("expediente_id", v === NO_EXPEDIENTE ? "" : v)}
+            >
+              <SelectTrigger><SelectValue placeholder="— Sin expediente —" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_EXPEDIENTE}>— Sin expediente —</SelectItem>
                 {(expedientes ?? []).map((e: any) => (
                   <SelectItem key={e.id} value={e.id}>{e.numero} · {e.clientes?.nombre ?? "—"}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="grid gap-1.5">
-            <Label>Cliente (auto)</Label>
-            <div className="h-9 px-3 rounded-md border bg-muted/40 flex items-center text-sm">
-              {(() => {
-                const exp = (expedientes ?? []).find((e: any) => e.id === form.expediente_id);
-                return exp?.clientes?.nombre ?? existing?.clientes?.nombre ?? <span className="text-muted-foreground">— (elige expediente)</span>;
-              })()}
-            </div>
+            <p className="text-[11px] text-muted-foreground">Deja vacío si es un viaje tercerizado sin expediente.</p>
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={newClientOpen} onOpenChange={setNewClientOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Nuevo cliente</DialogTitle></DialogHeader>
+          <form
+            className="grid gap-3"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!newClient.nombre.trim()) { toast.error("Nombre requerido"); return; }
+              const { data, error } = await supabase.from("clientes").insert(newClient).select().single();
+              if (error) { toast.error(error.message); return; }
+              toast.success("Cliente creado");
+              await qc.invalidateQueries({ queryKey: ["clientes-lite"] });
+              set("cliente_id", data.id);
+              setNewClient({ nombre: "", rnc: "", contacto: "", email: "", telefono: "" });
+              setNewClientOpen(false);
+            }}
+          >
+            <div className="grid gap-1.5"><Label>Nombre / Razón social *</Label><Input required value={newClient.nombre} onChange={(e) => setNewClient({ ...newClient, nombre: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5"><Label>RNC</Label><Input value={newClient.rnc} onChange={(e) => setNewClient({ ...newClient, rnc: e.target.value })} /></div>
+              <div className="grid gap-1.5"><Label>Contacto</Label><Input value={newClient.contacto} onChange={(e) => setNewClient({ ...newClient, contacto: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5"><Label>Email</Label><Input type="email" value={newClient.email} onChange={(e) => setNewClient({ ...newClient, email: e.target.value })} /></div>
+              <div className="grid gap-1.5"><Label>Teléfono</Label><Input value={newClient.telefono} onChange={(e) => setNewClient({ ...newClient, telefono: e.target.value })} /></div>
+            </div>
+            <DialogFooter><Button type="submit">Crear cliente</Button></DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
 
       <Card>
         <CardHeader className="pb-3 border-b">
