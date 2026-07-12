@@ -59,6 +59,7 @@ function fmtDate(d?: string | null): string {
 
 export type ValidationIssue = { field: string; label: string };
 
+// Bloquean la descarga: datos duros del expediente y códigos ya disponibles.
 export function validateExpediente(exp: any, items: any[], broker: BrokerConfig): ValidationIssue[] {
   const missing: ValidationIssue[] = [];
   const need = (cond: any, field: string, label: string) => { if (!cond) missing.push({ field, label }); };
@@ -66,10 +67,7 @@ export function validateExpediente(exp: any, items: any[], broker: BrokerConfig)
   need(exp?.numero, "numero", "Número de expediente");
   need(exp?.clientes?.rnc, "cliente.rnc", "RNC del cliente");
   need(exp?.clientes?.nombre, "cliente.nombre", "Nombre del cliente");
-  need(exp?.regimen_codigo, "regimen_codigo", "Código de Régimen aduanero (Catálogo)");
   need(exp?.area_aduanera_codigo, "area_aduanera_codigo", "Código de Área/Administración aduanera");
-  need(exp?.tipo_despacho_codigo, "tipo_despacho_codigo", "Código de Tipo de despacho");
-  need(exp?.metodo_transporte_codigo, "metodo_transporte_codigo", "Código de Método de transporte");
   need(exp?.pais_origen_codigo, "pais_origen_codigo", "Código de País de origen");
   need(exp?.puerto_arribo_codigo, "puerto_arribo_codigo", "Código de Puerto de arribo");
   need(exp?.bl_awb, "bl_awb", "BL / AWB");
@@ -87,6 +85,18 @@ export function validateExpediente(exp: any, items: any[], broker: BrokerConfig)
   need(broker.brokerEmployeeCode, "broker.employee", "Código de tramitador (BrokerEmployeeCode)");
   need(broker.brokerRnc, "broker.rnc", "RNC de la agencia");
   return missing;
+}
+
+// NO bloquean la descarga: códigos pendientes de homologación con la DGA.
+// Se emiten como etiquetas XML vacías (opción a).
+export function pendingDgaCodes(exp: any): ValidationIssue[] {
+  const pending: ValidationIssue[] = [];
+  const check = (v: any, field: string, label: string) => { if (!v) pending.push({ field, label }); };
+  check(exp?.regimen_codigo, "regimen_codigo", "Régimen aduanero");
+  check(exp?.tipo_despacho_codigo, "tipo_despacho_codigo", "Tipo de despacho");
+  check(exp?.metodo_transporte_codigo, "metodo_transporte_codigo", "Método de transporte");
+  check(exp?.acuerdo_codigo, "acuerdo_codigo", "Acuerdo / Preferencia comercial");
+  return pending;
 }
 
 export function buildImportDUAXml(exp: any, items: any[], broker: BrokerConfig): string {

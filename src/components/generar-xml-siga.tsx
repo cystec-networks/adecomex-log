@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { FileCode2, AlertTriangle, Download, Settings2, CheckCircle2 } from "lucide-react";
+import { FileCode2, AlertTriangle, Download, Settings2, CheckCircle2, Info } from "lucide-react";
 import { toast } from "sonner";
 import {
   buildImportDUAXml,
@@ -14,6 +14,7 @@ import {
   loadBrokerConfig,
   saveBrokerConfig,
   validateExpediente,
+  pendingDgaCodes,
   type BrokerConfig,
 } from "@/lib/siga-xml";
 
@@ -37,6 +38,7 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
   });
 
   const issues = useMemo(() => (exp ? validateExpediente(exp, items ?? [], broker) : []), [exp, items, broker]);
+  const pending = useMemo(() => (exp ? pendingDgaCodes(exp) : []), [exp]);
   const xml = useMemo(() => (exp ? buildImportDUAXml(exp, items ?? [], broker) : ""), [exp, items, broker]);
   const valid = issues.length === 0;
 
@@ -44,7 +46,8 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
     if (!exp) return;
     if (!valid) return toast.error("Corrige los errores antes de descargar");
     downloadXml(`SIGA_${exp.numero}.xml`, xml);
-    toast.success("XML descargado");
+    if (pending.length > 0) toast.warning(`XML descargado con ${pending.length} campo(s) sin código DGA`);
+    else toast.success("XML descargado");
   };
 
   const handleSaveCfg = () => {
@@ -73,13 +76,7 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
           <div className="flex-1 overflow-auto space-y-4">
             {!exp ? (
               <p className="text-sm text-muted-foreground">Cargando…</p>
-            ) : valid ? (
-              <Alert className="border-green-500/40 bg-green-500/5">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertTitle>Validación correcta</AlertTitle>
-                <AlertDescription>Todos los campos obligatorios están completos. Puedes descargar el XML.</AlertDescription>
-              </Alert>
-            ) : (
+            ) : !valid ? (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Faltan {issues.length} campo(s) obligatorio(s)</AlertTitle>
@@ -88,6 +85,23 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
                     {issues.map((i) => <li key={i.field}>{i.label}</li>)}
                   </ul>
                 </AlertDescription>
+              </Alert>
+            ) : pending.length > 0 ? (
+              <Alert className="border-yellow-500/50 bg-yellow-500/10">
+                <Info className="h-4 w-4 text-yellow-700" />
+                <AlertTitle>Campos sin código DGA confirmado</AlertTitle>
+                <AlertDescription>
+                  Este XML contiene campos sin código DGA confirmado. Las etiquetas correspondientes se emitirán vacías. Revísalo antes de cargarlo al sistema SIGA.
+                  <ul className="list-disc pl-5 mt-2 space-y-0.5 text-sm">
+                    {pending.map((i) => <li key={i.field}>{i.label}</li>)}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Alert className="border-green-500/40 bg-green-500/5">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertTitle>Validación correcta</AlertTitle>
+                <AlertDescription>Todos los campos obligatorios están completos. Puedes descargar el XML.</AlertDescription>
               </Alert>
             )}
 
