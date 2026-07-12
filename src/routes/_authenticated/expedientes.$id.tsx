@@ -163,6 +163,9 @@ function TabInfo({ exp }: { exp: any }) {
     otros: exp.otros ?? "",
     regimen_aduanero: exp.regimen_aduanero ?? "",
     observaciones: exp.observaciones ?? "",
+    pais_origen_codigo: exp.pais_origen_codigo ?? "",
+    pais_procedencia_codigo: exp.pais_procedencia_codigo ?? "",
+    puerto_arribo_codigo: exp.puerto_arribo_codigo ?? "",
   });
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
