@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, FolderPlus, Save } from "lucide-react";
 import { WhatsAppButton } from "@/components/whatsapp-button";
+import { EmailButton } from "@/components/email-button";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 
@@ -99,6 +100,13 @@ function DetalleSolicitud() {
                 <span>{s.clientes.nombre}</span>
                 <WhatsAppButton
                   phone={s.clientes.telefono}
+                  clientName={s.clientes.nombre}
+                  recordType="Solicitud"
+                  recordNumber={form.numero || s.numero}
+                  variant="icon"
+                />
+                <EmailButton
+                  email={(s.clientes as any).email}
                   clientName={s.clientes.nombre}
                   recordType="Solicitud"
                   recordNumber={form.numero || s.numero}

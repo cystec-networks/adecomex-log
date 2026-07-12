@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Trash2 } from "lucide-react";
 import { WhatsAppButton } from "@/components/whatsapp-button";
+import { EmailButton } from "@/components/email-button";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -31,7 +32,7 @@ function Solicitudes() {
     queryKey: ["solicitudes"],
     queryFn: async () => (await supabase
       .from("solicitudes")
-      .select("*, clientes(nombre,telefono)")
+      .select("*, clientes(nombre,telefono,email)")
       .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
   });
@@ -165,6 +166,13 @@ function Solicitudes() {
                   <td className="px-4 py-2 text-right whitespace-nowrap">
                     <WhatsAppButton
                       phone={s.clientes?.telefono}
+                      clientName={s.clientes?.nombre}
+                      recordType="Solicitud"
+                      recordNumber={s.numero}
+                      variant="icon"
+                    />
+                    <EmailButton
+                      email={(s.clientes as any)?.email}
                       clientName={s.clientes?.nombre}
                       recordType="Solicitud"
                       recordNumber={s.numero}

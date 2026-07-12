@@ -18,6 +18,7 @@ import { AutocompleteInput } from "@/components/autocomplete-input";
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { GenerarXmlSigaButton } from "@/components/generar-xml-siga";
 import { WhatsAppButton } from "@/components/whatsapp-button";
+import { EmailButton } from "@/components/email-button";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
@@ -97,13 +98,22 @@ function DetalleExpediente() {
           <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
             <span>{exp.clientes?.nombre ?? "Sin cliente"}</span>
             {exp.clientes && (
-              <WhatsAppButton
-                phone={exp.clientes.telefono}
-                clientName={exp.clientes.nombre}
-                recordType="Expediente"
-                recordNumber={exp.numero}
-                variant="icon"
-              />
+              <>
+                <WhatsAppButton
+                  phone={exp.clientes.telefono}
+                  clientName={exp.clientes.nombre}
+                  recordType="Expediente"
+                  recordNumber={exp.numero}
+                  variant="icon"
+                />
+                <EmailButton
+                  email={(exp.clientes as any).email}
+                  clientName={exp.clientes.nombre}
+                  recordType="Expediente"
+                  recordNumber={exp.numero}
+                  variant="icon"
+                />
+              </>
             )}
             <span>· BL/AWB: {exp.bl_awb ?? "—"}</span>
           </p>
