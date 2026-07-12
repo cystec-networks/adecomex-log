@@ -1457,6 +1457,7 @@ function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
       codigo_arancelario: it.codigo_arancelario ?? "",
       detalle_producto: it.detalle_producto ?? "",
       unidad_medida: it.unidad_medida ?? "",
+      unidad_codigo: it.unidad_codigo ?? "",
       cantidad: it.cantidad != null ? String(it.cantidad) : "",
       peso: it.peso != null ? String(it.peso) : "",
       valor_fob: it.valor_fob != null ? String(it.valor_fob) : "",
