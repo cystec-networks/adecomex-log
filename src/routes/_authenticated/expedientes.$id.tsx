@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { AutocompleteInput } from "@/components/autocomplete-input";
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { GenerarXmlSigaButton } from "@/components/generar-xml-siga";
+import { WhatsAppButton } from "@/components/whatsapp-button";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
