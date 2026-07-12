@@ -11,6 +11,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
+import { WhatsAppButton } from "@/components/whatsapp-button";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -35,7 +36,7 @@ function Expedientes() {
     queryKey: ["expedientes"],
     queryFn: async () => (await supabase
       .from("expedientes")
-      .select("*, clientes(nombre), solicitudes(tipo_operacion)")
+      .select("*, clientes(nombre,telefono), solicitudes(tipo_operacion)")
       .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
   });
@@ -287,15 +288,20 @@ function Expedientes() {
                             {estadoBadge(e.estado)}
                           </td>
                           <td className="px-1 py-2 align-middle text-right whitespace-nowrap">
-
+                            <WhatsAppButton
+                              phone={e.clientes?.telefono}
+                              clientName={e.clientes?.nombre}
+                              recordType="Expediente"
+                              recordNumber={e.numero}
+                              variant="icon"
+                              className="h-8 w-8"
+                            />
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-muted-foreground hover:text-destructive"
                               onClick={() => setToTrash({ id: e.id, numero: e.numero })}
                               title="Mover a papelera"
-
-
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

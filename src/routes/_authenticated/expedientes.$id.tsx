@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { AutocompleteInput } from "@/components/autocomplete-input";
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { GenerarXmlSigaButton } from "@/components/generar-xml-siga";
+import { WhatsAppButton } from "@/components/whatsapp-button";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
@@ -93,7 +94,19 @@ function DetalleExpediente() {
             <Badge className="bg-primary/10 text-primary border-transparent">{exp.estado?.replace("_"," ")}</Badge>
             {exp.solicitudes?.numero && <Badge variant="outline">← {exp.solicitudes.numero}</Badge>}
           </h1>
-          <p className="text-sm text-muted-foreground">{exp.clientes?.nombre ?? "Sin cliente"} · BL/AWB: {exp.bl_awb ?? "—"}</p>
+          <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+            <span>{exp.clientes?.nombre ?? "Sin cliente"}</span>
+            {exp.clientes && (
+              <WhatsAppButton
+                phone={exp.clientes.telefono}
+                clientName={exp.clientes.nombre}
+                recordType="Expediente"
+                recordNumber={exp.numero}
+                variant="icon"
+              />
+            )}
+            <span>· BL/AWB: {exp.bl_awb ?? "—"}</span>
+          </p>
         </div>
         <GenerarXmlSigaButton expedienteId={id} />
         <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>

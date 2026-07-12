@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, FolderPlus, Save } from "lucide-react";
+import { WhatsAppButton } from "@/components/whatsapp-button";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 
@@ -90,7 +91,22 @@ function DetalleSolicitud() {
             <Badge className="bg-primary/10 text-primary border-transparent">{form.estado?.replace("_", " ")}</Badge>
             <Badge variant="outline">{form.prioridad}</Badge>
           </h1>
-          <p className="text-sm text-muted-foreground">Registrada el {new Date(s.created_at).toLocaleString("es-DO")}</p>
+          <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+            <span>Registrada el {new Date(s.created_at).toLocaleString("es-DO")}</span>
+            {s.clientes && (
+              <>
+                <span>·</span>
+                <span>{s.clientes.nombre}</span>
+                <WhatsAppButton
+                  phone={s.clientes.telefono}
+                  clientName={s.clientes.nombre}
+                  recordType="Solicitud"
+                  recordNumber={form.numero || s.numero}
+                  variant="icon"
+                />
+              </>
+            )}
+          </p>
         </div>
         <Button onClick={() => save.mutate()} disabled={save.isPending}><Save className="h-4 w-4 mr-1" />Guardar cambios</Button>
         {form.estado === "convertida" && expedienteVinculado ? (
