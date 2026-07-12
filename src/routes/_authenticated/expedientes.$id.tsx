@@ -1406,7 +1406,7 @@ function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
 
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const emptyForm = { codigo_arancelario: "", detalle_producto: "", unidad_medida: "", cantidad: "", peso: "", valor_fob: "" };
+  const emptyForm = { codigo_arancelario: "", detalle_producto: "", unidad_medida: "", unidad_codigo: "", cantidad: "", peso: "", valor_fob: "" };
   const [f, setF] = useState(emptyForm);
 
   const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
