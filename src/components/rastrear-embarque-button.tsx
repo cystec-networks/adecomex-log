@@ -25,9 +25,11 @@ export function RastrearEmbarqueButton({
     e.preventDefault();
     e.stopPropagation();
 
-    const base = "https://www.e-tracking.net/tracking/tracking/index.php";
-    const ref = container || bl || "";
-    const url = ref ? `${base}?tracking_number=${encodeURIComponent(ref)}` : base;
+    const url = container
+      ? `https://e-tracking.net/tracking/container-tracking?container=${encodeURIComponent(container)}`
+      : bl
+        ? `https://e-tracking.net/tracking/bl-tracking?bl=${encodeURIComponent(bl)}`
+        : "https://e-tracking.net/";
 
     window.open(url, "_blank", "noopener,noreferrer");
   };
