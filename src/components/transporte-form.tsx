@@ -268,9 +268,23 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
           <div className="grid gap-1.5">
             <div className="flex items-center justify-between">
               <Label>Cliente *</Label>
-              <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setNewClientOpen(true)}>
-                <Plus className="h-3 w-3 mr-1" />Nuevo
-              </Button>
+              <div className="flex items-center gap-1">
+                {(() => {
+                  const c = (clientes ?? []).find((x: any) => x.id === form.cliente_id);
+                  return c ? (
+                    <WhatsAppButton
+                      phone={c.telefono}
+                      clientName={c.nombre}
+                      recordType="Transporte"
+                      recordNumber={form.numero_viaje}
+                      variant="icon"
+                    />
+                  ) : null;
+                })()}
+                <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setNewClientOpen(true)}>
+                  <Plus className="h-3 w-3 mr-1" />Nuevo
+                </Button>
+              </div>
             </div>
             <Select value={form.cliente_id || undefined} onValueChange={(v) => set("cliente_id", v)}>
               <SelectTrigger><SelectValue placeholder="Selecciona cliente" /></SelectTrigger>
