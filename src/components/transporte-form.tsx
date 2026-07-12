@@ -74,6 +74,14 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
     queryFn: async () => (await supabase.from("expedientes").select("id,numero,cliente_id,clientes(nombre)").is("eliminado_en", null).order("numero", { ascending: false }).limit(500)).data ?? [],
   });
 
+  const { data: clientes } = useQuery({
+    queryKey: ["clientes-lite"],
+    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc").order("nombre")).data ?? [],
+  });
+
+  const [newClientOpen, setNewClientOpen] = useState(false);
+  const [newClient, setNewClient] = useState({ nombre: "", rnc: "", contacto: "", email: "", telefono: "" });
+
   const [form, setForm] = useState({
     numero_viaje: "",
     expediente_id: expedienteId ?? "",
