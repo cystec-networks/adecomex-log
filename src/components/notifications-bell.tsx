@@ -1,4 +1,4 @@
-import { Bell, AlertTriangle, Clock, FileWarning, Truck, Inbox } from "lucide-react";
+import { Bell, AlertTriangle, Clock, FileWarning, Truck, Inbox, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,6 +13,8 @@ const KIND_ICON = {
   permiso_por_vencer: FileWarning,
   permiso_vencido: FileWarning,
   transporte_retrasado: Truck,
+  hito_proximo: CheckCircle2,
+  hito_atrasado: AlertTriangle,
 } as const;
 
 const SEV_STYLE = {

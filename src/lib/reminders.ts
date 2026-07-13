@@ -10,7 +10,9 @@ export type ReminderKind =
   | "eta_proximo"
   | "permiso_por_vencer"
   | "permiso_vencido"
-  | "transporte_retrasado";
+  | "transporte_retrasado"
+  | "hito_proximo"
+  | "hito_atrasado";
 
 export type Reminder = {
   id: string; // clave única `${kind}:${entidad_id}`
@@ -64,7 +66,7 @@ export function useReminders() {
   const query = useQuery({
     queryKey: ["reminders"],
     queryFn: async (): Promise<Reminder[]> => {
-      const [sol, exp, per, tra] = await Promise.all([
+      const [sol, exp, per, tra, hit] = await Promise.all([
         supabase
           .from("solicitudes")
           .select("id,numero,estado,created_at,cliente_id, cliente:clientes(nombre)")
@@ -81,6 +83,11 @@ export function useReminders() {
           .from("transportes")
           .select("id,numero_viaje,estado,eta")
           .is("eliminado_en", null),
+        supabase
+          .from("expediente_hitos")
+          .select("id,expediente_id,estado,fecha_programada,hito_codigo, catalogo_hitos(nombre), expedientes!inner(numero,eliminado_en)")
+          .in("estado", ["pendiente", "en_curso"])
+          .not("fecha_programada", "is", null),
       ]);
 
       const now = new Date();
@@ -191,6 +198,37 @@ export function useReminders() {
           });
         }
       }
+
+      // Hitos de despacho (próximos / atrasados)
+      for (const h of (hit.data ?? []) as any[]) {
+        if (h.expedientes?.eliminado_en) continue;
+        if (!h.fecha_programada) continue;
+        const dias = daysBetween(new Date(h.fecha_programada), now);
+        const nombre = h.catalogo_hitos?.nombre ?? h.hito_codigo;
+        const numExp = h.expedientes?.numero ?? "";
+        if (dias > 0) {
+          out.push({
+            id: `hito_atrasado:${h.id}`,
+            kind: "hito_atrasado",
+            severity: dias > 3 ? "critica" : "alta",
+            title: `Hito atrasado · ${nombre}`,
+            detail: `Exp. ${numExp} · vencido hace ${dias} días`,
+            href: `/expedientes/${h.expediente_id}`,
+            createdAt: h.fecha_programada,
+          });
+        } else if (Math.abs(dias) <= 3) {
+          out.push({
+            id: `hito_proximo:${h.id}`,
+            kind: "hito_proximo",
+            severity: Math.abs(dias) <= 1 ? "alta" : "media",
+            title: `Hito próximo · ${nombre}`,
+            detail: `Exp. ${numExp} · en ${Math.abs(dias)} días`,
+            href: `/expedientes/${h.expediente_id}`,
+            createdAt: h.fecha_programada,
+          });
+        }
+      }
+
 
       const sevOrder: Record<ReminderSeverity, number> = { critica: 0, alta: 1, media: 2 };
       out.sort((a, b) => sevOrder[a.severity] - sevOrder[b.severity]);

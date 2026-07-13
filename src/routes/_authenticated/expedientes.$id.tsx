@@ -21,6 +21,7 @@ import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
 import { SearchEmailButton } from "@/components/search-email-button";
 import { RastrearEmbarqueButton } from "@/components/rastrear-embarque-button";
+import { ChecklistHitos } from "@/components/checklist-hitos";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
@@ -142,6 +143,7 @@ function DetalleExpediente() {
       <Tabs defaultValue="info">
         <TabsList>
           <TabsTrigger value="info">Información</TabsTrigger>
+          <TabsTrigger value="checklist">Checklist</TabsTrigger>
           <TabsTrigger value="timeline">Flujo / Timeline</TabsTrigger>
           <TabsTrigger value="docs">Documentos</TabsTrigger>
           <TabsTrigger value="permisos">Permisos</TabsTrigger>
@@ -152,6 +154,7 @@ function DetalleExpediente() {
         </TabsList>
 
         <TabsContent value="info"><TabInfo exp={exp} /></TabsContent>
+        <TabsContent value="checklist"><ChecklistHitos expedienteId={id} /></TabsContent>
         <TabsContent value="timeline"><TabTimeline expedienteId={id} /></TabsContent>
         <TabsContent value="docs"><TabDocumentos expedienteId={id} /></TabsContent>
         <TabsContent value="permisos"><TabPermisosExp expedienteId={id} /></TabsContent>
