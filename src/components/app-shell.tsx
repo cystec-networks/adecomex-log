@@ -143,13 +143,20 @@ function AppSidebarInner() {
   const { data: profile } = useMyProfile();
   const { data: roles } = useMyRoles();
   const isAdmin = roles?.includes("admin");
+  const rolesSet = new Set<AppRole>((roles ?? []) as AppRole[]);
 
-  const visibleGroups = GROUPS.filter((g) => !g.adminOnly || isAdmin).map((g) => ({
+  const canSee = (it: { adminOnly?: boolean; roles?: AppRole[] }) => {
+    if (it.adminOnly) return !!isAdmin;
+    if (it.roles && it.roles.length > 0) return it.roles.some((r) => rolesSet.has(r));
+    return true;
+  };
+
+  const visibleGroups = GROUPS.filter(canSee).map((g) => ({
     ...g,
-    items: g.items.filter((it) => !it.adminOnly || isAdmin),
+    items: g.items.filter(canSee),
   })).filter((g) => g.items.length > 0);
 
-  const visibleSimpleItems = SIMPLE_ITEMS.filter((it) => !it.adminOnly || isAdmin);
+  const visibleSimpleItems = SIMPLE_ITEMS.filter(canSee);
 
   const isItemActive = (it: SubItem | SimpleItem) =>
     it.match ? it.match(pathname, search) : pathname === it.to;
