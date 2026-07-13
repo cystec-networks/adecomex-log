@@ -94,6 +94,7 @@ export function useReminders() {
       ]);
 
       const now = new Date();
+      const today = new Date(); today.setHours(0, 0, 0, 0);
       const out: Reminder[] = [];
       const cfg = REMINDER_CONFIG;
 
