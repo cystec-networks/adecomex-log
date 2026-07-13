@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Ship, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,6 +23,10 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
@@ -47,6 +52,21 @@ function AuthPage() {
     toast.success("Sesión iniciada");
     navigate({ to: "/dashboard" });
   };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    setForgotLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setForgotLoading(false);
+    if (error) return toast.error(error.message);
+    toast.success("Si el correo existe, recibirás un enlace para restablecer tu contraseña.");
+    setForgotOpen(false);
+    setForgotEmail("");
+  };
+
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
@@ -84,7 +104,16 @@ function AuthPage() {
                 <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Contraseña</Label>
+                  <button
+                    type="button"
+                    onClick={() => { setForgotEmail(email); setForgotOpen(true); }}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                </div>
                 <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
@@ -97,6 +126,30 @@ function AuthPage() {
             </form>
           </CardContent>
         </Card>
+
+        <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Restablecer contraseña</DialogTitle>
+              <DialogDescription>
+                Ingresa tu correo corporativo. Si existe una cuenta, recibirás un enlace para definir una nueva contraseña.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleForgot} className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="forgot-email">Correo</Label>
+                <Input id="forgot-email" type="email" required value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setForgotOpen(false)}>Cancelar</Button>
+                <Button type="submit" disabled={forgotLoading || !forgotEmail}>
+                  {forgotLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                  Enviar enlace
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
