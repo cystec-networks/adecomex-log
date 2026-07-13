@@ -3,7 +3,7 @@ import {
   Inbox, FolderKanban, Users, UserCog, LogOut,
   PackageOpen, PackageCheck, ScanText, Sparkles, Trash2, FileCheck2, Truck,
   ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3, Library, Settings,
-  DollarSign, PiggyBank,
+  DollarSign, PiggyBank, Shield,
 } from "lucide-react";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { GlobalSearch } from "@/components/global-search";
@@ -98,6 +98,26 @@ const GROUPS: Group[] = [
         match: (p) => p === "/transportes/dashboard" },
     ],
   },
+  {
+    id: "administracion",
+    label: "ADMINISTRACIÓN",
+    icon: Shield,
+    adminOnly: true,
+    items: [
+      { to: "/admin/usuarios", label: "Usuarios y roles", icon: UserCog, adminOnly: true,
+        match: (p) => p.startsWith("/admin/usuarios") },
+      { to: "/admin/catalogos", label: "Catálogos DGA", icon: Library, adminOnly: true,
+        match: (p) => p.startsWith("/admin/catalogos") },
+      { to: "/admin/configuracion", label: "Configuración", icon: Settings, adminOnly: true,
+        match: (p) => p.startsWith("/admin/configuracion") },
+      { to: "/admin/gastos-operativos", label: "Gastos Operativos", icon: DollarSign, adminOnly: true,
+        match: (p) => p.startsWith("/admin/gastos-operativos") },
+      { to: "/admin/dashboard-financiero", label: "Dashboard Financiero", icon: PiggyBank, adminOnly: true,
+        match: (p) => p.startsWith("/admin/dashboard-financiero") },
+      { to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
+        match: (p) => p === "/expedientes/papelera" },
+    ],
+  },
 ];
 
 const SIMPLE_ITEMS: SimpleItem[] = [
@@ -105,18 +125,6 @@ const SIMPLE_ITEMS: SimpleItem[] = [
     match: (p) => p === "/reportes" || p.startsWith("/reportes/") },
   { id: "clientes", to: "/clientes", label: "Clientes", icon: Users,
     match: (p) => p === "/clientes" || p.startsWith("/clientes/") },
-  { id: "usuarios", to: "/admin/usuarios", label: "Usuarios y roles", icon: UserCog, adminOnly: true,
-    match: (p) => p.startsWith("/admin/usuarios") },
-  { id: "catalogos", to: "/admin/catalogos", label: "Catálogos DGA", icon: Library, adminOnly: true,
-    match: (p) => p.startsWith("/admin/catalogos") },
-  { id: "configuracion", to: "/admin/configuracion", label: "Configuración", icon: Settings, adminOnly: true,
-    match: (p) => p.startsWith("/admin/configuracion") },
-  { id: "gastos-op", to: "/admin/gastos-operativos", label: "Gastos Operativos", icon: DollarSign, adminOnly: true,
-    match: (p) => p.startsWith("/admin/gastos-operativos") },
-  { id: "dashboard-financiero", to: "/admin/dashboard-financiero", label: "Dashboard Financiero", icon: PiggyBank, adminOnly: true,
-    match: (p) => p.startsWith("/admin/dashboard-financiero") },
-  { id: "papelera", to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
-    match: (p) => p === "/expedientes/papelera" },
 ];
 
 function AppSidebarInner() {
@@ -196,6 +204,9 @@ function AppSidebarInner() {
 
         {/* Simple items */}
         {visibleSimpleItems.map((it) => renderSimpleItem(it))}
+
+        {/* Administración group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "administracion")!)}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
