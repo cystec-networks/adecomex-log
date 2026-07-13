@@ -1095,7 +1095,7 @@ function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; to
       <CardContent>
         <FacturaEcfSelector
           value={(exp as any)?.factura_ecf_id ?? null}
-          onChange={(id) => link.mutate(id)}
+          onChange={(id: string | null) => link.mutate(id)}
           preload={{
             cliente_id: (exp as any)?.cliente_id ?? null,
             monto_total: totalFact,
