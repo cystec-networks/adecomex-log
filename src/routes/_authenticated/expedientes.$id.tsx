@@ -589,6 +589,22 @@ function TabInfo({ exp }: { exp: any }) {
             );
           })()}
 
+          <div className="md:col-span-2 lg:col-span-3">
+            <LiquidacionEstimadaBlock
+              expedienteId={exp.id}
+              seguro={Number(form.seguro) || 0}
+              flete={Number(form.flete) || 0}
+              otros={Number(form.otros) || 0}
+            />
+          </div>
+
+          <div className="md:col-span-2 lg:col-span-3">
+            <ResultadoOficialBlock
+              form={form}
+              set={set}
+            />
+          </div>
+
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
             <Label>Observaciones</Label>
             <Textarea rows={3} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} />
