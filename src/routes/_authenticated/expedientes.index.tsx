@@ -83,9 +83,18 @@ function Expedientes() {
     return "otros";
   };
 
+  const esUrgente = (e: any) => {
+    if (e.estado === "despachado" || !e.fecha_compromiso) return false;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const eta = new Date(e.fecha_compromiso); eta.setHours(0, 0, 0, 0);
+    const diff = Math.round((eta.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return diff < 3;
+  };
+
   const filtered = (data ?? []).filter((e: any) => {
     if (estado !== "todos" && e.estado !== estado) return false;
     if (tipo !== "todos" && detectTipo(e) !== tipo) return false;
+    if (soloUrgentes && !esUrgente(e)) return false;
     if (q && !norm(JSON.stringify(e)).includes(norm(q))) return false;
     return true;
   });
