@@ -155,7 +155,7 @@ function ExpedientesDashboard() {
       if (!exp) continue;
       const cliId = exp.cliente_id || "sin";
       const nombre = cliMap.get(cliId) || "Sin cliente";
-      const dias = f.fecha_emision ? Math.floor((now - new Date(f.fecha_emision).getTime()) / 86400000) : 0;
+      const dias = f.fecha_emision ? Math.floor((now - parseLocalDate(f.fecha_emision).getTime()) / 86400000) : 0;
       const cur = pendByCli.get(cliId) || { cliente: nombre, monto: 0, expedientes: new Set<string>(), diasMax: 0 };
       cur.monto += Number(f.monto || 0);
       cur.expedientes.add(exp.numero);
