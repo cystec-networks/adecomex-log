@@ -98,8 +98,9 @@ function ReportesPage() {
       if (regimen !== "todos" && (e.regimen_aduanero ?? "") !== regimen) return false;
       if (pref !== "todas" && (e.preferencia_comercial ?? "Ninguna") !== pref) return false;
       const dateField = fechaBase === "eta" ? e.fecha_compromiso : e.created_at;
-      if (desde && dateField && new Date(dateField) < new Date(desde)) return false;
-      if (hasta && dateField && new Date(dateField) > new Date(hasta + "T23:59:59")) return false;
+      const parseField = (v: string) => fechaBase === "eta" ? parseLocalDate(v) : new Date(v);
+      if (desde && dateField && parseField(dateField) < parseLocalDate(desde)) return false;
+      if (hasta && dateField && parseField(dateField) > (fechaBase === "eta" ? parseLocalDate(hasta) : new Date(hasta + "T23:59:59"))) return false;
       return true;
     });
   }, [expedientes, cliente, tipo, estado, regimen, pref, fechaBase, desde, hasta]);
