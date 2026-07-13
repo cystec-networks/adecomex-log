@@ -44,8 +44,9 @@ const fmt = (n: number, m: string) =>
 
 function ymOf(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }
 
+type Moneda = "DOP" | "USD" | "EUR";
 type Row = {
-  id: string; concepto: string; monto: number; moneda: string; fecha: string;
+  id: string; concepto: string; monto: number; moneda: Moneda; fecha: string;
   es_recurrente: boolean; comprobante_url: string | null; notas: string | null;
 };
 
