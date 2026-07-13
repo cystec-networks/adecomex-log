@@ -313,7 +313,7 @@ function Expedientes() {
                             {e.bl_awb ?? "—"}
                           </td>
                           <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground whitespace-nowrap">
-                            {e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"}
+                            {(() => { const d = parseLocalDate(e.fecha_compromiso); return d ? d.toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"; })()}
                           </td>
                           <td className="px-2 py-2 align-middle text-center whitespace-nowrap w-12 min-w-12">
                             {(() => {
