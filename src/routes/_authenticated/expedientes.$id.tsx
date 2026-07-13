@@ -274,6 +274,9 @@ function TabInfo({ exp }: { exp: any }) {
       payload.flete = toNum(payload.flete);
       payload.otros = toNum(payload.otros);
       payload.total_cif = (payload.total_fob ?? 0) + (payload.seguro ?? 0) + (payload.flete ?? 0) + (payload.otros ?? 0);
+      payload.liq_oficial_total = toNum(payload.liq_oficial_total);
+      if (!payload.liq_siga_numero) payload.liq_siga_numero = null;
+      if (!payload.liq_siga_estado) payload.liq_siga_estado = null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       const { error } = await supabase.from("expedientes").update(payload).eq("id", exp.id);
       if (error) throw error;
