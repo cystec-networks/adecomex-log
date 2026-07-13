@@ -349,6 +349,36 @@ export type Database = {
           },
         ]
       }
+      catalogo_tasas_cambio: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          fecha: string
+          id: string
+          notas: string | null
+          tasa: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          fecha: string
+          id?: string
+          notas?: string | null
+          tasa: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          fecha?: string
+          id?: string
+          notas?: string | null
+          tasa?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       catalogo_tipos_despacho: {
         Row: {
           codigo: string
@@ -727,6 +757,8 @@ export type Database = {
           sla_dias: number | null
           solicitud_id: string | null
           suplidor: string | null
+          tasa_cambio_congelada: boolean
+          tasa_cambio_usada: number | null
           tipo_carga: string | null
           tipo_despacho_codigo: string | null
           tipo_operacion: string | null
@@ -787,6 +819,8 @@ export type Database = {
           sla_dias?: number | null
           solicitud_id?: string | null
           suplidor?: string | null
+          tasa_cambio_congelada?: boolean
+          tasa_cambio_usada?: number | null
           tipo_carga?: string | null
           tipo_despacho_codigo?: string | null
           tipo_operacion?: string | null
@@ -847,6 +881,8 @@ export type Database = {
           sla_dias?: number | null
           solicitud_id?: string | null
           suplidor?: string | null
+          tasa_cambio_congelada?: boolean
+          tasa_cambio_usada?: number | null
           tipo_carga?: string | null
           tipo_despacho_codigo?: string | null
           tipo_operacion?: string | null
