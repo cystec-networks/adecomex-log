@@ -169,7 +169,7 @@ function DashboardFinanciero() {
   };
 
   return (
-    <AppShell>
+    <></>
       <div className="p-6 space-y-6 max-w-7xl mx-auto">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
@@ -301,7 +301,7 @@ function DashboardFinanciero() {
           </CardContent>
         </Card>
       </div>
-    </AppShell>
+    </>
   );
 }
 
