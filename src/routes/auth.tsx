@@ -103,7 +103,16 @@ function AuthPage() {
                 <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Contraseña</Label>
+                  <button
+                    type="button"
+                    onClick={() => { setForgotEmail(email); setForgotOpen(true); }}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                </div>
                 <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
@@ -116,6 +125,30 @@ function AuthPage() {
             </form>
           </CardContent>
         </Card>
+
+        <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Restablecer contraseña</DialogTitle>
+              <DialogDescription>
+                Ingresa tu correo corporativo. Si existe una cuenta, recibirás un enlace para definir una nueva contraseña.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleForgot} className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="forgot-email">Correo</Label>
+                <Input id="forgot-email" type="email" required value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setForgotOpen(false)}>Cancelar</Button>
+                <Button type="submit" disabled={forgotLoading || !forgotEmail}>
+                  {forgotLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                  Enviar enlace
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
