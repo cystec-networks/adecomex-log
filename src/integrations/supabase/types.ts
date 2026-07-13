@@ -1567,6 +1567,7 @@ export type Database = {
         | "documentacion"
         | "transporte"
         | "finanzas"
+        | "contabilidad"
       doc_estado:
         | "pendiente"
         | "recibido"
@@ -1749,6 +1750,7 @@ export const Constants = {
         "documentacion",
         "transporte",
         "finanzas",
+        "contabilidad",
       ],
       doc_estado: ["pendiente", "recibido", "observado", "aprobado", "vencido"],
       etapa_estado: ["pendiente", "en_curso", "completada", "bloqueada"],
