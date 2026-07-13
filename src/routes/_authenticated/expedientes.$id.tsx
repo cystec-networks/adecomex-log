@@ -597,7 +597,7 @@ function TabInfo({ exp }: { exp: any }) {
 
           <div className="md:col-span-2 lg:col-span-3">
             <LiquidacionEstimadaBlock
-              expedienteId={exp.id}
+              exp={exp}
               seguro={Number(form.seguro) || 0}
               flete={Number(form.flete) || 0}
               otros={Number(form.otros) || 0}
@@ -606,6 +606,7 @@ function TabInfo({ exp }: { exp: any }) {
 
           <div className="md:col-span-2 lg:col-span-3">
             <ResultadoOficialBlock
+              exp={exp}
               form={form}
               set={set}
             />
