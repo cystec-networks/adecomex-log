@@ -828,6 +828,54 @@ export type Database = {
           },
         ]
       }
+      gastos_operativos: {
+        Row: {
+          comprobante_url: string | null
+          concepto: string
+          created_at: string
+          created_by: string | null
+          eliminado_en: string | null
+          eliminado_por: string | null
+          es_recurrente: boolean
+          fecha: string
+          id: string
+          moneda: Database["public"]["Enums"]["moneda"]
+          monto: number
+          notas: string | null
+          updated_at: string
+        }
+        Insert: {
+          comprobante_url?: string | null
+          concepto: string
+          created_at?: string
+          created_by?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
+          es_recurrente?: boolean
+          fecha: string
+          id?: string
+          moneda?: Database["public"]["Enums"]["moneda"]
+          monto: number
+          notas?: string | null
+          updated_at?: string
+        }
+        Update: {
+          comprobante_url?: string | null
+          concepto?: string
+          created_at?: string
+          created_by?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
+          es_recurrente?: boolean
+          fecha?: string
+          id?: string
+          moneda?: Database["public"]["Enums"]["moneda"]
+          monto?: number
+          notas?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       incidencias: {
         Row: {
           accion_correctiva: string | null
