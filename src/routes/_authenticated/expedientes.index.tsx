@@ -97,7 +97,9 @@ function Expedientes() {
   const esUrgente = (e: any) => {
     if (e.estado === "despachado" || !e.fecha_compromiso) return false;
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    const eta = new Date(e.fecha_compromiso); eta.setHours(0, 0, 0, 0);
+    const eta = parseLocalDate(e.fecha_compromiso);
+    if (!eta) return false;
+    eta.setHours(0, 0, 0, 0);
     const diff = Math.round((eta.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     return diff < 3;
   };
