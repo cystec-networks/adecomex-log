@@ -34,6 +34,7 @@ type SubItem = {
   search?: Record<string, unknown>;
   match?: (pathname: string, search: Record<string, unknown>) => boolean;
   adminOnly?: boolean;
+  roles?: AppRole[]; // if set, requires user to have at least one of these
 };
 
 type Group = {
@@ -42,6 +43,7 @@ type Group = {
   icon: ComponentType<{ className?: string }>;
   items: SubItem[];
   adminOnly?: boolean;
+  roles?: AppRole[];
 };
 
 type SimpleItem = {
@@ -52,6 +54,7 @@ type SimpleItem = {
   search?: Record<string, unknown>;
   match?: (pathname: string, search: Record<string, unknown>) => boolean;
   adminOnly?: boolean;
+  roles?: AppRole[];
 };
 
 type MenuEntry =
