@@ -149,6 +149,39 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_hitos: {
+        Row: {
+          activo: boolean
+          codigo: string
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          orden: number
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          orden?: number
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          orden?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       catalogo_metodos_transporte: {
         Row: {
           codigo: string
@@ -524,6 +557,63 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "expedientes"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      expediente_hitos: {
+        Row: {
+          created_at: string
+          estado: Database["public"]["Enums"]["hito_estado"]
+          expediente_id: string
+          fecha_cumplimiento: string | null
+          fecha_programada: string | null
+          hito_codigo: string
+          id: string
+          notas: string | null
+          orden: number
+          responsable_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          estado?: Database["public"]["Enums"]["hito_estado"]
+          expediente_id: string
+          fecha_cumplimiento?: string | null
+          fecha_programada?: string | null
+          hito_codigo: string
+          id?: string
+          notas?: string | null
+          orden?: number
+          responsable_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          estado?: Database["public"]["Enums"]["hito_estado"]
+          expediente_id?: string
+          fecha_cumplimiento?: string | null
+          fecha_programada?: string | null
+          hito_codigo?: string
+          id?: string
+          notas?: string | null
+          orden?: number
+          responsable_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expediente_hitos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_hitos_hito_codigo_fkey"
+            columns: ["hito_codigo"]
+            isOneToOne: false
+            referencedRelation: "catalogo_hitos"
+            referencedColumns: ["codigo"]
           },
         ]
       }
@@ -1377,6 +1467,7 @@ export type Database = {
         | "verificar"
         | "facturar"
         | "despachado"
+      hito_estado: "pendiente" | "en_curso" | "completado" | "no_aplica"
       incidencia_estado: "abierta" | "en_gestion" | "resuelta" | "cerrada"
       incidencia_severidad: "baja" | "media" | "alta" | "critica"
       moneda: "USD" | "DOP" | "EUR"
@@ -1555,6 +1646,7 @@ export const Constants = {
         "facturar",
         "despachado",
       ],
+      hito_estado: ["pendiente", "en_curso", "completado", "no_aplica"],
       incidencia_estado: ["abierta", "en_gestion", "resuelta", "cerrada"],
       incidencia_severidad: ["baja", "media", "alta", "critica"],
       moneda: ["USD", "DOP", "EUR"],
