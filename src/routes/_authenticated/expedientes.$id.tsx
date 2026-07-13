@@ -1060,9 +1060,53 @@ function LiquidacionSection({ expedienteId }: { expedienteId: string }) {
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Margen</div><div className={`text-xl font-display font-bold mt-1 ${marginColor}`}>{margen.toFixed(1)}%</div></CardContent></Card>
       </div>
 
+      <FacturaEcfBlock expedienteId={expedienteId} totalFact={totalFact} />
       <FacturasBlock expedienteId={expedienteId} facturas={facturas ?? []} />
       <GastosBlock expedienteId={expedienteId} gastos={gastos ?? []} />
     </div>
+  );
+}
+
+function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; totalFact: number }) {
+  const qc = useQueryClient();
+  const { data: exp } = useQuery({
+    queryKey: ["expediente", expedienteId],
+    queryFn: async () => (await supabase.from("expedientes").select("*").eq("id", expedienteId).maybeSingle()).data,
+  });
+  const link = useMutation({
+    mutationFn: async (fid: string | null) => {
+      const { error } = await supabase.from("expedientes").update({ factura_ecf_id: fid }).eq("id", expedienteId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Factura e-CF actualizada");
+      qc.invalidateQueries({ queryKey: ["expediente", expedienteId] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  return (
+    <Card className="border-primary/20">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">
+          Factura e-CF (DGII) — requerida para Despachar
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <FacturaEcfSelector
+          value={(exp as any)?.factura_ecf_id ?? null}
+          onChange={(id) => link.mutate(id)}
+          preload={{
+            cliente_id: (exp as any)?.cliente_id ?? null,
+            monto_total: totalFact,
+          }}
+        />
+        {!(exp as any)?.factura_ecf_id && (
+          <p className="text-xs text-amber-700 mt-2">
+            Sin factura vinculada: el expediente no podrá pasar a estado "Despachado".
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
