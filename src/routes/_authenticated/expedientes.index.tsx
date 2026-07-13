@@ -307,7 +307,13 @@ function Expedientes() {
                                   ? "text-amber-600 dark:text-amber-400"
                                   : "text-destructive";
                               return (
-                                <span title={d.full} className={`text-xs font-medium tabular-nums ${toneClass}`}>
+                                <span title={d.full} className={`inline-flex items-center gap-1 text-xs font-medium tabular-nums ${toneClass}`}>
+                                  {esUrgente(e) && (
+                                    <AlarmClock
+                                      className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400"
+                                      aria-label="ETA urgente (menos de 3 días)"
+                                    />
+                                  )}
                                   {d.text}
                                 </span>
                               );
