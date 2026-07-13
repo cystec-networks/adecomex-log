@@ -176,6 +176,19 @@ function Expedientes() {
     );
   };
 
+  const rowHighlight = (estadoRaw: string | null) => {
+    switch (estadoRaw) {
+      case "verificar":
+        return "bg-red-50/50 border-l-4 border-l-red-500 dark:bg-red-950/20 dark:border-l-red-400";
+      case "presentar":
+        return "bg-amber-50/50 border-l-4 border-l-amber-500 dark:bg-amber-950/20 dark:border-l-amber-400";
+      case "despachado":
+        return "bg-slate-100/70 border-l-4 border-l-slate-600 dark:bg-slate-900/50 dark:border-l-slate-500";
+      default:
+        return "";
+    }
+  };
+
   const TruncatedCell = ({ value, className = "", maxClass = "max-w-[160px]" }: { value: string | null; className?: string; maxClass?: string }) => (
     <span title={value ?? undefined} className={`block truncate ${maxClass} ${className}`}>
       {value ?? "—"}
@@ -222,7 +235,7 @@ function Expedientes() {
                     <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">{grupoLabel[g]}</span>
                     <Badge variant="secondary" className="text-[10px]">{rows.length}</Badge>
                   </div>
-                  <table className="w-full text-[13px] border-collapse">
+                  <table className="w-full text-[13px] border-separate border-spacing-0">
                     <thead className="bg-muted/30 border-b">
                       <tr>
                         <Th k="numero" className="px-2 whitespace-nowrap">Expediente</Th>
@@ -240,7 +253,7 @@ function Expedientes() {
 
                     <tbody className="divide-y">
                       {rows.map((e: any) => (
-                        <tr key={e.id} className="hover:bg-muted/30 transition-colors">
+                        <tr key={e.id} className={`hover:bg-muted/30 transition-colors ${rowHighlight(e.estado)}`}>
                           <td className="px-2 py-2 align-middle whitespace-nowrap">
                             <Link
                               to="/expedientes/$id"
