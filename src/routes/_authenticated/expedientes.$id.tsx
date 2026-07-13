@@ -81,11 +81,15 @@ function DetalleExpediente() {
 
   const updateEstado = useMutation({
     mutationFn: async (estado: string) => {
+      if (estado === "despachado" && !(exp as any)?.factura_ecf_id) {
+        throw new Error("Para cambiar a Despachado debes vincular una Factura e-CF real (pestaña Finanzas).");
+      }
       const { error } = await supabase.from("expedientes").update({ estado: estado as any }).eq("id", id);
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: id, accion: `cambio_estado:${estado}` });
     },
     onSuccess: () => { toast.success("Estado actualizado"); qc.invalidateQueries({ queryKey: ["expediente", id] }); },
+    onError: (e: any) => toast.error(e.message),
   });
 
   if (!exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
