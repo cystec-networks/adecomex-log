@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Inbox, FolderKanban, CheckCircle2, Clock, FileWarning, TrendingUp, Bell, Truck } from "lucide-react";
-import { useReminders } from "@/lib/reminders";
+import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 import { daysFromToday } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
