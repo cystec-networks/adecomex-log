@@ -212,7 +212,7 @@ export function useReminders() {
       for (const h of (hit.data ?? []) as any[]) {
         if (h.expedientes?.eliminado_en) continue;
         if (!h.fecha_programada) continue;
-        const dias = daysBetween(new Date(h.fecha_programada), now);
+        const dias = daysBetween(parseLocalDate(h.fecha_programada), now);
         const nombre = h.catalogo_hitos?.nombre ?? h.hito_codigo;
         const numExp = h.expedientes?.numero ?? "";
         const esCritico = h.hito_codigo === HITO_CRITICO;
