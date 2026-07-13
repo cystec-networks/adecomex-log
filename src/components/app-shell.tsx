@@ -76,14 +76,14 @@ const GROUPS: Group[] = [
     label: "EXPEDIENTES",
     icon: FolderKanban,
     items: [
-      { to: "/expedientes/dashboard", label: "Dashboard", icon: LayoutDashboard,
-        match: (p) => p === "/expedientes/dashboard" },
       { to: "/expedientes", label: "Expedientes", icon: FolderKanban,
         match: (p, s) => (p === "/expedientes" || p.startsWith("/expedientes/")) && !s?.tipo && p !== "/expedientes/papelera" && p !== "/expedientes/dashboard" },
       { to: "/expedientes", search: { tipo: "importacion" }, label: "Importaciones", icon: PackageOpen,
         match: (p, s) => p.startsWith("/expedientes") && s?.tipo === "importacion" },
       { to: "/expedientes", search: { tipo: "exportacion" }, label: "Exportaciones", icon: PackageCheck,
         match: (p, s) => p.startsWith("/expedientes") && s?.tipo === "exportacion" },
+      { to: "/expedientes/dashboard", label: "Dashboard", icon: LayoutDashboard,
+        match: (p) => p === "/expedientes/dashboard" },
     ],
   },
   {
@@ -91,10 +91,10 @@ const GROUPS: Group[] = [
     label: "TRANSPORTES",
     icon: Truck,
     items: [
-      { to: "/transportes/dashboard", label: "Dashboard", icon: LayoutDashboard,
-        match: (p) => p === "/transportes/dashboard" },
       { to: "/transportes", label: "Transportes", icon: Truck,
         match: (p) => (p === "/transportes" || p.startsWith("/transportes/")) && p !== "/transportes/dashboard" },
+      { to: "/transportes/dashboard", label: "Dashboard", icon: LayoutDashboard,
+        match: (p) => p === "/transportes/dashboard" },
     ],
   },
 ];
