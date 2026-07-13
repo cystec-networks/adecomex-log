@@ -103,7 +103,7 @@ function Transportes() {
     );
   };
 
-  const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
+  const fmt = (d: string | null) => fmtLocalDateShort(d);
   const fmtFlete = (t: any) => t.flete_monto != null ? `${t.flete_moneda ?? "USD"} ${Number(t.flete_monto).toLocaleString("es-DO", { minimumFractionDigits: 2 })}` : "—";
 
   return (
