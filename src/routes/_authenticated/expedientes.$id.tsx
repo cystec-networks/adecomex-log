@@ -486,7 +486,13 @@ function TabInfo({ exp }: { exp: any }) {
             </Select>
           </div>
           <div className="md:col-span-2 lg:col-span-3">
-            <MercanciaItemsBlock expedienteId={exp.id} />
+            <MercanciaItemsBlock
+              expedienteId={exp.id}
+              seguro={Number(form.seguro) || 0}
+              flete={Number(form.flete) || 0}
+              otros={Number(form.otros) || 0}
+              preferenciaComercial={form.preferencia_comercial || ""}
+            />
           </div>
           <HerramientasDgaVuce />
           {(() => {
