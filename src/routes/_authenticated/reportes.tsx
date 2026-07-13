@@ -132,7 +132,7 @@ function ReportesPage() {
       else if (agrupar === "periodo") {
         const d = fechaBase === "eta" ? e.fecha_compromiso : e.created_at;
         if (d) {
-          const dt = new Date(d);
+          const dt = fechaBase === "eta" ? parseLocalDate(d) : new Date(d);
           key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
         } else key = "Sin fecha";
       }
