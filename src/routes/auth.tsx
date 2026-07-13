@@ -23,6 +23,10 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       if (session) navigate({ to: "/dashboard" });
@@ -47,6 +51,21 @@ function AuthPage() {
     toast.success("Sesión iniciada");
     navigate({ to: "/dashboard" });
   };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    setForgotLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setForgotLoading(false);
+    if (error) return toast.error(error.message);
+    toast.success("Si el correo existe, recibirás un enlace para restablecer tu contraseña.");
+    setForgotOpen(false);
+    setForgotEmail("");
+  };
+
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
