@@ -12,6 +12,7 @@ import { ChevronLeft, ChevronRight, Truck, Package, DollarSign, TrendingUp, Tren
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
+import { parseLocalDate } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/transportes/dashboard")({
   component: TransporteDashboard,
