@@ -447,7 +447,7 @@ function HitosCatalog({ isAdmin }: { isAdmin: boolean }) {
           initial={dialog.row ?? {}}
           mode={dialog.mode}
           onClose={() => setDialog(null)}
-          onSave={(v) => save.mutate(v)}
+          onSave={(v: any) => save.mutate(v)}
           saving={save.isPending}
         />
       )}
