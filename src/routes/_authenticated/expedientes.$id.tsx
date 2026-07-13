@@ -207,6 +207,9 @@ function TabInfo({ exp }: { exp: any }) {
     pais_origen_codigo: exp.pais_origen_codigo ?? "",
     pais_procedencia_codigo: exp.pais_procedencia_codigo ?? "",
     puerto_arribo_codigo: exp.puerto_arribo_codigo ?? "",
+    liq_siga_numero: exp.liq_siga_numero ?? "",
+    liq_siga_estado: exp.liq_siga_estado ?? "",
+    liq_oficial_total: exp.liq_oficial_total ?? "",
   });
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -271,6 +274,9 @@ function TabInfo({ exp }: { exp: any }) {
       payload.flete = toNum(payload.flete);
       payload.otros = toNum(payload.otros);
       payload.total_cif = (payload.total_fob ?? 0) + (payload.seguro ?? 0) + (payload.flete ?? 0) + (payload.otros ?? 0);
+      payload.liq_oficial_total = toNum(payload.liq_oficial_total);
+      if (!payload.liq_siga_numero) payload.liq_siga_numero = null;
+      if (!payload.liq_siga_estado) payload.liq_siga_estado = null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       const { error } = await supabase.from("expedientes").update(payload).eq("id", exp.id);
       if (error) throw error;
@@ -480,7 +486,13 @@ function TabInfo({ exp }: { exp: any }) {
             </Select>
           </div>
           <div className="md:col-span-2 lg:col-span-3">
-            <MercanciaItemsBlock expedienteId={exp.id} />
+            <MercanciaItemsBlock
+              expedienteId={exp.id}
+              seguro={Number(form.seguro) || 0}
+              flete={Number(form.flete) || 0}
+              otros={Number(form.otros) || 0}
+              preferenciaComercial={form.preferencia_comercial || ""}
+            />
           </div>
           <HerramientasDgaVuce />
           {(() => {
@@ -576,6 +588,22 @@ function TabInfo({ exp }: { exp: any }) {
               </div>
             );
           })()}
+
+          <div className="md:col-span-2 lg:col-span-3">
+            <LiquidacionEstimadaBlock
+              expedienteId={exp.id}
+              seguro={Number(form.seguro) || 0}
+              flete={Number(form.flete) || 0}
+              otros={Number(form.otros) || 0}
+            />
+          </div>
+
+          <div className="md:col-span-2 lg:col-span-3">
+            <ResultadoOficialBlock
+              form={form}
+              set={set}
+            />
+          </div>
 
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
             <Label>Observaciones</Label>
@@ -1439,16 +1467,91 @@ function TabTransportesExp({ expedienteId }: { expedienteId: string }) {
 
 const UNIDADES_MEDIDA = ["Kilogramos", "Unidades", "Litros", "Toneladas", "Metros", "Cajas", "Sacos", "Otros"];
 
-function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
+// --- Utilidades de cálculo de impuestos por línea ---
+type TaxCalc = {
+  cifLinea: number;
+  gravamen: number;
+  selectivo: number;
+  itbis: number;
+  total: number;
+};
+function calcImpuestosLinea(
+  fobLinea: number,
+  totalFob: number,
+  seguro: number,
+  flete: number,
+  otros: number,
+  pctGravamen: number | null | undefined,
+  aplicaIsc: boolean | null | undefined,
+  pctIsc: number | null | undefined,
+  pctItbis: number | null | undefined,
+): TaxCalc {
+  const share = totalFob > 0 ? fobLinea / totalFob : 0;
+  const cifLinea = fobLinea + (seguro + flete + otros) * share;
+  const grav = pctGravamen != null ? cifLinea * (Number(pctGravamen) / 100) : 0;
+  const isc = aplicaIsc && pctIsc != null ? (cifLinea + grav) * (Number(pctIsc) / 100) : 0;
+  const pIt = pctItbis != null ? Number(pctItbis) : 18;
+  const itbis = pctItbis != null || pctGravamen != null ? (cifLinea + grav + isc) * (pIt / 100) : 0;
+  const total = grav + isc + itbis;
+  return { cifLinea, gravamen: grav, selectivo: isc, itbis, total };
+}
+
+// Fuerza el % gravamen que corresponde según la preferencia comercial del expediente
+function pickPctFromTasa(
+  tasa: any | null | undefined,
+  preferenciaComercial: string,
+): { pct: number | null; usedPreferencial: boolean } {
+  if (!tasa) return { pct: null, usedPreferencial: false };
+  const hasPref = tasa.pct_gravamen_preferencial != null;
+  const acuerdo = (tasa.acuerdo_preferencial || "").trim().toLowerCase();
+  const prefExp = (preferenciaComercial || "").trim().toLowerCase();
+  const match = hasPref && acuerdo && prefExp && (acuerdo === prefExp || prefExp.includes(acuerdo) || acuerdo.includes(prefExp));
+  if (match) return { pct: Number(tasa.pct_gravamen_preferencial), usedPreferencial: true };
+  if (tasa.pct_gravamen != null) return { pct: Number(tasa.pct_gravamen), usedPreferencial: false };
+  return { pct: null, usedPreferencial: false };
+}
+
+function MercanciaItemsBlock({
+  expedienteId,
+  seguro,
+  flete,
+  otros,
+  preferenciaComercial,
+}: {
+  expedienteId: string;
+  seguro: number;
+  flete: number;
+  otros: number;
+  preferenciaComercial: string;
+}) {
   const qc = useQueryClient();
   const { data: items } = useQuery({
     queryKey: ["mercancia-items", expedienteId],
     queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", expedienteId).is("deleted_at", null).order("item_no")).data ?? [],
   });
 
+  const codigos = useMemo(() => Array.from(new Set(((items ?? []) as any[]).map((it) => (it.codigo_arancelario || "").trim()).filter(Boolean))), [items]);
+  const { data: tasas } = useQuery({
+    queryKey: ["tasas-por-codigos", codigos.join("|")],
+    enabled: codigos.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("catalogo_tasas_arancelarias").select("*").in("codigo_arancelario", codigos);
+      return data ?? [];
+    },
+  });
+  const tasaByCodigo = useMemo(() => {
+    const m = new Map<string, any>();
+    (tasas ?? []).forEach((t: any) => m.set(t.codigo_arancelario, t));
+    return m;
+  }, [tasas]);
+
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const emptyForm = { codigo_arancelario: "", detalle_producto: "", unidad_medida: "", unidad_codigo: "", cantidad: "", peso: "", valor_fob: "" };
+  const emptyForm = {
+    codigo_arancelario: "", detalle_producto: "", unidad_medida: "", unidad_codigo: "",
+    cantidad: "", peso: "", valor_fob: "",
+    pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "18",
+  };
   const [f, setF] = useState(emptyForm);
 
   const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
@@ -1456,18 +1559,49 @@ function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["mercancia-items", expedienteId] });
+    qc.invalidateQueries({ queryKey: ["tasas-por-codigos"] });
+  };
+
+  // Auto-alimenta el catálogo con lo que digitó el usuario (solo si no existe o no está verificado; RLS bloquea las verificadas)
+  const autoLearnTasa = async (codigo: string, pctGravamen: number | null, aplicaIsc: boolean, pctIsc: number | null) => {
+    if (!codigo) return;
+    const existing = tasaByCodigo.get(codigo);
+    if (existing?.verificado) return; // no tocar verificadas
+    const prefExp = (preferenciaComercial || "").trim();
+    const usePref = !!prefExp && prefExp.toLowerCase() !== "ninguna";
+    const payload: any = {
+      codigo_arancelario: codigo,
+      aplica_isc: !!aplicaIsc,
+      pct_isc: aplicaIsc ? pctIsc : null,
+      origen_expediente_id: expedienteId,
+    };
+    if (pctGravamen != null) {
+      if (usePref) {
+        payload.pct_gravamen_preferencial = pctGravamen;
+        payload.acuerdo_preferencial = prefExp;
+        if (existing?.pct_gravamen != null) payload.pct_gravamen = existing.pct_gravamen;
+      } else {
+        payload.pct_gravamen = pctGravamen;
+      }
+    }
+    await supabase.from("catalogo_tasas_arancelarias").upsert(payload, { onConflict: "codigo_arancelario" });
   };
 
   const guardar = useMutation({
     mutationFn: async () => {
+      const codigo = (f.codigo_arancelario || "").trim();
       const payload: any = {
-        codigo_arancelario: f.codigo_arancelario || null,
+        codigo_arancelario: codigo || null,
         detalle_producto: f.detalle_producto || null,
         unidad_medida: f.unidad_medida || null,
         unidad_codigo: f.unidad_codigo || null,
         cantidad: f.cantidad === "" ? 0 : Number(f.cantidad),
         peso: f.peso === "" ? 0 : Number(f.peso),
         valor_fob: f.valor_fob === "" ? 0 : Number(f.valor_fob),
+        pct_gravamen: f.pct_gravamen === "" ? null : Number(f.pct_gravamen),
+        aplica_isc: !!f.aplica_isc,
+        pct_isc: f.aplica_isc && f.pct_isc !== "" ? Number(f.pct_isc) : null,
+        pct_itbis: f.pct_itbis === "" ? null : Number(f.pct_itbis),
       };
       if (editingId) {
         const { error } = await supabase.from("mercancia_items").update(payload).eq("id", editingId);
@@ -1477,6 +1611,7 @@ function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
         const { error } = await supabase.from("mercancia_items").insert({ ...payload, expediente_id: expedienteId, item_no: nextNo });
         if (error) throw error;
       }
+      await autoLearnTasa(codigo, payload.pct_gravamen, payload.aplica_isc, payload.pct_isc);
     },
     onSuccess: () => { toast.success(editingId ? "Ítem actualizado" : "Ítem agregado"); setOpen(false); setEditingId(null); setF(emptyForm); invalidate(); },
     onError: (e: any) => toast.error(e.message),
@@ -1503,8 +1638,32 @@ function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
       cantidad: it.cantidad != null ? String(it.cantidad) : "",
       peso: it.peso != null ? String(it.peso) : "",
       valor_fob: it.valor_fob != null ? String(it.valor_fob) : "",
+      pct_gravamen: it.pct_gravamen != null ? String(it.pct_gravamen) : "",
+      aplica_isc: !!it.aplica_isc,
+      pct_isc: it.pct_isc != null ? String(it.pct_isc) : "",
+      pct_itbis: it.pct_itbis != null ? String(it.pct_itbis) : "18",
     });
     setOpen(true);
+  };
+
+  // Cuando el usuario digita/pega un código en el diálogo y aún no tiene % gravamen, sugerir desde catálogo
+  const onCodigoBlur = async (codigo: string) => {
+    const c = (codigo || "").trim();
+    if (!c) return;
+    // buscar en tasas ya cargadas
+    let tasa = tasaByCodigo.get(c);
+    if (!tasa) {
+      const { data } = await supabase.from("catalogo_tasas_arancelarias").select("*").eq("codigo_arancelario", c).maybeSingle();
+      tasa = data;
+    }
+    if (!tasa) return;
+    const { pct } = pickPctFromTasa(tasa, preferenciaComercial);
+    setF((prev) => ({
+      ...prev,
+      pct_gravamen: prev.pct_gravamen === "" && pct != null ? String(pct) : prev.pct_gravamen,
+      aplica_isc: prev.aplica_isc || !!tasa.aplica_isc,
+      pct_isc: prev.pct_isc === "" && tasa.aplica_isc && tasa.pct_isc != null ? String(tasa.pct_isc) : prev.pct_isc,
+    }));
   };
 
   return (
@@ -1514,49 +1673,90 @@ function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
         <Button size="sm" variant="outline" onClick={startNew}><Plus className="h-4 w-4 mr-1" />Agregar ítem</Button>
       </div>
       <div className="rounded-md border overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+        <table className="w-full text-sm min-w-[1400px]">
+          <thead className="bg-muted/50 text-[10.5px] uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="px-3 py-2 text-left w-12">#</th>
-              <th className="px-3 py-2 text-left">Cód. Arancel</th>
-              <th className="px-3 py-2 text-left">Detalle Producto</th>
-              <th className="px-3 py-2 text-left">Unidad</th>
-              <th className="px-3 py-2 text-right">Cantidad</th>
-              <th className="px-3 py-2 text-right">Peso</th>
-              <th className="px-3 py-2 text-right">Valor FOB (US$)</th>
-              <th className="px-3 py-2 text-right w-24"></th>
+              <th className="px-2 py-2 text-left w-10">#</th>
+              <th className="px-2 py-2 text-left">Cód. Arancel</th>
+              <th className="px-2 py-2 text-left">Detalle</th>
+              <th className="px-2 py-2 text-left">Unidad</th>
+              <th className="px-2 py-2 text-right">Cantidad</th>
+              <th className="px-2 py-2 text-right">Peso</th>
+              <th className="px-2 py-2 text-right">FOB (US$)</th>
+              <th className="px-2 py-2 text-right bg-amber-50">% Grav.</th>
+              <th className="px-2 py-2 text-center bg-amber-50">ISC?</th>
+              <th className="px-2 py-2 text-right bg-amber-50">% ISC</th>
+              <th className="px-2 py-2 text-right bg-slate-50">CIF línea</th>
+              <th className="px-2 py-2 text-right bg-slate-50">Gravamen</th>
+              <th className="px-2 py-2 text-right bg-slate-50">Selectivo</th>
+              <th className="px-2 py-2 text-right bg-slate-50">ITBIS</th>
+              <th className="px-2 py-2 text-right bg-emerald-50">Total imp.</th>
+              <th className="px-2 py-2 text-right w-20"></th>
             </tr>
           </thead>
           <tbody>
             {(items ?? []).length === 0 ? (
-              <tr><td colSpan={8} className="px-3 py-6 text-center text-xs text-muted-foreground">Sin ítems. Agrega el primero.</td></tr>
-            ) : (items ?? []).map((it: any) => (
-              <tr key={it.id} className="border-t">
-                <td className="px-3 py-2 tabular-nums text-muted-foreground">{it.item_no}</td>
-                <td className="px-3 py-2 tabular-nums">{it.codigo_arancelario || "—"}</td>
-                <td className="px-3 py-2">{it.detalle_producto || "—"}</td>
-                <td className="px-3 py-2">{it.unidad_medida || "—"}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{Number(it.cantidad || 0).toLocaleString("en-US")}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{Number(it.peso || 0).toLocaleString("en-US")}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{fmt(Number(it.valor_fob || 0))}</td>
-                <td className="px-3 py-2 text-right">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(it)}><Pencil className="h-3.5 w-3.5" /></Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => eliminar.mutate(it.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                </td>
-              </tr>
-            ))}
+              <tr><td colSpan={16} className="px-3 py-6 text-center text-xs text-muted-foreground">Sin ítems. Agrega el primero.</td></tr>
+            ) : (items ?? []).map((it: any) => {
+              const c = calcImpuestosLinea(
+                Number(it.valor_fob) || 0, totalFob, seguro, flete, otros,
+                it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis,
+              );
+              const tasa = tasaByCodigo.get((it.codigo_arancelario || "").trim());
+              const unverifiedHint = tasa && !tasa.verificado && it.pct_gravamen != null;
+              return (
+                <tr key={it.id} className="border-t">
+                  <td className="px-2 py-2 tabular-nums text-muted-foreground">{it.item_no}</td>
+                  <td className="px-2 py-2 tabular-nums font-mono text-xs">
+                    <div className="flex items-center gap-1">
+                      <span>{it.codigo_arancelario || "—"}</span>
+                      {unverifiedHint && (
+                        <span title="Tasa sugerida por historial; aún no verificada por Administrador." className="inline-flex">
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-2 py-2 max-w-[220px] truncate" title={it.detalle_producto || ""}>{it.detalle_producto || "—"}</td>
+                  <td className="px-2 py-2 text-xs">{it.unidad_medida || "—"}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{Number(it.cantidad || 0).toLocaleString("en-US")}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{Number(it.peso || 0).toLocaleString("en-US")}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{fmt(Number(it.valor_fob || 0))}</td>
+                  <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{it.pct_gravamen != null ? `${Number(it.pct_gravamen)}%` : <span className="text-amber-600 text-xs">—</span>}</td>
+                  <td className="px-2 py-2 text-center bg-amber-50/40 text-xs">{it.aplica_isc ? "Sí" : "No"}</td>
+                  <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{it.aplica_isc && it.pct_isc != null ? `${Number(it.pct_isc)}%` : "—"}</td>
+                  <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.cifLinea)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.gravamen)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.selectivo)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.itbis)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums bg-emerald-50/60 font-semibold">{fmt(c.total)}</td>
+                  <td className="px-2 py-2 text-right whitespace-nowrap">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(it)}><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => eliminar.mutate(it.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
           {(items ?? []).length > 0 && (
             <tfoot>
               <tr className="border-t bg-muted/30">
-                <td colSpan={6} className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Suma FOB</td>
-                <td className="px-3 py-2 text-right tabular-nums font-semibold">US$ {fmt(totalFob)}</td>
+                <td colSpan={6} className="px-2 py-2 text-right text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Totales</td>
+                <td className="px-2 py-2 text-right tabular-nums font-semibold">{fmt(totalFob)}</td>
+                <td colSpan={7}></td>
+                <td className="px-2 py-2 text-right tabular-nums font-semibold bg-emerald-50/60">
+                  {fmt((items ?? []).reduce((s: number, it: any) => s + calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis).total, 0))}
+                </td>
                 <td></td>
               </tr>
             </tfoot>
           )}
         </table>
       </div>
+      <p className="text-[11px] text-muted-foreground">
+        Prorrateo: <b>CIF línea</b> = FOB línea + (Seguro+Flete+Otros) × (FOB línea / Total FOB). Ajusta % Gravamen / ISC al editar el ítem; el sistema guardará esa tasa en el catálogo para futuros expedientes.
+        <span className="inline-flex items-center gap-1 ml-2"><AlertTriangle className="h-3 w-3 text-amber-500" /> = tasa aprendida, sin verificar por Admin.</span>
+      </p>
 
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
         <DialogContent className="max-w-2xl">
@@ -1564,7 +1764,24 @@ function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
           <div className="grid gap-3 md:grid-cols-2">
             <div className="grid gap-1.5">
               <Label>Código Arancelario</Label>
-              <Input value={f.codigo_arancelario} onChange={(e) => setF({ ...f, codigo_arancelario: e.target.value })} placeholder="0402.10.90" />
+              <Input
+                value={f.codigo_arancelario}
+                onChange={(e) => setF({ ...f, codigo_arancelario: e.target.value })}
+                onBlur={(e) => onCodigoBlur(e.target.value)}
+                placeholder="0402.10.90"
+              />
+              {(() => {
+                const c = (f.codigo_arancelario || "").trim();
+                const t = c ? tasaByCodigo.get(c) : null;
+                if (!c) return null;
+                if (!t) return <span className="text-[11px] text-slate-500">Código nuevo — se agregará al catálogo al guardar.</span>;
+                return (
+                  <span className={`text-[11px] flex items-center gap-1 ${t.verificado ? "text-emerald-700" : "text-amber-700"}`}>
+                    {t.verificado ? <ShieldCheck className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                    {t.verificado ? "Tasa verificada por Admin." : "Tasa sugerida (sin verificar)."}
+                  </span>
+                );
+              })()}
             </div>
             <div className="grid gap-1.5">
               <Label>Unidad de Medida</Label>
@@ -1595,6 +1812,40 @@ function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
                 onBlur={(e) => { const v = e.target.value; if (v !== "" && !isNaN(Number(v))) setF({ ...f, valor_fob: Number(v).toFixed(2) }); }}
                 placeholder="0.00" />
             </div>
+
+            <div className="md:col-span-2 border-t pt-3 mt-1">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Impuestos de la línea</div>
+              <div className="grid gap-3 md:grid-cols-4">
+                <div className="grid gap-1.5">
+                  <Label>% Gravamen</Label>
+                  <Input type="text" inputMode="decimal" value={f.pct_gravamen}
+                    onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, pct_gravamen: v }); }}
+                    placeholder="0" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>¿Aplica ISC?</Label>
+                  <div className="h-9 flex items-center gap-2">
+                    <Switch checked={f.aplica_isc} onCheckedChange={(v) => setF({ ...f, aplica_isc: v, pct_isc: v ? f.pct_isc : "" })} />
+                    <span className="text-sm text-muted-foreground">{f.aplica_isc ? "Sí" : "No"}</span>
+                  </div>
+                </div>
+                {f.aplica_isc && (
+                  <div className="grid gap-1.5">
+                    <Label>% Selectivo (ISC)</Label>
+                    <Input type="text" inputMode="decimal" value={f.pct_isc}
+                      onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, pct_isc: v }); }}
+                      placeholder="0" />
+                  </div>
+                )}
+                <div className="grid gap-1.5">
+                  <Label>% ITBIS</Label>
+                  <Input type="text" inputMode="decimal" value={f.pct_itbis}
+                    onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, pct_itbis: v }); }}
+                    placeholder="18" />
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2">Por defecto 18%. Solo editar si aplica una excepción.</p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
@@ -1602,6 +1853,98 @@ function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function LiquidacionEstimadaBlock({
+  expedienteId, seguro, flete, otros,
+}: { expedienteId: string; seguro: number; flete: number; otros: number }) {
+  const { data: items } = useQuery({
+    queryKey: ["mercancia-items", expedienteId],
+    queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", expedienteId).is("deleted_at", null).order("item_no")).data ?? [],
+  });
+  const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
+  const totalCif = totalFob + seguro + flete + otros;
+  const totals = (items ?? []).reduce((acc: any, it: any) => {
+    const c = calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
+    acc.gravamen += c.gravamen; acc.selectivo += c.selectivo; acc.itbis += c.itbis; acc.total += c.total;
+    return acc;
+  }, { gravamen: 0, selectivo: 0, itbis: 0, total: 0 });
+  const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const anyPct = (items ?? []).some((it: any) => it.pct_gravamen != null || it.aplica_isc);
+
+  return (
+    <div className="grid gap-4 pt-4 border-t">
+      <div className="rounded-lg border border-amber-300/60 bg-amber-50/60 overflow-hidden">
+        <div className="px-4 py-3 border-b border-amber-200 flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <div className="font-semibold text-amber-900 text-sm">Liquidación de Impuestos — <span className="uppercase">Estimada</span></div>
+          <span className="ml-auto text-[11px] text-amber-800">Sujeta a verificación oficial de la DGA</span>
+        </div>
+        <div className="p-4 grid gap-x-8 gap-y-1.5 md:grid-cols-2 text-sm tabular-nums">
+          <div className="text-muted-foreground">Total FOB</div><div className="text-right">US$ {fmt(totalFob)}</div>
+          <div className="text-muted-foreground">Seguro</div><div className="text-right">US$ {fmt(seguro)}</div>
+          <div className="text-muted-foreground">Flete</div><div className="text-right">US$ {fmt(flete)}</div>
+          <div className="text-muted-foreground">Otros</div><div className="text-right">US$ {fmt(otros)}</div>
+          <div className="md:col-span-2 border-t border-dashed border-amber-200 my-1"></div>
+          <div className="font-semibold">Total CIF</div><div className="text-right font-semibold">US$ {fmt(totalCif)}</div>
+          <div className="md:col-span-2 border-t border-dashed border-amber-200 my-1"></div>
+          <div className="text-muted-foreground">Total Gravamen</div><div className="text-right">US$ {fmt(totals.gravamen)}</div>
+          <div className="text-muted-foreground">Total Selectivo (ISC)</div><div className="text-right">US$ {fmt(totals.selectivo)}</div>
+          <div className="text-muted-foreground">Total ITBIS</div><div className="text-right">US$ {fmt(totals.itbis)}</div>
+          <div className="md:col-span-2 mt-2 rounded-md bg-primary text-primary-foreground px-4 py-3 flex items-center">
+            <div className="text-sm font-semibold">TOTAL IMPUESTOS ESTIMADOS A PAGAR</div>
+            <div className="ml-auto text-lg font-bold">US$ {fmt(totals.total)}</div>
+          </div>
+          {!anyPct && (
+            <div className="md:col-span-2 text-[11px] text-amber-800 italic">
+              Aún no has capturado % Gravamen ni Selectivo en las líneas. Edita cada ítem para calcular impuestos.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResultadoOficialBlock({ form, set }: { form: any; set: (k: string, v: any) => void }) {
+  const estimado = Number(form.liq_estimado_ref) || null; // solo informativo si se quisiera
+  const oficial = form.liq_oficial_total === "" || form.liq_oficial_total == null ? null : Number(form.liq_oficial_total);
+  const dif = oficial != null && estimado != null ? oficial - estimado : null;
+  return (
+    <div className="rounded-lg border p-4 bg-muted/20">
+      <div className="flex items-center gap-2 mb-3">
+        <FileCheck className="h-4 w-4 text-primary" />
+        <div className="font-semibold text-sm">Resultado oficial DGA</div>
+        <Badge variant="outline" className="text-[10px] ml-auto">Opcional · al recibir la liquidación</Badge>
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-1.5">
+          <Label>N.º Liquidación SIGA</Label>
+          <Input value={form.liq_siga_numero || ""} onChange={(e) => set("liq_siga_numero", e.target.value)} placeholder="LIQ-2026-000123" />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Estado</Label>
+          <Select value={form.liq_siga_estado || undefined} onValueChange={(v) => set("liq_siga_estado", v)}>
+            <SelectTrigger><SelectValue placeholder="Selecciona estado" /></SelectTrigger>
+            <SelectContent>
+              {["Inspeccionada", "Liberada", "Con observación", "Rectificada"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Total impuestos oficial (US$)</Label>
+          <Input type="text" inputMode="decimal" value={form.liq_oficial_total ?? ""}
+            onChange={(e) => { const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("liq_oficial_total", v); }}
+            placeholder="0.00" className="tabular-nums" />
+        </div>
+      </div>
+      {dif != null && (
+        <div className="mt-3 text-xs text-muted-foreground">
+          Diferencia vs. estimado: <span className={`font-semibold ${dif >= 0 ? "text-destructive" : "text-emerald-700"}`}>US$ {dif.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+        </div>
+      )}
     </div>
   );
 }
