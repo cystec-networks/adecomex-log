@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { AppShell } from "@/components/app-shell";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/admin/dashboard-financiero
     if (!r) throw redirect({ to: "/dashboard" });
   },
   component: DashboardFinanciero,
-  errorComponent: ({ error }) => <AppShell><div className="p-6 text-destructive">{error.message}</div></AppShell>,
+  errorComponent: ({ error }) => <div className="p-6 text-destructive">{error.message}</div>,
 });
 
 const fmtRD = (n: number) => `RD$ ${(n || 0).toLocaleString("es-DO", { maximumFractionDigits: 0 })}`;
@@ -169,7 +169,7 @@ function DashboardFinanciero() {
   };
 
   return (
-    <AppShell>
+    <>
       <div className="p-6 space-y-6 max-w-7xl mx-auto">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
@@ -301,7 +301,7 @@ function DashboardFinanciero() {
           </CardContent>
         </Card>
       </div>
-    </AppShell>
+    </>
   );
 }
 

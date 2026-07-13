@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { AppShell } from "@/components/app-shell";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -127,7 +127,7 @@ function GastosOperativosPage() {
   });
 
   return (
-    <AppShell>
+    <>
       <div className="p-6 space-y-6 max-w-6xl mx-auto">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
@@ -214,7 +214,7 @@ function GastosOperativosPage() {
 
       {editing && <EditDialog row={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); qc.invalidateQueries({ queryKey: ["gastos-op"] }); }} />}
       {copyOpen && <CopyDialog items={faltantes} onClose={() => setCopyOpen(false)} onConfirm={(ids) => copiarRecurrentes.mutate(ids)} pending={copiarRecurrentes.isPending} />}
-    </AppShell>
+    </>
   );
 }
 
