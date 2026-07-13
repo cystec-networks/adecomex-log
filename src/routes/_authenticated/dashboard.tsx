@@ -98,32 +98,8 @@ function Dashboard() {
         <KPI icon={AlertTriangle} label="Alertas activas" value={reminders.length} tone="danger" />
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base font-display flex items-center gap-2">
-            <Bell className="h-4 w-4" /> Atención requerida
-          </CardTitle>
-          <Badge variant="outline">{reminders.length}</Badge>
-        </CardHeader>
-        <CardContent className="p-0">
-          {reminders.length === 0 ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">Sin alertas pendientes</div>
-          ) : (
-            <ul className="divide-y">
-              {reminders.slice(0, 8).map((r) => (
-                <li key={r.id} className="px-4 py-2.5 flex items-center gap-3 hover:bg-muted/40">
-                  <span className={`h-2 w-2 rounded-full ${r.severity === "critica" ? "bg-destructive" : r.severity === "alta" ? "bg-[var(--warning)]" : "bg-[var(--info)]"}`} />
-                  <div className="min-w-0 flex-1">
-                    <Link to={r.href} className="text-sm font-medium hover:underline block truncate">{r.title}</Link>
-                    <div className="text-xs text-muted-foreground truncate">{r.detail}</div>
-                  </div>
-                  <Badge variant="outline" className="text-[10px] uppercase">{r.severity}</Badge>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <RemindersPanel />
+
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
