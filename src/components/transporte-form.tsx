@@ -505,14 +505,37 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-5 space-y-5">
+              <div className="grid gap-1.5">
+                <Label>
+                  Factura e-CF (obligatoria para estado "Facturado")
+                </Label>
+                <FacturaEcfSelector
+                  value={form.factura_ecf_id || null}
+                  onChange={(id, fact) => {
+                    set("factura_ecf_id", id ?? "");
+                    if (fact) {
+                      if (!form.factura_numero) set("factura_numero", fact.encf);
+                      if (!form.factura_fecha) set("factura_fecha", fact.fecha_emision);
+                      if (!form.ingreso_facturado || Number(form.ingreso_facturado) === 0) {
+                        set("ingreso_facturado", String(fact.monto_total));
+                      }
+                    }
+                  }}
+                  preload={{
+                    cliente_id: form.cliente_id || null,
+                    monto_total: Number(form.ingreso_facturado) || 0,
+                  }}
+                />
+              </div>
+
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <div className="grid gap-1.5">
                   <Label>Ingreso facturado al cliente</Label>
                   <MoneyDOP value={form.ingreso_facturado} onChange={(v) => set("ingreso_facturado", v)} />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label>N° Factura</Label>
-                  <Input value={form.factura_numero} onChange={(e) => set("factura_numero", e.target.value)} placeholder="B01…" />
+                  <Label>N° Factura (referencia)</Label>
+                  <Input value={form.factura_numero} onChange={(e) => set("factura_numero", e.target.value)} placeholder="Se autocompleta del e-CF" />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Fecha de factura</Label>
