@@ -44,7 +44,7 @@ const AGRUPAR_POR = [
 const norm = (s: string) => (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const fmtUSD = (n: number) => `US$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtNum = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString("es-DO") : "—");
+const fmtDate = (d?: string | null) => fmtLocalDate(d);
 
 const estadoBadge: Record<string, string> = {
   digitar: "bg-slate-500/15 text-slate-700 border-slate-500/30",
