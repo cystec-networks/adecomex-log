@@ -10,7 +10,9 @@ export type ReminderKind =
   | "eta_proximo"
   | "permiso_por_vencer"
   | "permiso_vencido"
-  | "transporte_retrasado";
+  | "transporte_retrasado"
+  | "hito_proximo"
+  | "hito_atrasado";
 
 export type Reminder = {
   id: string; // clave única `${kind}:${entidad_id}`
