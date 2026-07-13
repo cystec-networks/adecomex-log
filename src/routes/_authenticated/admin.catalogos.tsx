@@ -80,6 +80,7 @@ function CatalogosAdmin() {
       <Tabs defaultValue="catalogo_hitos">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="catalogo_hitos" className="gap-1.5">Hitos de Despacho</TabsTrigger>
+          <TabsTrigger value="tasas_cambio" className="gap-1.5">Tasa de Cambio</TabsTrigger>
           {tabs.map((t) => (
             <TabsTrigger key={t} value={t} className="gap-1.5">
               {TABLE_LABELS[t]}
@@ -91,6 +92,9 @@ function CatalogosAdmin() {
         </TabsList>
         <TabsContent value="catalogo_hitos" className="mt-4">
           <HitosCatalog isAdmin={!!isAdmin} />
+        </TabsContent>
+        <TabsContent value="tasas_cambio" className="mt-4">
+          <TasasCambioCatalog isAdmin={!!isAdmin} />
         </TabsContent>
         {tabs.map((t) => (
           <TabsContent key={t} value={t} className="mt-4">
