@@ -64,6 +64,16 @@ function Expedientes() {
 
   const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
+  // Parse YYYY-MM-DD (or ISO with time) as LOCAL date to avoid UTC->local day shift
+  const parseLocalDate = (v: any): Date | null => {
+    if (!v) return null;
+    const s = String(v);
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
   const diasRestantes = (e: any) => {
     if (e.estado === "despachado" || !e.fecha_compromiso) return null;
     const today = new Date();
