@@ -331,7 +331,17 @@ function Expedientes() {
                             {e.numero_vuce ?? "—"}
                           </td>
                           <td className="px-2 py-2 align-middle text-center whitespace-nowrap">
-                            {estadoBadge(e.estado)}
+                            <div className="flex flex-col items-center gap-0.5">
+                              {estadoBadge(e.estado)}
+                              {e.estado === "verificar" && (() => {
+                                const fv = fechaVerificacion(e);
+                                return fv ? (
+                                  <span title="Fecha programada de verificación" className="text-[10px] text-muted-foreground tabular-nums">
+                                    {new Date(fv).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit" })}
+                                  </span>
+                                ) : null;
+                              })()}
+                            </div>
                           </td>
                           <td className="px-1 py-2 align-middle text-right whitespace-nowrap">
                             <WhatsAppButton
