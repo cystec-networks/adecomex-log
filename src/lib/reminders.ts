@@ -120,7 +120,7 @@ export function useReminders() {
         if (e.estado === "despachado") continue;
         if (e.fecha_compromiso) {
           const eta = parseLocalDate(e.fecha_compromiso);
-          const dias = daysBetween(eta, now);
+          const dias = daysBetween(eta, today);
           if (dias < 0) {
             out.push({
               id: `eta_proximo:${e.id}`,
@@ -161,7 +161,7 @@ export function useReminders() {
       for (const p of per.data ?? []) {
         if (!p.fecha_vencimiento) continue;
         if (p.estado === "rechazado" || p.estado === "vencido") continue;
-        const dias = daysBetween(parseLocalDate(p.fecha_vencimiento), now);
+        const dias = daysBetween(parseLocalDate(p.fecha_vencimiento), today);
         if (dias < 0) {
           out.push({
             id: `permiso_vencido:${p.id}`,
@@ -189,7 +189,7 @@ export function useReminders() {
       for (const t of tra.data ?? []) {
         if (t.estado === "entregado") continue;
         if (!t.eta) continue;
-        const dias = daysBetween(now, parseLocalDate(t.eta));
+        const dias = daysBetween(today, parseLocalDate(t.eta));
         if (dias >= cfg.transporteRetrasadoDias) {
           out.push({
             id: `transporte_retrasado:${t.id}`,
@@ -208,7 +208,7 @@ export function useReminders() {
       for (const h of (hit.data ?? []) as any[]) {
         if (h.expedientes?.eliminado_en) continue;
         if (!h.fecha_programada) continue;
-        const dias = daysBetween(parseLocalDate(h.fecha_programada), now);
+        const dias = daysBetween(parseLocalDate(h.fecha_programada), today);
         const nombre = h.catalogo_hitos?.nombre ?? h.hito_codigo;
         const numExp = h.expedientes?.numero ?? "";
         const esCritico = h.hito_codigo === HITO_CRITICO;
