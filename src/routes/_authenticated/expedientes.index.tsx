@@ -179,11 +179,11 @@ function Expedientes() {
   const rowHighlight = (estadoRaw: string | null) => {
     switch (estadoRaw) {
       case "verificar":
-        return "bg-red-50/50 border-l-4 border-l-red-500 dark:bg-red-950/30 dark:border-l-red-400";
+        return "bg-red-100 dark:bg-red-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-red-500 dark:[&>td:first-child]:border-l-red-400";
       case "presentar":
-        return "bg-amber-50/50 border-l-4 border-l-amber-500 dark:bg-amber-950/30 dark:border-l-amber-400";
+        return "bg-amber-100 dark:bg-amber-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-amber-500 dark:[&>td:first-child]:border-l-amber-400";
       case "despachado":
-        return "bg-slate-100/50 border-l-4 border-l-slate-600 dark:bg-slate-900/30 dark:border-l-slate-500";
+        return "bg-slate-200 dark:bg-slate-900/60 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-slate-600 dark:[&>td:first-child]:border-l-slate-500";
       default:
         return "";
     }
