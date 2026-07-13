@@ -138,7 +138,7 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
                     activo &&
                     h.fecha_programada &&
                     !atrasado &&
-                    (new Date(h.fecha_programada).getTime() - Date.now()) / 86400000 <= 3
+                    daysFromToday(h.fecha_programada) <= 3
                   );
                   return (
                     <tr key={h.id} className={`border-t align-top ${esCritico && atrasado ? "bg-destructive/5" : ""}`}>
