@@ -64,11 +64,22 @@ function Expedientes() {
 
   const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
+  // Parse YYYY-MM-DD (or ISO with time) as LOCAL date to avoid UTC->local day shift
+  const parseLocalDate = (v: any): Date | null => {
+    if (!v) return null;
+    const s = String(v);
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
   const diasRestantes = (e: any) => {
     if (e.estado === "despachado" || !e.fecha_compromiso) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const eta = new Date(e.fecha_compromiso);
+    const eta = parseLocalDate(e.fecha_compromiso);
+    if (!eta) return null;
     eta.setHours(0, 0, 0, 0);
     const diff = Math.round((eta.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     if (diff > 5) return { text: `${diff}`, full: `${diff} días`, tone: "success" as const };
@@ -86,7 +97,9 @@ function Expedientes() {
   const esUrgente = (e: any) => {
     if (e.estado === "despachado" || !e.fecha_compromiso) return false;
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    const eta = new Date(e.fecha_compromiso); eta.setHours(0, 0, 0, 0);
+    const eta = parseLocalDate(e.fecha_compromiso);
+    if (!eta) return false;
+    eta.setHours(0, 0, 0, 0);
     const diff = Math.round((eta.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     return diff < 3;
   };
@@ -300,7 +313,7 @@ function Expedientes() {
                             {e.bl_awb ?? "—"}
                           </td>
                           <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground whitespace-nowrap">
-                            {e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"}
+                            {(() => { const d = parseLocalDate(e.fecha_compromiso); return d ? d.toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"; })()}
                           </td>
                           <td className="px-2 py-2 align-middle text-center whitespace-nowrap w-12 min-w-12">
                             {(() => {
