@@ -200,19 +200,26 @@ export function useReminders() {
       }
 
       // Hitos de despacho (próximos / atrasados)
+      const HITO_CRITICO = "verificacion_mercancia_puerto";
       for (const h of (hit.data ?? []) as any[]) {
         if (h.expedientes?.eliminado_en) continue;
         if (!h.fecha_programada) continue;
         const dias = daysBetween(new Date(h.fecha_programada), now);
         const nombre = h.catalogo_hitos?.nombre ?? h.hito_codigo;
         const numExp = h.expedientes?.numero ?? "";
-        if (dias > 0) {
+        const esCritico = h.hito_codigo === HITO_CRITICO;
+        // Hito crítico: alerta desde el mismo día (dias === 0). Otros: solo cuando vencido (dias > 0).
+        if (dias > 0 || (esCritico && dias === 0)) {
           out.push({
             id: `hito_atrasado:${h.id}`,
             kind: "hito_atrasado",
-            severity: dias > 3 ? "critica" : "alta",
-            title: `Hito atrasado · ${nombre}`,
-            detail: `Exp. ${numExp} · vencido hace ${dias} días`,
+            severity: "critica",
+            title: esCritico
+              ? `⚠️ CRÍTICO · ${nombre}${dias === 0 ? " (hoy)" : ""}`
+              : `Hito atrasado · ${nombre}`,
+            detail: esCritico
+              ? `Exp. ${numExp} · ${dias === 0 ? "vence hoy — riesgo de cargos por demora en puerto" : `vencido hace ${dias} días — cargos por demora activos`}`
+              : `Exp. ${numExp} · vencido hace ${dias} días`,
             href: `/expedientes/${h.expediente_id}`,
             createdAt: h.fecha_programada,
           });
@@ -220,18 +227,24 @@ export function useReminders() {
           out.push({
             id: `hito_proximo:${h.id}`,
             kind: "hito_proximo",
-            severity: Math.abs(dias) <= 1 ? "alta" : "media",
-            title: `Hito próximo · ${nombre}`,
-            detail: `Exp. ${numExp} · en ${Math.abs(dias)} días`,
+            severity: esCritico ? "critica" : Math.abs(dias) <= 1 ? "alta" : "media",
+            title: esCritico ? `⚠️ CRÍTICO próximo · ${nombre}` : `Hito próximo · ${nombre}`,
+            detail: `Exp. ${numExp} · en ${Math.abs(dias)} días${esCritico ? " — riesgo de cargos por demora" : ""}`,
             href: `/expedientes/${h.expediente_id}`,
             createdAt: h.fecha_programada,
           });
         }
       }
 
-
       const sevOrder: Record<ReminderSeverity, number> = { critica: 0, alta: 1, media: 2 };
-      out.sort((a, b) => sevOrder[a.severity] - sevOrder[b.severity]);
+      // Ordena por severidad; dentro de "crítica", el hito de Verificación va primero.
+      out.sort((a, b) => {
+        const s = sevOrder[a.severity] - sevOrder[b.severity];
+        if (s !== 0) return s;
+        const aC = a.title.includes("CRÍTICO") ? 0 : 1;
+        const bC = b.title.includes("CRÍTICO") ? 0 : 1;
+        return aC - bC;
+      });
       return out;
     },
     refetchInterval: 60_000,
