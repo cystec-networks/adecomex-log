@@ -335,11 +335,14 @@ function Expedientes() {
                               {estadoBadge(e.estado)}
                               {e.estado === "verificar" && (() => {
                                 const fv = fechaVerificacion(e);
-                                return fv ? (
+                                if (!fv) return null;
+                                const m = String(fv).match(/^(\d{4})-(\d{2})-(\d{2})/);
+                                const label = m ? `${m[3]}/${m[2]}` : new Date(fv).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit" });
+                                return (
                                   <span title="Fecha programada de verificación" className="text-[10px] text-muted-foreground tabular-nums">
-                                    {new Date(fv).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit" })}
+                                    {label}
                                   </span>
-                                ) : null;
+                                );
                               })()}
                             </div>
                           </td>
