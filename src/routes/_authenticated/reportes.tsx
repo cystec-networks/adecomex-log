@@ -184,7 +184,7 @@ function ReportesPage() {
         detalle.push([
           g.key, e.numero, e.clientes?.nombre ?? "", e.bl_awb ?? "",
           e.puerto_arribo ?? "", e.pais_origen ?? "",
-          e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO") : "",
+          fmtLocalDate(e.fecha_compromiso, undefined, ""),
           e.regimen_aduanero ?? "", e.preferencia_comercial ?? "Ninguna",
           e.numero_certificado_origen ?? "", e.numeros_contenedores ?? "",
           Number(e.total_fob) || 0, Number(e.seguro) || 0, Number(e.flete) || 0,
@@ -270,7 +270,7 @@ function ReportesPage() {
           e.clientes?.nombre ?? "—",
           e.bl_awb ?? "—",
           e.puerto_arribo ?? "—",
-          e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO") : "—",
+          fmtLocalDate(e.fecha_compromiso),
           e.regimen_aduanero ?? "—",
           e.preferencia_comercial ?? "Ninguna",
           fmtNum(Number(e.total_fob) || 0),
