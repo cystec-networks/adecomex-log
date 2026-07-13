@@ -162,7 +162,7 @@ function Solicitudes() {
                   <td>{s.clientes?.nombre ?? "—"}</td>
                   <td className="text-muted-foreground">{s.tipo_operacion ?? "—"}</td>
                   <td>{s.origen ?? "—"}</td>
-                  <td>{s.fecha_arribo_est ? new Date(s.fecha_arribo_est).toLocaleDateString("es-DO") : "—"}</td>
+                  <td>{fmtLocalDate(s.fecha_arribo_est)}</td>
                   <td><Badge className="bg-muted text-muted-foreground border-transparent">{s.prioridad}</Badge></td>
                   <td><Badge className="bg-primary/10 text-primary border-transparent">{s.estado?.replace("_", " ")}</Badge></td>
                   <td className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString("es-DO")}</td>
