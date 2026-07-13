@@ -15,6 +15,7 @@ import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
+import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
 import { AutocompleteInput } from "@/components/autocomplete-input";
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { GenerarXmlSigaButton } from "@/components/generar-xml-siga";
