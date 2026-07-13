@@ -152,7 +152,7 @@ function TransporteDashboard() {
 
   const atrasados = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    return current.filter(r => r.eta && new Date(r.eta) < today && r.estado !== "entregado" && r.estado !== "facturado").length;
+    return current.filter(r => r.eta && parseLocalDate(r.eta) < today && r.estado !== "entregado" && r.estado !== "facturado").length;
   }, [current]);
 
   const promedioCont = kpis.viajes > 0 ? (kpis.contenedores / kpis.viajes) : 0;
