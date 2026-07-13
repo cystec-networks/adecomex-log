@@ -78,7 +78,8 @@ function Expedientes() {
     if (e.estado === "despachado" || !e.fecha_compromiso) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const eta = new Date(e.fecha_compromiso);
+    const eta = parseLocalDate(e.fecha_compromiso);
+    if (!eta) return null;
     eta.setHours(0, 0, 0, 0);
     const diff = Math.round((eta.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     if (diff > 5) return { text: `${diff}`, full: `${diff} días`, tone: "success" as const };
