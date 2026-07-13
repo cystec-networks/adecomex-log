@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
@@ -482,6 +482,7 @@ function TabInfo({ exp }: { exp: any }) {
           <div className="md:col-span-2 lg:col-span-3">
             <MercanciaItemsBlock expedienteId={exp.id} />
           </div>
+          <HerramientasDgaVuce />
           {(() => {
             const toN = (v: any) => (v === "" || v == null ? 0 : Number(v) || 0);
             const fob = sumFob;
@@ -1604,5 +1605,47 @@ function MercanciaItemsBlock({ expedienteId }: { expedienteId: string }) {
     </div>
   );
 }
+
+function HerramientasDgaVuce() {
+  const tools = [
+    { label: "Buscador de Productos", url: "https://www.aduanas.gob.do/consultas/buscador-de-productos/", icon: Search },
+    { label: "Consulta Aranceles VUCE", url: "https://sirevuce.aduanas.gob.do/", icon: FileText },
+    { label: "Arancel de Aduanas 7ma Enmienda 2022", url: "https://www.aduanas.gob.do/consultas/arancel-de-aduanas-7ma-enmienda-2022/", icon: Scale },
+    { label: "Portal VUCE-RD", url: "https://vucerd.gob.do/", icon: ShieldCheck },
+    { label: "Portal SIGA", url: "https://siga.aduanas.gob.do/", icon: LayoutGrid },
+    { label: "VUCE - Gestión de Trámites", url: "https://app.vucerd.gob.do/auth", icon: FileCheck },
+  ];
+
+  return (
+    <div className="md:col-span-2 lg:col-span-3">
+      <div className="rounded-lg border border-dashed border-accent/30 bg-accent/[0.03] p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground mb-3">
+          <Clock className="h-4 w-4 text-accent" />
+          <span>Herramientas DGA/VUCE</span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {tools.map((t) => {
+            const Icon = t.icon;
+            return (
+              <a
+                key={t.url}
+                href={t.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-2 rounded-md border border-border bg-background/60 px-3 py-2.5 text-sm hover:border-accent/50 hover:bg-accent/5 transition-colors"
+              >
+                <Icon className="h-4 w-4 shrink-0 text-accent" />
+                <span className="flex-1 leading-tight">{t.label}</span>
+                <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-accent" />
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 
 
