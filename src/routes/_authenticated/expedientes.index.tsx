@@ -10,7 +10,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
+import { Trash2, AlarmClock } from "lucide-react";
+import { Toggle } from "@/components/ui/toggle";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
 import { useState } from "react";
@@ -31,6 +32,7 @@ function Expedientes() {
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState("todos");
   const [toTrash, setToTrash] = useState<{ id: string; numero: string } | null>(null);
+  const [soloUrgentes, setSoloUrgentes] = useState(false);
   const qc = useQueryClient();
 
   const { data } = useQuery({
@@ -81,9 +83,18 @@ function Expedientes() {
     return "otros";
   };
 
+  const esUrgente = (e: any) => {
+    if (e.estado === "despachado" || !e.fecha_compromiso) return false;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const eta = new Date(e.fecha_compromiso); eta.setHours(0, 0, 0, 0);
+    const diff = Math.round((eta.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return diff < 3;
+  };
+
   const filtered = (data ?? []).filter((e: any) => {
     if (estado !== "todos" && e.estado !== estado) return false;
     if (tipo !== "todos" && detectTipo(e) !== tipo) return false;
+    if (soloUrgentes && !esUrgente(e)) return false;
     if (q && !norm(JSON.stringify(e)).includes(norm(q))) return false;
     return true;
   });
@@ -219,6 +230,16 @@ function Expedientes() {
               {["digitar","presentar","verificar","facturar","despachado"].map((e) => <SelectItem key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1)}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Toggle
+            pressed={soloUrgentes}
+            onPressedChange={setSoloUrgentes}
+            size="sm"
+            className="data-[state=on]:bg-orange-100 data-[state=on]:text-orange-700 dark:data-[state=on]:bg-orange-950/40 dark:data-[state=on]:text-orange-300 gap-1.5"
+            title="Filtrar expedientes con ETA a menos de 3 días"
+          >
+            <AlarmClock className="h-3.5 w-3.5" />
+            <span className="text-xs">Solo urgentes ETA</span>
+          </Toggle>
           <Input placeholder="Buscar por BL/AWB, expediente o cliente…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
         </CardHeader>
         <CardContent className="p-0">
@@ -286,7 +307,13 @@ function Expedientes() {
                                   ? "text-amber-600 dark:text-amber-400"
                                   : "text-destructive";
                               return (
-                                <span title={d.full} className={`text-xs font-medium tabular-nums ${toneClass}`}>
+                                <span title={d.full} className={`inline-flex items-center gap-1 text-xs font-medium tabular-nums ${toneClass}`}>
+                                  {esUrgente(e) && (
+                                    <AlarmClock
+                                      className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400"
+                                      aria-label="ETA urgente (menos de 3 días)"
+                                    />
+                                  )}
                                   {d.text}
                                 </span>
                               );
