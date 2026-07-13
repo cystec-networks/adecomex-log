@@ -200,6 +200,11 @@ function Expedientes() {
     }
   };
 
+  const fechaVerificacion = (e: any) => {
+    const hito = (e.expediente_hitos ?? []).find((h: any) => h.hito_codigo === "verificacion_mercancia_puerto");
+    return hito?.fecha_programada ?? hito?.fecha_cumplimiento ?? null;
+  };
+
   const TruncatedCell = ({ value, className = "", maxClass = "max-w-[160px]" }: { value: string | null; className?: string; maxClass?: string }) => (
     <span title={value ?? undefined} className={`block truncate ${maxClass} ${className}`}>
       {value ?? "—"}
