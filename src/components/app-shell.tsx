@@ -3,8 +3,9 @@ import {
   Inbox, FolderKanban, Users, UserCog, LogOut,
   PackageOpen, PackageCheck, ScanText, Sparkles, Trash2, FileCheck2, Truck,
   ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3, Library, Settings,
-  DollarSign, PiggyBank, Shield,
+  DollarSign, PiggyBank, Shield, Receipt, ClipboardList,
 } from "lucide-react";
+import type { AppRole } from "@/lib/auth-hooks";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { GlobalSearch } from "@/components/global-search";
 import {
@@ -33,6 +34,7 @@ type SubItem = {
   search?: Record<string, unknown>;
   match?: (pathname: string, search: Record<string, unknown>) => boolean;
   adminOnly?: boolean;
+  roles?: AppRole[]; // if set, requires user to have at least one of these
 };
 
 type Group = {
@@ -41,6 +43,7 @@ type Group = {
   icon: ComponentType<{ className?: string }>;
   items: SubItem[];
   adminOnly?: boolean;
+  roles?: AppRole[];
 };
 
 type SimpleItem = {
@@ -51,6 +54,7 @@ type SimpleItem = {
   search?: Record<string, unknown>;
   match?: (pathname: string, search: Record<string, unknown>) => boolean;
   adminOnly?: boolean;
+  roles?: AppRole[];
 };
 
 type MenuEntry =
@@ -102,7 +106,7 @@ const GROUPS: Group[] = [
     id: "administracion",
     label: "ADMINISTRACIÓN",
     icon: Shield,
-    adminOnly: true,
+    roles: ["admin", "contabilidad"],
     items: [
       { to: "/admin/usuarios", label: "Usuarios y roles", icon: UserCog, adminOnly: true,
         match: (p) => p.startsWith("/admin/usuarios") },
@@ -110,9 +114,13 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/admin/catalogos") },
       { to: "/admin/configuracion", label: "Configuración", icon: Settings, adminOnly: true,
         match: (p) => p.startsWith("/admin/configuracion") },
-      { to: "/admin/gastos-operativos", label: "Gastos Operativos", icon: DollarSign, adminOnly: true,
+      { to: "/admin/facturacion", label: "Facturación (e-CF)", icon: Receipt, roles: ["admin","contabilidad"],
+        match: (p) => p === "/admin/facturacion" || (p.startsWith("/admin/facturacion") && !p.includes("/pendientes")) },
+      { to: "/admin/facturacion/pendientes", label: "Pendientes de vincular", icon: ClipboardList, roles: ["admin","contabilidad"],
+        match: (p) => p.startsWith("/admin/facturacion/pendientes") },
+      { to: "/admin/gastos-operativos", label: "Gastos Operativos", icon: DollarSign, roles: ["admin","contabilidad"],
         match: (p) => p.startsWith("/admin/gastos-operativos") },
-      { to: "/admin/dashboard-financiero", label: "Dashboard Financiero", icon: PiggyBank, adminOnly: true,
+      { to: "/admin/dashboard-financiero", label: "Dashboard Financiero", icon: PiggyBank, roles: ["admin","contabilidad"],
         match: (p) => p.startsWith("/admin/dashboard-financiero") },
       { to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
         match: (p) => p === "/expedientes/papelera" },
@@ -135,13 +143,20 @@ function AppSidebarInner() {
   const { data: profile } = useMyProfile();
   const { data: roles } = useMyRoles();
   const isAdmin = roles?.includes("admin");
+  const rolesSet = new Set<AppRole>((roles ?? []) as AppRole[]);
 
-  const visibleGroups = GROUPS.filter((g) => !g.adminOnly || isAdmin).map((g) => ({
+  const canSee = (it: { adminOnly?: boolean; roles?: AppRole[] }) => {
+    if (it.adminOnly) return !!isAdmin;
+    if (it.roles && it.roles.length > 0) return it.roles.some((r) => rolesSet.has(r));
+    return true;
+  };
+
+  const visibleGroups = GROUPS.filter(canSee).map((g) => ({
     ...g,
-    items: g.items.filter((it) => !it.adminOnly || isAdmin),
+    items: g.items.filter(canSee),
   })).filter((g) => g.items.length > 0);
 
-  const visibleSimpleItems = SIMPLE_ITEMS.filter((it) => !it.adminOnly || isAdmin);
+  const visibleSimpleItems = SIMPLE_ITEMS.filter(canSee);
 
   const isItemActive = (it: SubItem | SimpleItem) =>
     it.match ? it.match(pathname, search) : pathname === it.to;

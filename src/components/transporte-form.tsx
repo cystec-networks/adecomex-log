@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
 import { SearchEmailButton } from "@/components/search-email-button";
+import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 
 const NO_EXPEDIENTE = "__none__";
 
@@ -116,6 +117,7 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
     pago_estado: "pendiente",
     contenedores_cantidad: "",
     contenedores_detalle: "",
+    factura_ecf_id: "" as string,
   });
   const [loaded, setLoaded] = useState(false);
 
@@ -151,6 +153,7 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         pago_estado: existing.pago_estado ?? "pendiente",
         contenedores_cantidad: existing.contenedores_cantidad?.toString() ?? "",
         contenedores_detalle: existing.contenedores_detalle ?? "",
+        factura_ecf_id: existing.factura_ecf_id ?? "",
       });
       setLoaded(true);
     }
@@ -182,11 +185,15 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
 
   const save = useMutation({
     mutationFn: async () => {
+      if (form.estado === "facturado" && !form.factura_ecf_id) {
+        throw new Error("Para marcar como Facturado debes vincular una Factura e-CF real.");
+      }
       const payload: any = { ...form };
       const nullableStr = [
         "expediente_id","cliente_id","tipo","transportista","placa_contenedor","origen","destino",
         "fecha_salida","eta","observaciones","factura_numero","factura_fecha","numero_viaje",
         "pago_referencia","factura_costo_numero","factura_costo_fecha","contenedores_detalle",
+        "factura_ecf_id",
       ];
       nullableStr.forEach((k) => { if (payload[k] === "") payload[k] = null; });
       const nullableNum = ["flete_monto","costo_viaje","descuento_cxc","costo_combustible","costo_peajes","costo_chofer","costo_otros","ingreso_facturado","contenedores_cantidad"];
@@ -498,14 +505,37 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-5 space-y-5">
+              <div className="grid gap-1.5">
+                <Label>
+                  Factura e-CF (obligatoria para estado "Facturado")
+                </Label>
+                <FacturaEcfSelector
+                  value={form.factura_ecf_id || null}
+                  onChange={(id, fact) => {
+                    set("factura_ecf_id", id ?? "");
+                    if (fact) {
+                      if (!form.factura_numero) set("factura_numero", fact.encf);
+                      if (!form.factura_fecha) set("factura_fecha", fact.fecha_emision);
+                      if (!form.ingreso_facturado || Number(form.ingreso_facturado) === 0) {
+                        set("ingreso_facturado", String(fact.monto_total));
+                      }
+                    }
+                  }}
+                  preload={{
+                    cliente_id: form.cliente_id || null,
+                    monto_total: Number(form.ingreso_facturado) || 0,
+                  }}
+                />
+              </div>
+
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <div className="grid gap-1.5">
                   <Label>Ingreso facturado al cliente</Label>
                   <MoneyDOP value={form.ingreso_facturado} onChange={(v) => set("ingreso_facturado", v)} />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label>N° Factura</Label>
-                  <Input value={form.factura_numero} onChange={(e) => set("factura_numero", e.target.value)} placeholder="B01…" />
+                  <Label>N° Factura (referencia)</Label>
+                  <Input value={form.factura_numero} onChange={(e) => set("factura_numero", e.target.value)} placeholder="Se autocompleta del e-CF" />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Fecha de factura</Label>

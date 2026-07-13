@@ -719,6 +719,7 @@ export type Database = {
           estado: Database["public"]["Enums"]["expediente_estado"]
           etapa_actual: number
           factura_comercial: string | null
+          factura_ecf_id: string | null
           fecha_cierre: string | null
           fecha_compromiso: string | null
           flete: number | null
@@ -781,6 +782,7 @@ export type Database = {
           estado?: Database["public"]["Enums"]["expediente_estado"]
           etapa_actual?: number
           factura_comercial?: string | null
+          factura_ecf_id?: string | null
           fecha_cierre?: string | null
           fecha_compromiso?: string | null
           flete?: number | null
@@ -843,6 +845,7 @@ export type Database = {
           estado?: Database["public"]["Enums"]["expediente_estado"]
           etapa_actual?: number
           factura_comercial?: string | null
+          factura_ecf_id?: string | null
           fecha_cierre?: string | null
           fecha_compromiso?: string | null
           flete?: number | null
@@ -896,6 +899,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expedientes_factura_ecf_id_fkey"
+            columns: ["factura_ecf_id"]
+            isOneToOne: false
+            referencedRelation: "facturas_ecf"
             referencedColumns: ["id"]
           },
           {
@@ -959,6 +969,157 @@ export type Database = {
             columns: ["expediente_id"]
             isOneToOne: false
             referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facturas_ecf: {
+        Row: {
+          cdt: number
+          cliente_id: string | null
+          cliente_razon_social: string | null
+          cliente_rnc: string | null
+          codigo_seguridad: string | null
+          created_at: string
+          created_by: string | null
+          eliminado_en: string | null
+          eliminado_por: string | null
+          encf: string
+          fecha_emision: string
+          fecha_firma: string | null
+          fecha_vencimiento_ncf: string | null
+          id: string
+          monto_total: number
+          notas: string | null
+          otros_impuestos: number
+          pdf_url: string | null
+          propina_legal: number
+          subtotal_exento: number
+          subtotal_gravado: number
+          tipo_comprobante: string
+          total_isc_av: number
+          total_isc_e: number
+          total_itbis: number
+          updated_at: string
+        }
+        Insert: {
+          cdt?: number
+          cliente_id?: string | null
+          cliente_razon_social?: string | null
+          cliente_rnc?: string | null
+          codigo_seguridad?: string | null
+          created_at?: string
+          created_by?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
+          encf: string
+          fecha_emision: string
+          fecha_firma?: string | null
+          fecha_vencimiento_ncf?: string | null
+          id?: string
+          monto_total?: number
+          notas?: string | null
+          otros_impuestos?: number
+          pdf_url?: string | null
+          propina_legal?: number
+          subtotal_exento?: number
+          subtotal_gravado?: number
+          tipo_comprobante: string
+          total_isc_av?: number
+          total_isc_e?: number
+          total_itbis?: number
+          updated_at?: string
+        }
+        Update: {
+          cdt?: number
+          cliente_id?: string | null
+          cliente_razon_social?: string | null
+          cliente_rnc?: string | null
+          codigo_seguridad?: string | null
+          created_at?: string
+          created_by?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
+          encf?: string
+          fecha_emision?: string
+          fecha_firma?: string | null
+          fecha_vencimiento_ncf?: string | null
+          id?: string
+          monto_total?: number
+          notas?: string | null
+          otros_impuestos?: number
+          pdf_url?: string | null
+          propina_legal?: number
+          subtotal_exento?: number
+          subtotal_gravado?: number
+          tipo_comprobante?: string
+          total_isc_av?: number
+          total_isc_e?: number
+          total_itbis?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facturas_ecf_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facturas_ecf_lineas: {
+        Row: {
+          cantidad: number
+          created_at: string
+          descripcion: string
+          descuento: number
+          factura_id: string
+          gravado: boolean
+          id: string
+          itbis: number
+          orden: number
+          precio: number
+          recargo: number
+          unidad: string | null
+          valor: number
+        }
+        Insert: {
+          cantidad?: number
+          created_at?: string
+          descripcion: string
+          descuento?: number
+          factura_id: string
+          gravado?: boolean
+          id?: string
+          itbis?: number
+          orden?: number
+          precio?: number
+          recargo?: number
+          unidad?: string | null
+          valor?: number
+        }
+        Update: {
+          cantidad?: number
+          created_at?: string
+          descripcion?: string
+          descuento?: number
+          factura_id?: string
+          gravado?: boolean
+          id?: string
+          itbis?: number
+          orden?: number
+          precio?: number
+          recargo?: number
+          unidad?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facturas_ecf_lineas_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "facturas_ecf"
             referencedColumns: ["id"]
           },
         ]
@@ -1415,6 +1576,7 @@ export type Database = {
           expediente_id: string | null
           factura_costo_fecha: string | null
           factura_costo_numero: string | null
+          factura_ecf_id: string | null
           factura_fecha: string | null
           factura_numero: string | null
           fecha_salida: string | null
@@ -1454,6 +1616,7 @@ export type Database = {
           expediente_id?: string | null
           factura_costo_fecha?: string | null
           factura_costo_numero?: string | null
+          factura_ecf_id?: string | null
           factura_fecha?: string | null
           factura_numero?: string | null
           fecha_salida?: string | null
@@ -1493,6 +1656,7 @@ export type Database = {
           expediente_id?: string | null
           factura_costo_fecha?: string | null
           factura_costo_numero?: string | null
+          factura_ecf_id?: string | null
           factura_fecha?: string | null
           factura_numero?: string | null
           fecha_salida?: string | null
@@ -1525,6 +1689,13 @@ export type Database = {
             columns: ["expediente_id"]
             isOneToOne: false
             referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transportes_factura_ecf_id_fkey"
+            columns: ["factura_ecf_id"]
+            isOneToOne: false
+            referencedRelation: "facturas_ecf"
             referencedColumns: ["id"]
           },
         ]
@@ -1567,6 +1738,7 @@ export type Database = {
         | "documentacion"
         | "transporte"
         | "finanzas"
+        | "contabilidad"
       doc_estado:
         | "pendiente"
         | "recibido"
@@ -1749,6 +1921,7 @@ export const Constants = {
         "documentacion",
         "transporte",
         "finanzas",
+        "contabilidad",
       ],
       doc_estado: ["pendiente", "recibido", "observado", "aprobado", "vencido"],
       etapa_estado: ["pendiente", "en_curso", "completada", "bloqueada"],

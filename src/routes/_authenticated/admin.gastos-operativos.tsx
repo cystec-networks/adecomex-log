@@ -26,8 +26,8 @@ export const Route = createFileRoute("/_authenticated/admin/gastos-operativos")(
     if (!data.user) throw redirect({ to: "/auth" });
     const { data: r } = await supabase
       .from("user_roles").select("role")
-      .eq("user_id", data.user.id).eq("role", "admin").maybeSingle();
-    if (!r) throw redirect({ to: "/dashboard" });
+      .eq("user_id", data.user.id).in("role", ["admin","contabilidad"]);
+    if (!r || r.length === 0) throw redirect({ to: "/dashboard" });
   },
   component: GastosOperativosPage,
 });

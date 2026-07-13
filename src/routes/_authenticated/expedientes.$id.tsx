@@ -24,6 +24,7 @@ import { EmailButton } from "@/components/email-button";
 import { SearchEmailButton } from "@/components/search-email-button";
 import { RastrearEmbarqueButton } from "@/components/rastrear-embarque-button";
 import { ChecklistHitos } from "@/components/checklist-hitos";
+import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
@@ -81,11 +82,15 @@ function DetalleExpediente() {
 
   const updateEstado = useMutation({
     mutationFn: async (estado: string) => {
+      if (estado === "despachado" && !(exp as any)?.factura_ecf_id) {
+        throw new Error("Para cambiar a Despachado debes vincular una Factura e-CF real (pestaña Finanzas).");
+      }
       const { error } = await supabase.from("expedientes").update({ estado: estado as any }).eq("id", id);
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: id, accion: `cambio_estado:${estado}` });
     },
     onSuccess: () => { toast.success("Estado actualizado"); qc.invalidateQueries({ queryKey: ["expediente", id] }); },
+    onError: (e: any) => toast.error(e.message),
   });
 
   if (!exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
@@ -1056,9 +1061,53 @@ function LiquidacionSection({ expedienteId }: { expedienteId: string }) {
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Margen</div><div className={`text-xl font-display font-bold mt-1 ${marginColor}`}>{margen.toFixed(1)}%</div></CardContent></Card>
       </div>
 
+      <FacturaEcfBlock expedienteId={expedienteId} totalFact={totalFact} />
       <FacturasBlock expedienteId={expedienteId} facturas={facturas ?? []} />
       <GastosBlock expedienteId={expedienteId} gastos={gastos ?? []} />
     </div>
+  );
+}
+
+function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; totalFact: number }) {
+  const qc = useQueryClient();
+  const { data: exp } = useQuery({
+    queryKey: ["expediente", expedienteId],
+    queryFn: async () => (await supabase.from("expedientes").select("*").eq("id", expedienteId).maybeSingle()).data,
+  });
+  const link = useMutation({
+    mutationFn: async (fid: string | null) => {
+      const { error } = await supabase.from("expedientes").update({ factura_ecf_id: fid }).eq("id", expedienteId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Factura e-CF actualizada");
+      qc.invalidateQueries({ queryKey: ["expediente", expedienteId] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  return (
+    <Card className="border-primary/20">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">
+          Factura e-CF (DGII) — requerida para Despachar
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <FacturaEcfSelector
+          value={(exp as any)?.factura_ecf_id ?? null}
+          onChange={(id: string | null) => link.mutate(id)}
+          preload={{
+            cliente_id: (exp as any)?.cliente_id ?? null,
+            monto_total: totalFact,
+          }}
+        />
+        {!(exp as any)?.factura_ecf_id && (
+          <p className="text-xs text-amber-700 mt-2">
+            Sin factura vinculada: el expediente no podrá pasar a estado "Despachado".
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
