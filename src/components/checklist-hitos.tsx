@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, Clock, Circle, MinusCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { daysFromToday } from "@/lib/dates";
 
 type HitoRow = {
   id: string;
