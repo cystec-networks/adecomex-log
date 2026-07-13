@@ -80,6 +80,7 @@ function CatalogosAdmin() {
       <Tabs defaultValue="catalogo_hitos">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="catalogo_hitos" className="gap-1.5">Hitos de Despacho</TabsTrigger>
+          <TabsTrigger value="tasas_cambio" className="gap-1.5">Tasa de Cambio</TabsTrigger>
           {tabs.map((t) => (
             <TabsTrigger key={t} value={t} className="gap-1.5">
               {TABLE_LABELS[t]}
@@ -91,6 +92,9 @@ function CatalogosAdmin() {
         </TabsList>
         <TabsContent value="catalogo_hitos" className="mt-4">
           <HitosCatalog isAdmin={!!isAdmin} />
+        </TabsContent>
+        <TabsContent value="tasas_cambio" className="mt-4">
+          <TasasCambioCatalog isAdmin={!!isAdmin} />
         </TabsContent>
         {tabs.map((t) => (
           <TabsContent key={t} value={t} className="mt-4">
@@ -499,4 +503,162 @@ function HitoDialog({ initial, mode, onClose, onSave, saving }: any) {
     </Dialog>
   );
 }
+
+function TasasCambioCatalog({ isAdmin }: { isAdmin: boolean }) {
+  const qc = useQueryClient();
+  const [dialog, setDialog] = useState<{ mode: "new" | "edit"; row?: any } | null>(null);
+
+  const { data: rows } = useQuery({
+    queryKey: ["catalogo_tasas_cambio", "all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("catalogo_tasas_cambio")
+        .select("*")
+        .order("fecha", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const save = useMutation({
+    mutationFn: async (v: any) => {
+      const payload = { fecha: v.fecha, tasa: Number(v.tasa), notas: v.notas || null };
+      if (dialog?.mode === "edit") {
+        const { error } = await supabase.from("catalogo_tasas_cambio").update(payload).eq("id", dialog.row.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("catalogo_tasas_cambio").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Tasa guardada");
+      setDialog(null);
+      qc.invalidateQueries({ queryKey: ["catalogo_tasas_cambio"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("catalogo_tasas_cambio").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Eliminada"); qc.invalidateQueries({ queryKey: ["catalogo_tasas_cambio"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-3 border-b flex-row items-center gap-3 space-y-0">
+        <CardTitle className="text-base">Tasa de Cambio DGA (RD$ por US$1)</CardTitle>
+        <Badge variant="outline" className="text-xs font-normal">{rows?.length ?? 0} registros</Badge>
+        <div className="flex-1" />
+        <a href="https://www.aduanas.gob.do/tasa-de-cambio/" target="_blank" rel="noopener noreferrer"
+          className="text-xs text-blue-700 underline">aduanas.gob.do ↗</a>
+        {isAdmin && (
+          <Button size="sm" onClick={() => setDialog({ mode: "new", row: { fecha: new Date().toISOString().slice(0,10), tasa: "" } })}>
+            <Plus className="h-4 w-4 mr-1" />Agregar tasa
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent className="pt-0">
+        <p className="text-xs text-muted-foreground pt-3 pb-2">
+          Solo administradores pueden editar o eliminar. Cualquier operador puede capturar la tasa la primera vez del día
+          desde el expediente. Los expedientes despachados o con Resultado Oficial DGA conservan la tasa original congelada.
+        </p>
+        <div className="rounded-md border overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 text-left w-40">Fecha</th>
+                <th className="px-3 py-2 text-right w-40">RD$ / US$1</th>
+                <th className="px-3 py-2 text-left">Notas</th>
+                {isAdmin && <th className="w-24"></th>}
+              </tr>
+            </thead>
+            <tbody>
+              {(rows ?? []).length === 0 && (
+                <tr><td colSpan={4} className="px-3 py-8 text-center text-muted-foreground">Sin tasas registradas todavía.</td></tr>
+              )}
+              {(rows ?? []).map((r: any) => (
+                <tr key={r.id} className="border-t">
+                  <td className="px-3 py-2 font-medium">{new Date(r.fecha + "T00:00:00").toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "numeric" })}</td>
+                  <td className="px-3 py-2 text-right font-mono tabular-nums">{Number(r.tasa).toFixed(4)}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{r.notas ?? "—"}</td>
+                  {isAdmin && (
+                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDialog({ mode: "edit", row: r })}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                        onClick={() => { if (confirm(`Eliminar tasa del ${r.fecha}?`)) del.mutate(r.id); }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+
+      {dialog && (
+        <TasaDialog
+          initial={dialog.row ?? {}}
+          mode={dialog.mode}
+          onClose={() => setDialog(null)}
+          onSave={(v: any) => save.mutate(v)}
+          saving={save.isPending}
+        />
+      )}
+    </Card>
+  );
+}
+
+function TasaDialog({ initial, mode, onClose, onSave, saving }: any) {
+  const [f, setF] = useState<any>({
+    fecha: initial.fecha ?? "",
+    tasa: initial.tasa ?? "",
+    notas: initial.notas ?? "",
+  });
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{mode === "edit" ? "Editar tasa de cambio" : "Agregar tasa de cambio"}</DialogTitle></DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <Label>Fecha <span className="text-destructive">*</span></Label>
+            <Input type="date" value={f.fecha} disabled={mode === "edit"} onChange={(e) => setF({ ...f, fecha: e.target.value })} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>RD$ por US$ 1.00 <span className="text-destructive">*</span></Label>
+            <Input inputMode="decimal" className="font-mono tabular-nums" value={f.tasa}
+              onChange={(e) => { const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,4}$/.test(v)) setF({ ...f, tasa: v }); }}
+              placeholder="59.4100" />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Notas</Label>
+            <Input value={f.notas} onChange={(e) => setF({ ...f, notas: e.target.value })} placeholder="Opcional: fuente, corrección, etc." />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button
+            onClick={() => {
+              if (!f.fecha || !f.tasa || Number(f.tasa) <= 0) return toast.error("Fecha y tasa (> 0) son requeridos");
+              onSave(f);
+            }}
+            disabled={saving}
+          >{saving ? "Guardando…" : "Guardar"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 

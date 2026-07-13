@@ -15,6 +15,7 @@ import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
+import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
 import { AutocompleteInput } from "@/components/autocomplete-input";
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { GenerarXmlSigaButton } from "@/components/generar-xml-siga";
@@ -278,6 +279,11 @@ function TabInfo({ exp }: { exp: any }) {
       if (!payload.liq_siga_numero) payload.liq_siga_numero = null;
       if (!payload.liq_siga_estado) payload.liq_siga_estado = null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
+      // Congelar la tasa cuando el expediente pasa a despachado o registra resultado oficial DGA.
+      if (debeCongelar({ estado: exp.estado, liq_oficial_total: payload.liq_oficial_total, tasa_cambio_congelada: exp.tasa_cambio_congelada })) {
+        payload.tasa_cambio_congelada = true;
+        if (exp.tasa_cambio_usada != null) payload.tasa_cambio_usada = Number(exp.tasa_cambio_usada);
+      }
       const { error } = await supabase.from("expedientes").update(payload).eq("id", exp.id);
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
@@ -591,7 +597,7 @@ function TabInfo({ exp }: { exp: any }) {
 
           <div className="md:col-span-2 lg:col-span-3">
             <LiquidacionEstimadaBlock
-              expedienteId={exp.id}
+              exp={exp}
               seguro={Number(form.seguro) || 0}
               flete={Number(form.flete) || 0}
               otros={Number(form.otros) || 0}
@@ -600,6 +606,7 @@ function TabInfo({ exp }: { exp: any }) {
 
           <div className="md:col-span-2 lg:col-span-3">
             <ResultadoOficialBlock
+              exp={exp}
               form={form}
               set={set}
             />
@@ -1858,11 +1865,11 @@ function MercanciaItemsBlock({
 }
 
 function LiquidacionEstimadaBlock({
-  expedienteId, seguro, flete, otros,
-}: { expedienteId: string; seguro: number; flete: number; otros: number }) {
+  exp, seguro, flete, otros,
+}: { exp: any; seguro: number; flete: number; otros: number }) {
   const { data: items } = useQuery({
-    queryKey: ["mercancia-items", expedienteId],
-    queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", expedienteId).is("deleted_at", null).order("item_no")).data ?? [],
+    queryKey: ["mercancia-items", exp.id],
+    queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
   });
   const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
   const totalCif = totalFob + seguro + flete + otros;
@@ -1874,44 +1881,124 @@ function LiquidacionEstimadaBlock({
   const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const anyPct = (items ?? []).some((it: any) => it.pct_gravamen != null || it.aplica_isc);
 
+  const tc = useTasaCambioForExpediente(exp);
+  const [rateInput, setRateInput] = useState("");
+  const tasa = tc.tasa;
+  const rd = (n: number) => tasa != null ? fmt(n * tasa) : "—";
+
   return (
     <div className="grid gap-4 pt-4 border-t">
+      {tc.needsCapture && (
+        <div className="rounded-lg border border-amber-400 bg-amber-50 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="h-4 w-4 text-amber-700" />
+            <div className="font-semibold text-sm text-amber-900">Tasa de Cambio requerida</div>
+          </div>
+          <p className="text-xs text-amber-900 mb-3">
+            No existe una Tasa Oficial DGA para <b>{tc.fechaLabel}</b>. Ingrésala una sola vez y quedará
+            guardada en el catálogo para todos los expedientes de ese día.
+          </p>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="grid gap-1">
+              <Label className="text-xs">RD$ por US$ 1.00</Label>
+              <Input
+                className="w-40 font-mono tabular-nums"
+                inputMode="decimal"
+                placeholder="59.4100"
+                value={rateInput}
+                onChange={(e) => { const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,4}$/.test(v)) setRateInput(v); }}
+              />
+            </div>
+            <a href="https://www.aduanas.gob.do/tasa-de-cambio/" target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 underline flex items-center gap-1 pb-2.5">
+              Ver tasa oficial en aduanas.gob.do <ExternalLink className="h-3 w-3" />
+            </a>
+            <Button
+              size="sm"
+              className="ml-auto"
+              disabled={tc.guardar.isPending || !rateInput || Number(rateInput) <= 0}
+              onClick={() => tc.guardar.mutate(Number(rateInput), {
+                onSuccess: () => { toast.success(`Tasa RD$ ${rateInput} guardada para ${tc.fechaLabel}`); setRateInput(""); },
+                onError: (e: any) => toast.error(e.message),
+              })}
+            >
+              {tc.guardar.isPending ? "Guardando…" : "Guardar tasa"}
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-lg border border-amber-300/60 bg-amber-50/60 overflow-hidden">
-        <div className="px-4 py-3 border-b border-amber-200 flex items-center gap-2">
+        <div className="px-4 py-3 border-b border-amber-200 flex items-center gap-2 flex-wrap">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
           <div className="font-semibold text-amber-900 text-sm">Liquidación de Impuestos — <span className="uppercase">Estimada</span></div>
-          <span className="ml-auto text-[11px] text-amber-800">Sujeta a verificación oficial de la DGA</span>
+          <span className="ml-auto text-right text-[11px] leading-tight">
+            {tasa != null ? (
+              <>
+                <div className="text-amber-900 font-semibold">Tasa Oficial: RD$ {tasa.toFixed(4)} / US$1</div>
+                <div className="text-amber-800">
+                  {tc.fechaLabel}
+                  {tc.origen === "congelada" && <span className="ml-1 inline-flex items-center gap-1 text-emerald-700"><ShieldCheck className="h-3 w-3" />congelada</span>}
+                </div>
+              </>
+            ) : (
+              <span className="text-amber-800">Tasa Oficial DGA no capturada</span>
+            )}
+          </span>
         </div>
-        <div className="p-4 grid gap-x-8 gap-y-1.5 md:grid-cols-2 text-sm tabular-nums">
-          <div className="text-muted-foreground">Total FOB</div><div className="text-right">US$ {fmt(totalFob)}</div>
-          <div className="text-muted-foreground">Seguro</div><div className="text-right">US$ {fmt(seguro)}</div>
-          <div className="text-muted-foreground">Flete</div><div className="text-right">US$ {fmt(flete)}</div>
-          <div className="text-muted-foreground">Otros</div><div className="text-right">US$ {fmt(otros)}</div>
-          <div className="md:col-span-2 border-t border-dashed border-amber-200 my-1"></div>
-          <div className="font-semibold">Total CIF</div><div className="text-right font-semibold">US$ {fmt(totalCif)}</div>
-          <div className="md:col-span-2 border-t border-dashed border-amber-200 my-1"></div>
-          <div className="text-muted-foreground">Total Gravamen</div><div className="text-right">US$ {fmt(totals.gravamen)}</div>
-          <div className="text-muted-foreground">Total Selectivo (ISC)</div><div className="text-right">US$ {fmt(totals.selectivo)}</div>
-          <div className="text-muted-foreground">Total ITBIS</div><div className="text-right">US$ {fmt(totals.itbis)}</div>
-          <div className="md:col-span-2 mt-2 rounded-md bg-primary text-primary-foreground px-4 py-3 flex items-center">
-            <div className="text-sm font-semibold">TOTAL IMPUESTOS ESTIMADOS A PAGAR</div>
-            <div className="ml-auto text-lg font-bold">US$ {fmt(totals.total)}</div>
+        <table className="w-full text-sm tabular-nums">
+          <thead className="bg-amber-100/40 text-[11px] uppercase text-amber-900">
+            <tr>
+              <th className="text-left px-4 py-1.5 font-medium">Concepto</th>
+              <th className="text-right px-4 py-1.5 w-36 font-medium">US$</th>
+              <th className="text-right px-4 py-1.5 w-44 font-medium">RD$</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Total FOB</td><td className="text-right">{fmt(totalFob)}</td><td className="text-right">{rd(totalFob)}</td></tr>
+            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Seguro</td><td className="text-right">{fmt(seguro)}</td><td className="text-right">{rd(seguro)}</td></tr>
+            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Flete</td><td className="text-right">{fmt(flete)}</td><td className="text-right">{rd(flete)}</td></tr>
+            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Otros</td><td className="text-right">{fmt(otros)}</td><td className="text-right">{rd(otros)}</td></tr>
+            <tr className="border-t border-amber-200 bg-amber-100/30 font-semibold"><td className="px-4 py-1.5">Total CIF</td><td className="text-right">{fmt(totalCif)}</td><td className="text-right">{rd(totalCif)}</td></tr>
+            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Total Gravamen</td><td className="text-right">{fmt(totals.gravamen)}</td><td className="text-right">{rd(totals.gravamen)}</td></tr>
+            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Total Selectivo (ISC)</td><td className="text-right">{fmt(totals.selectivo)}</td><td className="text-right">{rd(totals.selectivo)}</td></tr>
+            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Total ITBIS</td><td className="text-right">{fmt(totals.itbis)}</td><td className="text-right">{rd(totals.itbis)}</td></tr>
+            <tr className="border-t-2 border-primary bg-primary text-primary-foreground font-bold">
+              <td className="px-4 py-2.5 text-sm">TOTAL A PAGAR</td>
+              <td className="text-right text-base">{fmt(totals.total)}</td>
+              <td className="text-right text-base">{rd(totals.total)}</td>
+            </tr>
+          </tbody>
+        </table>
+        {!anyPct && (
+          <div className="px-4 py-2 text-[11px] text-amber-800 italic border-t border-amber-200">
+            Aún no has capturado % Gravamen ni Selectivo en las líneas. Edita cada ítem para calcular impuestos.
           </div>
-          {!anyPct && (
-            <div className="md:col-span-2 text-[11px] text-amber-800 italic">
-              Aún no has capturado % Gravamen ni Selectivo en las líneas. Edita cada ítem para calcular impuestos.
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
 }
 
-function ResultadoOficialBlock({ form, set }: { form: any; set: (k: string, v: any) => void }) {
-  const estimado = Number(form.liq_estimado_ref) || null; // solo informativo si se quisiera
-  const oficial = form.liq_oficial_total === "" || form.liq_oficial_total == null ? null : Number(form.liq_oficial_total);
-  const dif = oficial != null && estimado != null ? oficial - estimado : null;
+function ResultadoOficialBlock({ exp, form, set }: { exp: any; form: any; set: (k: string, v: any) => void }) {
+  const tc = useTasaCambioForExpediente(exp);
+  // Estimado total en US$: recalculado a partir de items — para simplicidad, tomamos del form (mercancía se recalcula por línea).
+  const { data: items } = useQuery({
+    queryKey: ["mercancia-items", exp.id],
+    queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null)).data ?? [],
+  });
+  const seguro = Number(form.seguro) || 0;
+  const flete = Number(form.flete) || 0;
+  const otros = Number(form.otros) || 0;
+  const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
+  const estimadoUsd = (items ?? []).reduce((acc: number, it: any) => {
+    const c = calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
+    return acc + c.total;
+  }, 0);
+  const estimadoRd = tc.tasa != null ? estimadoUsd * tc.tasa : null;
+  const oficialRd = form.liq_oficial_total === "" || form.liq_oficial_total == null ? null : Number(form.liq_oficial_total);
+  const dif = oficialRd != null && estimadoRd != null ? oficialRd - estimadoRd : null;
+  const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
   return (
     <div className="rounded-lg border p-4 bg-muted/20">
       <div className="flex items-center gap-2 mb-3">
@@ -1934,17 +2021,30 @@ function ResultadoOficialBlock({ form, set }: { form: any; set: (k: string, v: a
           </Select>
         </div>
         <div className="grid gap-1.5">
-          <Label>Total impuestos oficial (US$)</Label>
+          <Label>Total oficial (RD$)</Label>
           <Input type="text" inputMode="decimal" value={form.liq_oficial_total ?? ""}
             onChange={(e) => { const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("liq_oficial_total", v); }}
             placeholder="0.00" className="tabular-nums" />
         </div>
       </div>
-      {dif != null && (
-        <div className="mt-3 text-xs text-muted-foreground">
-          Diferencia vs. estimado: <span className={`font-semibold ${dif >= 0 ? "text-destructive" : "text-emerald-700"}`}>US$ {dif.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-        </div>
-      )}
+      <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
+        {estimadoRd != null && (
+          <div>Estimado (RD$): <span className="font-mono tabular-nums text-foreground">{fmt(estimadoRd)}</span></div>
+        )}
+        {dif != null && (
+          <div>
+            Diferencia vs. estimado:{" "}
+            <span className={`font-semibold tabular-nums ${dif >= 0 ? "text-destructive" : "text-emerald-700"}`}>
+              {dif >= 0 ? "+" : "−"} RD$ {fmt(Math.abs(dif))}
+            </span>
+          </div>
+        )}
+        {tc.congelado && (
+          <div className="inline-flex items-center gap-1 text-emerald-700">
+            <ShieldCheck className="h-3 w-3" /> Tasa RD$ {tc.tasa?.toFixed(4)} congelada para trazabilidad histórica.
+          </div>
+        )}
+      </div>
     </div>
   );
 }
