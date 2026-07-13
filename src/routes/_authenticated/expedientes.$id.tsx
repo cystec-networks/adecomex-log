@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
 import { AutocompleteInput } from "@/components/autocomplete-input";
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { GenerarXmlSigaButton } from "@/components/generar-xml-siga";
@@ -755,7 +756,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           </thead>
           <tbody>
             {(docs ?? []).map((d: any) => {
-              const vencido = d.fecha_vencimiento && new Date(d.fecha_vencimiento) < new Date();
+              const vd = daysFromToday(d.fecha_vencimiento); const vencido = d.fecha_vencimiento && !isNaN(vd) && vd < 0;
               return (
                 <tr key={d.id} className="border-b last:border-0">
                   <td className="px-4 py-2 font-medium"><FileText className="h-4 w-4 inline mr-1 text-muted-foreground" />{d.tipo}</td>
@@ -765,8 +766,8 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                       <SelectContent>{["pendiente","recibido","observado","aprobado","vencido"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                     </Select>
                   </td>
-                  <td className="text-xs">{d.fecha_recepcion ? new Date(d.fecha_recepcion).toLocaleDateString("es-DO") : "—"}</td>
-                  <td className={`text-xs ${vencido ? "text-destructive font-medium" : ""}`}>{d.fecha_vencimiento ? new Date(d.fecha_vencimiento).toLocaleDateString("es-DO") : "—"}</td>
+                  <td className="text-xs">{fmtLocalDate(d.fecha_recepcion)}</td>
+                  <td className={`text-xs ${vencido ? "text-destructive font-medium" : ""}`}>{fmtLocalDate(d.fecha_vencimiento)}</td>
                   <td className="px-4 py-2 text-right">
                     {d.storage_path && <Button size="sm" variant="ghost" onClick={() => download(d.storage_path)}>Descargar</Button>}
                   </td>
@@ -1127,8 +1128,8 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
               <tr key={r.id} className="border-b last:border-0">
                 <td className="px-4 py-2">{r.concepto}</td>
                 <td className="text-xs text-muted-foreground">{r.referencia || "—"}</td>
-                <td className="text-xs">{r.fecha_emision ? new Date(r.fecha_emision).toLocaleDateString("es-DO") : "—"}</td>
-                <td className="text-xs">{r.fecha_pago ? new Date(r.fecha_pago).toLocaleDateString("es-DO") : "—"}</td>
+                <td className="text-xs">{fmtLocalDate(r.fecha_emision)}</td>
+                <td className="text-xs">{fmtLocalDate(r.fecha_pago)}</td>
                 <td><Badge variant="outline" className={estadoBadge(r.estado)}>{r.estado}</Badge></td>
                 <td className="text-right font-medium">{fmtDOP(Number(r.monto))}</td>
                 <td className="text-right pr-4">
@@ -1266,7 +1267,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
               <tr key={r.id} className="border-b last:border-0">
                 <td className="px-4 py-2">{r.concepto}{r.es_reembolso && <Badge variant="outline" className="ml-2 text-xs">reembolso</Badge>}</td>
                 <td className="text-xs text-muted-foreground">{r.proveedor || "—"}</td>
-                <td className="text-xs">{r.fecha ? new Date(r.fecha).toLocaleDateString("es-DO") : "—"}</td>
+                <td className="text-xs">{fmtLocalDate(r.fecha)}</td>
                 <td>{r.adjunto_path ? <Button variant="link" size="sm" className="h-auto p-0" onClick={() => openAdjunto(r.adjunto_path)}><FileText className="h-3.5 w-3.5 mr-1" />Ver</Button> : <span className="text-xs text-muted-foreground">—</span>}</td>
                 <td className={`text-right font-medium ${r.es_reembolso ? "text-[var(--success)]" : ""}`}>{r.es_reembolso ? "−" : ""}{fmtDOP(Number(r.monto))}</td>
                 <td className="text-right pr-4">
@@ -1365,8 +1366,8 @@ function TabPermisosExp({ expedienteId }: { expedienteId: string }) {
                   <td className="text-muted-foreground">{TIPOS[p.tipo] ?? "—"}</td>
                   <td className="text-muted-foreground">{p.institucion_emisora ?? "—"}</td>
                   <td><Badge variant="outline">{ESTADOS[p.estado] ?? p.estado}</Badge></td>
-                  <td className="text-xs text-muted-foreground">{p.fecha_emision ? new Date(p.fecha_emision).toLocaleDateString("es-DO") : "—"}</td>
-                  <td className="text-xs text-muted-foreground">{p.fecha_vencimiento ? new Date(p.fecha_vencimiento).toLocaleDateString("es-DO") : "—"}</td>
+                  <td className="text-xs text-muted-foreground">{fmtLocalDate(p.fecha_emision)}</td>
+                  <td className="text-xs text-muted-foreground">{fmtLocalDate(p.fecha_vencimiento)}</td>
                   <td className="px-4 py-2 text-right">
                     <Button variant="ghost" size="sm" asChild><Link to="/permisos/$id" params={{ id: p.id }}>Editar</Link></Button>
                   </td>
@@ -1419,8 +1420,8 @@ function TabTransportesExp({ expedienteId }: { expedienteId: string }) {
                   <td className="text-muted-foreground">{TIPOS[t.tipo] ?? "—"}</td>
                   <td>{t.transportista ?? "—"}</td>
                   <td className="text-xs text-muted-foreground tabular-nums">{t.placa_contenedor ?? "—"}</td>
-                  <td className="text-xs text-muted-foreground">{t.fecha_salida ? new Date(t.fecha_salida).toLocaleDateString("es-DO") : "—"}</td>
-                  <td className="text-xs">{t.eta ? new Date(t.eta).toLocaleDateString("es-DO") : "—"}</td>
+                  <td className="text-xs text-muted-foreground">{fmtLocalDate(t.fecha_salida)}</td>
+                  <td className="text-xs">{fmtLocalDate(t.eta)}</td>
                   <td><Badge variant="outline">{ESTADOS[t.estado] ?? t.estado}</Badge></td>
                   <td className="px-4 py-2 text-right">
                     <Button variant="ghost" size="sm" asChild><Link to="/transportes/$id" params={{ id: t.id }}>Editar</Link></Button>
