@@ -62,6 +62,14 @@ function daysBetween(a: Date, b: Date) {
   return Math.floor((a.getTime() - b.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+// Parsea 'YYYY-MM-DD' como fecha local para evitar el desfase UTC de un día.
+function parseLocalDate(s: string | null | undefined): Date {
+  if (!s) return new Date(NaN);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  return new Date(s);
+}
+
 export function useReminders() {
   const query = useQuery({
     queryKey: ["reminders"],
@@ -115,7 +123,7 @@ export function useReminders() {
       for (const e of exp.data ?? []) {
         if (e.estado === "despachado") continue;
         if (e.fecha_compromiso) {
-          const eta = new Date(e.fecha_compromiso);
+          const eta = parseLocalDate(e.fecha_compromiso);
           const dias = daysBetween(eta, now);
           if (dias < 0) {
             out.push({
@@ -157,7 +165,7 @@ export function useReminders() {
       for (const p of per.data ?? []) {
         if (!p.fecha_vencimiento) continue;
         if (p.estado === "rechazado" || p.estado === "vencido") continue;
-        const dias = daysBetween(new Date(p.fecha_vencimiento), now);
+        const dias = daysBetween(parseLocalDate(p.fecha_vencimiento), now);
         if (dias < 0) {
           out.push({
             id: `permiso_vencido:${p.id}`,
@@ -185,7 +193,7 @@ export function useReminders() {
       for (const t of tra.data ?? []) {
         if (t.estado === "entregado") continue;
         if (!t.eta) continue;
-        const dias = daysBetween(now, new Date(t.eta));
+        const dias = daysBetween(now, parseLocalDate(t.eta));
         if (dias >= cfg.transporteRetrasadoDias) {
           out.push({
             id: `transporte_retrasado:${t.id}`,
@@ -204,7 +212,7 @@ export function useReminders() {
       for (const h of (hit.data ?? []) as any[]) {
         if (h.expedientes?.eliminado_en) continue;
         if (!h.fecha_programada) continue;
-        const dias = daysBetween(new Date(h.fecha_programada), now);
+        const dias = daysBetween(parseLocalDate(h.fecha_programada), now);
         const nombre = h.catalogo_hitos?.nombre ?? h.hito_codigo;
         const numExp = h.expedientes?.numero ?? "";
         const esCritico = h.hito_codigo === HITO_CRITICO;
