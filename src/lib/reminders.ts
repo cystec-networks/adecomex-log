@@ -193,7 +193,7 @@ export function useReminders() {
       for (const t of tra.data ?? []) {
         if (t.estado === "entregado") continue;
         if (!t.eta) continue;
-        const dias = daysBetween(now, new Date(t.eta));
+        const dias = daysBetween(now, parseLocalDate(t.eta));
         if (dias >= cfg.transporteRetrasadoDias) {
           out.push({
             id: `transporte_retrasado:${t.id}`,
