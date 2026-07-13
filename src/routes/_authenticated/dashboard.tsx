@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Inbox, FolderKanban, CheckCircle2, Clock, FileWarning, TrendingUp, Bell, Truck } from "lucide-react";
 import { useReminders } from "@/lib/reminders";
+import { daysFromToday } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -66,10 +67,14 @@ function Dashboard() {
   const expedientesCerrados = stats?.expedientes.filter((e) => e.estado === "despachado").length ?? 0;
   const incidenciasAbiertas = stats?.incidencias.filter((i) => i.estado !== "cerrada" && i.estado !== "resuelta").length ?? 0;
   const urgentes = stats?.solicitudes.filter((s) => s.prioridad === "urgente" || s.prioridad === "alta").length ?? 0;
-  const docsVencidos = stats?.documentos.filter((d) => d.fecha_vencimiento && new Date(d.fecha_vencimiento) < new Date()).length ?? 0;
+  const docsVencidos = stats?.documentos.filter((d) => {
+    if (!d.fecha_vencimiento) return false;
+    const days = daysFromToday(d.fecha_vencimiento);
+    return !isNaN(days) && days < 0;
+  }).length ?? 0;
   const permisosPorVencer = stats?.permisos.filter((p) => {
     if (!p.fecha_vencimiento || p.estado === "rechazado" || p.estado === "vencido") return false;
-    const d = (new Date(p.fecha_vencimiento).getTime() - Date.now()) / 86400000;
+    const d = daysFromToday(p.fecha_vencimiento);
     return d >= 0 && d <= 15;
   }).length ?? 0;
   const transportesEnTransito = stats?.transportes.filter((t) => t.estado === "en_transito" || t.estado === "programado").length ?? 0;

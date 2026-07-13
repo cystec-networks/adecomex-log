@@ -12,6 +12,7 @@ import { ChevronLeft, ChevronRight, Truck, Package, DollarSign, TrendingUp, Tren
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
+import { parseLocalDate } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/transportes/dashboard")({
   component: TransporteDashboard,
@@ -106,7 +107,7 @@ function TransporteDashboard() {
     return [...s].sort();
   }, [rows]);
 
-  const getBaseDate = (r: any) => r.fecha_salida ? new Date(r.fecha_salida) : new Date(r.created_at);
+  const getBaseDate = (r: any) => r.fecha_salida ? parseLocalDate(r.fecha_salida) : new Date(r.created_at);
 
   const inRange = (r: any, s: Date, e: Date) => {
     const d = getBaseDate(r);
@@ -151,7 +152,7 @@ function TransporteDashboard() {
 
   const atrasados = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    return current.filter(r => r.eta && new Date(r.eta) < today && r.estado !== "entregado" && r.estado !== "facturado").length;
+    return current.filter(r => r.eta && parseLocalDate(r.eta) < today && r.estado !== "entregado" && r.estado !== "facturado").length;
   }, [current]);
 
   const promedioCont = kpis.viajes > 0 ? (kpis.contenedores / kpis.viajes) : 0;

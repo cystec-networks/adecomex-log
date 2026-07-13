@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { parseLocalDate } from "@/lib/dates";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -154,7 +155,7 @@ function ExpedientesDashboard() {
       if (!exp) continue;
       const cliId = exp.cliente_id || "sin";
       const nombre = cliMap.get(cliId) || "Sin cliente";
-      const dias = f.fecha_emision ? Math.floor((now - new Date(f.fecha_emision).getTime()) / 86400000) : 0;
+      const dias = f.fecha_emision ? Math.floor((now - parseLocalDate(f.fecha_emision).getTime()) / 86400000) : 0;
       const cur = pendByCli.get(cliId) || { cliente: nombre, monto: 0, expedientes: new Set<string>(), diasMax: 0 };
       cur.monto += Number(f.monto || 0);
       cur.expedientes.add(exp.numero);

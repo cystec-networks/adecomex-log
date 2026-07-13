@@ -15,6 +15,7 @@ import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
 import { useState } from "react";
 import { toast } from "sonner";
+import { parseLocalDate, fmtLocalDate } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/solicitudes/")({
   component: Solicitudes,
@@ -84,7 +85,9 @@ function Solicitudes() {
     if (aEmpty) return 1;
     if (bEmpty) return -1;
     let r = 0;
-    if (activeSort.key === "fecha_arribo_est" || activeSort.key === "created_at") {
+    if (activeSort.key === "fecha_arribo_est") {
+      r = parseLocalDate(av).getTime() - parseLocalDate(bv).getTime();
+    } else if (activeSort.key === "created_at") {
       r = new Date(av).getTime() - new Date(bv).getTime();
     } else {
       r = String(av).localeCompare(String(bv), "es", { numeric: true });
@@ -159,7 +162,7 @@ function Solicitudes() {
                   <td>{s.clientes?.nombre ?? "—"}</td>
                   <td className="text-muted-foreground">{s.tipo_operacion ?? "—"}</td>
                   <td>{s.origen ?? "—"}</td>
-                  <td>{s.fecha_arribo_est ? new Date(s.fecha_arribo_est).toLocaleDateString("es-DO") : "—"}</td>
+                  <td>{fmtLocalDate(s.fecha_arribo_est)}</td>
                   <td><Badge className="bg-muted text-muted-foreground border-transparent">{s.prioridad}</Badge></td>
                   <td><Badge className="bg-primary/10 text-primary border-transparent">{s.estado?.replace("_", " ")}</Badge></td>
                   <td className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString("es-DO")}</td>

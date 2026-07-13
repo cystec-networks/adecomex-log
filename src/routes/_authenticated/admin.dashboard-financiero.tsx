@@ -32,7 +32,8 @@ const monthLabel = (d: Date) => d.toLocaleDateString("es-DO", { month: "short", 
 const ymKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 const parseDate = (s: string | null | undefined): Date | null => {
   if (!s) return null;
-  const d = new Date(s);
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(s);
   return isNaN(d.getTime()) ? null : d;
 };
 

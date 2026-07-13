@@ -13,6 +13,7 @@ import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { parseLocalDate, fmtLocalDate } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/reportes")({
   component: ReportesPage,
@@ -43,7 +44,7 @@ const AGRUPAR_POR = [
 const norm = (s: string) => (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const fmtUSD = (n: number) => `US$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtNum = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString("es-DO") : "—");
+const fmtDate = (d?: string | null) => fmtLocalDate(d);
 
 const estadoBadge: Record<string, string> = {
   digitar: "bg-slate-500/15 text-slate-700 border-slate-500/30",
@@ -97,8 +98,9 @@ function ReportesPage() {
       if (regimen !== "todos" && (e.regimen_aduanero ?? "") !== regimen) return false;
       if (pref !== "todas" && (e.preferencia_comercial ?? "Ninguna") !== pref) return false;
       const dateField = fechaBase === "eta" ? e.fecha_compromiso : e.created_at;
-      if (desde && dateField && new Date(dateField) < new Date(desde)) return false;
-      if (hasta && dateField && new Date(dateField) > new Date(hasta + "T23:59:59")) return false;
+      const parseField = (v: string) => fechaBase === "eta" ? parseLocalDate(v) : new Date(v);
+      if (desde && dateField && parseField(dateField) < parseLocalDate(desde)) return false;
+      if (hasta && dateField && parseField(dateField) > (fechaBase === "eta" ? parseLocalDate(hasta) : new Date(hasta + "T23:59:59"))) return false;
       return true;
     });
   }, [expedientes, cliente, tipo, estado, regimen, pref, fechaBase, desde, hasta]);
@@ -130,7 +132,7 @@ function ReportesPage() {
       else if (agrupar === "periodo") {
         const d = fechaBase === "eta" ? e.fecha_compromiso : e.created_at;
         if (d) {
-          const dt = new Date(d);
+          const dt = fechaBase === "eta" ? parseLocalDate(d) : new Date(d);
           key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
         } else key = "Sin fecha";
       }
@@ -182,7 +184,7 @@ function ReportesPage() {
         detalle.push([
           g.key, e.numero, e.clientes?.nombre ?? "", e.bl_awb ?? "",
           e.puerto_arribo ?? "", e.pais_origen ?? "",
-          e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO") : "",
+          fmtLocalDate(e.fecha_compromiso, undefined, ""),
           e.regimen_aduanero ?? "", e.preferencia_comercial ?? "Ninguna",
           e.numero_certificado_origen ?? "", e.numeros_contenedores ?? "",
           Number(e.total_fob) || 0, Number(e.seguro) || 0, Number(e.flete) || 0,
@@ -268,7 +270,7 @@ function ReportesPage() {
           e.clientes?.nombre ?? "—",
           e.bl_awb ?? "—",
           e.puerto_arribo ?? "—",
-          e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO") : "—",
+          fmtLocalDate(e.fecha_compromiso),
           e.regimen_aduanero ?? "—",
           e.preferencia_comercial ?? "Ninguna",
           fmtNum(Number(e.total_fob) || 0),

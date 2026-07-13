@@ -13,6 +13,7 @@ import {
 import { RotateCcw, Trash2, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
 
 type Kind = "expedientes" | "solicitudes" | "permisos" | "transportes";
@@ -182,7 +183,7 @@ function Papelera() {
                         <td>{e.clientes?.nombre ?? "—"}</td>
                         <td className="text-xs">{e.numero_dua ?? "—"}</td>
                         <td className="text-muted-foreground">{e.bl_awb ?? "—"}</td>
-                        <td>{e.fecha_compromiso ? new Date(e.fecha_compromiso).toLocaleDateString("es-DO") : "—"}</td>
+                        <td>{fmtLocalDate(e.fecha_compromiso)}</td>
                         <td className="text-xs">{e.puerto_arribo ?? "—"}</td>
                         <td><Badge variant="outline">{e.estado?.replace("_"," ")}</Badge></td>
                         <td className="text-xs text-muted-foreground">{e.eliminado_en ? new Date(e.eliminado_en).toLocaleString("es-DO") : "—"}</td>
@@ -238,7 +239,7 @@ function Papelera() {
                         <td>{s.clientes?.nombre ?? "—"}</td>
                         <td className="text-muted-foreground">{s.tipo_operacion ?? "—"}</td>
                         <td>{s.origen ?? "—"}</td>
-                        <td>{s.fecha_arribo_est ? new Date(s.fecha_arribo_est).toLocaleDateString("es-DO") : "—"}</td>
+                        <td>{fmtLocalDate(s.fecha_arribo_est)}</td>
                         <td><Badge className="bg-muted text-muted-foreground border-transparent">{s.prioridad}</Badge></td>
                         <td><Badge className="bg-primary/10 text-primary border-transparent">{s.estado?.replace("_"," ")}</Badge></td>
                         <td className="text-xs text-muted-foreground">{s.eliminado_en ? new Date(s.eliminado_en).toLocaleString("es-DO") : "—"}</td>
@@ -292,7 +293,7 @@ function Papelera() {
                         <td>{p.clientes?.nombre ?? "—"}</td>
                         <td className="text-muted-foreground">{p.tipo ?? "—"}</td>
                         <td><Badge variant="outline">{p.estado?.replace("_"," ")}</Badge></td>
-                        <td className="text-xs">{p.fecha_vencimiento ? new Date(p.fecha_vencimiento).toLocaleDateString("es-DO") : "—"}</td>
+                        <td className="text-xs">{fmtLocalDate(p.fecha_vencimiento)}</td>
                         <td className="text-xs text-muted-foreground">{p.eliminado_en ? new Date(p.eliminado_en).toLocaleString("es-DO") : "—"}</td>
                         <td className="px-4 py-2 text-right whitespace-nowrap">
                           <Button variant="ghost" size="sm" onClick={() => setToRestore({ kind: "permisos", id: p.id, numero: p.numero })}>
@@ -341,7 +342,7 @@ function Papelera() {
                         <td>{t.clientes?.nombre ?? "—"}</td>
                         <td className="text-muted-foreground">{t.tipo ?? "—"}</td>
                         <td>{t.transportista ?? "—"}</td>
-                        <td className="text-xs">{t.eta ? new Date(t.eta).toLocaleDateString("es-DO") : "—"}</td>
+                        <td className="text-xs">{fmtLocalDate(t.eta)}</td>
                         <td><Badge variant="outline">{t.estado?.replace("_"," ")}</Badge></td>
                         <td className="text-xs text-muted-foreground">{t.eliminado_en ? new Date(t.eliminado_en).toLocaleString("es-DO") : "—"}</td>
                         <td className="px-4 py-2 text-right whitespace-nowrap">

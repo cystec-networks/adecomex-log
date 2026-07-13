@@ -13,6 +13,7 @@ import {
 import { Trash2, Plus, FileCheck2, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { parseLocalDate, fmtLocalDateShort, daysFromToday } from "@/lib/dates";
 import { PERMISO_ESTADOS, PERMISO_TIPOS } from "@/components/permiso-form";
 import { estadoBadgePermiso } from "@/components/transporte-form";
 
@@ -83,7 +84,7 @@ function Permisos() {
     const aE = av === "" || av == null; const bE = bv === "" || bv == null;
     if (aE && bE) return 0; if (aE) return 1; if (bE) return -1;
     let r = 0;
-    if (activeSort.key.startsWith("fecha_")) r = new Date(av).getTime() - new Date(bv).getTime();
+    if (activeSort.key.startsWith("fecha_")) r = parseLocalDate(av).getTime() - parseLocalDate(bv).getTime();
     else r = String(av).localeCompare(String(bv), "es", { numeric: true });
     return activeSort.dir === "asc" ? r : -r;
   };
@@ -106,10 +107,10 @@ function Permisos() {
     );
   };
 
-  const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
+  const fmt = (d: string | null) => fmtLocalDateShort(d);
   const venceProximo = (d: string | null) => {
     if (!d) return false;
-    const days = Math.round((new Date(d).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    const days = daysFromToday(d);
     return days >= 0 && days <= 15;
   };
 

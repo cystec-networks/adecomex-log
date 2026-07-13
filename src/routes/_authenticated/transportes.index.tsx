@@ -13,6 +13,7 @@ import { Trash2, Plus, Truck, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TRANSPORTE_ESTADOS, TRANSPORTE_TIPOS, estadoBadgeTransporte } from "@/components/transporte-form";
+import { parseLocalDate, fmtLocalDateShort } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/transportes/")({
   component: Transportes,
@@ -79,7 +80,7 @@ function Transportes() {
     const aE = av === "" || av == null; const bE = bv === "" || bv == null;
     if (aE && bE) return 0; if (aE) return 1; if (bE) return -1;
     let r = 0;
-    if (activeSort.key === "eta" || activeSort.key === "fecha_salida") r = new Date(av).getTime() - new Date(bv).getTime();
+    if (activeSort.key === "eta" || activeSort.key === "fecha_salida") r = parseLocalDate(av).getTime() - parseLocalDate(bv).getTime();
     else r = String(av).localeCompare(String(bv), "es", { numeric: true });
     return activeSort.dir === "asc" ? r : -r;
   };
@@ -102,7 +103,7 @@ function Transportes() {
     );
   };
 
-  const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
+  const fmt = (d: string | null) => fmtLocalDateShort(d);
   const fmtFlete = (t: any) => t.flete_monto != null ? `${t.flete_moneda ?? "USD"} ${Number(t.flete_monto).toLocaleString("es-DO", { minimumFractionDigits: 2 })}` : "—";
 
   return (
