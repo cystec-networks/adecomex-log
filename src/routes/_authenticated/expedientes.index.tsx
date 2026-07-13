@@ -10,7 +10,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
+import { Trash2, AlarmClock } from "lucide-react";
+import { Toggle } from "@/components/ui/toggle";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
 import { useState } from "react";
