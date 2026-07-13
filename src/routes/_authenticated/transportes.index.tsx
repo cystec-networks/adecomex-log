@@ -80,7 +80,7 @@ function Transportes() {
     const aE = av === "" || av == null; const bE = bv === "" || bv == null;
     if (aE && bE) return 0; if (aE) return 1; if (bE) return -1;
     let r = 0;
-    if (activeSort.key === "eta" || activeSort.key === "fecha_salida") r = new Date(av).getTime() - new Date(bv).getTime();
+    if (activeSort.key === "eta" || activeSort.key === "fecha_salida") r = parseLocalDate(av).getTime() - parseLocalDate(bv).getTime();
     else r = String(av).localeCompare(String(bv), "es", { numeric: true });
     return activeSort.dir === "asc" ? r : -r;
   };
