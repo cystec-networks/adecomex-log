@@ -137,7 +137,7 @@ function Expedientes() {
     if (aEmpty) return 1;
     if (bEmpty) return -1;
     let r = 0;
-    if (activeSort.key === "fecha_compromiso") r = new Date(av).getTime() - new Date(bv).getTime();
+    if (activeSort.key === "fecha_compromiso") { const ad = parseLocalDate(av); const bd = parseLocalDate(bv); r = (ad?.getTime() ?? 0) - (bd?.getTime() ?? 0); }
     else r = String(av).localeCompare(String(bv), "es", { numeric: true });
     return activeSort.dir === "asc" ? r : -r;
   };
