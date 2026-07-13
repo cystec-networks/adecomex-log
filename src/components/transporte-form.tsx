@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
 import { SearchEmailButton } from "@/components/search-email-button";
+import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 
 const NO_EXPEDIENTE = "__none__";
 
@@ -116,6 +117,7 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
     pago_estado: "pendiente",
     contenedores_cantidad: "",
     contenedores_detalle: "",
+    factura_ecf_id: "" as string,
   });
   const [loaded, setLoaded] = useState(false);
 
@@ -151,6 +153,7 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         pago_estado: existing.pago_estado ?? "pendiente",
         contenedores_cantidad: existing.contenedores_cantidad?.toString() ?? "",
         contenedores_detalle: existing.contenedores_detalle ?? "",
+        factura_ecf_id: existing.factura_ecf_id ?? "",
       });
       setLoaded(true);
     }
@@ -182,11 +185,15 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
 
   const save = useMutation({
     mutationFn: async () => {
+      if (form.estado === "facturado" && !form.factura_ecf_id) {
+        throw new Error("Para marcar como Facturado debes vincular una Factura e-CF real.");
+      }
       const payload: any = { ...form };
       const nullableStr = [
         "expediente_id","cliente_id","tipo","transportista","placa_contenedor","origen","destino",
         "fecha_salida","eta","observaciones","factura_numero","factura_fecha","numero_viaje",
         "pago_referencia","factura_costo_numero","factura_costo_fecha","contenedores_detalle",
+        "factura_ecf_id",
       ];
       nullableStr.forEach((k) => { if (payload[k] === "") payload[k] = null; });
       const nullableNum = ["flete_monto","costo_viaje","descuento_cxc","costo_combustible","costo_peajes","costo_chofer","costo_otros","ingreso_facturado","contenedores_cantidad"];
