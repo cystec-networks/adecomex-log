@@ -32,6 +32,7 @@ function Expedientes() {
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState("todos");
   const [toTrash, setToTrash] = useState<{ id: string; numero: string } | null>(null);
+  const [soloUrgentes, setSoloUrgentes] = useState(false);
   const qc = useQueryClient();
 
   const { data } = useQuery({
