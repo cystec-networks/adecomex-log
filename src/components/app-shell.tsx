@@ -210,7 +210,7 @@ function AppSidebarInner() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        <div className="flex items-center gap-2 p-2">
+        <Link to="/mi-cuenta" className="flex items-center gap-2 p-2 rounded-md hover:bg-sidebar-accent/60 transition-colors" title="Mi cuenta">
           <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
               {(profile?.nombre ?? "?").slice(0, 2).toUpperCase()}
@@ -226,10 +226,12 @@ function AppSidebarInner() {
                   </Badge>
                 ))}
               </div>
+              <div className="text-[10px] text-sidebar-foreground/50 mt-0.5">Mi cuenta · cambiar contraseña</div>
             </div>
           )}
-        </div>
+        </Link>
       </SidebarFooter>
+
     </Sidebar>
   );
 
