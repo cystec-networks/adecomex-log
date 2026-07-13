@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/admin/dashboard-financiero
     if (!r) throw redirect({ to: "/dashboard" });
   },
   component: DashboardFinanciero,
-  errorComponent: ({ error }) => <AppShell><div className="p-6 text-destructive">{error.message}</div></AppShell>,
+  errorComponent: ({ error }) => <div className="p-6 text-destructive">{error.message}</div>,
 });
 
 const fmtRD = (n: number) => `RD$ ${(n || 0).toLocaleString("es-DO", { maximumFractionDigits: 0 })}`;
