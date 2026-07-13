@@ -230,6 +230,16 @@ function Expedientes() {
               {["digitar","presentar","verificar","facturar","despachado"].map((e) => <SelectItem key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1)}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Toggle
+            pressed={soloUrgentes}
+            onPressedChange={setSoloUrgentes}
+            size="sm"
+            className="data-[state=on]:bg-orange-100 data-[state=on]:text-orange-700 dark:data-[state=on]:bg-orange-950/40 dark:data-[state=on]:text-orange-300 gap-1.5"
+            title="Filtrar expedientes con ETA a menos de 3 días"
+          >
+            <AlarmClock className="h-3.5 w-3.5" />
+            <span className="text-xs">Solo urgentes ETA</span>
+          </Toggle>
           <Input placeholder="Buscar por BL/AWB, expediente o cliente…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
         </CardHeader>
         <CardContent className="p-0">
