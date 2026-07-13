@@ -137,7 +137,8 @@ function DashboardFinanciero() {
       const margen = ing > 0 ? (utilNeta / ing) * 100 : 0;
       return {
         key: m.key, label: m.label,
-        ingresos: ing, costosDir, opex: opx, utilBruta, utilNeta, margen,
+        key: m.key, label: m.label,
+        ingresos: ing, costosDir: costoDir, opex: opx, utilBruta, utilNeta, margen,
         ingresosExp: ingresosExp[m.key], ingresosTr: ingresosTr[m.key],
         costosExp: costosExp[m.key], costosTr: costosTr[m.key],
       };
