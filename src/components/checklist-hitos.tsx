@@ -55,16 +55,24 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
     },
   });
 
+  type HitoPatch = {
+    estado?: HitoRow["estado"];
+    fecha_programada?: string | null;
+    fecha_cumplimiento?: string | null;
+    notas?: string | null;
+    responsable_id?: string | null;
+  };
+
   const update = useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: Partial<HitoRow> }) => {
-      // Auto-fill fecha_cumplimiento when marking completado
-      if (patch.estado === "completado" && !patch.fecha_cumplimiento) {
-        patch.fecha_cumplimiento = new Date().toISOString().slice(0, 10);
+    mutationFn: async ({ id, patch }: { id: string; patch: HitoPatch }) => {
+      const p: HitoPatch = { ...patch };
+      if (p.estado === "completado" && !p.fecha_cumplimiento) {
+        p.fecha_cumplimiento = new Date().toISOString().slice(0, 10);
       }
-      if (patch.estado && patch.estado !== "completado") {
-        patch.fecha_cumplimiento = null;
+      if (p.estado && p.estado !== "completado") {
+        p.fecha_cumplimiento = null;
       }
-      const { error } = await supabase.from("expediente_hitos").update(patch).eq("id", id);
+      const { error } = await supabase.from("expediente_hitos").update(p).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
