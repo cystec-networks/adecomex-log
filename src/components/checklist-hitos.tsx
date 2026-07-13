@@ -126,8 +126,13 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
               </thead>
               <tbody>
                 {(hitos ?? []).map((h, i) => {
+                  const esCritico = h.hito_codigo === "verificacion_mercancia_puerto";
                   const activo = h.estado !== "completado" && h.estado !== "no_aplica";
-                  const atrasado = !!(activo && h.fecha_programada && h.fecha_programada < today);
+                  const atrasado = !!(
+                    activo &&
+                    h.fecha_programada &&
+                    (esCritico ? h.fecha_programada <= today : h.fecha_programada < today)
+                  );
                   const proximo = !!(
                     activo &&
                     h.fecha_programada &&
@@ -135,9 +140,23 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
                     (new Date(h.fecha_programada).getTime() - Date.now()) / 86400000 <= 3
                   );
                   return (
-                    <tr key={h.id} className="border-t align-top">
+                    <tr key={h.id} className={`border-t align-top ${esCritico && atrasado ? "bg-destructive/5" : ""}`}>
                       <td className="px-2 py-2 text-muted-foreground tabular-nums">{i + 1}</td>
-                      <td className="px-2 py-2 font-medium">{h.catalogo_hitos?.nombre ?? h.hito_codigo}</td>
+                      <td className="px-2 py-2 font-medium">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {esCritico && (
+                            <Badge className="bg-destructive hover:bg-destructive text-destructive-foreground gap-1 text-[10px] uppercase tracking-wide">
+                              <AlertTriangle className="h-3 w-3" />Crítico
+                            </Badge>
+                          )}
+                          <span>{h.catalogo_hitos?.nombre ?? h.hito_codigo}</span>
+                        </div>
+                        {esCritico && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            Cargos por demora/almacenaje en puerto si no se completa en fecha.
+                          </p>
+                        )}
+                      </td>
                       <td className="px-2 py-2">
                         <Input
                           type="date"
