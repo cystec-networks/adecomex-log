@@ -13,6 +13,7 @@ import {
 import { RotateCcw, Trash2, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
 
 type Kind = "expedientes" | "solicitudes" | "permisos" | "transportes";
