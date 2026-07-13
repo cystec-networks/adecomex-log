@@ -107,7 +107,7 @@ function TransporteDashboard() {
     return [...s].sort();
   }, [rows]);
 
-  const getBaseDate = (r: any) => r.fecha_salida ? new Date(r.fecha_salida) : new Date(r.created_at);
+  const getBaseDate = (r: any) => r.fecha_salida ? parseLocalDate(r.fecha_salida) : new Date(r.created_at);
 
   const inRange = (r: any, s: Date, e: Date) => {
     const d = getBaseDate(r);
