@@ -84,7 +84,7 @@ function Permisos() {
     const aE = av === "" || av == null; const bE = bv === "" || bv == null;
     if (aE && bE) return 0; if (aE) return 1; if (bE) return -1;
     let r = 0;
-    if (activeSort.key.startsWith("fecha_")) r = new Date(av).getTime() - new Date(bv).getTime();
+    if (activeSort.key.startsWith("fecha_")) r = parseLocalDate(av).getTime() - parseLocalDate(bv).getTime();
     else r = String(av).localeCompare(String(bv), "es", { numeric: true });
     return activeSort.dir === "asc" ? r : -r;
   };
