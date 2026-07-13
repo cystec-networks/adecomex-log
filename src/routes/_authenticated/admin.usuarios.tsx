@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { UserPlus, KeyRound, Trash2 } from "lucide-react";
 
-const ROLES: AppRole[] = ["admin","operaciones","ejecutivo","agente_aduanal","documentacion","transporte","finanzas"];
+const ROLES: AppRole[] = ["admin","contabilidad","operaciones","ejecutivo","agente_aduanal","documentacion","transporte","finanzas"];
 
 export const Route = createFileRoute("/_authenticated/admin/usuarios")({
   ssr: false,
