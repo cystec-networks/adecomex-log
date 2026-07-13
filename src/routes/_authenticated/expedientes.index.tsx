@@ -39,7 +39,7 @@ function Expedientes() {
     queryKey: ["expedientes"],
     queryFn: async () => (await supabase
       .from("expedientes")
-      .select("*, clientes(nombre,telefono,email), solicitudes(tipo_operacion)")
+      .select("*, clientes(nombre,telefono,email), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento)")
       .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
   });
