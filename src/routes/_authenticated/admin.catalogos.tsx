@@ -77,8 +77,9 @@ function CatalogosAdmin() {
         </div>
       </div>
 
-      <Tabs defaultValue="catalogo_paises">
+      <Tabs defaultValue="catalogo_hitos">
         <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="catalogo_hitos" className="gap-1.5">Hitos de Despacho</TabsTrigger>
           {tabs.map((t) => (
             <TabsTrigger key={t} value={t} className="gap-1.5">
               {TABLE_LABELS[t]}
@@ -88,6 +89,9 @@ function CatalogosAdmin() {
             </TabsTrigger>
           ))}
         </TabsList>
+        <TabsContent value="catalogo_hitos" className="mt-4">
+          <HitosCatalog isAdmin={!!isAdmin} />
+        </TabsContent>
         {tabs.map((t) => (
           <TabsContent key={t} value={t} className="mt-4">
             <CatalogTable table={t} isAdmin={!!isAdmin} />
