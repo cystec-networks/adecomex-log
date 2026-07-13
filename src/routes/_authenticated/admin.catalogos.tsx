@@ -339,3 +339,164 @@ function CatalogEditDialog({ fields, initial, mode, onClose, onSave, saving }: a
     </Dialog>
   );
 }
+
+function HitosCatalog({ isAdmin }: { isAdmin: boolean }) {
+  const qc = useQueryClient();
+  const { data: rows } = useQuery({
+    queryKey: ["catalogo_hitos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("catalogo_hitos").select("*").order("orden");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const [dialog, setDialog] = useState<{ mode: "new" | "edit"; row?: any } | null>(null);
+
+  const save = useMutation({
+    mutationFn: async (v: any) => {
+      const payload = {
+        codigo: v.codigo,
+        nombre: v.nombre,
+        orden: Number(v.orden) || 0,
+        activo: v.activo !== false,
+        descripcion: v.descripcion || null,
+      };
+      if (dialog?.mode === "edit") {
+        const { error } = await supabase.from("catalogo_hitos").update(payload).eq("id", dialog.row.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("catalogo_hitos").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Guardado");
+      setDialog(null);
+      qc.invalidateQueries({ queryKey: ["catalogo_hitos"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("catalogo_hitos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Eliminado"); qc.invalidateQueries({ queryKey: ["catalogo_hitos"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-3 border-b flex-row items-center gap-3 space-y-0">
+        <CardTitle className="text-base">Hitos de Despacho</CardTitle>
+        <Badge variant="outline" className="text-xs font-normal">{rows?.length ?? 0} hitos</Badge>
+        <div className="flex-1" />
+        {isAdmin && (
+          <Button size="sm" onClick={() => setDialog({ mode: "new", row: { activo: true, orden: (rows?.length ?? 0) * 10 + 10 } })}>
+            <Plus className="h-4 w-4 mr-1" />Agregar hito
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent className="pt-0">
+        <p className="text-xs text-muted-foreground pt-3 pb-2">
+          Los hitos activos se crean automáticamente al registrar un nuevo Expediente. Los expedientes existentes conservan sus hitos actuales.
+        </p>
+        <div className="rounded-md border overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 text-left w-16">Orden</th>
+                <th className="px-3 py-2 text-left">Nombre</th>
+                <th className="px-3 py-2 text-left">Código</th>
+                <th className="px-3 py-2 text-left w-20">Activo</th>
+                {isAdmin && <th className="w-24"></th>}
+              </tr>
+            </thead>
+            <tbody>
+              {(rows ?? []).map((r: any) => (
+                <tr key={r.id} className="border-t">
+                  <td className="px-3 py-2 tabular-nums">{r.orden}</td>
+                  <td className="px-3 py-2 font-medium">{r.nombre}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{r.codigo}</td>
+                  <td className="px-3 py-2">
+                    <Badge variant={r.activo ? "default" : "outline"}>{r.activo ? "Sí" : "No"}</Badge>
+                  </td>
+                  {isAdmin && (
+                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDialog({ mode: "edit", row: r })}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                        onClick={() => { if (confirm(`Eliminar hito "${r.nombre}"?`)) del.mutate(r.id); }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+
+      {dialog && (
+        <HitoDialog
+          initial={dialog.row ?? {}}
+          mode={dialog.mode}
+          onClose={() => setDialog(null)}
+          onSave={(v) => save.mutate(v)}
+          saving={save.isPending}
+        />
+      )}
+    </Card>
+  );
+}
+
+function HitoDialog({ initial, mode, onClose, onSave, saving }: any) {
+  const [f, setF] = useState<any>({
+    codigo: initial.codigo ?? "",
+    nombre: initial.nombre ?? "",
+    orden: initial.orden ?? 0,
+    activo: initial.activo ?? true,
+    descripcion: initial.descripcion ?? "",
+  });
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{mode === "edit" ? "Editar hito" : "Agregar hito"}</DialogTitle></DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <Label>Nombre <span className="text-destructive">*</span></Label>
+            <Input value={f.nombre} onChange={(e) => setF({ ...f, nombre: e.target.value })} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Código <span className="text-destructive">*</span></Label>
+            <Input value={f.codigo} disabled={mode === "edit"} onChange={(e) => setF({ ...f, codigo: e.target.value })} placeholder="ej. cita_asignada_puerto" />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Orden</Label>
+            <Input type="number" value={f.orden} onChange={(e) => setF({ ...f, orden: e.target.value })} />
+          </div>
+          <div className="flex items-center gap-2">
+            <input type="checkbox" checked={!!f.activo} onChange={(e) => setF({ ...f, activo: e.target.checked })} />
+            <Label>Activo</Label>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button
+            onClick={() => {
+              if (!f.nombre || !f.codigo) return toast.error("Nombre y código son requeridos");
+              onSave(f);
+            }}
+            disabled={saving}
+          >{saving ? "Guardando…" : "Guardar"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
