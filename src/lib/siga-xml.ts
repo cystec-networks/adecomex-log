@@ -50,11 +50,13 @@ function tag(name: string, value: unknown, indent = "    "): string {
 
 function fmtDate(d?: string | null): string {
   if (!d) return "";
-  // Devuelve YYYY-MM-DDTHH:mm:ss-04:00
+  // Devuelve YYYY-MM-DDTHH:mm:ss-04:00, interpretando fechas YYYY-MM-DD como locales.
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}T00:00:00${TZ}`;
   const date = new Date(d);
   if (isNaN(date.getTime())) return "";
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}T00:00:00${TZ}`;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T00:00:00${TZ}`;
 }
 
 export type ValidationIssue = { field: string; label: string };
