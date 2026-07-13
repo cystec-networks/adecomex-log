@@ -123,7 +123,7 @@ export function useReminders() {
       for (const e of exp.data ?? []) {
         if (e.estado === "despachado") continue;
         if (e.fecha_compromiso) {
-          const eta = new Date(e.fecha_compromiso);
+          const eta = parseLocalDate(e.fecha_compromiso);
           const dias = daysBetween(eta, now);
           if (dias < 0) {
             out.push({
