@@ -13,6 +13,7 @@ import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { parseLocalDate, fmtLocalDate } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/reportes")({
   component: ReportesPage,
