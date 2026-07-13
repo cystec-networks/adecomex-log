@@ -110,6 +110,10 @@ const SIMPLE_ITEMS: SimpleItem[] = [
     match: (p) => p.startsWith("/admin/catalogos") },
   { id: "configuracion", to: "/admin/configuracion", label: "Configuración", icon: Settings, adminOnly: true,
     match: (p) => p.startsWith("/admin/configuracion") },
+  { id: "gastos-op", to: "/admin/gastos-operativos", label: "Gastos Operativos", icon: DollarSign, adminOnly: true,
+    match: (p) => p.startsWith("/admin/gastos-operativos") },
+  { id: "dashboard-financiero", to: "/admin/dashboard-financiero", label: "Dashboard Financiero", icon: PiggyBank, adminOnly: true,
+    match: (p) => p.startsWith("/admin/dashboard-financiero") },
   { id: "papelera", to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
     match: (p) => p === "/expedientes/papelera" },
 ];
