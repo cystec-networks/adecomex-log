@@ -66,7 +66,7 @@ export function useReminders() {
   const query = useQuery({
     queryKey: ["reminders"],
     queryFn: async (): Promise<Reminder[]> => {
-      const [sol, exp, per, tra] = await Promise.all([
+      const [sol, exp, per, tra, hit] = await Promise.all([
         supabase
           .from("solicitudes")
           .select("id,numero,estado,created_at,cliente_id, cliente:clientes(nombre)")
@@ -83,6 +83,11 @@ export function useReminders() {
           .from("transportes")
           .select("id,numero_viaje,estado,eta")
           .is("eliminado_en", null),
+        supabase
+          .from("expediente_hitos")
+          .select("id,expediente_id,estado,fecha_programada,hito_codigo, catalogo_hitos(nombre), expedientes!inner(numero,eliminado_en)")
+          .in("estado", ["pendiente", "en_curso"])
+          .not("fecha_programada", "is", null),
       ]);
 
       const now = new Date();
