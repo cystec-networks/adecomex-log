@@ -207,6 +207,9 @@ function TabInfo({ exp }: { exp: any }) {
     pais_origen_codigo: exp.pais_origen_codigo ?? "",
     pais_procedencia_codigo: exp.pais_procedencia_codigo ?? "",
     puerto_arribo_codigo: exp.puerto_arribo_codigo ?? "",
+    liq_siga_numero: exp.liq_siga_numero ?? "",
+    liq_siga_estado: exp.liq_siga_estado ?? "",
+    liq_oficial_total: exp.liq_oficial_total ?? "",
   });
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
