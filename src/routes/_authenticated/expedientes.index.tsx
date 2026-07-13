@@ -39,7 +39,7 @@ function Expedientes() {
     queryKey: ["expedientes"],
     queryFn: async () => (await supabase
       .from("expedientes")
-      .select("*, clientes(nombre,telefono,email), solicitudes(tipo_operacion)")
+      .select("*, clientes(nombre,telefono,email), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento)")
       .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
   });
@@ -200,6 +200,11 @@ function Expedientes() {
     }
   };
 
+  const fechaVerificacion = (e: any) => {
+    const hito = (e.expediente_hitos ?? []).find((h: any) => h.hito_codigo === "verificacion_mercancia_puerto");
+    return hito?.fecha_programada ?? hito?.fecha_cumplimiento ?? null;
+  };
+
   const TruncatedCell = ({ value, className = "", maxClass = "max-w-[160px]" }: { value: string | null; className?: string; maxClass?: string }) => (
     <span title={value ?? undefined} className={`block truncate ${maxClass} ${className}`}>
       {value ?? "—"}
@@ -326,7 +331,17 @@ function Expedientes() {
                             {e.numero_vuce ?? "—"}
                           </td>
                           <td className="px-2 py-2 align-middle text-center whitespace-nowrap">
-                            {estadoBadge(e.estado)}
+                            <div className="flex flex-col items-center gap-0.5">
+                              {estadoBadge(e.estado)}
+                              {e.estado === "verificar" && (() => {
+                                const fv = fechaVerificacion(e);
+                                return fv ? (
+                                  <span title="Fecha programada de verificación" className="text-[10px] text-muted-foreground tabular-nums">
+                                    {new Date(fv).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit" })}
+                                  </span>
+                                ) : null;
+                              })()}
+                            </div>
                           </td>
                           <td className="px-1 py-2 align-middle text-right whitespace-nowrap">
                             <WhatsAppButton
