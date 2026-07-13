@@ -107,10 +107,10 @@ function Permisos() {
     );
   };
 
-  const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
+  const fmt = (d: string | null) => fmtLocalDateShort(d);
   const venceProximo = (d: string | null) => {
     if (!d) return false;
-    const days = Math.round((new Date(d).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    const days = daysFromToday(d);
     return days >= 0 && days <= 15;
   };
 
