@@ -293,6 +293,62 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_tasas_arancelarias: {
+        Row: {
+          acuerdo_preferencial: string | null
+          aplica_isc: boolean
+          codigo_arancelario: string
+          created_at: string
+          origen_expediente_id: string | null
+          origen_nota: string | null
+          pct_gravamen: number | null
+          pct_gravamen_preferencial: number | null
+          pct_isc: number | null
+          updated_at: string
+          verificado: boolean
+          verificado_at: string | null
+          verificado_por: string | null
+        }
+        Insert: {
+          acuerdo_preferencial?: string | null
+          aplica_isc?: boolean
+          codigo_arancelario: string
+          created_at?: string
+          origen_expediente_id?: string | null
+          origen_nota?: string | null
+          pct_gravamen?: number | null
+          pct_gravamen_preferencial?: number | null
+          pct_isc?: number | null
+          updated_at?: string
+          verificado?: boolean
+          verificado_at?: string | null
+          verificado_por?: string | null
+        }
+        Update: {
+          acuerdo_preferencial?: string | null
+          aplica_isc?: boolean
+          codigo_arancelario?: string
+          created_at?: string
+          origen_expediente_id?: string | null
+          origen_nota?: string | null
+          pct_gravamen?: number | null
+          pct_gravamen_preferencial?: number | null
+          pct_isc?: number | null
+          updated_at?: string
+          verificado?: boolean
+          verificado_at?: string | null
+          verificado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_tasas_arancelarias_origen_expediente_id_fkey"
+            columns: ["origen_expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalogo_tipos_despacho: {
         Row: {
           codigo: string
@@ -638,6 +694,9 @@ export type Database = {
           flete: number | null
           id: string
           incoterm: string | null
+          liq_oficial_total: number | null
+          liq_siga_estado: string | null
+          liq_siga_numero: string | null
           medio_transporte: string | null
           metodo_transporte_codigo: string | null
           naviera: string | null
@@ -695,6 +754,9 @@ export type Database = {
           flete?: number | null
           id?: string
           incoterm?: string | null
+          liq_oficial_total?: number | null
+          liq_siga_estado?: string | null
+          liq_siga_numero?: string | null
           medio_transporte?: string | null
           metodo_transporte_codigo?: string | null
           naviera?: string | null
@@ -752,6 +814,9 @@ export type Database = {
           flete?: number | null
           id?: string
           incoterm?: string | null
+          liq_oficial_total?: number | null
+          liq_siga_estado?: string | null
+          liq_siga_numero?: string | null
           medio_transporte?: string | null
           metodo_transporte_codigo?: string | null
           naviera?: string | null
@@ -1018,6 +1083,7 @@ export type Database = {
       }
       mercancia_items: {
         Row: {
+          aplica_isc: boolean | null
           cantidad: number | null
           codigo_arancelario: string | null
           created_at: string
@@ -1027,6 +1093,9 @@ export type Database = {
           expediente_id: string
           id: string
           item_no: number
+          pct_gravamen: number | null
+          pct_isc: number | null
+          pct_itbis: number | null
           peso: number | null
           unidad_codigo: string | null
           unidad_medida: string | null
@@ -1034,6 +1103,7 @@ export type Database = {
           valor_fob: number | null
         }
         Insert: {
+          aplica_isc?: boolean | null
           cantidad?: number | null
           codigo_arancelario?: string | null
           created_at?: string
@@ -1043,6 +1113,9 @@ export type Database = {
           expediente_id: string
           id?: string
           item_no: number
+          pct_gravamen?: number | null
+          pct_isc?: number | null
+          pct_itbis?: number | null
           peso?: number | null
           unidad_codigo?: string | null
           unidad_medida?: string | null
@@ -1050,6 +1123,7 @@ export type Database = {
           valor_fob?: number | null
         }
         Update: {
+          aplica_isc?: boolean | null
           cantidad?: number | null
           codigo_arancelario?: string | null
           created_at?: string
@@ -1059,6 +1133,9 @@ export type Database = {
           expediente_id?: string
           id?: string
           item_no?: number
+          pct_gravamen?: number | null
+          pct_isc?: number | null
+          pct_itbis?: number | null
           peso?: number | null
           unidad_codigo?: string | null
           unidad_medida?: string | null
