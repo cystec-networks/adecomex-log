@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { AppShell } from "@/components/app-shell";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,9 +16,9 @@ import {
 export const Route = createFileRoute("/_authenticated/transportes/dashboard")({
   component: TransporteDashboard,
   errorComponent: ({ error }) => (
-    <AppShell><div className="p-6 text-destructive">{error.message}</div></AppShell>
+    <div className="p-6 text-destructive">{error.message}</div>
   ),
-  notFoundComponent: () => <AppShell><div className="p-6">No disponible</div></AppShell>,
+  notFoundComponent: () => <div className="p-6">No disponible</div>,
 });
 
 type Periodo = "semanal" | "mensual";
@@ -190,7 +190,7 @@ function TransporteDashboard() {
   const goNext = () => setAnchor(a => periodo === "semanal" ? addDays(a, 7) : addMonths(a, 1));
 
   return (
-    <AppShell>
+    <>
       <div className="p-4 md:p-6 space-y-4">
         {/* Header controls */}
         <div className="flex flex-wrap items-center gap-3 justify-between">
@@ -322,7 +322,7 @@ function TransporteDashboard() {
           </CardContent>
         </Card>
       </div>
-    </AppShell>
+    </>
   );
 }
 
