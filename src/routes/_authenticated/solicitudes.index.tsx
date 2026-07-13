@@ -85,7 +85,9 @@ function Solicitudes() {
     if (aEmpty) return 1;
     if (bEmpty) return -1;
     let r = 0;
-    if (activeSort.key === "fecha_arribo_est" || activeSort.key === "created_at") {
+    if (activeSort.key === "fecha_arribo_est") {
+      r = parseLocalDate(av).getTime() - parseLocalDate(bv).getTime();
+    } else if (activeSort.key === "created_at") {
       r = new Date(av).getTime() - new Date(bv).getTime();
     } else {
       r = String(av).localeCompare(String(bv), "es", { numeric: true });
