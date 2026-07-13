@@ -30,6 +30,7 @@ import { Route as AuthenticatedPermisosNuevoRouteImport } from './routes/_authen
 import { Route as AuthenticatedPermisosIdRouteImport } from './routes/_authenticated/permisos.$id'
 import { Route as AuthenticatedExpedientesPapeleraRouteImport } from './routes/_authenticated/expedientes.papelera'
 import { Route as AuthenticatedExpedientesNuevoRouteImport } from './routes/_authenticated/expedientes.nuevo'
+import { Route as AuthenticatedExpedientesDashboardRouteImport } from './routes/_authenticated/expedientes.dashboard'
 import { Route as AuthenticatedExpedientesIdRouteImport } from './routes/_authenticated/expedientes.$id'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as AuthenticatedAdminConfiguracionRouteImport } from './routes/_authenticated/admin.configuracion'
@@ -152,6 +153,12 @@ const AuthenticatedExpedientesNuevoRoute =
     path: '/expedientes/nuevo',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedExpedientesDashboardRoute =
+  AuthenticatedExpedientesDashboardRouteImport.update({
+    id: '/expedientes/dashboard',
+    path: '/expedientes/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedExpedientesIdRoute =
   AuthenticatedExpedientesIdRouteImport.update({
     id: '/expedientes/$id',
@@ -188,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
+  '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
@@ -214,6 +222,7 @@ export interface FileRoutesByTo {
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
+  '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
@@ -242,6 +251,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
+  '/_authenticated/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/_authenticated/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
   '/_authenticated/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/_authenticated/permisos/$id': typeof AuthenticatedPermisosIdRoute
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/admin/configuracion'
     | '/admin/usuarios'
     | '/expedientes/$id'
+    | '/expedientes/dashboard'
     | '/expedientes/nuevo'
     | '/expedientes/papelera'
     | '/permisos/$id'
@@ -296,6 +307,7 @@ export interface FileRouteTypes {
     | '/admin/configuracion'
     | '/admin/usuarios'
     | '/expedientes/$id'
+    | '/expedientes/dashboard'
     | '/expedientes/nuevo'
     | '/expedientes/papelera'
     | '/permisos/$id'
@@ -323,6 +335,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/configuracion'
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/expedientes/$id'
+    | '/_authenticated/expedientes/dashboard'
     | '/_authenticated/expedientes/nuevo'
     | '/_authenticated/expedientes/papelera'
     | '/_authenticated/permisos/$id'
@@ -494,6 +507,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedExpedientesNuevoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/expedientes/dashboard': {
+      id: '/_authenticated/expedientes/dashboard'
+      path: '/expedientes/dashboard'
+      fullPath: '/expedientes/dashboard'
+      preLoaderRoute: typeof AuthenticatedExpedientesDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/expedientes/$id': {
       id: '/_authenticated/expedientes/$id'
       path: '/expedientes/$id'
@@ -534,6 +554,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminConfiguracionRoute: typeof AuthenticatedAdminConfiguracionRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedExpedientesIdRoute: typeof AuthenticatedExpedientesIdRoute
+  AuthenticatedExpedientesDashboardRoute: typeof AuthenticatedExpedientesDashboardRoute
   AuthenticatedExpedientesNuevoRoute: typeof AuthenticatedExpedientesNuevoRoute
   AuthenticatedExpedientesPapeleraRoute: typeof AuthenticatedExpedientesPapeleraRoute
   AuthenticatedPermisosIdRoute: typeof AuthenticatedPermisosIdRoute
@@ -559,6 +580,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminConfiguracionRoute: AuthenticatedAdminConfiguracionRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedExpedientesIdRoute: AuthenticatedExpedientesIdRoute,
+  AuthenticatedExpedientesDashboardRoute:
+    AuthenticatedExpedientesDashboardRoute,
   AuthenticatedExpedientesNuevoRoute: AuthenticatedExpedientesNuevoRoute,
   AuthenticatedExpedientesPapeleraRoute: AuthenticatedExpedientesPapeleraRoute,
   AuthenticatedPermisosIdRoute: AuthenticatedPermisosIdRoute,

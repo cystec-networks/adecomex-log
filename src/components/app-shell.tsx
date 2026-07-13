@@ -76,8 +76,10 @@ const GROUPS: Group[] = [
     label: "EXPEDIENTES",
     icon: FolderKanban,
     items: [
+      { to: "/expedientes/dashboard", label: "Dashboard", icon: LayoutDashboard,
+        match: (p) => p === "/expedientes/dashboard" },
       { to: "/expedientes", label: "Expedientes", icon: FolderKanban,
-        match: (p, s) => (p === "/expedientes" || p.startsWith("/expedientes/")) && !s?.tipo && p !== "/expedientes/papelera" },
+        match: (p, s) => (p === "/expedientes" || p.startsWith("/expedientes/")) && !s?.tipo && p !== "/expedientes/papelera" && p !== "/expedientes/dashboard" },
       { to: "/expedientes", search: { tipo: "importacion" }, label: "Importaciones", icon: PackageOpen,
         match: (p, s) => p.startsWith("/expedientes") && s?.tipo === "importacion" },
       { to: "/expedientes", search: { tipo: "exportacion" }, label: "Exportaciones", icon: PackageCheck,
