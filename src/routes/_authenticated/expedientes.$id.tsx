@@ -279,6 +279,11 @@ function TabInfo({ exp }: { exp: any }) {
       if (!payload.liq_siga_numero) payload.liq_siga_numero = null;
       if (!payload.liq_siga_estado) payload.liq_siga_estado = null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
+      // Congelar la tasa cuando el expediente pasa a despachado o registra resultado oficial DGA.
+      if (debeCongelar({ estado: exp.estado, liq_oficial_total: payload.liq_oficial_total, tasa_cambio_congelada: exp.tasa_cambio_congelada })) {
+        payload.tasa_cambio_congelada = true;
+        if (exp.tasa_cambio_usada != null) payload.tasa_cambio_usada = Number(exp.tasa_cambio_usada);
+      }
       const { error } = await supabase.from("expedientes").update(payload).eq("id", exp.id);
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
