@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Inbox, FolderKanban, CheckCircle2, Clock, FileWarning, TrendingUp, Bell, Truck } from "lucide-react";
-import { useReminders } from "@/lib/reminders";
+import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 import { daysFromToday } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -98,32 +100,8 @@ function Dashboard() {
         <KPI icon={AlertTriangle} label="Alertas activas" value={reminders.length} tone="danger" />
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base font-display flex items-center gap-2">
-            <Bell className="h-4 w-4" /> Atención requerida
-          </CardTitle>
-          <Badge variant="outline">{reminders.length}</Badge>
-        </CardHeader>
-        <CardContent className="p-0">
-          {reminders.length === 0 ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">Sin alertas pendientes</div>
-          ) : (
-            <ul className="divide-y">
-              {reminders.slice(0, 8).map((r) => (
-                <li key={r.id} className="px-4 py-2.5 flex items-center gap-3 hover:bg-muted/40">
-                  <span className={`h-2 w-2 rounded-full ${r.severity === "critica" ? "bg-destructive" : r.severity === "alta" ? "bg-[var(--warning)]" : "bg-[var(--info)]"}`} />
-                  <div className="min-w-0 flex-1">
-                    <Link to={r.href} className="text-sm font-medium hover:underline block truncate">{r.title}</Link>
-                    <div className="text-xs text-muted-foreground truncate">{r.detail}</div>
-                  </div>
-                  <Badge variant="outline" className="text-[10px] uppercase">{r.severity}</Badge>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <RemindersPanel />
+
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -206,4 +184,104 @@ function PrioridadBadge({ value }: { value: string }) {
     urgente: "bg-destructive/15 text-destructive",
   };
   return <Badge className={`${map[value] ?? "bg-muted"} border-transparent`}>{value}</Badge>;
+}
+
+type GroupDef = { key: string; label: string; emoji: string; kinds: ReminderKind[] };
+
+const REMINDER_GROUPS: GroupDef[] = [
+  { key: "hitos", label: "Hitos atrasados / críticos", emoji: "🔴", kinds: ["hito_atrasado", "hito_proximo"] },
+  { key: "eta", label: "ETA / Expedientes", emoji: "🟡", kinds: ["eta_proximo", "expediente_inactivo"] },
+  { key: "permisos", label: "Permisos por vencer", emoji: "🟠", kinds: ["permiso_vencido", "permiso_por_vencer"] },
+  { key: "transportes", label: "Transportes retrasados", emoji: "🚚", kinds: ["transporte_retrasado"] },
+  { key: "solicitudes", label: "Solicitudes sin convertir", emoji: "📥", kinds: ["solicitud_sin_convertir"] },
+];
+
+function RemindersPanel() {
+  const { visible: reminders, dismiss } = useReminders();
+
+  const grouped = REMINDER_GROUPS
+    .map((g) => ({ ...g, items: reminders.filter((r) => g.kinds.includes(r.kind)) }))
+    .filter((g) => g.items.length > 0);
+
+  const defaultOpen = grouped.length > 0 ? [grouped[0].key] : [];
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardTitle className="text-base font-display flex items-center gap-2">
+          <Bell className="h-4 w-4" /> Atención requerida
+        </CardTitle>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline">{reminders.length}</Badge>
+          {reminders.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => reminders.forEach((r) => dismiss(r.id))}
+            >
+              Marcar todo visto
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        {reminders.length === 0 ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">Sin alertas pendientes 🎉</div>
+        ) : (
+          <div className="max-h-[460px] overflow-auto">
+            <Accordion type="multiple" defaultValue={defaultOpen} className="w-full">
+              {grouped.map((g) => (
+                <AccordionItem key={g.key} value={g.key} className="border-b last:border-b-0">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="text-base leading-none">{g.emoji}</span>
+                      <span className="text-sm font-medium">{g.label}</span>
+                      <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[11px]">
+                        {g.items.length}
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-0">
+                    <ul className="divide-y border-t">
+                      {g.items.map((r) => (
+                        <li key={r.id} className="px-4 py-2.5 flex items-center gap-3 hover:bg-muted/40">
+                          <span
+                            className={`h-2 w-2 rounded-full shrink-0 ${
+                              r.severity === "critica"
+                                ? "bg-destructive"
+                                : r.severity === "alta"
+                                ? "bg-[var(--warning)]"
+                                : "bg-[var(--info)]"
+                            }`}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <Link to={r.href} className="text-sm font-medium hover:underline block truncate">
+                              {r.title}
+                            </Link>
+                            <div className="text-xs text-muted-foreground truncate">{r.detail}</div>
+                          </div>
+                          <Badge variant="outline" className="text-[10px] uppercase">
+                            {r.severity}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-[11px] px-2"
+                            onClick={() => dismiss(r.id)}
+                          >
+                            Visto
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }

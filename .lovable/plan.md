@@ -1,128 +1,67 @@
-# Módulos Permisos y Transportes
+## 1. Diagnóstico (8 vs 13)
 
-Antes de aplicar, este es el plan visual y técnico. Confirma para ejecutar.
+Revisé `src/routes/_authenticated/dashboard.tsx` (líneas 106 y 113):
 
-## 1. Sidebar (OPERACIONES)
+- El **badge del encabezado** muestra `reminders.length` → total real de alertas visibles del hook `useReminders` (los 13 correctos, ya filtrados por las descartadas).
+- La **lista** se renderiza con `reminders.slice(0, 8)` → hay un **corte fijo hardcoded a 8**, sin scroll, sin paginación y sin indicación de "hay más".
 
-```text
-OPERACIONES
-  ├─ Dashboard
-  ├─ Solicitudes
-  ├─ Expedientes ▾
-  │    ├─ Importaciones
-  │    └─ Exportaciones
-  ├─ Permisos          ← nuevo (icono FileCheck2)
-  ├─ Transportes       ← nuevo (icono Truck)
-  ├─ Clientes
-  └─ OCR
-```
+Por eso ves 13 en el contador y solo 8 filas. No es un bug de datos: el conteo es correcto; el bug es puramente de presentación (`slice(0, 8)`).
 
-## 2. Tabla Permisos `/permisos`
+Nota adicional: el hook ya ordena por severidad (crítica → alta → media) y pone los hitos "CRÍTICO" primero, así que las 5 que se pierden actualmente son siempre las menos urgentes — pero igual deben ser visibles.
+
+## 2. Rediseño propuesto (mockup)
+
+Reemplazo la lista plana por un **acordeón agrupado por categoría**, con contador por grupo y ordenado por urgencia. El grupo más crítico se abre por defecto; los demás inician colapsados y son expandibles de forma independiente (multi-open).
 
 ```text
-┌──────────┬─────────┬────────────┬───────────┬────────────┬────────────┬───────────┬────────┬────────┬────────┬─────────┐
-│ N° Perm. │ N° Res. │ Expediente │ Cliente   │ Tipo       │ Institución│ Estado    │ Solic. │ Emisión│ Vence  │ Acciones│
-├──────────┼─────────┼────────────┼───────────┼────────────┼────────────┼───────────┼────────┼────────┼────────┼─────────┤
-│ PER-001  │ R-2025..│ EXP-0034 ↗ │ ACME SRL  │ Sanitario  │ MSP        │ [aprobado]│ 01/11  │ 05/11  │ 05/12  │ ✎ 🗑    │
-└──────────┴─────────┴────────────┴───────────┴────────────┴────────────┴───────────┴────────┴────────┴────────┴─────────┘
-```
-- Búsqueda global + filtros Estado / Cliente + orden por fechas.
-- Estados con Badge de color: `solicitado` (gris), `en_tramite` (azul), `aprobado` (verde), `rechazado` (rojo), `vencido` (ámbar).
-- Vencimiento cercano (<15 días) resaltado en ámbar.
-
-## 3. Formulario Permiso `/permisos/nuevo` y `/permisos/$id`
-
-```text
-┌──────────────────────────────────────────────────────────┐
-│ Vinculación                                              │
-│  Expediente [EXP-0034 ▾]   Cliente: ACME SRL (auto)     │
-├──────────────────────────────────────────────────────────┤
-│ Datos del Permiso                                        │
-│  N° Permiso [___]  N° Resolución [___]                  │
-│  Tipo [Sanitario ▾]  Institución [MSP ▾]                │
-│  Estado [en_tramite ▾]                                   │
-├──────────────────────────────────────────────────────────┤
-│ Fechas                                                   │
-│  Solicitud [__]  Emisión [__]  Vencimiento [__]         │
-├──────────────────────────────────────────────────────────┤
-│ Documento adjunto  [ Subir PDF/imagen ]  (bucket documentos)│
-│ Observaciones      [ área de texto ]                     │
-└──────────────────────────────────────────────────────────┘
+┌─ Atención requerida ──────────────────────── [13] ─┐
+│                                                    │
+│  🔴 Hitos atrasados / críticos            (4) ▾   │  ← abierto por defecto
+│     • ⚠️ CRÍTICO · Verificación mercancía puerto  │
+│       Exp. EXP-0012 · vence hoy — cargos por…    │
+│     • Hito atrasado · Pago de impuestos           │
+│       Exp. EXP-0009 · vencido hace 2 días         │
+│     • …                                            │
+│                                                    │
+│  🟡 ETA / Expedientes                     (5) ▸   │
+│  🟠 Permisos por vencer                   (2) ▸   │
+│  🚚 Transportes retrasados                (1) ▸   │
+│  📥 Solicitudes sin convertir             (1) ▸   │
+│                                                    │
+│  ────────────────────────────────────────────────  │
+│  [ Marcar todo visto ]           [ Ver todas → ]  │
+└────────────────────────────────────────────────────┘
 ```
 
-## 4. Tabla Transportes `/transportes`
+### Reglas de agrupación
 
-```text
-┌──────────┬────────────┬──────────┬──────────┬─────────────┬──────────┬───────┬────────┬──────┬──────────┬───────────┬─────────┐
-│ N° Viaje │ Expediente │ Cliente  │ Tipo     │ Transportist│ Placa/Ctn│ Origen│ Destino│Salida│ ETA      │ Flete     │ Estado  │
-├──────────┼────────────┼──────────┼──────────┼─────────────┼──────────┼───────┼────────┼──────┼──────────┼───────────┼─────────┤
-│ TR-0012  │ EXP-0034 ↗ │ ACME SRL │ Marítimo │ MAERSK      │ MSKU1234 │ Miami │ SDQ    │ 01/11│ 10/11    │ USD 3,200 │ tránsito│
-└──────────┴────────────┴──────────┴──────────┴─────────────┴──────────┴───────┴────────┴──────┴──────────┴───────────┴─────────┘
-```
-- Mismo patrón de búsqueda/filtros/orden que Expedientes.
-- Estados: `programado`, `en_transito`, `entregado`, `retrasado`.
+Mapeo de `ReminderKind` (definido en `src/lib/reminders.ts`) a grupos:
 
-## 5. Formulario Transporte
+| Grupo                     | Kinds incluidos                              | Prioridad |
+| ------------------------- | -------------------------------------------- | --------- |
+| Hitos atrasados/críticos  | `hito_atrasado`, `hito_proximo`              | 1 (abierto) |
+| ETA / Expedientes         | `eta_proximo`, `expediente_inactivo`         | 2         |
+| Permisos                  | `permiso_vencido`, `permiso_por_vencer`      | 3         |
+| Transportes retrasados    | `transporte_retrasado`                       | 4         |
+| Solicitudes sin convertir | `solicitud_sin_convertir`                    | 5         |
 
-```text
-┌──────────────────────────────────────────────────────────┐
-│ Vinculación                                              │
-│  Expediente [EXP-0034 ▾]  Cliente: ACME SRL (auto)      │
-├──────────────────────────────────────────────────────────┤
-│ Datos del Viaje                                          │
-│  N° Viaje/Ref [__]  Tipo [Marítimo ▾]                   │
-│  Transportista/Naviera [__]  Placa/Unidad/Contenedor [__]│
-│  Origen [__]  Destino [__]                              │
-├──────────────────────────────────────────────────────────┤
-│ Fechas                                                   │
-│  Salida [__]   ETA [__]                                  │
-├──────────────────────────────────────────────────────────┤
-│ Flete   [monto __] [moneda USD/DOP/EUR ▾]                │
-│ Estado  [programado ▾]                                   │
-│ Observaciones [__]                                       │
-└──────────────────────────────────────────────────────────┘
-```
+Dentro de cada grupo se mantiene el orden actual del hook (severidad + CRÍTICO primero). Un grupo con 0 alertas no se renderiza.
 
-## 6. En el detalle de Expediente
+### Comportamiento
 
-Nuevas dos secciones dentro de las pestañas existentes (o nuevas pestañas "Permisos" y "Transportes"):
+- **Multi-open**: usar `Accordion type="multiple"` de shadcn.
+- **Default open**: solo el primer grupo con contenido (normalmente Hitos).
+- **Altura máxima con scroll interno** dentro del acordeón (`max-h-[420px] overflow-auto`) para que aunque todos se expandan el dashboard no crezca sin control.
+- **Sin corte de datos**: eliminar el `slice(0, 8)`. Todas las alertas quedan accesibles.
+- **Acciones al pie**: "Marcar todo visto" (llama a `dismiss` sobre las visibles) y opcional "Ver todas" (por ahora abre la campana de notificaciones ya existente; una ruta dedicada `/alertas` la dejo fuera de este cambio salvo que la pidas).
+- Cada fila conserva: link al recurso, título, detalle, severity badge.
 
-```text
-┌── Permisos vinculados ──────────────────── [+ Agregar Permiso] ┐
-│ PER-001 · Sanitario · MSP · [aprobado] · Vence 05/12/2026  ✎ │
-│ PER-002 · Fitosanitario · MA · [en_trámite] · —            ✎ │
-└──────────────────────────────────────────────────────────────┘
+## 3. Alcance del cambio
 
-┌── Transportes vinculados ─────────────── [+ Agregar Transporte] ┐
-│ TR-0012 · Marítimo · MAERSK · MSKU1234 · ETA 10/11 · tránsito ✎│
-└──────────────────────────────────────────────────────────────┘
-```
-El botón `+ Agregar` navega a `/permisos/nuevo?expediente=<id>` o `/transportes/nuevo?expediente=<id>`, con el expediente y cliente precargados.
+Solo frontend, un único archivo:
 
-## 7. Detalles técnicos
+- `src/routes/_authenticated/dashboard.tsx` — reemplazar el bloque de la Card "Atención requerida" (líneas ~101-126) por el acordeón agrupado. Importar `Accordion*` de `@/components/ui/accordion` (ya existe en el proyecto).
 
-**Migración SQL** (una sola):
-- ENUMs: `permiso_estado`, `permiso_tipo`, `transporte_tipo`, `transporte_estado`, `moneda`.
-- Tabla `public.permisos`: numero, numero_resolucion, expediente_id (FK), cliente_id (FK), tipo, institucion_emisora, estado, fecha_solicitud, fecha_emision, fecha_vencimiento, documento_url, observaciones, created_by, created_at, updated_at, eliminado_en, eliminado_por.
-- Tabla `public.transportes`: numero_viaje, expediente_id (FK), cliente_id (FK), tipo, transportista, placa_contenedor, origen, destino, fecha_salida, eta, flete_monto, flete_moneda, estado, observaciones, created_by, created_at, updated_at, eliminado_en, eliminado_por.
-- GRANTs a `authenticated`/`service_role`, RLS ON, políticas equivalentes a expedientes (staff full access, resto lectura).
-- Triggers `updated_at`.
-- Indices por `expediente_id`, `estado`, `eliminado_en`.
+Sin cambios en `useReminders`, sin cambios de BD, sin nuevas rutas.
 
-**Rutas nuevas** (TanStack file-based):
-- `src/routes/_authenticated/permisos.index.tsx`
-- `src/routes/_authenticated/permisos.nuevo.tsx`
-- `src/routes/_authenticated/permisos.$id.tsx`
-- `src/routes/_authenticated/transportes.index.tsx`
-- `src/routes/_authenticated/transportes.nuevo.tsx`
-- `src/routes/_authenticated/transportes.$id.tsx`
-
-**Modificaciones**:
-- `src/components/app-shell.tsx`: dos entradas de sidebar.
-- `src/routes/_authenticated/expedientes.$id.tsx`: dos secciones nuevas (Permisos, Transportes) con listado y botón Agregar.
-- `src/routes/_authenticated/expedientes.papelera.tsx`: dos pestañas más (Permisos, Transportes) con Restaurar / Eliminar permanente.
-- Upload de documento del permiso al bucket `documentos` existente (privado, signed URL para visualizar).
-
-**Consistencia**: se reutiliza el componente `Th` con indicadores ▲▼, el patrón de ordenamiento con "cerrados/entregados al final", filtros y estilo `Refined semantic table` idéntico a Expedientes.
-
-¿Aplico todo tal cual?
+¿Apruebas para implementarlo así, o prefieres que además cree la ruta dedicada `/alertas` con tabla y filtros?
