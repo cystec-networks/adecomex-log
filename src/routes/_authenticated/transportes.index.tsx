@@ -13,6 +13,7 @@ import { Trash2, Plus, Truck, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TRANSPORTE_ESTADOS, TRANSPORTE_TIPOS, estadoBadgeTransporte } from "@/components/transporte-form";
+import { parseLocalDate, fmtLocalDateShort } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/transportes/")({
   component: Transportes,
