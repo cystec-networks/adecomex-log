@@ -264,7 +264,7 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
             </div>
             <div>
               <Label>Moneda</Label>
-              <Select value={form.moneda} onValueChange={(v) => setForm({ ...form, moneda: v })}>
+              <Select value={form.moneda} onValueChange={(v) => setForm({ ...form, moneda: v as Moneda })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="DOP">DOP</SelectItem>
