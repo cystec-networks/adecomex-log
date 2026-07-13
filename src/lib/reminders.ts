@@ -165,7 +165,7 @@ export function useReminders() {
       for (const p of per.data ?? []) {
         if (!p.fecha_vencimiento) continue;
         if (p.estado === "rechazado" || p.estado === "vencido") continue;
-        const dias = daysBetween(new Date(p.fecha_vencimiento), now);
+        const dias = daysBetween(parseLocalDate(p.fecha_vencimiento), now);
         if (dias < 0) {
           out.push({
             id: `permiso_vencido:${p.id}`,
