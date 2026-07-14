@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { fmtLocalDate } from "@/lib/dates";
 import { Navigate } from "@tanstack/react-router";
-import { FORMA_PAGO_CODE, EMPRESA_RNC_KEY, money, isPagoExterior } from "@/lib/fiscal-606";
+import { FORMA_PAGO_CODE, EMPRESA_RNC_KEY, montoRequerido, montoOpcional, isPagoExterior } from "@/lib/fiscal-606";
 
 export const Route = createFileRoute("/_authenticated/admin/reportes-fiscales")({
   component: ReportesFiscalesPage,
@@ -275,27 +275,27 @@ function Panel606({ periodo }: { periodo: string }) {
       const tipoBS = r.tipo_bienes_servicios != null ? String(r.tipo_bienes_servicios).padStart(2, "0") : "";
       const fComp = fdate(r.fecha);
       const fPago = fdate(r.fecha);
-      const mfServ = money(r.monto_facturado_servicios);
-      const mfBien = money(r.monto_facturado_bienes);
-      const total = money((r.monto_facturado_servicios || 0) + (r.monto_facturado_bienes || 0) || r.monto_facturado);
-      const itbisFac = money(r.itbis_facturado);
-      const itbisRet = exterior ? "0.00" : money(r.itbis_retenido);
-      const itbisProp = exterior ? "0.00" : money(r.itbis_proporcionalidad_349);
-      const itbisCost = exterior ? "0.00" : money(r.itbis_llevado_costo);
-      const itbisAdelantar = money(Math.max(
+      const mfServ = montoRequerido(r.monto_facturado_servicios);
+      const mfBien = montoRequerido(r.monto_facturado_bienes);
+      const total = montoRequerido((r.monto_facturado_servicios || 0) + (r.monto_facturado_bienes || 0) || r.monto_facturado);
+      const itbisFac = montoRequerido(r.itbis_facturado);
+      const itbisRet = exterior ? "" : montoOpcional(r.itbis_retenido);
+      const itbisProp = exterior ? "" : montoOpcional(r.itbis_proporcionalidad_349);
+      const itbisCost = exterior ? "" : montoOpcional(r.itbis_llevado_costo);
+      const itbisAdelantar = montoRequerido(Math.max(
         0,
         (r.itbis_facturado || 0)
         - (exterior ? 0 : (r.itbis_retenido || 0))
         - (exterior ? 0 : (r.itbis_proporcionalidad_349 || 0))
         - (exterior ? 0 : (r.itbis_llevado_costo || 0))
       ));
-      const itbisPerc = exterior ? "0.00" : money(r.itbis_percibido_compras);
+      const itbisPerc = exterior ? "" : montoOpcional(r.itbis_percibido_compras);
       const tipoRet = r.tipo_retencion_isr != null ? String(r.tipo_retencion_isr).padStart(2, "0") : "";
-      const isrRet = money(r.isr_retenido);
-      const isrPerc = exterior ? "0.00" : money(r.isr_percibido_compras);
-      const isc = exterior ? "0.00" : money(r.impuesto_selectivo_consumo);
-      const otros = exterior ? "0.00" : money(r.otros_impuestos_tasas);
-      const propina = exterior ? "0.00" : money(r.monto_propina_legal);
+      const isrRet = montoOpcional(r.isr_retenido);
+      const isrPerc = exterior ? "" : montoOpcional(r.isr_percibido_compras);
+      const isc = exterior ? "" : montoOpcional(r.impuesto_selectivo_consumo);
+      const otros = exterior ? "" : montoOpcional(r.otros_impuestos_tasas);
+      const propina = exterior ? "" : montoOpcional(r.monto_propina_legal);
       const formaPago = r.forma_pago ? (FORMA_PAGO_CODE[r.forma_pago] ?? "") : "";
       return [
         rncCol,           // 1
