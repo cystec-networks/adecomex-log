@@ -240,6 +240,12 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
       if (!form.concepto.trim()) throw new Error("Concepto requerido");
       if (!form.fecha) throw new Error("Fecha requerida");
       if (!(Number(form.monto) >= 0)) throw new Error("Monto inválido");
+      const rnc = (form.rnc_cedula_proveedor ?? "").trim();
+      const ncf = (form.ncf_proveedor ?? "").trim();
+      const ncfMod = (form.ncf_modificado ?? "").trim();
+      if (rnc && !RNC_RE.test(rnc)) throw new Error("RNC/Cédula debe tener 9 u 11 dígitos numéricos");
+      if (ncf && !NCF_RE.test(ncf)) throw new Error("NCF debe tener 11 o 13 caracteres alfanuméricos");
+      if (ncfMod && !NCF_RE.test(ncfMod)) throw new Error("NCF modificado debe tener 11 o 13 caracteres alfanuméricos");
       const { data: u } = await supabase.auth.getUser();
       const payload = {
         concepto: form.concepto.trim(),
@@ -249,6 +255,16 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
         es_recurrente: form.es_recurrente,
         comprobante_url: form.comprobante_url,
         notas: form.notas,
+        rnc_cedula_proveedor: rnc || null,
+        tipo_id_proveedor: form.tipo_id_proveedor || null,
+        ncf_proveedor: ncf || null,
+        tipo_ncf_proveedor: (form.tipo_ncf_proveedor ?? "").trim() || null,
+        ncf_modificado: ncfMod || null,
+        monto_facturado: Number(form.monto_facturado ?? 0),
+        itbis_facturado: Number(form.itbis_facturado ?? 0),
+        itbis_retenido: Number(form.itbis_retenido ?? 0),
+        isr_retenido: Number(form.isr_retenido ?? 0),
+        forma_pago: form.forma_pago || null,
       };
       if (row.id) {
         const { error } = await supabase.from("gastos_operativos").update(payload).eq("id", row.id);
