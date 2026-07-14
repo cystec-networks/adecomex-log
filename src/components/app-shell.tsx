@@ -122,6 +122,8 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/admin/gastos-operativos") },
       { to: "/admin/dashboard-financiero", label: "Dashboard Financiero", icon: PiggyBank, roles: ["admin","contabilidad"],
         match: (p) => p.startsWith("/admin/dashboard-financiero") },
+      { to: "/admin/reportes-fiscales", label: "Reportes Fiscales DGII", icon: FileBarChart2, roles: ["admin","finanzas"],
+        match: (p) => p.startsWith("/admin/reportes-fiscales") },
       { to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
         match: (p) => p === "/expedientes/papelera" },
     ],
