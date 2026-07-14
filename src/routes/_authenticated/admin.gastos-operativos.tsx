@@ -155,7 +155,7 @@ function GastosOperativosPage() {
               {anchor.toLocaleDateString("es-DO", { month: "long", year: "numeric" })}
             </div>
             <Button variant="outline" size="sm" onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1))}>►</Button>
-            <Button onClick={() => setEditing({ id: "", concepto: "", monto: 0, moneda: "DOP", fecha: new Date().toISOString().slice(0, 10), es_recurrente: false, comprobante_url: null, notas: null })}>
+            <Button onClick={() => setEditing({ id: "", concepto: "", monto: 0, moneda: "DOP", fecha: new Date().toISOString().slice(0, 10), es_recurrente: false, comprobante_url: null, notas: null, rnc_cedula_proveedor: null, tipo_id_proveedor: null, ncf_proveedor: null, tipo_ncf_proveedor: null, ncf_modificado: null, monto_facturado: 0, itbis_facturado: 0, itbis_retenido: 0, isr_retenido: 0, forma_pago: null })}>
               <Plus className="h-4 w-4 mr-1" /> Nuevo gasto
             </Button>
           </div>
