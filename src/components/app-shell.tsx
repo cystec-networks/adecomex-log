@@ -3,7 +3,7 @@ import {
   Inbox, FolderKanban, Users, UserCog, LogOut,
   PackageOpen, PackageCheck, ScanText, Sparkles, Trash2, FileCheck2, Truck,
   ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3, Library, Settings,
-  DollarSign, PiggyBank, Shield, Receipt, ClipboardList,
+  DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2,
 } from "lucide-react";
 import type { AppRole } from "@/lib/auth-hooks";
 import { NotificationsBell } from "@/components/notifications-bell";
@@ -106,7 +106,7 @@ const GROUPS: Group[] = [
     id: "administracion",
     label: "ADMINISTRACIÓN",
     icon: Shield,
-    roles: ["admin", "contabilidad"],
+    roles: ["admin", "contabilidad", "finanzas"],
     items: [
       { to: "/admin/usuarios", label: "Usuarios y roles", icon: UserCog, adminOnly: true,
         match: (p) => p.startsWith("/admin/usuarios") },
@@ -122,6 +122,8 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/admin/gastos-operativos") },
       { to: "/admin/dashboard-financiero", label: "Dashboard Financiero", icon: PiggyBank, roles: ["admin","contabilidad"],
         match: (p) => p.startsWith("/admin/dashboard-financiero") },
+      { to: "/admin/reportes-fiscales", label: "Reportes Fiscales DGII", icon: FileBarChart2, roles: ["admin","finanzas"],
+        match: (p) => p.startsWith("/admin/reportes-fiscales") },
       { to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
         match: (p) => p === "/expedientes/papelera" },
     ],

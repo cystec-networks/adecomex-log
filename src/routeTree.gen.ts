@@ -35,6 +35,7 @@ import { Route as AuthenticatedExpedientesNuevoRouteImport } from './routes/_aut
 import { Route as AuthenticatedExpedientesDashboardRouteImport } from './routes/_authenticated/expedientes.dashboard'
 import { Route as AuthenticatedExpedientesIdRouteImport } from './routes/_authenticated/expedientes.$id'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
+import { Route as AuthenticatedAdminReportesFiscalesRouteImport } from './routes/_authenticated/admin.reportes-fiscales'
 import { Route as AuthenticatedAdminGastosOperativosRouteImport } from './routes/_authenticated/admin.gastos-operativos'
 import { Route as AuthenticatedAdminFacturacionRouteImport } from './routes/_authenticated/admin.facturacion'
 import { Route as AuthenticatedAdminDashboardFinancieroRouteImport } from './routes/_authenticated/admin.dashboard-financiero'
@@ -187,6 +188,12 @@ const AuthenticatedAdminUsuariosRoute =
     path: '/admin/usuarios',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminReportesFiscalesRoute =
+  AuthenticatedAdminReportesFiscalesRouteImport.update({
+    id: '/admin/reportes-fiscales',
+    path: '/admin/reportes-fiscales',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminGastosOperativosRoute =
   AuthenticatedAdminGastosOperativosRouteImport.update({
     id: '/admin/gastos-operativos',
@@ -238,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard-financiero': typeof AuthenticatedAdminDashboardFinancieroRoute
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRouteWithChildren
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
+  '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
@@ -271,6 +279,7 @@ export interface FileRoutesByTo {
   '/admin/dashboard-financiero': typeof AuthenticatedAdminDashboardFinancieroRoute
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRouteWithChildren
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
+  '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
@@ -306,6 +315,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/dashboard-financiero': typeof AuthenticatedAdminDashboardFinancieroRoute
   '/_authenticated/admin/facturacion': typeof AuthenticatedAdminFacturacionRouteWithChildren
   '/_authenticated/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
+  '/_authenticated/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/_authenticated/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
@@ -341,6 +351,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard-financiero'
     | '/admin/facturacion'
     | '/admin/gastos-operativos'
+    | '/admin/reportes-fiscales'
     | '/admin/usuarios'
     | '/expedientes/$id'
     | '/expedientes/dashboard'
@@ -374,6 +385,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard-financiero'
     | '/admin/facturacion'
     | '/admin/gastos-operativos'
+    | '/admin/reportes-fiscales'
     | '/admin/usuarios'
     | '/expedientes/$id'
     | '/expedientes/dashboard'
@@ -408,6 +420,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/dashboard-financiero'
     | '/_authenticated/admin/facturacion'
     | '/_authenticated/admin/gastos-operativos'
+    | '/_authenticated/admin/reportes-fiscales'
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/expedientes/$id'
     | '/_authenticated/expedientes/dashboard'
@@ -619,6 +632,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/reportes-fiscales': {
+      id: '/_authenticated/admin/reportes-fiscales'
+      path: '/admin/reportes-fiscales'
+      fullPath: '/admin/reportes-fiscales'
+      preLoaderRoute: typeof AuthenticatedAdminReportesFiscalesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/gastos-operativos': {
       id: '/_authenticated/admin/gastos-operativos'
       path: '/admin/gastos-operativos'
@@ -690,6 +710,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminDashboardFinancieroRoute: typeof AuthenticatedAdminDashboardFinancieroRoute
   AuthenticatedAdminFacturacionRoute: typeof AuthenticatedAdminFacturacionRouteWithChildren
   AuthenticatedAdminGastosOperativosRoute: typeof AuthenticatedAdminGastosOperativosRoute
+  AuthenticatedAdminReportesFiscalesRoute: typeof AuthenticatedAdminReportesFiscalesRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedExpedientesIdRoute: typeof AuthenticatedExpedientesIdRoute
   AuthenticatedExpedientesDashboardRoute: typeof AuthenticatedExpedientesDashboardRoute
@@ -723,6 +744,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAdminFacturacionRouteWithChildren,
   AuthenticatedAdminGastosOperativosRoute:
     AuthenticatedAdminGastosOperativosRoute,
+  AuthenticatedAdminReportesFiscalesRoute:
+    AuthenticatedAdminReportesFiscalesRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedExpedientesIdRoute: AuthenticatedExpedientesIdRoute,
   AuthenticatedExpedientesDashboardRoute:
