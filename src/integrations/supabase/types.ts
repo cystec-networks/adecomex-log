@@ -596,6 +596,51 @@ export type Database = {
           },
         ]
       }
+      envios_dgii: {
+        Row: {
+          archivo_path: string | null
+          cantidad_registros: number
+          created_at: string
+          fecha_enviado: string | null
+          fecha_generado: string
+          formato: string
+          generado_por: string | null
+          id: string
+          monto_total: number
+          numero_acuse: string | null
+          periodo: string
+          updated_at: string
+        }
+        Insert: {
+          archivo_path?: string | null
+          cantidad_registros?: number
+          created_at?: string
+          fecha_enviado?: string | null
+          fecha_generado?: string
+          formato: string
+          generado_por?: string | null
+          id?: string
+          monto_total?: number
+          numero_acuse?: string | null
+          periodo: string
+          updated_at?: string
+        }
+        Update: {
+          archivo_path?: string | null
+          cantidad_registros?: number
+          created_at?: string
+          fecha_enviado?: string | null
+          fecha_generado?: string
+          formato?: string
+          generado_por?: string | null
+          id?: string
+          monto_total?: number
+          numero_acuse?: string | null
+          periodo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       etapas: {
         Row: {
           comentario: string | null
@@ -985,11 +1030,14 @@ export type Database = {
           eliminado_en: string | null
           eliminado_por: string | null
           encf: string
+          estado: string
+          fecha_anulacion: string | null
           fecha_emision: string
           fecha_firma: string | null
           fecha_vencimiento_ncf: string | null
           id: string
           monto_total: number
+          motivo_anulacion: string | null
           notas: string | null
           otros_impuestos: number
           pdf_url: string | null
@@ -1013,11 +1061,14 @@ export type Database = {
           eliminado_en?: string | null
           eliminado_por?: string | null
           encf: string
+          estado?: string
+          fecha_anulacion?: string | null
           fecha_emision: string
           fecha_firma?: string | null
           fecha_vencimiento_ncf?: string | null
           id?: string
           monto_total?: number
+          motivo_anulacion?: string | null
           notas?: string | null
           otros_impuestos?: number
           pdf_url?: string | null
@@ -1041,11 +1092,14 @@ export type Database = {
           eliminado_en?: string | null
           eliminado_por?: string | null
           encf?: string
+          estado?: string
+          fecha_anulacion?: string | null
           fecha_emision?: string
           fecha_firma?: string | null
           fecha_vencimiento_ncf?: string | null
           id?: string
           monto_total?: number
+          motivo_anulacion?: string | null
           notas?: string | null
           otros_impuestos?: number
           pdf_url?: string | null
