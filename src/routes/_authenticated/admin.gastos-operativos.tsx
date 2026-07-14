@@ -45,10 +45,25 @@ const fmt = (n: number, m: string) =>
 function ymOf(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }
 
 type Moneda = "DOP" | "USD" | "EUR";
+type TipoId = "RNC" | "CEDULA" | "PASAPORTE";
+type FormaPago = "efectivo" | "cheque_transferencia" | "tarjeta" | "credito" | "permuta" | "nota_credito" | "mixto";
 type Row = {
   id: string; concepto: string; monto: number; moneda: Moneda; fecha: string;
   es_recurrente: boolean; comprobante_url: string | null; notas: string | null;
+  rnc_cedula_proveedor?: string | null;
+  tipo_id_proveedor?: TipoId | null;
+  ncf_proveedor?: string | null;
+  tipo_ncf_proveedor?: string | null;
+  ncf_modificado?: string | null;
+  monto_facturado?: number | null;
+  itbis_facturado?: number | null;
+  itbis_retenido?: number | null;
+  isr_retenido?: number | null;
+  forma_pago?: FormaPago | null;
 };
+
+const RNC_RE = /^(\d{9}|\d{11})$/;
+const NCF_RE = /^[A-Za-z0-9]{11}$|^[A-Za-z0-9]{13}$/;
 
 function GastosOperativosPage() {
   const qc = useQueryClient();
