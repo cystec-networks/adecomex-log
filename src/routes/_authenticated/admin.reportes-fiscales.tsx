@@ -97,12 +97,13 @@ function ReportesFiscalesPage() {
   const [tab, setTab] = useState("606");
   const periodo = `${year}${month}`;
 
-  const rolesLoading = !user ? userLoading || !user : (rolesPending && fetchStatus !== "idle");
-  if (userLoading || (user && rolesPending && fetchStatus !== "idle")) return <div className="p-6">Cargando…</div>;
+  if (userLoading || (user && rolesPending && fetchStatus !== "idle")) {
+    return <div className="p-6">Cargando…</div>;
+  }
   if (!user) return <Navigate to="/auth" />;
   const allowed = roles?.some(r => r === "admin" || r === "finanzas");
   if (!allowed) return <Navigate to="/dashboard" />;
-  void rolesLoading;
+
 
 
   const years = Array.from({ length: 6 }, (_, i) => String(now.getFullYear() - i));
