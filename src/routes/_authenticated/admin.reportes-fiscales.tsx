@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { fmtLocalDate } from "@/lib/dates";
 import { Navigate } from "@tanstack/react-router";
-import { FORMA_PAGO_CODE, EMPRESA_RNC_KEY, money, isPagoExterior } from "@/lib/fiscal-606";
+import { FORMA_PAGO_CODE, EMPRESA_RNC_KEY, montoRequerido, montoOpcional, isPagoExterior } from "@/lib/fiscal-606";
 
 export const Route = createFileRoute("/_authenticated/admin/reportes-fiscales")({
   component: ReportesFiscalesPage,
