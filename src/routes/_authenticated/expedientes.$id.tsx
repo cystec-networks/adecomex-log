@@ -1315,7 +1315,20 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
 
   const openEdit = (r: any) => {
     setEditingId(r.id);
-    setF({ concepto: r.concepto, monto: Number(r.monto || 0), fecha: r.fecha ?? "", proveedor: r.proveedor ?? "", es_reembolso: !!r.es_reembolso, notas: r.notas ?? "" });
+    setF({
+      concepto: r.concepto, monto: Number(r.monto || 0), fecha: r.fecha ?? "",
+      proveedor: r.proveedor ?? "", es_reembolso: !!r.es_reembolso, notas: r.notas ?? "",
+      rnc_cedula_proveedor: r.rnc_cedula_proveedor ?? "",
+      tipo_id_proveedor: r.tipo_id_proveedor ?? "",
+      ncf_proveedor: r.ncf_proveedor ?? "",
+      tipo_ncf_proveedor: r.tipo_ncf_proveedor ?? "",
+      ncf_modificado: r.ncf_modificado ?? "",
+      monto_facturado: Number(r.monto_facturado ?? 0),
+      itbis_facturado: Number(r.itbis_facturado ?? 0),
+      itbis_retenido: Number(r.itbis_retenido ?? 0),
+      isr_retenido: Number(r.isr_retenido ?? 0),
+      forma_pago: r.forma_pago ?? "",
+    });
     setFile(null);
     setOpen(true);
   };
