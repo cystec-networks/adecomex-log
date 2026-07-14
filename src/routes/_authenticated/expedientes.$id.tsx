@@ -1348,7 +1348,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
         <CardTitle className="text-base">Gastos operativos</CardTitle>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); setFile(null); } }}>
           <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar gasto</Button>
-          <DialogContent>
+          <DialogContent className="max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editingId ? "Editar gasto" : "Nuevo gasto"}</DialogTitle></DialogHeader>
             <div className="grid gap-3">
               <div className="grid gap-1.5"><Label>Concepto</Label>
