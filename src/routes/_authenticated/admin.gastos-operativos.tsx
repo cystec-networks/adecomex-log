@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2, Copy, AlertTriangle } from "lucide-react";
+import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 
 export const Route = createFileRoute("/_authenticated/admin/gastos-operativos")({
   ssr: false,
@@ -60,6 +61,17 @@ type Row = {
   itbis_retenido?: number | null;
   isr_retenido?: number | null;
   forma_pago?: FormaPago | null;
+  tipo_bienes_servicios?: number | null;
+  monto_facturado_servicios?: number | null;
+  monto_facturado_bienes?: number | null;
+  tipo_retencion_isr?: number | null;
+  itbis_proporcionalidad_349?: number | null;
+  itbis_llevado_costo?: number | null;
+  itbis_percibido_compras?: number | null;
+  isr_percibido_compras?: number | null;
+  impuesto_selectivo_consumo?: number | null;
+  otros_impuestos_tasas?: number | null;
+  monto_propina_legal?: number | null;
 };
 
 const RNC_RE = /^(\d{9}|\d{11})$/;
@@ -260,11 +272,22 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
         ncf_proveedor: ncf || null,
         tipo_ncf_proveedor: (form.tipo_ncf_proveedor ?? "").trim() || null,
         ncf_modificado: ncfMod || null,
-        monto_facturado: Number(form.monto_facturado ?? 0),
+        monto_facturado: Number(form.monto_facturado_servicios ?? 0) + Number(form.monto_facturado_bienes ?? 0),
+        monto_facturado_servicios: Number(form.monto_facturado_servicios ?? 0),
+        monto_facturado_bienes: Number(form.monto_facturado_bienes ?? 0),
         itbis_facturado: Number(form.itbis_facturado ?? 0),
         itbis_retenido: Number(form.itbis_retenido ?? 0),
         isr_retenido: Number(form.isr_retenido ?? 0),
         forma_pago: form.forma_pago || null,
+        tipo_bienes_servicios: form.tipo_bienes_servicios ?? null,
+        tipo_retencion_isr: form.tipo_retencion_isr ?? null,
+        itbis_proporcionalidad_349: Number(form.itbis_proporcionalidad_349 ?? 0),
+        itbis_llevado_costo: Number(form.itbis_llevado_costo ?? 0),
+        itbis_percibido_compras: Number(form.itbis_percibido_compras ?? 0),
+        isr_percibido_compras: Number(form.isr_percibido_compras ?? 0),
+        impuesto_selectivo_consumo: Number(form.impuesto_selectivo_consumo ?? 0),
+        otros_impuestos_tasas: Number(form.otros_impuestos_tasas ?? 0),
+        monto_propina_legal: Number(form.monto_propina_legal ?? 0),
       };
       if (row.id) {
         const { error } = await supabase.from("gastos_operativos").update(payload).eq("id", row.id);
@@ -354,8 +377,32 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Monto facturado</Label>
-                <Input type="number" step="0.01" value={form.monto_facturado ?? 0} onChange={(e) => setForm({ ...form, monto_facturado: Number(e.target.value) })} />
+                <Label>Tipo bienes / servicios (606)</Label>
+                <Select value={form.tipo_bienes_servicios ? String(form.tipo_bienes_servicios) : ""} onValueChange={(v) => setForm({ ...form, tipo_bienes_servicios: v ? Number(v) : null })}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    {TIPOS_BIENES_SERVICIOS.map(o => <SelectItem key={o.v} value={String(o.v)}>{o.l}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Tipo retención ISR</Label>
+                <Select value={form.tipo_retencion_isr ? String(form.tipo_retencion_isr) : ""} onValueChange={(v) => setForm({ ...form, tipo_retencion_isr: v ? Number(v) : null })}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    {TIPOS_RETENCION_ISR.map(o => <SelectItem key={o.v} value={String(o.v)}>{o.l}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Monto facturado servicios</Label>
+                <Input type="number" step="0.01" value={form.monto_facturado_servicios ?? 0} onChange={(e) => setForm({ ...form, monto_facturado_servicios: Number(e.target.value) })} />
+              </div>
+              <div>
+                <Label>Monto facturado bienes</Label>
+                <Input type="number" step="0.01" value={form.monto_facturado_bienes ?? 0} onChange={(e) => setForm({ ...form, monto_facturado_bienes: Number(e.target.value) })} />
               </div>
               <div>
                 <Label>ITBIS facturado</Label>
@@ -369,6 +416,9 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
                 <Label>ISR retenido</Label>
                 <Input type="number" step="0.01" value={form.isr_retenido ?? 0} onChange={(e) => setForm({ ...form, isr_retenido: Number(e.target.value) })} />
               </div>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Monto facturado total: <b>{(Number(form.monto_facturado_servicios ?? 0) + Number(form.monto_facturado_bienes ?? 0)).toFixed(2)}</b>
             </div>
             <div>
               <Label>Forma de pago</Label>
@@ -385,6 +435,20 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
                 </SelectContent>
               </Select>
             </div>
+            <details className="rounded border bg-background/60">
+              <summary className="cursor-pointer text-xs font-medium px-3 py-2 select-none">Detalles fiscales avanzados (opcional)</summary>
+              <div className="p-3 space-y-2 border-t">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-xs">ITBIS sujeto proporcionalidad (Art. 349)</Label><Input type="number" step="0.01" value={form.itbis_proporcionalidad_349 ?? 0} onChange={(e) => setForm({ ...form, itbis_proporcionalidad_349: Number(e.target.value) })} /></div>
+                  <div><Label className="text-xs">ITBIS llevado al costo</Label><Input type="number" step="0.01" value={form.itbis_llevado_costo ?? 0} onChange={(e) => setForm({ ...form, itbis_llevado_costo: Number(e.target.value) })} /></div>
+                  <div><Label className="text-xs">ITBIS percibido en compras</Label><Input type="number" step="0.01" value={form.itbis_percibido_compras ?? 0} onChange={(e) => setForm({ ...form, itbis_percibido_compras: Number(e.target.value) })} /></div>
+                  <div><Label className="text-xs">ISR percibido en compras</Label><Input type="number" step="0.01" value={form.isr_percibido_compras ?? 0} onChange={(e) => setForm({ ...form, isr_percibido_compras: Number(e.target.value) })} /></div>
+                  <div><Label className="text-xs">Impuesto Selectivo al Consumo</Label><Input type="number" step="0.01" value={form.impuesto_selectivo_consumo ?? 0} onChange={(e) => setForm({ ...form, impuesto_selectivo_consumo: Number(e.target.value) })} /></div>
+                  <div><Label className="text-xs">Otros impuestos / tasas</Label><Input type="number" step="0.01" value={form.otros_impuestos_tasas ?? 0} onChange={(e) => setForm({ ...form, otros_impuestos_tasas: Number(e.target.value) })} /></div>
+                  <div><Label className="text-xs">Monto propina legal</Label><Input type="number" step="0.01" value={form.monto_propina_legal ?? 0} onChange={(e) => setForm({ ...form, monto_propina_legal: Number(e.target.value) })} /></div>
+                </div>
+              </div>
+            </details>
           </fieldset>
         </div>
         <DialogFooter>

@@ -1190,18 +1190,29 @@ export type Database = {
           fecha: string | null
           forma_pago: string | null
           id: string
+          impuesto_selectivo_consumo: number
+          isr_percibido_compras: number
           isr_retenido: number
           itbis_facturado: number
+          itbis_llevado_costo: number
+          itbis_percibido_compras: number
+          itbis_proporcionalidad_349: number
           itbis_retenido: number
           monto: number
           monto_facturado: number
+          monto_facturado_bienes: number
+          monto_facturado_servicios: number
+          monto_propina_legal: number
           ncf_modificado: string | null
           ncf_proveedor: string | null
           notas: string | null
+          otros_impuestos_tasas: number
           proveedor: string | null
           rnc_cedula_proveedor: string | null
+          tipo_bienes_servicios: number | null
           tipo_id_proveedor: string | null
           tipo_ncf_proveedor: string | null
+          tipo_retencion_isr: number | null
           updated_at: string
         }
         Insert: {
@@ -1215,18 +1226,29 @@ export type Database = {
           fecha?: string | null
           forma_pago?: string | null
           id?: string
+          impuesto_selectivo_consumo?: number
+          isr_percibido_compras?: number
           isr_retenido?: number
           itbis_facturado?: number
+          itbis_llevado_costo?: number
+          itbis_percibido_compras?: number
+          itbis_proporcionalidad_349?: number
           itbis_retenido?: number
           monto?: number
           monto_facturado?: number
+          monto_facturado_bienes?: number
+          monto_facturado_servicios?: number
+          monto_propina_legal?: number
           ncf_modificado?: string | null
           ncf_proveedor?: string | null
           notas?: string | null
+          otros_impuestos_tasas?: number
           proveedor?: string | null
           rnc_cedula_proveedor?: string | null
+          tipo_bienes_servicios?: number | null
           tipo_id_proveedor?: string | null
           tipo_ncf_proveedor?: string | null
+          tipo_retencion_isr?: number | null
           updated_at?: string
         }
         Update: {
@@ -1240,18 +1262,29 @@ export type Database = {
           fecha?: string | null
           forma_pago?: string | null
           id?: string
+          impuesto_selectivo_consumo?: number
+          isr_percibido_compras?: number
           isr_retenido?: number
           itbis_facturado?: number
+          itbis_llevado_costo?: number
+          itbis_percibido_compras?: number
+          itbis_proporcionalidad_349?: number
           itbis_retenido?: number
           monto?: number
           monto_facturado?: number
+          monto_facturado_bienes?: number
+          monto_facturado_servicios?: number
+          monto_propina_legal?: number
           ncf_modificado?: string | null
           ncf_proveedor?: string | null
           notas?: string | null
+          otros_impuestos_tasas?: number
           proveedor?: string | null
           rnc_cedula_proveedor?: string | null
+          tipo_bienes_servicios?: number | null
           tipo_id_proveedor?: string | null
           tipo_ncf_proveedor?: string | null
+          tipo_retencion_isr?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -1276,18 +1309,29 @@ export type Database = {
           fecha: string
           forma_pago: string | null
           id: string
+          impuesto_selectivo_consumo: number
+          isr_percibido_compras: number
           isr_retenido: number
           itbis_facturado: number
+          itbis_llevado_costo: number
+          itbis_percibido_compras: number
+          itbis_proporcionalidad_349: number
           itbis_retenido: number
           moneda: Database["public"]["Enums"]["moneda"]
           monto: number
           monto_facturado: number
+          monto_facturado_bienes: number
+          monto_facturado_servicios: number
+          monto_propina_legal: number
           ncf_modificado: string | null
           ncf_proveedor: string | null
           notas: string | null
+          otros_impuestos_tasas: number
           rnc_cedula_proveedor: string | null
+          tipo_bienes_servicios: number | null
           tipo_id_proveedor: string | null
           tipo_ncf_proveedor: string | null
+          tipo_retencion_isr: number | null
           updated_at: string
         }
         Insert: {
@@ -1301,18 +1345,29 @@ export type Database = {
           fecha: string
           forma_pago?: string | null
           id?: string
+          impuesto_selectivo_consumo?: number
+          isr_percibido_compras?: number
           isr_retenido?: number
           itbis_facturado?: number
+          itbis_llevado_costo?: number
+          itbis_percibido_compras?: number
+          itbis_proporcionalidad_349?: number
           itbis_retenido?: number
           moneda?: Database["public"]["Enums"]["moneda"]
           monto: number
           monto_facturado?: number
+          monto_facturado_bienes?: number
+          monto_facturado_servicios?: number
+          monto_propina_legal?: number
           ncf_modificado?: string | null
           ncf_proveedor?: string | null
           notas?: string | null
+          otros_impuestos_tasas?: number
           rnc_cedula_proveedor?: string | null
+          tipo_bienes_servicios?: number | null
           tipo_id_proveedor?: string | null
           tipo_ncf_proveedor?: string | null
+          tipo_retencion_isr?: number | null
           updated_at?: string
         }
         Update: {
@@ -1326,18 +1381,29 @@ export type Database = {
           fecha?: string
           forma_pago?: string | null
           id?: string
+          impuesto_selectivo_consumo?: number
+          isr_percibido_compras?: number
           isr_retenido?: number
           itbis_facturado?: number
+          itbis_llevado_costo?: number
+          itbis_percibido_compras?: number
+          itbis_proporcionalidad_349?: number
           itbis_retenido?: number
           moneda?: Database["public"]["Enums"]["moneda"]
           monto?: number
           monto_facturado?: number
+          monto_facturado_bienes?: number
+          monto_facturado_servicios?: number
+          monto_propina_legal?: number
           ncf_modificado?: string | null
           ncf_proveedor?: string | null
           notas?: string | null
+          otros_impuestos_tasas?: number
           rnc_cedula_proveedor?: string | null
+          tipo_bienes_servicios?: number | null
           tipo_id_proveedor?: string | null
           tipo_ncf_proveedor?: string | null
+          tipo_retencion_isr?: number | null
           updated_at?: string
         }
         Relationships: []

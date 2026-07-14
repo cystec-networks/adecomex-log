@@ -25,6 +25,7 @@ import { SearchEmailButton } from "@/components/search-email-button";
 import { RastrearEmbarqueButton } from "@/components/rastrear-embarque-button";
 import { ChecklistHitos } from "@/components/checklist-hitos";
 import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
+import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
@@ -1249,6 +1250,12 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
     rnc_cedula_proveedor: "", tipo_id_proveedor: "", ncf_proveedor: "", tipo_ncf_proveedor: "",
     ncf_modificado: "", monto_facturado: 0, itbis_facturado: 0, itbis_retenido: 0, isr_retenido: 0,
     forma_pago: "",
+    tipo_bienes_servicios: "" as string,
+    monto_facturado_servicios: 0, monto_facturado_bienes: 0,
+    tipo_retencion_isr: "" as string,
+    itbis_proporcionalidad_349: 0, itbis_llevado_costo: 0,
+    itbis_percibido_compras: 0, isr_percibido_compras: 0,
+    impuesto_selectivo_consumo: 0, otros_impuestos_tasas: 0, monto_propina_legal: 0,
   };
   const [f, setF] = useState<any>(empty);
   const [file, setFile] = useState<File | null>(null);
@@ -1271,6 +1278,8 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
       const ncfMod = (f.ncf_modificado || "").trim().toUpperCase();
       if (ncfMod && !/^[A-Z0-9]{11}$|^[A-Z0-9]{13}$/.test(ncfMod)) throw new Error("NCF modificado debe tener 11 o 13 caracteres alfanuméricos");
 
+      const mfServ = Number(f.monto_facturado_servicios || 0);
+      const mfBien = Number(f.monto_facturado_bienes || 0);
       const payload: any = {
         concepto: f.concepto, monto: Number(f.monto || 0),
         fecha: f.fecha || null, proveedor: f.proveedor || null,
@@ -1280,11 +1289,22 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
         ncf_proveedor: ncf || null,
         tipo_ncf_proveedor: f.tipo_ncf_proveedor || null,
         ncf_modificado: ncfMod || null,
-        monto_facturado: Number(f.monto_facturado || 0),
+        monto_facturado: mfServ + mfBien,
+        monto_facturado_servicios: mfServ,
+        monto_facturado_bienes: mfBien,
         itbis_facturado: Number(f.itbis_facturado || 0),
         itbis_retenido: Number(f.itbis_retenido || 0),
         isr_retenido: Number(f.isr_retenido || 0),
         forma_pago: f.forma_pago || null,
+        tipo_bienes_servicios: f.tipo_bienes_servicios ? Number(f.tipo_bienes_servicios) : null,
+        tipo_retencion_isr: f.tipo_retencion_isr ? Number(f.tipo_retencion_isr) : null,
+        itbis_proporcionalidad_349: Number(f.itbis_proporcionalidad_349 || 0),
+        itbis_llevado_costo: Number(f.itbis_llevado_costo || 0),
+        itbis_percibido_compras: Number(f.itbis_percibido_compras || 0),
+        isr_percibido_compras: Number(f.isr_percibido_compras || 0),
+        impuesto_selectivo_consumo: Number(f.impuesto_selectivo_consumo || 0),
+        otros_impuestos_tasas: Number(f.otros_impuestos_tasas || 0),
+        monto_propina_legal: Number(f.monto_propina_legal || 0),
       };
       if (adjunto_path !== undefined) payload.adjunto_path = adjunto_path;
 
@@ -1328,6 +1348,17 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
       itbis_retenido: Number(r.itbis_retenido ?? 0),
       isr_retenido: Number(r.isr_retenido ?? 0),
       forma_pago: r.forma_pago ?? "",
+      tipo_bienes_servicios: r.tipo_bienes_servicios != null ? String(r.tipo_bienes_servicios) : "",
+      monto_facturado_servicios: Number(r.monto_facturado_servicios ?? 0),
+      monto_facturado_bienes: Number(r.monto_facturado_bienes ?? 0),
+      tipo_retencion_isr: r.tipo_retencion_isr != null ? String(r.tipo_retencion_isr) : "",
+      itbis_proporcionalidad_349: Number(r.itbis_proporcionalidad_349 ?? 0),
+      itbis_llevado_costo: Number(r.itbis_llevado_costo ?? 0),
+      itbis_percibido_compras: Number(r.itbis_percibido_compras ?? 0),
+      isr_percibido_compras: Number(r.isr_percibido_compras ?? 0),
+      impuesto_selectivo_consumo: Number(r.impuesto_selectivo_consumo ?? 0),
+      otros_impuestos_tasas: Number(r.otros_impuestos_tasas ?? 0),
+      monto_propina_legal: Number(r.monto_propina_legal ?? 0),
     });
     setFile(null);
     setOpen(true);
@@ -1398,10 +1429,36 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
                   <Input value={f.ncf_modificado} onChange={(e) => setF({ ...f, ncf_modificado: e.target.value.toUpperCase() })} placeholder="NCF original modificado por nota crédito/débito" maxLength={13} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="grid gap-1.5"><Label>Monto facturado</Label><Input type="number" step="0.01" value={f.monto_facturado} onChange={(e) => setF({ ...f, monto_facturado: e.target.value })} /></div>
+                  <div className="grid gap-1.5">
+                    <Label>Tipo bienes / servicios (606)</Label>
+                    <Select value={f.tipo_bienes_servicios || "__none"} onValueChange={(v) => setF({ ...f, tipo_bienes_servicios: v === "__none" ? "" : v })}>
+                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">—</SelectItem>
+                        {TIPOS_BIENES_SERVICIOS.map(o => <SelectItem key={o.v} value={String(o.v)}>{o.l}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>Tipo retención ISR</Label>
+                    <Select value={f.tipo_retencion_isr || "__none"} onValueChange={(v) => setF({ ...f, tipo_retencion_isr: v === "__none" ? "" : v })}>
+                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">—</SelectItem>
+                        {TIPOS_RETENCION_ISR.map(o => <SelectItem key={o.v} value={String(o.v)}>{o.l}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-1.5"><Label>Monto facturado servicios</Label><Input type="number" step="0.01" value={f.monto_facturado_servicios} onChange={(e) => setF({ ...f, monto_facturado_servicios: e.target.value })} /></div>
+                  <div className="grid gap-1.5"><Label>Monto facturado bienes</Label><Input type="number" step="0.01" value={f.monto_facturado_bienes} onChange={(e) => setF({ ...f, monto_facturado_bienes: e.target.value })} /></div>
                   <div className="grid gap-1.5"><Label>ITBIS facturado</Label><Input type="number" step="0.01" value={f.itbis_facturado} onChange={(e) => setF({ ...f, itbis_facturado: e.target.value })} /></div>
                   <div className="grid gap-1.5"><Label>ITBIS retenido</Label><Input type="number" step="0.01" value={f.itbis_retenido} onChange={(e) => setF({ ...f, itbis_retenido: e.target.value })} /></div>
                   <div className="grid gap-1.5"><Label>ISR retenido</Label><Input type="number" step="0.01" value={f.isr_retenido} onChange={(e) => setF({ ...f, isr_retenido: e.target.value })} /></div>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Monto facturado total: <b>{(Number(f.monto_facturado_servicios || 0) + Number(f.monto_facturado_bienes || 0)).toFixed(2)}</b>
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Forma de pago</Label>
@@ -1419,6 +1476,20 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
                     </SelectContent>
                   </Select>
                 </div>
+                <details className="rounded border bg-background/60">
+                  <summary className="cursor-pointer text-xs font-medium px-3 py-2 select-none">Detalles fiscales avanzados (opcional)</summary>
+                  <div className="p-3 space-y-2 border-t">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="grid gap-1.5"><Label className="text-xs">ITBIS sujeto proporcionalidad (Art. 349)</Label><Input type="number" step="0.01" value={f.itbis_proporcionalidad_349} onChange={(e) => setF({ ...f, itbis_proporcionalidad_349: e.target.value })} /></div>
+                      <div className="grid gap-1.5"><Label className="text-xs">ITBIS llevado al costo</Label><Input type="number" step="0.01" value={f.itbis_llevado_costo} onChange={(e) => setF({ ...f, itbis_llevado_costo: e.target.value })} /></div>
+                      <div className="grid gap-1.5"><Label className="text-xs">ITBIS percibido en compras</Label><Input type="number" step="0.01" value={f.itbis_percibido_compras} onChange={(e) => setF({ ...f, itbis_percibido_compras: e.target.value })} /></div>
+                      <div className="grid gap-1.5"><Label className="text-xs">ISR percibido en compras</Label><Input type="number" step="0.01" value={f.isr_percibido_compras} onChange={(e) => setF({ ...f, isr_percibido_compras: e.target.value })} /></div>
+                      <div className="grid gap-1.5"><Label className="text-xs">Impuesto Selectivo al Consumo</Label><Input type="number" step="0.01" value={f.impuesto_selectivo_consumo} onChange={(e) => setF({ ...f, impuesto_selectivo_consumo: e.target.value })} /></div>
+                      <div className="grid gap-1.5"><Label className="text-xs">Otros impuestos / tasas</Label><Input type="number" step="0.01" value={f.otros_impuestos_tasas} onChange={(e) => setF({ ...f, otros_impuestos_tasas: e.target.value })} /></div>
+                      <div className="grid gap-1.5"><Label className="text-xs">Monto propina legal</Label><Input type="number" step="0.01" value={f.monto_propina_legal} onChange={(e) => setF({ ...f, monto_propina_legal: e.target.value })} /></div>
+                    </div>
+                  </div>
+                </details>
               </div>
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={f.es_reembolso} onChange={(e) => setF({ ...f, es_reembolso: e.target.checked })} />

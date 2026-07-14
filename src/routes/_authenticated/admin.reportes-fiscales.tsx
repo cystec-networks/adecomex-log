@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { fmtLocalDate } from "@/lib/dates";
 import { Navigate } from "@tanstack/react-router";
+import { FORMA_PAGO_CODE, EMPRESA_RNC_KEY, money, isPagoExterior } from "@/lib/fiscal-606";
 
 export const Route = createFileRoute("/_authenticated/admin/reportes-fiscales")({
   component: ReportesFiscalesPage,
@@ -57,6 +58,17 @@ type Row = {
   itbis_retenido: number;
   isr_retenido: number;
   forma_pago: string | null;
+  tipo_bienes_servicios: number | null;
+  monto_facturado_servicios: number;
+  monto_facturado_bienes: number;
+  tipo_retencion_isr: number | null;
+  itbis_proporcionalidad_349: number;
+  itbis_llevado_costo: number;
+  itbis_percibido_compras: number;
+  isr_percibido_compras: number;
+  impuesto_selectivo_consumo: number;
+  otros_impuestos_tasas: number;
+  monto_propina_legal: number;
 };
 
 function fmtRD(n: number) {
@@ -85,6 +97,7 @@ function validateRow(r: Row): string[] {
   else if (!NCF_RE.test(r.ncf_proveedor)) errs.push("NCF debe tener 11 o 13 caracteres alfanuméricos");
   if (!r.tipo_ncf_proveedor) errs.push("Tipo NCF vacío");
   if (!r.monto_facturado || r.monto_facturado <= 0) errs.push("Monto facturado vacío o cero");
+  if (!r.tipo_bienes_servicios) errs.push("Tipo bienes/servicios vacío");
   return errs;
 }
 
@@ -168,7 +181,7 @@ function Panel606({ periodo }: { periodo: string }) {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["reporte-606", periodo],
     queryFn: async (): Promise<Row[]> => {
-      const cols = "id,fecha,proveedor,concepto,rnc_cedula_proveedor,tipo_id_proveedor,ncf_proveedor,tipo_ncf_proveedor,ncf_modificado,monto_facturado,itbis_facturado,itbis_retenido,isr_retenido,forma_pago";
+      const cols = "id,fecha,proveedor,concepto,rnc_cedula_proveedor,tipo_id_proveedor,ncf_proveedor,tipo_ncf_proveedor,ncf_modificado,monto_facturado,itbis_facturado,itbis_retenido,isr_retenido,forma_pago,tipo_bienes_servicios,monto_facturado_servicios,monto_facturado_bienes,tipo_retencion_isr,itbis_proporcionalidad_349,itbis_llevado_costo,itbis_percibido_compras,isr_percibido_compras,impuesto_selectivo_consumo,otros_impuestos_tasas,monto_propina_legal";
       const [g, go] = await Promise.all([
         supabase.from("gastos").select(cols)
           .not("rnc_cedula_proveedor", "is", null)
@@ -181,12 +194,22 @@ function Panel606({ periodo }: { periodo: string }) {
       ]);
       if (g.error) throw g.error;
       if (go.error) throw go.error;
+      const num = (v: any) => Number(v) || 0;
       const map = (arr: any[], origen: Origen): Row[] => arr.map(r => ({
         key: `${origen}:${r.id}`, origen, ...r,
-        monto_facturado: Number(r.monto_facturado) || 0,
-        itbis_facturado: Number(r.itbis_facturado) || 0,
-        itbis_retenido: Number(r.itbis_retenido) || 0,
-        isr_retenido: Number(r.isr_retenido) || 0,
+        monto_facturado: num(r.monto_facturado),
+        itbis_facturado: num(r.itbis_facturado),
+        itbis_retenido: num(r.itbis_retenido),
+        isr_retenido: num(r.isr_retenido),
+        monto_facturado_servicios: num(r.monto_facturado_servicios),
+        monto_facturado_bienes: num(r.monto_facturado_bienes),
+        itbis_proporcionalidad_349: num(r.itbis_proporcionalidad_349),
+        itbis_llevado_costo: num(r.itbis_llevado_costo),
+        itbis_percibido_compras: num(r.itbis_percibido_compras),
+        isr_percibido_compras: num(r.isr_percibido_compras),
+        impuesto_selectivo_consumo: num(r.impuesto_selectivo_consumo),
+        otros_impuestos_tasas: num(r.otros_impuestos_tasas),
+        monto_propina_legal: num(r.monto_propina_legal),
       }));
       return [...map(g.data ?? [], "gasto"), ...map(go.data ?? [], "gasto_operativo")]
         .sort((a, b) => (a.fecha ?? "").localeCompare(b.fecha ?? ""));
@@ -228,24 +251,81 @@ function Panel606({ periodo }: { periodo: string }) {
   };
 
   const generar = async () => {
-    // Layout preliminar 606 (pipe-separado). Se ajustará al instructivo oficial.
-    // Columnas: RNC/Céd|TipoID|TipoBienServicio|NCF|NCFModificado|FechaComprobante|FechaPago|MontoFacturado|ITBISFacturado|ITBISRetenido|ISRRetenido|FormaPago
-    const lines = merged.map(r => [
-      r.rnc_cedula_proveedor ?? "",
-      r.tipo_id_proveedor ?? "",
-      "09", // Tipo bien/servicio genérico (ajustable)
-      r.ncf_proveedor ?? "",
-      r.ncf_modificado ?? "",
-      (r.fecha ?? "").replace(/-/g, ""),
-      (r.fecha ?? "").replace(/-/g, ""),
-      r.monto_facturado.toFixed(2),
-      (r.itbis_facturado || 0).toFixed(2),
-      (r.itbis_retenido || 0).toFixed(2),
-      (r.isr_retenido || 0).toFixed(2),
-      r.forma_pago ?? "",
-    ].join("|"));
-    const content = lines.join("\r\n") + "\r\n";
-    const filename = `606_${periodo}.txt`;
+    // Obtener RNC de la empresa
+    const { data: rncRow } = await supabase.from("system_settings")
+      .select("value").eq("key", EMPRESA_RNC_KEY).maybeSingle();
+    const empresaRnc = (rncRow?.value ?? "").trim();
+    if (!empresaRnc || !RNC_RE.test(empresaRnc)) {
+      toast.error("Configura el RNC de la empresa en Configuración antes de generar el 606.");
+      return;
+    }
+
+    const tipoIdCode = (t: string | null) =>
+      t === "RNC" ? "1" : t === "CEDULA" ? "2" : t === "PASAPORTE" ? "3" : "";
+    const fdate = (d: string | null) => (d ?? "").replace(/-/g, "");
+
+    // Cabecera: 606|RNC|PERIODO|CANTIDAD
+    const header = ["606", empresaRnc, periodo, String(merged.length)].join("|");
+
+    // 23 columnas por registro (instructivo DGII feb 2026)
+    const detalle = merged.map(r => {
+      const exterior = isPagoExterior(r.ncf_proveedor);
+      const rncCol = exterior ? empresaRnc : (r.rnc_cedula_proveedor ?? "");
+      const tipoId = exterior ? "1" : tipoIdCode(r.tipo_id_proveedor);
+      const tipoBS = r.tipo_bienes_servicios != null ? String(r.tipo_bienes_servicios).padStart(2, "0") : "";
+      const fComp = fdate(r.fecha);
+      const fPago = fdate(r.fecha);
+      const mfServ = money(r.monto_facturado_servicios);
+      const mfBien = money(r.monto_facturado_bienes);
+      const total = money((r.monto_facturado_servicios || 0) + (r.monto_facturado_bienes || 0) || r.monto_facturado);
+      const itbisFac = money(r.itbis_facturado);
+      const itbisRet = exterior ? "0.00" : money(r.itbis_retenido);
+      const itbisProp = exterior ? "0.00" : money(r.itbis_proporcionalidad_349);
+      const itbisCost = exterior ? "0.00" : money(r.itbis_llevado_costo);
+      const itbisAdelantar = money(Math.max(
+        0,
+        (r.itbis_facturado || 0)
+        - (exterior ? 0 : (r.itbis_retenido || 0))
+        - (exterior ? 0 : (r.itbis_proporcionalidad_349 || 0))
+        - (exterior ? 0 : (r.itbis_llevado_costo || 0))
+      ));
+      const itbisPerc = exterior ? "0.00" : money(r.itbis_percibido_compras);
+      const tipoRet = r.tipo_retencion_isr != null ? String(r.tipo_retencion_isr).padStart(2, "0") : "";
+      const isrRet = money(r.isr_retenido);
+      const isrPerc = exterior ? "0.00" : money(r.isr_percibido_compras);
+      const isc = exterior ? "0.00" : money(r.impuesto_selectivo_consumo);
+      const otros = exterior ? "0.00" : money(r.otros_impuestos_tasas);
+      const propina = exterior ? "0.00" : money(r.monto_propina_legal);
+      const formaPago = r.forma_pago ? (FORMA_PAGO_CODE[r.forma_pago] ?? "") : "";
+      return [
+        rncCol,           // 1
+        tipoId,           // 2
+        tipoBS,           // 3
+        r.ncf_proveedor ?? "", // 4
+        r.ncf_modificado ?? "", // 5
+        fComp,            // 6
+        fPago,            // 7
+        mfServ,           // 8
+        mfBien,           // 9
+        total,            // 10
+        itbisFac,         // 11
+        itbisRet,         // 12
+        itbisProp,        // 13
+        itbisCost,        // 14
+        itbisAdelantar,   // 15
+        itbisPerc,        // 16
+        tipoRet,          // 17
+        isrRet,           // 18
+        isrPerc,          // 19
+        isc,              // 20
+        otros,            // 21
+        propina,          // 22
+        formaPago,        // 23
+      ].join("|");
+    });
+
+    const content = [header, ...detalle].join("\r\n") + "\r\n";
+    const filename = `DGII_606_${empresaRnc}_${periodo}.txt`;
     download(filename, content);
 
     const total = merged.reduce((s, r) => s + r.monto_facturado, 0);
