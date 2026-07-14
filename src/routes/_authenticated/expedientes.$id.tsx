@@ -1263,12 +1263,31 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
         if (upErr) throw upErr;
         adjunto_path = path;
       }
+      // Validaciones opcionales de formato
+      const rnc = (f.rnc_cedula_proveedor || "").trim();
+      if (rnc && !/^\d{9}$|^\d{11}$/.test(rnc)) throw new Error("RNC/Cédula debe tener 9 u 11 dígitos numéricos");
+      const ncf = (f.ncf_proveedor || "").trim().toUpperCase();
+      if (ncf && !/^[A-Z0-9]{11}$|^[A-Z0-9]{13}$/.test(ncf)) throw new Error("NCF debe tener 11 o 13 caracteres alfanuméricos");
+      const ncfMod = (f.ncf_modificado || "").trim().toUpperCase();
+      if (ncfMod && !/^[A-Z0-9]{11}$|^[A-Z0-9]{13}$/.test(ncfMod)) throw new Error("NCF modificado debe tener 11 o 13 caracteres alfanuméricos");
+
       const payload: any = {
         concepto: f.concepto, monto: Number(f.monto || 0),
         fecha: f.fecha || null, proveedor: f.proveedor || null,
         es_reembolso: !!f.es_reembolso, notas: f.notas || null,
+        rnc_cedula_proveedor: rnc || null,
+        tipo_id_proveedor: f.tipo_id_proveedor || null,
+        ncf_proveedor: ncf || null,
+        tipo_ncf_proveedor: f.tipo_ncf_proveedor || null,
+        ncf_modificado: ncfMod || null,
+        monto_facturado: Number(f.monto_facturado || 0),
+        itbis_facturado: Number(f.itbis_facturado || 0),
+        itbis_retenido: Number(f.itbis_retenido || 0),
+        isr_retenido: Number(f.isr_retenido || 0),
+        forma_pago: f.forma_pago || null,
       };
       if (adjunto_path !== undefined) payload.adjunto_path = adjunto_path;
+
       if (editingId) {
         const { error } = await supabase.from("gastos").update(payload).eq("id", editingId);
         if (error) throw error;
