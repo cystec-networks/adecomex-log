@@ -280,7 +280,7 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{row.id ? "Editar gasto operativo" : "Nuevo gasto operativo"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div>
@@ -317,6 +317,75 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
             <Label>Notas</Label>
             <Textarea value={form.notas ?? ""} onChange={(e) => setForm({ ...form, notas: e.target.value })} rows={2} />
           </div>
+
+          <fieldset className="border rounded-md p-3 space-y-3">
+            <legend className="text-sm font-semibold px-1">Datos fiscales del proveedor</legend>
+            <p className="text-xs text-muted-foreground -mt-1">Opcional. Requerido solo si el gasto tiene comprobante fiscal formal (para reporte 606 DGII).</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Tipo de ID</Label>
+                <Select value={form.tipo_id_proveedor ?? ""} onValueChange={(v) => setForm({ ...form, tipo_id_proveedor: (v || null) as TipoId | null })}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="RNC">RNC</SelectItem>
+                    <SelectItem value="CEDULA">Cédula</SelectItem>
+                    <SelectItem value="PASAPORTE">Pasaporte</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>RNC / Cédula</Label>
+                <Input value={form.rnc_cedula_proveedor ?? ""} onChange={(e) => setForm({ ...form, rnc_cedula_proveedor: e.target.value })} placeholder="9 u 11 dígitos" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>NCF</Label>
+                <Input value={form.ncf_proveedor ?? ""} onChange={(e) => setForm({ ...form, ncf_proveedor: e.target.value })} placeholder="11 o 13 caracteres" />
+              </div>
+              <div>
+                <Label>Tipo NCF</Label>
+                <Input value={form.tipo_ncf_proveedor ?? ""} onChange={(e) => setForm({ ...form, tipo_ncf_proveedor: e.target.value })} placeholder="Ej: 01, 02, 11…" />
+              </div>
+            </div>
+            <div>
+              <Label>NCF modificado (si aplica)</Label>
+              <Input value={form.ncf_modificado ?? ""} onChange={(e) => setForm({ ...form, ncf_modificado: e.target.value })} placeholder="NCF original al que reemplaza (nota de crédito/débito)" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Monto facturado</Label>
+                <Input type="number" step="0.01" value={form.monto_facturado ?? 0} onChange={(e) => setForm({ ...form, monto_facturado: Number(e.target.value) })} />
+              </div>
+              <div>
+                <Label>ITBIS facturado</Label>
+                <Input type="number" step="0.01" value={form.itbis_facturado ?? 0} onChange={(e) => setForm({ ...form, itbis_facturado: Number(e.target.value) })} />
+              </div>
+              <div>
+                <Label>ITBIS retenido</Label>
+                <Input type="number" step="0.01" value={form.itbis_retenido ?? 0} onChange={(e) => setForm({ ...form, itbis_retenido: Number(e.target.value) })} />
+              </div>
+              <div>
+                <Label>ISR retenido</Label>
+                <Input type="number" step="0.01" value={form.isr_retenido ?? 0} onChange={(e) => setForm({ ...form, isr_retenido: Number(e.target.value) })} />
+              </div>
+            </div>
+            <div>
+              <Label>Forma de pago</Label>
+              <Select value={form.forma_pago ?? ""} onValueChange={(v) => setForm({ ...form, forma_pago: (v || null) as FormaPago | null })}>
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="efectivo">Efectivo</SelectItem>
+                  <SelectItem value="cheque_transferencia">Cheque / Transferencia</SelectItem>
+                  <SelectItem value="tarjeta">Tarjeta</SelectItem>
+                  <SelectItem value="credito">Crédito</SelectItem>
+                  <SelectItem value="permuta">Permuta</SelectItem>
+                  <SelectItem value="nota_credito">Nota de crédito</SelectItem>
+                  <SelectItem value="mixto">Mixto</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </fieldset>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
