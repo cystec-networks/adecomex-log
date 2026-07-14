@@ -38,6 +38,22 @@ export const FORMA_PAGO_CODE: Record<string, string> = {
 
 export const EMPRESA_RNC_KEY = "empresa_rnc";
 
+function formatMonto(n: number): string {
+  if (Number.isInteger(n)) return String(n);
+  return n.toFixed(2).replace(/\.?0+$/, "");
+}
+
+export function montoRequerido(n: number | null | undefined): string {
+  return formatMonto(Number(n) || 0);
+}
+
+export function montoOpcional(n: number | null | undefined): string {
+  const v = Number(n);
+  if (!v || Number.isNaN(v)) return "";
+  return formatMonto(v);
+}
+
+/** @deprecated usa montoRequerido / montoOpcional */
 export function money(n: number | null | undefined): string {
   return (Number(n) || 0).toFixed(2);
 }
