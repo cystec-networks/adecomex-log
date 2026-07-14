@@ -435,6 +435,20 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
                 </SelectContent>
               </Select>
             </div>
+            <details className="rounded border bg-background/60">
+              <summary className="cursor-pointer text-xs font-medium px-3 py-2 select-none">Detalles fiscales avanzados (opcional)</summary>
+              <div className="p-3 space-y-2 border-t">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-xs">ITBIS sujeto proporcionalidad (Art. 349)</Label><Input type="number" step="0.01" value={form.itbis_proporcionalidad_349 ?? 0} onChange={(e) => setForm({ ...form, itbis_proporcionalidad_349: Number(e.target.value) })} /></div>
+                  <div><Label className="text-xs">ITBIS llevado al costo</Label><Input type="number" step="0.01" value={form.itbis_llevado_costo ?? 0} onChange={(e) => setForm({ ...form, itbis_llevado_costo: Number(e.target.value) })} /></div>
+                  <div><Label className="text-xs">ITBIS percibido en compras</Label><Input type="number" step="0.01" value={form.itbis_percibido_compras ?? 0} onChange={(e) => setForm({ ...form, itbis_percibido_compras: Number(e.target.value) })} /></div>
+                  <div><Label className="text-xs">ISR percibido en compras</Label><Input type="number" step="0.01" value={form.isr_percibido_compras ?? 0} onChange={(e) => setForm({ ...form, isr_percibido_compras: Number(e.target.value) })} /></div>
+                  <div><Label className="text-xs">Impuesto Selectivo al Consumo</Label><Input type="number" step="0.01" value={form.impuesto_selectivo_consumo ?? 0} onChange={(e) => setForm({ ...form, impuesto_selectivo_consumo: Number(e.target.value) })} /></div>
+                  <div><Label className="text-xs">Otros impuestos / tasas</Label><Input type="number" step="0.01" value={form.otros_impuestos_tasas ?? 0} onChange={(e) => setForm({ ...form, otros_impuestos_tasas: Number(e.target.value) })} /></div>
+                  <div><Label className="text-xs">Monto propina legal</Label><Input type="number" step="0.01" value={form.monto_propina_legal ?? 0} onChange={(e) => setForm({ ...form, monto_propina_legal: Number(e.target.value) })} /></div>
+                </div>
+              </div>
+            </details>
           </fieldset>
         </div>
         <DialogFooter>
