@@ -45,10 +45,25 @@ const fmt = (n: number, m: string) =>
 function ymOf(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }
 
 type Moneda = "DOP" | "USD" | "EUR";
+type TipoId = "RNC" | "CEDULA" | "PASAPORTE";
+type FormaPago = "efectivo" | "cheque_transferencia" | "tarjeta" | "credito" | "permuta" | "nota_credito" | "mixto";
 type Row = {
   id: string; concepto: string; monto: number; moneda: Moneda; fecha: string;
   es_recurrente: boolean; comprobante_url: string | null; notas: string | null;
+  rnc_cedula_proveedor?: string | null;
+  tipo_id_proveedor?: TipoId | null;
+  ncf_proveedor?: string | null;
+  tipo_ncf_proveedor?: string | null;
+  ncf_modificado?: string | null;
+  monto_facturado?: number | null;
+  itbis_facturado?: number | null;
+  itbis_retenido?: number | null;
+  isr_retenido?: number | null;
+  forma_pago?: FormaPago | null;
 };
+
+const RNC_RE = /^(\d{9}|\d{11})$/;
+const NCF_RE = /^[A-Za-z0-9]{11}$|^[A-Za-z0-9]{13}$/;
 
 function GastosOperativosPage() {
   const qc = useQueryClient();
@@ -140,7 +155,7 @@ function GastosOperativosPage() {
               {anchor.toLocaleDateString("es-DO", { month: "long", year: "numeric" })}
             </div>
             <Button variant="outline" size="sm" onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1))}>►</Button>
-            <Button onClick={() => setEditing({ id: "", concepto: "", monto: 0, moneda: "DOP", fecha: new Date().toISOString().slice(0, 10), es_recurrente: false, comprobante_url: null, notas: null })}>
+            <Button onClick={() => setEditing({ id: "", concepto: "", monto: 0, moneda: "DOP", fecha: new Date().toISOString().slice(0, 10), es_recurrente: false, comprobante_url: null, notas: null, rnc_cedula_proveedor: null, tipo_id_proveedor: null, ncf_proveedor: null, tipo_ncf_proveedor: null, ncf_modificado: null, monto_facturado: 0, itbis_facturado: 0, itbis_retenido: 0, isr_retenido: 0, forma_pago: null })}>
               <Plus className="h-4 w-4 mr-1" /> Nuevo gasto
             </Button>
           </div>
@@ -225,6 +240,12 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
       if (!form.concepto.trim()) throw new Error("Concepto requerido");
       if (!form.fecha) throw new Error("Fecha requerida");
       if (!(Number(form.monto) >= 0)) throw new Error("Monto inválido");
+      const rnc = (form.rnc_cedula_proveedor ?? "").trim();
+      const ncf = (form.ncf_proveedor ?? "").trim();
+      const ncfMod = (form.ncf_modificado ?? "").trim();
+      if (rnc && !RNC_RE.test(rnc)) throw new Error("RNC/Cédula debe tener 9 u 11 dígitos numéricos");
+      if (ncf && !NCF_RE.test(ncf)) throw new Error("NCF debe tener 11 o 13 caracteres alfanuméricos");
+      if (ncfMod && !NCF_RE.test(ncfMod)) throw new Error("NCF modificado debe tener 11 o 13 caracteres alfanuméricos");
       const { data: u } = await supabase.auth.getUser();
       const payload = {
         concepto: form.concepto.trim(),
@@ -234,6 +255,16 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
         es_recurrente: form.es_recurrente,
         comprobante_url: form.comprobante_url,
         notas: form.notas,
+        rnc_cedula_proveedor: rnc || null,
+        tipo_id_proveedor: form.tipo_id_proveedor || null,
+        ncf_proveedor: ncf || null,
+        tipo_ncf_proveedor: (form.tipo_ncf_proveedor ?? "").trim() || null,
+        ncf_modificado: ncfMod || null,
+        monto_facturado: Number(form.monto_facturado ?? 0),
+        itbis_facturado: Number(form.itbis_facturado ?? 0),
+        itbis_retenido: Number(form.itbis_retenido ?? 0),
+        isr_retenido: Number(form.isr_retenido ?? 0),
+        forma_pago: form.forma_pago || null,
       };
       if (row.id) {
         const { error } = await supabase.from("gastos_operativos").update(payload).eq("id", row.id);
@@ -249,7 +280,7 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{row.id ? "Editar gasto operativo" : "Nuevo gasto operativo"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div>
@@ -286,6 +317,75 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
             <Label>Notas</Label>
             <Textarea value={form.notas ?? ""} onChange={(e) => setForm({ ...form, notas: e.target.value })} rows={2} />
           </div>
+
+          <fieldset className="border rounded-md p-3 space-y-3">
+            <legend className="text-sm font-semibold px-1">Datos fiscales del proveedor</legend>
+            <p className="text-xs text-muted-foreground -mt-1">Opcional. Requerido solo si el gasto tiene comprobante fiscal formal (para reporte 606 DGII).</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Tipo de ID</Label>
+                <Select value={form.tipo_id_proveedor ?? ""} onValueChange={(v) => setForm({ ...form, tipo_id_proveedor: (v || null) as TipoId | null })}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="RNC">RNC</SelectItem>
+                    <SelectItem value="CEDULA">Cédula</SelectItem>
+                    <SelectItem value="PASAPORTE">Pasaporte</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>RNC / Cédula</Label>
+                <Input value={form.rnc_cedula_proveedor ?? ""} onChange={(e) => setForm({ ...form, rnc_cedula_proveedor: e.target.value })} placeholder="9 u 11 dígitos" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>NCF</Label>
+                <Input value={form.ncf_proveedor ?? ""} onChange={(e) => setForm({ ...form, ncf_proveedor: e.target.value })} placeholder="11 o 13 caracteres" />
+              </div>
+              <div>
+                <Label>Tipo NCF</Label>
+                <Input value={form.tipo_ncf_proveedor ?? ""} onChange={(e) => setForm({ ...form, tipo_ncf_proveedor: e.target.value })} placeholder="Ej: 01, 02, 11…" />
+              </div>
+            </div>
+            <div>
+              <Label>NCF modificado (si aplica)</Label>
+              <Input value={form.ncf_modificado ?? ""} onChange={(e) => setForm({ ...form, ncf_modificado: e.target.value })} placeholder="NCF original al que reemplaza (nota de crédito/débito)" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Monto facturado</Label>
+                <Input type="number" step="0.01" value={form.monto_facturado ?? 0} onChange={(e) => setForm({ ...form, monto_facturado: Number(e.target.value) })} />
+              </div>
+              <div>
+                <Label>ITBIS facturado</Label>
+                <Input type="number" step="0.01" value={form.itbis_facturado ?? 0} onChange={(e) => setForm({ ...form, itbis_facturado: Number(e.target.value) })} />
+              </div>
+              <div>
+                <Label>ITBIS retenido</Label>
+                <Input type="number" step="0.01" value={form.itbis_retenido ?? 0} onChange={(e) => setForm({ ...form, itbis_retenido: Number(e.target.value) })} />
+              </div>
+              <div>
+                <Label>ISR retenido</Label>
+                <Input type="number" step="0.01" value={form.isr_retenido ?? 0} onChange={(e) => setForm({ ...form, isr_retenido: Number(e.target.value) })} />
+              </div>
+            </div>
+            <div>
+              <Label>Forma de pago</Label>
+              <Select value={form.forma_pago ?? ""} onValueChange={(v) => setForm({ ...form, forma_pago: (v || null) as FormaPago | null })}>
+                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="efectivo">Efectivo</SelectItem>
+                  <SelectItem value="cheque_transferencia">Cheque / Transferencia</SelectItem>
+                  <SelectItem value="tarjeta">Tarjeta</SelectItem>
+                  <SelectItem value="credito">Crédito</SelectItem>
+                  <SelectItem value="permuta">Permuta</SelectItem>
+                  <SelectItem value="nota_credito">Nota de crédito</SelectItem>
+                  <SelectItem value="mixto">Mixto</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </fieldset>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
