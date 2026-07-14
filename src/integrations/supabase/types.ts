@@ -1134,10 +1134,20 @@ export type Database = {
           es_reembolso: boolean
           expediente_id: string
           fecha: string | null
+          forma_pago: string | null
           id: string
+          isr_retenido: number
+          itbis_facturado: number
+          itbis_retenido: number
           monto: number
+          monto_facturado: number
+          ncf_modificado: string | null
+          ncf_proveedor: string | null
           notas: string | null
           proveedor: string | null
+          rnc_cedula_proveedor: string | null
+          tipo_id_proveedor: string | null
+          tipo_ncf_proveedor: string | null
           updated_at: string
         }
         Insert: {
@@ -1149,10 +1159,20 @@ export type Database = {
           es_reembolso?: boolean
           expediente_id: string
           fecha?: string | null
+          forma_pago?: string | null
           id?: string
+          isr_retenido?: number
+          itbis_facturado?: number
+          itbis_retenido?: number
           monto?: number
+          monto_facturado?: number
+          ncf_modificado?: string | null
+          ncf_proveedor?: string | null
           notas?: string | null
           proveedor?: string | null
+          rnc_cedula_proveedor?: string | null
+          tipo_id_proveedor?: string | null
+          tipo_ncf_proveedor?: string | null
           updated_at?: string
         }
         Update: {
@@ -1164,10 +1184,20 @@ export type Database = {
           es_reembolso?: boolean
           expediente_id?: string
           fecha?: string | null
+          forma_pago?: string | null
           id?: string
+          isr_retenido?: number
+          itbis_facturado?: number
+          itbis_retenido?: number
           monto?: number
+          monto_facturado?: number
+          ncf_modificado?: string | null
+          ncf_proveedor?: string | null
           notas?: string | null
           proveedor?: string | null
+          rnc_cedula_proveedor?: string | null
+          tipo_id_proveedor?: string | null
+          tipo_ncf_proveedor?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1190,10 +1220,20 @@ export type Database = {
           eliminado_por: string | null
           es_recurrente: boolean
           fecha: string
+          forma_pago: string | null
           id: string
+          isr_retenido: number
+          itbis_facturado: number
+          itbis_retenido: number
           moneda: Database["public"]["Enums"]["moneda"]
           monto: number
+          monto_facturado: number
+          ncf_modificado: string | null
+          ncf_proveedor: string | null
           notas: string | null
+          rnc_cedula_proveedor: string | null
+          tipo_id_proveedor: string | null
+          tipo_ncf_proveedor: string | null
           updated_at: string
         }
         Insert: {
@@ -1205,10 +1245,20 @@ export type Database = {
           eliminado_por?: string | null
           es_recurrente?: boolean
           fecha: string
+          forma_pago?: string | null
           id?: string
+          isr_retenido?: number
+          itbis_facturado?: number
+          itbis_retenido?: number
           moneda?: Database["public"]["Enums"]["moneda"]
           monto: number
+          monto_facturado?: number
+          ncf_modificado?: string | null
+          ncf_proveedor?: string | null
           notas?: string | null
+          rnc_cedula_proveedor?: string | null
+          tipo_id_proveedor?: string | null
+          tipo_ncf_proveedor?: string | null
           updated_at?: string
         }
         Update: {
@@ -1220,10 +1270,20 @@ export type Database = {
           eliminado_por?: string | null
           es_recurrente?: boolean
           fecha?: string
+          forma_pago?: string | null
           id?: string
+          isr_retenido?: number
+          itbis_facturado?: number
+          itbis_retenido?: number
           moneda?: Database["public"]["Enums"]["moneda"]
           monto?: number
+          monto_facturado?: number
+          ncf_modificado?: string | null
+          ncf_proveedor?: string | null
           notas?: string | null
+          rnc_cedula_proveedor?: string | null
+          tipo_id_proveedor?: string | null
+          tipo_ncf_proveedor?: string | null
           updated_at?: string
         }
         Relationships: []
