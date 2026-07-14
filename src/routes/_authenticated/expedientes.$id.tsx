@@ -1249,6 +1249,12 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
     rnc_cedula_proveedor: "", tipo_id_proveedor: "", ncf_proveedor: "", tipo_ncf_proveedor: "",
     ncf_modificado: "", monto_facturado: 0, itbis_facturado: 0, itbis_retenido: 0, isr_retenido: 0,
     forma_pago: "",
+    tipo_bienes_servicios: "" as string,
+    monto_facturado_servicios: 0, monto_facturado_bienes: 0,
+    tipo_retencion_isr: "" as string,
+    itbis_proporcionalidad_349: 0, itbis_llevado_costo: 0,
+    itbis_percibido_compras: 0, isr_percibido_compras: 0,
+    impuesto_selectivo_consumo: 0, otros_impuestos_tasas: 0, monto_propina_legal: 0,
   };
   const [f, setF] = useState<any>(empty);
   const [file, setFile] = useState<File | null>(null);
@@ -1271,6 +1277,8 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
       const ncfMod = (f.ncf_modificado || "").trim().toUpperCase();
       if (ncfMod && !/^[A-Z0-9]{11}$|^[A-Z0-9]{13}$/.test(ncfMod)) throw new Error("NCF modificado debe tener 11 o 13 caracteres alfanuméricos");
 
+      const mfServ = Number(f.monto_facturado_servicios || 0);
+      const mfBien = Number(f.monto_facturado_bienes || 0);
       const payload: any = {
         concepto: f.concepto, monto: Number(f.monto || 0),
         fecha: f.fecha || null, proveedor: f.proveedor || null,
@@ -1280,11 +1288,22 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
         ncf_proveedor: ncf || null,
         tipo_ncf_proveedor: f.tipo_ncf_proveedor || null,
         ncf_modificado: ncfMod || null,
-        monto_facturado: Number(f.monto_facturado || 0),
+        monto_facturado: mfServ + mfBien,
+        monto_facturado_servicios: mfServ,
+        monto_facturado_bienes: mfBien,
         itbis_facturado: Number(f.itbis_facturado || 0),
         itbis_retenido: Number(f.itbis_retenido || 0),
         isr_retenido: Number(f.isr_retenido || 0),
         forma_pago: f.forma_pago || null,
+        tipo_bienes_servicios: f.tipo_bienes_servicios ? Number(f.tipo_bienes_servicios) : null,
+        tipo_retencion_isr: f.tipo_retencion_isr ? Number(f.tipo_retencion_isr) : null,
+        itbis_proporcionalidad_349: Number(f.itbis_proporcionalidad_349 || 0),
+        itbis_llevado_costo: Number(f.itbis_llevado_costo || 0),
+        itbis_percibido_compras: Number(f.itbis_percibido_compras || 0),
+        isr_percibido_compras: Number(f.isr_percibido_compras || 0),
+        impuesto_selectivo_consumo: Number(f.impuesto_selectivo_consumo || 0),
+        otros_impuestos_tasas: Number(f.otros_impuestos_tasas || 0),
+        monto_propina_legal: Number(f.monto_propina_legal || 0),
       };
       if (adjunto_path !== undefined) payload.adjunto_path = adjunto_path;
 
@@ -1328,6 +1347,17 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
       itbis_retenido: Number(r.itbis_retenido ?? 0),
       isr_retenido: Number(r.isr_retenido ?? 0),
       forma_pago: r.forma_pago ?? "",
+      tipo_bienes_servicios: r.tipo_bienes_servicios != null ? String(r.tipo_bienes_servicios) : "",
+      monto_facturado_servicios: Number(r.monto_facturado_servicios ?? 0),
+      monto_facturado_bienes: Number(r.monto_facturado_bienes ?? 0),
+      tipo_retencion_isr: r.tipo_retencion_isr != null ? String(r.tipo_retencion_isr) : "",
+      itbis_proporcionalidad_349: Number(r.itbis_proporcionalidad_349 ?? 0),
+      itbis_llevado_costo: Number(r.itbis_llevado_costo ?? 0),
+      itbis_percibido_compras: Number(r.itbis_percibido_compras ?? 0),
+      isr_percibido_compras: Number(r.isr_percibido_compras ?? 0),
+      impuesto_selectivo_consumo: Number(r.impuesto_selectivo_consumo ?? 0),
+      otros_impuestos_tasas: Number(r.otros_impuestos_tasas ?? 0),
+      monto_propina_legal: Number(r.monto_propina_legal ?? 0),
     });
     setFile(null);
     setOpen(true);
