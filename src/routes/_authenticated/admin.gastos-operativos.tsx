@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2, Copy, AlertTriangle } from "lucide-react";
+import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 
 export const Route = createFileRoute("/_authenticated/admin/gastos-operativos")({
   ssr: false,
@@ -60,6 +61,17 @@ type Row = {
   itbis_retenido?: number | null;
   isr_retenido?: number | null;
   forma_pago?: FormaPago | null;
+  tipo_bienes_servicios?: number | null;
+  monto_facturado_servicios?: number | null;
+  monto_facturado_bienes?: number | null;
+  tipo_retencion_isr?: number | null;
+  itbis_proporcionalidad_349?: number | null;
+  itbis_llevado_costo?: number | null;
+  itbis_percibido_compras?: number | null;
+  isr_percibido_compras?: number | null;
+  impuesto_selectivo_consumo?: number | null;
+  otros_impuestos_tasas?: number | null;
+  monto_propina_legal?: number | null;
 };
 
 const RNC_RE = /^(\d{9}|\d{11})$/;
