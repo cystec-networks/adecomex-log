@@ -1244,9 +1244,15 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const empty = { concepto: CONCEPTOS_GASTO[0], monto: 0, fecha: "", proveedor: "", es_reembolso: false, notas: "" };
+  const empty = {
+    concepto: CONCEPTOS_GASTO[0], monto: 0, fecha: "", proveedor: "", es_reembolso: false, notas: "",
+    rnc_cedula_proveedor: "", tipo_id_proveedor: "", ncf_proveedor: "", tipo_ncf_proveedor: "",
+    ncf_modificado: "", monto_facturado: 0, itbis_facturado: 0, itbis_retenido: 0, isr_retenido: 0,
+    forma_pago: "",
+  };
   const [f, setF] = useState<any>(empty);
   const [file, setFile] = useState<File | null>(null);
+
 
   const save = useMutation({
     mutationFn: async () => {
