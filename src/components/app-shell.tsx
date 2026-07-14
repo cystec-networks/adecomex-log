@@ -3,7 +3,7 @@ import {
   Inbox, FolderKanban, Users, UserCog, LogOut,
   PackageOpen, PackageCheck, ScanText, Sparkles, Trash2, FileCheck2, Truck,
   ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3, Library, Settings,
-  DollarSign, PiggyBank, Shield, Receipt, ClipboardList,
+  DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2,
 } from "lucide-react";
 import type { AppRole } from "@/lib/auth-hooks";
 import { NotificationsBell } from "@/components/notifications-bell";
