@@ -1362,6 +1362,64 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
                 <div className="grid gap-1.5"><Label>Fecha</Label><Input type="date" value={f.fecha} onChange={(e) => setF({ ...f, fecha: e.target.value })} /></div>
               </div>
               <div className="grid gap-1.5"><Label>Proveedor</Label><Input value={f.proveedor} onChange={(e) => setF({ ...f, proveedor: e.target.value })} /></div>
+
+              <div className="border rounded-md p-3 space-y-3 bg-muted/20">
+                <div className="text-sm font-semibold">Datos fiscales del proveedor <span className="text-xs font-normal text-muted-foreground">(opcional · Reporte 606)</span></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-1.5">
+                    <Label>Tipo ID</Label>
+                    <Select value={f.tipo_id_proveedor || "__none"} onValueChange={(v) => setF({ ...f, tipo_id_proveedor: v === "__none" ? "" : v })}>
+                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">—</SelectItem>
+                        <SelectItem value="RNC">RNC</SelectItem>
+                        <SelectItem value="CEDULA">Cédula</SelectItem>
+                        <SelectItem value="PASAPORTE">Pasaporte</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>RNC / Cédula</Label>
+                    <Input value={f.rnc_cedula_proveedor} onChange={(e) => setF({ ...f, rnc_cedula_proveedor: e.target.value.replace(/\D/g, "") })} placeholder="9 u 11 dígitos" maxLength={11} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-1.5">
+                    <Label>NCF</Label>
+                    <Input value={f.ncf_proveedor} onChange={(e) => setF({ ...f, ncf_proveedor: e.target.value.toUpperCase() })} placeholder="11 o 13 caracteres" maxLength={13} />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>Tipo NCF</Label>
+                    <Input value={f.tipo_ncf_proveedor} onChange={(e) => setF({ ...f, tipo_ncf_proveedor: e.target.value })} placeholder="Ej: 01, 02, 11…" />
+                  </div>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>NCF modificado (si aplica)</Label>
+                  <Input value={f.ncf_modificado} onChange={(e) => setF({ ...f, ncf_modificado: e.target.value.toUpperCase() })} placeholder="NCF original modificado por nota crédito/débito" maxLength={13} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-1.5"><Label>Monto facturado</Label><Input type="number" step="0.01" value={f.monto_facturado} onChange={(e) => setF({ ...f, monto_facturado: e.target.value })} /></div>
+                  <div className="grid gap-1.5"><Label>ITBIS facturado</Label><Input type="number" step="0.01" value={f.itbis_facturado} onChange={(e) => setF({ ...f, itbis_facturado: e.target.value })} /></div>
+                  <div className="grid gap-1.5"><Label>ITBIS retenido</Label><Input type="number" step="0.01" value={f.itbis_retenido} onChange={(e) => setF({ ...f, itbis_retenido: e.target.value })} /></div>
+                  <div className="grid gap-1.5"><Label>ISR retenido</Label><Input type="number" step="0.01" value={f.isr_retenido} onChange={(e) => setF({ ...f, isr_retenido: e.target.value })} /></div>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Forma de pago</Label>
+                  <Select value={f.forma_pago || "__none"} onValueChange={(v) => setF({ ...f, forma_pago: v === "__none" ? "" : v })}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">—</SelectItem>
+                      <SelectItem value="efectivo">Efectivo</SelectItem>
+                      <SelectItem value="cheque_transferencia">Cheque / Transferencia</SelectItem>
+                      <SelectItem value="tarjeta">Tarjeta</SelectItem>
+                      <SelectItem value="credito">Crédito</SelectItem>
+                      <SelectItem value="permuta">Permuta</SelectItem>
+                      <SelectItem value="nota_credito">Nota de crédito</SelectItem>
+                      <SelectItem value="mixto">Mixto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={f.es_reembolso} onChange={(e) => setF({ ...f, es_reembolso: e.target.checked })} />
                 Es reembolso (resta del total)
