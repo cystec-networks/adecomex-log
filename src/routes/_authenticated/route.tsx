@@ -10,6 +10,16 @@ export const Route = createFileRoute("/_authenticated")({
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
 
+    // Segunda barrera: usuarios sin rol de staff no pertenecen aquí
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.user.id)
+      .limit(1);
+    if (!roles || roles.length === 0) throw redirect({ to: "/portal" });
+
+
+
     // Enforce 8h session lifetime from login time
     try {
       const loginAtStr = localStorage.getItem("adecomex.loginAt");
