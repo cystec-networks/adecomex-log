@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2, Copy, AlertTriangle } from "lucide-react";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
+import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 
 export const Route = createFileRoute("/_authenticated/admin/gastos-operativos")({
   ssr: false,
