@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import {
   TIPOS_COMPROBANTE, type LineaInput, calcLinea, calcTotales, fmtRD,
 } from "@/lib/facturas-ecf";
+import { EscanearFacturaVentaButton } from "@/components/escanear-factura-venta-button";
+import type { FacturaVentaExtraction } from "@/lib/ai-ocr-factura-venta.functions";
 
 export type FacturaEcfFormPreload = {
   cliente_id?: string | null;
@@ -151,6 +153,62 @@ export function FacturaEcfFormDialog({
   const removeLinea = (i: number) =>
     setLineas((prev) => prev.filter((_, idx) => idx !== i));
 
+  const isLineasDefault = () =>
+    lineas.length === 1 &&
+    !lineas[0].descripcion &&
+    !lineas[0].precio &&
+    !lineas[0].itbis;
+
+  const toDatetimeLocal = (v: string | null) => {
+    if (!v) return "";
+    // "YYYY-MM-DD HH:MM:SS" -> "YYYY-MM-DDTHH:MM"
+    const m = v.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/);
+    return m ? `${m[1]}T${m[2]}` : "";
+  };
+
+  const applyExtracted = (d: FacturaVentaExtraction) => {
+    if (d.encf && !encf) setEncf(d.encf);
+    if (d.tipo_comprobante && tipo === "31") setTipo(d.tipo_comprobante);
+    if (d.fecha_emision) setFechaEmision(d.fecha_emision);
+    if (d.fecha_vencimiento_ncf && !fechaVenc) setFechaVenc(d.fecha_vencimiento_ncf);
+    if (d.codigo_seguridad && !codigoSeguridad) setCodigoSeguridad(d.codigo_seguridad);
+    if (d.fecha_firma && !fechaFirma) {
+      const dt = toDatetimeLocal(d.fecha_firma);
+      if (dt) setFechaFirma(dt);
+    }
+
+    if (!clienteId && d.cliente_rnc) {
+      const match = (clientes ?? []).find(
+        (c: any) => (c.rnc ?? "").replace(/\D/g, "") === d.cliente_rnc,
+      );
+      if (match) setClienteId(match.id);
+      else toast.info(`Cliente "${d.cliente_razon_social ?? d.cliente_rnc}" no está registrado. Selecciónalo o créalo manualmente.`);
+    }
+
+    if (isLineasDefault()) {
+      const nuevas: LineaInput[] = [];
+      const grav = d.subtotal_gravado ?? 0;
+      const itbis = d.total_itbis ?? 0;
+      const exento = d.subtotal_exento ?? 0;
+      if (grav > 0 || itbis > 0) {
+        nuevas.push({
+          cantidad: 1, descripcion: "Servicios de gestión aduanal (gravado)",
+          unidad: "UND", precio: +grav.toFixed(2), itbis: +itbis.toFixed(2),
+          descuento: 0, recargo: 0, gravado: true,
+        });
+      }
+      if (exento > 0) {
+        nuevas.push({
+          cantidad: 1, descripcion: "Servicios exentos",
+          unidad: "UND", precio: +exento.toFixed(2), itbis: 0,
+          descuento: 0, recargo: 0, gravado: false,
+        });
+      }
+      if (nuevas.length) setLineas(nuevas);
+    }
+  };
+
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -167,6 +225,11 @@ export function FacturaEcfFormDialog({
             En caso de discrepancia con el comprobante emitido por la DGII, el documento oficial prevalece.
           </span>
         </div>
+
+        <div className="flex justify-end">
+          <EscanearFacturaVentaButton onExtracted={applyExtracted} />
+        </div>
+
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <div className="space-y-1.5">
