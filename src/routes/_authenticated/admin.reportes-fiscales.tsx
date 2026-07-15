@@ -21,6 +21,7 @@ import { fmtLocalDate } from "@/lib/dates";
 import { Navigate } from "@tanstack/react-router";
 import { FORMA_PAGO_CODE, EMPRESA_RNC_KEY, montoRequerido, montoOpcional, isPagoExterior } from "@/lib/fiscal-606";
 import * as XLSX from "xlsx";
+import { PanelITBIS } from "@/components/panel-itbis";
 
 const BS_LABEL_EXCEL: Record<number, string> = {
   1: "01-GASTOS DE PERSONAL",
@@ -151,7 +152,7 @@ function ReportesFiscalesPage() {
     return <div className="p-6">Cargando…</div>;
   }
   if (!user) return <Navigate to="/auth" />;
-  const allowed = roles?.some(r => r === "admin" || r === "finanzas");
+  const allowed = roles?.some(r => r === "admin" || r === "finanzas" || r === "contabilidad");
   if (!allowed) return <Navigate to="/dashboard" />;
 
 
@@ -196,10 +197,12 @@ function ReportesFiscalesPage() {
         <TabsList>
           <TabsTrigger value="606">606 · Compras</TabsTrigger>
           <TabsTrigger value="608">608 · Anulados</TabsTrigger>
+          <TabsTrigger value="itbis">ITBIS (IT-1)</TabsTrigger>
           <TabsTrigger value="historial"><History className="h-4 w-4 mr-1" />Historial</TabsTrigger>
         </TabsList>
         <TabsContent value="606"><Panel606 periodo={periodo} /></TabsContent>
         <TabsContent value="608"><Panel608 periodo={periodo} /></TabsContent>
+        <TabsContent value="itbis"><PanelITBIS periodo={periodo} /></TabsContent>
         <TabsContent value="historial"><PanelHistorial /></TabsContent>
       </Tabs>
     </div>
