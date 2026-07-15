@@ -106,7 +106,7 @@ function DetalleExpediente() {
         <div className="flex-1 min-w-0">
           <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
             {exp.numero}
-            <Badge className="bg-primary/10 text-primary border-transparent">{exp.estado?.replace("_"," ")}</Badge>
+            <Badge className="bg-primary/10 text-primary border-transparent">{ESTADO_LABEL[exp.estado ?? ""] ?? exp.estado?.replace("_"," ")}</Badge>
             {exp.solicitudes?.numero && <Badge variant="outline">← {exp.solicitudes.numero}</Badge>}
           </h1>
           <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
