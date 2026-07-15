@@ -186,7 +186,7 @@ function Expedientes() {
   const countExp = (data ?? []).filter((e: any) => detectTipo(e) === "exportacion").length;
 
   const estadoBadge = (estadoRaw: string | null) => {
-    const s = (estadoRaw ?? "").replace("_", " ");
+    const label = ESTADO_LABEL[estadoRaw ?? ""] ?? (estadoRaw ?? "");
     const variants: Record<string, string> = {
       digitar: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
       presentar: "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900",
@@ -196,7 +196,7 @@ function Expedientes() {
     };
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${variants[estadoRaw ?? ""] ?? variants.digitar}`}>
-        {s.charAt(0).toUpperCase() + s.slice(1)}
+        {label}
       </span>
     );
   };
