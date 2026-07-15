@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Save, Trash2, Pencil, X, Check } from "lucide-react";
+import { Save, Trash2, Pencil, X, Check, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useMyRoles } from "@/lib/auth-hooks";
 
 const RETENCION_TIPOS = [
