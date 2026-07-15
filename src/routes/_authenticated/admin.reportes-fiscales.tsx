@@ -493,6 +493,9 @@ function Panel606({ periodo }: { periodo: string }) {
             <Button variant="outline" onClick={() => setValidated(true)} disabled={merged.length === 0}>
               <CheckCircle2 className="h-4 w-4 mr-1" /> Validar
             </Button>
+            <Button variant="outline" onClick={generarExcel} disabled={merged.length === 0}>
+              <Download className="h-4 w-4 mr-1" /> Descargar Excel (revisión)
+            </Button>
             <Button onClick={generar} disabled={!canGenerate}>
               <Download className="h-4 w-4 mr-1" /> Generar archivo 606
             </Button>
