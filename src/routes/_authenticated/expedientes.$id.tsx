@@ -965,6 +965,8 @@ function TabCostos({ expedienteId }: { expedienteId: string }) {
 
   return (
     <div className="space-y-4">
+      <RentabilidadCard expedienteId={expedienteId} />
+
       <div className="grid gap-4 md:grid-cols-3">
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total estimado</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalEst)}</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total real</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalReal)}</div></CardContent></Card>
