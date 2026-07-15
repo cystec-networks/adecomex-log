@@ -226,6 +226,11 @@ export function FacturaEcfFormDialog({
           </span>
         </div>
 
+        <div className="flex justify-end">
+          <EscanearFacturaVentaButton onExtracted={applyExtracted} />
+        </div>
+
+
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <div className="space-y-1.5">
             <Label>e-NCF *</Label>
