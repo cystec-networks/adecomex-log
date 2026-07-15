@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
 
   if (!userId) {
     const siteUrl = Deno.env.get("SITE_URL") ?? "https://adecomex-log.lovable.app";
-    const redirectTo = `${siteUrl.replace(/\/$/, "")}/portal`;
+    const redirectTo = `${siteUrl.replace(/\/$/, "")}/reset-password`;
     const { data: invited, error: invErr } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo });
     if (invErr || !invited?.user) return json(500, { error: invErr?.message ?? "No se pudo invitar al usuario" });
     userId = invited.user.id;
