@@ -1445,7 +1445,22 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
               <div className="grid gap-1.5"><Label>Proveedor</Label><Input value={f.proveedor} onChange={(e) => setF({ ...f, proveedor: e.target.value })} /></div>
 
               <div className="border rounded-md p-3 space-y-3 bg-muted/20">
-                <div className="text-sm font-semibold">Datos fiscales del proveedor <span className="text-xs font-normal text-muted-foreground">(opcional · Reporte 606)</span></div>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="text-sm font-semibold">Datos fiscales del proveedor <span className="text-xs font-normal text-muted-foreground">(opcional · Reporte 606)</span></div>
+                  <EscanearFacturaButton onExtracted={(d) => setF((prev: any) => ({
+                    ...prev,
+                    proveedor: prev.proveedor || d.proveedor_nombre || "",
+                    concepto: prev.concepto || d.concepto || "",
+                    fecha: d.fecha || prev.fecha,
+                    rnc_cedula_proveedor: d.rnc_cedula_proveedor ?? prev.rnc_cedula_proveedor,
+                    tipo_id_proveedor: d.tipo_id_proveedor ?? prev.tipo_id_proveedor,
+                    ncf_proveedor: d.ncf_proveedor ?? prev.ncf_proveedor,
+                    ncf_modificado: d.ncf_modificado ?? prev.ncf_modificado,
+                    monto_facturado_servicios: d.monto_facturado_servicios ?? prev.monto_facturado_servicios,
+                    monto_facturado_bienes: d.monto_facturado_bienes ?? prev.monto_facturado_bienes,
+                    itbis_facturado: d.itbis_facturado ?? prev.itbis_facturado,
+                  }))} />
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="grid gap-1.5">
                     <Label>Tipo ID</Label>
