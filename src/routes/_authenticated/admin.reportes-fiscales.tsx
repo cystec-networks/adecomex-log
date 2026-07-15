@@ -20,6 +20,41 @@ import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { fmtLocalDate } from "@/lib/dates";
 import { Navigate } from "@tanstack/react-router";
 import { FORMA_PAGO_CODE, EMPRESA_RNC_KEY, montoRequerido, montoOpcional, isPagoExterior } from "@/lib/fiscal-606";
+import * as XLSX from "xlsx";
+
+const BS_LABEL_EXCEL: Record<number, string> = {
+  1: "01-GASTOS DE PERSONAL",
+  2: "02-GASTOS POR TRABAJOS, SUMINISTROS Y SERVICIOS",
+  3: "03-ARRENDAMIENTOS",
+  4: "04-GASTOS DE ACTIVOS FIJO",
+  5: "05 -GASTOS DE REPRESENTACIÓN",
+  6: "06 -OTRAS DEDUCCIONES ADMITIDAS",
+  7: "07 -GASTOS FINANCIEROS",
+  8: "08 -GASTOS EXTRAORDINARIOS",
+  9: "09 -COMPRAS Y GASTOS QUE FORMARAN PARTE DEL COSTO DE VENTA",
+  10: "10 -ADQUISICIONES DE ACTIVOS",
+  11: "11- GASTOS DE SEGUROS",
+};
+const ISR_LABEL_EXCEL: Record<number, string> = {
+  1: "01 - ALQUILERES",
+  2: "02 - HONORARIOS POR SERVICIOS",
+  3: "03 - OTRAS RENTAS",
+  4: "04 - OTRAS RENTAS (Rentas Presuntas)",
+  5: "05 - INTERESES PAGADOS A PERSONAS JURIDICAS RESIDENTES",
+  6: "06 - INTERESES PAGADOS A PERSONAS FISICAS RESIDENTES",
+  7: "07 - RETENCION POR PROVEEDORES DEL ESTADO",
+  8: "08 - JUEGOS TELEFONICOS",
+  9: "09 - RETENCIONES SUBSECTOR GANADERIA DE CARNE BOVINA",
+};
+const FORMA_PAGO_LABEL_EXCEL: Record<string, string> = {
+  efectivo: "01 - EFECTIVO",
+  cheque_transferencia: "02 - CHEQUES/TRANSFERENCIAS/DEPÓSITO",
+  tarjeta: "03 - TARJETA CRÉDITO/DÉBITO",
+  credito: "04 - COMPRA A CREDITO",
+  permuta: "05 - PERMUTA",
+  nota_credito: "06 - NOTA DE CREDITO",
+  mixto: "07 - MIXTO",
+};
 
 export const Route = createFileRoute("/_authenticated/admin/reportes-fiscales")({
   component: ReportesFiscalesPage,
