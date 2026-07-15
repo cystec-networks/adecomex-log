@@ -11,7 +11,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { UserPlus, ShieldOff, ShieldCheck } from "lucide-react";
+import { UserPlus, ShieldOff, ShieldCheck, Mail } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/accesos-clientes")({
   ssr: false,
@@ -109,23 +109,29 @@ function AccesosClientesPage() {
                         <UserPlus className="h-4 w-4 mr-1" /> Invitar al portal
                       </Button>
                     )}
-                    {c.vinculo?.activo && (
-                      <Button
-                        size="sm" variant="outline"
-                        onClick={() => toggleAcceso.mutate({ user_id: c.vinculo!.user_id, activo: false })}
-                        disabled={toggleAcceso.isPending}
-                      >
-                        <ShieldOff className="h-4 w-4 mr-1" /> Revocar acceso
-                      </Button>
-                    )}
-                    {c.vinculo && !c.vinculo.activo && (
-                      <Button
-                        size="sm" variant="outline"
-                        onClick={() => toggleAcceso.mutate({ user_id: c.vinculo!.user_id, activo: true })}
-                        disabled={toggleAcceso.isPending}
-                      >
-                        <ShieldCheck className="h-4 w-4 mr-1" /> Reactivar
-                      </Button>
+                    {c.vinculo && (
+                      <div className="inline-flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setInviting(c)}>
+                          <Mail className="h-4 w-4 mr-1" /> Reenviar invitación
+                        </Button>
+                        {c.vinculo.activo ? (
+                          <Button
+                            size="sm" variant="outline"
+                            onClick={() => toggleAcceso.mutate({ user_id: c.vinculo!.user_id, activo: false })}
+                            disabled={toggleAcceso.isPending}
+                          >
+                            <ShieldOff className="h-4 w-4 mr-1" /> Revocar acceso
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm" variant="outline"
+                            onClick={() => toggleAcceso.mutate({ user_id: c.vinculo!.user_id, activo: true })}
+                            disabled={toggleAcceso.isPending}
+                          >
+                            <ShieldCheck className="h-4 w-4 mr-1" /> Reactivar
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -171,7 +177,13 @@ function InvitarDialog({
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
-      toast.success("Invitación enviada al portal");
+      if (data?.yaConfirmado) {
+        toast.info("Este cliente ya tiene cuenta activa, no se reenvió invitación");
+      } else if (data?.warning) {
+        toast.warning(data.warning);
+      } else {
+        toast.success(cliente.vinculo ? "Invitación reenviada" : "Invitación enviada al portal");
+      }
       onDone();
       handleClose();
     } catch (err: any) {
