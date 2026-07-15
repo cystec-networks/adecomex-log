@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2, Copy, AlertTriangle } from "lucide-react";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
+import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 
 export const Route = createFileRoute("/_authenticated/admin/gastos-operativos")({
   ssr: false,
@@ -342,7 +343,22 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
           </div>
 
           <fieldset className="border rounded-md p-3 space-y-3">
-            <legend className="text-sm font-semibold px-1">Datos fiscales del proveedor</legend>
+            <div className="flex items-center justify-between gap-2 flex-wrap px-1">
+              <legend className="text-sm font-semibold">Datos fiscales del proveedor</legend>
+              <EscanearFacturaButton onExtracted={(d) => setForm((prev) => prev ? ({
+                ...prev,
+                concepto: prev.concepto || d.concepto || "",
+                fecha: d.fecha || prev.fecha,
+                rnc_cedula_proveedor: d.rnc_cedula_proveedor ?? prev.rnc_cedula_proveedor,
+                tipo_id_proveedor: (d.tipo_id_proveedor ?? prev.tipo_id_proveedor) as any,
+                ncf_proveedor: d.ncf_proveedor ?? prev.ncf_proveedor,
+                ncf_modificado: d.ncf_modificado ?? prev.ncf_modificado,
+                monto_facturado_servicios: d.monto_facturado_servicios ?? prev.monto_facturado_servicios,
+                monto_facturado_bienes: d.monto_facturado_bienes ?? prev.monto_facturado_bienes,
+                itbis_facturado: d.itbis_facturado ?? prev.itbis_facturado,
+                notas: prev.notas || (d.proveedor_nombre ? `Proveedor: ${d.proveedor_nombre}` : prev.notas),
+              }) : prev)} />
+            </div>
             <p className="text-xs text-muted-foreground -mt-1">Opcional. Requerido solo si el gasto tiene comprobante fiscal formal (para reporte 606 DGII).</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
