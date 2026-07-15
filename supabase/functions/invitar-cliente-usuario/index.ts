@@ -96,12 +96,12 @@ Deno.serve(async (req) => {
     if (invErr || !invited?.user) return json(500, { error: invErr?.message ?? "No se pudo invitar al usuario" });
     userId = invited.user.id;
   } else {
-    // Existing user - check confirmation status
-    const confirmedAt = existingUser?.email_confirmed_at ?? existingUser?.confirmed_at ?? null;
-    if (confirmedAt) {
+    // Existing user - check if they have ever signed in (completed password setup)
+    const lastSignInAt = existingUser?.last_sign_in_at ?? null;
+    if (lastSignInAt) {
       yaConfirmado = true;
     } else {
-      // Not confirmed - resend invitation
+      // Never signed in - always resend invitation
       const { error: reinvErr } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo });
       if (reinvErr) {
         warning = `No se pudo reenviar el correo de invitación (${reinvErr.message}), pero el vínculo quedó actualizado.`;
