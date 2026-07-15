@@ -248,6 +248,8 @@ function GastosOperativosPage() {
 
 function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({ ...row });
+  const [crearCxp, setCrearCxp] = useState(false);
+  const [cxpVence, setCxpVence] = useState<string>("");
   const save = useMutation({
     mutationFn: async () => {
       if (!form.concepto.trim()) throw new Error("Concepto requerido");
@@ -260,6 +262,7 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
       if (ncf && !NCF_RE.test(ncf)) throw new Error("NCF debe tener 11 o 13 caracteres alfanuméricos");
       if (ncfMod && !NCF_RE.test(ncfMod)) throw new Error("NCF modificado debe tener 11 o 13 caracteres alfanuméricos");
       const { data: u } = await supabase.auth.getUser();
+      const montoFact = Number(form.monto_facturado_servicios ?? 0) + Number(form.monto_facturado_bienes ?? 0);
       const payload = {
         concepto: form.concepto.trim(),
         monto: Number(form.monto),
@@ -273,7 +276,7 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
         ncf_proveedor: ncf || null,
         tipo_ncf_proveedor: (form.tipo_ncf_proveedor ?? "").trim() || null,
         ncf_modificado: ncfMod || null,
-        monto_facturado: Number(form.monto_facturado_servicios ?? 0) + Number(form.monto_facturado_bienes ?? 0),
+        monto_facturado: montoFact,
         monto_facturado_servicios: Number(form.monto_facturado_servicios ?? 0),
         monto_facturado_bienes: Number(form.monto_facturado_bienes ?? 0),
         itbis_facturado: Number(form.itbis_facturado ?? 0),
@@ -290,15 +293,43 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
         otros_impuestos_tasas: Number(form.otros_impuestos_tasas ?? 0),
         monto_propina_legal: Number(form.monto_propina_legal ?? 0),
       };
+      let gastoId = row.id;
       if (row.id) {
         const { error } = await supabase.from("gastos_operativos").update(payload).eq("id", row.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("gastos_operativos").insert({ ...payload, created_by: u.user?.id });
+        const { data: ins, error } = await supabase.from("gastos_operativos").insert({ ...payload, created_by: u.user?.id }).select("id").single();
         if (error) throw error;
+        gastoId = ins.id;
       }
+
+      let cxpCreada = false;
+      if (crearCxp) {
+        const proveedorNombre =
+          ((form as any).proveedor as string | undefined)?.trim() ||
+          (form.rnc_cedula_proveedor ?? "").trim() ||
+          form.concepto.trim();
+        const { error: cxpErr } = await supabase.from("cuentas_por_pagar").insert({
+          gasto_operativo_id: gastoId,
+          proveedor_nombre: proveedorNombre,
+          proveedor_rnc: rnc || null,
+          monto_total: montoFact > 0 ? montoFact : Number(form.monto),
+          moneda: "DOP",
+          fecha_factura: form.fecha,
+          fecha_vencimiento: cxpVence || null,
+          estado: "pendiente",
+          notas: "Generado automáticamente desde gasto",
+          created_by: u.user?.id,
+        });
+        if (cxpErr) throw new Error(`Gasto guardado, pero falló la cuenta por pagar: ${cxpErr.message}`);
+        cxpCreada = true;
+      }
+      return { cxpCreada };
     },
-    onSuccess: () => { toast.success("Guardado"); onSaved(); },
+    onSuccess: (r) => {
+      toast.success(r?.cxpCreada ? "Guardado y cuenta por pagar creada" : "Guardado");
+      onSaved();
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
