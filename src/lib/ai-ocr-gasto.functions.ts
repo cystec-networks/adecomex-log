@@ -35,16 +35,27 @@ export const extractGastoFiscalFromDocument = createServerFn({ method: "POST" })
       "tipo_id_proveedor, ncf_proveedor, ncf_modificado, fecha, monto_facturado_bienes, " +
       "monto_facturado_servicios, itbis_facturado, concepto.\n" +
       "Reglas:\n" +
-      "- rnc_cedula_proveedor: solo dígitos (sin guiones ni espacios), o null.\n" +
+      "- rnc_cedula_proveedor: solo dígitos (sin guiones ni espacios), o null. NUNCA confundas " +
+      "el RNC del proveedor con el RNC de ADECOMEX (130481301): si aparece 130481301 en el " +
+      "documento es porque ADECOMEX es el CLIENTE de esa factura (el que recibe el bien/servicio), " +
+      "nunca el proveedor. El rnc_cedula_proveedor debe ser el RNC de la empresa que EMITE la " +
+      "factura (el que aparece en el encabezado/logo del documento), jamás 130481301.\n" +
       "- tipo_id_proveedor: 'RNC' si el identificador tiene 9 dígitos, 'CEDULA' si tiene 11 " +
       "dígitos con formato de cédula dominicana, o null si no se puede determinar.\n" +
-      "- ncf_proveedor: código NCF/e-NCF en mayúsculas, o null.\n" +
-      "- ncf_modificado: solo si es nota de crédito/débito que referencia otro NCF, si no, null.\n" +
+      "- ncf_proveedor: código NCF/e-NCF en mayúsculas, o null. Los NCF válidos son de 11 " +
+      "posiciones cuando empiezan con 'B' o de 13 posiciones cuando empiezan con 'E'. Si el " +
+      "valor extraído tiene más de 13 caracteres y está compuesto por ceros de relleno seguidos " +
+      "de una letra + dígitos (por ejemplo '00000000B0100009352'), devuelve SOLO la parte " +
+      "significativa a partir de la primera letra (en el ejemplo: 'B0100009352').\n" +
+      "- ncf_modificado: solo si es nota de crédito/débito que referencia otro NCF, si no, null. " +
+      "Aplica la misma limpieza de ceros de relleno.\n" +
       "- fecha: formato YYYY-MM-DD o null.\n" +
       "- monto_facturado_bienes / monto_facturado_servicios: números (sin símbolo de moneda). " +
       "Si la factura NO distingue bienes de servicios, pon el total en monto_facturado_servicios " +
       "y 0 en monto_facturado_bienes.\n" +
-      "- itbis_facturado: número o null.\n" +
+      "- itbis_facturado: número o 0. Muchas facturas de transportistas y otros servicios " +
+      "exentos NO tienen ITBIS; si no ves ningún ITBIS o impuesto en la factura, devuelve 0, " +
+      "NO null.\n" +
       "- concepto: resumen breve de lo facturado, máximo 150 caracteres.\n" +
       "No inventes datos. Usa null cuando el dato no aparezca claramente.";
 
@@ -85,22 +96,36 @@ export const extractGastoFiscalFromDocument = createServerFn({ method: "POST" })
       return s.length ? s : null;
     };
 
-    const rnc = str(parsed.rnc_cedula_proveedor)?.replace(/\D/g, "") ?? null;
+    let rnc = str(parsed.rnc_cedula_proveedor)?.replace(/\D/g, "") ?? null;
+    // Nunca devolver el RNC de ADECOMEX como proveedor
+    if (rnc === "130481301") rnc = null;
     let tipoId = parsed.tipo_id_proveedor ?? null;
     if (tipoId !== "RNC" && tipoId !== "CEDULA") {
       tipoId = rnc && rnc.length === 9 ? "RNC" : rnc && rnc.length === 11 ? "CEDULA" : null;
     }
 
+    // Limpia ceros de relleno en NCF: si tiene >13 chars y hay una letra B/E interior,
+    // conserva desde esa letra en adelante.
+    const cleanNcf = (v: unknown): string | null => {
+      const s = str(v)?.toUpperCase() ?? null;
+      if (!s) return null;
+      if (s.length > 13) {
+        const m = s.match(/[BE][A-Z0-9]+$/);
+        if (m) return m[0];
+      }
+      return s;
+    };
+
     return {
       proveedor_nombre: str(parsed.proveedor_nombre),
       rnc_cedula_proveedor: rnc,
       tipo_id_proveedor: tipoId,
-      ncf_proveedor: str(parsed.ncf_proveedor)?.toUpperCase() ?? null,
-      ncf_modificado: str(parsed.ncf_modificado)?.toUpperCase() ?? null,
+      ncf_proveedor: cleanNcf(parsed.ncf_proveedor),
+      ncf_modificado: cleanNcf(parsed.ncf_modificado),
       fecha: str(parsed.fecha),
       monto_facturado_bienes: num(parsed.monto_facturado_bienes),
       monto_facturado_servicios: num(parsed.monto_facturado_servicios),
-      itbis_facturado: num(parsed.itbis_facturado),
+      itbis_facturado: num(parsed.itbis_facturado) ?? 0,
       concepto: str(parsed.concepto)?.slice(0, 150) ?? null,
     };
   });

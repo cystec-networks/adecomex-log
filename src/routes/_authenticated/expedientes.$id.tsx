@@ -1310,6 +1310,8 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
   };
   const [f, setF] = useState<any>(empty);
   const [file, setFile] = useState<File | null>(null);
+  const [crearCxp, setCrearCxp] = useState(false);
+  const [cxpVence, setCxpVence] = useState<string>("");
 
 
   const save = useMutation({
@@ -1359,18 +1361,47 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
       };
       if (adjunto_path !== undefined) payload.adjunto_path = adjunto_path;
 
+      let gastoId = editingId;
       if (editingId) {
         const { error } = await supabase.from("gastos").update(payload).eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("gastos").insert({ expediente_id: expedienteId, ...payload });
+        const { data: ins, error } = await supabase.from("gastos").insert({ expediente_id: expedienteId, ...payload }).select("id").single();
         if (error) throw error;
+        gastoId = ins.id;
       }
+
+      let cxpCreada = false;
+      if (crearCxp) {
+        const proveedorNombre = (f.proveedor || "").trim() || (rnc || "").trim() || (f.concepto || "").trim();
+        const montoCxp = (payload.monto_facturado && payload.monto_facturado > 0) ? payload.monto_facturado : Number(f.monto || 0);
+        const { data: u } = await supabase.auth.getUser();
+        const { error: cxpErr } = await supabase.from("cuentas_por_pagar").insert({
+          gasto_id: gastoId,
+          expediente_id: expedienteId,
+          proveedor_nombre: proveedorNombre,
+          proveedor_rnc: rnc || null,
+          monto_total: montoCxp,
+          moneda: "DOP",
+          fecha_factura: f.fecha || null,
+          fecha_vencimiento: cxpVence || null,
+          estado: "pendiente",
+          notas: "Generado automáticamente desde gasto",
+          created_by: u.user?.id,
+        });
+        if (cxpErr) throw new Error(`Gasto guardado, pero falló la cuenta por pagar: ${cxpErr.message}`);
+        cxpCreada = true;
+      }
+      return { cxpCreada };
     },
-    onSuccess: () => {
-      toast.success(editingId ? "Gasto actualizado" : "Gasto registrado");
+    onSuccess: (r) => {
+      toast.success(
+        r?.cxpCreada
+          ? (editingId ? "Gasto actualizado y cuenta por pagar creada" : "Gasto registrado y cuenta por pagar creada")
+          : (editingId ? "Gasto actualizado" : "Gasto registrado")
+      );
       qc.invalidateQueries({ queryKey: ["gastos", expedienteId] });
-      setOpen(false); setEditingId(null); setF(empty); setFile(null);
+      setOpen(false); setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence("");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -1414,7 +1445,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
     setFile(null);
     setOpen(true);
   };
-  const openNew = () => { setEditingId(null); setF(empty); setFile(null); setOpen(true); };
+  const openNew = () => { setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); setOpen(true); };
 
   const subtotal = gastos.reduce((s, r) => s + (r.es_reembolso ? -Number(r.monto || 0) : Number(r.monto || 0)), 0);
 
@@ -1428,7 +1459,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-base">Gastos operativos</CardTitle>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); setFile(null); } }}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); } }}>
           <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar gasto</Button>
           <DialogContent className="max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editingId ? "Editar gasto" : "Nuevo gasto"}</DialogTitle></DialogHeader>
@@ -1541,6 +1572,18 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
                       <SelectItem value="mixto">Mixto</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="rounded border bg-background/60 p-3 space-y-2">
+                  <label className="flex items-start gap-2 text-sm">
+                    <input type="checkbox" className="mt-1" checked={crearCxp} onChange={(e) => setCrearCxp(e.target.checked)} />
+                    <span>También crear cuenta por pagar vinculada a este proveedor</span>
+                  </label>
+                  {crearCxp && (
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs">Fecha de vencimiento del pago (opcional)</Label>
+                      <Input type="date" value={cxpVence} onChange={(e) => setCxpVence(e.target.value)} />
+                    </div>
+                  )}
                 </div>
                 <details className="rounded border bg-background/60">
                   <summary className="cursor-pointer text-xs font-medium px-3 py-2 select-none">Detalles fiscales avanzados (opcional)</summary>
