@@ -123,9 +123,32 @@ export function PanelITBIS({ periodo }: { periodo: string }) {
     },
   });
 
+  const { data: empresaRnc } = useQuery({
+    queryKey: ["system_settings", "empresa_rnc"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("system_settings").select("value").eq("key", "empresa_rnc").maybeSingle();
+      return (data?.value as string) ?? "";
+    },
+  });
+
+  const { data: retencionesList } = useQuery({
+    queryKey: ["itbis_retenciones", periodo],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("itbis_retenciones_recibidas").select("tipo,monto").eq("periodo", periodo);
+      if (error) throw error;
+      return (data ?? []) as { tipo: string; monto: number }[];
+    },
+  });
+
   if (isLoading) return <div className="p-4 text-sm">Calculando IT-1…</div>;
   if (error) return <div className="p-4 text-sm text-destructive">Error: {(error as Error).message}</div>;
   if (!data) return null;
+
+  const handleDownloadExcel = () => {
+    downloadItbisExcel(data, periodo, empresaRnc ?? "", retencionesList ?? []);
+  };
 
   const gravadas = data.ventas.gravadas_por_tasa || {};
 
