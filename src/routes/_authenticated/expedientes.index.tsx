@@ -16,6 +16,7 @@ import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ESTADO_LABEL } from "@/lib/estados-expediente";
 
 type TipoFilter = "importacion" | "exportacion" | "todos";
 
