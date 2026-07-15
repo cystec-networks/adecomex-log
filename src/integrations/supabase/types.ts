@@ -560,6 +560,95 @@ export type Database = {
           },
         ]
       }
+      cuentas_por_pagar: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          estado: Database["public"]["Enums"]["cxp_estado"]
+          expediente_id: string | null
+          fecha_factura: string | null
+          fecha_vencimiento: string | null
+          gasto_id: string | null
+          gasto_operativo_id: string | null
+          id: string
+          moneda: string
+          monto_pagado: number
+          monto_total: number
+          notas: string | null
+          proveedor_nombre: string
+          proveedor_rnc: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          estado?: Database["public"]["Enums"]["cxp_estado"]
+          expediente_id?: string | null
+          fecha_factura?: string | null
+          fecha_vencimiento?: string | null
+          gasto_id?: string | null
+          gasto_operativo_id?: string | null
+          id?: string
+          moneda?: string
+          monto_pagado?: number
+          monto_total?: number
+          notas?: string | null
+          proveedor_nombre: string
+          proveedor_rnc?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          estado?: Database["public"]["Enums"]["cxp_estado"]
+          expediente_id?: string | null
+          fecha_factura?: string | null
+          fecha_vencimiento?: string | null
+          gasto_id?: string | null
+          gasto_operativo_id?: string | null
+          id?: string
+          moneda?: string
+          monto_pagado?: number
+          monto_total?: number
+          notas?: string | null
+          proveedor_nombre?: string
+          proveedor_rnc?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cuentas_por_pagar_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuentas_por_pagar_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "cuentas_por_pagar_gasto_id_fkey"
+            columns: ["gasto_id"]
+            isOneToOne: false
+            referencedRelation: "gastos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuentas_por_pagar_gasto_operativo_id_fkey"
+            columns: ["gasto_operativo_id"]
+            isOneToOne: false
+            referencedRelation: "gastos_operativos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documentos: {
         Row: {
           created_at: string
@@ -2117,6 +2206,7 @@ export type Database = {
         | "transporte"
         | "finanzas"
         | "contabilidad"
+      cxp_estado: "pendiente" | "parcial" | "pagado" | "disputado"
       doc_estado:
         | "pendiente"
         | "recibido"
@@ -2301,6 +2391,7 @@ export const Constants = {
         "finanzas",
         "contabilidad",
       ],
+      cxp_estado: ["pendiente", "parcial", "pagado", "disputado"],
       doc_estado: ["pendiente", "recibido", "observado", "aprobado", "vencido"],
       etapa_estado: ["pendiente", "en_curso", "completada", "bloqueada"],
       expediente_estado: [
