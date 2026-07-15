@@ -244,8 +244,21 @@ function FacturacionPage() {
                       </td>
                       <td className="px-3 py-2 text-right">
                         {f.pdf_url && (
-                          <Button size="sm" variant="ghost" className="h-7" asChild>
-                            <a href={supabase.storage.from("documentos").getPublicUrl(f.pdf_url).data.publicUrl} target="_blank" rel="noreferrer">PDF</a>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7"
+                            onClick={async () => {
+                              const { data, error } = await supabase.storage.from("documentos").createSignedUrl(f.pdf_url as string, 300);
+                              if (error || !data?.signedUrl) {
+                                console.error("Error al firmar PDF:", error);
+                                toast.error("Error al generar enlace del PDF. Inténtalo de nuevo.");
+                                return;
+                              }
+                              window.open(data.signedUrl, "_blank");
+                            }}
+                          >
+                            PDF
                           </Button>
                         )}
                         <Button
