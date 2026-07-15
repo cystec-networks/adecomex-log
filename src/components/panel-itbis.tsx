@@ -57,7 +57,7 @@ const TIPO_INGRESO_LABEL: Record<string, string> = {
   financieros: "Ingresos financieros",
   extraordinarios: "Ingresos extraordinarios",
   arrendamientos: "Arrendamientos",
-  activos: "Venta de activos",
+  venta_activos_depreciables: "Venta de activos",
   otros: "Otros ingresos",
 };
 
