@@ -1361,18 +1361,47 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
       };
       if (adjunto_path !== undefined) payload.adjunto_path = adjunto_path;
 
+      let gastoId = editingId;
       if (editingId) {
         const { error } = await supabase.from("gastos").update(payload).eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("gastos").insert({ expediente_id: expedienteId, ...payload });
+        const { data: ins, error } = await supabase.from("gastos").insert({ expediente_id: expedienteId, ...payload }).select("id").single();
         if (error) throw error;
+        gastoId = ins.id;
       }
+
+      let cxpCreada = false;
+      if (crearCxp) {
+        const proveedorNombre = (f.proveedor || "").trim() || (rnc || "").trim() || (f.concepto || "").trim();
+        const montoCxp = (payload.monto_facturado && payload.monto_facturado > 0) ? payload.monto_facturado : Number(f.monto || 0);
+        const { data: u } = await supabase.auth.getUser();
+        const { error: cxpErr } = await supabase.from("cuentas_por_pagar").insert({
+          gasto_id: gastoId,
+          expediente_id: expedienteId,
+          proveedor_nombre: proveedorNombre,
+          proveedor_rnc: rnc || null,
+          monto_total: montoCxp,
+          moneda: "DOP",
+          fecha_factura: f.fecha || null,
+          fecha_vencimiento: cxpVence || null,
+          estado: "pendiente",
+          notas: "Generado automáticamente desde gasto",
+          created_by: u.user?.id,
+        });
+        if (cxpErr) throw new Error(`Gasto guardado, pero falló la cuenta por pagar: ${cxpErr.message}`);
+        cxpCreada = true;
+      }
+      return { cxpCreada };
     },
-    onSuccess: () => {
-      toast.success(editingId ? "Gasto actualizado" : "Gasto registrado");
+    onSuccess: (r) => {
+      toast.success(
+        r?.cxpCreada
+          ? (editingId ? "Gasto actualizado y cuenta por pagar creada" : "Gasto registrado y cuenta por pagar creada")
+          : (editingId ? "Gasto actualizado" : "Gasto registrado")
+      );
       qc.invalidateQueries({ queryKey: ["gastos", expedienteId] });
-      setOpen(false); setEditingId(null); setF(empty); setFile(null);
+      setOpen(false); setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence("");
     },
     onError: (e: any) => toast.error(e.message),
   });
