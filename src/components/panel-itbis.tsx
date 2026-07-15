@@ -150,13 +150,24 @@ export function PanelITBIS({ periodo }: { periodo: string }) {
     downloadItbisExcel(data, periodo, empresaRnc ?? "", retencionesList ?? []);
   };
 
+  const handleDownload607 = async () => {
+    try {
+      await download607Excel(periodo, empresaRnc ?? "");
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo generar el 607");
+    }
+  };
+
   const gravadas = data.ventas.gravadas_por_tasa || {};
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2 flex-wrap">
         <Button variant="outline" onClick={handleDownloadExcel}>
           <Download className="h-4 w-4 mr-1" /> Descargar Excel (revisión IT-1)
+        </Button>
+        <Button variant="outline" onClick={handleDownload607}>
+          <Download className="h-4 w-4 mr-1" /> Descargar Excel 607 (uso interno)
         </Button>
       </div>
       {/* Anexo A por tipo */}
