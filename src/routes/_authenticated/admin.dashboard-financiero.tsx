@@ -301,7 +301,10 @@ function DashboardFinanciero() {
             )}
           </CardContent>
         </Card>
+
+        <RentabilidadExpedientesPanel />
       </div>
+
     </>
   );
 }
