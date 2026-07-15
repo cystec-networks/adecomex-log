@@ -1035,6 +1035,7 @@ export type Database = {
           fecha_emision: string
           fecha_firma: string | null
           fecha_vencimiento_ncf: string | null
+          forma_pago_venta: string | null
           id: string
           monto_total: number
           motivo_anulacion: string | null
@@ -1044,7 +1045,9 @@ export type Database = {
           propina_legal: number
           subtotal_exento: number
           subtotal_gravado: number
+          tasa_itbis: number
           tipo_comprobante: string
+          tipo_ingreso: string
           total_isc_av: number
           total_isc_e: number
           total_itbis: number
@@ -1066,6 +1069,7 @@ export type Database = {
           fecha_emision: string
           fecha_firma?: string | null
           fecha_vencimiento_ncf?: string | null
+          forma_pago_venta?: string | null
           id?: string
           monto_total?: number
           motivo_anulacion?: string | null
@@ -1075,7 +1079,9 @@ export type Database = {
           propina_legal?: number
           subtotal_exento?: number
           subtotal_gravado?: number
+          tasa_itbis?: number
           tipo_comprobante: string
+          tipo_ingreso?: string
           total_isc_av?: number
           total_isc_e?: number
           total_itbis?: number
@@ -1097,6 +1103,7 @@ export type Database = {
           fecha_emision?: string
           fecha_firma?: string | null
           fecha_vencimiento_ncf?: string | null
+          forma_pago_venta?: string | null
           id?: string
           monto_total?: number
           motivo_anulacion?: string | null
@@ -1106,7 +1113,9 @@ export type Database = {
           propina_legal?: number
           subtotal_exento?: number
           subtotal_gravado?: number
+          tasa_itbis?: number
           tipo_comprobante?: string
+          tipo_ingreso?: string
           total_isc_av?: number
           total_isc_e?: number
           total_itbis?: number
@@ -1457,6 +1466,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      itbis_declaraciones: {
+        Row: {
+          created_at: string
+          estado: string
+          fecha_presentada: string | null
+          interes_indemnizatorio: number
+          periodo: string
+          recargos: number
+          saldo_favor_anterior: number
+          sanciones: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          estado?: string
+          fecha_presentada?: string | null
+          interes_indemnizatorio?: number
+          periodo: string
+          recargos?: number
+          saldo_favor_anterior?: number
+          sanciones?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          estado?: string
+          fecha_presentada?: string | null
+          interes_indemnizatorio?: number
+          periodo?: string
+          recargos?: number
+          saldo_favor_anterior?: number
+          sanciones?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      itbis_retenciones_recibidas: {
+        Row: {
+          cliente_o_agente: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          monto: number
+          notas: string | null
+          periodo: string
+          referencia: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_o_agente?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          monto?: number
+          notas?: string | null
+          periodo: string
+          referencia?: string | null
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_o_agente?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          monto?: number
+          notas?: string | null
+          periodo?: string
+          referencia?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       mercancia_items: {
         Row: {
@@ -1906,6 +1993,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calc_itbis_periodo: { Args: { _periodo: string }; Returns: Json }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
