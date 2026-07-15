@@ -120,6 +120,8 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/admin/facturacion/pendientes") },
       { to: "/admin/gastos-operativos", label: "Gastos Operativos", icon: DollarSign, roles: ["admin","contabilidad"],
         match: (p) => p.startsWith("/admin/gastos-operativos") },
+      { to: "/admin/cuentas-por-pagar", label: "Cuentas por Pagar", icon: Wallet, roles: ["admin","finanzas"],
+        match: (p) => p.startsWith("/admin/cuentas-por-pagar") },
       { to: "/admin/dashboard-financiero", label: "Dashboard Financiero", icon: PiggyBank, roles: ["admin","contabilidad"],
         match: (p) => p.startsWith("/admin/dashboard-financiero") },
       { to: "/admin/reportes-fiscales", label: "Reportes Fiscales DGII", icon: FileBarChart2, roles: ["admin","finanzas"],
