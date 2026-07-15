@@ -197,10 +197,12 @@ function ReportesFiscalesPage() {
         <TabsList>
           <TabsTrigger value="606">606 · Compras</TabsTrigger>
           <TabsTrigger value="608">608 · Anulados</TabsTrigger>
+          <TabsTrigger value="itbis">ITBIS (IT-1)</TabsTrigger>
           <TabsTrigger value="historial"><History className="h-4 w-4 mr-1" />Historial</TabsTrigger>
         </TabsList>
         <TabsContent value="606"><Panel606 periodo={periodo} /></TabsContent>
         <TabsContent value="608"><Panel608 periodo={periodo} /></TabsContent>
+        <TabsContent value="itbis"><PanelITBIS periodo={periodo} /></TabsContent>
         <TabsContent value="historial"><PanelHistorial /></TabsContent>
       </Tabs>
     </div>
