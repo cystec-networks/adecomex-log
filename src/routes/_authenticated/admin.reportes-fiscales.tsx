@@ -377,6 +377,103 @@ function Panel606({ periodo }: { periodo: string }) {
     qc.invalidateQueries({ queryKey: ["envios-dgii"] });
   };
 
+  const generarExcel = async () => {
+    const { data: rncRow } = await supabase.from("system_settings")
+      .select("value").eq("key", EMPRESA_RNC_KEY).maybeSingle();
+    const empresaRnc = (rncRow?.value ?? "").trim();
+
+    const headers = [
+      "Línea", "RNC o Cédula", "Tipo Id", "Tipo Bienes y Servicios Comprados",
+      "NCF", "NCF ó Documento Modificado",
+      "Fecha Comprobante", "Día",
+      "Fecha Pago", "Día",
+      "Monto Facturado en Servicios", "Monto Facturado en Bienes", "Total Monto Facturado",
+      "ITBIS Facturado", "ITBIS Retenido", "ITBIS sujeto a Proporcionalidad (Art. 349)",
+      "ITBIS llevado al Costo", "ITBIS por Adelantar", "ITBIS percibido en compras",
+      "Tipo de Retención en ISR", "Monto Retención Renta", "ISR Percibido en compras",
+      "Impuesto Selectivo al Consumo", "Otros Impuesto/Tasas", "Monto Propina Legal",
+      "Forma de Pago",
+    ];
+
+    const tipoIdLabel = (t: string | null) =>
+      t === "RNC" ? "1 - RNC" : t === "CEDULA" ? "2 - Cédula" : t === "PASAPORTE" ? "3 - Pasaporte" : "";
+
+    const splitFecha = (d: string | null): [string, string] => {
+      if (!d) return ["", ""];
+      const [y, mo, da] = d.split("-");
+      return [`${y}${mo}`, da];
+    };
+
+    const rows = merged.map((r, i) => {
+      const exterior = isPagoExterior(r.ncf_proveedor);
+      const rncCol = exterior ? empresaRnc : (r.rnc_cedula_proveedor ?? "");
+      const [fcYm, fcD] = splitFecha(r.fecha);
+      const [fpYm, fpD] = splitFecha(r.fecha);
+      const total = (r.monto_facturado_servicios || 0) + (r.monto_facturado_bienes || 0) || r.monto_facturado || 0;
+      const itbisAdelantar = Math.max(
+        0,
+        (r.itbis_facturado || 0)
+        - (exterior ? 0 : (r.itbis_retenido || 0))
+        - (exterior ? 0 : (r.itbis_proporcionalidad_349 || 0))
+        - (exterior ? 0 : (r.itbis_llevado_costo || 0))
+      );
+      const bsLabel = r.tipo_bienes_servicios ? (BS_LABEL_EXCEL[r.tipo_bienes_servicios] ?? "") : "";
+      const isrLabel = r.tipo_retencion_isr ? (ISR_LABEL_EXCEL[r.tipo_retencion_isr] ?? "") : "";
+      const fpLabel = r.forma_pago ? (FORMA_PAGO_LABEL_EXCEL[r.forma_pago] ?? "") : "";
+      return [
+        i + 1,
+        rncCol,
+        tipoIdLabel(r.tipo_id_proveedor),
+        bsLabel,
+        r.ncf_proveedor ?? "",
+        r.ncf_modificado ?? "",
+        fcYm, fcD,
+        fpYm, fpD,
+        r.monto_facturado_servicios || 0,
+        r.monto_facturado_bienes || 0,
+        total,
+        r.itbis_facturado || 0,
+        exterior ? "" : (r.itbis_retenido || 0),
+        exterior ? "" : (r.itbis_proporcionalidad_349 || 0),
+        exterior ? "" : (r.itbis_llevado_costo || 0),
+        itbisAdelantar,
+        exterior ? "" : (r.itbis_percibido_compras || 0),
+        isrLabel,
+        r.isr_retenido || 0,
+        exterior ? "" : (r.isr_percibido_compras || 0),
+        exterior ? "" : (r.impuesto_selectivo_consumo || 0),
+        exterior ? "" : (r.otros_impuestos_tasas || 0),
+        exterior ? "" : (r.monto_propina_legal || 0),
+        fpLabel,
+      ];
+    });
+
+    const aoa: any[][] = [];
+    for (let i = 0; i < 10; i++) aoa.push([]);
+    aoa[3] = ["RNC o Cédula", "", empresaRnc];
+    aoa[4] = ["Periodo", "", periodo];
+    aoa[5] = ["Cantidad Registros", "", merged.length];
+    aoa[10] = headers;
+    for (const row of rows) aoa.push(row);
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    // Formato numérico 2 decimales para columnas de montos (K..Y salvo T que es texto ISR)
+    const numericCols = [10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24];
+    const startRow = 11; // fila 12 (0-index 11)
+    for (let r = startRow; r < startRow + rows.length; r++) {
+      for (const c of numericCols) {
+        const ref = XLSX.utils.encode_cell({ r, c });
+        const cell = ws[ref];
+        if (cell && typeof cell.v === "number") cell.z = "#,##0.00";
+      }
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "606");
+    XLSX.writeFile(wb, `Revision_606_${periodo}.xlsx`);
+    toast.success("Excel de revisión descargado");
+  };
+
   return (
     <Card>
       <CardHeader>
