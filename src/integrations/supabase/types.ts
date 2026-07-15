@@ -347,6 +347,13 @@ export type Database = {
             referencedRelation: "expedientes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "catalogo_tasas_arancelarias_origen_expediente_id_fkey"
+            columns: ["origen_expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
         ]
       }
       catalogo_tasas_cambio: {
@@ -544,6 +551,13 @@ export type Database = {
             referencedRelation: "expedientes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "costos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
         ]
       }
       documentos: {
@@ -593,6 +607,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "expedientes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
           },
         ]
       }
@@ -689,6 +710,13 @@ export type Database = {
             referencedRelation: "expedientes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "etapas_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
         ]
       }
       expediente_hitos: {
@@ -738,6 +766,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "expedientes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_hitos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
           },
           {
             foreignKeyName: "expediente_hitos_hito_codigo_fkey"
@@ -1015,6 +1050,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "expedientes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
           },
         ]
       }
@@ -1316,6 +1358,13 @@ export type Database = {
             referencedRelation: "expedientes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "gastos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
         ]
       }
       gastos_operativos: {
@@ -1477,6 +1526,13 @@ export type Database = {
             referencedRelation: "expedientes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "incidencias_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
         ]
       }
       itbis_declaraciones: {
@@ -1626,6 +1682,13 @@ export type Database = {
             referencedRelation: "expedientes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "mercancia_items_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
         ]
       }
       permisos: {
@@ -1703,6 +1766,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "expedientes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permisos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
           },
         ]
       }
@@ -1971,6 +2041,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transportes_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
             foreignKeyName: "transportes_factura_ecf_id_fkey"
             columns: ["factura_ecf_id"]
             isOneToOne: false
@@ -2002,7 +2079,28 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_rentabilidad_expediente: {
+        Row: {
+          cliente_id: string | null
+          estado: Database["public"]["Enums"]["expediente_estado"] | null
+          expediente_id: string | null
+          margen_pct: number | null
+          margen_real: number | null
+          numero: string | null
+          total_costos_reales: number | null
+          total_facturado: number | null
+          total_gastos: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expedientes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       calc_itbis_periodo: { Args: { _periodo: string }; Returns: Json }
