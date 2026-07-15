@@ -11,7 +11,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { UserPlus, ShieldOff, ShieldCheck } from "lucide-react";
+import { UserPlus, ShieldOff, ShieldCheck, Mail } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/accesos-clientes")({
   ssr: false,
