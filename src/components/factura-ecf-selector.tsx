@@ -55,6 +55,10 @@ export function FacturaEcfFormDialog({
   const [clienteId, setClienteId] = useState<string>(preload?.cliente_id ?? "");
   const [notas, setNotas] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [itbisRetenidoTerceros, setItbisRetenidoTerceros] = useState<string>("");
+  const [itbisPercibidoVenta, setItbisPercibidoVenta] = useState<string>("");
+  const [retencionRentaTerceros, setRetencionRentaTerceros] = useState<string>("");
+  const [isrPercibidoVenta, setIsrPercibidoVenta] = useState<string>("");
 
   const [lineas, setLineas] = useState<LineaInput[]>(() => {
     if (preload?.monto_total && preload.monto_total > 0) {
