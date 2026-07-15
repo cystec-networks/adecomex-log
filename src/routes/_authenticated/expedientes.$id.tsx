@@ -146,7 +146,7 @@ function DetalleExpediente() {
         <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>
           <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {["digitar","presentar","verificar","facturar","despachado"].map((e) => <SelectItem key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1)}</SelectItem>)}
+            {["digitar","presentar","verificar","facturar","despachado"].map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
