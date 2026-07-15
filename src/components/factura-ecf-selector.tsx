@@ -285,6 +285,30 @@ export function FacturaEcfFormDialog({
           </div>
         </div>
 
+        <details className="rounded-md border bg-muted/20 open:bg-muted/10">
+          <summary className="cursor-pointer select-none px-3 py-2 text-sm font-medium">
+            Retenciones aplicadas por el cliente <span className="text-xs text-muted-foreground font-normal">(opcional)</span>
+          </summary>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 pt-1">
+            <div className="space-y-1.5">
+              <Label className="text-xs">ITBIS Retenido por Terceros</Label>
+              <Input type="number" step="0.01" value={itbisRetenidoTerceros} onChange={(e) => setItbisRetenidoTerceros(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">ITBIS Percibido en Venta</Label>
+              <Input type="number" step="0.01" value={itbisPercibidoVenta} onChange={(e) => setItbisPercibidoVenta(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Retención Renta por Terceros</Label>
+              <Input type="number" step="0.01" value={retencionRentaTerceros} onChange={(e) => setRetencionRentaTerceros(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">ISR Percibido en Venta</Label>
+              <Input type="number" step="0.01" value={isrPercibidoVenta} onChange={(e) => setIsrPercibidoVenta(e.target.value)} />
+            </div>
+          </div>
+        </details>
+
         <div className="space-y-1.5">
           <Label>Notas</Label>
           <Textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2} />
