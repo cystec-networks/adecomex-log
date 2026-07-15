@@ -177,7 +177,13 @@ function InvitarDialog({
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
-      toast.success("Invitación enviada al portal");
+      if (data?.yaConfirmado) {
+        toast.info("Este cliente ya tiene cuenta activa, no se reenvió invitación");
+      } else if (data?.warning) {
+        toast.warning(data.warning);
+      } else {
+        toast.success(cliente.vinculo ? "Invitación reenviada" : "Invitación enviada al portal");
+      }
       onDone();
       handleClose();
     } catch (err: any) {
