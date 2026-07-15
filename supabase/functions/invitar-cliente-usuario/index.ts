@@ -25,7 +25,6 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization") ?? "";
   if (!authHeader.startsWith("Bearer ")) return json(401, { error: "Falta token de autorización" });
 
-  // Client acting as the caller (RLS applies) to verify identity + admin role
   const supaCaller = createClient(SUPABASE_URL, ANON, {
     global: { headers: { Authorization: authHeader } },
   });
@@ -38,7 +37,6 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  // Verify admin role
   const { data: roleRows, error: roleErr } = await admin
     .from("user_roles")
     .select("role")
@@ -58,7 +56,6 @@ Deno.serve(async (req) => {
   const cliente_id = (payload.cliente_id ?? "").trim();
   if (!email || !cliente_id) return json(400, { error: "email y cliente_id son requeridos" });
 
-  // Verify cliente exists
   const { data: cliente, error: cliErr } = await admin
     .from("clientes")
     .select("id")
@@ -67,28 +64,50 @@ Deno.serve(async (req) => {
   if (cliErr) return json(500, { error: cliErr.message });
   if (!cliente) return json(404, { error: "Cliente no encontrado" });
 
-  // Try to find existing user by email
+  const siteUrl = Deno.env.get("SITE_URL") ?? "https://adecomex-log.lovable.app";
+  const redirectTo = `${siteUrl.replace(/\/$/, "")}/reset-password`;
+
+  // Find existing user
   let userId: string | null = null;
+  let existingUser: any = null;
   try {
     const { data: existing } = await (admin.auth.admin as any).getUserByEmail?.(email) ?? { data: null };
-    if (existing?.user?.id) userId = existing.user.id;
-  } catch (_e) { /* ignore, fallback below */ }
+    if (existing?.user?.id) {
+      userId = existing.user.id;
+      existingUser = existing.user;
+    }
+  } catch (_e) { /* ignore */ }
 
   if (!userId) {
-    // Fallback: list users and find by email
     const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
     const found = list?.users?.find((u) => (u.email ?? "").toLowerCase() === email);
-    if (found) userId = found.id;
+    if (found) {
+      userId = found.id;
+      existingUser = found;
+    }
   }
 
+  let yaConfirmado = false;
+  let warning: string | null = null;
+
   if (!userId) {
-    const siteUrl = Deno.env.get("SITE_URL") ?? "https://adecomex-log.lovable.app";
-    const redirectTo = `${siteUrl.replace(/\/$/, "")}/reset-password`;
+    // Brand new user - invite
     const { data: invited, error: invErr } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo });
     if (invErr || !invited?.user) return json(500, { error: invErr?.message ?? "No se pudo invitar al usuario" });
     userId = invited.user.id;
+  } else {
+    // Existing user - check confirmation status
+    const confirmedAt = existingUser?.email_confirmed_at ?? existingUser?.confirmed_at ?? null;
+    if (confirmedAt) {
+      yaConfirmado = true;
+    } else {
+      // Not confirmed - resend invitation
+      const { error: reinvErr } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo });
+      if (reinvErr) {
+        warning = `No se pudo reenviar el correo de invitación (${reinvErr.message}), pero el vínculo quedó actualizado.`;
+      }
+    }
   }
-
 
   const { error: upsertErr } = await admin
     .from("cliente_usuarios")
@@ -98,5 +117,5 @@ Deno.serve(async (req) => {
     );
   if (upsertErr) return json(500, { error: upsertErr.message });
 
-  return json(200, { success: true, user_id: userId, cliente_id });
+  return json(200, { success: true, user_id: userId, cliente_id, yaConfirmado, warning });
 });
