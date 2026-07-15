@@ -154,6 +154,11 @@ export function PanelITBIS({ periodo }: { periodo: string }) {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button variant="outline" onClick={handleDownloadExcel}>
+          <Download className="h-4 w-4 mr-1" /> Descargar Excel (revisión IT-1)
+        </Button>
+      </div>
       {/* Anexo A por tipo */}
       <Card>
         <CardHeader>
