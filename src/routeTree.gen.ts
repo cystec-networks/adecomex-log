@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PortalRouteRouteImport } from './routes/_portal/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedReportesRouteImport } from './routes/_authenticated/reportes'
@@ -18,6 +19,7 @@ import { Route as AuthenticatedMiCuentaRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCopilotoRouteImport } from './routes/_authenticated/copiloto'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
+import { Route as PortalPortalIndexRouteImport } from './routes/_portal/portal.index'
 import { Route as AuthenticatedTransportesIndexRouteImport } from './routes/_authenticated/transportes.index'
 import { Route as AuthenticatedSolicitudesIndexRouteImport } from './routes/_authenticated/solicitudes.index'
 import { Route as AuthenticatedPermisosIndexRouteImport } from './routes/_authenticated/permisos.index'
@@ -55,6 +57,10 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalRouteRoute = PortalRouteRouteImport.update({
+  id: '/_portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -88,6 +94,11 @@ const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const PortalPortalIndexRoute = PortalPortalIndexRouteImport.update({
+  id: '/portal/',
+  path: '/portal/',
+  getParentRoute: () => PortalRouteRoute,
 } as any)
 const AuthenticatedTransportesIndexRoute =
   AuthenticatedTransportesIndexRouteImport.update({
@@ -279,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/permisos/': typeof AuthenticatedPermisosIndexRoute
   '/solicitudes/': typeof AuthenticatedSolicitudesIndexRoute
   '/transportes/': typeof AuthenticatedTransportesIndexRoute
+  '/portal/': typeof PortalPortalIndexRoute
   '/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
 }
 export interface FileRoutesByTo {
@@ -315,12 +327,14 @@ export interface FileRoutesByTo {
   '/permisos': typeof AuthenticatedPermisosIndexRoute
   '/solicitudes': typeof AuthenticatedSolicitudesIndexRoute
   '/transportes': typeof AuthenticatedTransportesIndexRoute
+  '/portal': typeof PortalPortalIndexRoute
   '/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/_portal': typeof PortalRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
@@ -353,6 +367,7 @@ export interface FileRoutesById {
   '/_authenticated/permisos/': typeof AuthenticatedPermisosIndexRoute
   '/_authenticated/solicitudes/': typeof AuthenticatedSolicitudesIndexRoute
   '/_authenticated/transportes/': typeof AuthenticatedTransportesIndexRoute
+  '/_portal/portal/': typeof PortalPortalIndexRoute
   '/_authenticated/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
 }
 export interface FileRouteTypes {
@@ -391,6 +406,7 @@ export interface FileRouteTypes {
     | '/permisos/'
     | '/solicitudes/'
     | '/transportes/'
+    | '/portal/'
     | '/admin/facturacion/pendientes'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -427,11 +443,13 @@ export interface FileRouteTypes {
     | '/permisos'
     | '/solicitudes'
     | '/transportes'
+    | '/portal'
     | '/admin/facturacion/pendientes'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/_portal'
     | '/auth'
     | '/reset-password'
     | '/_authenticated/clientes'
@@ -464,12 +482,14 @@ export interface FileRouteTypes {
     | '/_authenticated/permisos/'
     | '/_authenticated/solicitudes/'
     | '/_authenticated/transportes/'
+    | '/_portal/portal/'
     | '/_authenticated/admin/facturacion/pendientes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  PortalRouteRoute: typeof PortalRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
 }
@@ -488,6 +508,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_portal': {
+      id: '/_portal'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PortalRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -538,6 +565,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/clientes'
       preLoaderRoute: typeof AuthenticatedClientesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_portal/portal/': {
+      id: '/_portal/portal/'
+      path: '/portal'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalPortalIndexRouteImport
+      parentRoute: typeof PortalRouteRoute
     }
     '/_authenticated/transportes/': {
       id: '/_authenticated/transportes/'
@@ -816,9 +850,22 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface PortalRouteRouteChildren {
+  PortalPortalIndexRoute: typeof PortalPortalIndexRoute
+}
+
+const PortalRouteRouteChildren: PortalRouteRouteChildren = {
+  PortalPortalIndexRoute: PortalPortalIndexRoute,
+}
+
+const PortalRouteRouteWithChildren = PortalRouteRoute._addFileChildren(
+  PortalRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  PortalRouteRoute: PortalRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
 }
