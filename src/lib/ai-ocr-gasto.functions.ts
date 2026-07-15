@@ -35,16 +35,27 @@ export const extractGastoFiscalFromDocument = createServerFn({ method: "POST" })
       "tipo_id_proveedor, ncf_proveedor, ncf_modificado, fecha, monto_facturado_bienes, " +
       "monto_facturado_servicios, itbis_facturado, concepto.\n" +
       "Reglas:\n" +
-      "- rnc_cedula_proveedor: solo dígitos (sin guiones ni espacios), o null.\n" +
+      "- rnc_cedula_proveedor: solo dígitos (sin guiones ni espacios), o null. NUNCA confundas " +
+      "el RNC del proveedor con el RNC de ADECOMEX (130481301): si aparece 130481301 en el " +
+      "documento es porque ADECOMEX es el CLIENTE de esa factura (el que recibe el bien/servicio), " +
+      "nunca el proveedor. El rnc_cedula_proveedor debe ser el RNC de la empresa que EMITE la " +
+      "factura (el que aparece en el encabezado/logo del documento), jamás 130481301.\n" +
       "- tipo_id_proveedor: 'RNC' si el identificador tiene 9 dígitos, 'CEDULA' si tiene 11 " +
       "dígitos con formato de cédula dominicana, o null si no se puede determinar.\n" +
-      "- ncf_proveedor: código NCF/e-NCF en mayúsculas, o null.\n" +
-      "- ncf_modificado: solo si es nota de crédito/débito que referencia otro NCF, si no, null.\n" +
+      "- ncf_proveedor: código NCF/e-NCF en mayúsculas, o null. Los NCF válidos son de 11 " +
+      "posiciones cuando empiezan con 'B' o de 13 posiciones cuando empiezan con 'E'. Si el " +
+      "valor extraído tiene más de 13 caracteres y está compuesto por ceros de relleno seguidos " +
+      "de una letra + dígitos (por ejemplo '00000000B0100009352'), devuelve SOLO la parte " +
+      "significativa a partir de la primera letra (en el ejemplo: 'B0100009352').\n" +
+      "- ncf_modificado: solo si es nota de crédito/débito que referencia otro NCF, si no, null. " +
+      "Aplica la misma limpieza de ceros de relleno.\n" +
       "- fecha: formato YYYY-MM-DD o null.\n" +
       "- monto_facturado_bienes / monto_facturado_servicios: números (sin símbolo de moneda). " +
       "Si la factura NO distingue bienes de servicios, pon el total en monto_facturado_servicios " +
       "y 0 en monto_facturado_bienes.\n" +
-      "- itbis_facturado: número o null.\n" +
+      "- itbis_facturado: número o 0. Muchas facturas de transportistas y otros servicios " +
+      "exentos NO tienen ITBIS; si no ves ningún ITBIS o impuesto en la factura, devuelve 0, " +
+      "NO null.\n" +
       "- concepto: resumen breve de lo facturado, máximo 150 caracteres.\n" +
       "No inventes datos. Usa null cuando el dato no aparezca claramente.";
 
