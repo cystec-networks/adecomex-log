@@ -152,7 +152,7 @@ function ReportesFiscalesPage() {
     return <div className="p-6">Cargando…</div>;
   }
   if (!user) return <Navigate to="/auth" />;
-  const allowed = roles?.some(r => r === "admin" || r === "finanzas");
+  const allowed = roles?.some(r => r === "admin" || r === "finanzas" || r === "contabilidad");
   if (!allowed) return <Navigate to="/dashboard" />;
 
 
