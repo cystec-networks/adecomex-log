@@ -149,12 +149,11 @@ function InvitarDialog({
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // reset email when cliente changes
   const open = !!cliente;
-  if (open && email === "" && cliente?.email) {
-    // set once when opening
-    setTimeout(() => setEmail(cliente.email ?? ""), 0);
-  }
+  useEffect(() => {
+    if (cliente) setEmail(cliente.email ?? "");
+  }, [cliente]);
+
 
   const handleClose = () => {
     setEmail("");
