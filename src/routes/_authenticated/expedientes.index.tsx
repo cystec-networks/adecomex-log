@@ -16,6 +16,7 @@ import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ESTADO_LABEL } from "@/lib/estados-expediente";
 
 type TipoFilter = "importacion" | "exportacion" | "todos";
 
@@ -185,7 +186,7 @@ function Expedientes() {
   const countExp = (data ?? []).filter((e: any) => detectTipo(e) === "exportacion").length;
 
   const estadoBadge = (estadoRaw: string | null) => {
-    const s = (estadoRaw ?? "").replace("_", " ");
+    const label = ESTADO_LABEL[estadoRaw ?? ""] ?? (estadoRaw ?? "");
     const variants: Record<string, string> = {
       digitar: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
       presentar: "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900",
@@ -195,7 +196,7 @@ function Expedientes() {
     };
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${variants[estadoRaw ?? ""] ?? variants.digitar}`}>
-        {s.charAt(0).toUpperCase() + s.slice(1)}
+        {label}
       </span>
     );
   };
@@ -245,7 +246,7 @@ function Expedientes() {
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos los estados</SelectItem>
-              {["digitar","presentar","verificar","facturar","despachado"].map((e) => <SelectItem key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1)}</SelectItem>)}
+              {["digitar","presentar","verificar","facturar","despachado"].map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
             </SelectContent>
           </Select>
           <Toggle

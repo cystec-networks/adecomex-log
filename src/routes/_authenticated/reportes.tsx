@@ -14,6 +14,7 @@ import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { parseLocalDate, fmtLocalDate } from "@/lib/dates";
+import { ESTADO_LABEL } from "@/lib/estados-expediente";
 
 export const Route = createFileRoute("/_authenticated/reportes")({
   component: ReportesPage,
@@ -359,7 +360,7 @@ function ReportesPage() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
-                  {ESTADOS.map((e) => <SelectItem key={e} value={e}>{e[0].toUpperCase() + e.slice(1)}</SelectItem>)}
+                  {ESTADOS.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -548,7 +549,7 @@ function ExpedienteRow({ e, items, showCliente }: { e: any; items: any[]; showCl
         <td className="px-3 py-2 text-right font-mono font-semibold">{fmtNum(Number(e.total_cif) || 0)}</td>
         <td className="px-3 py-2">
           <Badge variant="outline" className={estadoBadge[e.estado] ?? ""}>
-            {e.estado}
+            {ESTADO_LABEL[e.estado ?? ""] ?? e.estado}
           </Badge>
         </td>
       </tr>

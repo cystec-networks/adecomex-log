@@ -27,6 +27,7 @@ import { ChecklistHitos } from "@/components/checklist-hitos";
 import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
+import { ESTADO_LABEL } from "@/lib/estados-expediente";
 import { useMyRoles } from "@/lib/auth-hooks";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
@@ -105,7 +106,7 @@ function DetalleExpediente() {
         <div className="flex-1 min-w-0">
           <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
             {exp.numero}
-            <Badge className="bg-primary/10 text-primary border-transparent">{exp.estado?.replace("_"," ")}</Badge>
+            <Badge className="bg-primary/10 text-primary border-transparent">{ESTADO_LABEL[exp.estado ?? ""] ?? exp.estado?.replace("_"," ")}</Badge>
             {exp.solicitudes?.numero && <Badge variant="outline">← {exp.solicitudes.numero}</Badge>}
           </h1>
           <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
@@ -145,7 +146,7 @@ function DetalleExpediente() {
         <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>
           <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {["digitar","presentar","verificar","facturar","despachado"].map((e) => <SelectItem key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1)}</SelectItem>)}
+            {["digitar","presentar","verificar","facturar","despachado"].map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>

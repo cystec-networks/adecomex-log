@@ -173,7 +173,8 @@ function EstadoBadge({ value }: { value: string }) {
     facturar: "bg-accent/20 text-accent-foreground border-transparent",
     despachado: "bg-[var(--success)]/15 text-[var(--success)] border-transparent",
   };
-  return <Badge className={map[value] ?? "bg-muted text-muted-foreground border-transparent"}>{value?.replace("_", " ")}</Badge>;
+  const label = ({ digitar: "Recibido", presentar: "Presentado", verificar: "Verificado", facturar: "Facturado", despachado: "Despachado" } as Record<string, string>)[value] ?? value?.replace("_", " ");
+  return <Badge className={map[value] ?? "bg-muted text-muted-foreground border-transparent"}>{label}</Badge>;
 }
 
 function PrioridadBadge({ value }: { value: string }) {
