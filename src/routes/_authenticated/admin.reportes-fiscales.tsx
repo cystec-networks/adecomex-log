@@ -21,6 +21,7 @@ import { fmtLocalDate } from "@/lib/dates";
 import { Navigate } from "@tanstack/react-router";
 import { FORMA_PAGO_CODE, EMPRESA_RNC_KEY, montoRequerido, montoOpcional, isPagoExterior } from "@/lib/fiscal-606";
 import * as XLSX from "xlsx";
+import { PanelITBIS } from "@/components/panel-itbis";
 
 const BS_LABEL_EXCEL: Record<number, string> = {
   1: "01-GASTOS DE PERSONAL",
