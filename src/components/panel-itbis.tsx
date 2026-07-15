@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Save, Trash2, Pencil, X, Check } from "lucide-react";
+import { Save, Trash2, Pencil, X, Check, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useMyRoles } from "@/lib/auth-hooks";
 
 const RETENCION_TIPOS = [
@@ -56,7 +57,7 @@ const TIPO_INGRESO_LABEL: Record<string, string> = {
   financieros: "Ingresos financieros",
   extraordinarios: "Ingresos extraordinarios",
   arrendamientos: "Arrendamientos",
-  activos: "Venta de activos",
+  venta_activos_depreciables: "Venta de activos",
   otros: "Otros ingresos",
 };
 
@@ -122,14 +123,42 @@ export function PanelITBIS({ periodo }: { periodo: string }) {
     },
   });
 
+  const { data: empresaRnc } = useQuery({
+    queryKey: ["system_settings", "empresa_rnc"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("system_settings").select("value").eq("key", "empresa_rnc").maybeSingle();
+      return (data?.value as string) ?? "";
+    },
+  });
+
+  const { data: retencionesList } = useQuery({
+    queryKey: ["itbis_retenciones", periodo],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("itbis_retenciones_recibidas").select("tipo,monto").eq("periodo", periodo);
+      if (error) throw error;
+      return (data ?? []) as { tipo: string; monto: number }[];
+    },
+  });
+
   if (isLoading) return <div className="p-4 text-sm">Calculando IT-1…</div>;
   if (error) return <div className="p-4 text-sm text-destructive">Error: {(error as Error).message}</div>;
   if (!data) return null;
+
+  const handleDownloadExcel = () => {
+    downloadItbisExcel(data, periodo, empresaRnc ?? "", retencionesList ?? []);
+  };
 
   const gravadas = data.ventas.gravadas_por_tasa || {};
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button variant="outline" onClick={handleDownloadExcel}>
+          <Download className="h-4 w-4 mr-1" /> Descargar Excel (revisión IT-1)
+        </Button>
+      </div>
       {/* Anexo A por tipo */}
       <Card>
         <CardHeader>
@@ -578,4 +607,135 @@ function PanelAjustes({
       </CardContent>
     </Card>
   );
+}
+
+// ============ Excel export ============
+function downloadItbisExcel(
+  data: CalcResult,
+  periodo: string,
+  rnc: string,
+  retenciones: { tipo: string; monto: number }[],
+) {
+  const N = (n: any) => Number(n) || 0;
+  const header = (title: string) => [
+    ["DIRECCIÓN GENERAL DE IMPUESTOS INTERNOS"],
+    ["DECLARACIÓN JURADA Y/O PAGO DEL ITBIS"],
+    [`RNC: ${rnc || "(no configurado)"}`],
+    [`Período: ${periodo}`],
+    [title],
+    [],
+  ];
+
+  // ===== Anexo A =====
+  const aoaA: any[][] = [
+    ...header("Anexo A"),
+    ["II. Operaciones reportadas por tipo de NCF"],
+    ["Tipo de comprobante", "Cantidad", "Monto"],
+  ];
+  const anexo = data.ventas.anexo_a_por_tipo || {};
+  let totCant = 0, totMonto = 0;
+  Object.entries(anexo).forEach(([k, v]) => {
+    aoaA.push([ANEXO_A_LABEL[k] ?? k, N(v.cantidad), N(v.monto)]);
+    totCant += N(v.cantidad); totMonto += N(v.monto);
+  });
+  aoaA.push(["TOTAL OPERACIONES", totCant, totMonto], []);
+
+  aoaA.push(["III. Por forma de pago"], ["Forma de pago", "Monto"]);
+  Object.entries(data.ventas.por_forma_pago || {}).forEach(([k, v]) =>
+    aoaA.push([FORMA_PAGO_LABEL[k] ?? k, N(v)]),
+  );
+  aoaA.push([]);
+
+  aoaA.push(["IV. Por tipo de ingreso"], ["Tipo de ingreso", "Monto"]);
+  Object.entries(data.ventas.por_tipo_ingreso || {}).forEach(([k, v]) =>
+    aoaA.push([TIPO_INGRESO_LABEL[k] ?? k, N(v)]),
+  );
+  aoaA.push([]);
+
+  aoaA.push(
+    ["VI y VII. Constructoras y Comisionistas"],
+    ["No aplica a esta empresa", 0],
+    [],
+  );
+
+  aoaA.push(["IX. ITBIS Pagado"], ["Concepto", "Monto"]);
+  aoaA.push(["ITBIS por adelantar — Bienes", N(data.compras.itbis_adelantar_bienes)]);
+  aoaA.push(["ITBIS por adelantar — Servicios", N(data.compras.itbis_adelantar_servicios)]);
+  aoaA.push(["ITBIS sujeto a proporcionalidad", N(data.compras.itbis_sujeto_proporcionalidad)]);
+  aoaA.push([
+    `Coeficiente de proporcionalidad (${(N(data.compras.coeficiente_proporcionalidad) * 100).toFixed(4)}%)`,
+    N(data.compras.coeficiente_proporcionalidad),
+  ]);
+  aoaA.push(["ITBIS admitido por proporcionalidad", N(data.compras.itbis_admitido_proporcionalidad)]);
+  aoaA.push(["Total ITBIS deducible", N(data.compras.itbis_deducible_total)]);
+
+  const wsA = XLSX.utils.aoa_to_sheet(aoaA);
+  applyNumberFormat(wsA);
+  wsA["!cols"] = [{ wch: 50 }, { wch: 18 }, { wch: 18 }];
+
+  // ===== IT-1 =====
+  const aoaB: any[][] = [
+    ...header("IT-1"),
+    ["II. Ingresos por Operaciones"],
+    ["Concepto", "Monto"],
+    ["Total operaciones", N(data.ventas.total_operaciones)],
+    [`Total no gravadas (Casilla ${data.categoria_exenta_casilla})`, N(data.ventas.total_no_gravadas)],
+    ["Total gravadas", N(data.ventas.total_gravadas)],
+    ["  Gravadas 18%", N(data.ventas.gravadas_por_tasa?.["18"])],
+    ["  Gravadas 16%", N(data.ventas.gravadas_por_tasa?.["16"])],
+    ["  Gravadas 9%", N(data.ventas.gravadas_por_tasa?.["9"])],
+    ["  Gravadas 8%", N(data.ventas.gravadas_por_tasa?.["8"])],
+    [],
+    ["III. Liquidación"],
+    ["Concepto", "Monto"],
+    ["ITBIS Cobrado", N(data.ventas.itbis_cobrado)],
+    ["ITBIS Deducible Total", N(data.compras.itbis_deducible_total)],
+    ["Impuesto a Pagar o Saldo a Favor", N(data.resultado.impuesto_a_pagar_o_saldo_favor)],
+    [],
+    ["Retenciones / Percepciones"],
+    ["Tipo", "Monto"],
+  ];
+  const totalesRet: Record<string, number> = {};
+  retenciones.forEach((r) => {
+    totalesRet[r.tipo] = (totalesRet[r.tipo] || 0) + N(r.monto);
+  });
+  let totRet = 0;
+  Object.entries(totalesRet).forEach(([k, v]) => {
+    aoaB.push([RETENCION_LABEL[k] ?? k, N(v)]);
+    totRet += N(v);
+  });
+  aoaB.push(["Total retenciones/percepciones", totRet], []);
+
+  aoaB.push(
+    ["Ajustes"],
+    ["Concepto", "Monto"],
+    ["Saldo a favor anterior", N(data.declaracion.saldo_favor_anterior)],
+    ["Recargos", N(data.declaracion.recargos)],
+    ["Interés indemnizatorio", N(data.declaracion.interes_indemnizatorio)],
+    ["Sanciones", N(data.declaracion.sanciones)],
+    [],
+    ["DIFERENCIA A PAGAR FINAL", N(data.resultado.diferencia_a_pagar_final)],
+  );
+
+  const wsB = XLSX.utils.aoa_to_sheet(aoaB);
+  applyNumberFormat(wsB);
+  wsB["!cols"] = [{ wch: 50 }, { wch: 20 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, wsA, "Anexo A");
+  XLSX.utils.book_append_sheet(wb, wsB, "IT-1");
+  XLSX.writeFile(wb, `Revision_ITBIS_${periodo}.xlsx`);
+}
+
+function applyNumberFormat(ws: XLSX.WorkSheet) {
+  const ref = ws["!ref"];
+  if (!ref) return;
+  const range = XLSX.utils.decode_range(ref);
+  for (let R = range.s.r; R <= range.e.r; R++) {
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const addr = XLSX.utils.encode_cell({ r: R, c: C });
+      const cell = ws[addr];
+      if (cell && cell.t === "n") cell.z = "#,##0.00";
+    }
+  }
 }
