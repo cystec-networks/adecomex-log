@@ -150,13 +150,24 @@ export function PanelITBIS({ periodo }: { periodo: string }) {
     downloadItbisExcel(data, periodo, empresaRnc ?? "", retencionesList ?? []);
   };
 
+  const handleDownload607 = async () => {
+    try {
+      await download607Excel(periodo, empresaRnc ?? "");
+    } catch (e: any) {
+      toast.error(e?.message ?? "No se pudo generar el 607");
+    }
+  };
+
   const gravadas = data.ventas.gravadas_por_tasa || {};
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2 flex-wrap">
         <Button variant="outline" onClick={handleDownloadExcel}>
           <Download className="h-4 w-4 mr-1" /> Descargar Excel (revisión IT-1)
+        </Button>
+        <Button variant="outline" onClick={handleDownload607}>
+          <Download className="h-4 w-4 mr-1" /> Descargar Excel 607 (uso interno)
         </Button>
       </div>
       {/* Anexo A por tipo */}
@@ -739,3 +750,143 @@ function applyNumberFormat(ws: XLSX.WorkSheet) {
     }
   }
 }
+
+// ============ 607 (uso interno) ============
+const TIPO_INGRESO_607: Record<string, string> = {
+  operaciones: "01 - Ingresos por Operaciones (No Financieros)",
+  financieros: "02 - Ingresos Financieros",
+  extraordinarios: "03 - Ingresos Extraordinarios",
+  arrendamientos: "04 - Ingresos por Arrendamientos",
+  venta_activos_depreciables: "05 - Ingresos por Venta de Activo Depreciable",
+  otros: "06 - Otros Ingresos",
+};
+
+function fechaAAAAMMDD(fecha: string | null | undefined): string {
+  if (!fecha) return "";
+  return String(fecha).slice(0, 10).replace(/-/g, "");
+}
+
+async function download607Excel(periodo: string, empresaRnc: string) {
+  if (!/^\d{6}$/.test(periodo)) throw new Error("Período inválido (AAAAMM)");
+  const anio = periodo.slice(0, 4);
+  const mes = periodo.slice(4, 6);
+  const desde = `${anio}-${mes}-01`;
+  const nextMonth = new Date(Number(anio), Number(mes), 1);
+  const hasta = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-01`;
+
+  const { data: facturas, error } = await supabase
+    .from("facturas_ecf")
+    .select("*")
+    .is("eliminado_en", null)
+    .gte("fecha_emision", desde)
+    .lt("fecha_emision", hasta)
+    .order("fecha_emision", { ascending: true });
+  if (error) throw error;
+
+  const rows = (facturas ?? []) as any[];
+  const N = (x: any) => Number(x) || 0;
+
+  const aoa: any[][] = [
+    ["Formato 607 — Ventas de Bienes y Servicios (USO INTERNO)"],
+    ["Uso interno únicamente — no se envía a la DGII (ADECOMEX emite 100% e-CF)"],
+    [],
+    ["RNC Empresa", empresaRnc || ""],
+    ["Período", periodo],
+    ["Cantidad de Registros", rows.length],
+    [],
+    [
+      "No",
+      "RNC/Cédula o Pasaporte",
+      "Tipo Identificación",
+      "Número Comprobante Fiscal",
+      "Número Comprobante Fiscal Modificado",
+      "Tipo de Ingreso",
+      "Fecha Comprobante",
+      "Fecha de Retención",
+      "Monto Facturado",
+      "ITBIS Facturado",
+      "ITBIS Retenido por Terceros",
+      "ITBIS Percibido",
+      "Retención Renta por Terceros",
+      "ISR Percibido",
+      "Impuesto Selectivo al Consumo",
+      "Otros Impuestos/Tasas",
+      "Monto Propina Legal",
+      "Efectivo",
+      "Cheque/Transferencia/Depósito",
+      "Tarjeta Débito/Crédito",
+      "Venta a Crédito",
+      "Bonos o Certificados de Regalo",
+      "Permuta",
+      "Otras Formas de Ventas",
+    ],
+  ];
+
+  rows.forEach((f, i) => {
+    const rnc = (f.cliente_rnc ?? "").toString().replace(/\D/g, "");
+    const tipoId = rnc.length === 9 || rnc.length === 11 ? 1 : "";
+    const montoFacturado = N(f.subtotal_gravado) + N(f.subtotal_exento);
+    const itbisFacturado = N(f.total_itbis);
+    const itbisRetTerc = N(f.itbis_retenido_terceros);
+    const itbisPercibido = N(f.itbis_percibido_venta);
+    const retRentaTerc = N(f.retencion_renta_terceros);
+    const isrPercibido = N(f.isr_percibido_venta);
+    const isc = N(f.total_isc_e) + N(f.total_isc_av);
+    const otros = N(f.otros_impuestos);
+    const propina = N(f.propina_legal);
+    const fp = f.forma_pago_venta ?? null;
+    const totalConItbis = montoFacturado + itbisFacturado;
+    const fechaComp = fechaAAAAMMDD(f.fecha_emision);
+    const fechaRet = (itbisRetTerc > 0 || retRentaTerc > 0) ? fechaComp : "";
+
+    aoa.push([
+      i + 1,
+      f.cliente_rnc ?? "",
+      tipoId,
+      f.encf ?? "",
+      "",
+      TIPO_INGRESO_607[f.tipo_ingreso ?? "operaciones"] ?? "",
+      fechaComp,
+      fechaRet,
+      montoFacturado,
+      itbisFacturado,
+      itbisRetTerc,
+      itbisPercibido,
+      retRentaTerc,
+      isrPercibido,
+      isc,
+      otros,
+      propina,
+      fp === "efectivo" ? totalConItbis : 0,
+      fp === "cheque_transferencia" ? totalConItbis : 0,
+      fp === "tarjeta" ? totalConItbis : 0,
+      fp === "credito" ? totalConItbis : 0,
+      fp === "bonos_certificados" ? totalConItbis : 0,
+      fp === "permuta" ? totalConItbis : 0,
+      (!fp || fp === "otras") ? totalConItbis : 0,
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  // Format numeric cells (columns I..X => index 8..23) as #,##0.00 for detail rows
+  const startRow = 8; // 0-indexed row 8 = row 9 in Excel (first data row)
+  for (let r = startRow; r < startRow + rows.length; r++) {
+    for (let c = 8; c <= 23; c++) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      const cell = ws[addr];
+      if (cell && cell.t === "n") cell.z = "#,##0.00";
+    }
+  }
+  ws["!cols"] = [
+    { wch: 5 }, { wch: 18 }, { wch: 8 }, { wch: 22 }, { wch: 22 },
+    { wch: 46 }, { wch: 12 }, { wch: 12 },
+    { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
+    { wch: 14 }, { wch: 14 }, { wch: 14 },
+    { wch: 14 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "607 uso interno");
+  XLSX.writeFile(wb, `Revision_607_uso_interno_${periodo}.xlsx`);
+}
+

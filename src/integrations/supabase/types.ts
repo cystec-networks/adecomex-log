@@ -1037,12 +1037,16 @@ export type Database = {
           fecha_vencimiento_ncf: string | null
           forma_pago_venta: string | null
           id: string
+          isr_percibido_venta: number
+          itbis_percibido_venta: number
+          itbis_retenido_terceros: number
           monto_total: number
           motivo_anulacion: string | null
           notas: string | null
           otros_impuestos: number
           pdf_url: string | null
           propina_legal: number
+          retencion_renta_terceros: number
           subtotal_exento: number
           subtotal_gravado: number
           tasa_itbis: number
@@ -1071,12 +1075,16 @@ export type Database = {
           fecha_vencimiento_ncf?: string | null
           forma_pago_venta?: string | null
           id?: string
+          isr_percibido_venta?: number
+          itbis_percibido_venta?: number
+          itbis_retenido_terceros?: number
           monto_total?: number
           motivo_anulacion?: string | null
           notas?: string | null
           otros_impuestos?: number
           pdf_url?: string | null
           propina_legal?: number
+          retencion_renta_terceros?: number
           subtotal_exento?: number
           subtotal_gravado?: number
           tasa_itbis?: number
@@ -1105,12 +1113,16 @@ export type Database = {
           fecha_vencimiento_ncf?: string | null
           forma_pago_venta?: string | null
           id?: string
+          isr_percibido_venta?: number
+          itbis_percibido_venta?: number
+          itbis_retenido_terceros?: number
           monto_total?: number
           motivo_anulacion?: string | null
           notas?: string | null
           otros_impuestos?: number
           pdf_url?: string | null
           propina_legal?: number
+          retencion_renta_terceros?: number
           subtotal_exento?: number
           subtotal_gravado?: number
           tasa_itbis?: number
