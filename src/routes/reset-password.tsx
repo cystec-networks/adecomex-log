@@ -19,14 +19,52 @@ function ResetPassword() {
   const [pwd, setPwd] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Supabase emite un evento PASSWORD_RECOVERY cuando el usuario llega desde el enlace del correo.
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setReady(true);
     });
-    // También verificar si ya hay sesión de recuperación al montar
-    supabase.auth.getSession().then(({ data }) => { if (data.session) setReady(true); });
+
+    (async () => {
+      try {
+        const url = new URL(window.location.href);
+        const hash = url.hash.startsWith("#") ? url.hash.slice(1) : url.hash;
+        const hashParams = new URLSearchParams(hash);
+
+        const code = url.searchParams.get("code");
+        const tokenHash = url.searchParams.get("token_hash") ?? hashParams.get("token_hash");
+        const type = url.searchParams.get("type") ?? hashParams.get("type");
+
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+          if (error) {
+            setErrorMsg(error.message || "El enlace expiró o ya fue usado. Solicita un nuevo enlace.");
+            return;
+          }
+          setReady(true);
+          return;
+        }
+
+        if (tokenHash && type) {
+          const otpType = (type === "invite" ? "invite" : "recovery") as "recovery" | "invite";
+          const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: otpType });
+          if (error) {
+            setErrorMsg(error.message || "El enlace expiró o ya fue usado. Solicita un nuevo enlace.");
+            return;
+          }
+          setReady(true);
+          return;
+        }
+
+        const { data } = await supabase.auth.getSession();
+        if (data.session) setReady(true);
+      } catch (e: any) {
+        setErrorMsg(e?.message ?? "No se pudo validar el enlace de recuperación.");
+      }
+    })();
+
     return () => sub.subscription.unsubscribe();
   }, []);
 
