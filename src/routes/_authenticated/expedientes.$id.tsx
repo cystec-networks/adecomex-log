@@ -1573,6 +1573,18 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="rounded border bg-background/60 p-3 space-y-2">
+                  <label className="flex items-start gap-2 text-sm">
+                    <input type="checkbox" className="mt-1" checked={crearCxp} onChange={(e) => setCrearCxp(e.target.checked)} />
+                    <span>También crear cuenta por pagar vinculada a este proveedor</span>
+                  </label>
+                  {crearCxp && (
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs">Fecha de vencimiento del pago (opcional)</Label>
+                      <Input type="date" value={cxpVence} onChange={(e) => setCxpVence(e.target.value)} />
+                    </div>
+                  )}
+                </div>
                 <details className="rounded border bg-background/60">
                   <summary className="cursor-pointer text-xs font-medium px-3 py-2 select-none">Detalles fiscales avanzados (opcional)</summary>
                   <div className="p-3 space-y-2 border-t">
