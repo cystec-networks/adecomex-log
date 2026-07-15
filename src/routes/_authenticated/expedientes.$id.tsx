@@ -1310,6 +1310,8 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
   };
   const [f, setF] = useState<any>(empty);
   const [file, setFile] = useState<File | null>(null);
+  const [crearCxp, setCrearCxp] = useState(false);
+  const [cxpVence, setCxpVence] = useState<string>("");
 
 
   const save = useMutation({
