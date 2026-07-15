@@ -109,23 +109,29 @@ function AccesosClientesPage() {
                         <UserPlus className="h-4 w-4 mr-1" /> Invitar al portal
                       </Button>
                     )}
-                    {c.vinculo?.activo && (
-                      <Button
-                        size="sm" variant="outline"
-                        onClick={() => toggleAcceso.mutate({ user_id: c.vinculo!.user_id, activo: false })}
-                        disabled={toggleAcceso.isPending}
-                      >
-                        <ShieldOff className="h-4 w-4 mr-1" /> Revocar acceso
-                      </Button>
-                    )}
-                    {c.vinculo && !c.vinculo.activo && (
-                      <Button
-                        size="sm" variant="outline"
-                        onClick={() => toggleAcceso.mutate({ user_id: c.vinculo!.user_id, activo: true })}
-                        disabled={toggleAcceso.isPending}
-                      >
-                        <ShieldCheck className="h-4 w-4 mr-1" /> Reactivar
-                      </Button>
+                    {c.vinculo && (
+                      <div className="inline-flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setInviting(c)}>
+                          <Mail className="h-4 w-4 mr-1" /> Reenviar invitación
+                        </Button>
+                        {c.vinculo.activo ? (
+                          <Button
+                            size="sm" variant="outline"
+                            onClick={() => toggleAcceso.mutate({ user_id: c.vinculo!.user_id, activo: false })}
+                            disabled={toggleAcceso.isPending}
+                          >
+                            <ShieldOff className="h-4 w-4 mr-1" /> Revocar acceso
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm" variant="outline"
+                            onClick={() => toggleAcceso.mutate({ user_id: c.vinculo!.user_id, activo: true })}
+                            disabled={toggleAcceso.isPending}
+                          >
+                            <ShieldCheck className="h-4 w-4 mr-1" /> Reactivar
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>
