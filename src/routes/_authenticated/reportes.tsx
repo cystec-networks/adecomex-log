@@ -360,7 +360,7 @@ function ReportesPage() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
-                  {ESTADOS.map((e) => <SelectItem key={e} value={e}>{e[0].toUpperCase() + e.slice(1)}</SelectItem>)}
+                  {ESTADOS.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
