@@ -25,6 +25,7 @@ import { SearchEmailButton } from "@/components/search-email-button";
 import { RastrearEmbarqueButton } from "@/components/rastrear-embarque-button";
 import { ChecklistHitos } from "@/components/checklist-hitos";
 import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
+import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { useMyRoles } from "@/lib/auth-hooks";
 
