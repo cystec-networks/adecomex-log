@@ -14,6 +14,7 @@ import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { parseLocalDate, fmtLocalDate } from "@/lib/dates";
+import { ESTADO_LABEL } from "@/lib/estados-expediente";
 
 export const Route = createFileRoute("/_authenticated/reportes")({
   component: ReportesPage,
