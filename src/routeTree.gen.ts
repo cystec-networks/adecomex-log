@@ -45,6 +45,7 @@ import { Route as AuthenticatedAdminCuentasPorPagarRouteImport } from './routes/
 import { Route as AuthenticatedAdminConfiguracionRouteImport } from './routes/_authenticated/admin.configuracion'
 import { Route as AuthenticatedAdminCatalogosRouteImport } from './routes/_authenticated/admin.catalogos'
 import { Route as AuthenticatedAdminAccesosClientesRouteImport } from './routes/_authenticated/admin.accesos-clientes'
+import { Route as PortalPortalExpedientesIdRouteImport } from './routes/_portal/portal.expedientes.$id'
 import { Route as AuthenticatedAdminFacturacionPendientesRouteImport } from './routes/_authenticated/admin.facturacion.pendientes'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -249,6 +250,12 @@ const AuthenticatedAdminAccesosClientesRoute =
     path: '/admin/accesos-clientes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const PortalPortalExpedientesIdRoute =
+  PortalPortalExpedientesIdRouteImport.update({
+    id: '/portal/expedientes/$id',
+    path: '/portal/expedientes/$id',
+    getParentRoute: () => PortalRouteRoute,
+  } as any)
 const AuthenticatedAdminFacturacionPendientesRoute =
   AuthenticatedAdminFacturacionPendientesRouteImport.update({
     id: '/pendientes',
@@ -292,6 +299,7 @@ export interface FileRoutesByFullPath {
   '/transportes/': typeof AuthenticatedTransportesIndexRoute
   '/portal/': typeof PortalPortalIndexRoute
   '/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
+  '/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -329,6 +337,7 @@ export interface FileRoutesByTo {
   '/transportes': typeof AuthenticatedTransportesIndexRoute
   '/portal': typeof PortalPortalIndexRoute
   '/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
+  '/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -369,6 +378,7 @@ export interface FileRoutesById {
   '/_authenticated/transportes/': typeof AuthenticatedTransportesIndexRoute
   '/_portal/portal/': typeof PortalPortalIndexRoute
   '/_authenticated/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
+  '/_portal/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -408,6 +418,7 @@ export interface FileRouteTypes {
     | '/transportes/'
     | '/portal/'
     | '/admin/facturacion/pendientes'
+    | '/portal/expedientes/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -445,6 +456,7 @@ export interface FileRouteTypes {
     | '/transportes'
     | '/portal'
     | '/admin/facturacion/pendientes'
+    | '/portal/expedientes/$id'
   id:
     | '__root__'
     | '/'
@@ -484,6 +496,7 @@ export interface FileRouteTypes {
     | '/_authenticated/transportes/'
     | '/_portal/portal/'
     | '/_authenticated/admin/facturacion/pendientes'
+    | '/_portal/portal/expedientes/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -748,6 +761,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAccesosClientesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_portal/portal/expedientes/$id': {
+      id: '/_portal/portal/expedientes/$id'
+      path: '/portal/expedientes/$id'
+      fullPath: '/portal/expedientes/$id'
+      preLoaderRoute: typeof PortalPortalExpedientesIdRouteImport
+      parentRoute: typeof PortalRouteRoute
+    }
     '/_authenticated/admin/facturacion/pendientes': {
       id: '/_authenticated/admin/facturacion/pendientes'
       path: '/pendientes'
@@ -852,10 +872,12 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface PortalRouteRouteChildren {
   PortalPortalIndexRoute: typeof PortalPortalIndexRoute
+  PortalPortalExpedientesIdRoute: typeof PortalPortalExpedientesIdRoute
 }
 
 const PortalRouteRouteChildren: PortalRouteRouteChildren = {
   PortalPortalIndexRoute: PortalPortalIndexRoute,
+  PortalPortalExpedientesIdRoute: PortalPortalExpedientesIdRoute,
 }
 
 const PortalRouteRouteWithChildren = PortalRouteRoute._addFileChildren(
