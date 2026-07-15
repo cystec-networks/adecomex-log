@@ -96,22 +96,36 @@ export const extractGastoFiscalFromDocument = createServerFn({ method: "POST" })
       return s.length ? s : null;
     };
 
-    const rnc = str(parsed.rnc_cedula_proveedor)?.replace(/\D/g, "") ?? null;
+    let rnc = str(parsed.rnc_cedula_proveedor)?.replace(/\D/g, "") ?? null;
+    // Nunca devolver el RNC de ADECOMEX como proveedor
+    if (rnc === "130481301") rnc = null;
     let tipoId = parsed.tipo_id_proveedor ?? null;
     if (tipoId !== "RNC" && tipoId !== "CEDULA") {
       tipoId = rnc && rnc.length === 9 ? "RNC" : rnc && rnc.length === 11 ? "CEDULA" : null;
     }
 
+    // Limpia ceros de relleno en NCF: si tiene >13 chars y hay una letra B/E interior,
+    // conserva desde esa letra en adelante.
+    const cleanNcf = (v: unknown): string | null => {
+      const s = str(v)?.toUpperCase() ?? null;
+      if (!s) return null;
+      if (s.length > 13) {
+        const m = s.match(/[BE][A-Z0-9]+$/);
+        if (m) return m[0];
+      }
+      return s;
+    };
+
     return {
       proveedor_nombre: str(parsed.proveedor_nombre),
       rnc_cedula_proveedor: rnc,
       tipo_id_proveedor: tipoId,
-      ncf_proveedor: str(parsed.ncf_proveedor)?.toUpperCase() ?? null,
-      ncf_modificado: str(parsed.ncf_modificado)?.toUpperCase() ?? null,
+      ncf_proveedor: cleanNcf(parsed.ncf_proveedor),
+      ncf_modificado: cleanNcf(parsed.ncf_modificado),
       fecha: str(parsed.fecha),
       monto_facturado_bienes: num(parsed.monto_facturado_bienes),
       monto_facturado_servicios: num(parsed.monto_facturado_servicios),
-      itbis_facturado: num(parsed.itbis_facturado),
+      itbis_facturado: num(parsed.itbis_facturado) ?? 0,
       concepto: str(parsed.concepto)?.slice(0, 150) ?? null,
     };
   });
