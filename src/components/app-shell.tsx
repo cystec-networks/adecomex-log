@@ -110,6 +110,8 @@ const GROUPS: Group[] = [
     items: [
       { to: "/admin/usuarios", label: "Usuarios y roles", icon: UserCog, adminOnly: true,
         match: (p) => p.startsWith("/admin/usuarios") },
+      { to: "/admin/accesos-clientes", label: "Accesos de clientes", icon: UserCog, adminOnly: true,
+        match: (p) => p.startsWith("/admin/accesos-clientes") },
       { to: "/admin/catalogos", label: "Catálogos DGA", icon: Library, adminOnly: true,
         match: (p) => p.startsWith("/admin/catalogos") },
       { to: "/admin/configuracion", label: "Configuración", icon: Settings, adminOnly: true,
