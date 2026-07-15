@@ -99,6 +99,10 @@ export function FacturaEcfFormDialog({
         monto_total: totales.monto_total,
         notas: notas || null,
         pdf_url,
+        itbis_retenido_terceros: Number(itbisRetenidoTerceros) || 0,
+        itbis_percibido_venta: Number(itbisPercibidoVenta) || 0,
+        retencion_renta_terceros: Number(retencionRentaTerceros) || 0,
+        isr_percibido_venta: Number(isrPercibidoVenta) || 0,
         created_by: u.user?.id ?? null,
       }).select().single();
       if (error) throw error;
