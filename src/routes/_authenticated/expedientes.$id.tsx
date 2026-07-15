@@ -1445,7 +1445,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
     setFile(null);
     setOpen(true);
   };
-  const openNew = () => { setEditingId(null); setF(empty); setFile(null); setOpen(true); };
+  const openNew = () => { setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); setOpen(true); };
 
   const subtotal = gastos.reduce((s, r) => s + (r.es_reembolso ? -Number(r.monto || 0) : Number(r.monto || 0)), 0);
 
