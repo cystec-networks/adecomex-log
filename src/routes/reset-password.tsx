@@ -93,7 +93,9 @@ function ResetPassword() {
           </div>
           <CardTitle className="font-display text-xl">Restablecer contraseña</CardTitle>
           <CardDescription>
-            {ready
+            {errorMsg
+              ? errorMsg
+              : ready
               ? "Define una nueva contraseña para tu cuenta."
               : "Valida tu enlace de recuperación. Si llegaste desde el correo y no carga, vuelve a solicitar el restablecimiento."}
           </CardDescription>
