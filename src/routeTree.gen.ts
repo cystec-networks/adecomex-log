@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PortalRouteRouteImport } from './routes/_portal/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedReportesRouteImport } from './routes/_authenticated/reportes'
@@ -18,6 +19,7 @@ import { Route as AuthenticatedMiCuentaRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCopilotoRouteImport } from './routes/_authenticated/copiloto'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
+import { Route as PortalPortalIndexRouteImport } from './routes/_portal/portal.index'
 import { Route as AuthenticatedTransportesIndexRouteImport } from './routes/_authenticated/transportes.index'
 import { Route as AuthenticatedSolicitudesIndexRouteImport } from './routes/_authenticated/solicitudes.index'
 import { Route as AuthenticatedPermisosIndexRouteImport } from './routes/_authenticated/permisos.index'
@@ -43,6 +45,7 @@ import { Route as AuthenticatedAdminCuentasPorPagarRouteImport } from './routes/
 import { Route as AuthenticatedAdminConfiguracionRouteImport } from './routes/_authenticated/admin.configuracion'
 import { Route as AuthenticatedAdminCatalogosRouteImport } from './routes/_authenticated/admin.catalogos'
 import { Route as AuthenticatedAdminAccesosClientesRouteImport } from './routes/_authenticated/admin.accesos-clientes'
+import { Route as PortalPortalExpedientesIdRouteImport } from './routes/_portal/portal.expedientes.$id'
 import { Route as AuthenticatedAdminFacturacionPendientesRouteImport } from './routes/_authenticated/admin.facturacion.pendientes'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -53,6 +56,10 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRouteRoute = PortalRouteRouteImport.update({
+  id: '/_portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -88,6 +95,11 @@ const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const PortalPortalIndexRoute = PortalPortalIndexRouteImport.update({
+  id: '/portal/',
+  path: '/portal/',
+  getParentRoute: () => PortalRouteRoute,
 } as any)
 const AuthenticatedTransportesIndexRoute =
   AuthenticatedTransportesIndexRouteImport.update({
@@ -238,6 +250,12 @@ const AuthenticatedAdminAccesosClientesRoute =
     path: '/admin/accesos-clientes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const PortalPortalExpedientesIdRoute =
+  PortalPortalExpedientesIdRouteImport.update({
+    id: '/portal/expedientes/$id',
+    path: '/portal/expedientes/$id',
+    getParentRoute: () => PortalRouteRoute,
+  } as any)
 const AuthenticatedAdminFacturacionPendientesRoute =
   AuthenticatedAdminFacturacionPendientesRouteImport.update({
     id: '/pendientes',
@@ -279,7 +297,9 @@ export interface FileRoutesByFullPath {
   '/permisos/': typeof AuthenticatedPermisosIndexRoute
   '/solicitudes/': typeof AuthenticatedSolicitudesIndexRoute
   '/transportes/': typeof AuthenticatedTransportesIndexRoute
+  '/portal/': typeof PortalPortalIndexRoute
   '/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
+  '/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -315,12 +335,15 @@ export interface FileRoutesByTo {
   '/permisos': typeof AuthenticatedPermisosIndexRoute
   '/solicitudes': typeof AuthenticatedSolicitudesIndexRoute
   '/transportes': typeof AuthenticatedTransportesIndexRoute
+  '/portal': typeof PortalPortalIndexRoute
   '/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
+  '/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/_portal': typeof PortalRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
@@ -353,7 +376,9 @@ export interface FileRoutesById {
   '/_authenticated/permisos/': typeof AuthenticatedPermisosIndexRoute
   '/_authenticated/solicitudes/': typeof AuthenticatedSolicitudesIndexRoute
   '/_authenticated/transportes/': typeof AuthenticatedTransportesIndexRoute
+  '/_portal/portal/': typeof PortalPortalIndexRoute
   '/_authenticated/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
+  '/_portal/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -391,7 +416,9 @@ export interface FileRouteTypes {
     | '/permisos/'
     | '/solicitudes/'
     | '/transportes/'
+    | '/portal/'
     | '/admin/facturacion/pendientes'
+    | '/portal/expedientes/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -427,11 +454,14 @@ export interface FileRouteTypes {
     | '/permisos'
     | '/solicitudes'
     | '/transportes'
+    | '/portal'
     | '/admin/facturacion/pendientes'
+    | '/portal/expedientes/$id'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/_portal'
     | '/auth'
     | '/reset-password'
     | '/_authenticated/clientes'
@@ -464,12 +494,15 @@ export interface FileRouteTypes {
     | '/_authenticated/permisos/'
     | '/_authenticated/solicitudes/'
     | '/_authenticated/transportes/'
+    | '/_portal/portal/'
     | '/_authenticated/admin/facturacion/pendientes'
+    | '/_portal/portal/expedientes/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  PortalRouteRoute: typeof PortalRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
 }
@@ -488,6 +521,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_portal': {
+      id: '/_portal'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PortalRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -538,6 +578,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/clientes'
       preLoaderRoute: typeof AuthenticatedClientesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_portal/portal/': {
+      id: '/_portal/portal/'
+      path: '/portal'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalPortalIndexRouteImport
+      parentRoute: typeof PortalRouteRoute
     }
     '/_authenticated/transportes/': {
       id: '/_authenticated/transportes/'
@@ -714,6 +761,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAccesosClientesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_portal/portal/expedientes/$id': {
+      id: '/_portal/portal/expedientes/$id'
+      path: '/portal/expedientes/$id'
+      fullPath: '/portal/expedientes/$id'
+      preLoaderRoute: typeof PortalPortalExpedientesIdRouteImport
+      parentRoute: typeof PortalRouteRoute
+    }
     '/_authenticated/admin/facturacion/pendientes': {
       id: '/_authenticated/admin/facturacion/pendientes'
       path: '/pendientes'
@@ -816,9 +870,24 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface PortalRouteRouteChildren {
+  PortalPortalIndexRoute: typeof PortalPortalIndexRoute
+  PortalPortalExpedientesIdRoute: typeof PortalPortalExpedientesIdRoute
+}
+
+const PortalRouteRouteChildren: PortalRouteRouteChildren = {
+  PortalPortalIndexRoute: PortalPortalIndexRoute,
+  PortalPortalExpedientesIdRoute: PortalPortalExpedientesIdRoute,
+}
+
+const PortalRouteRouteWithChildren = PortalRouteRoute._addFileChildren(
+  PortalRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  PortalRouteRoute: PortalRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
 }
