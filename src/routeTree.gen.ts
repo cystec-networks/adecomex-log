@@ -42,6 +42,7 @@ import { Route as AuthenticatedAdminDashboardFinancieroRouteImport } from './rou
 import { Route as AuthenticatedAdminCuentasPorPagarRouteImport } from './routes/_authenticated/admin.cuentas-por-pagar'
 import { Route as AuthenticatedAdminConfiguracionRouteImport } from './routes/_authenticated/admin.configuracion'
 import { Route as AuthenticatedAdminCatalogosRouteImport } from './routes/_authenticated/admin.catalogos'
+import { Route as AuthenticatedAdminAccesosClientesRouteImport } from './routes/_authenticated/admin.accesos-clientes'
 import { Route as AuthenticatedAdminFacturacionPendientesRouteImport } from './routes/_authenticated/admin.facturacion.pendientes'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -231,6 +232,12 @@ const AuthenticatedAdminCatalogosRoute =
     path: '/admin/catalogos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminAccesosClientesRoute =
+  AuthenticatedAdminAccesosClientesRouteImport.update({
+    id: '/admin/accesos-clientes',
+    path: '/admin/accesos-clientes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminFacturacionPendientesRoute =
   AuthenticatedAdminFacturacionPendientesRouteImport.update({
     id: '/pendientes',
@@ -247,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/mi-cuenta': typeof AuthenticatedMiCuentaRoute
   '/reportes': typeof AuthenticatedReportesRoute
+  '/admin/accesos-clientes': typeof AuthenticatedAdminAccesosClientesRoute
   '/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
   '/admin/cuentas-por-pagar': typeof AuthenticatedAdminCuentasPorPagarRoute
@@ -282,6 +290,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/mi-cuenta': typeof AuthenticatedMiCuentaRoute
   '/reportes': typeof AuthenticatedReportesRoute
+  '/admin/accesos-clientes': typeof AuthenticatedAdminAccesosClientesRoute
   '/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
   '/admin/cuentas-por-pagar': typeof AuthenticatedAdminCuentasPorPagarRoute
@@ -319,6 +328,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/mi-cuenta': typeof AuthenticatedMiCuentaRoute
   '/_authenticated/reportes': typeof AuthenticatedReportesRoute
+  '/_authenticated/admin/accesos-clientes': typeof AuthenticatedAdminAccesosClientesRoute
   '/_authenticated/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/_authenticated/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
   '/_authenticated/admin/cuentas-por-pagar': typeof AuthenticatedAdminCuentasPorPagarRoute
@@ -356,6 +366,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/mi-cuenta'
     | '/reportes'
+    | '/admin/accesos-clientes'
     | '/admin/catalogos'
     | '/admin/configuracion'
     | '/admin/cuentas-por-pagar'
@@ -391,6 +402,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/mi-cuenta'
     | '/reportes'
+    | '/admin/accesos-clientes'
     | '/admin/catalogos'
     | '/admin/configuracion'
     | '/admin/cuentas-por-pagar'
@@ -427,6 +439,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/mi-cuenta'
     | '/_authenticated/reportes'
+    | '/_authenticated/admin/accesos-clientes'
     | '/_authenticated/admin/catalogos'
     | '/_authenticated/admin/configuracion'
     | '/_authenticated/admin/cuentas-por-pagar'
@@ -694,6 +707,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCatalogosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/accesos-clientes': {
+      id: '/_authenticated/admin/accesos-clientes'
+      path: '/admin/accesos-clientes'
+      fullPath: '/admin/accesos-clientes'
+      preLoaderRoute: typeof AuthenticatedAdminAccesosClientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/facturacion/pendientes': {
       id: '/_authenticated/admin/facturacion/pendientes'
       path: '/pendientes'
@@ -725,6 +745,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedMiCuentaRoute: typeof AuthenticatedMiCuentaRoute
   AuthenticatedReportesRoute: typeof AuthenticatedReportesRoute
+  AuthenticatedAdminAccesosClientesRoute: typeof AuthenticatedAdminAccesosClientesRoute
   AuthenticatedAdminCatalogosRoute: typeof AuthenticatedAdminCatalogosRoute
   AuthenticatedAdminConfiguracionRoute: typeof AuthenticatedAdminConfiguracionRoute
   AuthenticatedAdminCuentasPorPagarRoute: typeof AuthenticatedAdminCuentasPorPagarRoute
@@ -757,6 +778,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedMiCuentaRoute: AuthenticatedMiCuentaRoute,
   AuthenticatedReportesRoute: AuthenticatedReportesRoute,
+  AuthenticatedAdminAccesosClientesRoute:
+    AuthenticatedAdminAccesosClientesRoute,
   AuthenticatedAdminCatalogosRoute: AuthenticatedAdminCatalogosRoute,
   AuthenticatedAdminConfiguracionRoute: AuthenticatedAdminConfiguracionRoute,
   AuthenticatedAdminCuentasPorPagarRoute:
@@ -802,13 +825,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
