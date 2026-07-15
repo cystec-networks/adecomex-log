@@ -549,7 +549,7 @@ function ExpedienteRow({ e, items, showCliente }: { e: any; items: any[]; showCl
         <td className="px-3 py-2 text-right font-mono font-semibold">{fmtNum(Number(e.total_cif) || 0)}</td>
         <td className="px-3 py-2">
           <Badge variant="outline" className={estadoBadge[e.estado] ?? ""}>
-            {e.estado}
+            {ESTADO_LABEL[e.estado ?? ""] ?? e.estado}
           </Badge>
         </td>
       </tr>
