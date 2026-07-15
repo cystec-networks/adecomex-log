@@ -130,9 +130,11 @@ function validateRow(r: Row): string[] {
   else if (!RNC_RE.test(r.rnc_cedula_proveedor)) errs.push("RNC/Cédula debe tener 9 u 11 dígitos numéricos");
   if (!r.ncf_proveedor) errs.push("NCF vacío");
   else if (!NCF_RE.test(r.ncf_proveedor)) errs.push("NCF debe tener 11 o 13 caracteres alfanuméricos");
-  if (!r.tipo_ncf_proveedor) errs.push("Tipo NCF vacío");
   if (!r.monto_facturado || r.monto_facturado <= 0) errs.push("Monto facturado vacío o cero");
   if (!r.tipo_bienes_servicios) errs.push("Tipo bienes/servicios vacío");
+  if (r.tipo_id_proveedor === "PASAPORTE" && !isPagoExterior(r.ncf_proveedor)) {
+    errs.push("Proveedores con pasaporte no son válidos para el 606 salvo que sea Pago al Exterior (NCF B17/E17). Verifica con contabilidad cómo clasificar este gasto.");
+  }
   return errs;
 }
 
