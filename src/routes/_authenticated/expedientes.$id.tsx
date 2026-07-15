@@ -26,6 +26,7 @@ import { RastrearEmbarqueButton } from "@/components/rastrear-embarque-button";
 import { ChecklistHitos } from "@/components/checklist-hitos";
 import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
+import { useMyRoles } from "@/lib/auth-hooks";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
@@ -911,7 +912,54 @@ function TabIncidencias({ expedienteId }: { expedienteId: string }) {
   );
 }
 
+function RentabilidadCard({ expedienteId }: { expedienteId: string }) {
+  const { data: roles } = useMyRoles();
+  const allowed = (roles ?? []).some((r) => r === "admin" || r === "finanzas");
+  const { data } = useQuery({
+    queryKey: ["rentabilidad", expedienteId],
+    enabled: allowed,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("v_rentabilidad_expediente" as any)
+        .select("total_facturado,total_costos_reales,total_gastos,margen_real,margen_pct")
+        .eq("expediente_id", expedienteId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+  if (!allowed) return null;
+  const fmt = (n: number) => new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
+  const fact = Number(data?.total_facturado ?? 0);
+  const costos = Number(data?.total_costos_reales ?? 0);
+  const gastos = Number(data?.total_gastos ?? 0);
+  const margen = Number(data?.margen_real ?? 0);
+  const pct = data?.margen_pct == null ? null : Number(data.margen_pct);
+  const tone = margen < 0 ? "text-destructive" : pct != null && pct < 15 ? "text-amber-600" : "text-[var(--success)]";
+  return (
+    <Card className={margen < 0 ? "border-destructive/40" : ""}>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <DollarSign className="h-4 w-4" />Rentabilidad
+          {margen < 0 && <Badge variant="destructive" className="ml-2">Margen negativo</Badge>}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-3 md:grid-cols-4">
+        <div><div className="text-xs text-muted-foreground">Total facturado</div><div className="text-xl font-display font-bold mt-1">{fmt(fact)}</div></div>
+        <div><div className="text-xs text-muted-foreground">Costos reales</div><div className="text-xl font-display font-bold mt-1">{fmt(costos)}</div></div>
+        <div><div className="text-xs text-muted-foreground">Gastos</div><div className="text-xl font-display font-bold mt-1">{fmt(gastos)}</div></div>
+        <div>
+          <div className="text-xs text-muted-foreground">Margen real</div>
+          <div className={`text-xl font-display font-bold mt-1 ${tone}`}>{fmt(margen)}</div>
+          <div className={`text-xs mt-0.5 ${tone}`}>{pct == null ? "— sin facturación" : `${pct.toFixed(1)}%`}</div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function TabCostos({ expedienteId }: { expedienteId: string }) {
+
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -964,6 +1012,8 @@ function TabCostos({ expedienteId }: { expedienteId: string }) {
 
   return (
     <div className="space-y-4">
+      <RentabilidadCard expedienteId={expedienteId} />
+
       <div className="grid gap-4 md:grid-cols-3">
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total estimado</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalEst)}</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total real</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalReal)}</div></CardContent></Card>

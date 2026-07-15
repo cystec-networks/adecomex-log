@@ -301,7 +301,10 @@ function DashboardFinanciero() {
             )}
           </CardContent>
         </Card>
+
+        <RentabilidadExpedientesPanel />
       </div>
+
     </>
   );
 }
@@ -331,5 +334,118 @@ function Line2({ label, value, bold, divider, highlight }: { label: string; valu
       <td className={`py-1.5 ${bold ? "font-semibold" : ""} ${highlight ? "text-primary" : ""}`}>{label}</td>
       <td className={`py-1.5 text-right tabular-nums ${bold ? "font-semibold" : ""} ${highlight ? "text-primary" : ""}`}>{fmtRD(value)}</td>
     </tr>
+  );
+}
+
+function RentabilidadExpedientesPanel() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["v-rentabilidad-expediente"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("v_rentabilidad_expediente" as any)
+        .select("expediente_id,numero,estado,total_facturado,total_costos_reales,total_gastos,margen_real,margen_pct");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+  const rows = data ?? [];
+  const negativos = rows.filter((r) => Number(r.total_facturado) > 0 && Number(r.margen_real) < 0);
+  const top10 = [...rows]
+    .filter((r) => Number(r.total_facturado) > 0)
+    .sort((a, b) => Number(b.margen_real) - Number(a.margen_real))
+    .slice(0, 10);
+
+  return (
+    <>
+      {negativos.length > 0 && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-destructive text-base">
+              ⚠ {negativos.length} expediente{negativos.length === 1 ? "" : "s"} con margen negativo
+            </CardTitle>
+            <CardDescription>Se está vendiendo por debajo del costo real (costos + gastos superan lo facturado).</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-muted-foreground border-b">
+                  <tr>
+                    <th className="text-left py-2">Expediente</th>
+                    <th className="text-left">Estado</th>
+                    <th className="text-right">Facturado</th>
+                    <th className="text-right">Costos</th>
+                    <th className="text-right">Gastos</th>
+                    <th className="text-right">Margen</th>
+                    <th className="text-right">%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {negativos.map((r) => (
+                    <tr key={r.expediente_id} className="border-b last:border-0">
+                      <td className="py-1.5"><a href={`/expedientes/${r.expediente_id}`} className="text-primary hover:underline font-medium">{r.numero ?? r.expediente_id.slice(0, 8)}</a></td>
+                      <td className="text-xs text-muted-foreground">{r.estado}</td>
+                      <td className="text-right tabular-nums">{fmtRD(Number(r.total_facturado))}</td>
+                      <td className="text-right tabular-nums">{fmtRD(Number(r.total_costos_reales))}</td>
+                      <td className="text-right tabular-nums">{fmtRD(Number(r.total_gastos))}</td>
+                      <td className="text-right tabular-nums font-semibold text-destructive">{fmtRD(Number(r.margen_real))}</td>
+                      <td className="text-right tabular-nums text-destructive">{r.margen_pct == null ? "—" : `${Number(r.margen_pct).toFixed(1)}%`}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Top 10 expedientes por margen</CardTitle>
+          <CardDescription>Expedientes con facturación registrada, ordenados por margen real (facturado − costos − gastos).</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-sm text-muted-foreground py-6 text-center">Cargando…</div>
+          ) : top10.length === 0 ? (
+            <div className="text-sm text-muted-foreground py-6 text-center">Sin expedientes facturados aún.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-muted-foreground border-b">
+                  <tr>
+                    <th className="text-left py-2">#</th>
+                    <th className="text-left">Expediente</th>
+                    <th className="text-left">Estado</th>
+                    <th className="text-right">Facturado</th>
+                    <th className="text-right">Costos</th>
+                    <th className="text-right">Gastos</th>
+                    <th className="text-right">Margen</th>
+                    <th className="text-right">%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {top10.map((r, i) => {
+                    const m = Number(r.margen_real);
+                    const tone = m < 0 ? "text-destructive" : "text-emerald-600";
+                    return (
+                      <tr key={r.expediente_id} className="border-b last:border-0 hover:bg-muted/40">
+                        <td className="py-1.5 text-muted-foreground">{i + 1}</td>
+                        <td><a href={`/expedientes/${r.expediente_id}`} className="text-primary hover:underline font-medium">{r.numero ?? r.expediente_id.slice(0, 8)}</a></td>
+                        <td className="text-xs text-muted-foreground">{r.estado}</td>
+                        <td className="text-right tabular-nums">{fmtRD(Number(r.total_facturado))}</td>
+                        <td className="text-right tabular-nums">{fmtRD(Number(r.total_costos_reales))}</td>
+                        <td className="text-right tabular-nums">{fmtRD(Number(r.total_gastos))}</td>
+                        <td className={`text-right tabular-nums font-semibold ${tone}`}>{fmtRD(m)}</td>
+                        <td className={`text-right tabular-nums ${tone}`}>{r.margen_pct == null ? "—" : `${Number(r.margen_pct).toFixed(1)}%`}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </>
   );
 }
