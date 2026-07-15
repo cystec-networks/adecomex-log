@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import {
   TIPOS_COMPROBANTE, type LineaInput, calcLinea, calcTotales, fmtRD,
 } from "@/lib/facturas-ecf";
+import { EscanearFacturaVentaButton } from "@/components/escanear-factura-venta-button";
+import type { FacturaVentaExtraction } from "@/lib/ai-ocr-factura-venta.functions";
 
 export type FacturaEcfFormPreload = {
   cliente_id?: string | null;
