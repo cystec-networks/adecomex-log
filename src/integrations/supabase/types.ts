@@ -2400,10 +2400,12 @@ export type Database = {
       etapa_estado: "pendiente" | "en_curso" | "completada" | "bloqueada"
       expediente_estado:
         | "digitar"
+        | "en_transito"
         | "presentar"
         | "verificar"
         | "facturar"
         | "despachado"
+        | "entregado"
       hito_estado: "pendiente" | "en_curso" | "completado" | "no_aplica"
       incidencia_estado: "abierta" | "en_gestion" | "resuelta" | "cerrada"
       incidencia_severidad: "baja" | "media" | "alta" | "critica"
@@ -2580,10 +2582,12 @@ export const Constants = {
       etapa_estado: ["pendiente", "en_curso", "completada", "bloqueada"],
       expediente_estado: [
         "digitar",
+        "en_transito",
         "presentar",
         "verificar",
         "facturar",
         "despachado",
+        "entregado",
       ],
       hito_estado: ["pendiente", "en_curso", "completado", "no_aplica"],
       incidencia_estado: ["abierta", "en_gestion", "resuelta", "cerrada"],
