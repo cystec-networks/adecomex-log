@@ -48,11 +48,12 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("expediente_hitos")
-        .select("*, catalogo_hitos(nombre, orden)")
+        .select("*, catalogo_hitos(nombre, orden, con_alerta, activo)")
         .eq("expediente_id", expedienteId)
         .order("orden", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as HitoRow[];
+      const rows = (data ?? []) as unknown as HitoRow[];
+      return rows.filter((h) => h.catalogo_hitos?.activo !== false);
     },
   });
 
