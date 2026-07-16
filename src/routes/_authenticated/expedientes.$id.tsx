@@ -353,6 +353,11 @@ function TabInfo({ exp }: { exp: any }) {
 
   return (
     <div className="space-y-5">
+      <div className="flex justify-end">
+        <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending}>
+          {save.isPending ? "Guardando…" : "Guardar cambios"}
+        </Button>
+      </div>
       {hasSolicitud && (
         <Card className="bg-muted/30 border-dashed">
           <CardHeader className="pb-3 border-b">
