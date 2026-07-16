@@ -14,14 +14,16 @@ export const Route = createFileRoute("/_portal/portal/expedientes/$id")({
   component: PortalExpedienteDetalle,
 });
 
-type EstadoKey = "digitar" | "presentar" | "verificar" | "facturar" | "despachado";
+type EstadoKey = "digitar" | "en_transito" | "presentar" | "verificar" | "despachado" | "entregado" | "facturar";
 
 const TIMELINE: { key: EstadoKey; label: string; fechaField: string }[] = [
   { key: "digitar", label: "Recibido", fechaField: "fecha_recibido" },
+  { key: "en_transito", label: "En Tránsito", fechaField: "fecha_en_transito" },
   { key: "presentar", label: "Presentado", fechaField: "fecha_presentado" },
   { key: "verificar", label: "Verificado", fechaField: "fecha_verificado" },
-  { key: "facturar", label: "Facturado", fechaField: "fecha_facturado" },
   { key: "despachado", label: "Despachado", fechaField: "fecha_despachado" },
+  { key: "entregado", label: "Entregado", fechaField: "fecha_entregado" },
+  { key: "facturar", label: "Facturado", fechaField: "fecha_facturado" },
 ];
 
 function PortalExpedienteDetalle() {

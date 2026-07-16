@@ -966,6 +966,8 @@ export type Database = {
           fecha_cierre: string | null
           fecha_compromiso: string | null
           fecha_despachado: string | null
+          fecha_en_transito: string | null
+          fecha_entregado: string | null
           fecha_facturado: string | null
           fecha_presentado: string | null
           fecha_recibido: string | null
@@ -1034,6 +1036,8 @@ export type Database = {
           fecha_cierre?: string | null
           fecha_compromiso?: string | null
           fecha_despachado?: string | null
+          fecha_en_transito?: string | null
+          fecha_entregado?: string | null
           fecha_facturado?: string | null
           fecha_presentado?: string | null
           fecha_recibido?: string | null
@@ -1102,6 +1106,8 @@ export type Database = {
           fecha_cierre?: string | null
           fecha_compromiso?: string | null
           fecha_despachado?: string | null
+          fecha_en_transito?: string | null
+          fecha_entregado?: string | null
           fecha_facturado?: string | null
           fecha_presentado?: string | null
           fecha_recibido?: string | null
@@ -2307,6 +2313,8 @@ export type Database = {
           estado: Database["public"]["Enums"]["expediente_estado"] | null
           fecha_compromiso: string | null
           fecha_despachado: string | null
+          fecha_en_transito: string | null
+          fecha_entregado: string | null
           fecha_facturado: string | null
           fecha_presentado: string | null
           fecha_recibido: string | null
@@ -2321,6 +2329,8 @@ export type Database = {
           estado?: Database["public"]["Enums"]["expediente_estado"] | null
           fecha_compromiso?: string | null
           fecha_despachado?: string | null
+          fecha_en_transito?: string | null
+          fecha_entregado?: string | null
           fecha_facturado?: string | null
           fecha_presentado?: string | null
           fecha_recibido?: string | null
@@ -2335,6 +2345,8 @@ export type Database = {
           estado?: Database["public"]["Enums"]["expediente_estado"] | null
           fecha_compromiso?: string | null
           fecha_despachado?: string | null
+          fecha_en_transito?: string | null
+          fecha_entregado?: string | null
           fecha_facturado?: string | null
           fecha_presentado?: string | null
           fecha_recibido?: string | null
@@ -2400,10 +2412,12 @@ export type Database = {
       etapa_estado: "pendiente" | "en_curso" | "completada" | "bloqueada"
       expediente_estado:
         | "digitar"
+        | "en_transito"
         | "presentar"
         | "verificar"
         | "facturar"
         | "despachado"
+        | "entregado"
       hito_estado: "pendiente" | "en_curso" | "completado" | "no_aplica"
       incidencia_estado: "abierta" | "en_gestion" | "resuelta" | "cerrada"
       incidencia_severidad: "baja" | "media" | "alta" | "critica"
@@ -2580,10 +2594,12 @@ export const Constants = {
       etapa_estado: ["pendiente", "en_curso", "completada", "bloqueada"],
       expediente_estado: [
         "digitar",
+        "en_transito",
         "presentar",
         "verificar",
         "facturar",
         "despachado",
+        "entregado",
       ],
       hito_estado: ["pendiente", "en_curso", "completado", "no_aplica"],
       incidencia_estado: ["abierta", "en_gestion", "resuelta", "cerrada"],

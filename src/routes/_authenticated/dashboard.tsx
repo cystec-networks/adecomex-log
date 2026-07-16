@@ -8,6 +8,7 @@ import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { daysFromToday } from "@/lib/dates";
+import { ESTADO_LABEL } from "@/lib/estados-expediente";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -66,7 +67,7 @@ function Dashboard() {
 
   const solicitudesActivas = stats?.solicitudes.filter((s) => s.estado !== "rechazada").length ?? 0;
   const expedientesEnProceso = stats?.expedientes.filter((e) => e.estado === "digitar" || e.estado === "presentar" || e.estado === "verificar" || e.estado === "facturar").length ?? 0;
-  const expedientesCerrados = stats?.expedientes.filter((e) => e.estado === "despachado").length ?? 0;
+  const expedientesCerrados = stats?.expedientes.filter((e) => e.estado === "facturar").length ?? 0;
   const incidenciasAbiertas = stats?.incidencias.filter((i) => i.estado !== "cerrada" && i.estado !== "resuelta").length ?? 0;
   const urgentes = stats?.solicitudes.filter((s) => s.prioridad === "urgente" || s.prioridad === "alta").length ?? 0;
   const docsVencidos = stats?.documentos.filter((d) => {
@@ -168,12 +169,14 @@ function EstadoBadge({ value }: { value: string }) {
     rechazada: "bg-destructive/15 text-destructive border-transparent",
     convertida: "bg-primary/15 text-primary border-transparent",
     digitar: "bg-[var(--info)]/15 text-[var(--info)] border-transparent",
+    en_transito: "bg-[var(--info)]/15 text-[var(--info)] border-transparent",
     presentar: "bg-[var(--warning)]/25 text-[var(--warning-foreground)] border-transparent",
     verificar: "bg-primary/15 text-primary border-transparent",
-    facturar: "bg-accent/20 text-accent-foreground border-transparent",
     despachado: "bg-[var(--success)]/15 text-[var(--success)] border-transparent",
+    entregado: "bg-[var(--success)]/15 text-[var(--success)] border-transparent",
+    facturar: "bg-accent/20 text-accent-foreground border-transparent",
   };
-  const label = ({ digitar: "Recibido", presentar: "Presentado", verificar: "Verificado", facturar: "Facturado", despachado: "Despachado" } as Record<string, string>)[value] ?? value?.replace("_", " ");
+  const label = ESTADO_LABEL[value] ?? value?.replace("_", " ");
   return <Badge className={map[value] ?? "bg-muted text-muted-foreground border-transparent"}>{label}</Badge>;
 }
 
