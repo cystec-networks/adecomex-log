@@ -128,7 +128,7 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
               </thead>
               <tbody>
                 {(hitos ?? []).map((h, i) => {
-                  const esCritico = h.hito_codigo === "verificacion_mercancia_puerto";
+                  const esCritico = h.catalogo_hitos?.con_alerta === true;
                   const activo = h.estado !== "completado" && h.estado !== "no_aplica";
                   const atrasado = !!(
                     activo &&
