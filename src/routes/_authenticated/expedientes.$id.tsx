@@ -172,7 +172,7 @@ function DetalleExpediente() {
       <Tabs defaultValue="info">
         <TabsList>
           <TabsTrigger value="info">Información</TabsTrigger>
-          <TabsTrigger value="checklist">Checklist</TabsTrigger>
+          <TabsTrigger value="checklist">Seguimiento Operativo</TabsTrigger>
           
           <TabsTrigger value="docs">Documentos</TabsTrigger>
           <TabsTrigger value="permisos">Permisos</TabsTrigger>
