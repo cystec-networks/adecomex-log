@@ -40,7 +40,7 @@ function Expedientes() {
     queryKey: ["expedientes"],
     queryFn: async () => (await supabase
       .from("expedientes")
-      .select("*, clientes(nombre,telefono,email), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento)")
+      .select("*, clientes(nombre,telefono,email), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento), mercancia_items(item_no, detalle_producto, deleted_at)")
       .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
   });
@@ -221,6 +221,24 @@ function Expedientes() {
     return hito?.fecha_programada ?? hito?.fecha_cumplimiento ?? null;
   };
 
+  const MercanciaCell = ({ items }: { items: any[] }) => {
+    const active = (items ?? [])
+      .filter((it: any) => it.deleted_at == null)
+      .sort((a: any, b: any) => (a.item_no ?? 0) - (b.item_no ?? 0));
+    if (active.length === 0) return <span className="text-muted-foreground">—</span>;
+    const first = active[0].detalle_producto ?? "—";
+    if (active.length === 1) {
+      return <TruncatedCell value={first} className="text-muted-foreground" />;
+    }
+    const all = active.map((it: any) => it.detalle_producto ?? "—").join("\n");
+    return (
+      <span title={all} className="block truncate max-w-[160px]">
+        <span className="text-muted-foreground">{first}</span>
+        <span className="text-[10px] text-muted-foreground/70 ml-1">+{active.length - 1} más</span>
+      </span>
+    );
+  };
+
   const TruncatedCell = ({ value, className = "", maxClass = "max-w-[160px]" }: { value: string | null; className?: string; maxClass?: string }) => (
     <span title={value ?? undefined} className={`block truncate ${maxClass} ${className}`}>
       {value ?? "—"}
@@ -261,7 +279,7 @@ function Expedientes() {
             <AlarmClock className="h-3.5 w-3.5" />
             <span className="text-xs">Solo urgentes ETA</span>
           </Toggle>
-          <Input placeholder="Buscar por BL/AWB, expediente o cliente…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
+          <Input placeholder="Buscar por BL/AWB, expediente, cliente o mercancía…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
         </CardHeader>
         <CardContent className="p-0">
           {filtered.length === 0 && (
@@ -282,6 +300,7 @@ function Expedientes() {
                       <tr>
                         <Th k="numero" className="px-2 whitespace-nowrap">Expediente</Th>
                         <Th k="cliente" className="px-2 whitespace-nowrap">Cliente</Th>
+                        <th className="px-2 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Mercancía</th>
                         <Th k="numero_dua" align="right" className="px-2 whitespace-nowrap">DUA</Th>
                         <Th k="bl_awb" className="px-2 whitespace-nowrap">BL / AWB</Th>
                         <Th k="fecha_compromiso" align="right" className="px-2 whitespace-nowrap">ETA</Th>
@@ -308,6 +327,9 @@ function Expedientes() {
                           </td>
                           <td className="px-2 py-2 align-middle whitespace-nowrap text-foreground/90">
                             {e.clientes?.nombre ?? "—"}
+                          </td>
+                          <td className="px-2 py-2 align-middle text-muted-foreground text-xs whitespace-nowrap">
+                            <MercanciaCell items={e.mercancia_items} />
                           </td>
                           <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground text-xs whitespace-nowrap">
                             {e.numero_dua ?? "—"}
