@@ -166,7 +166,7 @@ function DetalleExpediente() {
 
         <TabsContent value="info"><TabInfo exp={exp} /></TabsContent>
         <TabsContent value="checklist"><ChecklistHitos expedienteId={id} /></TabsContent>
-        <TabsContent value="timeline"><TabTimeline expedienteId={id} /></TabsContent>
+        
         <TabsContent value="docs"><TabDocumentos expedienteId={id} /></TabsContent>
         <TabsContent value="permisos"><TabPermisosExp expedienteId={id} /></TabsContent>
         <TabsContent value="transportes"><TabTransportesExp expedienteId={id} /></TabsContent>
