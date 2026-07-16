@@ -155,7 +155,7 @@ function DetalleExpediente() {
         <TabsList>
           <TabsTrigger value="info">Información</TabsTrigger>
           <TabsTrigger value="checklist">Checklist</TabsTrigger>
-          <TabsTrigger value="timeline">Flujo / Timeline</TabsTrigger>
+          
           <TabsTrigger value="docs">Documentos</TabsTrigger>
           <TabsTrigger value="permisos">Permisos</TabsTrigger>
           <TabsTrigger value="transportes">Transportes</TabsTrigger>
