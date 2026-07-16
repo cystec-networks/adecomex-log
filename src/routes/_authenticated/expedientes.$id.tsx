@@ -143,12 +143,30 @@ function DetalleExpediente() {
           </p>
         </div>
         <GenerarXmlSigaButton expedienteId={id} />
-        <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>
-          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {ESTADO_ORDEN.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>
+            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {ESTADO_ORDEN.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {exp.estado && (
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
+              {(() => {
+                const fecha = {
+                  digitar: exp.fecha_recibido,
+                  en_transito: exp.fecha_en_transito,
+                  presentar: exp.fecha_presentado,
+                  verificar: exp.fecha_verificado,
+                  despachado: exp.fecha_despachado,
+                  entregado: exp.fecha_entregado,
+                  facturar: exp.fecha_facturado,
+                }[exp.estado];
+                return fecha ? `· ${fmtLocalDate(fecha)}` : null;
+              })()}
+            </span>
+          )}
+        </div>
       </div>
 
       <Tabs defaultValue="info">
