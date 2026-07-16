@@ -76,7 +76,7 @@ function Expedientes() {
   };
 
   const diasRestantes = (e: any) => {
-    if (e.estado === "facturar" || !e.fecha_compromiso) return null;
+    if (e.estado === "despachado" || e.estado === "entregado" || e.estado === "facturar" || !e.fecha_compromiso) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const eta = parseLocalDate(e.fecha_compromiso);
@@ -96,7 +96,7 @@ function Expedientes() {
   };
 
   const esUrgente = (e: any) => {
-    if (e.estado === "facturar" || !e.fecha_compromiso) return false;
+    if (e.estado === "despachado" || e.estado === "entregado" || e.estado === "facturar" || !e.fecha_compromiso) return false;
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const eta = parseLocalDate(e.fecha_compromiso);
     if (!eta) return false;
@@ -127,8 +127,8 @@ function Expedientes() {
   const activeSort = sort ?? { key: "fecha_compromiso" as SortKey, dir: "asc" as const };
   const getVal = (e: any, k: SortKey) => k === "cliente" ? (e.clientes?.nombre ?? "") : (e[k] ?? "");
   const cmp = (a: any, b: any) => {
-    const aD = a.estado === "facturar" ? 1 : 0;
-    const bD = b.estado === "facturar" ? 1 : 0;
+    const aD = (a.estado === "despachado" || a.estado === "entregado" || a.estado === "facturar") ? 1 : 0;
+    const bD = (b.estado === "despachado" || b.estado === "entregado" || b.estado === "facturar") ? 1 : 0;
     if (aD !== bD) return aD - bD;
     const av = getVal(a, activeSort.key);
     const bv = getVal(b, activeSort.key);
