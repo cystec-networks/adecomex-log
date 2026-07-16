@@ -966,6 +966,8 @@ export type Database = {
           fecha_cierre: string | null
           fecha_compromiso: string | null
           fecha_despachado: string | null
+          fecha_en_transito: string | null
+          fecha_entregado: string | null
           fecha_facturado: string | null
           fecha_presentado: string | null
           fecha_recibido: string | null
@@ -1034,6 +1036,8 @@ export type Database = {
           fecha_cierre?: string | null
           fecha_compromiso?: string | null
           fecha_despachado?: string | null
+          fecha_en_transito?: string | null
+          fecha_entregado?: string | null
           fecha_facturado?: string | null
           fecha_presentado?: string | null
           fecha_recibido?: string | null
@@ -1102,6 +1106,8 @@ export type Database = {
           fecha_cierre?: string | null
           fecha_compromiso?: string | null
           fecha_despachado?: string | null
+          fecha_en_transito?: string | null
+          fecha_entregado?: string | null
           fecha_facturado?: string | null
           fecha_presentado?: string | null
           fecha_recibido?: string | null
