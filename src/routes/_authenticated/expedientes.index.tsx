@@ -76,7 +76,7 @@ function Expedientes() {
   };
 
   const diasRestantes = (e: any) => {
-    if (e.estado === "despachado" || !e.fecha_compromiso) return null;
+    if (e.estado === "facturar" || !e.fecha_compromiso) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const eta = parseLocalDate(e.fecha_compromiso);
@@ -96,7 +96,7 @@ function Expedientes() {
   };
 
   const esUrgente = (e: any) => {
-    if (e.estado === "despachado" || !e.fecha_compromiso) return false;
+    if (e.estado === "facturar" || !e.fecha_compromiso) return false;
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const eta = parseLocalDate(e.fecha_compromiso);
     if (!eta) return false;
@@ -127,8 +127,8 @@ function Expedientes() {
   const activeSort = sort ?? { key: "fecha_compromiso" as SortKey, dir: "asc" as const };
   const getVal = (e: any, k: SortKey) => k === "cliente" ? (e.clientes?.nombre ?? "") : (e[k] ?? "");
   const cmp = (a: any, b: any) => {
-    const aD = a.estado === "despachado" ? 1 : 0;
-    const bD = b.estado === "despachado" ? 1 : 0;
+    const aD = a.estado === "facturar" ? 1 : 0;
+    const bD = b.estado === "facturar" ? 1 : 0;
     if (aD !== bD) return aD - bD;
     const av = getVal(a, activeSort.key);
     const bv = getVal(b, activeSort.key);
@@ -189,10 +189,12 @@ function Expedientes() {
     const label = ESTADO_LABEL[estadoRaw ?? ""] ?? (estadoRaw ?? "");
     const variants: Record<string, string> = {
       digitar: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+      en_transito: "bg-cyan-50 text-cyan-700 border-cyan-100 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-900",
       presentar: "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900",
       verificar: "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900",
-      facturar: "bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900",
       despachado: "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900",
+      entregado: "bg-teal-50 text-teal-700 border-teal-100 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-900",
+      facturar: "bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900",
     };
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${variants[estadoRaw ?? ""] ?? variants.digitar}`}>
@@ -246,7 +248,7 @@ function Expedientes() {
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos los estados</SelectItem>
-              {["digitar","presentar","verificar","facturar","despachado"].map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
+              {ESTADO_ORDEN.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
             </SelectContent>
           </Select>
           <Toggle
