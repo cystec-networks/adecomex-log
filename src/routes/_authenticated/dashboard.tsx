@@ -66,7 +66,7 @@ function Dashboard() {
   const { visible: reminders } = useReminders();
 
   const solicitudesActivas = stats?.solicitudes.filter((s) => s.estado !== "rechazada").length ?? 0;
-  const expedientesEnProceso = stats?.expedientes.filter((e) => e.estado === "digitar" || e.estado === "presentar" || e.estado === "verificar" || e.estado === "facturar").length ?? 0;
+  const expedientesEnProceso = stats?.expedientes.filter((e) => e.estado === "digitar" || e.estado === "en_transito" || e.estado === "presentar" || e.estado === "verificar" || e.estado === "entregado").length ?? 0;
   const expedientesCerrados = stats?.expedientes.filter((e) => e.estado === "facturar").length ?? 0;
   const incidenciasAbiertas = stats?.incidencias.filter((i) => i.estado !== "cerrada" && i.estado !== "resuelta").length ?? 0;
   const urgentes = stats?.solicitudes.filter((s) => s.prioridad === "urgente" || s.prioridad === "alta").length ?? 0;
@@ -95,7 +95,7 @@ function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <KPI icon={Inbox} label="SOLICITUDES RECIBIDAS" value={solicitudesActivas} tone="primary" />
         <KPI icon={FolderKanban} label="EXPEDIENTES EN PROCESOS" value={expedientesEnProceso} tone="info" />
-        <KPI icon={CheckCircle2} label="DESPACHADOS" value={expedientesCerrados} tone="success" />
+        <KPI icon={CheckCircle2} label="FACTURADOS" value={expedientesCerrados} tone="success" />
         <KPI icon={FileWarning} label="Permisos por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" />
         <KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" />
         <KPI icon={AlertTriangle} label="Alertas activas" value={reminders.length} tone="danger" />
