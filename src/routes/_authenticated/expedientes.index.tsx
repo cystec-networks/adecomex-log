@@ -217,7 +217,7 @@ function Expedientes() {
   };
 
   const fechaVerificacion = (e: any) => {
-    const hito = (e.expediente_hitos ?? []).find((h: any) => h.hito_codigo === "verificacion_mercancia_puerto");
+    const hito = (e.expediente_hitos ?? []).find((h: any) => h.hito_codigo === "turno_verificacion_puerto");
     return hito?.fecha_programada ?? hito?.fecha_cumplimiento ?? null;
   };
 

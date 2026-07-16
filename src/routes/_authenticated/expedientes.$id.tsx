@@ -155,7 +155,7 @@ function DetalleExpediente() {
         <TabsList>
           <TabsTrigger value="info">Información</TabsTrigger>
           <TabsTrigger value="checklist">Checklist</TabsTrigger>
-          <TabsTrigger value="timeline">Flujo / Timeline</TabsTrigger>
+          
           <TabsTrigger value="docs">Documentos</TabsTrigger>
           <TabsTrigger value="permisos">Permisos</TabsTrigger>
           <TabsTrigger value="transportes">Transportes</TabsTrigger>
@@ -166,7 +166,7 @@ function DetalleExpediente() {
 
         <TabsContent value="info"><TabInfo exp={exp} /></TabsContent>
         <TabsContent value="checklist"><ChecklistHitos expedienteId={id} /></TabsContent>
-        <TabsContent value="timeline"><TabTimeline expedienteId={id} /></TabsContent>
+        
         <TabsContent value="docs"><TabDocumentos expedienteId={id} /></TabsContent>
         <TabsContent value="permisos"><TabPermisosExp expedienteId={id} /></TabsContent>
         <TabsContent value="transportes"><TabTransportesExp expedienteId={id} /></TabsContent>

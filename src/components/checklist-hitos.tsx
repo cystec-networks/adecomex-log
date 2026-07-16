@@ -21,7 +21,7 @@ type HitoRow = {
   fecha_cumplimiento: string | null;
   responsable_id: string | null;
   notas: string | null;
-  catalogo_hitos?: { nombre: string; orden: number } | null;
+  catalogo_hitos?: { nombre: string; orden: number; con_alerta: boolean; activo: boolean } | null;
 };
 
 const ESTADOS = [
@@ -48,11 +48,12 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("expediente_hitos")
-        .select("*, catalogo_hitos(nombre, orden)")
+        .select("*, catalogo_hitos(nombre, orden, con_alerta, activo)")
         .eq("expediente_id", expedienteId)
         .order("orden", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as HitoRow[];
+      const rows = (data ?? []) as unknown as HitoRow[];
+      return rows.filter((h) => h.catalogo_hitos?.activo !== false);
     },
   });
 
@@ -127,7 +128,7 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
               </thead>
               <tbody>
                 {(hitos ?? []).map((h, i) => {
-                  const esCritico = h.hito_codigo === "verificacion_mercancia_puerto";
+                  const esCritico = h.catalogo_hitos?.con_alerta === true;
                   const activo = h.estado !== "completado" && h.estado !== "no_aplica";
                   const atrasado = !!(
                     activo &&
