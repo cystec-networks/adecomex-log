@@ -21,7 +21,7 @@ type HitoRow = {
   fecha_cumplimiento: string | null;
   responsable_id: string | null;
   notas: string | null;
-  catalogo_hitos?: { nombre: string; orden: number } | null;
+  catalogo_hitos?: { nombre: string; orden: number; con_alerta: boolean; activo: boolean } | null;
 };
 
 const ESTADOS = [
