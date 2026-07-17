@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
 import { FacturaEcfFormDialog } from "@/components/factura-ecf-selector";
 import { TIPOS_COMPROBANTE, tipoLabel, tipoBadgeClass, fmtRD } from "@/lib/facturas-ecf";
+import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/facturacion")({
   ssr: false,
