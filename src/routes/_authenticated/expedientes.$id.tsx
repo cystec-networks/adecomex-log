@@ -29,6 +29,7 @@ import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { useMyRoles } from "@/lib/auth-hooks";
+import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
