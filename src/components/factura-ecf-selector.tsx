@@ -17,6 +17,7 @@ import {
 } from "@/lib/facturas-ecf";
 import { EscanearFacturaVentaButton } from "@/components/escanear-factura-venta-button";
 import type { FacturaVentaExtraction } from "@/lib/ai-ocr-factura-venta.functions";
+import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
 export type FacturaEcfFormPreload = {
   cliente_id?: string | null;
