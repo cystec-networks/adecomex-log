@@ -153,11 +153,6 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!form.documento_url) { setSignedUrl(null); return; }
-    supabase.storage.from("documentos").createSignedUrl(form.documento_url, 3600).then(({ data }) => setSignedUrl(data?.signedUrl ?? null));
-  }, [form.documento_url]);
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-5">
