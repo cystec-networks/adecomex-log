@@ -197,6 +197,42 @@ function DetalleExpediente() {
   );
 }
 
+function Field({ label, value, onChange, type = "text", className = "" }: { label: string; value: any; onChange: (v: string) => void; type?: string; className?: string }) {
+  return (
+    <div className={`grid gap-1.5 ${className}`}>
+      <Label>{label}</Label>
+      <Input type={type} value={value ?? ""} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
+}
+
+function AutoField({ label, value, onChange, suggestion, className = "" }: { label: string; value: any; onChange: (v: string) => void; suggestion: string[]; className?: string }) {
+  return (
+    <div className={`grid gap-1.5 ${className}`}>
+      <Label>{label}</Label>
+      <AutocompleteInput
+        value={value ?? ""}
+        onChange={onChange}
+        suggestions={suggestion ?? []}
+        placeholder={`Escribe para buscar ${label.toLowerCase()}…`}
+      />
+    </div>
+  );
+}
+
+function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  return (
+    <Card>
+      <CardHeader className="pb-3 border-b">
+        <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">{title}</CardTitle>
+        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+      </CardHeader>
+      <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{children}</CardContent>
+    </Card>
+  );
+}
+
+
 function TabInfo({ exp }: { exp: any }) {
   const qc = useQueryClient();
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
@@ -321,34 +357,6 @@ function TabInfo({ exp }: { exp: any }) {
   });
 
 
-  const Field = ({ label, k, type = "text", className = "" }: { label: string; k: keyof typeof form; type?: string; className?: string }) => (
-    <div className={`grid gap-1.5 ${className}`}>
-      <Label>{label}</Label>
-      <Input type={type} value={form[k] as any} onChange={(e) => set(k as string, e.target.value)} />
-    </div>
-  );
-
-  const AutoField = ({ label, k, className = "" }: { label: string; k: keyof typeof sug; className?: string }) => (
-    <div className={`grid gap-1.5 ${className}`}>
-      <Label>{label}</Label>
-      <AutocompleteInput
-        value={(form as any)[k] ?? ""}
-        onChange={(v) => set(k as string, v)}
-        suggestions={sug[k] ?? []}
-        placeholder={`Escribe para buscar ${label.toLowerCase()}…`}
-      />
-    </div>
-  );
-
-  const Section = ({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) => (
-    <Card>
-      <CardHeader className="pb-3 border-b">
-        <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">{title}</CardTitle>
-        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-      </CardHeader>
-      <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{children}</CardContent>
-    </Card>
-  );
 
   const hasSolicitud = !!(exp.solicitud_id || exp.tipo_operacion || exp.tipo_carga || exp.contacto_solicitud);
 
@@ -384,18 +392,18 @@ function TabInfo({ exp }: { exp: any }) {
       )}
 
       <Section title="1. Información general" subtitle="Identificación y logística base del expediente">
-        <Field label="Número / ID" k="numero" />
-        <Field label="BL / AWB / Guía" k="bl_awb" />
-        <AutoField label="Medio de transporte" k="medio_transporte" />
-        <AutoField label="Naviera" k="naviera" />
-        <Field label="SLA (días)" k="sla_dias" type="number" />
-        <Field label="Fecha Estimada de Llegada (ETA)" k="fecha_compromiso" type="date" />
-        <Field label="Etapa actual (1-14)" k="etapa_actual" type="number" />
+        <Field label="Número / ID" value={form.numero} onChange={(v) => set("numero", v)} />
+        <Field label="BL / AWB / Guía" value={form.bl_awb} onChange={(v) => set("bl_awb", v)} />
+        <AutoField label="Medio de transporte" value={form.medio_transporte} onChange={(v) => set("medio_transporte", v)} suggestion={sug.medio_transporte ?? []} />
+        <AutoField label="Naviera" value={form.naviera} onChange={(v) => set("naviera", v)} suggestion={sug.naviera ?? []} />
+        <Field label="SLA (días)" value={form.sla_dias} onChange={(v) => set("sla_dias", v)} type="number" />
+        <Field label="Fecha Estimada de Llegada (ETA)" value={form.fecha_compromiso} onChange={(v) => set("fecha_compromiso", v)} type="date" />
+        <Field label="Etapa actual (1-14)" value={form.etapa_actual} onChange={(v) => set("etapa_actual", v)} type="number" />
       </Section>
 
 
       <Section title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
-        <AutoField label="Suplidor" k="suplidor" />
+        <AutoField label="Suplidor" value={form.suplidor} onChange={(v) => set("suplidor", v)} suggestion={sug.suplidor ?? []} />
         <div className="grid gap-1.5">
           <Label>País de origen</Label>
           <CatalogCombobox
@@ -406,9 +414,9 @@ function TabInfo({ exp }: { exp: any }) {
             placeholder="Selecciona país (catálogo DGA)"
           />
         </div>
-        <AutoField label="Factura comercial" k="factura_comercial" />
-        <AutoField label="Incoterm" k="incoterm" />
-        <AutoField label="Puerto de salida" k="puerto_salida" />
+        <AutoField label="Factura comercial" value={form.factura_comercial} onChange={(v) => set("factura_comercial", v)} suggestion={sug.factura_comercial ?? []} />
+        <AutoField label="Incoterm" value={form.incoterm} onChange={(v) => set("incoterm", v)} suggestion={sug.incoterm ?? []} />
+        <AutoField label="Puerto de salida" value={form.puerto_salida} onChange={(v) => set("puerto_salida", v)} suggestion={sug.puerto_salida ?? []} />
       </Section>
 
       <Card>
@@ -417,9 +425,9 @@ function TabInfo({ exp }: { exp: any }) {
           <p className="text-xs text-muted-foreground">Documentos oficiales ante DGA y VUCE</p>
         </CardHeader>
         <CardContent className="pt-5 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <AutoField label="Declaración DUA" k="numero_dua" />
-          <AutoField label="Número de despacho" k="numero_igra" />
-          <AutoField label="Número de permiso" k="numero_vuce" />
+          <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} />
+          <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} />
+          <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} />
           <div className="grid gap-1.5">
             <Label>Puerto de arribo</Label>
             <CatalogCombobox
@@ -469,7 +477,7 @@ function TabInfo({ exp }: { exp: any }) {
               placeholder="0.00"
             />
           </div>
-          <AutoField label="Preferencia comercial" k="preferencia_comercial" />
+          <AutoField label="Preferencia comercial" value={form.preferencia_comercial} onChange={(v) => set("preferencia_comercial", v)} suggestion={sug.preferencia_comercial ?? []} />
           {(() => {
             const p = (form.preferencia_comercial || "").trim().toLowerCase();
             const showCert = p !== "" && p !== "ninguna" && p !== "no aplica" && p !== "n/a";
