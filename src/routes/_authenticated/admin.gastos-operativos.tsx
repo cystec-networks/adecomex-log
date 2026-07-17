@@ -305,6 +305,17 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
         gastoId = ins.id;
       }
 
+      if (file) {
+        const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+        const path = `gastos-operativos/${gastoId}/${safeName}`;
+        const { error: upErr } = await supabase.storage.from("documentos").upload(path, file, { upsert: true });
+        if (upErr) throw new Error(`Gasto guardado, pero falló la subida del comprobante: ${upErr.message}`);
+        const { error: updErr } = await supabase.from("gastos_operativos").update({ comprobante_url: path }).eq("id", gastoId);
+        if (updErr) throw updErr;
+        form.comprobante_url = path;
+      }
+
+
       let cxpCreada = false;
       if (crearCxp) {
         const proveedorNombre =
