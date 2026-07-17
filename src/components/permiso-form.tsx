@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Check, Upload, FileText, X } from "lucide-react";
 import { toast } from "sonner";
+import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
 export const PERMISO_TIPOS = [
   { v: "sanitario", l: "Sanitario" },
@@ -152,11 +153,6 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!form.documento_url) { setSignedUrl(null); return; }
-    supabase.storage.from("documentos").createSignedUrl(form.documento_url, 3600).then(({ data }) => setSignedUrl(data?.signedUrl ?? null));
-  }, [form.documento_url]);
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-5">
@@ -278,9 +274,13 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
             </label>
             {form.documento_url && (
               <>
-                <a href={signedUrl ?? "#"} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm text-primary underline">
-                  <FileText className="h-4 w-4" /> Ver documento
-                </a>
+                <DocumentoPreviewButton
+                  path={form.documento_url}
+                  variant="outline"
+                  size="sm"
+                  icon={<FileText className="h-4 w-4 mr-1" />}
+                  label="Ver documento"
+                />
                 <Button variant="ghost" size="sm" onClick={() => set("documento_url", "")}>Quitar</Button>
               </>
             )}

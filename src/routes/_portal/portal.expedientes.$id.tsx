@@ -8,7 +8,8 @@ import { estadoLabel } from "@/lib/estados-expediente";
 import { fmtLocalDate } from "@/lib/dates";
 import { RastrearEmbarqueButton } from "@/components/rastrear-embarque-button";
 import { ArrowLeft, Check, Circle, Download, FileText } from "lucide-react";
-import { toast } from "sonner";
+
+import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
 export const Route = createFileRoute("/_portal/portal/expedientes/$id")({
   component: PortalExpedienteDetalle,
@@ -56,12 +57,6 @@ function PortalExpedienteDetalle() {
     },
   });
 
-  const handleDownload = async (path: string | null) => {
-    if (!path) return toast.error("Documento no disponible");
-    const { data, error } = await supabase.storage.from("documentos").createSignedUrl(path, 300);
-    if (error || !data?.signedUrl) return toast.error("No se pudo generar el enlace de descarga");
-    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
-  };
 
   if (isLoading) return <div className="text-sm text-muted-foreground">Cargando…</div>;
   if (isError || !expediente) {
@@ -175,14 +170,19 @@ function PortalExpedienteDetalle() {
                       </td>
                       <td className="px-4 py-2 text-muted-foreground">{fmtLocalDate(d.fecha_recepcion ?? d.created_at)}</td>
                       <td className="px-4 py-2 text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={!d.storage_path}
-                          onClick={() => handleDownload(d.storage_path)}
-                        >
-                          <Download className="h-3.5 w-3.5 mr-1" /> Descargar
-                        </Button>
+                        {d.storage_path ? (
+                          <DocumentoPreviewButton
+                            path={d.storage_path}
+                            variant="outline"
+                            size="sm"
+                            icon={<Download className="h-3.5 w-3.5 mr-1" />}
+                            label="Descargar"
+                          />
+                        ) : (
+                          <Button variant="outline" size="sm" disabled>
+                            <Download className="h-3.5 w-3.5 mr-1" /> Descargar
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}

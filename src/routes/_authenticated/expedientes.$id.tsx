@@ -29,6 +29,7 @@ import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { useMyRoles } from "@/lib/auth-hooks";
+import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
@@ -789,10 +790,6 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
     qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
   };
 
-  const download = async (path: string) => {
-    const { data } = await supabase.storage.from("documentos").createSignedUrl(path, 300);
-    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
-  };
 
   return (
     <Card>
@@ -837,7 +834,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                   <td className="text-xs">{fmtLocalDate(d.fecha_recepcion)}</td>
                   <td className={`text-xs ${vencido ? "text-destructive font-medium" : ""}`}>{fmtLocalDate(d.fecha_vencimiento)}</td>
                   <td className="px-4 py-2 text-right">
-                    {d.storage_path && <Button size="sm" variant="ghost" onClick={() => download(d.storage_path)}>Descargar</Button>}
+                    {d.storage_path && <DocumentoPreviewButton path={d.storage_path} variant="ghost" size="sm" label="Ver" />}
                   </td>
                 </tr>
               );
@@ -1473,11 +1470,6 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
 
   const subtotal = gastos.reduce((s, r) => s + (r.es_reembolso ? -Number(r.monto || 0) : Number(r.monto || 0)), 0);
 
-  const openAdjunto = async (path: string) => {
-    const { data, error } = await supabase.storage.from("documentos").createSignedUrl(path, 60);
-    if (error) return toast.error(error.message);
-    window.open(data.signedUrl, "_blank");
-  };
 
   return (
     <Card>
@@ -1653,7 +1645,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
                 <td className="px-4 py-2">{r.concepto}{r.es_reembolso && <Badge variant="outline" className="ml-2 text-xs">reembolso</Badge>}</td>
                 <td className="text-xs text-muted-foreground">{r.proveedor || "—"}</td>
                 <td className="text-xs">{fmtLocalDate(r.fecha)}</td>
-                <td>{r.adjunto_path ? <Button variant="link" size="sm" className="h-auto p-0" onClick={() => openAdjunto(r.adjunto_path)}><FileText className="h-3.5 w-3.5 mr-1" />Ver</Button> : <span className="text-xs text-muted-foreground">—</span>}</td>
+                <td>{r.adjunto_path ? <DocumentoPreviewButton path={r.adjunto_path} variant="link" size="sm" className="h-auto p-0" icon={<FileText className="h-3.5 w-3.5 mr-1" />} label="Ver" /> : <span className="text-xs text-muted-foreground">—</span>}</td>
                 <td className={`text-right font-medium ${r.es_reembolso ? "text-[var(--success)]" : ""}`}>{r.es_reembolso ? "−" : ""}{fmtDOP(Number(r.monto))}</td>
                 <td className="text-right pr-4">
                   <div className="inline-flex gap-1">
