@@ -274,9 +274,13 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
             </label>
             {form.documento_url && (
               <>
-                <a href={signedUrl ?? "#"} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm text-primary underline">
-                  <FileText className="h-4 w-4" /> Ver documento
-                </a>
+                <DocumentoPreviewButton
+                  path={form.documento_url}
+                  variant="outline"
+                  size="sm"
+                  icon={<FileText className="h-4 w-4 mr-1" />}
+                  label="Ver documento"
+                />
                 <Button variant="ghost" size="sm" onClick={() => set("documento_url", "")}>Quitar</Button>
               </>
             )}
