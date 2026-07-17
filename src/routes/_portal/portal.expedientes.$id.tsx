@@ -57,12 +57,6 @@ function PortalExpedienteDetalle() {
     },
   });
 
-  const handleDownload = async (path: string | null) => {
-    if (!path) return toast.error("Documento no disponible");
-    const { data, error } = await supabase.storage.from("documentos").createSignedUrl(path, 300);
-    if (error || !data?.signedUrl) return toast.error("No se pudo generar el enlace de descarga");
-    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
-  };
 
   if (isLoading) return <div className="text-sm text-muted-foreground">Cargando…</div>;
   if (isError || !expediente) {
