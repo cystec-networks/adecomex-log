@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { Pencil, Plus, Trash2, Copy, AlertTriangle } from "lucide-react";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
+import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/gastos-operativos")({
   ssr: false,
@@ -250,6 +251,7 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
   const [form, setForm] = useState({ ...row });
   const [crearCxp, setCrearCxp] = useState(false);
   const [cxpVence, setCxpVence] = useState<string>("");
+  const [file, setFile] = useState<File | null>(null);
   const save = useMutation({
     mutationFn: async () => {
       if (!form.concepto.trim()) throw new Error("Concepto requerido");
@@ -302,6 +304,17 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
         if (error) throw error;
         gastoId = ins.id;
       }
+
+      if (file) {
+        const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+        const path = `gastos-operativos/${gastoId}/${safeName}`;
+        const { error: upErr } = await supabase.storage.from("documentos").upload(path, file, { upsert: true });
+        if (upErr) throw new Error(`Gasto guardado, pero falló la subida del comprobante: ${upErr.message}`);
+        const { error: updErr } = await supabase.from("gastos_operativos").update({ comprobante_url: path }).eq("id", gastoId);
+        if (updErr) throw updErr;
+        form.comprobante_url = path;
+      }
+
 
       let cxpCreada = false;
       if (crearCxp) {
@@ -391,6 +404,29 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
               }) : prev)} />
             </div>
             <p className="text-xs text-muted-foreground -mt-1">Opcional. Requerido solo si el gasto tiene comprobante fiscal formal (para reporte 606 DGII).</p>
+            <div className="rounded border bg-background/60 p-3 space-y-2">
+              <Label className="text-sm">Comprobante (PDF o imagen)</Label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Input
+                  type="file"
+                  accept="application/pdf,image/*"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  className="max-w-xs"
+                />
+                {file && (
+                  <span className="text-xs text-muted-foreground truncate max-w-[200px]">{file.name}</span>
+                )}
+                {form.comprobante_url && !file && (
+                  <>
+                    <DocumentoPreviewButton path={form.comprobante_url} variant="outline" size="sm" label="Ver actual" />
+                    <Button variant="ghost" size="sm" onClick={() => setForm({ ...form, comprobante_url: null })}>Quitar</Button>
+                  </>
+                )}
+              </div>
+              {form.comprobante_url && file && (
+                <p className="text-xs text-muted-foreground">Se reemplazará el comprobante actual al guardar.</p>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Tipo de ID</Label>
