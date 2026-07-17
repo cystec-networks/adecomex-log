@@ -357,34 +357,6 @@ function TabInfo({ exp }: { exp: any }) {
   });
 
 
-  const Field = ({ label, k, type = "text", className = "" }: { label: string; k: keyof typeof form; type?: string; className?: string }) => (
-    <div className={`grid gap-1.5 ${className}`}>
-      <Label>{label}</Label>
-      <Input type={type} value={form[k] as any} onChange={(e) => set(k as string, e.target.value)} />
-    </div>
-  );
-
-  const AutoField = ({ label, k, className = "" }: { label: string; k: keyof typeof sug; className?: string }) => (
-    <div className={`grid gap-1.5 ${className}`}>
-      <Label>{label}</Label>
-      <AutocompleteInput
-        value={(form as any)[k] ?? ""}
-        onChange={(v) => set(k as string, v)}
-        suggestions={sug[k] ?? []}
-        placeholder={`Escribe para buscar ${label.toLowerCase()}…`}
-      />
-    </div>
-  );
-
-  const Section = ({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) => (
-    <Card>
-      <CardHeader className="pb-3 border-b">
-        <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">{title}</CardTitle>
-        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-      </CardHeader>
-      <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{children}</CardContent>
-    </Card>
-  );
 
   const hasSolicitud = !!(exp.solicitud_id || exp.tipo_operacion || exp.tipo_carga || exp.contacto_solicitud);
 
