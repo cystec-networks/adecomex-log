@@ -223,11 +223,10 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
                         )}
                       </td>
                       <td className="px-2 py-2">
-                        <Input
-                          type="date"
+                        <DeferredDateInput
                           className="h-8"
-                          value={h.fecha_programada ?? ""}
-                          onChange={(e) => update.mutate({ id: h.id, patch: { fecha_programada: e.target.value || null } })}
+                          value={h.fecha_programada}
+                          onSave={(v) => update.mutate({ id: h.id, patch: { fecha_programada: v } })}
                         />
                       </td>
                       <td className="px-2 py-2">
@@ -242,19 +241,18 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
                         </div>
                       </td>
                       <td className="px-2 py-2">
-                        <Input
-                          type="date"
+                        <DeferredDateInput
                           className="h-8"
-                          value={h.fecha_cumplimiento ?? ""}
-                          onChange={(e) => update.mutate({ id: h.id, patch: { fecha_cumplimiento: e.target.value || null } })}
+                          value={h.fecha_cumplimiento}
+                          onSave={(v) => update.mutate({ id: h.id, patch: { fecha_cumplimiento: v } })}
                         />
                       </td>
                       <td className="px-2 py-2">
-                        <Textarea
+                        <DeferredTextarea
                           rows={1}
                           className="min-h-8 text-sm"
-                          value={h.notas ?? ""}
-                          onChange={(e) => update.mutate({ id: h.id, patch: { notas: e.target.value || null } })}
+                          value={h.notas}
+                          onSave={(v) => update.mutate({ id: h.id, patch: { notas: v } })}
                           placeholder="Observaciones…"
                         />
                       </td>
