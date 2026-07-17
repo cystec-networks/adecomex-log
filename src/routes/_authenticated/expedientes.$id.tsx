@@ -1470,11 +1470,6 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
 
   const subtotal = gastos.reduce((s, r) => s + (r.es_reembolso ? -Number(r.monto || 0) : Number(r.monto || 0)), 0);
 
-  const openAdjunto = async (path: string) => {
-    const { data, error } = await supabase.storage.from("documentos").createSignedUrl(path, 60);
-    if (error) return toast.error(error.message);
-    window.open(data.signedUrl, "_blank");
-  };
 
   return (
     <Card>
