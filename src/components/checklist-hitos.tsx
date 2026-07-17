@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +30,69 @@ const ESTADOS = [
   { v: "completado", label: "Completado" },
   { v: "no_aplica", label: "No aplica" },
 ] as const;
+
+type DeferredTextareaProps = {
+  value: string | null;
+  onSave: (v: string | null) => void;
+  rows?: number;
+  className?: string;
+  placeholder?: string;
+};
+
+function DeferredTextarea({ value, onSave, ...props }: DeferredTextareaProps) {
+  const [local, setLocal] = useState(value ?? "");
+  const isFocused = useRef(false);
+
+  useEffect(() => {
+    if (!isFocused.current) {
+      setLocal(value ?? "");
+    }
+  }, [value]);
+
+  return (
+    <Textarea
+      {...props}
+      value={local}
+      onChange={(e) => setLocal(e.target.value)}
+      onFocus={() => { isFocused.current = true; }}
+      onBlur={() => {
+        isFocused.current = false;
+        onSave(local || null);
+      }}
+    />
+  );
+}
+
+type DeferredDateInputProps = {
+  value: string | null;
+  onSave: (v: string | null) => void;
+  className?: string;
+};
+
+function DeferredDateInput({ value, onSave, className }: DeferredDateInputProps) {
+  const [local, setLocal] = useState(value ?? "");
+  const isFocused = useRef(false);
+
+  useEffect(() => {
+    if (!isFocused.current) {
+      setLocal(value ?? "");
+    }
+  }, [value]);
+
+  return (
+    <Input
+      type="date"
+      className={className}
+      value={local}
+      onChange={(e) => setLocal(e.target.value)}
+      onFocus={() => { isFocused.current = true; }}
+      onBlur={() => {
+        isFocused.current = false;
+        onSave(local || null);
+      }}
+    />
+  );
+}
 
 function estadoBadge(e: HitoRow["estado"], atrasado: boolean, proximo: boolean) {
   if (e === "completado") return <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white gap-1"><CheckCircle2 className="h-3 w-3" />Completado</Badge>;
@@ -160,11 +223,10 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
                         )}
                       </td>
                       <td className="px-2 py-2">
-                        <Input
-                          type="date"
+                        <DeferredDateInput
                           className="h-8"
-                          value={h.fecha_programada ?? ""}
-                          onChange={(e) => update.mutate({ id: h.id, patch: { fecha_programada: e.target.value || null } })}
+                          value={h.fecha_programada}
+                          onSave={(v) => update.mutate({ id: h.id, patch: { fecha_programada: v } })}
                         />
                       </td>
                       <td className="px-2 py-2">
@@ -179,19 +241,18 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
                         </div>
                       </td>
                       <td className="px-2 py-2">
-                        <Input
-                          type="date"
+                        <DeferredDateInput
                           className="h-8"
-                          value={h.fecha_cumplimiento ?? ""}
-                          onChange={(e) => update.mutate({ id: h.id, patch: { fecha_cumplimiento: e.target.value || null } })}
+                          value={h.fecha_cumplimiento}
+                          onSave={(v) => update.mutate({ id: h.id, patch: { fecha_cumplimiento: v } })}
                         />
                       </td>
                       <td className="px-2 py-2">
-                        <Textarea
+                        <DeferredTextarea
                           rows={1}
                           className="min-h-8 text-sm"
-                          value={h.notas ?? ""}
-                          onChange={(e) => update.mutate({ id: h.id, patch: { notas: e.target.value || null } })}
+                          value={h.notas}
+                          onSave={(v) => update.mutate({ id: h.id, patch: { notas: v } })}
                           placeholder="Observaciones…"
                         />
                       </td>
