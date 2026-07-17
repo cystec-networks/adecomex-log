@@ -24,6 +24,7 @@ export type FacturaEcfFormPreload = {
   encf?: string;
   monto_total?: number;
   tipo_comprobante?: string;
+  pdf_url?: string | null;
 };
 
 /**
