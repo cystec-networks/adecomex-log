@@ -31,6 +31,69 @@ const ESTADOS = [
   { v: "no_aplica", label: "No aplica" },
 ] as const;
 
+type DeferredTextareaProps = {
+  value: string | null;
+  onSave: (v: string | null) => void;
+  rows?: number;
+  className?: string;
+  placeholder?: string;
+};
+
+function DeferredTextarea({ value, onSave, ...props }: DeferredTextareaProps) {
+  const [local, setLocal] = useState(value ?? "");
+  const isFocused = useRef(false);
+
+  useEffect(() => {
+    if (!isFocused.current) {
+      setLocal(value ?? "");
+    }
+  }, [value]);
+
+  return (
+    <Textarea
+      {...props}
+      value={local}
+      onChange={(e) => setLocal(e.target.value)}
+      onFocus={() => { isFocused.current = true; }}
+      onBlur={() => {
+        isFocused.current = false;
+        onSave(local || null);
+      }}
+    />
+  );
+}
+
+type DeferredDateInputProps = {
+  value: string | null;
+  onSave: (v: string | null) => void;
+  className?: string;
+};
+
+function DeferredDateInput({ value, onSave, className }: DeferredDateInputProps) {
+  const [local, setLocal] = useState(value ?? "");
+  const isFocused = useRef(false);
+
+  useEffect(() => {
+    if (!isFocused.current) {
+      setLocal(value ?? "");
+    }
+  }, [value]);
+
+  return (
+    <Input
+      type="date"
+      className={className}
+      value={local}
+      onChange={(e) => setLocal(e.target.value)}
+      onFocus={() => { isFocused.current = true; }}
+      onBlur={() => {
+        isFocused.current = false;
+        onSave(local || null);
+      }}
+    />
+  );
+}
+
 function estadoBadge(e: HitoRow["estado"], atrasado: boolean, proximo: boolean) {
   if (e === "completado") return <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white gap-1"><CheckCircle2 className="h-3 w-3" />Completado</Badge>;
   if (e === "no_aplica") return <Badge variant="outline" className="gap-1"><MinusCircle className="h-3 w-3" />No aplica</Badge>;
