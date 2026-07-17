@@ -834,7 +834,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                   <td className="text-xs">{fmtLocalDate(d.fecha_recepcion)}</td>
                   <td className={`text-xs ${vencido ? "text-destructive font-medium" : ""}`}>{fmtLocalDate(d.fecha_vencimiento)}</td>
                   <td className="px-4 py-2 text-right">
-                    {d.storage_path && <Button size="sm" variant="ghost" onClick={() => download(d.storage_path)}>Descargar</Button>}
+                    {d.storage_path && <DocumentoPreviewButton path={d.storage_path} variant="ghost" size="sm" label="Ver" />}
                   </td>
                 </tr>
               );
