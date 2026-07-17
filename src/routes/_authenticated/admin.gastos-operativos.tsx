@@ -251,6 +251,7 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
   const [form, setForm] = useState({ ...row });
   const [crearCxp, setCrearCxp] = useState(false);
   const [cxpVence, setCxpVence] = useState<string>("");
+  const [file, setFile] = useState<File | null>(null);
   const save = useMutation({
     mutationFn: async () => {
       if (!form.concepto.trim()) throw new Error("Concepto requerido");
