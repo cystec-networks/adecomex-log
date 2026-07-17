@@ -404,6 +404,29 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
               }) : prev)} />
             </div>
             <p className="text-xs text-muted-foreground -mt-1">Opcional. Requerido solo si el gasto tiene comprobante fiscal formal (para reporte 606 DGII).</p>
+            <div className="rounded border bg-background/60 p-3 space-y-2">
+              <Label className="text-sm">Comprobante (PDF o imagen)</Label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Input
+                  type="file"
+                  accept="application/pdf,image/*"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  className="max-w-xs"
+                />
+                {file && (
+                  <span className="text-xs text-muted-foreground truncate max-w-[200px]">{file.name}</span>
+                )}
+                {form.comprobante_url && !file && (
+                  <>
+                    <DocumentoPreviewButton path={form.comprobante_url} variant="outline" size="sm" label="Ver actual" />
+                    <Button variant="ghost" size="sm" onClick={() => setForm({ ...form, comprobante_url: null })}>Quitar</Button>
+                  </>
+                )}
+              </div>
+              {form.comprobante_url && file && (
+                <p className="text-xs text-muted-foreground">Se reemplazará el comprobante actual al guardar.</p>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Tipo de ID</Label>
