@@ -280,7 +280,12 @@ export function FacturaEcfFormDialog({
           </div>
           <div className="space-y-1.5">
             <Label>PDF (opcional)</Label>
-            <Input type="file" accept="application/pdf" onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)} />
+            <div className="flex items-center gap-2">
+              <Input type="file" accept="application/pdf" onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)} />
+              {preload?.pdf_url && (
+                <DocumentoPreviewButton path={preload.pdf_url} label="Ver actual" />
+              )}
+            </div>
           </div>
         </div>
 
