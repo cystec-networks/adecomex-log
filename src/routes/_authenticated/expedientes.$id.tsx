@@ -790,10 +790,6 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
     qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
   };
 
-  const download = async (path: string) => {
-    const { data } = await supabase.storage.from("documentos").createSignedUrl(path, 300);
-    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
-  };
 
   return (
     <Card>
