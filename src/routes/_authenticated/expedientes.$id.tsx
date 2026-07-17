@@ -197,6 +197,42 @@ function DetalleExpediente() {
   );
 }
 
+function Field({ label, value, onChange, type = "text", className = "" }: { label: string; value: any; onChange: (v: string) => void; type?: string; className?: string }) {
+  return (
+    <div className={`grid gap-1.5 ${className}`}>
+      <Label>{label}</Label>
+      <Input type={type} value={value ?? ""} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
+}
+
+function AutoField({ label, value, onChange, suggestion, className = "" }: { label: string; value: any; onChange: (v: string) => void; suggestion: string[]; className?: string }) {
+  return (
+    <div className={`grid gap-1.5 ${className}`}>
+      <Label>{label}</Label>
+      <AutocompleteInput
+        value={value ?? ""}
+        onChange={onChange}
+        suggestions={suggestion ?? []}
+        placeholder={`Escribe para buscar ${label.toLowerCase()}…`}
+      />
+    </div>
+  );
+}
+
+function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  return (
+    <Card>
+      <CardHeader className="pb-3 border-b">
+        <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">{title}</CardTitle>
+        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+      </CardHeader>
+      <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{children}</CardContent>
+    </Card>
+  );
+}
+
+
 function TabInfo({ exp }: { exp: any }) {
   const qc = useQueryClient();
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
