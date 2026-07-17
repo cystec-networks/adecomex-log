@@ -8,7 +8,7 @@ import { estadoLabel } from "@/lib/estados-expediente";
 import { fmtLocalDate } from "@/lib/dates";
 import { RastrearEmbarqueButton } from "@/components/rastrear-embarque-button";
 import { ArrowLeft, Check, Circle, Download, FileText } from "lucide-react";
-import { toast } from "sonner";
+
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
 export const Route = createFileRoute("/_portal/portal/expedientes/$id")({
