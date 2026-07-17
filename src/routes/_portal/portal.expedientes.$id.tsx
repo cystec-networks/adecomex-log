@@ -170,14 +170,19 @@ function PortalExpedienteDetalle() {
                       </td>
                       <td className="px-4 py-2 text-muted-foreground">{fmtLocalDate(d.fecha_recepcion ?? d.created_at)}</td>
                       <td className="px-4 py-2 text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={!d.storage_path}
-                          onClick={() => handleDownload(d.storage_path)}
-                        >
-                          <Download className="h-3.5 w-3.5 mr-1" /> Descargar
-                        </Button>
+                        {d.storage_path ? (
+                          <DocumentoPreviewButton
+                            path={d.storage_path}
+                            variant="outline"
+                            size="sm"
+                            icon={<Download className="h-3.5 w-3.5 mr-1" />}
+                            label="Descargar"
+                          />
+                        ) : (
+                          <Button variant="outline" size="sm" disabled>
+                            <Download className="h-3.5 w-3.5 mr-1" /> Descargar
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}
