@@ -85,6 +85,7 @@ Deno.serve(async (req) => {
   if (!userId) {
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
       email, password: tempPassword, email_confirm: true,
+      user_metadata: { is_portal_account: true },
     });
     if (createErr || !created?.user) return json(500, { error: createErr?.message ?? "No se pudo crear la cuenta" });
     userId = created.user.id;
