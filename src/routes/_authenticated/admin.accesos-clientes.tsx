@@ -131,12 +131,11 @@ function AccesosClientesPage() {
                           <UserPlus className="h-4 w-4 mr-1" /> Invitar al portal
                         </Button>
                         <Button
-                          size="sm" variant="outline"
-                          className="border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E]"
-                          onClick={() => enviarWhatsApp.mutate(c)}
-                          disabled={enviarWhatsApp.isPending}
+                          size="sm"
+                          onClick={() => crearAcceso.mutate(c)}
+                          disabled={crearAcceso.isPending}
                         >
-                          <MessageCircle className="h-4 w-4 mr-1" /> Enviar enlace por WhatsApp
+                          <KeyRound className="h-4 w-4 mr-1" /> Crear acceso directo
                         </Button>
                       </div>
                     )}
@@ -147,11 +146,10 @@ function AccesosClientesPage() {
                         </Button>
                         <Button
                           size="sm" variant="outline"
-                          className="border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E]"
-                          onClick={() => enviarWhatsApp.mutate(c)}
-                          disabled={enviarWhatsApp.isPending}
+                          onClick={() => crearAcceso.mutate(c)}
+                          disabled={crearAcceso.isPending}
                         >
-                          <MessageCircle className="h-4 w-4 mr-1" /> Enviar enlace por WhatsApp
+                          <RotateCw className="h-4 w-4 mr-1" /> Restablecer acceso
                         </Button>
                         {c.vinculo.activo ? (
                           <Button
