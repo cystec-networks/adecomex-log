@@ -137,6 +137,12 @@ function Estudiantes() {
           <h1 className="font-display text-2xl font-bold">Estudiantes</h1>
           <p className="text-sm text-muted-foreground">Personas registradas en la Academia.</p>
         </div>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button variant="outline" onClick={() => setPapeleraOpen(true)}>
+              <Trash className="h-4 w-4 mr-1" />Ver papelera
+            </Button>
+          )}
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetDialog(); }}>
           <DialogTrigger asChild><Button onClick={() => { setEditing(null); setForm(empty); }}><Plus className="h-4 w-4 mr-1" />Nuevo estudiante</Button></DialogTrigger>
           <DialogContent>
