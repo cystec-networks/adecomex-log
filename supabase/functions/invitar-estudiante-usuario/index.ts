@@ -109,16 +109,19 @@ Deno.serve(async (req) => {
       const { data: gen, error: genErr } = await (admin.auth.admin as any).generateLink({
         type: "invite",
         email,
-        options: { redirectTo },
+        options: { redirectTo, data: { is_portal_account: true } },
       });
       if (genErr || !gen?.user) return json(500, { error: genErr?.message ?? "No se pudo generar el enlace" });
       userId = gen.user.id;
       enlace = gen?.properties?.action_link ?? null;
     } else {
-      const { data: invited, error: invErr } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo });
+      const { data: invited, error: invErr } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo, data: { is_portal_account: true } });
       if (invErr || !invited?.user) return json(500, { error: invErr?.message ?? "No se pudo invitar al usuario" });
       userId = invited.user.id;
     }
+    try {
+      await admin.auth.admin.updateUserById(userId!, { user_metadata: { is_portal_account: true } });
+    } catch (_e) { /* ignore */ }
   } else {
     const lastSignInAt = existingUser?.last_sign_in_at ?? null;
     if (lastSignInAt) {
