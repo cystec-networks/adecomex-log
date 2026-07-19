@@ -345,11 +345,9 @@ function Expedientes() {
                 : "text-blue-600 dark:text-blue-400";
             const Icon = a.tone === "danger" ? AlertTriangle : Clock;
             return (
-              <Icon
-                className={`mt-0.5 h-3 w-3 ${cls}`}
-                title={title}
-                aria-label={title}
-              />
+              <span title={title} aria-label={title} className="inline-flex items-center justify-center">
+                <Icon className={`mt-0.5 h-3 w-3 ${cls}`} />
+              </span>
             );
           })()}
         </div>
