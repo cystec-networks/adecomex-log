@@ -12,7 +12,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertCircle, Trash, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useMyRoles } from "@/lib/auth-hooks";
@@ -39,7 +39,28 @@ function Estudiantes() {
   const { data: estudiantes } = useQuery({
     queryKey: ["academia-estudiantes"],
     queryFn: async () =>
-      ((await (supabase as any).from("estudiantes").select("*").order("created_at", { ascending: false })).data ?? []) as any[],
+      ((await (supabase as any).from("estudiantes").select("*").is("deleted_at", null).order("created_at", { ascending: false })).data ?? []) as any[],
+  });
+
+  const [papeleraOpen, setPapeleraOpen] = useState(false);
+  const { data: papelera } = useQuery({
+    queryKey: ["academia-estudiantes-papelera"],
+    enabled: papeleraOpen,
+    queryFn: async () =>
+      ((await (supabase as any).from("estudiantes").select("*").not("deleted_at", "is", null).order("deleted_at", { ascending: false })).data ?? []) as any[],
+  });
+
+  const restore = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("estudiantes").update({ deleted_at: null, deleted_by: null }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Estudiante restaurado");
+      qc.invalidateQueries({ queryKey: ["academia-estudiantes"] });
+      qc.invalidateQueries({ queryKey: ["academia-estudiantes-papelera"] });
+    },
+    onError: (e: any) => toast.error(e.message),
   });
 
   const save = useMutation({
@@ -83,12 +104,14 @@ function Estudiantes() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("estudiantes").delete().eq("id", id);
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await (supabase as any).from("estudiantes").update({ deleted_at: new Date().toISOString(), deleted_by: u.user?.id ?? null }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Estudiante eliminado");
+      toast.success("Estudiante movido a la papelera");
       qc.invalidateQueries({ queryKey: ["academia-estudiantes"] });
+      qc.invalidateQueries({ queryKey: ["academia-estudiantes-papelera"] });
       setToDelete(null);
     },
     onError: (e: any) => toast.error(e.message),
@@ -114,6 +137,12 @@ function Estudiantes() {
           <h1 className="font-display text-2xl font-bold">Estudiantes</h1>
           <p className="text-sm text-muted-foreground">Personas registradas en la Academia.</p>
         </div>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button variant="outline" onClick={() => setPapeleraOpen(true)}>
+              <Trash className="h-4 w-4 mr-1" />Ver papelera
+            </Button>
+          )}
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetDialog(); }}>
           <DialogTrigger asChild><Button onClick={() => { setEditing(null); setForm(empty); }}><Plus className="h-4 w-4 mr-1" />Nuevo estudiante</Button></DialogTrigger>
           <DialogContent>
@@ -168,6 +197,7 @@ function Estudiantes() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Input placeholder="Buscar por nombre, cédula o email..." value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
@@ -225,7 +255,7 @@ function Estudiantes() {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar estudiante</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Seguro que deseas eliminar a <b>{toDelete?.nombre}</b>? Se eliminarán también sus inscripciones y accesos vinculados. Esta acción no se puede deshacer.
+              ¿Seguro que deseas eliminar a <b>{toDelete?.nombre}</b>? Se moverá a la papelera y podrás restaurarlo después. Sus inscripciones y accesos existentes NO se eliminan, solo quedan ocultos mientras esté en la papelera.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -239,6 +269,41 @@ function Estudiantes() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={papeleraOpen} onOpenChange={setPapeleraOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader><DialogTitle>Papelera de estudiantes</DialogTitle></DialogHeader>
+          <div className="max-h-[60vh] overflow-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-xs uppercase">
+                <tr>
+                  <th className="text-left p-2">Nombre</th>
+                  <th className="text-left p-2">Email</th>
+                  <th className="text-left p-2">Eliminado</th>
+                  <th className="p-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {(papelera ?? []).map((s: any) => (
+                  <tr key={s.id} className="border-t">
+                    <td className="p-2 font-medium">{s.nombre}</td>
+                    <td className="p-2">{s.email ?? "—"}</td>
+                    <td className="p-2">{s.deleted_at ? new Date(s.deleted_at).toLocaleString() : "—"}</td>
+                    <td className="p-2 text-right">
+                      <Button size="sm" variant="outline" onClick={() => restore.mutate(s.id)} disabled={restore.isPending}>
+                        <RotateCcw className="h-4 w-4 mr-1" />Restaurar
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {(papelera ?? []).length === 0 && (
+                  <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">Papelera vacía.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

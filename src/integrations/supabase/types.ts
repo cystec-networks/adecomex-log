@@ -924,6 +924,8 @@ export type Database = {
           correo_generado: boolean
           created_at: string
           created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           email: string | null
           empresa: string | null
           id: string
@@ -937,6 +939,8 @@ export type Database = {
           correo_generado?: boolean
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           email?: string | null
           empresa?: string | null
           id?: string
@@ -950,6 +954,8 @@ export type Database = {
           correo_generado?: boolean
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           email?: string | null
           empresa?: string | null
           id?: string
