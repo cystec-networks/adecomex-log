@@ -21,7 +21,18 @@ const ESTADO_COLOR: Record<string, string> = {
   despachado: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
 };
 
+function normalizeSearch(text: string | null | undefined): string {
+  return (text ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
 function PortalListado() {
+  const navigate = useNavigate({ from: "/_portal/portal" });
+  const [query, setQuery] = useState("");
+
   const { data: expedientes, isLoading } = useQuery({
     queryKey: ["portal-expedientes"],
     queryFn: async () => {
@@ -34,6 +45,35 @@ function PortalListado() {
     },
   });
 
+  const normalizedQuery = normalizeSearch(query);
+
+  const filtered = normalizedQuery
+    ? (expedientes ?? []).filter((exp) => {
+        const normNum = normalizeSearch(exp.numero);
+        const normBl = normalizeSearch(exp.bl_awb);
+        return normNum.includes(normalizedQuery) || normBl.includes(normalizedQuery);
+      })
+    : (expedientes ?? []);
+
+  const handleSearch = (value: string) => {
+    setQuery(value);
+    const normalized = normalizeSearch(value);
+    if (!normalized || !expedientes?.length) return;
+
+    const exactMatches = expedientes.filter((exp) => {
+      const normNum = normalizeSearch(exp.numero);
+      const normBl = normalizeSearch(exp.bl_awb);
+      return normNum === normalized || normBl === normalized;
+    });
+
+    if (exactMatches.length === 1) {
+      navigate({
+        to: "/portal/expedientes/$id",
+        params: { id: exactMatches[0].id! },
+      });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -41,6 +81,18 @@ function PortalListado() {
           <FolderKanban className="h-6 w-6 text-primary" /> Mis expedientes
         </h1>
         <p className="text-sm text-muted-foreground">Consulta el estado y documentos de tus operaciones.</p>
+      </div>
+
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
+        <Input
+          type="text"
+          value={query}
+          onChange={(e) => handleSearch(e.target.value)}
+          placeholder="Busca por número de expediente o BL/AWB..."
+          className="pl-12 pr-4 py-5 text-lg w-full"
+          aria-label="Buscar expediente por número o BL/AWB"
+        />
       </div>
 
       {isLoading && <div className="text-sm text-muted-foreground">Cargando…</div>}
@@ -55,8 +107,16 @@ function PortalListado() {
         </Card>
       )}
 
+      {!isLoading && query && filtered.length === 0 && (expedientes?.length ?? 0) > 0 && (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            <div className="font-medium text-foreground">No se encontró ningún expediente con ese número o BL/AWB</div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {(expedientes ?? []).map((exp) => (
+        {filtered.map((exp) => (
           <Link
             key={exp.id!}
             to="/portal/expedientes/$id"
