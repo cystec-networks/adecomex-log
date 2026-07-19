@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PortalEstudianteRouteRouteImport } from './routes/_portal-estudiante/route'
 import { Route as PortalRouteRouteImport } from './routes/_portal/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -20,6 +21,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCopilotoRouteImport } from './routes/_authenticated/copiloto'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as PortalPortalIndexRouteImport } from './routes/_portal/portal.index'
+import { Route as PortalEstudiantePortalEstudianteIndexRouteImport } from './routes/_portal-estudiante/portal-estudiante.index'
 import { Route as AuthenticatedTransportesIndexRouteImport } from './routes/_authenticated/transportes.index'
 import { Route as AuthenticatedSolicitudesIndexRouteImport } from './routes/_authenticated/solicitudes.index'
 import { Route as AuthenticatedPermisosIndexRouteImport } from './routes/_authenticated/permisos.index'
@@ -50,6 +52,7 @@ import { Route as AuthenticatedAcademiaInscripcionesRouteImport } from './routes
 import { Route as AuthenticatedAcademiaEstudiantesRouteImport } from './routes/_authenticated/academia.estudiantes'
 import { Route as AuthenticatedAcademiaAccesosEstudiantesRouteImport } from './routes/_authenticated/academia.accesos-estudiantes'
 import { Route as PortalPortalExpedientesIdRouteImport } from './routes/_portal/portal.expedientes.$id'
+import { Route as PortalEstudiantePortalEstudianteProgramasIdRouteImport } from './routes/_portal-estudiante/portal-estudiante.programas.$id'
 import { Route as AuthenticatedAdminFacturacionPendientesRouteImport } from './routes/_authenticated/admin.facturacion.pendientes'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -60,6 +63,10 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalEstudianteRouteRoute = PortalEstudianteRouteRouteImport.update({
+  id: '/_portal-estudiante',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalRouteRoute = PortalRouteRouteImport.update({
@@ -105,6 +112,12 @@ const PortalPortalIndexRoute = PortalPortalIndexRouteImport.update({
   path: '/portal/',
   getParentRoute: () => PortalRouteRoute,
 } as any)
+const PortalEstudiantePortalEstudianteIndexRoute =
+  PortalEstudiantePortalEstudianteIndexRouteImport.update({
+    id: '/portal-estudiante/',
+    path: '/portal-estudiante/',
+    getParentRoute: () => PortalEstudianteRouteRoute,
+  } as any)
 const AuthenticatedTransportesIndexRoute =
   AuthenticatedTransportesIndexRouteImport.update({
     id: '/transportes/',
@@ -284,6 +297,12 @@ const PortalPortalExpedientesIdRoute =
     path: '/portal/expedientes/$id',
     getParentRoute: () => PortalRouteRoute,
   } as any)
+const PortalEstudiantePortalEstudianteProgramasIdRoute =
+  PortalEstudiantePortalEstudianteProgramasIdRouteImport.update({
+    id: '/portal-estudiante/programas/$id',
+    path: '/portal-estudiante/programas/$id',
+    getParentRoute: () => PortalEstudianteRouteRoute,
+  } as any)
 const AuthenticatedAdminFacturacionPendientesRoute =
   AuthenticatedAdminFacturacionPendientesRouteImport.update({
     id: '/pendientes',
@@ -329,8 +348,10 @@ export interface FileRoutesByFullPath {
   '/permisos/': typeof AuthenticatedPermisosIndexRoute
   '/solicitudes/': typeof AuthenticatedSolicitudesIndexRoute
   '/transportes/': typeof AuthenticatedTransportesIndexRoute
+  '/portal-estudiante/': typeof PortalEstudiantePortalEstudianteIndexRoute
   '/portal/': typeof PortalPortalIndexRoute
   '/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
+  '/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
 }
 export interface FileRoutesByTo {
@@ -371,8 +392,10 @@ export interface FileRoutesByTo {
   '/permisos': typeof AuthenticatedPermisosIndexRoute
   '/solicitudes': typeof AuthenticatedSolicitudesIndexRoute
   '/transportes': typeof AuthenticatedTransportesIndexRoute
+  '/portal-estudiante': typeof PortalEstudiantePortalEstudianteIndexRoute
   '/portal': typeof PortalPortalIndexRoute
   '/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
+  '/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
 }
 export interface FileRoutesById {
@@ -380,6 +403,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_portal': typeof PortalRouteRouteWithChildren
+  '/_portal-estudiante': typeof PortalEstudianteRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
@@ -416,8 +440,10 @@ export interface FileRoutesById {
   '/_authenticated/permisos/': typeof AuthenticatedPermisosIndexRoute
   '/_authenticated/solicitudes/': typeof AuthenticatedSolicitudesIndexRoute
   '/_authenticated/transportes/': typeof AuthenticatedTransportesIndexRoute
+  '/_portal-estudiante/portal-estudiante/': typeof PortalEstudiantePortalEstudianteIndexRoute
   '/_portal/portal/': typeof PortalPortalIndexRoute
   '/_authenticated/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
+  '/_portal-estudiante/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/_portal/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
 }
 export interface FileRouteTypes {
@@ -460,8 +486,10 @@ export interface FileRouteTypes {
     | '/permisos/'
     | '/solicitudes/'
     | '/transportes/'
+    | '/portal-estudiante/'
     | '/portal/'
     | '/admin/facturacion/pendientes'
+    | '/portal-estudiante/programas/$id'
     | '/portal/expedientes/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -502,14 +530,17 @@ export interface FileRouteTypes {
     | '/permisos'
     | '/solicitudes'
     | '/transportes'
+    | '/portal-estudiante'
     | '/portal'
     | '/admin/facturacion/pendientes'
+    | '/portal-estudiante/programas/$id'
     | '/portal/expedientes/$id'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/_portal'
+    | '/_portal-estudiante'
     | '/auth'
     | '/reset-password'
     | '/_authenticated/clientes'
@@ -546,8 +577,10 @@ export interface FileRouteTypes {
     | '/_authenticated/permisos/'
     | '/_authenticated/solicitudes/'
     | '/_authenticated/transportes/'
+    | '/_portal-estudiante/portal-estudiante/'
     | '/_portal/portal/'
     | '/_authenticated/admin/facturacion/pendientes'
+    | '/_portal-estudiante/portal-estudiante/programas/$id'
     | '/_portal/portal/expedientes/$id'
   fileRoutesById: FileRoutesById
 }
@@ -555,6 +588,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   PortalRouteRoute: typeof PortalRouteRouteWithChildren
+  PortalEstudianteRouteRoute: typeof PortalEstudianteRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
 }
@@ -573,6 +607,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_portal-estudiante': {
+      id: '/_portal-estudiante'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PortalEstudianteRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_portal': {
@@ -637,6 +678,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/portal/'
       preLoaderRoute: typeof PortalPortalIndexRouteImport
       parentRoute: typeof PortalRouteRoute
+    }
+    '/_portal-estudiante/portal-estudiante/': {
+      id: '/_portal-estudiante/portal-estudiante/'
+      path: '/portal-estudiante'
+      fullPath: '/portal-estudiante/'
+      preLoaderRoute: typeof PortalEstudiantePortalEstudianteIndexRouteImport
+      parentRoute: typeof PortalEstudianteRouteRoute
     }
     '/_authenticated/transportes/': {
       id: '/_authenticated/transportes/'
@@ -848,6 +896,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalPortalExpedientesIdRouteImport
       parentRoute: typeof PortalRouteRoute
     }
+    '/_portal-estudiante/portal-estudiante/programas/$id': {
+      id: '/_portal-estudiante/portal-estudiante/programas/$id'
+      path: '/portal-estudiante/programas/$id'
+      fullPath: '/portal-estudiante/programas/$id'
+      preLoaderRoute: typeof PortalEstudiantePortalEstudianteProgramasIdRouteImport
+      parentRoute: typeof PortalEstudianteRouteRoute
+    }
     '/_authenticated/admin/facturacion/pendientes': {
       id: '/_authenticated/admin/facturacion/pendientes'
       path: '/pendientes'
@@ -974,10 +1029,28 @@ const PortalRouteRouteWithChildren = PortalRouteRoute._addFileChildren(
   PortalRouteRouteChildren,
 )
 
+interface PortalEstudianteRouteRouteChildren {
+  PortalEstudiantePortalEstudianteIndexRoute: typeof PortalEstudiantePortalEstudianteIndexRoute
+  PortalEstudiantePortalEstudianteProgramasIdRoute: typeof PortalEstudiantePortalEstudianteProgramasIdRoute
+}
+
+const PortalEstudianteRouteRouteChildren: PortalEstudianteRouteRouteChildren = {
+  PortalEstudiantePortalEstudianteIndexRoute:
+    PortalEstudiantePortalEstudianteIndexRoute,
+  PortalEstudiantePortalEstudianteProgramasIdRoute:
+    PortalEstudiantePortalEstudianteProgramasIdRoute,
+}
+
+const PortalEstudianteRouteRouteWithChildren =
+  PortalEstudianteRouteRoute._addFileChildren(
+    PortalEstudianteRouteRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   PortalRouteRoute: PortalRouteRouteWithChildren,
+  PortalEstudianteRouteRoute: PortalEstudianteRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
 }
