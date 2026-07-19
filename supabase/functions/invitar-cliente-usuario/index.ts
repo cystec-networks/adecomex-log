@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
   if (roleErr) return json(500, { error: roleErr.message });
   if (!roleRows || roleRows.length === 0) return json(403, { error: "Solo administradores pueden invitar clientes" });
 
-  let payload: { email?: string; cliente_id?: string };
+  let payload: { email?: string; cliente_id?: string; soloGenerarEnlace?: boolean };
   try {
     payload = await req.json();
   } catch {
@@ -54,6 +54,7 @@ Deno.serve(async (req) => {
   }
   const email = (payload.email ?? "").trim().toLowerCase();
   const cliente_id = (payload.cliente_id ?? "").trim();
+  const soloGenerarEnlace = !!payload.soloGenerarEnlace;
   if (!email || !cliente_id) return json(400, { error: "email y cliente_id son requeridos" });
 
   const { data: cliente, error: cliErr } = await admin
@@ -89,19 +90,43 @@ Deno.serve(async (req) => {
 
   let yaConfirmado = false;
   let warning: string | null = null;
+  let enlace: string | null = null;
+
+  async function generarEnlaceInvite(): Promise<string | null> {
+    const { data: gen, error: genErr } = await (admin.auth.admin as any).generateLink({
+      type: "invite",
+      email,
+      options: { redirectTo },
+    });
+    if (genErr) {
+      warning = `No se pudo generar el enlace de invitación (${genErr.message}).`;
+      return null;
+    }
+    return gen?.properties?.action_link ?? null;
+  }
 
   if (!userId) {
-    // Brand new user - invite
-    const { data: invited, error: invErr } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo });
-    if (invErr || !invited?.user) return json(500, { error: invErr?.message ?? "No se pudo invitar al usuario" });
-    userId = invited.user.id;
+    if (soloGenerarEnlace) {
+      const { data: gen, error: genErr } = await (admin.auth.admin as any).generateLink({
+        type: "invite",
+        email,
+        options: { redirectTo },
+      });
+      if (genErr || !gen?.user) return json(500, { error: genErr?.message ?? "No se pudo generar el enlace" });
+      userId = gen.user.id;
+      enlace = gen?.properties?.action_link ?? null;
+    } else {
+      const { data: invited, error: invErr } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo });
+      if (invErr || !invited?.user) return json(500, { error: invErr?.message ?? "No se pudo invitar al usuario" });
+      userId = invited.user.id;
+    }
   } else {
-    // Existing user - check if they have ever signed in (completed password setup)
     const lastSignInAt = existingUser?.last_sign_in_at ?? null;
     if (lastSignInAt) {
       yaConfirmado = true;
+    } else if (soloGenerarEnlace) {
+      enlace = await generarEnlaceInvite();
     } else {
-      // Never signed in - always resend invitation
       const { error: reinvErr } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo });
       if (reinvErr) {
         warning = `No se pudo reenviar el correo de invitación (${reinvErr.message}), pero el vínculo quedó actualizado.`;
