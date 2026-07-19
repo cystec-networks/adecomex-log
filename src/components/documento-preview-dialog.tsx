@@ -38,6 +38,14 @@ export function DocumentoPreviewButton({
   className,
   children,
   icon,
+  /**
+   * Modo restringido: oculta botones de "Abrir en pestaña nueva" y desactiva
+   * parte de la UI nativa del visor PDF. Reduce la descarga casual, pero NO
+   * es una protección absoluta: un usuario técnico siempre puede obtener el
+   * archivo de otras formas (inspector, caché, etc.). Se usa solo en portales
+   * de solo lectura (cliente/estudiante).
+   */
+  restringido = false,
 }: {
   path: string;
   bucket?: string;
@@ -48,6 +56,7 @@ export function DocumentoPreviewButton({
   children?: React.ReactNode;
   /** Icono opcional dentro del botón (default: <Eye />) */
   icon?: React.ReactNode;
+  restringido?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState<string | null>(null);
@@ -73,7 +82,11 @@ export function DocumentoPreviewButton({
         if (error || !data?.signedUrl) {
           setError(error?.message ?? "No se pudo generar el enlace");
         } else {
-          setUrl(data.signedUrl);
+          let signedUrl = data.signedUrl;
+          if (restringido && kind === "pdf") {
+            signedUrl += "#toolbar=0&navpanes=0";
+          }
+          setUrl(signedUrl);
         }
       })
       .finally(() => {
@@ -82,10 +95,14 @@ export function DocumentoPreviewButton({
     return () => {
       cancel = true;
     };
-  }, [open, bucket, path]);
+  }, [open, bucket, path, restringido, kind]);
 
   const openExternal = () => {
     if (url) window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const preventContextMenu = (e: React.MouseEvent) => {
+    if (restringido) e.preventDefault();
   };
 
   return (
@@ -122,6 +139,7 @@ export function DocumentoPreviewButton({
               src={url}
               title="Vista previa PDF"
               className="w-full h-full border-0"
+              onContextMenu={preventContextMenu}
             />
           )}
           {!loading && !error && url && kind === "image" && (
@@ -129,27 +147,36 @@ export function DocumentoPreviewButton({
               src={url}
               alt="Vista previa"
               className="max-w-full max-h-full object-contain"
+              onContextMenu={preventContextMenu}
             />
           )}
           {!loading && !error && url && kind === "other" && (
             <div className="text-sm text-center px-6 space-y-3">
-              <p>No se pudo previsualizar este archivo en el navegador.</p>
-              <Button variant="outline" size="sm" onClick={openExternal}>
-                <ExternalLink className="h-4 w-4 mr-1" /> Abrir en pestaña nueva
-              </Button>
+              {restringido ? (
+                <p>Este archivo no se puede previsualizar en este portal.</p>
+              ) : (
+                <>
+                  <p>No se pudo previsualizar este archivo en el navegador.</p>
+                  <Button variant="outline" size="sm" onClick={openExternal}>
+                    <ExternalLink className="h-4 w-4 mr-1" /> Abrir en pestaña nueva
+                  </Button>
+                </>
+              )}
             </div>
           )}
         </div>
 
         <DialogFooter className="px-5 py-3 border-t gap-2 sm:justify-between">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={openExternal}
-            disabled={!url}
-          >
-            <ExternalLink className="h-4 w-4 mr-1" /> Abrir en pestaña nueva
-          </Button>
+          {!restringido && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openExternal}
+              disabled={!url}
+            >
+              <ExternalLink className="h-4 w-4 mr-1" /> Abrir en pestaña nueva
+            </Button>
+          )}
           <Button size="sm" onClick={() => setOpen(false)}>
             Cerrar
           </Button>

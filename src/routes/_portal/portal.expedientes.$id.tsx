@@ -223,6 +223,7 @@ function PortalExpedienteDetalle() {
                             size="sm"
                             icon={<Download className="h-3.5 w-3.5 mr-1" />}
                             label="Descargar"
+                            restringido
                           />
                         ) : (
                           <Button variant="outline" size="sm" disabled>
@@ -343,6 +344,7 @@ function PortalExpedienteDetalle() {
                             size="sm"
                             icon={<Download className="h-3.5 w-3.5 mr-1" />}
                             label="Ver PDF"
+                            restringido
                           />
                         ) : (
                           <Button variant="outline" size="sm" disabled>
