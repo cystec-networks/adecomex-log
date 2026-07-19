@@ -96,12 +96,7 @@ function NuevaSolicitud() {
               </Select>
             </div>
             <div className="grid gap-1.5"><Label>Tipo de carga</Label>
-              <Select value={form.tipo_carga} onValueChange={(v) => setForm({ ...form, tipo_carga: v })}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
-                <SelectContent>
-                  {["FCL","LCL","Aéreo","Granel","RoRo","Courier","Consolidado"].map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => setForm({ ...form, tipo_carga: v })} placeholder="Escribe o selecciona…" />
             </div>
             <div className="grid gap-1.5"><Label>Origen</Label>
               <Select value={form.origen} onValueChange={(v) => setForm({ ...form, origen: v })}>
