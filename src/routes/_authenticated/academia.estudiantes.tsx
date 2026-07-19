@@ -39,7 +39,28 @@ function Estudiantes() {
   const { data: estudiantes } = useQuery({
     queryKey: ["academia-estudiantes"],
     queryFn: async () =>
-      ((await (supabase as any).from("estudiantes").select("*").order("created_at", { ascending: false })).data ?? []) as any[],
+      ((await (supabase as any).from("estudiantes").select("*").is("deleted_at", null).order("created_at", { ascending: false })).data ?? []) as any[],
+  });
+
+  const [papeleraOpen, setPapeleraOpen] = useState(false);
+  const { data: papelera } = useQuery({
+    queryKey: ["academia-estudiantes-papelera"],
+    enabled: papeleraOpen,
+    queryFn: async () =>
+      ((await (supabase as any).from("estudiantes").select("*").not("deleted_at", "is", null).order("deleted_at", { ascending: false })).data ?? []) as any[],
+  });
+
+  const restore = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("estudiantes").update({ deleted_at: null, deleted_by: null }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Estudiante restaurado");
+      qc.invalidateQueries({ queryKey: ["academia-estudiantes"] });
+      qc.invalidateQueries({ queryKey: ["academia-estudiantes-papelera"] });
+    },
+    onError: (e: any) => toast.error(e.message),
   });
 
   const save = useMutation({
