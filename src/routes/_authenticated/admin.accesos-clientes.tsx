@@ -68,37 +68,23 @@ function AccesosClientesPage() {
     },
     onError: (err: any) => toast.error(err.message ?? "No se pudo actualizar"),
   });
-  const enviarWhatsApp = useMutation({
+  const [credenciales, setCredenciales] = useState<{ cliente: ClienteRow; email: string; password: string } | null>(null);
+
+  const crearAcceso = useMutation({
     mutationFn: async (c: ClienteRow) => {
-      const tel = normalizeWhatsAppPhone(c.telefono);
-      if (!tel) throw new Error("Este cliente no tiene teléfono registrado");
-      const clean = (c.email ?? "").trim().toLowerCase();
-      if (!clean) throw new Error("El cliente no tiene email registrado para generar la invitación");
-      const { data, error } = await supabase.functions.invoke("invitar-cliente-usuario", {
-        body: { email: clean, cliente_id: c.id, soloGenerarEnlace: true },
+      const { data, error } = await supabase.functions.invoke("crear-acceso-cliente", {
+        body: { cliente_id: c.id },
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
-      if (data?.yaConfirmado) {
-        return { yaConfirmado: true as const };
-      }
-      const enlace: string | undefined = data?.enlace;
-      if (!enlace) throw new Error(data?.warning ?? "No se pudo generar el enlace de invitación");
-      const msg = `Hola ${c.nombre}, ADECOMEX SRL te invita a acceder al portal de seguimiento. Activa tu acceso aquí: ${enlace}`;
-      const url = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
-      window.open(url, "_blank", "noopener,noreferrer");
-      return { yaConfirmado: false as const, warning: data?.warning as string | null };
+      if (!data?.email || !data?.password) throw new Error("Respuesta inválida del servidor");
+      return { cliente: c, email: data.email as string, password: data.password as string };
     },
     onSuccess: (res) => {
-      if (res.yaConfirmado) {
-        toast.info("Este cliente ya tiene cuenta activa. Debe iniciar sesión desde la pantalla de login.");
-      } else {
-        if (res.warning) toast.warning(res.warning);
-        else toast.success("Enlace generado y abierto en WhatsApp");
-        refresh();
-      }
+      setCredenciales(res);
+      refresh();
     },
-    onError: (err: any) => toast.error(err.message ?? "No se pudo generar el enlace"),
+    onError: (err: any) => toast.error(err.message ?? "No se pudo crear el acceso"),
   });
 
 
