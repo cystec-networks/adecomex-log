@@ -255,7 +255,7 @@ function Estudiantes() {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar estudiante</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Seguro que deseas eliminar a <b>{toDelete?.nombre}</b>? Se eliminarán también sus inscripciones y accesos vinculados. Esta acción no se puede deshacer.
+              ¿Seguro que deseas eliminar a <b>{toDelete?.nombre}</b>? Se moverá a la papelera y podrás restaurarlo después. Sus inscripciones y accesos existentes NO se eliminan, solo quedan ocultos mientras esté en la papelera.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
