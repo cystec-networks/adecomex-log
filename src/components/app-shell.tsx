@@ -240,14 +240,14 @@ function AppSidebarInner() {
         {/* Transportes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "transporte")!)}
 
-        {/* Simple items */}
-        {visibleSimpleItems.map((it) => renderSimpleItem(it))}
+        {/* Academia group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "academia")!)}
 
         {/* Administración group */}
         {renderGroup(visibleGroups.find((g) => g.id === "administracion")!)}
 
-        {/* Academia group */}
-        {renderGroup(visibleGroups.find((g) => g.id === "academia")!)}
+        {/* Simple items */}
+        {visibleSimpleItems.map((it) => renderSimpleItem(it))}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
