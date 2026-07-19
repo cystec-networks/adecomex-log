@@ -169,7 +169,7 @@ function DetalleSolicitud() {
                 <SelectContent>{(clientes ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="grid gap-1.5"><Label>Contacto</Label><Input value={form.contacto} onChange={(e) => set("contacto", e.target.value)} /></div>
+            <div className="grid gap-1.5"><Label>Contacto</Label><CatalogoAutocomplete tabla="catalogo_contactos" value={form.contacto} onChange={(v) => set("contacto", v)} /></div>
           </CardContent>
         </Card>
 
