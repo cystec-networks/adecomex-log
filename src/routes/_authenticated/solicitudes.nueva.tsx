@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 
 export const Route = createFileRoute("/_authenticated/solicitudes/nueva")({
   component: NuevaSolicitud,
@@ -67,7 +68,7 @@ function NuevaSolicitud() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid gap-1.5"><Label>Contacto</Label><Input value={form.contacto} onChange={(e) => setForm({ ...form, contacto: e.target.value })} /></div>
+            <div className="grid gap-1.5"><Label>Contacto</Label><CatalogoAutocomplete tabla="catalogo_contactos" value={form.contacto} onChange={(v) => setForm({ ...form, contacto: v })} /></div>
             <div className="grid gap-1.5">
               <Label>Prioridad</Label>
               <Select value={form.prioridad} onValueChange={(v) => setForm({ ...form, prioridad: v })}>
@@ -95,20 +96,10 @@ function NuevaSolicitud() {
               </Select>
             </div>
             <div className="grid gap-1.5"><Label>Tipo de carga</Label>
-              <Select value={form.tipo_carga} onValueChange={(v) => setForm({ ...form, tipo_carga: v })}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
-                <SelectContent>
-                  {["FCL","LCL","Aéreo","Granel","RoRo","Courier","Consolidado"].map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => setForm({ ...form, tipo_carga: v })} placeholder="Escribe o selecciona…" />
             </div>
             <div className="grid gap-1.5"><Label>Origen</Label>
-              <Select value={form.origen} onValueChange={(v) => setForm({ ...form, origen: v })}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
-                <SelectContent>
-                  {["China","Estados Unidos","España","México","Panamá","Colombia","Brasil","Alemania","India","Turquía","Italia","Países Bajos","Corea del Sur","Japón"].map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <CatalogoAutocomplete tabla="catalogo_paises" value={form.origen} onChange={(v) => setForm({ ...form, origen: v })} placeholder="Escribe o selecciona…" />
             </div>
             <div className="grid gap-1.5"><Label>Puerto / Aeropuerto de llegada</Label>
               <Select value={form.puerto_llegada} onValueChange={(v) => setForm({ ...form, puerto_llegada: v })}>
@@ -120,12 +111,7 @@ function NuevaSolicitud() {
             </div>
             <div className="grid gap-1.5"><Label>Fecha estimada de arribo</Label><Input type="date" value={form.fecha_arribo_est} onChange={(e) => setForm({ ...form, fecha_arribo_est: e.target.value })} /></div>
             <div className="grid gap-1.5"><Label>Incoterm</Label>
-              <Select value={form.incoterm} onValueChange={(v) => setForm({ ...form, incoterm: v })}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
-                <SelectContent>
-                  {["EXW","FCA","FAS","FOB","CFR","CIF","CPT","CIP","DAP","DPU","DDP"].map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <CatalogoAutocomplete tabla="catalogo_incoterms" value={form.incoterm} onChange={(v) => setForm({ ...form, incoterm: v })} placeholder="Escribe o selecciona…" />
             </div>
             <div className="grid gap-1.5"><Label>Medio de transporte</Label>
               <Select value={form.medio_transporte} onValueChange={(v) => setForm({ ...form, medio_transporte: v })}>

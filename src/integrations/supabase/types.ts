@@ -95,6 +95,27 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_contactos: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
       catalogo_documentos_requeridos: {
         Row: {
           codigo: string
@@ -182,6 +203,27 @@ export type Database = {
           nombre?: string
           orden?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_incoterms: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre?: string
         }
         Relationships: []
       }
@@ -393,6 +435,27 @@ export type Database = {
           notas?: string | null
           tasa?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_tipos_carga: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre?: string
         }
         Relationships: []
       }
