@@ -181,7 +181,78 @@ function AccesosEstudiantesPage() {
       </Card>
 
       <InvitarDialog estudiante={inviting} onClose={() => setInviting(null)} onDone={refresh} />
+      <CredencialesDialog creds={credenciales} onClose={() => setCredenciales(null)} />
     </div>
+  );
+}
+
+function CredencialesDialog({
+  creds, onClose,
+}: {
+  creds: { estudiante: EstudianteRow; email: string; password: string } | null;
+  onClose: () => void;
+}) {
+  const open = !!creds;
+  const authUrl = typeof window !== "undefined" ? `${window.location.origin}/auth` : "";
+  const copy = (text: string, label: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(
+        () => toast.success(`${label} copiado`),
+        () => toast.error("No se pudo copiar"),
+      );
+    }
+  };
+  const msg = creds
+    ? `Hola ${creds.estudiante.nombre}, aquí tienes tu acceso al portal de ADECOMEX: Usuario: ${creds.email} / Contraseña temporal: ${creds.password}. Te pedirá cambiarla al entrar por primera vez. Entra aquí: ${authUrl}`
+    : "";
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Acceso directo creado</DialogTitle>
+          <DialogDescription>
+            Comparte estas credenciales con el estudiante. Se le pedirá cambiar la contraseña al iniciar sesión.
+          </DialogDescription>
+        </DialogHeader>
+        {creds && (
+          <div className="space-y-3">
+            <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 px-3 py-2 text-sm">
+              ⚠️ Esta contraseña no se volverá a mostrar — cópiala o envíala ahora.
+            </div>
+            <div className="space-y-1.5">
+              <Label>Correo</Label>
+              <div className="flex gap-2">
+                <Input value={creds.email} readOnly className="font-mono" />
+                <Button type="button" variant="outline" size="icon" onClick={() => copy(creds.email, "Correo")}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Contraseña temporal</Label>
+              <div className="flex gap-2">
+                <Input value={creds.password} readOnly className="font-mono" />
+                <Button type="button" variant="outline" size="icon" onClick={() => copy(creds.password, "Contraseña")}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            {normalizeWhatsAppPhone(creds.estudiante.telefono) && (
+              <div className="pt-1">
+                <WhatsAppButton
+                  phone={creds.estudiante.telefono}
+                  clientName={creds.estudiante.nombre}
+                  message={msg}
+                />
+              </div>
+            )}
+          </div>
+        )}
+        <DialogFooter>
+          <Button onClick={onClose}>Listo</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
