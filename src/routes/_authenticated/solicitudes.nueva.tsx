@@ -21,7 +21,7 @@ function NuevaSolicitud() {
   const [form, setForm] = useState<any>({
     cliente_id: "", contacto: "", tipo_operacion: "Importación", tipo_carga: "",
     origen: "", puerto_llegada: "", fecha_arribo_est: "", incoterm: "", medio_transporte: "Marítimo",
-    prioridad: "media", observaciones: "",
+    prioridad: "media", observaciones: "", bl_awb: "", factura_comercial: "",
   });
 
   const { data: clientes } = useQuery({
@@ -121,6 +121,8 @@ function NuevaSolicitud() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid gap-1.5"><Label>BL / AWB</Label><Input value={form.bl_awb} onChange={(e) => setForm({ ...form, bl_awb: e.target.value })} /></div>
+            <div className="grid gap-1.5"><Label>Factura comercial</Label><Input value={form.factura_comercial} onChange={(e) => setForm({ ...form, factura_comercial: e.target.value })} /></div>
             <div className="grid gap-1.5 md:col-span-2"><Label>Observaciones</Label><Textarea rows={3} value={form.observaciones} onChange={(e) => setForm({ ...form, observaciones: e.target.value })} /></div>
           </CardContent>
         </Card>

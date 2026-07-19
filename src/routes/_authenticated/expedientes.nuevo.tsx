@@ -72,6 +72,8 @@ function NuevoExpediente() {
         incoterm: sol.incoterm ?? "",
         medio_transporte: sol.medio_transporte ?? "",
         contacto_solicitud: sol.contacto ?? "",
+        bl_awb: sol.bl_awb ?? "",
+        factura_comercial: sol.factura_comercial ?? "",
       }));
       setLoaded(true);
     }

@@ -89,6 +89,8 @@ function SolicitudesOCR() {
         prioridad: "media",
         observaciones: obs,
         puerto_llegada: puerto || null,
+        bl_awb: data?.bl || null,
+        factura_comercial: data?.numero_documento || null,
       };
       if (clienteId) payload.cliente_id = clienteId;
       if (eta) payload.fecha_arribo_est = eta;

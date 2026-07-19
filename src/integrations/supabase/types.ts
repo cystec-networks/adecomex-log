@@ -2090,6 +2090,7 @@ export type Database = {
       }
       solicitudes: {
         Row: {
+          bl_awb: string | null
           cliente_id: string | null
           contacto: string | null
           created_at: string
@@ -2097,6 +2098,7 @@ export type Database = {
           eliminado_en: string | null
           eliminado_por: string | null
           estado: Database["public"]["Enums"]["solicitud_estado"]
+          factura_comercial: string | null
           fecha_arribo_est: string | null
           id: string
           incoterm: string | null
@@ -2112,6 +2114,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bl_awb?: string | null
           cliente_id?: string | null
           contacto?: string | null
           created_at?: string
@@ -2119,6 +2122,7 @@ export type Database = {
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["solicitud_estado"]
+          factura_comercial?: string | null
           fecha_arribo_est?: string | null
           id?: string
           incoterm?: string | null
@@ -2134,6 +2138,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bl_awb?: string | null
           cliente_id?: string | null
           contacto?: string | null
           created_at?: string
@@ -2141,6 +2146,7 @@ export type Database = {
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["solicitud_estado"]
+          factura_comercial?: string | null
           fecha_arribo_est?: string | null
           id?: string
           incoterm?: string | null
