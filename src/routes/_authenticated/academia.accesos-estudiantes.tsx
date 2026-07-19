@@ -45,7 +45,7 @@ function AccesosEstudiantesPage() {
     queryKey: ["accesos-estudiantes"],
     queryFn: async (): Promise<EstudianteRow[]> => {
       const [{ data: estudiantes, error: e1 }, { data: vinculos, error: e2 }] = await Promise.all([
-        (supabase as any).from("estudiantes").select("id, nombre, cedula_pasaporte, email").order("nombre"),
+        (supabase as any).from("estudiantes").select("id, nombre, cedula_pasaporte, email, telefono").order("nombre"),
         (supabase as any).from("estudiante_usuarios").select("user_id, estudiante_id, activo"),
       ]);
       if (e1) throw e1;
