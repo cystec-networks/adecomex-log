@@ -1845,10 +1845,61 @@ export type Database = {
           },
         ]
       }
+      inscripcion_cuotas: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          estado: Database["public"]["Enums"]["cuota_estado"]
+          fecha_pagada: string | null
+          fecha_vencimiento: string | null
+          id: string
+          inscripcion_id: string
+          monto: number
+          monto_pagado: number
+          numero_cuota: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: Database["public"]["Enums"]["cuota_estado"]
+          fecha_pagada?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          inscripcion_id: string
+          monto?: number
+          monto_pagado?: number
+          numero_cuota: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: Database["public"]["Enums"]["cuota_estado"]
+          fecha_pagada?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          inscripcion_id?: string
+          monto?: number
+          monto_pagado?: number
+          numero_cuota?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inscripcion_cuotas_inscripcion_id_fkey"
+            columns: ["inscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "inscripciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inscripciones: {
         Row: {
           created_at: string
           created_by: string | null
+          descuento_aplicado: number
           estado: Database["public"]["Enums"]["inscripcion_estado"]
           estudiante_id: string
           factura_ecf_id: string | null
@@ -1858,11 +1909,13 @@ export type Database = {
           monto_total: number
           notas: string | null
           programa_id: string
+          referido_por_estudiante_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          descuento_aplicado?: number
           estado?: Database["public"]["Enums"]["inscripcion_estado"]
           estudiante_id: string
           factura_ecf_id?: string | null
@@ -1872,11 +1925,13 @@ export type Database = {
           monto_total?: number
           notas?: string | null
           programa_id: string
+          referido_por_estudiante_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          descuento_aplicado?: number
           estado?: Database["public"]["Enums"]["inscripcion_estado"]
           estudiante_id?: string
           factura_ecf_id?: string | null
@@ -1886,6 +1941,7 @@ export type Database = {
           monto_total?: number
           notas?: string | null
           programa_id?: string
+          referido_por_estudiante_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1908,6 +1964,13 @@ export type Database = {
             columns: ["programa_id"]
             isOneToOne: false
             referencedRelation: "programas_academia"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inscripciones_referido_por_estudiante_id_fkey"
+            columns: ["referido_por_estudiante_id"]
+            isOneToOne: false
+            referencedRelation: "estudiantes"
             referencedColumns: ["id"]
           },
         ]
@@ -2196,53 +2259,77 @@ export type Database = {
       }
       programas_academia: {
         Row: {
+          cantidad_encuentros: number | null
+          certificacion: string | null
           created_at: string
           created_by: string | null
           cupo_maximo: number | null
           descripcion: string | null
+          descuento_referido_pct: number
+          dirigido_a: string | null
           duracion_horas: number | null
           estado: Database["public"]["Enums"]["programa_estado"]
           fecha_fin: string | null
           fecha_inicio: string | null
+          horas_por_encuentro: number | null
           id: string
+          metodologia: Json
           modalidad: string | null
           moneda: string
           nombre: string
+          plan_pago: Json
           precio: number
+          temario: Json
           tipo: Database["public"]["Enums"]["programa_tipo"]
           updated_at: string
         }
         Insert: {
+          cantidad_encuentros?: number | null
+          certificacion?: string | null
           created_at?: string
           created_by?: string | null
           cupo_maximo?: number | null
           descripcion?: string | null
+          descuento_referido_pct?: number
+          dirigido_a?: string | null
           duracion_horas?: number | null
           estado?: Database["public"]["Enums"]["programa_estado"]
           fecha_fin?: string | null
           fecha_inicio?: string | null
+          horas_por_encuentro?: number | null
           id?: string
+          metodologia?: Json
           modalidad?: string | null
           moneda?: string
           nombre: string
+          plan_pago?: Json
           precio?: number
+          temario?: Json
           tipo: Database["public"]["Enums"]["programa_tipo"]
           updated_at?: string
         }
         Update: {
+          cantidad_encuentros?: number | null
+          certificacion?: string | null
           created_at?: string
           created_by?: string | null
           cupo_maximo?: number | null
           descripcion?: string | null
+          descuento_referido_pct?: number
+          dirigido_a?: string | null
           duracion_horas?: number | null
           estado?: Database["public"]["Enums"]["programa_estado"]
           fecha_fin?: string | null
           fecha_inicio?: string | null
+          horas_por_encuentro?: number | null
           id?: string
+          metodologia?: Json
           modalidad?: string | null
           moneda?: string
           nombre?: string
+          plan_pago?: Json
           precio?: number
+          temario?: Json
           tipo?: Database["public"]["Enums"]["programa_tipo"]
           updated_at?: string
         }
@@ -2635,6 +2722,7 @@ export type Database = {
         | "finanzas"
         | "contabilidad"
         | "academia"
+      cuota_estado: "pendiente" | "pagada" | "disputada"
       cxp_estado: "pendiente" | "parcial" | "pagado" | "disputado"
       doc_estado:
         | "pendiente"
@@ -2836,6 +2924,7 @@ export const Constants = {
         "contabilidad",
         "academia",
       ],
+      cuota_estado: ["pendiente", "pagada", "disputada"],
       cxp_estado: ["pendiente", "parcial", "pagado", "disputado"],
       doc_estado: ["pendiente", "recibido", "observado", "aprobado", "vencido"],
       etapa_estado: ["pendiente", "en_curso", "completada", "bloqueada"],
