@@ -54,6 +54,8 @@ function DetalleSolicitud() {
         fecha_arribo_est: s.fecha_arribo_est ?? "",
         incoterm: s.incoterm ?? "",
         medio_transporte: s.medio_transporte ?? "",
+        bl_awb: s.bl_awb ?? "",
+        factura_comercial: s.factura_comercial ?? "",
         observaciones: s.observaciones ?? "",
       });
     }
