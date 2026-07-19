@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_portal-estudiante")({
 
     const { data: link } = await (supabase as any)
       .from("estudiante_usuarios")
-      .select("estudiante_id, activo")
+      .select("estudiante_id, activo, debe_cambiar_password")
       .eq("user_id", userId)
       .eq("activo", true)
       .limit(1)
@@ -35,6 +35,11 @@ export const Route = createFileRoute("/_portal-estudiante")({
       await supabase.auth.signOut();
       toast.error("Tu cuenta no tiene acceso a este portal");
       throw redirect({ to: "/auth" });
+    }
+
+    if (link.debe_cambiar_password && typeof window !== "undefined"
+        && !window.location.pathname.endsWith("/portal-estudiante/cambiar-password")) {
+      throw redirect({ to: "/portal-estudiante/cambiar-password" });
     }
 
     return { user: data.user, estudianteId: link.estudiante_id as string };
