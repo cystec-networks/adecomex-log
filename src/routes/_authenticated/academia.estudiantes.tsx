@@ -197,6 +197,7 @@ function Estudiantes() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Input placeholder="Buscar por nombre, cédula o email..." value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
