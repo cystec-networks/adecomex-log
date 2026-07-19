@@ -145,6 +145,8 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/academia/estudiantes") },
       { to: "/academia/inscripciones", label: "Inscripciones", icon: ClipboardCheck, roles: ["admin","academia"],
         match: (p) => p.startsWith("/academia/inscripciones") },
+      { to: "/academia/accesos-estudiantes", label: "Accesos de estudiantes", icon: UserCog, roles: ["admin","academia"],
+        match: (p) => p.startsWith("/academia/accesos-estudiantes") },
     ],
   },
 ];
