@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -233,6 +233,28 @@ function Programas() {
                 <div className="grid gap-1.5"><Label>Fecha inicio</Label><Input type="date" value={form.fecha_inicio} onChange={(e) => setForm({ ...form, fecha_inicio: e.target.value })} /></div>
                 <div className="grid gap-1.5"><Label>Fecha fin</Label><Input type="date" value={form.fecha_fin} onChange={(e) => setForm({ ...form, fecha_fin: e.target.value })} /></div>
               </div>
+
+              <div className="grid gap-1.5">
+                <Label>Enlace de Google Classroom</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="url"
+                    placeholder="https://classroom.google.com/..."
+                    value={form.enlace_classroom}
+                    onChange={(e) => setForm({ ...form, enlace_classroom: e.target.value })}
+                  />
+                  {form.enlace_classroom?.trim() && (
+                    <Button
+                      type="button" variant="outline" size="sm" asChild
+                    >
+                      <a href={form.enlace_classroom} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-1" /> Ir
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </div>
+
 
               {/* Metodología */}
               <div className="grid gap-2 p-3 border rounded-md">
