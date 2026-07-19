@@ -15,10 +15,12 @@ export const Route = createFileRoute("/_portal/portal/")({
 
 const ESTADO_COLOR: Record<string, string> = {
   digitar: "bg-slate-500/15 text-slate-700 border-slate-500/30",
+  en_transito: "bg-cyan-500/15 text-cyan-700 border-cyan-500/30",
   presentar: "bg-blue-500/15 text-blue-700 border-blue-500/30",
   verificar: "bg-amber-500/15 text-amber-700 border-amber-500/30",
   facturar: "bg-purple-500/15 text-purple-700 border-purple-500/30",
   despachado: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
+  entregado: "bg-teal-500/15 text-teal-700 border-teal-500/30",
 };
 
 function normalizeSearch(text: string | null | undefined): string {
