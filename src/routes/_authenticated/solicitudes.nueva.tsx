@@ -121,6 +121,8 @@ function NuevaSolicitud() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid gap-1.5"><Label>BL / AWB</Label><Input value={form.bl_awb} onChange={(e) => setForm({ ...form, bl_awb: e.target.value })} /></div>
+            <div className="grid gap-1.5"><Label>Factura comercial</Label><Input value={form.factura_comercial} onChange={(e) => setForm({ ...form, factura_comercial: e.target.value })} /></div>
             <div className="grid gap-1.5 md:col-span-2"><Label>Observaciones</Label><Textarea rows={3} value={form.observaciones} onChange={(e) => setForm({ ...form, observaciones: e.target.value })} /></div>
           </CardContent>
         </Card>
