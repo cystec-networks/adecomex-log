@@ -33,6 +33,7 @@ type EstudianteRow = {
   nombre: string;
   cedula_pasaporte: string | null;
   email: string | null;
+  telefono: string | null;
   vinculo: { user_id: string; activo: boolean } | null;
 };
 
