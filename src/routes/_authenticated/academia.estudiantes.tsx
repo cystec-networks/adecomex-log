@@ -269,6 +269,41 @@ function Estudiantes() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={papeleraOpen} onOpenChange={setPapeleraOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader><DialogTitle>Papelera de estudiantes</DialogTitle></DialogHeader>
+          <div className="max-h-[60vh] overflow-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-xs uppercase">
+                <tr>
+                  <th className="text-left p-2">Nombre</th>
+                  <th className="text-left p-2">Email</th>
+                  <th className="text-left p-2">Eliminado</th>
+                  <th className="p-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {(papelera ?? []).map((s: any) => (
+                  <tr key={s.id} className="border-t">
+                    <td className="p-2 font-medium">{s.nombre}</td>
+                    <td className="p-2">{s.email ?? "—"}</td>
+                    <td className="p-2">{s.deleted_at ? new Date(s.deleted_at).toLocaleString() : "—"}</td>
+                    <td className="p-2 text-right">
+                      <Button size="sm" variant="outline" onClick={() => restore.mutate(s.id)} disabled={restore.isPending}>
+                        <RotateCcw className="h-4 w-4 mr-1" />Restaurar
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {(papelera ?? []).length === 0 && (
+                  <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">Papelera vacía.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
