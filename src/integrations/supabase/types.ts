@@ -877,6 +877,45 @@ export type Database = {
         }
         Relationships: []
       }
+      estudiantes: {
+        Row: {
+          cedula_pasaporte: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          empresa: string | null
+          id: string
+          nombre: string
+          notas: string | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          cedula_pasaporte?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          empresa?: string | null
+          id?: string
+          nombre: string
+          notas?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cedula_pasaporte?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          empresa?: string | null
+          id?: string
+          nombre?: string
+          notas?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       etapas: {
         Row: {
           comentario: string | null
@@ -1806,6 +1845,73 @@ export type Database = {
           },
         ]
       }
+      inscripciones: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          estado: Database["public"]["Enums"]["inscripcion_estado"]
+          estudiante_id: string
+          factura_ecf_id: string | null
+          fecha_inscripcion: string
+          id: string
+          monto_pagado: number
+          monto_total: number
+          notas: string | null
+          programa_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          estado?: Database["public"]["Enums"]["inscripcion_estado"]
+          estudiante_id: string
+          factura_ecf_id?: string | null
+          fecha_inscripcion?: string
+          id?: string
+          monto_pagado?: number
+          monto_total?: number
+          notas?: string | null
+          programa_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          estado?: Database["public"]["Enums"]["inscripcion_estado"]
+          estudiante_id?: string
+          factura_ecf_id?: string | null
+          fecha_inscripcion?: string
+          id?: string
+          monto_pagado?: number
+          monto_total?: number
+          notas?: string | null
+          programa_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inscripciones_estudiante_id_fkey"
+            columns: ["estudiante_id"]
+            isOneToOne: false
+            referencedRelation: "estudiantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inscripciones_factura_ecf_id_fkey"
+            columns: ["factura_ecf_id"]
+            isOneToOne: false
+            referencedRelation: "facturas_ecf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inscripciones_programa_id_fkey"
+            columns: ["programa_id"]
+            isOneToOne: false
+            referencedRelation: "programas_academia"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       itbis_declaraciones: {
         Row: {
           created_at: string
@@ -2085,6 +2191,60 @@ export type Database = {
           id?: string
           nombre?: string
           telefono?: string | null
+        }
+        Relationships: []
+      }
+      programas_academia: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          cupo_maximo: number | null
+          descripcion: string | null
+          duracion_horas: number | null
+          estado: Database["public"]["Enums"]["programa_estado"]
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          id: string
+          modalidad: string | null
+          moneda: string
+          nombre: string
+          precio: number
+          tipo: Database["public"]["Enums"]["programa_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          cupo_maximo?: number | null
+          descripcion?: string | null
+          duracion_horas?: number | null
+          estado?: Database["public"]["Enums"]["programa_estado"]
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          modalidad?: string | null
+          moneda?: string
+          nombre: string
+          precio?: number
+          tipo: Database["public"]["Enums"]["programa_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          cupo_maximo?: number | null
+          descripcion?: string | null
+          duracion_horas?: number | null
+          estado?: Database["public"]["Enums"]["programa_estado"]
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          modalidad?: string | null
+          moneda?: string
+          nombre?: string
+          precio?: number
+          tipo?: Database["public"]["Enums"]["programa_tipo"]
+          updated_at?: string
         }
         Relationships: []
       }
@@ -2494,6 +2654,12 @@ export type Database = {
       hito_estado: "pendiente" | "en_curso" | "completado" | "no_aplica"
       incidencia_estado: "abierta" | "en_gestion" | "resuelta" | "cerrada"
       incidencia_severidad: "baja" | "media" | "alta" | "critica"
+      inscripcion_estado:
+        | "inscrito"
+        | "en_curso"
+        | "completado"
+        | "retirado"
+        | "cancelado"
       moneda: "USD" | "DOP" | "EUR"
       permiso_estado:
         | "solicitado"
@@ -2511,6 +2677,13 @@ export type Database = {
         | "ministerio_salud"
         | "otro"
       prioridad: "baja" | "media" | "alta" | "urgente"
+      programa_estado:
+        | "planificado"
+        | "activo"
+        | "en_curso"
+        | "finalizado"
+        | "cancelado"
+      programa_tipo: "diplomado" | "curso" | "taller"
       solicitud_estado:
         | "recibida"
         | "en_revision"
@@ -2678,6 +2851,13 @@ export const Constants = {
       hito_estado: ["pendiente", "en_curso", "completado", "no_aplica"],
       incidencia_estado: ["abierta", "en_gestion", "resuelta", "cerrada"],
       incidencia_severidad: ["baja", "media", "alta", "critica"],
+      inscripcion_estado: [
+        "inscrito",
+        "en_curso",
+        "completado",
+        "retirado",
+        "cancelado",
+      ],
       moneda: ["USD", "DOP", "EUR"],
       permiso_estado: [
         "solicitado",
@@ -2697,6 +2877,14 @@ export const Constants = {
         "otro",
       ],
       prioridad: ["baja", "media", "alta", "urgente"],
+      programa_estado: [
+        "planificado",
+        "activo",
+        "en_curso",
+        "finalizado",
+        "cancelado",
+      ],
+      programa_tipo: ["diplomado", "curso", "taller"],
       solicitud_estado: [
         "recibida",
         "en_revision",
