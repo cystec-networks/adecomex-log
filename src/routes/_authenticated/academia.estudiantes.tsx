@@ -104,12 +104,14 @@ function Estudiantes() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("estudiantes").delete().eq("id", id);
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await (supabase as any).from("estudiantes").update({ deleted_at: new Date().toISOString(), deleted_by: u.user?.id ?? null }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Estudiante eliminado");
+      toast.success("Estudiante movido a la papelera");
       qc.invalidateQueries({ queryKey: ["academia-estudiantes"] });
+      qc.invalidateQueries({ queryKey: ["academia-estudiantes-papelera"] });
       setToDelete(null);
     },
     onError: (e: any) => toast.error(e.message),
