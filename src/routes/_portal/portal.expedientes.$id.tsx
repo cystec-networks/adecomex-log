@@ -131,6 +131,12 @@ function PortalExpedienteDetalle() {
               {expediente.bl_awb && (
                 <div className="text-sm text-muted-foreground mt-1">BL/AWB: <span className="font-mono">{expediente.bl_awb}</span></div>
               )}
+              {(expediente as any).puerto_arribo && (
+                <div className="text-sm text-muted-foreground">Puerto de llegada: <span className="font-medium text-foreground">{(expediente as any).puerto_arribo}</span></div>
+              )}
+              {(expediente as any).numero_dua && (
+                <div className="text-sm text-muted-foreground">DUA: <span className="font-mono">{(expediente as any).numero_dua}</span></div>
+              )}
             </div>
             <Badge variant="outline" className="text-sm">
               {estadoLabel(expediente.estado)}
