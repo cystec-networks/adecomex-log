@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
   const { data: cliActivo } = await admin
     .from("cliente_usuarios").select("cliente_id").eq("user_id", userId).eq("activo", true).limit(1);
   if (cliActivo && cliActivo.length > 0) {
-    return json(200, { error: "Este correo ya tiene acceso activo al Portal de Cliente. Un mismo correo no puede tener acceso a ambos portales — desactiva primero su acceso de cliente si quieres darle acceso de estudiante." });
+    return json(409, { error: "Este correo ya tiene acceso activo al Portal de Cliente. Un mismo correo no puede tener acceso a ambos portales — desactiva primero su acceso de cliente si quieres darle acceso de estudiante." });
   }
 
 
