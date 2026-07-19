@@ -140,14 +140,32 @@ function AccesosClientesPage() {
                   </td>
                   <td className="text-right px-4 py-2">
                     {!c.vinculo && (
-                      <Button size="sm" variant="outline" onClick={() => setInviting(c)}>
-                        <UserPlus className="h-4 w-4 mr-1" /> Invitar al portal
-                      </Button>
+                      <div className="inline-flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setInviting(c)}>
+                          <UserPlus className="h-4 w-4 mr-1" /> Invitar al portal
+                        </Button>
+                        <Button
+                          size="sm" variant="outline"
+                          className="border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E]"
+                          onClick={() => enviarWhatsApp.mutate(c)}
+                          disabled={enviarWhatsApp.isPending}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" /> Enviar enlace por WhatsApp
+                        </Button>
+                      </div>
                     )}
                     {c.vinculo && (
                       <div className="inline-flex gap-2">
                         <Button size="sm" variant="outline" onClick={() => setInviting(c)}>
                           <Mail className="h-4 w-4 mr-1" /> Reenviar invitación
+                        </Button>
+                        <Button
+                          size="sm" variant="outline"
+                          className="border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E]"
+                          onClick={() => enviarWhatsApp.mutate(c)}
+                          disabled={enviarWhatsApp.isPending}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" /> Enviar enlace por WhatsApp
                         </Button>
                         {c.vinculo.activo ? (
                           <Button
@@ -169,6 +187,7 @@ function AccesosClientesPage() {
                       </div>
                     )}
                   </td>
+
                 </tr>
               ))}
               {!isLoading && (data?.length ?? 0) === 0 && (
