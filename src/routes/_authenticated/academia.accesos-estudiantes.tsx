@@ -11,7 +11,8 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { UserPlus, ShieldOff, ShieldCheck, Mail } from "lucide-react";
+import { UserPlus, ShieldOff, ShieldCheck, Mail, MessageCircle } from "lucide-react";
+import { normalizeWhatsAppPhone } from "@/components/whatsapp-button";
 
 export const Route = createFileRoute("/_authenticated/academia/accesos-estudiantes")({
   ssr: false,
