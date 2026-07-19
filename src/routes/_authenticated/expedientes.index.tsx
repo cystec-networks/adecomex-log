@@ -146,7 +146,7 @@ function Expedientes() {
 
   const grupos: Record<string, any[]> = { importacion: [], exportacion: [], otros: [] };
   filtered.forEach((e: any) => grupos[detectTipo(e)].push(e));
-  (Object.keys(grupos) as Array<keyof typeof grupos>).forEach((k) => grupos[k].sort(cmp));
+  // no se ordena aquí; cada subgrupo por estado se ordena dentro del render
 
   const isActive = (k: SortKey) => !!sort && sort.key === k;
   const isDefault = (k: SortKey) => !sort && k === "fecha_compromiso";
