@@ -44,7 +44,7 @@ function AccesosClientesPage() {
     queryKey: ["accesos-clientes"],
     queryFn: async (): Promise<ClienteRow[]> => {
       const [{ data: clientes, error: e1 }, { data: vinculos, error: e2 }] = await Promise.all([
-        supabase.from("clientes").select("id, nombre, rnc, email").order("nombre"),
+        supabase.from("clientes").select("id, nombre, rnc, email, telefono").order("nombre"),
         supabase.from("cliente_usuarios").select("user_id, cliente_id, activo"),
       ]);
       if (e1) throw e1;
