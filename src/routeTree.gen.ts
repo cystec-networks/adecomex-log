@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PortalEstudianteRouteImport } from './routes/portal-estudiante'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PortalRouteRouteImport } from './routes/_portal/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -55,6 +56,11 @@ import { Route as AuthenticatedAdminFacturacionPendientesRouteImport } from './r
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalEstudianteRoute = PortalEstudianteRouteImport.update({
+  id: '/portal-estudiante',
+  path: '/portal-estudiante',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -294,6 +300,7 @@ const AuthenticatedAdminFacturacionPendientesRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/portal-estudiante': typeof PortalEstudianteRoute
   '/reset-password': typeof ResetPasswordRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/copiloto': typeof AuthenticatedCopilotoRoute
@@ -336,6 +343,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/portal-estudiante': typeof PortalEstudianteRoute
   '/reset-password': typeof ResetPasswordRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/copiloto': typeof AuthenticatedCopilotoRoute
@@ -381,6 +389,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_portal': typeof PortalRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/portal-estudiante': typeof PortalEstudianteRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/copiloto': typeof AuthenticatedCopilotoRoute
@@ -425,6 +434,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/portal-estudiante'
     | '/reset-password'
     | '/clientes'
     | '/copiloto'
@@ -467,6 +477,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/portal-estudiante'
     | '/reset-password'
     | '/clientes'
     | '/copiloto'
@@ -511,6 +522,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/_portal'
     | '/auth'
+    | '/portal-estudiante'
     | '/reset-password'
     | '/_authenticated/clientes'
     | '/_authenticated/copiloto'
@@ -556,6 +568,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   PortalRouteRoute: typeof PortalRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  PortalEstudianteRoute: typeof PortalEstudianteRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
@@ -566,6 +579,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal-estudiante': {
+      id: '/portal-estudiante'
+      path: '/portal-estudiante'
+      fullPath: '/portal-estudiante'
+      preLoaderRoute: typeof PortalEstudianteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -979,6 +999,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   PortalRouteRoute: PortalRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  PortalEstudianteRoute: PortalEstudianteRoute,
   ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
