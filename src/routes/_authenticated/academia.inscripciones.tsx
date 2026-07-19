@@ -308,8 +308,8 @@ function Inscripciones() {
                 const cs = cuotasPorInsc.get(i.id) ?? [];
                 const expanded = expandido === i.id;
                 return (
-                  <>
-                    <tr key={i.id} className="border-t">
+                  <React.Fragment key={i.id}>
+                    <tr className="border-t">
                       <td className="p-2">
                         {cs.length > 0 && (
                           <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setExpandido(expanded ? null : i.id)}>
