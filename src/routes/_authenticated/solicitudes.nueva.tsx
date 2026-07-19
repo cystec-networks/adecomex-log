@@ -99,12 +99,7 @@ function NuevaSolicitud() {
               <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => setForm({ ...form, tipo_carga: v })} placeholder="Escribe o selecciona…" />
             </div>
             <div className="grid gap-1.5"><Label>Origen</Label>
-              <Select value={form.origen} onValueChange={(v) => setForm({ ...form, origen: v })}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
-                <SelectContent>
-                  {["China","Estados Unidos","España","México","Panamá","Colombia","Brasil","Alemania","India","Turquía","Italia","Países Bajos","Corea del Sur","Japón"].map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <CatalogoAutocomplete tabla="catalogo_paises" value={form.origen} onChange={(v) => setForm({ ...form, origen: v })} placeholder="Escribe o selecciona…" />
             </div>
             <div className="grid gap-1.5"><Label>Puerto / Aeropuerto de llegada</Label>
               <Select value={form.puerto_llegada} onValueChange={(v) => setForm({ ...form, puerto_llegada: v })}>
