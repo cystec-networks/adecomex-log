@@ -398,6 +398,13 @@ function Programas() {
                   <Badge variant="secondary">{detalle.estado}</Badge>
                   <Badge variant="outline">{detalle.modalidad}</Badge>
                 </div>
+                {detalle.enlace_classroom && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={detalle.enlace_classroom} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4 mr-1" /> Ir a Google Classroom
+                    </a>
+                  </Button>
+                )}
                 {detalle.descripcion && <p className="text-muted-foreground">{detalle.descripcion}</p>}
                 {detalle.dirigido_a && (
                   <div><div className="font-semibold mb-1">Dirigido a</div><p className="text-muted-foreground whitespace-pre-line">{detalle.dirigido_a}</p></div>
