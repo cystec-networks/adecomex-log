@@ -16,7 +16,26 @@ export const Route = createFileRoute("/_authenticated")({
       .select("role")
       .eq("user_id", data.user.id)
       .limit(1);
-    if (!roles || roles.length === 0) throw redirect({ to: "/portal" });
+    if (!roles || roles.length === 0) {
+      // Prioridad: cliente > estudiante
+      const { data: cli } = await supabase
+        .from("cliente_usuarios")
+        .select("cliente_id")
+        .eq("user_id", data.user.id)
+        .eq("activo", true)
+        .limit(1)
+        .maybeSingle();
+      if (cli) throw redirect({ to: "/portal" });
+      const { data: est } = await (supabase as any)
+        .from("estudiante_usuarios")
+        .select("estudiante_id")
+        .eq("user_id", data.user.id)
+        .eq("activo", true)
+        .limit(1)
+        .maybeSingle();
+      if (est) throw redirect({ to: "/portal-estudiante" });
+      throw redirect({ to: "/auth" });
+    }
 
 
 

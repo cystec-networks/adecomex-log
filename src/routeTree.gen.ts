@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PortalEstudianteRouteImport } from './routes/portal-estudiante'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PortalRouteRouteImport } from './routes/_portal/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -48,12 +49,18 @@ import { Route as AuthenticatedAdminAccesosClientesRouteImport } from './routes/
 import { Route as AuthenticatedAcademiaProgramasRouteImport } from './routes/_authenticated/academia.programas'
 import { Route as AuthenticatedAcademiaInscripcionesRouteImport } from './routes/_authenticated/academia.inscripciones'
 import { Route as AuthenticatedAcademiaEstudiantesRouteImport } from './routes/_authenticated/academia.estudiantes'
+import { Route as AuthenticatedAcademiaAccesosEstudiantesRouteImport } from './routes/_authenticated/academia.accesos-estudiantes'
 import { Route as PortalPortalExpedientesIdRouteImport } from './routes/_portal/portal.expedientes.$id'
 import { Route as AuthenticatedAdminFacturacionPendientesRouteImport } from './routes/_authenticated/admin.facturacion.pendientes'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalEstudianteRoute = PortalEstudianteRouteImport.update({
+  id: '/portal-estudiante',
+  path: '/portal-estudiante',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -271,6 +278,12 @@ const AuthenticatedAcademiaEstudiantesRoute =
     path: '/academia/estudiantes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAcademiaAccesosEstudiantesRoute =
+  AuthenticatedAcademiaAccesosEstudiantesRouteImport.update({
+    id: '/academia/accesos-estudiantes',
+    path: '/academia/accesos-estudiantes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const PortalPortalExpedientesIdRoute =
   PortalPortalExpedientesIdRouteImport.update({
     id: '/portal/expedientes/$id',
@@ -287,12 +300,14 @@ const AuthenticatedAdminFacturacionPendientesRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/portal-estudiante': typeof PortalEstudianteRoute
   '/reset-password': typeof ResetPasswordRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/copiloto': typeof AuthenticatedCopilotoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/mi-cuenta': typeof AuthenticatedMiCuentaRoute
   '/reportes': typeof AuthenticatedReportesRoute
+  '/academia/accesos-estudiantes': typeof AuthenticatedAcademiaAccesosEstudiantesRoute
   '/academia/estudiantes': typeof AuthenticatedAcademiaEstudiantesRoute
   '/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
   '/academia/programas': typeof AuthenticatedAcademiaProgramasRoute
@@ -328,12 +343,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/portal-estudiante': typeof PortalEstudianteRoute
   '/reset-password': typeof ResetPasswordRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/copiloto': typeof AuthenticatedCopilotoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/mi-cuenta': typeof AuthenticatedMiCuentaRoute
   '/reportes': typeof AuthenticatedReportesRoute
+  '/academia/accesos-estudiantes': typeof AuthenticatedAcademiaAccesosEstudiantesRoute
   '/academia/estudiantes': typeof AuthenticatedAcademiaEstudiantesRoute
   '/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
   '/academia/programas': typeof AuthenticatedAcademiaProgramasRoute
@@ -372,12 +389,14 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_portal': typeof PortalRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/portal-estudiante': typeof PortalEstudianteRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/copiloto': typeof AuthenticatedCopilotoRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/mi-cuenta': typeof AuthenticatedMiCuentaRoute
   '/_authenticated/reportes': typeof AuthenticatedReportesRoute
+  '/_authenticated/academia/accesos-estudiantes': typeof AuthenticatedAcademiaAccesosEstudiantesRoute
   '/_authenticated/academia/estudiantes': typeof AuthenticatedAcademiaEstudiantesRoute
   '/_authenticated/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
   '/_authenticated/academia/programas': typeof AuthenticatedAcademiaProgramasRoute
@@ -415,12 +434,14 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/portal-estudiante'
     | '/reset-password'
     | '/clientes'
     | '/copiloto'
     | '/dashboard'
     | '/mi-cuenta'
     | '/reportes'
+    | '/academia/accesos-estudiantes'
     | '/academia/estudiantes'
     | '/academia/inscripciones'
     | '/academia/programas'
@@ -456,12 +477,14 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/portal-estudiante'
     | '/reset-password'
     | '/clientes'
     | '/copiloto'
     | '/dashboard'
     | '/mi-cuenta'
     | '/reportes'
+    | '/academia/accesos-estudiantes'
     | '/academia/estudiantes'
     | '/academia/inscripciones'
     | '/academia/programas'
@@ -499,12 +522,14 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/_portal'
     | '/auth'
+    | '/portal-estudiante'
     | '/reset-password'
     | '/_authenticated/clientes'
     | '/_authenticated/copiloto'
     | '/_authenticated/dashboard'
     | '/_authenticated/mi-cuenta'
     | '/_authenticated/reportes'
+    | '/_authenticated/academia/accesos-estudiantes'
     | '/_authenticated/academia/estudiantes'
     | '/_authenticated/academia/inscripciones'
     | '/_authenticated/academia/programas'
@@ -543,6 +568,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   PortalRouteRoute: typeof PortalRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  PortalEstudianteRoute: typeof PortalEstudianteRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
@@ -553,6 +579,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal-estudiante': {
+      id: '/portal-estudiante'
+      path: '/portal-estudiante'
+      fullPath: '/portal-estudiante'
+      preLoaderRoute: typeof PortalEstudianteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -821,6 +854,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAcademiaEstudiantesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/academia/accesos-estudiantes': {
+      id: '/_authenticated/academia/accesos-estudiantes'
+      path: '/academia/accesos-estudiantes'
+      fullPath: '/academia/accesos-estudiantes'
+      preLoaderRoute: typeof AuthenticatedAcademiaAccesosEstudiantesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_portal/portal/expedientes/$id': {
       id: '/_portal/portal/expedientes/$id'
       path: '/portal/expedientes/$id'
@@ -859,6 +899,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedMiCuentaRoute: typeof AuthenticatedMiCuentaRoute
   AuthenticatedReportesRoute: typeof AuthenticatedReportesRoute
+  AuthenticatedAcademiaAccesosEstudiantesRoute: typeof AuthenticatedAcademiaAccesosEstudiantesRoute
   AuthenticatedAcademiaEstudiantesRoute: typeof AuthenticatedAcademiaEstudiantesRoute
   AuthenticatedAcademiaInscripcionesRoute: typeof AuthenticatedAcademiaInscripcionesRoute
   AuthenticatedAcademiaProgramasRoute: typeof AuthenticatedAcademiaProgramasRoute
@@ -895,6 +936,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedMiCuentaRoute: AuthenticatedMiCuentaRoute,
   AuthenticatedReportesRoute: AuthenticatedReportesRoute,
+  AuthenticatedAcademiaAccesosEstudiantesRoute:
+    AuthenticatedAcademiaAccesosEstudiantesRoute,
   AuthenticatedAcademiaEstudiantesRoute: AuthenticatedAcademiaEstudiantesRoute,
   AuthenticatedAcademiaInscripcionesRoute:
     AuthenticatedAcademiaInscripcionesRoute,
@@ -956,6 +999,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   PortalRouteRoute: PortalRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  PortalEstudianteRoute: PortalEstudianteRoute,
   ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport

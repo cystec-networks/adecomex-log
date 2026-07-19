@@ -877,6 +877,38 @@ export type Database = {
         }
         Relationships: []
       }
+      estudiante_usuarios: {
+        Row: {
+          activo: boolean
+          created_at: string
+          created_by: string | null
+          estudiante_id: string
+          user_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          created_by?: string | null
+          estudiante_id: string
+          user_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          created_by?: string | null
+          estudiante_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estudiante_usuarios_estudiante_id_fkey"
+            columns: ["estudiante_id"]
+            isOneToOne: false
+            referencedRelation: "estudiantes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estudiantes: {
         Row: {
           cedula_pasaporte: string | null
@@ -1893,6 +1925,13 @@ export type Database = {
             referencedRelation: "inscripciones"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "inscripcion_cuotas_inscripcion_id_fkey"
+            columns: ["inscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "v_inscripciones_estudiante"
+            referencedColumns: ["id"]
+          },
         ]
       }
       inscripciones: {
@@ -1964,6 +2003,13 @@ export type Database = {
             columns: ["programa_id"]
             isOneToOne: false
             referencedRelation: "programas_academia"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inscripciones_programa_id_fkey"
+            columns: ["programa_id"]
+            isOneToOne: false
+            referencedRelation: "v_programas_estudiante"
             referencedColumns: ["id"]
           },
           {
@@ -2268,6 +2314,7 @@ export type Database = {
           descuento_referido_pct: number
           dirigido_a: string | null
           duracion_horas: number | null
+          enlace_classroom: string | null
           estado: Database["public"]["Enums"]["programa_estado"]
           fecha_fin: string | null
           fecha_inicio: string | null
@@ -2293,6 +2340,7 @@ export type Database = {
           descuento_referido_pct?: number
           dirigido_a?: string | null
           duracion_horas?: number | null
+          enlace_classroom?: string | null
           estado?: Database["public"]["Enums"]["programa_estado"]
           fecha_fin?: string | null
           fecha_inicio?: string | null
@@ -2318,6 +2366,7 @@ export type Database = {
           descuento_referido_pct?: number
           dirigido_a?: string | null
           duracion_horas?: number | null
+          enlace_classroom?: string | null
           estado?: Database["public"]["Enums"]["programa_estado"]
           fecha_fin?: string | null
           fecha_inicio?: string | null
@@ -2624,6 +2673,57 @@ export type Database = {
       }
     }
     Views: {
+      v_cuotas_estudiante: {
+        Row: {
+          descripcion: string | null
+          estado: Database["public"]["Enums"]["cuota_estado"] | null
+          fecha_pagada: string | null
+          fecha_vencimiento: string | null
+          id: string | null
+          inscripcion_id: string | null
+          monto: number | null
+          monto_pagado: number | null
+          numero_cuota: number | null
+        }
+        Insert: {
+          descripcion?: string | null
+          estado?: Database["public"]["Enums"]["cuota_estado"] | null
+          fecha_pagada?: string | null
+          fecha_vencimiento?: string | null
+          id?: string | null
+          inscripcion_id?: string | null
+          monto?: number | null
+          monto_pagado?: number | null
+          numero_cuota?: number | null
+        }
+        Update: {
+          descripcion?: string | null
+          estado?: Database["public"]["Enums"]["cuota_estado"] | null
+          fecha_pagada?: string | null
+          fecha_vencimiento?: string | null
+          id?: string | null
+          inscripcion_id?: string | null
+          monto?: number | null
+          monto_pagado?: number | null
+          numero_cuota?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inscripcion_cuotas_inscripcion_id_fkey"
+            columns: ["inscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "inscripciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inscripcion_cuotas_inscripcion_id_fkey"
+            columns: ["inscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "v_inscripciones_estudiante"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_expedientes_cliente: {
         Row: {
           bl_awb: string | null
@@ -2682,6 +2782,118 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      v_inscripciones_estudiante: {
+        Row: {
+          created_at: string | null
+          estado: Database["public"]["Enums"]["inscripcion_estado"] | null
+          estudiante_id: string | null
+          fecha_inscripcion: string | null
+          id: string | null
+          monto_pagado: number | null
+          monto_total: number | null
+          programa_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          estado?: Database["public"]["Enums"]["inscripcion_estado"] | null
+          estudiante_id?: string | null
+          fecha_inscripcion?: string | null
+          id?: string | null
+          monto_pagado?: number | null
+          monto_total?: number | null
+          programa_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          estado?: Database["public"]["Enums"]["inscripcion_estado"] | null
+          estudiante_id?: string | null
+          fecha_inscripcion?: string | null
+          id?: string | null
+          monto_pagado?: number | null
+          monto_total?: number | null
+          programa_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inscripciones_estudiante_id_fkey"
+            columns: ["estudiante_id"]
+            isOneToOne: false
+            referencedRelation: "estudiantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inscripciones_programa_id_fkey"
+            columns: ["programa_id"]
+            isOneToOne: false
+            referencedRelation: "programas_academia"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inscripciones_programa_id_fkey"
+            columns: ["programa_id"]
+            isOneToOne: false
+            referencedRelation: "v_programas_estudiante"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_programas_estudiante: {
+        Row: {
+          cantidad_encuentros: number | null
+          certificacion: string | null
+          descripcion: string | null
+          dirigido_a: string | null
+          duracion_horas: number | null
+          enlace_classroom: string | null
+          estado: Database["public"]["Enums"]["programa_estado"] | null
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          horas_por_encuentro: number | null
+          id: string | null
+          metodologia: Json | null
+          modalidad: string | null
+          nombre: string | null
+          temario: Json | null
+          tipo: Database["public"]["Enums"]["programa_tipo"] | null
+        }
+        Insert: {
+          cantidad_encuentros?: number | null
+          certificacion?: string | null
+          descripcion?: string | null
+          dirigido_a?: string | null
+          duracion_horas?: number | null
+          enlace_classroom?: string | null
+          estado?: Database["public"]["Enums"]["programa_estado"] | null
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          horas_por_encuentro?: number | null
+          id?: string | null
+          metodologia?: Json | null
+          modalidad?: string | null
+          nombre?: string | null
+          temario?: Json | null
+          tipo?: Database["public"]["Enums"]["programa_tipo"] | null
+        }
+        Update: {
+          cantidad_encuentros?: number | null
+          certificacion?: string | null
+          descripcion?: string | null
+          dirigido_a?: string | null
+          duracion_horas?: number | null
+          enlace_classroom?: string | null
+          estado?: Database["public"]["Enums"]["programa_estado"] | null
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          horas_por_encuentro?: number | null
+          id?: string | null
+          metodologia?: Json | null
+          modalidad?: string | null
+          nombre?: string | null
+          temario?: Json | null
+          tipo?: Database["public"]["Enums"]["programa_tipo"] | null
+        }
+        Relationships: []
       }
       v_rentabilidad_expediente: {
         Row: {

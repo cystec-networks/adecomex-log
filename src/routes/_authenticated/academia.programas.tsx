@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -41,6 +41,7 @@ const empty = {
   temario: [] as { numero: number; titulo: string; subtemas: string[] }[],
   plan_pago: [] as { descripcion: string; porcentaje: number }[],
   descuento_referido_pct: "0",
+  enlace_classroom: "",
 } as any;
 
 function Programas() {
@@ -85,6 +86,7 @@ function Programas() {
         cantidad_encuentros: payload.cantidad_encuentros ? Number(payload.cantidad_encuentros) : null,
         horas_por_encuentro: payload.horas_por_encuentro ? Number(payload.horas_por_encuentro) : null,
         descuento_referido_pct: Number(payload.descuento_referido_pct || 0),
+        enlace_classroom: payload.enlace_classroom?.trim() || null,
         metodologia: payload.metodologia ?? [],
         temario: (payload.temario ?? []).map((m: any, i: number) => ({
           numero: m.numero ?? i + 1,
@@ -137,6 +139,7 @@ function Programas() {
       temario: Array.isArray(p.temario) ? p.temario : [],
       plan_pago: Array.isArray(p.plan_pago) ? p.plan_pago : [],
       descuento_referido_pct: p.descuento_referido_pct ?? "0",
+      enlace_classroom: p.enlace_classroom ?? "",
     });
     setOpen(true);
   };
@@ -230,6 +233,28 @@ function Programas() {
                 <div className="grid gap-1.5"><Label>Fecha inicio</Label><Input type="date" value={form.fecha_inicio} onChange={(e) => setForm({ ...form, fecha_inicio: e.target.value })} /></div>
                 <div className="grid gap-1.5"><Label>Fecha fin</Label><Input type="date" value={form.fecha_fin} onChange={(e) => setForm({ ...form, fecha_fin: e.target.value })} /></div>
               </div>
+
+              <div className="grid gap-1.5">
+                <Label>Enlace de Google Classroom</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="url"
+                    placeholder="https://classroom.google.com/..."
+                    value={form.enlace_classroom}
+                    onChange={(e) => setForm({ ...form, enlace_classroom: e.target.value })}
+                  />
+                  {form.enlace_classroom?.trim() && (
+                    <Button
+                      type="button" variant="outline" size="sm" asChild
+                    >
+                      <a href={form.enlace_classroom} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-1" /> Ir
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </div>
+
 
               {/* Metodología */}
               <div className="grid gap-2 p-3 border rounded-md">
@@ -373,6 +398,13 @@ function Programas() {
                   <Badge variant="secondary">{detalle.estado}</Badge>
                   <Badge variant="outline">{detalle.modalidad}</Badge>
                 </div>
+                {detalle.enlace_classroom && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={detalle.enlace_classroom} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4 mr-1" /> Ir a Google Classroom
+                    </a>
+                  </Button>
+                )}
                 {detalle.descripcion && <p className="text-muted-foreground">{detalle.descripcion}</p>}
                 {detalle.dirigido_a && (
                   <div><div className="font-semibold mb-1">Dirigido a</div><p className="text-muted-foreground whitespace-pre-line">{detalle.dirigido_a}</p></div>
