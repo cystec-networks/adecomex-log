@@ -24,9 +24,9 @@ export const Route = createFileRoute("/_portal")({
     }
 
     // Cliente activo requerido
-    const { data: link } = await supabase
+    const { data: link } = await (supabase as any)
       .from("cliente_usuarios")
-      .select("cliente_id, activo")
+      .select("cliente_id, activo, debe_cambiar_password")
       .eq("user_id", userId)
       .eq("activo", true)
       .limit(1)
@@ -36,6 +36,11 @@ export const Route = createFileRoute("/_portal")({
       await supabase.auth.signOut();
       toast.error("Tu cuenta no tiene acceso a este portal");
       throw redirect({ to: "/auth" });
+    }
+
+    if (link.debe_cambiar_password && typeof window !== "undefined"
+        && !window.location.pathname.endsWith("/portal/cambiar-password")) {
+      throw redirect({ to: "/portal/cambiar-password" });
     }
 
     return { user: data.user, clienteId: link.cliente_id as string };

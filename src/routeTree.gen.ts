@@ -26,6 +26,8 @@ import { Route as AuthenticatedTransportesIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedSolicitudesIndexRouteImport } from './routes/_authenticated/solicitudes.index'
 import { Route as AuthenticatedPermisosIndexRouteImport } from './routes/_authenticated/permisos.index'
 import { Route as AuthenticatedExpedientesIndexRouteImport } from './routes/_authenticated/expedientes.index'
+import { Route as PortalPortalCambiarPasswordRouteImport } from './routes/_portal/portal.cambiar-password'
+import { Route as PortalEstudiantePortalEstudianteCambiarPasswordRouteImport } from './routes/_portal-estudiante/portal-estudiante.cambiar-password'
 import { Route as AuthenticatedTransportesNuevoRouteImport } from './routes/_authenticated/transportes.nuevo'
 import { Route as AuthenticatedTransportesDashboardRouteImport } from './routes/_authenticated/transportes.dashboard'
 import { Route as AuthenticatedTransportesIdRouteImport } from './routes/_authenticated/transportes.$id'
@@ -141,6 +143,18 @@ const AuthenticatedExpedientesIndexRoute =
     id: '/expedientes/',
     path: '/expedientes/',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const PortalPortalCambiarPasswordRoute =
+  PortalPortalCambiarPasswordRouteImport.update({
+    id: '/portal/cambiar-password',
+    path: '/portal/cambiar-password',
+    getParentRoute: () => PortalRouteRoute,
+  } as any)
+const PortalEstudiantePortalEstudianteCambiarPasswordRoute =
+  PortalEstudiantePortalEstudianteCambiarPasswordRouteImport.update({
+    id: '/portal-estudiante/cambiar-password',
+    path: '/portal-estudiante/cambiar-password',
+    getParentRoute: () => PortalEstudianteRouteRoute,
   } as any)
 const AuthenticatedTransportesNuevoRoute =
   AuthenticatedTransportesNuevoRouteImport.update({
@@ -344,6 +358,8 @@ export interface FileRoutesByFullPath {
   '/transportes/$id': typeof AuthenticatedTransportesIdRoute
   '/transportes/dashboard': typeof AuthenticatedTransportesDashboardRoute
   '/transportes/nuevo': typeof AuthenticatedTransportesNuevoRoute
+  '/portal-estudiante/cambiar-password': typeof PortalEstudiantePortalEstudianteCambiarPasswordRoute
+  '/portal/cambiar-password': typeof PortalPortalCambiarPasswordRoute
   '/expedientes/': typeof AuthenticatedExpedientesIndexRoute
   '/permisos/': typeof AuthenticatedPermisosIndexRoute
   '/solicitudes/': typeof AuthenticatedSolicitudesIndexRoute
@@ -388,6 +404,8 @@ export interface FileRoutesByTo {
   '/transportes/$id': typeof AuthenticatedTransportesIdRoute
   '/transportes/dashboard': typeof AuthenticatedTransportesDashboardRoute
   '/transportes/nuevo': typeof AuthenticatedTransportesNuevoRoute
+  '/portal-estudiante/cambiar-password': typeof PortalEstudiantePortalEstudianteCambiarPasswordRoute
+  '/portal/cambiar-password': typeof PortalPortalCambiarPasswordRoute
   '/expedientes': typeof AuthenticatedExpedientesIndexRoute
   '/permisos': typeof AuthenticatedPermisosIndexRoute
   '/solicitudes': typeof AuthenticatedSolicitudesIndexRoute
@@ -436,6 +454,8 @@ export interface FileRoutesById {
   '/_authenticated/transportes/$id': typeof AuthenticatedTransportesIdRoute
   '/_authenticated/transportes/dashboard': typeof AuthenticatedTransportesDashboardRoute
   '/_authenticated/transportes/nuevo': typeof AuthenticatedTransportesNuevoRoute
+  '/_portal-estudiante/portal-estudiante/cambiar-password': typeof PortalEstudiantePortalEstudianteCambiarPasswordRoute
+  '/_portal/portal/cambiar-password': typeof PortalPortalCambiarPasswordRoute
   '/_authenticated/expedientes/': typeof AuthenticatedExpedientesIndexRoute
   '/_authenticated/permisos/': typeof AuthenticatedPermisosIndexRoute
   '/_authenticated/solicitudes/': typeof AuthenticatedSolicitudesIndexRoute
@@ -482,6 +502,8 @@ export interface FileRouteTypes {
     | '/transportes/$id'
     | '/transportes/dashboard'
     | '/transportes/nuevo'
+    | '/portal-estudiante/cambiar-password'
+    | '/portal/cambiar-password'
     | '/expedientes/'
     | '/permisos/'
     | '/solicitudes/'
@@ -526,6 +548,8 @@ export interface FileRouteTypes {
     | '/transportes/$id'
     | '/transportes/dashboard'
     | '/transportes/nuevo'
+    | '/portal-estudiante/cambiar-password'
+    | '/portal/cambiar-password'
     | '/expedientes'
     | '/permisos'
     | '/solicitudes'
@@ -573,6 +597,8 @@ export interface FileRouteTypes {
     | '/_authenticated/transportes/$id'
     | '/_authenticated/transportes/dashboard'
     | '/_authenticated/transportes/nuevo'
+    | '/_portal-estudiante/portal-estudiante/cambiar-password'
+    | '/_portal/portal/cambiar-password'
     | '/_authenticated/expedientes/'
     | '/_authenticated/permisos/'
     | '/_authenticated/solicitudes/'
@@ -713,6 +739,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/expedientes/'
       preLoaderRoute: typeof AuthenticatedExpedientesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_portal/portal/cambiar-password': {
+      id: '/_portal/portal/cambiar-password'
+      path: '/portal/cambiar-password'
+      fullPath: '/portal/cambiar-password'
+      preLoaderRoute: typeof PortalPortalCambiarPasswordRouteImport
+      parentRoute: typeof PortalRouteRoute
+    }
+    '/_portal-estudiante/portal-estudiante/cambiar-password': {
+      id: '/_portal-estudiante/portal-estudiante/cambiar-password'
+      path: '/portal-estudiante/cambiar-password'
+      fullPath: '/portal-estudiante/cambiar-password'
+      preLoaderRoute: typeof PortalEstudiantePortalEstudianteCambiarPasswordRouteImport
+      parentRoute: typeof PortalEstudianteRouteRoute
     }
     '/_authenticated/transportes/nuevo': {
       id: '/_authenticated/transportes/nuevo'
@@ -1016,11 +1056,13 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface PortalRouteRouteChildren {
+  PortalPortalCambiarPasswordRoute: typeof PortalPortalCambiarPasswordRoute
   PortalPortalIndexRoute: typeof PortalPortalIndexRoute
   PortalPortalExpedientesIdRoute: typeof PortalPortalExpedientesIdRoute
 }
 
 const PortalRouteRouteChildren: PortalRouteRouteChildren = {
+  PortalPortalCambiarPasswordRoute: PortalPortalCambiarPasswordRoute,
   PortalPortalIndexRoute: PortalPortalIndexRoute,
   PortalPortalExpedientesIdRoute: PortalPortalExpedientesIdRoute,
 }
@@ -1030,11 +1072,14 @@ const PortalRouteRouteWithChildren = PortalRouteRoute._addFileChildren(
 )
 
 interface PortalEstudianteRouteRouteChildren {
+  PortalEstudiantePortalEstudianteCambiarPasswordRoute: typeof PortalEstudiantePortalEstudianteCambiarPasswordRoute
   PortalEstudiantePortalEstudianteIndexRoute: typeof PortalEstudiantePortalEstudianteIndexRoute
   PortalEstudiantePortalEstudianteProgramasIdRoute: typeof PortalEstudiantePortalEstudianteProgramasIdRoute
 }
 
 const PortalEstudianteRouteRouteChildren: PortalEstudianteRouteRouteChildren = {
+  PortalEstudiantePortalEstudianteCambiarPasswordRoute:
+    PortalEstudiantePortalEstudianteCambiarPasswordRoute,
   PortalEstudiantePortalEstudianteIndexRoute:
     PortalEstudiantePortalEstudianteIndexRoute,
   PortalEstudiantePortalEstudianteProgramasIdRoute:

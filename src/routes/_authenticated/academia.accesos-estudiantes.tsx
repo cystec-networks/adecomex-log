@@ -11,8 +11,8 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { UserPlus, ShieldOff, ShieldCheck, Mail, MessageCircle } from "lucide-react";
-import { normalizeWhatsAppPhone } from "@/components/whatsapp-button";
+import { UserPlus, ShieldOff, ShieldCheck, Mail, KeyRound, Copy, RotateCw } from "lucide-react";
+import { WhatsAppButton, normalizeWhatsAppPhone } from "@/components/whatsapp-button";
 
 export const Route = createFileRoute("/_authenticated/academia/accesos-estudiantes")({
   ssr: false,
@@ -70,35 +70,20 @@ function AccesosEstudiantesPage() {
     onError: (err: any) => toast.error(err.message ?? "No se pudo actualizar"),
   });
 
-  const enviarWhatsApp = useMutation({
+  const [credenciales, setCredenciales] = useState<{ estudiante: EstudianteRow; email: string; password: string } | null>(null);
+
+  const crearAcceso = useMutation({
     mutationFn: async (e: EstudianteRow) => {
-      const tel = normalizeWhatsAppPhone(e.telefono);
-      if (!tel) throw new Error("Este estudiante no tiene teléfono registrado");
-      const clean = (e.email ?? "").trim().toLowerCase();
-      if (!clean) throw new Error("El estudiante no tiene email registrado para generar la invitación");
-      const { data, error } = await (supabase as any).functions.invoke("invitar-estudiante-usuario", {
-        body: { email: clean, estudiante_id: e.id, soloGenerarEnlace: true },
+      const { data, error } = await (supabase as any).functions.invoke("crear-acceso-estudiante", {
+        body: { estudiante_id: e.id },
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
-      if (data?.yaConfirmado) return { yaConfirmado: true as const };
-      const enlace: string | undefined = data?.enlace;
-      if (!enlace) throw new Error(data?.warning ?? "No se pudo generar el enlace de invitación");
-      const msg = `Hola ${e.nombre}, ADECOMEX Academia te invita a acceder a tu portal de estudiante. Activa tu acceso aquí: ${enlace}`;
-      const url = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
-      window.open(url, "_blank", "noopener,noreferrer");
-      return { yaConfirmado: false as const, warning: data?.warning as string | null };
+      if (!data?.email || !data?.password) throw new Error("Respuesta inválida del servidor");
+      return { estudiante: e, email: data.email as string, password: data.password as string };
     },
-    onSuccess: (res) => {
-      if (res.yaConfirmado) {
-        toast.info("Este estudiante ya tiene cuenta activa. Debe iniciar sesión desde la pantalla de login.");
-      } else {
-        if (res.warning) toast.warning(res.warning);
-        else toast.success("Enlace generado y abierto en WhatsApp");
-        refresh();
-      }
-    },
-    onError: (err: any) => toast.error(err.message ?? "No se pudo generar el enlace"),
+    onSuccess: (res) => { setCredenciales(res); refresh(); },
+    onError: (err: any) => toast.error(err.message ?? "No se pudo crear el acceso"),
   });
 
   return (
@@ -144,12 +129,11 @@ function AccesosEstudiantesPage() {
                           <UserPlus className="h-4 w-4 mr-1" /> Invitar al portal
                         </Button>
                         <Button
-                          size="sm" variant="outline"
-                          className="border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E]"
-                          onClick={() => enviarWhatsApp.mutate(e)}
-                          disabled={enviarWhatsApp.isPending}
+                          size="sm"
+                          onClick={() => crearAcceso.mutate(e)}
+                          disabled={crearAcceso.isPending}
                         >
-                          <MessageCircle className="h-4 w-4 mr-1" /> Enviar enlace por WhatsApp
+                          <KeyRound className="h-4 w-4 mr-1" /> Crear acceso directo
                         </Button>
                       </div>
                     )}
@@ -160,11 +144,10 @@ function AccesosEstudiantesPage() {
                         </Button>
                         <Button
                           size="sm" variant="outline"
-                          className="border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E]"
-                          onClick={() => enviarWhatsApp.mutate(e)}
-                          disabled={enviarWhatsApp.isPending}
+                          onClick={() => crearAcceso.mutate(e)}
+                          disabled={crearAcceso.isPending}
                         >
-                          <MessageCircle className="h-4 w-4 mr-1" /> Enviar enlace por WhatsApp
+                          <RotateCw className="h-4 w-4 mr-1" /> Restablecer acceso
                         </Button>
                         {e.vinculo.activo ? (
                           <Button
@@ -198,7 +181,78 @@ function AccesosEstudiantesPage() {
       </Card>
 
       <InvitarDialog estudiante={inviting} onClose={() => setInviting(null)} onDone={refresh} />
+      <CredencialesDialog creds={credenciales} onClose={() => setCredenciales(null)} />
     </div>
+  );
+}
+
+function CredencialesDialog({
+  creds, onClose,
+}: {
+  creds: { estudiante: EstudianteRow; email: string; password: string } | null;
+  onClose: () => void;
+}) {
+  const open = !!creds;
+  const authUrl = typeof window !== "undefined" ? `${window.location.origin}/auth` : "";
+  const copy = (text: string, label: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(
+        () => toast.success(`${label} copiado`),
+        () => toast.error("No se pudo copiar"),
+      );
+    }
+  };
+  const msg = creds
+    ? `Hola ${creds.estudiante.nombre}, aquí tienes tu acceso al portal de ADECOMEX: Usuario: ${creds.email} / Contraseña temporal: ${creds.password}. Te pedirá cambiarla al entrar por primera vez. Entra aquí: ${authUrl}`
+    : "";
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Acceso directo creado</DialogTitle>
+          <DialogDescription>
+            Comparte estas credenciales con el estudiante. Se le pedirá cambiar la contraseña al iniciar sesión.
+          </DialogDescription>
+        </DialogHeader>
+        {creds && (
+          <div className="space-y-3">
+            <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 px-3 py-2 text-sm">
+              ⚠️ Esta contraseña no se volverá a mostrar — cópiala o envíala ahora.
+            </div>
+            <div className="space-y-1.5">
+              <Label>Correo</Label>
+              <div className="flex gap-2">
+                <Input value={creds.email} readOnly className="font-mono" />
+                <Button type="button" variant="outline" size="icon" onClick={() => copy(creds.email, "Correo")}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Contraseña temporal</Label>
+              <div className="flex gap-2">
+                <Input value={creds.password} readOnly className="font-mono" />
+                <Button type="button" variant="outline" size="icon" onClick={() => copy(creds.password, "Contraseña")}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            {normalizeWhatsAppPhone(creds.estudiante.telefono) && (
+              <div className="pt-1">
+                <WhatsAppButton
+                  phone={creds.estudiante.telefono}
+                  clientName={creds.estudiante.nombre}
+                  message={msg}
+                />
+              </div>
+            )}
+          </div>
+        )}
+        <DialogFooter>
+          <Button onClick={onClose}>Listo</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

@@ -546,6 +546,7 @@ export type Database = {
           cliente_id: string
           created_at: string
           created_by: string | null
+          debe_cambiar_password: boolean
           user_id: string
         }
         Insert: {
@@ -553,6 +554,7 @@ export type Database = {
           cliente_id: string
           created_at?: string
           created_by?: string | null
+          debe_cambiar_password?: boolean
           user_id: string
         }
         Update: {
@@ -560,6 +562,7 @@ export type Database = {
           cliente_id?: string
           created_at?: string
           created_by?: string | null
+          debe_cambiar_password?: boolean
           user_id?: string
         }
         Relationships: [
@@ -885,6 +888,7 @@ export type Database = {
           activo: boolean
           created_at: string
           created_by: string | null
+          debe_cambiar_password: boolean
           estudiante_id: string
           user_id: string
         }
@@ -892,6 +896,7 @@ export type Database = {
           activo?: boolean
           created_at?: string
           created_by?: string | null
+          debe_cambiar_password?: boolean
           estudiante_id: string
           user_id: string
         }
@@ -899,6 +904,7 @@ export type Database = {
           activo?: boolean
           created_at?: string
           created_by?: string | null
+          debe_cambiar_password?: boolean
           estudiante_id?: string
           user_id?: string
         }
@@ -2926,6 +2932,8 @@ export type Database = {
     }
     Functions: {
       calc_itbis_periodo: { Args: { _periodo: string }; Returns: Json }
+      marcar_password_cambiada_cliente: { Args: never; Returns: undefined }
+      marcar_password_cambiada_estudiante: { Args: never; Returns: undefined }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
     }

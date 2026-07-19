@@ -11,8 +11,8 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { UserPlus, ShieldOff, ShieldCheck, Mail, MessageCircle } from "lucide-react";
-import { normalizeWhatsAppPhone } from "@/components/whatsapp-button";
+import { UserPlus, ShieldOff, ShieldCheck, Mail, KeyRound, Copy, RotateCw } from "lucide-react";
+import { WhatsAppButton, normalizeWhatsAppPhone } from "@/components/whatsapp-button";
 
 export const Route = createFileRoute("/_authenticated/admin/accesos-clientes")({
   ssr: false,
@@ -68,37 +68,23 @@ function AccesosClientesPage() {
     },
     onError: (err: any) => toast.error(err.message ?? "No se pudo actualizar"),
   });
-  const enviarWhatsApp = useMutation({
+  const [credenciales, setCredenciales] = useState<{ cliente: ClienteRow; email: string; password: string } | null>(null);
+
+  const crearAcceso = useMutation({
     mutationFn: async (c: ClienteRow) => {
-      const tel = normalizeWhatsAppPhone(c.telefono);
-      if (!tel) throw new Error("Este cliente no tiene teléfono registrado");
-      const clean = (c.email ?? "").trim().toLowerCase();
-      if (!clean) throw new Error("El cliente no tiene email registrado para generar la invitación");
-      const { data, error } = await supabase.functions.invoke("invitar-cliente-usuario", {
-        body: { email: clean, cliente_id: c.id, soloGenerarEnlace: true },
+      const { data, error } = await supabase.functions.invoke("crear-acceso-cliente", {
+        body: { cliente_id: c.id },
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
-      if (data?.yaConfirmado) {
-        return { yaConfirmado: true as const };
-      }
-      const enlace: string | undefined = data?.enlace;
-      if (!enlace) throw new Error(data?.warning ?? "No se pudo generar el enlace de invitación");
-      const msg = `Hola ${c.nombre}, ADECOMEX SRL te invita a acceder al portal de seguimiento. Activa tu acceso aquí: ${enlace}`;
-      const url = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
-      window.open(url, "_blank", "noopener,noreferrer");
-      return { yaConfirmado: false as const, warning: data?.warning as string | null };
+      if (!data?.email || !data?.password) throw new Error("Respuesta inválida del servidor");
+      return { cliente: c, email: data.email as string, password: data.password as string };
     },
     onSuccess: (res) => {
-      if (res.yaConfirmado) {
-        toast.info("Este cliente ya tiene cuenta activa. Debe iniciar sesión desde la pantalla de login.");
-      } else {
-        if (res.warning) toast.warning(res.warning);
-        else toast.success("Enlace generado y abierto en WhatsApp");
-        refresh();
-      }
+      setCredenciales(res);
+      refresh();
     },
-    onError: (err: any) => toast.error(err.message ?? "No se pudo generar el enlace"),
+    onError: (err: any) => toast.error(err.message ?? "No se pudo crear el acceso"),
   });
 
 
@@ -145,12 +131,11 @@ function AccesosClientesPage() {
                           <UserPlus className="h-4 w-4 mr-1" /> Invitar al portal
                         </Button>
                         <Button
-                          size="sm" variant="outline"
-                          className="border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E]"
-                          onClick={() => enviarWhatsApp.mutate(c)}
-                          disabled={enviarWhatsApp.isPending}
+                          size="sm"
+                          onClick={() => crearAcceso.mutate(c)}
+                          disabled={crearAcceso.isPending}
                         >
-                          <MessageCircle className="h-4 w-4 mr-1" /> Enviar enlace por WhatsApp
+                          <KeyRound className="h-4 w-4 mr-1" /> Crear acceso directo
                         </Button>
                       </div>
                     )}
@@ -161,11 +146,10 @@ function AccesosClientesPage() {
                         </Button>
                         <Button
                           size="sm" variant="outline"
-                          className="border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E]"
-                          onClick={() => enviarWhatsApp.mutate(c)}
-                          disabled={enviarWhatsApp.isPending}
+                          onClick={() => crearAcceso.mutate(c)}
+                          disabled={crearAcceso.isPending}
                         >
-                          <MessageCircle className="h-4 w-4 mr-1" /> Enviar enlace por WhatsApp
+                          <RotateCw className="h-4 w-4 mr-1" /> Restablecer acceso
                         </Button>
                         {c.vinculo.activo ? (
                           <Button
@@ -199,7 +183,78 @@ function AccesosClientesPage() {
       </Card>
 
       <InvitarDialog cliente={inviting} onClose={() => setInviting(null)} onDone={refresh} />
+      <CredencialesDialog creds={credenciales} onClose={() => setCredenciales(null)} />
     </div>
+  );
+}
+
+function CredencialesDialog({
+  creds, onClose,
+}: {
+  creds: { cliente: ClienteRow; email: string; password: string } | null;
+  onClose: () => void;
+}) {
+  const open = !!creds;
+  const authUrl = typeof window !== "undefined" ? `${window.location.origin}/auth` : "";
+  const copy = (text: string, label: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(
+        () => toast.success(`${label} copiado`),
+        () => toast.error("No se pudo copiar"),
+      );
+    }
+  };
+  const msg = creds
+    ? `Hola ${creds.cliente.nombre}, aquí tienes tu acceso al portal de ADECOMEX: Usuario: ${creds.email} / Contraseña temporal: ${creds.password}. Te pedirá cambiarla al entrar por primera vez. Entra aquí: ${authUrl}`
+    : "";
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Acceso directo creado</DialogTitle>
+          <DialogDescription>
+            Comparte estas credenciales con el cliente. Se le pedirá cambiar la contraseña al iniciar sesión.
+          </DialogDescription>
+        </DialogHeader>
+        {creds && (
+          <div className="space-y-3">
+            <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 px-3 py-2 text-sm">
+              ⚠️ Esta contraseña no se volverá a mostrar — cópiala o envíala ahora.
+            </div>
+            <div className="space-y-1.5">
+              <Label>Correo</Label>
+              <div className="flex gap-2">
+                <Input value={creds.email} readOnly className="font-mono" />
+                <Button type="button" variant="outline" size="icon" onClick={() => copy(creds.email, "Correo")}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Contraseña temporal</Label>
+              <div className="flex gap-2">
+                <Input value={creds.password} readOnly className="font-mono" />
+                <Button type="button" variant="outline" size="icon" onClick={() => copy(creds.password, "Contraseña")}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            {normalizeWhatsAppPhone(creds.cliente.telefono) && (
+              <div className="pt-1">
+                <WhatsAppButton
+                  phone={creds.cliente.telefono}
+                  clientName={creds.cliente.nombre}
+                  message={msg}
+                />
+              </div>
+            )}
+          </div>
+        )}
+        <DialogFooter>
+          <Button onClick={onClose}>Listo</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
