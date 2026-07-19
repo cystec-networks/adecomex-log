@@ -1,11 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { estadoLabel } from "@/lib/estados-expediente";
 import { fmtLocalDate } from "@/lib/dates";
-import { FolderKanban, PackageOpen, ChevronRight } from "lucide-react";
+import { FolderKanban, PackageOpen, ChevronRight, Search } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/_portal/portal/")({
   component: PortalListado,
