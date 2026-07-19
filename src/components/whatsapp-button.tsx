@@ -29,6 +29,11 @@ export interface WhatsAppButtonProps {
   recordNumber?: string | null;
   variant?: "default" | "icon";
   className?: string;
+  message?: string;
+}
+
+export function normalizeWhatsAppPhone(raw?: string | null): string | null {
+  return normalizePhone(raw);
 }
 
 export function WhatsAppButton({
