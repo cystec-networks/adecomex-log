@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 
 export const Route = createFileRoute("/_authenticated/solicitudes/nueva")({
   component: NuevaSolicitud,
