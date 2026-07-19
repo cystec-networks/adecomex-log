@@ -142,5 +142,5 @@ Deno.serve(async (req) => {
     );
   if (upsertErr) return json(500, { error: upsertErr.message });
 
-  return json(200, { success: true, user_id: userId, cliente_id, yaConfirmado, warning });
+  return json(200, { success: true, user_id: userId, cliente_id, yaConfirmado, warning, enlace });
 });
