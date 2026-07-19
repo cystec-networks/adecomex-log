@@ -146,11 +146,11 @@ function Expedientes() {
 
   const grupos: Record<string, any[]> = { importacion: [], exportacion: [], otros: [] };
   filtered.forEach((e: any) => grupos[detectTipo(e)].push(e));
-  (Object.keys(grupos) as Array<keyof typeof grupos>).forEach((k) => grupos[k].sort(cmp));
+  // no se ordena aquí; cada subgrupo por estado se ordena dentro del render
 
   const isActive = (k: SortKey) => !!sort && sort.key === k;
   const isDefault = (k: SortKey) => !sort && k === "fecha_compromiso";
-  const Th = ({ k, children, align = "left", className = "" }: { k: SortKey; children: React.ReactNode; align?: "left" | "right" | "center"; className?: string }) => {
+  const Th = ({ k, children, align = "center", className = "" }: { k: SortKey; children: React.ReactNode; align?: "left" | "right" | "center"; className?: string }) => {
     const active = isActive(k);
     const def = isDefault(k);
     const icon = active ? (sort!.dir === "asc" ? "▲" : "▼") : def ? "▲" : "↕";
@@ -222,6 +222,12 @@ function Expedientes() {
     return hito?.fecha_programada ?? hito?.fecha_cumplimiento ?? null;
   };
 
+  const TruncatedCell = ({ value, className = "", maxClass = "max-w-[160px]" }: { value: string | null; className?: string; maxClass?: string }) => (
+    <span title={value ?? undefined} className={`block truncate ${maxClass} ${className}`}>
+      {value ?? "—"}
+    </span>
+  );
+
   const MercanciaCell = ({ items }: { items: any[] }) => {
     const active = (items ?? [])
       .filter((it: any) => it.deleted_at == null)
@@ -240,10 +246,141 @@ function Expedientes() {
     );
   };
 
-  const TruncatedCell = ({ value, className = "", maxClass = "max-w-[160px]" }: { value: string | null; className?: string; maxClass?: string }) => (
-    <span title={value ?? undefined} className={`block truncate ${maxClass} ${className}`}>
-      {value ?? "—"}
-    </span>
+  const ESTADO_GRUPO_1 = ["digitar", "presentar", "verificar"];
+  const ESTADO_GRUPO_3 = ["despachado", "entregado"];
+
+  const EstadoDivider = ({ label }: { label: string }) => (
+    <tr className="bg-muted/40">
+      <td colSpan={11} className="py-2 px-4">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-border" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">{label}</span>
+          <div className="flex-1 h-px bg-border" />
+        </div>
+      </td>
+    </tr>
+  );
+
+  const ExpedienteRow = ({ e }: { e: any }) => (
+    <tr key={e.id} className={`hover:bg-muted/30 transition-colors ${rowHighlight(e.estado)}`}>
+      <td className="px-2 py-2 align-middle whitespace-nowrap">
+        <Link
+          to="/expedientes/$id"
+          params={{ id: e.id }}
+          className="font-semibold text-primary hover:underline underline-offset-2 decoration-primary/40"
+          title={`Abrir expediente ${e.numero}`}
+        >
+          {e.numero}
+        </Link>
+      </td>
+      <td className="px-2 py-2 align-middle whitespace-nowrap text-foreground/90">
+        <TruncatedCell value={e.clientes?.nombre} />
+      </td>
+      <td className="px-2 py-2 align-middle text-muted-foreground text-xs whitespace-nowrap">
+        <MercanciaCell items={e.mercancia_items} />
+      </td>
+      <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground text-xs whitespace-nowrap">
+        {e.numero_dua ?? "—"}
+      </td>
+      <td className="px-2 py-2 align-middle text-muted-foreground whitespace-nowrap">
+        {e.bl_awb ?? "—"}
+      </td>
+      <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground whitespace-nowrap">
+        {(() => { const d = parseLocalDate(e.fecha_compromiso); return d ? d.toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"; })()}
+      </td>
+      <td className="px-2 py-2 align-middle text-center whitespace-nowrap w-12 min-w-12">
+        {(() => {
+          const d = diasRestantes(e);
+          if (!d) return <span className="text-muted-foreground">—</span>;
+          const toneClass = d.tone === "success"
+            ? "text-emerald-600 dark:text-emerald-400"
+            : d.tone === "warning"
+              ? "text-amber-600 dark:text-amber-400"
+              : "text-destructive";
+          return (
+            <span title={d.full} className={`inline-flex items-center gap-1 text-xs font-medium tabular-nums ${toneClass}`}>
+              {esUrgente(e) && (
+                <AlarmClock
+                  className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400"
+                  aria-label="ETA urgente (menos de 3 días)"
+                />
+              )}
+              {d.text}
+            </span>
+          );
+        })()}
+      </td>
+      <td className="px-2 py-2 align-middle text-muted-foreground text-xs whitespace-nowrap">
+        {e.puerto_arribo ?? "—"}
+      </td>
+      <td className="px-2 py-2 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
+        {e.numero_vuce ?? "—"}
+      </td>
+      <td className="px-2 py-2 align-middle text-center whitespace-nowrap">
+        <div className="flex flex-col items-center gap-0.5">
+          {estadoBadge(e.estado)}
+          {e.estado === "verificar" && (() => {
+            const fv = fechaVerificacion(e);
+            if (!fv) return null;
+            const m = String(fv).match(/^(\d{4})-(\d{2})-(\d{2})/);
+            const label = m ? `${m[3]}/${m[2]}` : new Date(fv).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit" });
+            return (
+              <span title="Fecha programada de verificación" className="text-[10px] text-muted-foreground tabular-nums">
+                {label}
+              </span>
+            );
+          })()}
+          {(() => {
+            const a = alertaDeclaracionTardia(e);
+            if (!a) return null;
+            const cls = a.tone === "danger"
+              ? "border-destructive/40 bg-destructive/10 text-destructive"
+              : a.tone === "warning"
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                : "border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-400";
+            const txt = a.tone === "danger"
+              ? (a.diasRestantes === 0 ? "⚠ Multa hoy (Ley 168-21)" : `⚠ Vencido hace ${Math.abs(a.diasRestantes)} día(s) hábiles`)
+              : `${a.diasRestantes} día(s) hábiles para declarar`;
+            return (
+              <span
+                title="Ley 168-21: 5 días laborables desde el arribo para presentar la declaración"
+                className={`mt-0.5 inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${cls}`}
+              >
+                {txt}
+              </span>
+            );
+          })()}
+        </div>
+      </td>
+
+      <td className="px-1 py-2 align-middle text-right whitespace-nowrap">
+        <WhatsAppButton
+          phone={e.clientes?.telefono}
+          clientName={e.clientes?.nombre}
+          recordType="Expediente"
+          recordNumber={e.numero}
+          variant="icon"
+          className="h-8 w-8"
+        />
+        <EmailButton
+          email={(e.clientes as any)?.email}
+          clientName={e.clientes?.nombre}
+          recordType="Expediente"
+          recordNumber={e.numero}
+          variant="icon"
+          className="h-8 w-8"
+        />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+          onClick={() => setToTrash({ id: e.id, numero: e.numero })}
+          title="Mover a papelera"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </td>
+    </tr>
   );
 
   return (
@@ -301,141 +438,34 @@ function Expedientes() {
                       <tr>
                         <Th k="numero" className="px-2 whitespace-nowrap">Expediente</Th>
                         <Th k="cliente" className="px-2 whitespace-nowrap">Cliente</Th>
-                        <th className="px-2 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Mercancía</th>
-                        <Th k="numero_dua" align="right" className="px-2 whitespace-nowrap">DUA</Th>
+                        <th className="px-2 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Mercancía</th>
+                        <Th k="numero_dua" className="px-2 whitespace-nowrap">DUA</Th>
                         <Th k="bl_awb" className="px-2 whitespace-nowrap">BL / AWB</Th>
-                        <Th k="fecha_compromiso" align="right" className="px-2 whitespace-nowrap">ETA</Th>
+                        <Th k="fecha_compromiso" className="px-2 whitespace-nowrap">ETA</Th>
                         <th className="px-2 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap w-12 min-w-12">Días</th>
                         <Th k="puerto_arribo" className="px-2 whitespace-nowrap">Puerto</Th>
-                        <Th k="numero_vuce" align="right" className="px-2 whitespace-nowrap">Permiso</Th>
-                        <Th k="estado" align="center" className="px-2 whitespace-nowrap">Estado</Th>
-                        <th className="px-1 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"></th>
+                        <Th k="numero_vuce" className="px-2 whitespace-nowrap">Permiso</Th>
+                        <Th k="estado" className="px-2 whitespace-nowrap">Estado</Th>
+                        <th className="px-1 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"></th>
                       </tr>
                     </thead>
 
-                    <tbody className="divide-y">
-                      {rows.map((e: any) => (
-                        <tr key={e.id} className={`hover:bg-muted/30 transition-colors ${rowHighlight(e.estado)}`}>
-                          <td className="px-2 py-2 align-middle whitespace-nowrap">
-                            <Link
-                              to="/expedientes/$id"
-                              params={{ id: e.id }}
-                              className="font-semibold text-primary hover:underline underline-offset-2 decoration-primary/40"
-                              title={`Abrir expediente ${e.numero}`}
-                            >
-                              {e.numero}
-                            </Link>
-                          </td>
-                          <td className="px-2 py-2 align-middle whitespace-nowrap text-foreground/90">
-                            {e.clientes?.nombre ?? "—"}
-                          </td>
-                          <td className="px-2 py-2 align-middle text-muted-foreground text-xs whitespace-nowrap">
-                            <MercanciaCell items={e.mercancia_items} />
-                          </td>
-                          <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground text-xs whitespace-nowrap">
-                            {e.numero_dua ?? "—"}
-                          </td>
-                          <td className="px-2 py-2 align-middle text-muted-foreground whitespace-nowrap">
-                            {e.bl_awb ?? "—"}
-                          </td>
-                          <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground whitespace-nowrap">
-                            {(() => { const d = parseLocalDate(e.fecha_compromiso); return d ? d.toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"; })()}
-                          </td>
-                          <td className="px-2 py-2 align-middle text-center whitespace-nowrap w-12 min-w-12">
-                            {(() => {
-                              const d = diasRestantes(e);
-                              if (!d) return <span className="text-muted-foreground">—</span>;
-                              const toneClass = d.tone === "success"
-                                ? "text-emerald-600 dark:text-emerald-400"
-                                : d.tone === "warning"
-                                  ? "text-amber-600 dark:text-amber-400"
-                                  : "text-destructive";
-                              return (
-                                <span title={d.full} className={`inline-flex items-center gap-1 text-xs font-medium tabular-nums ${toneClass}`}>
-                                  {esUrgente(e) && (
-                                    <AlarmClock
-                                      className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400"
-                                      aria-label="ETA urgente (menos de 3 días)"
-                                    />
-                                  )}
-                                  {d.text}
-                                </span>
-                              );
-                            })()}
-                          </td>
-                          <td className="px-2 py-2 align-middle text-muted-foreground text-xs whitespace-nowrap">
-                            {e.puerto_arribo ?? "—"}
-                          </td>
-                          <td className="px-2 py-2 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
-                            {e.numero_vuce ?? "—"}
-                          </td>
-                          <td className="px-2 py-2 align-middle text-center whitespace-nowrap">
-                            <div className="flex flex-col items-center gap-0.5">
-                              {estadoBadge(e.estado)}
-                              {e.estado === "verificar" && (() => {
-                                const fv = fechaVerificacion(e);
-                                if (!fv) return null;
-                                const m = String(fv).match(/^(\d{4})-(\d{2})-(\d{2})/);
-                                const label = m ? `${m[3]}/${m[2]}` : new Date(fv).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit" });
-                                return (
-                                  <span title="Fecha programada de verificación" className="text-[10px] text-muted-foreground tabular-nums">
-                                    {label}
-                                  </span>
-                                );
-                              })()}
-                              {(() => {
-                                const a = alertaDeclaracionTardia(e);
-                                if (!a) return null;
-                                const cls = a.tone === "danger"
-                                  ? "border-destructive/40 bg-destructive/10 text-destructive"
-                                  : a.tone === "warning"
-                                    ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                                    : "border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-400";
-                                const txt = a.tone === "danger"
-                                  ? (a.diasRestantes === 0 ? "⚠ Multa hoy (Ley 168-21)" : `⚠ Vencido hace ${Math.abs(a.diasRestantes)} día(s) hábiles`)
-                                  : `${a.diasRestantes} día(s) hábiles para declarar`;
-                                return (
-                                  <span
-                                    title="Ley 168-21: 5 días laborables desde el arribo para presentar la declaración"
-                                    className={`mt-0.5 inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${cls}`}
-                                  >
-                                    {txt}
-                                  </span>
-                                );
-                              })()}
-                            </div>
-                          </td>
-
-                          <td className="px-1 py-2 align-middle text-right whitespace-nowrap">
-                            <WhatsAppButton
-                              phone={e.clientes?.telefono}
-                              clientName={e.clientes?.nombre}
-                              recordType="Expediente"
-                              recordNumber={e.numero}
-                              variant="icon"
-                              className="h-8 w-8"
-                            />
-                            <EmailButton
-                              email={(e.clientes as any)?.email}
-                              clientName={e.clientes?.nombre}
-                              recordType="Expediente"
-                              recordNumber={e.numero}
-                              variant="icon"
-                              className="h-8 w-8"
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                              onClick={() => setToTrash({ id: e.id, numero: e.numero })}
-                              title="Mover a papelera"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
+                    {(() => {
+                      const g1 = rows.filter((e: any) => ESTADO_GRUPO_1.includes(e.estado)).sort(cmp);
+                      const transito = rows.filter((e: any) => e.estado === "en_transito").sort(cmp);
+                      const g3 = rows.filter((e: any) => ESTADO_GRUPO_3.includes(e.estado)).sort(cmp);
+                      const facturar = rows.filter((e: any) => e.estado === "facturar").sort(cmp);
+                      return (
+                        <tbody className="divide-y">
+                          {g1.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
+                          {g1.length > 0 && transito.length > 0 && <EstadoDivider key={`div-transito-${g}`} label="En Tránsito" />}
+                          {transito.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
+                          {g3.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
+                          {facturar.length > 0 && (g1.length + transito.length + g3.length > 0) && <EstadoDivider key={`div-facturados-${g}`} label="Facturados" />}
+                          {facturar.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
+                        </tbody>
+                      );
+                    })()}
                   </table>
                 </div>
               );
