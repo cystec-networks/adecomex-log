@@ -72,4 +72,5 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   transporte: "Transporte",
   finanzas: "Finanzas",
   contabilidad: "Contabilidad",
+  academia: "Academia",
 };
