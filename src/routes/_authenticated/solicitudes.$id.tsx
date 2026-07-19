@@ -183,6 +183,7 @@ function DetalleSolicitud() {
             <div className="grid gap-3 grid-cols-2 md:grid-cols-2"><div className="grid gap-1.5"><Label>Origen</Label><CatalogoAutocomplete tabla="catalogo_paises" value={form.origen} onChange={(v) => set("origen", v)} /></div><div className="grid gap-1.5"><Label>Puerto llegada</Label><Input value={form.puerto_llegada} onChange={(e) => set("puerto_llegada", e.target.value)} /></div></div>
             <div className="grid gap-3 grid-cols-2"><div className="grid gap-1.5"><Label>Fecha estimada arribo</Label><Input type="date" value={form.fecha_arribo_est ?? ""} onChange={(e) => set("fecha_arribo_est", e.target.value)} /></div><div className="grid gap-1.5"><Label>Incoterm</Label><CatalogoAutocomplete tabla="catalogo_incoterms" value={form.incoterm} onChange={(v) => set("incoterm", v)} /></div></div>
             <div className="grid gap-1.5"><Label>Medio de transporte</Label><Input value={form.medio_transporte} onChange={(e) => set("medio_transporte", e.target.value)} /></div>
+            <div className="grid gap-3 grid-cols-2"><div className="grid gap-1.5"><Label>BL / AWB</Label><Input value={form.bl_awb} onChange={(e) => set("bl_awb", e.target.value)} /></div><div className="grid gap-1.5"><Label>Factura comercial</Label><Input value={form.factura_comercial} onChange={(e) => set("factura_comercial", e.target.value)} /></div></div>
           </CardContent>
         </Card>
       </div>
