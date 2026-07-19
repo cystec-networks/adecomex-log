@@ -52,7 +52,7 @@ function PortalEstudianteLayout() {
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("estudiantes")
-        .select("nombre, apellido, email")
+        .select("nombre, email")
         .eq("id", estudianteId)
         .maybeSingle();
       return data;
@@ -67,9 +67,6 @@ function PortalEstudianteLayout() {
     navigate({ to: "/auth", replace: true });
   };
 
-  const nombreCompleto = estudiante
-    ? [estudiante.nombre, estudiante.apellido].filter(Boolean).join(" ")
-    : "";
 
   return (
     <div className="min-h-screen bg-background">
@@ -87,7 +84,7 @@ function PortalEstudianteLayout() {
           <div className="flex-1" />
           {estudiante && (
             <div className="hidden sm:block text-right">
-              <div className="text-sm font-medium truncate max-w-[240px]">{nombreCompleto}</div>
+              <div className="text-sm font-medium truncate max-w-[240px]">{estudiante.nombre}</div>
               {estudiante.email && <div className="text-xs text-muted-foreground truncate max-w-[240px]">{estudiante.email}</div>}
             </div>
           )}
