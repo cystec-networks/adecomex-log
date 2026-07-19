@@ -57,6 +57,46 @@ function PortalExpedienteDetalle() {
     },
   });
 
+  const { data: mercancia } = useQuery({
+    queryKey: ["portal-mercancia", id],
+    enabled: !!expediente,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("v_mercancia_cliente" as any)
+        .select("id, item_no, detalle_producto, cantidad, unidad_medida, peso")
+        .eq("expediente_id", id)
+        .order("item_no", { ascending: true });
+      return (data ?? []) as any[];
+    },
+  });
+
+  const { data: permisos } = useQuery({
+    queryKey: ["portal-permisos", id],
+    enabled: !!expediente,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("v_permisos_cliente" as any)
+        .select("id, numero, tipo, estado, fecha_solicitud, fecha_emision, fecha_vencimiento")
+        .eq("expediente_id", id)
+        .order("fecha_solicitud", { ascending: false });
+      return (data ?? []) as any[];
+    },
+  });
+
+  const { data: facturas } = useQuery({
+    queryKey: ["portal-facturas", id],
+    enabled: !!expediente,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("v_facturas_cliente" as any)
+        .select("id, encf, fecha_emision, monto_total, pdf_url")
+        .eq("expediente_id", id)
+        .order("fecha_emision", { ascending: false });
+      return (data ?? []) as any[];
+    },
+  });
+
+
 
   if (isLoading) return <div className="text-sm text-muted-foreground">Cargando…</div>;
   if (isError || !expediente) {
