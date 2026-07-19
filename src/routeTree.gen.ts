@@ -45,6 +45,9 @@ import { Route as AuthenticatedAdminCuentasPorPagarRouteImport } from './routes/
 import { Route as AuthenticatedAdminConfiguracionRouteImport } from './routes/_authenticated/admin.configuracion'
 import { Route as AuthenticatedAdminCatalogosRouteImport } from './routes/_authenticated/admin.catalogos'
 import { Route as AuthenticatedAdminAccesosClientesRouteImport } from './routes/_authenticated/admin.accesos-clientes'
+import { Route as AuthenticatedAcademiaProgramasRouteImport } from './routes/_authenticated/academia.programas'
+import { Route as AuthenticatedAcademiaInscripcionesRouteImport } from './routes/_authenticated/academia.inscripciones'
+import { Route as AuthenticatedAcademiaEstudiantesRouteImport } from './routes/_authenticated/academia.estudiantes'
 import { Route as PortalPortalExpedientesIdRouteImport } from './routes/_portal/portal.expedientes.$id'
 import { Route as AuthenticatedAdminFacturacionPendientesRouteImport } from './routes/_authenticated/admin.facturacion.pendientes'
 
@@ -250,6 +253,24 @@ const AuthenticatedAdminAccesosClientesRoute =
     path: '/admin/accesos-clientes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAcademiaProgramasRoute =
+  AuthenticatedAcademiaProgramasRouteImport.update({
+    id: '/academia/programas',
+    path: '/academia/programas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAcademiaInscripcionesRoute =
+  AuthenticatedAcademiaInscripcionesRouteImport.update({
+    id: '/academia/inscripciones',
+    path: '/academia/inscripciones',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAcademiaEstudiantesRoute =
+  AuthenticatedAcademiaEstudiantesRouteImport.update({
+    id: '/academia/estudiantes',
+    path: '/academia/estudiantes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const PortalPortalExpedientesIdRoute =
   PortalPortalExpedientesIdRouteImport.update({
     id: '/portal/expedientes/$id',
@@ -272,6 +293,9 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/mi-cuenta': typeof AuthenticatedMiCuentaRoute
   '/reportes': typeof AuthenticatedReportesRoute
+  '/academia/estudiantes': typeof AuthenticatedAcademiaEstudiantesRoute
+  '/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
+  '/academia/programas': typeof AuthenticatedAcademiaProgramasRoute
   '/admin/accesos-clientes': typeof AuthenticatedAdminAccesosClientesRoute
   '/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
@@ -310,6 +334,9 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/mi-cuenta': typeof AuthenticatedMiCuentaRoute
   '/reportes': typeof AuthenticatedReportesRoute
+  '/academia/estudiantes': typeof AuthenticatedAcademiaEstudiantesRoute
+  '/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
+  '/academia/programas': typeof AuthenticatedAcademiaProgramasRoute
   '/admin/accesos-clientes': typeof AuthenticatedAdminAccesosClientesRoute
   '/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
@@ -351,6 +378,9 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/mi-cuenta': typeof AuthenticatedMiCuentaRoute
   '/_authenticated/reportes': typeof AuthenticatedReportesRoute
+  '/_authenticated/academia/estudiantes': typeof AuthenticatedAcademiaEstudiantesRoute
+  '/_authenticated/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
+  '/_authenticated/academia/programas': typeof AuthenticatedAcademiaProgramasRoute
   '/_authenticated/admin/accesos-clientes': typeof AuthenticatedAdminAccesosClientesRoute
   '/_authenticated/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/_authenticated/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
@@ -391,6 +421,9 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/mi-cuenta'
     | '/reportes'
+    | '/academia/estudiantes'
+    | '/academia/inscripciones'
+    | '/academia/programas'
     | '/admin/accesos-clientes'
     | '/admin/catalogos'
     | '/admin/configuracion'
@@ -429,6 +462,9 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/mi-cuenta'
     | '/reportes'
+    | '/academia/estudiantes'
+    | '/academia/inscripciones'
+    | '/academia/programas'
     | '/admin/accesos-clientes'
     | '/admin/catalogos'
     | '/admin/configuracion'
@@ -469,6 +505,9 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/mi-cuenta'
     | '/_authenticated/reportes'
+    | '/_authenticated/academia/estudiantes'
+    | '/_authenticated/academia/inscripciones'
+    | '/_authenticated/academia/programas'
     | '/_authenticated/admin/accesos-clientes'
     | '/_authenticated/admin/catalogos'
     | '/_authenticated/admin/configuracion'
@@ -761,6 +800,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAccesosClientesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/academia/programas': {
+      id: '/_authenticated/academia/programas'
+      path: '/academia/programas'
+      fullPath: '/academia/programas'
+      preLoaderRoute: typeof AuthenticatedAcademiaProgramasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/academia/inscripciones': {
+      id: '/_authenticated/academia/inscripciones'
+      path: '/academia/inscripciones'
+      fullPath: '/academia/inscripciones'
+      preLoaderRoute: typeof AuthenticatedAcademiaInscripcionesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/academia/estudiantes': {
+      id: '/_authenticated/academia/estudiantes'
+      path: '/academia/estudiantes'
+      fullPath: '/academia/estudiantes'
+      preLoaderRoute: typeof AuthenticatedAcademiaEstudiantesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_portal/portal/expedientes/$id': {
       id: '/_portal/portal/expedientes/$id'
       path: '/portal/expedientes/$id'
@@ -799,6 +859,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedMiCuentaRoute: typeof AuthenticatedMiCuentaRoute
   AuthenticatedReportesRoute: typeof AuthenticatedReportesRoute
+  AuthenticatedAcademiaEstudiantesRoute: typeof AuthenticatedAcademiaEstudiantesRoute
+  AuthenticatedAcademiaInscripcionesRoute: typeof AuthenticatedAcademiaInscripcionesRoute
+  AuthenticatedAcademiaProgramasRoute: typeof AuthenticatedAcademiaProgramasRoute
   AuthenticatedAdminAccesosClientesRoute: typeof AuthenticatedAdminAccesosClientesRoute
   AuthenticatedAdminCatalogosRoute: typeof AuthenticatedAdminCatalogosRoute
   AuthenticatedAdminConfiguracionRoute: typeof AuthenticatedAdminConfiguracionRoute
@@ -832,6 +895,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedMiCuentaRoute: AuthenticatedMiCuentaRoute,
   AuthenticatedReportesRoute: AuthenticatedReportesRoute,
+  AuthenticatedAcademiaEstudiantesRoute: AuthenticatedAcademiaEstudiantesRoute,
+  AuthenticatedAcademiaInscripcionesRoute:
+    AuthenticatedAcademiaInscripcionesRoute,
+  AuthenticatedAcademiaProgramasRoute: AuthenticatedAcademiaProgramasRoute,
   AuthenticatedAdminAccesosClientesRoute:
     AuthenticatedAdminAccesosClientesRoute,
   AuthenticatedAdminCatalogosRoute: AuthenticatedAdminCatalogosRoute,

@@ -4,6 +4,7 @@ import {
   PackageOpen, PackageCheck, ScanText, Sparkles, Trash2, FileCheck2, Truck,
   ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3, Library, Settings,
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
+  GraduationCap, BookOpen, UserPlus, ClipboardCheck,
 } from "lucide-react";
 import type { AppRole } from "@/lib/auth-hooks";
 import { NotificationsBell } from "@/components/notifications-bell";
@@ -132,6 +133,20 @@ const GROUPS: Group[] = [
         match: (p) => p === "/expedientes/papelera" },
     ],
   },
+  {
+    id: "academia",
+    label: "ACADEMIA",
+    icon: GraduationCap,
+    roles: ["admin", "academia"],
+    items: [
+      { to: "/academia/programas", label: "Programas", icon: BookOpen, roles: ["admin","academia"],
+        match: (p) => p.startsWith("/academia/programas") },
+      { to: "/academia/estudiantes", label: "Estudiantes", icon: UserPlus, roles: ["admin","academia"],
+        match: (p) => p.startsWith("/academia/estudiantes") },
+      { to: "/academia/inscripciones", label: "Inscripciones", icon: ClipboardCheck, roles: ["admin","academia"],
+        match: (p) => p.startsWith("/academia/inscripciones") },
+    ],
+  },
 ];
 
 const SIMPLE_ITEMS: SimpleItem[] = [
@@ -228,6 +243,9 @@ function AppSidebarInner() {
 
         {/* Administración group */}
         {renderGroup(visibleGroups.find((g) => g.id === "administracion")!)}
+
+        {/* Academia group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "academia")!)}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
