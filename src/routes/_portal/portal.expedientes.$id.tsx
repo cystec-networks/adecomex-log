@@ -57,6 +57,46 @@ function PortalExpedienteDetalle() {
     },
   });
 
+  const { data: mercancia } = useQuery({
+    queryKey: ["portal-mercancia", id],
+    enabled: !!expediente,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("v_mercancia_cliente" as any)
+        .select("id, item_no, detalle_producto, cantidad, unidad_medida, peso")
+        .eq("expediente_id", id)
+        .order("item_no", { ascending: true });
+      return (data ?? []) as any[];
+    },
+  });
+
+  const { data: permisos } = useQuery({
+    queryKey: ["portal-permisos", id],
+    enabled: !!expediente,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("v_permisos_cliente" as any)
+        .select("id, numero, tipo, estado, fecha_solicitud, fecha_emision, fecha_vencimiento")
+        .eq("expediente_id", id)
+        .order("fecha_solicitud", { ascending: false });
+      return (data ?? []) as any[];
+    },
+  });
+
+  const { data: facturas } = useQuery({
+    queryKey: ["portal-facturas", id],
+    enabled: !!expediente,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("v_facturas_cliente" as any)
+        .select("id, encf, fecha_emision, monto_total, pdf_url")
+        .eq("expediente_id", id)
+        .order("fecha_emision", { ascending: false });
+      return (data ?? []) as any[];
+    },
+  });
+
+
 
   if (isLoading) return <div className="text-sm text-muted-foreground">Cargando…</div>;
   if (isError || !expediente) {
@@ -90,6 +130,12 @@ function PortalExpedienteDetalle() {
               <CardTitle className="font-mono">{expediente.numero ?? "—"}</CardTitle>
               {expediente.bl_awb && (
                 <div className="text-sm text-muted-foreground mt-1">BL/AWB: <span className="font-mono">{expediente.bl_awb}</span></div>
+              )}
+              {(expediente as any).puerto_arribo && (
+                <div className="text-sm text-muted-foreground">Puerto de llegada: <span className="font-medium text-foreground">{(expediente as any).puerto_arribo}</span></div>
+              )}
+              {(expediente as any).numero_dua && (
+                <div className="text-sm text-muted-foreground">DUA: <span className="font-mono">{(expediente as any).numero_dua}</span></div>
               )}
             </div>
             <Badge variant="outline" className="text-sm">
@@ -192,6 +238,126 @@ function PortalExpedienteDetalle() {
           )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Mercancía declarada</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {(!mercancia || mercancia.length === 0) ? (
+            <div className="px-6 py-8 text-center text-sm text-muted-foreground">Sin información de mercancía disponible.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground border-b">
+                    <th className="px-4 py-2">#</th>
+                    <th className="px-4 py-2">Descripción</th>
+                    <th className="px-4 py-2 text-right">Cantidad</th>
+                    <th className="px-4 py-2">Unidad</th>
+                    <th className="px-4 py-2 text-right">Peso</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mercancia.map((m) => (
+                    <tr key={m.id} className="border-b last:border-0">
+                      <td className="px-4 py-2 text-muted-foreground">{m.item_no ?? "—"}</td>
+                      <td className="px-4 py-2">{m.detalle_producto ?? "—"}</td>
+                      <td className="px-4 py-2 text-right">{m.cantidad ?? "—"}</td>
+                      <td className="px-4 py-2">{m.unidad_medida ?? "—"}</td>
+                      <td className="px-4 py-2 text-right">{m.peso ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {permisos && permisos.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Permisos</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground border-b">
+                    <th className="px-4 py-2">Tipo</th>
+                    <th className="px-4 py-2">Estado</th>
+                    <th className="px-4 py-2">Solicitud</th>
+                    <th className="px-4 py-2">Aprobación</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {permisos.map((p) => (
+                    <tr key={p.id} className="border-b last:border-0">
+                      <td className="px-4 py-2 font-medium">{p.tipo ?? "—"}</td>
+                      <td className="px-4 py-2">
+                        <Badge variant="outline" className="text-xs capitalize">{p.estado ?? "—"}</Badge>
+                      </td>
+                      <td className="px-4 py-2 text-muted-foreground">{p.fecha_solicitud ? fmtLocalDate(p.fecha_solicitud) : "—"}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{p.fecha_emision ? fmtLocalDate(p.fecha_emision) : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {facturas && facturas.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Facturas</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground border-b">
+                    <th className="px-4 py-2">e-NCF</th>
+                    <th className="px-4 py-2">Fecha</th>
+                    <th className="px-4 py-2 text-right">Monto total</th>
+                    <th className="px-4 py-2 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {facturas.map((f) => (
+                    <tr key={f.id} className="border-b last:border-0">
+                      <td className="px-4 py-2 font-mono">{f.encf ?? "—"}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{f.fecha_emision ? fmtLocalDate(f.fecha_emision) : "—"}</td>
+                      <td className="px-4 py-2 text-right font-medium">
+                        {f.monto_total != null
+                          ? new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(Number(f.monto_total))
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        {f.pdf_url ? (
+                          <DocumentoPreviewButton
+                            path={f.pdf_url}
+                            variant="outline"
+                            size="sm"
+                            icon={<Download className="h-3.5 w-3.5 mr-1" />}
+                            label="Ver PDF"
+                          />
+                        ) : (
+                          <Button variant="outline" size="sm" disabled>
+                            <Download className="h-3.5 w-3.5 mr-1" /> Ver PDF
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
