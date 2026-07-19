@@ -1,0 +1,1 @@
+ALTER TABLE public.solicitudes ADD COLUMN IF NOT EXISTS bl_awb text, ADD COLUMN IF NOT EXISTS factura_comercial text;
