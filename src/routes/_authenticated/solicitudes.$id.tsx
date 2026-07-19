@@ -14,6 +14,7 @@ import { EmailButton } from "@/components/email-button";
 import { SearchEmailButton } from "@/components/search-email-button";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 
 export const Route = createFileRoute("/_authenticated/solicitudes/$id")({
   component: DetalleSolicitud,
