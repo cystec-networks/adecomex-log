@@ -41,6 +41,7 @@ const empty = {
   temario: [] as { numero: number; titulo: string; subtemas: string[] }[],
   plan_pago: [] as { descripcion: string; porcentaje: number }[],
   descuento_referido_pct: "0",
+  enlace_classroom: "",
 } as any;
 
 function Programas() {
@@ -85,6 +86,7 @@ function Programas() {
         cantidad_encuentros: payload.cantidad_encuentros ? Number(payload.cantidad_encuentros) : null,
         horas_por_encuentro: payload.horas_por_encuentro ? Number(payload.horas_por_encuentro) : null,
         descuento_referido_pct: Number(payload.descuento_referido_pct || 0),
+        enlace_classroom: payload.enlace_classroom?.trim() || null,
         metodologia: payload.metodologia ?? [],
         temario: (payload.temario ?? []).map((m: any, i: number) => ({
           numero: m.numero ?? i + 1,
@@ -137,6 +139,7 @@ function Programas() {
       temario: Array.isArray(p.temario) ? p.temario : [],
       plan_pago: Array.isArray(p.plan_pago) ? p.plan_pago : [],
       descuento_referido_pct: p.descuento_referido_pct ?? "0",
+      enlace_classroom: p.enlace_classroom ?? "",
     });
     setOpen(true);
   };
