@@ -10,7 +10,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2, AlarmClock } from "lucide-react";
+import { Trash2, AlarmClock, AlertTriangle, Clock } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
@@ -333,20 +333,20 @@ function Expedientes() {
           {(() => {
             const a = alertaDeclaracionTardia(e);
             if (!a) return null;
+            const title =
+              "Ley 168-21: 5 días laborables desde el arribo para presentar la declaración. " +
+              (a.tone === "danger"
+                ? (a.diasRestantes === 0 ? "Vence hoy." : `Vencido hace ${Math.abs(a.diasRestantes)} día(s) hábiles.`)
+                : `Quedan ${a.diasRestantes} día(s) hábiles para declarar.`);
             const cls = a.tone === "danger"
-              ? "border-destructive/40 bg-destructive/10 text-destructive"
+              ? "text-destructive"
               : a.tone === "warning"
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                : "border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-400";
-            const txt = a.tone === "danger"
-              ? (a.diasRestantes === 0 ? "⚠ Multa hoy (Ley 168-21)" : `⚠ Vencido hace ${Math.abs(a.diasRestantes)} día(s) hábiles`)
-              : `${a.diasRestantes} día(s) hábiles para declarar`;
+                ? "text-amber-600 dark:text-amber-400"
+                : "text-blue-600 dark:text-blue-400";
+            const Icon = a.tone === "danger" ? AlertTriangle : Clock;
             return (
-              <span
-                title="Ley 168-21: 5 días laborables desde el arribo para presentar la declaración"
-                className={`mt-0.5 inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${cls}`}
-              >
-                {txt}
+              <span title={title} aria-label={title} className="inline-flex items-center justify-center">
+                <Icon className={`mt-0.5 h-3 w-3 ${cls}`} />
               </span>
             );
           })()}
