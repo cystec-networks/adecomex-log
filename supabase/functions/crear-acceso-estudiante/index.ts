@@ -92,6 +92,13 @@ Deno.serve(async (req) => {
     if (updErr) return json(500, { error: updErr.message });
   }
 
+  // Bloqueo: un mismo usuario no puede tener acceso activo a ambos portales.
+  const { data: cliActivo } = await admin
+    .from("cliente_usuarios").select("cliente_id").eq("user_id", userId).eq("activo", true).limit(1);
+  if (cliActivo && cliActivo.length > 0) {
+    return json(200, { error: "Este correo ya tiene acceso activo al Portal de Cliente. Un mismo correo no puede tener acceso a ambos portales — desactiva primero su acceso de cliente si quieres darle acceso de estudiante." });
+  }
+
   const { error: upsertErr } = await admin
     .from("estudiante_usuarios")
     .upsert(
