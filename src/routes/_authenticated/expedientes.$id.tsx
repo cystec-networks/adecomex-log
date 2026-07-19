@@ -168,8 +168,29 @@ function DetalleExpediente() {
               })()}
             </span>
           )}
+          {(() => {
+            const a = alertaDeclaracionTardia(exp);
+            if (!a) return null;
+            const cls = a.tone === "danger"
+              ? "border-destructive/40 bg-destructive/10 text-destructive"
+              : a.tone === "warning"
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                : "border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-400";
+            const txt = a.tone === "danger"
+              ? (a.diasRestantes === 0 ? "⚠ Multa hoy (Ley 168-21)" : `⚠ Vencido hace ${Math.abs(a.diasRestantes)} día(s) hábiles`)
+              : `${a.diasRestantes} día(s) hábiles para declarar (Ley 168-21)`;
+            return (
+              <span
+                title="Ley 168-21: 5 días laborables desde el arribo para presentar la declaración"
+                className={`inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium ${cls}`}
+              >
+                {txt}
+              </span>
+            );
+          })()}
         </div>
       </div>
+
 
       <Tabs defaultValue="info">
         <TabsList>
