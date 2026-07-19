@@ -378,7 +378,7 @@ function Inscripciones() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </React.Fragment>
                 );
               })}
               {filtered.length === 0 && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Sin inscripciones.</td></tr>}
