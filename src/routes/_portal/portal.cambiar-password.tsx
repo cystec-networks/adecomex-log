@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, Ship } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_portal/cambiar-password")({
+export const Route = createFileRoute("/_portal/portal/cambiar-password")({
   ssr: false,
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
