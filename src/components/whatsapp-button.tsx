@@ -29,6 +29,11 @@ export interface WhatsAppButtonProps {
   recordNumber?: string | null;
   variant?: "default" | "icon";
   className?: string;
+  message?: string;
+}
+
+export function normalizeWhatsAppPhone(raw?: string | null): string | null {
+  return normalizePhone(raw);
 }
 
 export function WhatsAppButton({
@@ -38,6 +43,7 @@ export function WhatsAppButton({
   recordNumber,
   variant = "default",
   className,
+  message,
 }: WhatsAppButtonProps) {
   const normalized = normalizePhone(phone);
 
@@ -48,9 +54,14 @@ export function WhatsAppButton({
       toast.error("Cliente sin número de contacto registrado");
       return;
     }
-    const greeting = clientName ? `Hola ${clientName}` : "Hola";
-    const ref = recordType && recordNumber ? ` con relación al ${recordType} ${recordNumber}` : "";
-    const msg = `${greeting}, le contactamos desde ADECOMEX SRL${ref}.`;
+    let msg: string;
+    if (message && message.trim()) {
+      msg = message;
+    } else {
+      const greeting = clientName ? `Hola ${clientName}` : "Hola";
+      const ref = recordType && recordNumber ? ` con relación al ${recordType} ${recordNumber}` : "";
+      msg = `${greeting}, le contactamos desde ADECOMEX SRL${ref}.`;
+    }
     const url = `https://wa.me/${normalized}?text=${encodeURIComponent(msg)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };

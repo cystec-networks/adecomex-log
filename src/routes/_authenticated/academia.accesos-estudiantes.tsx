@@ -11,7 +11,8 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { UserPlus, ShieldOff, ShieldCheck, Mail } from "lucide-react";
+import { UserPlus, ShieldOff, ShieldCheck, Mail, MessageCircle } from "lucide-react";
+import { normalizeWhatsAppPhone } from "@/components/whatsapp-button";
 
 export const Route = createFileRoute("/_authenticated/academia/accesos-estudiantes")({
   ssr: false,
@@ -32,6 +33,7 @@ type EstudianteRow = {
   nombre: string;
   cedula_pasaporte: string | null;
   email: string | null;
+  telefono: string | null;
   vinculo: { user_id: string; activo: boolean } | null;
 };
 
@@ -43,7 +45,7 @@ function AccesosEstudiantesPage() {
     queryKey: ["accesos-estudiantes"],
     queryFn: async (): Promise<EstudianteRow[]> => {
       const [{ data: estudiantes, error: e1 }, { data: vinculos, error: e2 }] = await Promise.all([
-        (supabase as any).from("estudiantes").select("id, nombre, cedula_pasaporte, email").order("nombre"),
+        (supabase as any).from("estudiantes").select("id, nombre, cedula_pasaporte, email, telefono").order("nombre"),
         (supabase as any).from("estudiante_usuarios").select("user_id, estudiante_id, activo"),
       ]);
       if (e1) throw e1;
@@ -66,6 +68,37 @@ function AccesosEstudiantesPage() {
       refresh();
     },
     onError: (err: any) => toast.error(err.message ?? "No se pudo actualizar"),
+  });
+
+  const enviarWhatsApp = useMutation({
+    mutationFn: async (e: EstudianteRow) => {
+      const tel = normalizeWhatsAppPhone(e.telefono);
+      if (!tel) throw new Error("Este estudiante no tiene teléfono registrado");
+      const clean = (e.email ?? "").trim().toLowerCase();
+      if (!clean) throw new Error("El estudiante no tiene email registrado para generar la invitación");
+      const { data, error } = await (supabase as any).functions.invoke("invitar-estudiante-usuario", {
+        body: { email: clean, estudiante_id: e.id, soloGenerarEnlace: true },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      if (data?.yaConfirmado) return { yaConfirmado: true as const };
+      const enlace: string | undefined = data?.enlace;
+      if (!enlace) throw new Error(data?.warning ?? "No se pudo generar el enlace de invitación");
+      const msg = `Hola ${e.nombre}, ADECOMEX Academia te invita a acceder a tu portal de estudiante. Activa tu acceso aquí: ${enlace}`;
+      const url = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+      return { yaConfirmado: false as const, warning: data?.warning as string | null };
+    },
+    onSuccess: (res) => {
+      if (res.yaConfirmado) {
+        toast.info("Este estudiante ya tiene cuenta activa. Debe iniciar sesión desde la pantalla de login.");
+      } else {
+        if (res.warning) toast.warning(res.warning);
+        else toast.success("Enlace generado y abierto en WhatsApp");
+        refresh();
+      }
+    },
+    onError: (err: any) => toast.error(err.message ?? "No se pudo generar el enlace"),
   });
 
   return (
@@ -106,14 +139,32 @@ function AccesosEstudiantesPage() {
                   </td>
                   <td className="text-right px-4 py-2">
                     {!e.vinculo && (
-                      <Button size="sm" variant="outline" onClick={() => setInviting(e)}>
-                        <UserPlus className="h-4 w-4 mr-1" /> Invitar al portal
-                      </Button>
+                      <div className="inline-flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setInviting(e)}>
+                          <UserPlus className="h-4 w-4 mr-1" /> Invitar al portal
+                        </Button>
+                        <Button
+                          size="sm" variant="outline"
+                          className="border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E]"
+                          onClick={() => enviarWhatsApp.mutate(e)}
+                          disabled={enviarWhatsApp.isPending}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" /> Enviar enlace por WhatsApp
+                        </Button>
+                      </div>
                     )}
                     {e.vinculo && (
                       <div className="inline-flex gap-2">
                         <Button size="sm" variant="outline" onClick={() => setInviting(e)}>
                           <Mail className="h-4 w-4 mr-1" /> Reenviar invitación
+                        </Button>
+                        <Button
+                          size="sm" variant="outline"
+                          className="border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E]"
+                          onClick={() => enviarWhatsApp.mutate(e)}
+                          disabled={enviarWhatsApp.isPending}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" /> Enviar enlace por WhatsApp
                         </Button>
                         {e.vinculo.activo ? (
                           <Button
@@ -135,6 +186,7 @@ function AccesosEstudiantesPage() {
                       </div>
                     )}
                   </td>
+
                 </tr>
               ))}
               {!isLoading && (data?.length ?? 0) === 0 && (

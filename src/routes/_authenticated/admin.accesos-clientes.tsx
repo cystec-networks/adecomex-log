@@ -11,7 +11,8 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { UserPlus, ShieldOff, ShieldCheck, Mail } from "lucide-react";
+import { UserPlus, ShieldOff, ShieldCheck, Mail, MessageCircle } from "lucide-react";
+import { normalizeWhatsAppPhone } from "@/components/whatsapp-button";
 
 export const Route = createFileRoute("/_authenticated/admin/accesos-clientes")({
   ssr: false,
@@ -31,6 +32,7 @@ type ClienteRow = {
   nombre: string;
   rnc: string | null;
   email: string | null;
+  telefono: string | null;
   vinculo: { user_id: string; activo: boolean } | null;
 };
 
@@ -42,7 +44,7 @@ function AccesosClientesPage() {
     queryKey: ["accesos-clientes"],
     queryFn: async (): Promise<ClienteRow[]> => {
       const [{ data: clientes, error: e1 }, { data: vinculos, error: e2 }] = await Promise.all([
-        supabase.from("clientes").select("id, nombre, rnc, email").order("nombre"),
+        supabase.from("clientes").select("id, nombre, rnc, email, telefono").order("nombre"),
         supabase.from("cliente_usuarios").select("user_id, cliente_id, activo"),
       ]);
       if (e1) throw e1;
@@ -66,6 +68,39 @@ function AccesosClientesPage() {
     },
     onError: (err: any) => toast.error(err.message ?? "No se pudo actualizar"),
   });
+  const enviarWhatsApp = useMutation({
+    mutationFn: async (c: ClienteRow) => {
+      const tel = normalizeWhatsAppPhone(c.telefono);
+      if (!tel) throw new Error("Este cliente no tiene teléfono registrado");
+      const clean = (c.email ?? "").trim().toLowerCase();
+      if (!clean) throw new Error("El cliente no tiene email registrado para generar la invitación");
+      const { data, error } = await supabase.functions.invoke("invitar-cliente-usuario", {
+        body: { email: clean, cliente_id: c.id, soloGenerarEnlace: true },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      if (data?.yaConfirmado) {
+        return { yaConfirmado: true as const };
+      }
+      const enlace: string | undefined = data?.enlace;
+      if (!enlace) throw new Error(data?.warning ?? "No se pudo generar el enlace de invitación");
+      const msg = `Hola ${c.nombre}, ADECOMEX SRL te invita a acceder al portal de seguimiento. Activa tu acceso aquí: ${enlace}`;
+      const url = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+      return { yaConfirmado: false as const, warning: data?.warning as string | null };
+    },
+    onSuccess: (res) => {
+      if (res.yaConfirmado) {
+        toast.info("Este cliente ya tiene cuenta activa. Debe iniciar sesión desde la pantalla de login.");
+      } else {
+        if (res.warning) toast.warning(res.warning);
+        else toast.success("Enlace generado y abierto en WhatsApp");
+        refresh();
+      }
+    },
+    onError: (err: any) => toast.error(err.message ?? "No se pudo generar el enlace"),
+  });
+
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto space-y-6">
@@ -105,14 +140,32 @@ function AccesosClientesPage() {
                   </td>
                   <td className="text-right px-4 py-2">
                     {!c.vinculo && (
-                      <Button size="sm" variant="outline" onClick={() => setInviting(c)}>
-                        <UserPlus className="h-4 w-4 mr-1" /> Invitar al portal
-                      </Button>
+                      <div className="inline-flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setInviting(c)}>
+                          <UserPlus className="h-4 w-4 mr-1" /> Invitar al portal
+                        </Button>
+                        <Button
+                          size="sm" variant="outline"
+                          className="border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E]"
+                          onClick={() => enviarWhatsApp.mutate(c)}
+                          disabled={enviarWhatsApp.isPending}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" /> Enviar enlace por WhatsApp
+                        </Button>
+                      </div>
                     )}
                     {c.vinculo && (
                       <div className="inline-flex gap-2">
                         <Button size="sm" variant="outline" onClick={() => setInviting(c)}>
                           <Mail className="h-4 w-4 mr-1" /> Reenviar invitación
+                        </Button>
+                        <Button
+                          size="sm" variant="outline"
+                          className="border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E]"
+                          onClick={() => enviarWhatsApp.mutate(c)}
+                          disabled={enviarWhatsApp.isPending}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-1" /> Enviar enlace por WhatsApp
                         </Button>
                         {c.vinculo.activo ? (
                           <Button
@@ -134,6 +187,7 @@ function AccesosClientesPage() {
                       </div>
                     )}
                   </td>
+
                 </tr>
               ))}
               {!isLoading && (data?.length ?? 0) === 0 && (
