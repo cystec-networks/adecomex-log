@@ -576,6 +576,7 @@ export type Database = {
         Row: {
           activo: boolean
           contacto: string | null
+          correo_generado: boolean
           created_at: string
           created_by: string | null
           direccion: string | null
@@ -589,6 +590,7 @@ export type Database = {
         Insert: {
           activo?: boolean
           contacto?: string | null
+          correo_generado?: boolean
           created_at?: string
           created_by?: string | null
           direccion?: string | null
@@ -602,6 +604,7 @@ export type Database = {
         Update: {
           activo?: boolean
           contacto?: string | null
+          correo_generado?: boolean
           created_at?: string
           created_by?: string | null
           direccion?: string | null
@@ -912,6 +915,7 @@ export type Database = {
       estudiantes: {
         Row: {
           cedula_pasaporte: string | null
+          correo_generado: boolean
           created_at: string
           created_by: string | null
           email: string | null
@@ -924,6 +928,7 @@ export type Database = {
         }
         Insert: {
           cedula_pasaporte?: string | null
+          correo_generado?: boolean
           created_at?: string
           created_by?: string | null
           email?: string | null
@@ -936,6 +941,7 @@ export type Database = {
         }
         Update: {
           cedula_pasaporte?: string | null
+          correo_generado?: boolean
           created_at?: string
           created_by?: string | null
           email?: string | null

@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Pencil } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Pencil, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -15,12 +16,16 @@ export const Route = createFileRoute("/_authenticated/clientes")({
   component: Clientes,
 });
 
+const empty = { nombre: "", rnc: "", contacto: "", email: "", telefono: "", direccion: "" };
+
 function Clientes() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState<any>({ nombre: "", rnc: "", contacto: "", email: "", telefono: "", direccion: "" });
+  const [form, setForm] = useState<any>(empty);
+  const [asignarCorreo, setAsignarCorreo] = useState(false);
+  const [nuevoCorreo, setNuevoCorreo] = useState("");
 
   const { data: clientes } = useQuery({
     queryKey: ["clientes"],
@@ -29,27 +34,51 @@ function Clientes() {
 
   const save = useMutation({
     mutationFn: async (payload: any) => {
+      const { correo_generado: _cg, ...rest } = payload;
+      const clean = { ...rest, email: rest.email?.trim() ? rest.email.trim() : null };
       if (editing) {
-        const { error } = await supabase.from("clientes").update(payload).eq("id", editing.id);
+        const { error } = await supabase.from("clientes").update(clean).eq("id", editing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("clientes").insert(payload);
+        const { error } = await supabase.from("clientes").insert(clean);
         if (error) throw error;
       }
     },
     onSuccess: () => {
       toast.success(editing ? "Cliente actualizado" : "Cliente creado");
       qc.invalidateQueries({ queryKey: ["clientes"] });
-      setOpen(false);
-      setEditing(null);
-      setForm({ nombre: "", rnc: "", contacto: "", email: "", telefono: "", direccion: "" });
+      resetDialog();
     },
     onError: (e: any) => toast.error(e.message),
   });
 
+  const asignarCorreoReal = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("actualizar-correo-cliente", {
+        body: { cliente_id: editing.id, nuevo_correo: nuevoCorreo.trim().toLowerCase() },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      return data as any;
+    },
+    onSuccess: (data: any) => {
+      if (data?.warning) toast.warning(data.warning);
+      else toast.success("Correo real asignado");
+      qc.invalidateQueries({ queryKey: ["clientes"] });
+      resetDialog();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  function resetDialog() {
+    setOpen(false); setEditing(null); setForm(empty); setAsignarCorreo(false); setNuevoCorreo("");
+  }
+
   const filtered = (clientes ?? []).filter((c: any) =>
     !q || c.nombre?.toLowerCase().includes(q.toLowerCase()) || c.rnc?.includes(q)
   );
+
+  const isGen = editing?.correo_generado;
 
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
@@ -58,9 +87,9 @@ function Clientes() {
           <h1 className="font-display text-2xl font-bold">Clientes</h1>
           <p className="text-sm text-muted-foreground">Empresas consignatarias registradas.</p>
         </div>
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditing(null); setForm({ nombre: "", rnc: "", contacto: "", email: "", telefono: "", direccion: "" }); } }}>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetDialog(); }}>
           <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-1" />Nuevo cliente</Button>
+            <Button onClick={() => { setEditing(null); setForm(empty); }}><Plus className="h-4 w-4 mr-1" />Nuevo cliente</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -76,7 +105,42 @@ function Clientes() {
                 <div className="grid gap-1.5"><Label>Contacto</Label><Input value={form.contacto ?? ""} onChange={(e) => setForm({ ...form, contacto: e.target.value })} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-1.5"><Label>Email</Label><Input type="email" value={form.email ?? ""} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+                <div className="grid gap-1.5">
+                  <Label>Email (opcional)</Label>
+                  {editing && isGen ? (
+                    <>
+                      <Input value={form.email ?? ""} disabled className="text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground">Correo generado automáticamente, no se usa para comunicación.</p>
+                      {!asignarCorreo ? (
+                        <Button type="button" size="sm" variant="outline" onClick={() => setAsignarCorreo(true)}>
+                          Asignar correo real
+                        </Button>
+                      ) : (
+                        <div className="grid gap-1.5">
+                          <Input
+                            type="email"
+                            placeholder="cliente@dominio.com"
+                            value={nuevoCorreo}
+                            onChange={(e) => setNuevoCorreo(e.target.value)}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={asignarCorreoReal.isPending || !nuevoCorreo.trim()}
+                              onClick={() => asignarCorreoReal.mutate()}
+                            >
+                              {asignarCorreoReal.isPending ? "Guardando…" : "Guardar correo real"}
+                            </Button>
+                            <Button type="button" size="sm" variant="ghost" onClick={() => { setAsignarCorreo(false); setNuevoCorreo(""); }}>Cancelar</Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <Input type="email" value={form.email ?? ""} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                  )}
+                </div>
                 <div className="grid gap-1.5"><Label>Teléfono</Label><Input value={form.telefono ?? ""} onChange={(e) => setForm({ ...form, telefono: e.target.value })} /></div>
               </div>
               <div className="grid gap-1.5"><Label>Dirección</Label><Textarea value={form.direccion ?? ""} onChange={(e) => setForm({ ...form, direccion: e.target.value })} /></div>
@@ -109,10 +173,19 @@ function Clientes() {
                   <td className="px-4 py-2 font-medium">{c.nombre}</td>
                   <td className="text-muted-foreground">{c.rnc ?? "—"}</td>
                   <td>{c.contacto ?? "—"}</td>
-                  <td>{c.email ?? "—"}</td>
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <span className={c.correo_generado ? "text-muted-foreground italic" : ""}>{c.email ?? "—"}</span>
+                      {c.correo_generado && (
+                        <Badge variant="outline" className="gap-1 text-[10px]">
+                          <AlertCircle className="h-3 w-3" />Sin correo real
+                        </Badge>
+                      )}
+                    </div>
+                  </td>
                   <td>{c.telefono ?? "—"}</td>
                   <td className="px-4 py-2 text-right">
-                    <Button variant="ghost" size="sm" onClick={() => { setEditing(c); setForm(c); setOpen(true); }}>
+                    <Button variant="ghost" size="sm" onClick={() => { setEditing(c); setForm({ ...empty, ...c }); setOpen(true); }}>
                       <Pencil className="h-4 w-4" />
                     </Button>
                   </td>
