@@ -344,9 +344,13 @@ function Expedientes() {
                 ? "text-amber-600 dark:text-amber-400"
                 : "text-blue-600 dark:text-blue-400";
             const Icon = a.tone === "danger" ? AlertTriangle : Clock;
+            const text = a.tone === "danger"
+              ? (a.diasRestantes < 0 ? "Vencido" : "Vence hoy")
+              : `${a.diasRestantes} día(s) hábiles`;
             return (
-              <span title={title} aria-label={title} className="inline-flex items-center justify-center">
-                <Icon className={`mt-0.5 h-3 w-3 ${cls}`} />
+              <span title={title} aria-label={title} className={`inline-flex items-center gap-1 text-[10px] tabular-nums ${cls}`}>
+                <Icon className="mt-0.5 h-3 w-3" />
+                <span>{text}</span>
               </span>
             );
           })()}
