@@ -46,7 +46,7 @@ function NuevoExpediente() {
     factura_comercial: "",
     puerto_arribo: "",
     fecha_compromiso: "",
-    sla_dias: 15,
+    sla_dias: 5,
     observaciones: "",
     // datos originales (read-only, se guardan al crear)
     tipo_operacion: "",

@@ -1,0 +1,1 @@
+ALTER TABLE public.expedientes ALTER COLUMN sla_dias SET DEFAULT 5;
