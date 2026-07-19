@@ -111,12 +111,7 @@ function NuevaSolicitud() {
             </div>
             <div className="grid gap-1.5"><Label>Fecha estimada de arribo</Label><Input type="date" value={form.fecha_arribo_est} onChange={(e) => setForm({ ...form, fecha_arribo_est: e.target.value })} /></div>
             <div className="grid gap-1.5"><Label>Incoterm</Label>
-              <Select value={form.incoterm} onValueChange={(v) => setForm({ ...form, incoterm: v })}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
-                <SelectContent>
-                  {["EXW","FCA","FAS","FOB","CFR","CIF","CPT","CIP","DAP","DPU","DDP"].map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <CatalogoAutocomplete tabla="catalogo_incoterms" value={form.incoterm} onChange={(v) => setForm({ ...form, incoterm: v })} placeholder="Escribe o selecciona…" />
             </div>
             <div className="grid gap-1.5"><Label>Medio de transporte</Label>
               <Select value={form.medio_transporte} onValueChange={(v) => setForm({ ...form, medio_transporte: v })}>
