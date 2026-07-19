@@ -68,7 +68,7 @@ function NuevaSolicitud() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid gap-1.5"><Label>Contacto</Label><Input value={form.contacto} onChange={(e) => setForm({ ...form, contacto: e.target.value })} /></div>
+            <div className="grid gap-1.5"><Label>Contacto</Label><CatalogoAutocomplete tabla="catalogo_contactos" value={form.contacto} onChange={(v) => setForm({ ...form, contacto: v })} /></div>
             <div className="grid gap-1.5">
               <Label>Prioridad</Label>
               <Select value={form.prioridad} onValueChange={(v) => setForm({ ...form, prioridad: v })}>
