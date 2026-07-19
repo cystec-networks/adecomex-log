@@ -243,6 +243,9 @@ function AppSidebarInner() {
 
         {/* Administración group */}
         {renderGroup(visibleGroups.find((g) => g.id === "administracion")!)}
+
+        {/* Academia group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "academia")!)}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
