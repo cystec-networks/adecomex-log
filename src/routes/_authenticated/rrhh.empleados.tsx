@@ -267,9 +267,13 @@ function Empleados() {
                   </td>
                   <td className="p-3 text-right">
                     <div className="flex justify-end gap-1">
-                      <Button asChild variant="ghost" size="icon">
-                        <Link to="/rrhh/empleados/$id" params={{ id: e.id }}><Pencil className="h-4 w-4" /></Link>
-                      </Button>
+                      <Link
+                        to="/rrhh/empleados/$id"
+                        params={{ id: e.id }}
+                        className="inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-muted text-muted-foreground"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Link>
                       {isAdmin && (
                         <Button variant="ghost" size="icon" onClick={() => setToDelete(e)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
