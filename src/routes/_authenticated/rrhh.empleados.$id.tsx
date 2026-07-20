@@ -29,13 +29,12 @@ const TIPO_CONTRATO = [
 
 const TIPO_DOC = [
   { v: "cedula", l: "Cédula" },
-  { v: "contrato", l: "Contrato" },
+  { v: "contrato_firmado", l: "Contrato firmado" },
+  { v: "inscripcion_tss", l: "Inscripción TSS" },
   { v: "curriculum", l: "Currículum" },
-  { v: "titulo_academico", l: "Título académico" },
-  { v: "amonestacion", l: "Amonestación" },
-  { v: "carta_recomendacion", l: "Carta de recomendación" },
-  { v: "evaluacion", l: "Evaluación de desempeño" },
-  { v: "otro", l: "Otro" },
+  { v: "referencias", l: "Referencias" },
+  { v: "certificado_medico", l: "Certificado médico" },
+  { v: "otros", l: "Otros" },
 ];
 
 function EmpleadoDetalle() {
