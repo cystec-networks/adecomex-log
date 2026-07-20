@@ -143,11 +143,6 @@ function PortalExpedienteDetalle() {
             </Badge>
           </div>
         </CardHeader>
-        {expediente.bl_awb && (
-          <CardContent className="pt-0">
-            <RastrearEmbarqueButton blNumber={expediente.bl_awb} expedienteNumber={expediente.numero} />
-          </CardContent>
-        )}
       </Card>
 
       <Card>
