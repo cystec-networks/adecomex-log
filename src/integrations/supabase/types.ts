@@ -3204,6 +3204,7 @@ export type Database = {
         | "finanzas"
         | "contabilidad"
         | "academia"
+        | "rrhh"
       cuota_estado: "pendiente" | "pagada" | "disputada"
       cxp_estado: "pendiente" | "parcial" | "pagado" | "disputado"
       doc_estado:
@@ -3405,6 +3406,7 @@ export const Constants = {
         "finanzas",
         "contabilidad",
         "academia",
+        "rrhh",
       ],
       cuota_estado: ["pendiente", "pagada", "disputada"],
       cxp_estado: ["pendiente", "parcial", "pagado", "disputado"],
