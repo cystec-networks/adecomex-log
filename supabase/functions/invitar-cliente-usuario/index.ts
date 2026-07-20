@@ -138,6 +138,13 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Bloqueo: un usuario con rol de staff no puede usarse como acceso de portal.
+  const { data: staffRoles } = await admin
+    .from("user_roles").select("role").eq("user_id", userId).limit(1);
+  if (staffRoles && staffRoles.length > 0) {
+    return json(409, { error: "Este correo pertenece a una cuenta de staff existente y no puede usarse también como acceso de portal. Usa un correo distinto para esta persona." });
+  }
+
   // Bloqueo: un mismo usuario no puede tener acceso activo a ambos portales.
   const { data: estActivo } = await admin
     .from("estudiante_usuarios").select("estudiante_id").eq("user_id", userId).eq("activo", true).limit(1);
