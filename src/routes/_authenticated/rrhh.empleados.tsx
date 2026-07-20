@@ -17,7 +17,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, Trash, RotateCcw, Eye } from "lucide-react";
+import { Plus, Trash2, Trash, RotateCcw, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useMyRoles } from "@/lib/auth-hooks";
@@ -268,7 +268,7 @@ function Empleados() {
                   <td className="p-3 text-right">
                     <div className="flex justify-end gap-1">
                       <Button asChild variant="ghost" size="icon">
-                        <Link to="/rrhh/empleados/$id" params={{ id: e.id }}><Eye className="h-4 w-4" /></Link>
+                        <Link to="/rrhh/empleados/$id" params={{ id: e.id }}><Pencil className="h-4 w-4" /></Link>
                       </Button>
                       {isAdmin && (
                         <Button variant="ghost" size="icon" onClick={() => setToDelete(e)}>
