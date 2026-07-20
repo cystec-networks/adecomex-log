@@ -254,6 +254,11 @@ function AppSidebarInner() {
         {/* Academia group */}
         {renderGroup(visibleGroups.find((g) => g.id === "academia")!)}
 
+        {/* Gestión Humana group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "rrhh")!)}
+
+
+
         {/* Administración group */}
         {renderGroup(visibleGroups.find((g) => g.id === "administracion")!)}
 
