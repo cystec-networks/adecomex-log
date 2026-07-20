@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { estadoLabel } from "@/lib/estados-expediente";
 import { fmtLocalDate } from "@/lib/dates";
-import { RastrearEmbarqueButton } from "@/components/rastrear-embarque-button";
+
 import { ArrowLeft, Check, Circle, Download, FileText } from "lucide-react";
 
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
