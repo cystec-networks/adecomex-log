@@ -262,7 +262,7 @@ function DocumentosTab({ empleadoId }: { empleadoId: string }) {
                 <tr key={d.id} className="border-t">
                   <td className="p-2">{TIPO_DOC.find((t) => t.v === d.tipo)?.l ?? d.tipo}</td>
                   <td className="p-2">{d.notas ?? "—"}</td>
-                  <td className="p-2">{new Date(d.created_at).toLocaleDateString()}</td>
+                  <td className="p-2">{new Date(d.fecha_subida).toLocaleDateString()}</td>
                   <td className="p-2 text-right">
                     <div className="flex justify-end gap-1">
                       <DocumentoPreviewButton path={d.storage_path} />
