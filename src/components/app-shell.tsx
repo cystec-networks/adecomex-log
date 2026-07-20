@@ -150,6 +150,16 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/academia/accesos-estudiantes") },
     ],
   },
+  {
+    id: "rrhh",
+    label: "GESTIÓN HUMANA",
+    icon: Briefcase,
+    roles: ["admin", "rrhh"],
+    items: [
+      { to: "/rrhh/empleados", label: "Empleados", icon: IdCard, roles: ["admin","rrhh"],
+        match: (p) => p.startsWith("/rrhh/empleados") },
+    ],
+  },
 ];
 
 const SIMPLE_ITEMS: SimpleItem[] = [
