@@ -198,7 +198,7 @@ function DocumentosTab({ empleadoId }: { empleadoId: string }) {
       if (upErr) throw upErr;
       const { data: u } = await supabase.auth.getUser();
       const { error } = await (supabase as any).from("empleado_documentos").insert({
-        empleado_id: empleadoId, tipo, descripcion: descripcion || null, archivo_url: path, uploaded_by: u.user?.id ?? null,
+        empleado_id: empleadoId, tipo, notas: descripcion || null, storage_path: path, created_by: u.user?.id ?? null,
       });
       if (error) throw error;
       toast.success("Documento subido");
@@ -211,7 +211,7 @@ function DocumentosTab({ empleadoId }: { empleadoId: string }) {
 
   const del = useMutation({
     mutationFn: async (d: any) => {
-      await supabase.storage.from("documentos").remove([d.archivo_url]);
+      await supabase.storage.from("documentos").remove([d.storage_path]);
       const { error } = await (supabase as any).from("empleado_documentos").delete().eq("id", d.id);
       if (error) throw error;
     },
@@ -261,11 +261,11 @@ function DocumentosTab({ empleadoId }: { empleadoId: string }) {
               {(docs ?? []).map((d: any) => (
                 <tr key={d.id} className="border-t">
                   <td className="p-2">{TIPO_DOC.find((t) => t.v === d.tipo)?.l ?? d.tipo}</td>
-                  <td className="p-2">{d.descripcion ?? "—"}</td>
+                  <td className="p-2">{d.notas ?? "—"}</td>
                   <td className="p-2">{new Date(d.created_at).toLocaleDateString()}</td>
                   <td className="p-2 text-right">
                     <div className="flex justify-end gap-1">
-                      <DocumentoPreviewButton path={d.archivo_url} />
+                      <DocumentoPreviewButton path={d.storage_path} />
                       <Button variant="ghost" size="icon" onClick={() => del.mutate(d)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
