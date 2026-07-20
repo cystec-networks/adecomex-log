@@ -22,7 +22,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useMyRoles } from "@/lib/auth-hooks";
 
-export const Route = createFileRoute("/_authenticated/rrhh/empleados")({
+export const Route = createFileRoute("/_authenticated/rrhh/empleados/")({
   component: Empleados,
 });
 
