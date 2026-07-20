@@ -17,7 +17,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, Trash, RotateCcw, Eye } from "lucide-react";
+import { Plus, Trash2, Trash, RotateCcw, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useMyRoles } from "@/lib/auth-hooks";
