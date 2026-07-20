@@ -186,7 +186,7 @@ function DocumentosTab({ empleadoId }: { empleadoId: string }) {
   const { data: docs } = useQuery({
     queryKey: ["rrhh-docs", empleadoId],
     queryFn: async () =>
-      ((await (supabase as any).from("empleado_documentos").select("*").eq("empleado_id", empleadoId).order("created_at", { ascending: false })).data ?? []) as any[],
+      ((await (supabase as any).from("empleado_documentos").select("*").eq("empleado_id", empleadoId).order("fecha_subida", { ascending: false })).data ?? []) as any[],
   });
 
   const upload = async () => {
