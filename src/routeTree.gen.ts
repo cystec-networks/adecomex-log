@@ -54,6 +54,7 @@ import { Route as AuthenticatedAcademiaInscripcionesRouteImport } from './routes
 import { Route as AuthenticatedAcademiaEstudiantesRouteImport } from './routes/_authenticated/academia.estudiantes'
 import { Route as AuthenticatedAcademiaAccesosEstudiantesRouteImport } from './routes/_authenticated/academia.accesos-estudiantes'
 import { Route as AuthenticatedRrhhEmpleadosIndexRouteImport } from './routes/_authenticated/rrhh.empleados.index'
+import { Route as AuthenticatedLegalDocumentosIndexRouteImport } from './routes/_authenticated/legal.documentos.index'
 import { Route as PortalPortalExpedientesIdRouteImport } from './routes/_portal/portal.expedientes.$id'
 import { Route as PortalEstudiantePortalEstudianteProgramasIdRouteImport } from './routes/_portal-estudiante/portal-estudiante.programas.$id'
 import { Route as AuthenticatedRrhhEmpleadosIdRouteImport } from './routes/_authenticated/rrhh.empleados.$id'
@@ -313,6 +314,12 @@ const AuthenticatedRrhhEmpleadosIndexRoute =
     path: '/rrhh/empleados/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedLegalDocumentosIndexRoute =
+  AuthenticatedLegalDocumentosIndexRouteImport.update({
+    id: '/legal/documentos/',
+    path: '/legal/documentos/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const PortalPortalExpedientesIdRoute =
   PortalPortalExpedientesIdRouteImport.update({
     id: '/portal/expedientes/$id',
@@ -384,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
+  '/legal/documentos/': typeof AuthenticatedLegalDocumentosIndexRoute
   '/rrhh/empleados/': typeof AuthenticatedRrhhEmpleadosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -432,6 +440,7 @@ export interface FileRoutesByTo {
   '/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
+  '/legal/documentos': typeof AuthenticatedLegalDocumentosIndexRoute
   '/rrhh/empleados': typeof AuthenticatedRrhhEmpleadosIndexRoute
 }
 export interface FileRoutesById {
@@ -484,6 +493,7 @@ export interface FileRoutesById {
   '/_authenticated/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/_portal-estudiante/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/_portal/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
+  '/_authenticated/legal/documentos/': typeof AuthenticatedLegalDocumentosIndexRoute
   '/_authenticated/rrhh/empleados/': typeof AuthenticatedRrhhEmpleadosIndexRoute
 }
 export interface FileRouteTypes {
@@ -534,6 +544,7 @@ export interface FileRouteTypes {
     | '/rrhh/empleados/$id'
     | '/portal-estudiante/programas/$id'
     | '/portal/expedientes/$id'
+    | '/legal/documentos/'
     | '/rrhh/empleados/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -582,6 +593,7 @@ export interface FileRouteTypes {
     | '/rrhh/empleados/$id'
     | '/portal-estudiante/programas/$id'
     | '/portal/expedientes/$id'
+    | '/legal/documentos'
     | '/rrhh/empleados'
   id:
     | '__root__'
@@ -633,6 +645,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rrhh/empleados/$id'
     | '/_portal-estudiante/portal-estudiante/programas/$id'
     | '/_portal/portal/expedientes/$id'
+    | '/_authenticated/legal/documentos/'
     | '/_authenticated/rrhh/empleados/'
   fileRoutesById: FileRoutesById
 }
@@ -962,6 +975,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRrhhEmpleadosIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/legal/documentos/': {
+      id: '/_authenticated/legal/documentos/'
+      path: '/legal/documentos'
+      fullPath: '/legal/documentos/'
+      preLoaderRoute: typeof AuthenticatedLegalDocumentosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_portal/portal/expedientes/$id': {
       id: '/_portal/portal/expedientes/$id'
       path: '/portal/expedientes/$id'
@@ -1044,6 +1064,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSolicitudesIndexRoute: typeof AuthenticatedSolicitudesIndexRoute
   AuthenticatedTransportesIndexRoute: typeof AuthenticatedTransportesIndexRoute
   AuthenticatedRrhhEmpleadosIdRoute: typeof AuthenticatedRrhhEmpleadosIdRoute
+  AuthenticatedLegalDocumentosIndexRoute: typeof AuthenticatedLegalDocumentosIndexRoute
   AuthenticatedRrhhEmpleadosIndexRoute: typeof AuthenticatedRrhhEmpleadosIndexRoute
 }
 
@@ -1093,6 +1114,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSolicitudesIndexRoute: AuthenticatedSolicitudesIndexRoute,
   AuthenticatedTransportesIndexRoute: AuthenticatedTransportesIndexRoute,
   AuthenticatedRrhhEmpleadosIdRoute: AuthenticatedRrhhEmpleadosIdRoute,
+  AuthenticatedLegalDocumentosIndexRoute:
+    AuthenticatedLegalDocumentosIndexRoute,
   AuthenticatedRrhhEmpleadosIndexRoute: AuthenticatedRrhhEmpleadosIndexRoute,
 }
 

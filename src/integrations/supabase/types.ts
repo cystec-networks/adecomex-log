@@ -866,6 +866,57 @@ export type Database = {
           },
         ]
       }
+      documentos_legales_empresa: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          entidad_emisora: string | null
+          fecha_emision: string | null
+          fecha_vencimiento: string | null
+          id: string
+          notas: string | null
+          numero_referencia: string | null
+          responsable: string | null
+          storage_path: string | null
+          tipo: Database["public"]["Enums"]["documento_legal_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          entidad_emisora?: string | null
+          fecha_emision?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          notas?: string | null
+          numero_referencia?: string | null
+          responsable?: string | null
+          storage_path?: string | null
+          tipo: Database["public"]["Enums"]["documento_legal_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          entidad_emisora?: string | null
+          fecha_emision?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          notas?: string | null
+          numero_referencia?: string | null
+          responsable?: string | null
+          storage_path?: string | null
+          tipo?: Database["public"]["Enums"]["documento_legal_tipo"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       empleado_documentos: {
         Row: {
           created_by: string | null
@@ -3394,6 +3445,16 @@ export type Database = {
         | "referencias"
         | "certificado_medico"
         | "otros"
+      documento_legal_tipo:
+        | "registro_mercantil"
+        | "rnc_dgii"
+        | "fianza_aduanal"
+        | "licencia_agente_aduanas"
+        | "acta_asamblea"
+        | "certificado_digital_siga"
+        | "registro_nombre_comercial_onapi"
+        | "poliza_seguro"
+        | "otro"
       empleado_estado: "activo" | "inactivo" | "baja"
       etapa_estado: "pendiente" | "en_curso" | "completada" | "bloqueada"
       expediente_estado:
@@ -3606,6 +3667,17 @@ export const Constants = {
         "referencias",
         "certificado_medico",
         "otros",
+      ],
+      documento_legal_tipo: [
+        "registro_mercantil",
+        "rnc_dgii",
+        "fianza_aduanal",
+        "licencia_agente_aduanas",
+        "acta_asamblea",
+        "certificado_digital_siga",
+        "registro_nombre_comercial_onapi",
+        "poliza_seguro",
+        "otro",
       ],
       empleado_estado: ["activo", "inactivo", "baja"],
       etapa_estado: ["pendiente", "en_curso", "completada", "bloqueada"],

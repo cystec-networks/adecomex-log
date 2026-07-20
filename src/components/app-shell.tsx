@@ -6,6 +6,8 @@ import {
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
   GraduationCap, BookOpen, UserPlus, ClipboardCheck,
   Briefcase, IdCard,
+  Scale,
+
 } from "lucide-react";
 import type { AppRole } from "@/lib/auth-hooks";
 import { NotificationsBell } from "@/components/notifications-bell";
@@ -160,7 +162,18 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/rrhh/empleados") },
     ],
   },
+  {
+    id: "legal",
+    label: "LEGAL",
+    icon: Scale,
+    adminOnly: true,
+    items: [
+      { to: "/legal/documentos", label: "Documentos Legales", icon: FileText, adminOnly: true,
+        match: (p) => p.startsWith("/legal/documentos") },
+    ],
+  },
 ];
+
 
 const SIMPLE_ITEMS: SimpleItem[] = [
   { id: "reportes", to: "/reportes", label: "Reportes", icon: BarChart3,
@@ -256,6 +269,10 @@ function AppSidebarInner() {
 
         {/* Gestión Humana group */}
         {renderGroup(visibleGroups.find((g) => g.id === "rrhh")!)}
+
+        {/* Legal group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "legal")!)}
+
 
 
 
