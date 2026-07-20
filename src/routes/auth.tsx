@@ -13,7 +13,7 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect({ to: "/dashboard" });
+    if (data.user) throw redirect({ to: "/" });
   },
   component: AuthPage,
 });
@@ -30,7 +30,7 @@ function AuthPage() {
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session) navigate({ to: "/dashboard" });
+      if (session) navigate({ to: "/" });
     });
     return () => sub.subscription.unsubscribe();
   }, [navigate]);
@@ -50,7 +50,7 @@ function AuthPage() {
       localStorage.setItem("adecomex.loginAt", String(Date.now()));
     } catch {}
     toast.success("Sesión iniciada");
-    navigate({ to: "/dashboard" });
+    navigate({ to: "/" });
   };
 
   const handleForgot = async (e: React.FormEvent) => {
