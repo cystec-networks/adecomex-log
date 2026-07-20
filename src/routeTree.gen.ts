@@ -34,6 +34,7 @@ import { Route as AuthenticatedTransportesIdRouteImport } from './routes/_authen
 import { Route as AuthenticatedSolicitudesOcrRouteImport } from './routes/_authenticated/solicitudes.ocr'
 import { Route as AuthenticatedSolicitudesNuevaRouteImport } from './routes/_authenticated/solicitudes.nueva'
 import { Route as AuthenticatedSolicitudesIdRouteImport } from './routes/_authenticated/solicitudes.$id'
+import { Route as AuthenticatedRrhhEmpleadosRouteImport } from './routes/_authenticated/rrhh.empleados'
 import { Route as AuthenticatedPermisosNuevoRouteImport } from './routes/_authenticated/permisos.nuevo'
 import { Route as AuthenticatedPermisosIdRouteImport } from './routes/_authenticated/permisos.$id'
 import { Route as AuthenticatedExpedientesPapeleraRouteImport } from './routes/_authenticated/expedientes.papelera'
@@ -190,6 +191,12 @@ const AuthenticatedSolicitudesIdRoute =
   AuthenticatedSolicitudesIdRouteImport.update({
     id: '/solicitudes/$id',
     path: '/solicitudes/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRrhhEmpleadosRoute =
+  AuthenticatedRrhhEmpleadosRouteImport.update({
+    id: '/rrhh/empleados',
+    path: '/rrhh/empleados',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPermisosNuevoRoute =
@@ -352,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
+  '/rrhh/empleados': typeof AuthenticatedRrhhEmpleadosRoute
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
   '/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
   '/solicitudes/ocr': typeof AuthenticatedSolicitudesOcrRoute
@@ -398,6 +406,7 @@ export interface FileRoutesByTo {
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
+  '/rrhh/empleados': typeof AuthenticatedRrhhEmpleadosRoute
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
   '/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
   '/solicitudes/ocr': typeof AuthenticatedSolicitudesOcrRoute
@@ -448,6 +457,7 @@ export interface FileRoutesById {
   '/_authenticated/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/_authenticated/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/_authenticated/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
+  '/_authenticated/rrhh/empleados': typeof AuthenticatedRrhhEmpleadosRoute
   '/_authenticated/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
   '/_authenticated/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
   '/_authenticated/solicitudes/ocr': typeof AuthenticatedSolicitudesOcrRoute
@@ -496,6 +506,7 @@ export interface FileRouteTypes {
     | '/expedientes/papelera'
     | '/permisos/$id'
     | '/permisos/nuevo'
+    | '/rrhh/empleados'
     | '/solicitudes/$id'
     | '/solicitudes/nueva'
     | '/solicitudes/ocr'
@@ -542,6 +553,7 @@ export interface FileRouteTypes {
     | '/expedientes/papelera'
     | '/permisos/$id'
     | '/permisos/nuevo'
+    | '/rrhh/empleados'
     | '/solicitudes/$id'
     | '/solicitudes/nueva'
     | '/solicitudes/ocr'
@@ -591,6 +603,7 @@ export interface FileRouteTypes {
     | '/_authenticated/expedientes/papelera'
     | '/_authenticated/permisos/$id'
     | '/_authenticated/permisos/nuevo'
+    | '/_authenticated/rrhh/empleados'
     | '/_authenticated/solicitudes/$id'
     | '/_authenticated/solicitudes/nueva'
     | '/_authenticated/solicitudes/ocr'
@@ -796,6 +809,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSolicitudesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/rrhh/empleados': {
+      id: '/_authenticated/rrhh/empleados'
+      path: '/rrhh/empleados'
+      fullPath: '/rrhh/empleados'
+      preLoaderRoute: typeof AuthenticatedRrhhEmpleadosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/permisos/nuevo': {
       id: '/_authenticated/permisos/nuevo'
       path: '/permisos/nuevo'
@@ -993,6 +1013,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedExpedientesPapeleraRoute: typeof AuthenticatedExpedientesPapeleraRoute
   AuthenticatedPermisosIdRoute: typeof AuthenticatedPermisosIdRoute
   AuthenticatedPermisosNuevoRoute: typeof AuthenticatedPermisosNuevoRoute
+  AuthenticatedRrhhEmpleadosRoute: typeof AuthenticatedRrhhEmpleadosRoute
   AuthenticatedSolicitudesIdRoute: typeof AuthenticatedSolicitudesIdRoute
   AuthenticatedSolicitudesNuevaRoute: typeof AuthenticatedSolicitudesNuevaRoute
   AuthenticatedSolicitudesOcrRoute: typeof AuthenticatedSolicitudesOcrRoute
@@ -1039,6 +1060,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedExpedientesPapeleraRoute: AuthenticatedExpedientesPapeleraRoute,
   AuthenticatedPermisosIdRoute: AuthenticatedPermisosIdRoute,
   AuthenticatedPermisosNuevoRoute: AuthenticatedPermisosNuevoRoute,
+  AuthenticatedRrhhEmpleadosRoute: AuthenticatedRrhhEmpleadosRoute,
   AuthenticatedSolicitudesIdRoute: AuthenticatedSolicitudesIdRoute,
   AuthenticatedSolicitudesNuevaRoute: AuthenticatedSolicitudesNuevaRoute,
   AuthenticatedSolicitudesOcrRoute: AuthenticatedSolicitudesOcrRoute,
