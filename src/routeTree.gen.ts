@@ -34,6 +34,7 @@ import { Route as AuthenticatedTransportesIdRouteImport } from './routes/_authen
 import { Route as AuthenticatedSolicitudesOcrRouteImport } from './routes/_authenticated/solicitudes.ocr'
 import { Route as AuthenticatedSolicitudesNuevaRouteImport } from './routes/_authenticated/solicitudes.nueva'
 import { Route as AuthenticatedSolicitudesIdRouteImport } from './routes/_authenticated/solicitudes.$id'
+import { Route as AuthenticatedRrhhEmpleadosRouteImport } from './routes/_authenticated/rrhh.empleados'
 import { Route as AuthenticatedPermisosNuevoRouteImport } from './routes/_authenticated/permisos.nuevo'
 import { Route as AuthenticatedPermisosIdRouteImport } from './routes/_authenticated/permisos.$id'
 import { Route as AuthenticatedExpedientesPapeleraRouteImport } from './routes/_authenticated/expedientes.papelera'
@@ -55,6 +56,7 @@ import { Route as AuthenticatedAcademiaEstudiantesRouteImport } from './routes/_
 import { Route as AuthenticatedAcademiaAccesosEstudiantesRouteImport } from './routes/_authenticated/academia.accesos-estudiantes'
 import { Route as PortalPortalExpedientesIdRouteImport } from './routes/_portal/portal.expedientes.$id'
 import { Route as PortalEstudiantePortalEstudianteProgramasIdRouteImport } from './routes/_portal-estudiante/portal-estudiante.programas.$id'
+import { Route as AuthenticatedRrhhEmpleadosIdRouteImport } from './routes/_authenticated/rrhh.empleados.$id'
 import { Route as AuthenticatedAdminFacturacionPendientesRouteImport } from './routes/_authenticated/admin.facturacion.pendientes'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -192,6 +194,12 @@ const AuthenticatedSolicitudesIdRoute =
     path: '/solicitudes/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedRrhhEmpleadosRoute =
+  AuthenticatedRrhhEmpleadosRouteImport.update({
+    id: '/rrhh/empleados',
+    path: '/rrhh/empleados',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPermisosNuevoRoute =
   AuthenticatedPermisosNuevoRouteImport.update({
     id: '/permisos/nuevo',
@@ -317,6 +325,12 @@ const PortalEstudiantePortalEstudianteProgramasIdRoute =
     path: '/portal-estudiante/programas/$id',
     getParentRoute: () => PortalEstudianteRouteRoute,
   } as any)
+const AuthenticatedRrhhEmpleadosIdRoute =
+  AuthenticatedRrhhEmpleadosIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedRrhhEmpleadosRoute,
+  } as any)
 const AuthenticatedAdminFacturacionPendientesRoute =
   AuthenticatedAdminFacturacionPendientesRouteImport.update({
     id: '/pendientes',
@@ -352,6 +366,7 @@ export interface FileRoutesByFullPath {
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
+  '/rrhh/empleados': typeof AuthenticatedRrhhEmpleadosRouteWithChildren
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
   '/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
   '/solicitudes/ocr': typeof AuthenticatedSolicitudesOcrRoute
@@ -367,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/portal-estudiante/': typeof PortalEstudiantePortalEstudianteIndexRoute
   '/portal/': typeof PortalPortalIndexRoute
   '/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
+  '/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
 }
@@ -398,6 +414,7 @@ export interface FileRoutesByTo {
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
+  '/rrhh/empleados': typeof AuthenticatedRrhhEmpleadosRouteWithChildren
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
   '/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
   '/solicitudes/ocr': typeof AuthenticatedSolicitudesOcrRoute
@@ -413,6 +430,7 @@ export interface FileRoutesByTo {
   '/portal-estudiante': typeof PortalEstudiantePortalEstudianteIndexRoute
   '/portal': typeof PortalPortalIndexRoute
   '/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
+  '/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
 }
@@ -448,6 +466,7 @@ export interface FileRoutesById {
   '/_authenticated/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/_authenticated/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/_authenticated/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
+  '/_authenticated/rrhh/empleados': typeof AuthenticatedRrhhEmpleadosRouteWithChildren
   '/_authenticated/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
   '/_authenticated/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
   '/_authenticated/solicitudes/ocr': typeof AuthenticatedSolicitudesOcrRoute
@@ -463,6 +482,7 @@ export interface FileRoutesById {
   '/_portal-estudiante/portal-estudiante/': typeof PortalEstudiantePortalEstudianteIndexRoute
   '/_portal/portal/': typeof PortalPortalIndexRoute
   '/_authenticated/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
+  '/_authenticated/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/_portal-estudiante/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/_portal/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
 }
@@ -496,6 +516,7 @@ export interface FileRouteTypes {
     | '/expedientes/papelera'
     | '/permisos/$id'
     | '/permisos/nuevo'
+    | '/rrhh/empleados'
     | '/solicitudes/$id'
     | '/solicitudes/nueva'
     | '/solicitudes/ocr'
@@ -511,6 +532,7 @@ export interface FileRouteTypes {
     | '/portal-estudiante/'
     | '/portal/'
     | '/admin/facturacion/pendientes'
+    | '/rrhh/empleados/$id'
     | '/portal-estudiante/programas/$id'
     | '/portal/expedientes/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -542,6 +564,7 @@ export interface FileRouteTypes {
     | '/expedientes/papelera'
     | '/permisos/$id'
     | '/permisos/nuevo'
+    | '/rrhh/empleados'
     | '/solicitudes/$id'
     | '/solicitudes/nueva'
     | '/solicitudes/ocr'
@@ -557,6 +580,7 @@ export interface FileRouteTypes {
     | '/portal-estudiante'
     | '/portal'
     | '/admin/facturacion/pendientes'
+    | '/rrhh/empleados/$id'
     | '/portal-estudiante/programas/$id'
     | '/portal/expedientes/$id'
   id:
@@ -591,6 +615,7 @@ export interface FileRouteTypes {
     | '/_authenticated/expedientes/papelera'
     | '/_authenticated/permisos/$id'
     | '/_authenticated/permisos/nuevo'
+    | '/_authenticated/rrhh/empleados'
     | '/_authenticated/solicitudes/$id'
     | '/_authenticated/solicitudes/nueva'
     | '/_authenticated/solicitudes/ocr'
@@ -606,6 +631,7 @@ export interface FileRouteTypes {
     | '/_portal-estudiante/portal-estudiante/'
     | '/_portal/portal/'
     | '/_authenticated/admin/facturacion/pendientes'
+    | '/_authenticated/rrhh/empleados/$id'
     | '/_portal-estudiante/portal-estudiante/programas/$id'
     | '/_portal/portal/expedientes/$id'
   fileRoutesById: FileRoutesById
@@ -796,6 +822,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSolicitudesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/rrhh/empleados': {
+      id: '/_authenticated/rrhh/empleados'
+      path: '/rrhh/empleados'
+      fullPath: '/rrhh/empleados'
+      preLoaderRoute: typeof AuthenticatedRrhhEmpleadosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/permisos/nuevo': {
       id: '/_authenticated/permisos/nuevo'
       path: '/permisos/nuevo'
@@ -943,6 +976,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalEstudiantePortalEstudianteProgramasIdRouteImport
       parentRoute: typeof PortalEstudianteRouteRoute
     }
+    '/_authenticated/rrhh/empleados/$id': {
+      id: '/_authenticated/rrhh/empleados/$id'
+      path: '/$id'
+      fullPath: '/rrhh/empleados/$id'
+      preLoaderRoute: typeof AuthenticatedRrhhEmpleadosIdRouteImport
+      parentRoute: typeof AuthenticatedRrhhEmpleadosRoute
+    }
     '/_authenticated/admin/facturacion/pendientes': {
       id: '/_authenticated/admin/facturacion/pendientes'
       path: '/pendientes'
@@ -966,6 +1006,20 @@ const AuthenticatedAdminFacturacionRouteChildren: AuthenticatedAdminFacturacionR
 const AuthenticatedAdminFacturacionRouteWithChildren =
   AuthenticatedAdminFacturacionRoute._addFileChildren(
     AuthenticatedAdminFacturacionRouteChildren,
+  )
+
+interface AuthenticatedRrhhEmpleadosRouteChildren {
+  AuthenticatedRrhhEmpleadosIdRoute: typeof AuthenticatedRrhhEmpleadosIdRoute
+}
+
+const AuthenticatedRrhhEmpleadosRouteChildren: AuthenticatedRrhhEmpleadosRouteChildren =
+  {
+    AuthenticatedRrhhEmpleadosIdRoute: AuthenticatedRrhhEmpleadosIdRoute,
+  }
+
+const AuthenticatedRrhhEmpleadosRouteWithChildren =
+  AuthenticatedRrhhEmpleadosRoute._addFileChildren(
+    AuthenticatedRrhhEmpleadosRouteChildren,
   )
 
 interface AuthenticatedRouteRouteChildren {
@@ -993,6 +1047,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedExpedientesPapeleraRoute: typeof AuthenticatedExpedientesPapeleraRoute
   AuthenticatedPermisosIdRoute: typeof AuthenticatedPermisosIdRoute
   AuthenticatedPermisosNuevoRoute: typeof AuthenticatedPermisosNuevoRoute
+  AuthenticatedRrhhEmpleadosRoute: typeof AuthenticatedRrhhEmpleadosRouteWithChildren
   AuthenticatedSolicitudesIdRoute: typeof AuthenticatedSolicitudesIdRoute
   AuthenticatedSolicitudesNuevaRoute: typeof AuthenticatedSolicitudesNuevaRoute
   AuthenticatedSolicitudesOcrRoute: typeof AuthenticatedSolicitudesOcrRoute
@@ -1039,6 +1094,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedExpedientesPapeleraRoute: AuthenticatedExpedientesPapeleraRoute,
   AuthenticatedPermisosIdRoute: AuthenticatedPermisosIdRoute,
   AuthenticatedPermisosNuevoRoute: AuthenticatedPermisosNuevoRoute,
+  AuthenticatedRrhhEmpleadosRoute: AuthenticatedRrhhEmpleadosRouteWithChildren,
   AuthenticatedSolicitudesIdRoute: AuthenticatedSolicitudesIdRoute,
   AuthenticatedSolicitudesNuevaRoute: AuthenticatedSolicitudesNuevaRoute,
   AuthenticatedSolicitudesOcrRoute: AuthenticatedSolicitudesOcrRoute,

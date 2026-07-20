@@ -5,6 +5,7 @@ import {
   ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3, Library, Settings,
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
   GraduationCap, BookOpen, UserPlus, ClipboardCheck,
+  Briefcase, IdCard,
 } from "lucide-react";
 import type { AppRole } from "@/lib/auth-hooks";
 import { NotificationsBell } from "@/components/notifications-bell";
@@ -149,6 +150,16 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/academia/accesos-estudiantes") },
     ],
   },
+  {
+    id: "rrhh",
+    label: "GESTIÓN HUMANA",
+    icon: Briefcase,
+    roles: ["admin", "rrhh"],
+    items: [
+      { to: "/rrhh/empleados", label: "Empleados", icon: IdCard, roles: ["admin","rrhh"],
+        match: (p) => p.startsWith("/rrhh/empleados") },
+    ],
+  },
 ];
 
 const SIMPLE_ITEMS: SimpleItem[] = [
@@ -242,6 +253,11 @@ function AppSidebarInner() {
 
         {/* Academia group */}
         {renderGroup(visibleGroups.find((g) => g.id === "academia")!)}
+
+        {/* Gestión Humana group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "rrhh")!)}
+
+
 
         {/* Administración group */}
         {renderGroup(visibleGroups.find((g) => g.id === "administracion")!)}

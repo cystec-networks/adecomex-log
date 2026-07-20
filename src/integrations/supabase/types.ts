@@ -866,6 +866,175 @@ export type Database = {
           },
         ]
       }
+      empleado_documentos: {
+        Row: {
+          created_by: string | null
+          empleado_id: string
+          fecha_subida: string
+          fecha_vencimiento: string | null
+          id: string
+          notas: string | null
+          storage_path: string | null
+          tipo: Database["public"]["Enums"]["documento_empleado_tipo"]
+        }
+        Insert: {
+          created_by?: string | null
+          empleado_id: string
+          fecha_subida?: string
+          fecha_vencimiento?: string | null
+          id?: string
+          notas?: string | null
+          storage_path?: string | null
+          tipo: Database["public"]["Enums"]["documento_empleado_tipo"]
+        }
+        Update: {
+          created_by?: string | null
+          empleado_id?: string
+          fecha_subida?: string
+          fecha_vencimiento?: string | null
+          id?: string
+          notas?: string | null
+          storage_path?: string | null
+          tipo?: Database["public"]["Enums"]["documento_empleado_tipo"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empleado_documentos_empleado_id_fkey"
+            columns: ["empleado_id"]
+            isOneToOne: false
+            referencedRelation: "empleados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      empleado_vacaciones: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dias_tomados: number
+          empleado_id: string
+          estado: string
+          fecha_fin: string
+          fecha_inicio: string
+          id: string
+          notas: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dias_tomados: number
+          empleado_id: string
+          estado?: string
+          fecha_fin: string
+          fecha_inicio: string
+          id?: string
+          notas?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dias_tomados?: number
+          empleado_id?: string
+          estado?: string
+          fecha_fin?: string
+          fecha_inicio?: string
+          id?: string
+          notas?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empleado_vacaciones_empleado_id_fkey"
+            columns: ["empleado_id"]
+            isOneToOne: false
+            referencedRelation: "empleados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      empleados: {
+        Row: {
+          afp: string | null
+          ars: string | null
+          cargo: string | null
+          cedula: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          departamento: string | null
+          direccion: string | null
+          email: string | null
+          estado: Database["public"]["Enums"]["empleado_estado"]
+          fecha_baja: string | null
+          fecha_ingreso: string
+          fecha_nacimiento: string | null
+          id: string
+          moneda: string
+          motivo_baja: string | null
+          nombre: string
+          notas: string | null
+          numero_tss: string | null
+          salario_base: number | null
+          telefono: string | null
+          tipo_contrato: Database["public"]["Enums"]["tipo_contrato"]
+          updated_at: string
+        }
+        Insert: {
+          afp?: string | null
+          ars?: string | null
+          cargo?: string | null
+          cedula?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          departamento?: string | null
+          direccion?: string | null
+          email?: string | null
+          estado?: Database["public"]["Enums"]["empleado_estado"]
+          fecha_baja?: string | null
+          fecha_ingreso: string
+          fecha_nacimiento?: string | null
+          id?: string
+          moneda?: string
+          motivo_baja?: string | null
+          nombre: string
+          notas?: string | null
+          numero_tss?: string | null
+          salario_base?: number | null
+          telefono?: string | null
+          tipo_contrato?: Database["public"]["Enums"]["tipo_contrato"]
+          updated_at?: string
+        }
+        Update: {
+          afp?: string | null
+          ars?: string | null
+          cargo?: string | null
+          cedula?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          departamento?: string | null
+          direccion?: string | null
+          email?: string | null
+          estado?: Database["public"]["Enums"]["empleado_estado"]
+          fecha_baja?: string | null
+          fecha_ingreso?: string
+          fecha_nacimiento?: string | null
+          id?: string
+          moneda?: string
+          motivo_baja?: string | null
+          nombre?: string
+          notas?: string | null
+          numero_tss?: string | null
+          salario_base?: number | null
+          telefono?: string | null
+          tipo_contrato?: Database["public"]["Enums"]["tipo_contrato"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       envios_dgii: {
         Row: {
           archivo_path: string | null
@@ -3188,6 +3357,10 @@ export type Database = {
     }
     Functions: {
       calc_itbis_periodo: { Args: { _periodo: string }; Returns: Json }
+      calcular_vacaciones_acumuladas: {
+        Args: { _fecha_ingreso: string }
+        Returns: number
+      }
       marcar_password_cambiada_cliente: { Args: never; Returns: undefined }
       marcar_password_cambiada_estudiante: { Args: never; Returns: undefined }
       show_limit: { Args: never; Returns: number }
@@ -3204,6 +3377,7 @@ export type Database = {
         | "finanzas"
         | "contabilidad"
         | "academia"
+        | "rrhh"
       cuota_estado: "pendiente" | "pagada" | "disputada"
       cxp_estado: "pendiente" | "parcial" | "pagado" | "disputado"
       doc_estado:
@@ -3212,6 +3386,15 @@ export type Database = {
         | "observado"
         | "aprobado"
         | "vencido"
+      documento_empleado_tipo:
+        | "cedula"
+        | "contrato_firmado"
+        | "inscripcion_tss"
+        | "curriculum"
+        | "referencias"
+        | "certificado_medico"
+        | "otros"
+      empleado_estado: "activo" | "inactivo" | "baja"
       etapa_estado: "pendiente" | "en_curso" | "completada" | "bloqueada"
       expediente_estado:
         | "digitar"
@@ -3260,6 +3443,11 @@ export type Database = {
         | "aprobada"
         | "rechazada"
         | "convertida"
+      tipo_contrato:
+        | "indefinido"
+        | "tiempo_determinado"
+        | "por_cierta_obra"
+        | "entrenamiento"
       transporte_estado:
         | "programado"
         | "en_transito"
@@ -3405,10 +3593,21 @@ export const Constants = {
         "finanzas",
         "contabilidad",
         "academia",
+        "rrhh",
       ],
       cuota_estado: ["pendiente", "pagada", "disputada"],
       cxp_estado: ["pendiente", "parcial", "pagado", "disputado"],
       doc_estado: ["pendiente", "recibido", "observado", "aprobado", "vencido"],
+      documento_empleado_tipo: [
+        "cedula",
+        "contrato_firmado",
+        "inscripcion_tss",
+        "curriculum",
+        "referencias",
+        "certificado_medico",
+        "otros",
+      ],
+      empleado_estado: ["activo", "inactivo", "baja"],
       etapa_estado: ["pendiente", "en_curso", "completada", "bloqueada"],
       expediente_estado: [
         "digitar",
@@ -3462,6 +3661,12 @@ export const Constants = {
         "aprobada",
         "rechazada",
         "convertida",
+      ],
+      tipo_contrato: [
+        "indefinido",
+        "tiempo_determinado",
+        "por_cierta_obra",
+        "entrenamiento",
       ],
       transporte_estado: [
         "programado",
