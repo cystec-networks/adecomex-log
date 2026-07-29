@@ -9,7 +9,9 @@ const schema = z.object({
   moneda: z.enum(["DOP", "USD"]).default("DOP"),
   referencia_viaje: z.string().trim().max(120).optional().nullable(),
   descripcion: z.string().trim().max(1000).optional().nullable(),
+  catalogo_viaje_id: z.string().uuid().optional().nullable(),
 });
+
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
