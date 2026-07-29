@@ -105,6 +105,10 @@ const GROUPS: Group[] = [
       { to: "/admin/solicitudes-pago-transporte", label: "Solicitudes de Pago", icon: Receipt,
         roles: ["admin", "transporte"],
         match: (p) => p.startsWith("/admin/solicitudes-pago-transporte") },
+      { to: "/admin/catalogo-viajes-transporte", label: "Catálogo de Viajes", icon: Receipt,
+        roles: ["admin", "transporte"],
+        match: (p) => p.startsWith("/admin/catalogo-viajes-transporte") },
+
       { to: "/transportes/dashboard", label: "Dashboard", icon: LayoutDashboard,
         match: (p) => p === "/transportes/dashboard" },
     ],
