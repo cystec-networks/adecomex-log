@@ -17,7 +17,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, CreditCard, Trash2 } from "lucide-react";
+import { Plus, CreditCard, Trash2, Pencil } from "lucide-react";
 import { fmtLocalDate, daysFromToday } from "@/lib/dates";
 import { EscanearFacturaCxpButton } from "@/components/escanear-factura-cxp-button";
 
@@ -115,6 +115,8 @@ function CuentasPorPagarPage() {
   const [fProveedor, setFProveedor] = useState("");
   const [openNew, setOpenNew] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   const [payRow, setPayRow] = useState<Row | null>(null);
   const [payMonto, setPayMonto] = useState("");
   const [askDisputado, setAskDisputado] = useState(false);
@@ -195,19 +197,26 @@ function CuentasPorPagarPage() {
         gasto_id: form.gasto_id || null,
         gasto_operativo_id: form.gasto_operativo_id || null,
         expediente_id,
-        created_by: u.user?.id ?? null,
         updated_by: u.user?.id ?? null,
       };
-      const { error } = await (supabase.from as any)("cuentas_por_pagar").insert(payload);
-      if (error) throw error;
+      if (editingId) {
+        const { error } = await (supabase.from as any)("cuentas_por_pagar")
+          .update(payload).eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase.from as any)("cuentas_por_pagar")
+          .insert({ ...payload, created_by: u.user?.id ?? null });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
-      toast.success("Cuenta por pagar creada");
-      setOpenNew(false); setForm(emptyForm);
+      toast.success(editingId ? "Cuenta por pagar actualizada" : "Cuenta por pagar creada");
+      setOpenNew(false); setForm(emptyForm); setEditingId(null);
       qc.invalidateQueries({ queryKey: ["cxp"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Error al crear"),
+    onError: (e: any) => toast.error(e.message ?? "Error al guardar"),
   });
+
 
   const payMut = useMutation({
     mutationFn: async ({ row, monto, quitarDisputa }: { row: Row; monto: number; quitarDisputa: boolean }) => {
@@ -249,6 +258,24 @@ function CuentasPorPagarPage() {
     onError: (e: any) => toast.error(e.message ?? "Error"),
   });
 
+  const handleOpenEdit = (r: Row) => {
+    setEditingId(r.id);
+    setForm({
+      proveedor_nombre: r.proveedor_nombre ?? "",
+      proveedor_rnc: r.proveedor_rnc ?? "",
+      numero_factura: r.numero_factura ?? "",
+      ncf_proveedor: r.ncf_proveedor ?? "",
+      monto_total: r.monto_total != null ? String(r.monto_total) : "",
+      moneda: (r.moneda ?? "DOP") as Moneda,
+      fecha_factura: r.fecha_factura ?? "",
+      fecha_vencimiento: r.fecha_vencimiento ?? "",
+      notas: r.notas ?? "",
+      gasto_id: r.gasto_id ?? "",
+      gasto_operativo_id: r.gasto_operativo_id ?? "",
+    });
+    setOpenNew(true);
+  };
+
   const handleOpenPay = (r: Row) => {
     setPayRow(r); setPayMonto(""); setAskDisputado(false);
   };
@@ -270,7 +297,7 @@ function CuentasPorPagarPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Cuentas por Pagar</h1>
           <p className="text-sm text-muted-foreground">Pagos pendientes a proveedores, transportistas y agentes en el exterior.</p>
         </div>
-        <Button onClick={() => setOpenNew(true)}><Plus className="h-4 w-4 mr-1" /> Nueva cuenta por pagar</Button>
+        <Button onClick={() => { setEditingId(null); setForm(emptyForm); setOpenNew(true); }}><Plus className="h-4 w-4 mr-1" /> Nueva cuenta por pagar</Button>
       </div>
 
       <Card>
@@ -374,6 +401,9 @@ function CuentasPorPagarPage() {
                       <td className="px-3 py-2"><EstadoBadge e={r.estado} /></td>
                       <td className="px-3 py-2 text-right">
                         <div className="flex justify-end gap-1">
+                          <Button size="sm" variant="outline" onClick={() => handleOpenEdit(r)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
                           <Button size="sm" variant="outline" onClick={() => handleOpenPay(r)} disabled={r.estado === "pagado"}>
                             <CreditCard className="h-3.5 w-3.5 mr-1" /> Pago
                           </Button>
@@ -391,12 +421,16 @@ function CuentasPorPagarPage() {
         </CardContent>
       </Card>
 
-      {/* Nueva cuenta */}
-      <Dialog open={openNew} onOpenChange={setOpenNew}>
+      {/* Nueva / editar cuenta */}
+      <Dialog open={openNew} onOpenChange={(o) => { setOpenNew(o); if (!o) { setEditingId(null); setForm(emptyForm); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Nueva cuenta por pagar</DialogTitle>
-            <DialogDescription>Registro manual de un pago pendiente a un proveedor.</DialogDescription>
+            <DialogTitle>{editingId ? "Editar cuenta por pagar" : "Nueva cuenta por pagar"}</DialogTitle>
+            <DialogDescription>
+              {editingId
+                ? "Modifica los datos de la cuenta por pagar. El estado se controla desde “Registrar pago”."
+                : "Registro manual de un pago pendiente a un proveedor."}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 flex items-center justify-between gap-2 rounded-md border bg-muted/20 px-3 py-2">
