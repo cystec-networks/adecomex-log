@@ -207,20 +207,38 @@ function SolicitudPagoTransportePage() {
                   <Label htmlFor="tel">Teléfono</Label>
                   <Input id="tel" maxLength={30} value={form.telefono} onChange={(e) => set("telefono", e.target.value)} />
                 </div>
+                <div className="grid gap-1.5 sm:col-span-2">
+                  <Label>Ruta / Viaje</Label>
+                  <Select value={viajeSel} onValueChange={elegirViaje}>
+                    <SelectTrigger><SelectValue placeholder="Selecciona la ruta del catálogo" /></SelectTrigger>
+                    <SelectContent>
+                      {viajes.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.origen} → {v.destino} — {Number(v.precio).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {v.moneda}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="otro">Otro (monto personalizado)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="monto">Monto *</Label>
                   <Input
                     id="monto"
                     inputMode="decimal"
                     required
+                    readOnly={bloqueado}
+                    className={bloqueado ? "bg-muted" : undefined}
                     placeholder="0.00"
                     value={form.monto}
                     onChange={(e) => {
+                      if (bloqueado) return;
                       const v = e.target.value.replace(",", ".");
                       if (v === "" || /^\d*\.?\d*$/.test(v)) set("monto", v);
                     }}
                   />
                 </div>
+
                 <div className="grid gap-1.5">
                   <Label>Moneda</Label>
                   <Select value={form.moneda} onValueChange={(v) => set("moneda", v)}>
