@@ -1,4 +1,5 @@
 import { defineTool } from "@lovable.dev/mcp-js";
+import { sanitizeSearchTerm } from "@/lib/search-filter";
 import { z } from "zod";
 import { errorResult, requireAuth, supabaseForUser, textResult } from "../supabase";
 
@@ -29,7 +30,7 @@ export default defineTool({
     if (estado) q = q.eq("estado", estado as never);
     if (buscar) {
       const t = buscar.replace(/[%,]/g, " ").trim();
-      q = q.or(`numero_viaje.ilike.%${t}%,transportista.ilike.%${t}%,placa_contenedor.ilike.%${t}%`);
+      q = q.or(`numero_viaje.ilike.%${sanitizeSearchTerm(t)}%,transportista.ilike.%${sanitizeSearchTerm(t)}%,placa_contenedor.ilike.%${sanitizeSearchTerm(t)}%`);
     }
 
     const { data, error } = await q;

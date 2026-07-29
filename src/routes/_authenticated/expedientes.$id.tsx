@@ -1707,7 +1707,7 @@ function TabAuditoria({ expedienteId }: { expedienteId: string }) {
     queryFn: async () => (await supabase
       .from("auditoria")
       .select("*")
-      .or(`entidad_id.eq.${expedienteId}`)
+      .eq("entidad_id", expedienteId)
       .order("created_at", { ascending: false })
       .limit(100)).data ?? [],
   });

@@ -1,4 +1,5 @@
 import { defineTool } from "@lovable.dev/mcp-js";
+import { sanitizeSearchTerm } from "@/lib/search-filter";
 import { z } from "zod";
 import { errorResult, requireAuth, supabaseForUser, textResult } from "../supabase";
 
@@ -31,7 +32,7 @@ export default defineTool({
     if (buscar) {
       const t = buscar.replace(/[%,]/g, " ").trim();
       q = q.or(
-        `numero.ilike.%${t}%,bl_awb.ilike.%${t}%,numero_dua.ilike.%${t}%,descripcion_mercancia.ilike.%${t}%`,
+        `numero.ilike.%${sanitizeSearchTerm(t)}%,bl_awb.ilike.%${sanitizeSearchTerm(t)}%,numero_dua.ilike.%${sanitizeSearchTerm(t)}%,descripcion_mercancia.ilike.%${sanitizeSearchTerm(t)}%`,
       );
     }
 

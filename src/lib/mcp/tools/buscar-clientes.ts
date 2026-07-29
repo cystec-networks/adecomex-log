@@ -1,4 +1,5 @@
 import { defineTool } from "@lovable.dev/mcp-js";
+import { sanitizeSearchTerm } from "@/lib/search-filter";
 import { z } from "zod";
 import { errorResult, requireAuth, supabaseForUser, textResult } from "../supabase";
 
@@ -20,7 +21,7 @@ export default defineTool({
     const { data, error } = await supabaseForUser(ctx)
       .from("clientes")
       .select("id,nombre,rnc,contacto,email,telefono,activo")
-      .or(`nombre.ilike.%${t}%,rnc.ilike.%${t}%`)
+      .or(`nombre.ilike.%${sanitizeSearchTerm(t)}%,rnc.ilike.%${sanitizeSearchTerm(t)}%`)
       .order("nombre")
       .limit(limit);
 

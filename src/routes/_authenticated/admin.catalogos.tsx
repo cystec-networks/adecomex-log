@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { sanitizeSearchTerm } from "@/lib/search-filter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -155,7 +156,8 @@ function CatalogTable({ table, isAdmin }: { table: TableKey; isAdmin: boolean })
     queryKey: [table, q, page],
     queryFn: async () => {
       let query: any = supabase.from(table).select("*", { count: "exact" });
-      if (q.trim()) query = query.or(`nombre.ilike.%${q}%,codigo.ilike.%${q}%`);
+      const term = sanitizeSearchTerm(q);
+      if (term) query = query.or(`nombre.ilike.%${term}%,codigo.ilike.%${term}%`);
       query = query.order("nombre").range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
       const { data, count, error } = await query;
       if (error) throw error;

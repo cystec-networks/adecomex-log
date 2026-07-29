@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { sanitizeSearchTerm } from "@/lib/search-filter";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,8 @@ export function CatalogCombobox({
         : table === "catalogo_unidades" ? "codigo, nombre, tipo"
         : "codigo, nombre";
       let query: any = supabase.from(table).select(cols).eq("activo", true);
-      if (q.trim()) query = query.or(`nombre.ilike.%${q}%,codigo.ilike.%${q}%`);
+      const term = sanitizeSearchTerm(q);
+      if (term) query = query.or(`nombre.ilike.%${term}%,codigo.ilike.%${term}%`);
       if (table === "catalogo_puertos" && filterCodPais) query = query.eq("cod_pais", filterCodPais);
       query = query.order("nombre").limit(50);
       const { data } = await query;
