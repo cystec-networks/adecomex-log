@@ -2809,6 +2809,59 @@ export type Database = {
           },
         ]
       }
+      solicitudes_pago_transporte: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          estado: string
+          id: string
+          moneda: string
+          monto: number
+          numero_control: string | null
+          referencia_viaje: string | null
+          telefono: string | null
+          transporte_id: string | null
+          transportista_nombre: string
+          transportista_rnc: string | null
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          id?: string
+          moneda?: string
+          monto?: number
+          numero_control?: string | null
+          referencia_viaje?: string | null
+          telefono?: string | null
+          transporte_id?: string | null
+          transportista_nombre: string
+          transportista_rnc?: string | null
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          estado?: string
+          id?: string
+          moneda?: string
+          monto?: number
+          numero_control?: string | null
+          referencia_viaje?: string | null
+          telefono?: string | null
+          transporte_id?: string | null
+          transportista_nombre?: string
+          transportista_rnc?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitudes_pago_transporte_transporte_id_fkey"
+            columns: ["transporte_id"]
+            isOneToOne: false
+            referencedRelation: "transportes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_settings: {
         Row: {
           description: string | null
@@ -2862,6 +2915,7 @@ export type Database = {
           flete_monto: number | null
           id: string
           ingreso_facturado: number | null
+          numero_control_pago: string | null
           numero_viaje: string
           observaciones: string | null
           origen: string | null
@@ -2902,6 +2956,7 @@ export type Database = {
           flete_monto?: number | null
           id?: string
           ingreso_facturado?: number | null
+          numero_control_pago?: string | null
           numero_viaje?: string
           observaciones?: string | null
           origen?: string | null
@@ -2942,6 +2997,7 @@ export type Database = {
           flete_monto?: number | null
           id?: string
           ingreso_facturado?: number | null
+          numero_control_pago?: string | null
           numero_viaje?: string
           observaciones?: string | null
           origen?: string | null

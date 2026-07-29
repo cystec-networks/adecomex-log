@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SolicitudPagoTransporteRouteImport } from './routes/solicitud-pago-transporte'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -29,6 +30,7 @@ import { Route as AuthenticatedTransportesIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedSolicitudesIndexRouteImport } from './routes/_authenticated/solicitudes.index'
 import { Route as AuthenticatedPermisosIndexRouteImport } from './routes/_authenticated/permisos.index'
 import { Route as AuthenticatedExpedientesIndexRouteImport } from './routes/_authenticated/expedientes.index'
+import { Route as ApiPublicSolicitudPagoTransporteRouteImport } from './routes/api/public/solicitud-pago-transporte'
 import { Route as PortalPortalCambiarPasswordRouteImport } from './routes/_portal/portal.cambiar-password'
 import { Route as PortalEstudiantePortalEstudianteCambiarPasswordRouteImport } from './routes/_portal-estudiante/portal-estudiante.cambiar-password'
 import { Route as AuthenticatedTransportesNuevoRouteImport } from './routes/_authenticated/transportes.nuevo'
@@ -65,6 +67,11 @@ import { Route as PortalEstudiantePortalEstudianteProgramasIdRouteImport } from 
 import { Route as AuthenticatedRrhhEmpleadosIdRouteImport } from './routes/_authenticated/rrhh.empleados.$id'
 import { Route as AuthenticatedAdminFacturacionPendientesRouteImport } from './routes/_authenticated/admin.facturacion.pendientes'
 
+const SolicitudPagoTransporteRoute = SolicitudPagoTransporteRouteImport.update({
+  id: '/solicitud-pago-transporte',
+  path: '/solicitud-pago-transporte',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -168,6 +175,12 @@ const AuthenticatedExpedientesIndexRoute =
     id: '/expedientes/',
     path: '/expedientes/',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ApiPublicSolicitudPagoTransporteRoute =
+  ApiPublicSolicitudPagoTransporteRouteImport.update({
+    id: '/api/public/solicitud-pago-transporte',
+    path: '/api/public/solicitud-pago-transporte',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const PortalPortalCambiarPasswordRoute =
   PortalPortalCambiarPasswordRouteImport.update({
@@ -383,6 +396,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/solicitud-pago-transporte': typeof SolicitudPagoTransporteRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/clientes': typeof AuthenticatedClientesRoute
@@ -419,6 +433,7 @@ export interface FileRoutesByFullPath {
   '/transportes/nuevo': typeof AuthenticatedTransportesNuevoRoute
   '/portal-estudiante/cambiar-password': typeof PortalEstudiantePortalEstudianteCambiarPasswordRoute
   '/portal/cambiar-password': typeof PortalPortalCambiarPasswordRoute
+  '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRoute
   '/expedientes/': typeof AuthenticatedExpedientesIndexRoute
   '/permisos/': typeof AuthenticatedPermisosIndexRoute
   '/solicitudes/': typeof AuthenticatedSolicitudesIndexRoute
@@ -437,6 +452,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/solicitud-pago-transporte': typeof SolicitudPagoTransporteRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/clientes': typeof AuthenticatedClientesRoute
@@ -473,6 +489,7 @@ export interface FileRoutesByTo {
   '/transportes/nuevo': typeof AuthenticatedTransportesNuevoRoute
   '/portal-estudiante/cambiar-password': typeof PortalEstudiantePortalEstudianteCambiarPasswordRoute
   '/portal/cambiar-password': typeof PortalPortalCambiarPasswordRoute
+  '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRoute
   '/expedientes': typeof AuthenticatedExpedientesIndexRoute
   '/permisos': typeof AuthenticatedPermisosIndexRoute
   '/solicitudes': typeof AuthenticatedSolicitudesIndexRoute
@@ -495,6 +512,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/solicitud-pago-transporte': typeof SolicitudPagoTransporteRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
@@ -531,6 +549,7 @@ export interface FileRoutesById {
   '/_authenticated/transportes/nuevo': typeof AuthenticatedTransportesNuevoRoute
   '/_portal-estudiante/portal-estudiante/cambiar-password': typeof PortalEstudiantePortalEstudianteCambiarPasswordRoute
   '/_portal/portal/cambiar-password': typeof PortalPortalCambiarPasswordRoute
+  '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRoute
   '/_authenticated/expedientes/': typeof AuthenticatedExpedientesIndexRoute
   '/_authenticated/permisos/': typeof AuthenticatedPermisosIndexRoute
   '/_authenticated/solicitudes/': typeof AuthenticatedSolicitudesIndexRoute
@@ -551,6 +570,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/mcp'
     | '/reset-password'
+    | '/solicitud-pago-transporte'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/clientes'
@@ -587,6 +607,7 @@ export interface FileRouteTypes {
     | '/transportes/nuevo'
     | '/portal-estudiante/cambiar-password'
     | '/portal/cambiar-password'
+    | '/api/public/solicitud-pago-transporte'
     | '/expedientes/'
     | '/permisos/'
     | '/solicitudes/'
@@ -605,6 +626,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/mcp'
     | '/reset-password'
+    | '/solicitud-pago-transporte'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/clientes'
@@ -641,6 +663,7 @@ export interface FileRouteTypes {
     | '/transportes/nuevo'
     | '/portal-estudiante/cambiar-password'
     | '/portal/cambiar-password'
+    | '/api/public/solicitud-pago-transporte'
     | '/expedientes'
     | '/permisos'
     | '/solicitudes'
@@ -662,6 +685,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/mcp'
     | '/reset-password'
+    | '/solicitud-pago-transporte'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/clientes'
@@ -698,6 +722,7 @@ export interface FileRouteTypes {
     | '/_authenticated/transportes/nuevo'
     | '/_portal-estudiante/portal-estudiante/cambiar-password'
     | '/_portal/portal/cambiar-password'
+    | '/api/public/solicitud-pago-transporte'
     | '/_authenticated/expedientes/'
     | '/_authenticated/permisos/'
     | '/_authenticated/solicitudes/'
@@ -720,14 +745,23 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   McpRoute: typeof McpRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SolicitudPagoTransporteRoute: typeof SolicitudPagoTransporteRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiPublicSolicitudPagoTransporteRoute: typeof ApiPublicSolicitudPagoTransporteRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/solicitud-pago-transporte': {
+      id: '/solicitud-pago-transporte'
+      path: '/solicitud-pago-transporte'
+      fullPath: '/solicitud-pago-transporte'
+      preLoaderRoute: typeof SolicitudPagoTransporteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -867,6 +901,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/expedientes/'
       preLoaderRoute: typeof AuthenticatedExpedientesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/solicitud-pago-transporte': {
+      id: '/api/public/solicitud-pago-transporte'
+      path: '/api/public/solicitud-pago-transporte'
+      fullPath: '/api/public/solicitud-pago-transporte'
+      preLoaderRoute: typeof ApiPublicSolicitudPagoTransporteRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_portal/portal/cambiar-password': {
       id: '/_portal/portal/cambiar-password'
@@ -1269,11 +1310,13 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   McpRoute: McpRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SolicitudPagoTransporteRoute: SolicitudPagoTransporteRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiPublicSolicitudPagoTransporteRoute: ApiPublicSolicitudPagoTransporteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

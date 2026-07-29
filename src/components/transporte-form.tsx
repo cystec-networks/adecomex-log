@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, Check, X, Plus } from "lucide-react";
+import { ArrowLeft, Check, X, Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
@@ -118,8 +118,11 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
     contenedores_cantidad: "",
     contenedores_detalle: "",
     factura_ecf_id: "" as string,
+    numero_control_pago: "",
   });
   const [loaded, setLoaded] = useState(false);
+  const [buscandoSpt, setBuscandoSpt] = useState(false);
+
 
   useEffect(() => {
     if (mode === "edit" && existing && !loaded) {
@@ -154,6 +157,8 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         contenedores_cantidad: existing.contenedores_cantidad?.toString() ?? "",
         contenedores_detalle: existing.contenedores_detalle ?? "",
         factura_ecf_id: existing.factura_ecf_id ?? "",
+        numero_control_pago: (existing as any).numero_control_pago ?? "",
+
       });
       setLoaded(true);
     }
@@ -183,6 +188,29 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
     return { costos, ingreso, margen, pct, costoViaje, cxc, netoPagar };
   }, [form.costo_viaje, form.descuento_cxc, form.costo_combustible, form.costo_peajes, form.costo_chofer, form.costo_otros, form.ingreso_facturado]);
 
+  const buscarSolicitudPago = async () => {
+    const nc = (form.numero_control_pago ?? "").trim();
+    if (!nc) return toast.error("Escribe un número de control");
+    setBuscandoSpt(true);
+    const { data, error } = await (supabase as any)
+      .from("solicitudes_pago_transporte")
+      .select("numero_control, transportista_nombre, monto, moneda, estado")
+      .eq("numero_control", nc)
+      .eq("estado", "pendiente")
+      .maybeSingle();
+    setBuscandoSpt(false);
+    if (error) return toast.error(error.message);
+    if (!data) return toast.error("No se encontró ninguna solicitud con ese número de control");
+    setForm((f) => ({
+      ...f,
+      transportista: data.transportista_nombre ?? f.transportista,
+      flete_monto: data.monto != null ? String(data.monto) : f.flete_monto,
+      flete_moneda: data.moneda ?? f.flete_moneda,
+    }));
+    toast.success(`Datos autocompletados desde la solicitud ${data.numero_control}`);
+  };
+
+
   const save = useMutation({
     mutationFn: async () => {
       if (form.estado === "facturado" && !form.factura_ecf_id) {
@@ -193,7 +221,8 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         "expediente_id","cliente_id","tipo","transportista","placa_contenedor","origen","destino",
         "fecha_salida","eta","observaciones","factura_numero","factura_fecha","numero_viaje",
         "pago_referencia","factura_costo_numero","factura_costo_fecha","contenedores_detalle",
-        "factura_ecf_id",
+        "factura_ecf_id","numero_control_pago",
+
       ];
       nullableStr.forEach((k) => { if (payload[k] === "") payload[k] = null; });
       const nullableNum = ["flete_monto","costo_viaje","descuento_cxc","costo_combustible","costo_peajes","costo_chofer","costo_otros","ingreso_facturado","contenedores_cantidad"];
@@ -218,6 +247,7 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         payload.contenedores_detalle = null;
       }
 
+      let saved: any;
       if (mode === "new") {
         // If numero_viaje omitted, let DB default assign it
         if (!payload.numero_viaje) delete payload.numero_viaje;
@@ -225,13 +255,25 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         payload.created_by = u.user?.id ?? null;
         const { data, error } = await supabase.from("transportes").insert(payload).select().single();
         if (error) throw error;
-        return data;
+        saved = data;
       } else {
         const { data, error } = await supabase.from("transportes").update(payload).eq("id", id!).select().single();
         if (error) throw error;
-        return data;
+        saved = data;
       }
+
+      // Vincular solicitud de pago pendiente si el número de control coincide
+      const nc = (form.numero_control_pago ?? "").trim();
+      if (nc) {
+        await (supabase as any)
+          .from("solicitudes_pago_transporte")
+          .update({ transporte_id: saved.id, estado: "vinculada" })
+          .eq("numero_control", nc)
+          .eq("estado", "pendiente");
+      }
+      return saved;
     },
+
     onSuccess: (row) => {
       qc.invalidateQueries({ queryKey: ["transportes"] });
       qc.invalidateQueries({ queryKey: ["transporte", id] });
@@ -383,6 +425,21 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
               placeholder={mode === "new" ? "Auto (TR-000001) o escribe uno" : ""}
             />
           </div>
+          <div className="grid gap-1.5">
+            <Label>Número de control de pago</Label>
+            <div className="flex gap-2">
+              <Input
+                value={form.numero_control_pago}
+                onChange={(e) => set("numero_control_pago", e.target.value)}
+                placeholder="SPT-000001"
+              />
+              <Button type="button" variant="outline" disabled={buscandoSpt} onClick={buscarSolicitudPago}>
+                {buscandoSpt ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Buscar
+              </Button>
+            </div>
+          </div>
+
           <div className="grid gap-1.5">
             <Label>Tipo de Transporte</Label>
             <Select value={form.tipo || undefined} onValueChange={(v) => set("tipo", v)}>
