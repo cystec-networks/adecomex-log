@@ -59,6 +59,35 @@ function SolicitudPagoTransportePage() {
   });
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
+  const [viajes, setViajes] = useState<Viaje[]>([]);
+  const [viajeSel, setViajeSel] = useState<string>("");
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("catalogo_viajes_transporte")
+        .select("id, origen, destino, tipo_servicio, precio, moneda")
+        .eq("activo", true)
+        .order("origen", { ascending: true });
+      setViajes((data ?? []) as Viaje[]);
+    })();
+  }, []);
+
+  const elegirViaje = (id: string) => {
+    setViajeSel(id);
+    if (id === "otro") return;
+    const v = viajes.find((x) => x.id === id);
+    if (!v) return;
+    setForm((f) => ({
+      ...f,
+      monto: String(v.precio ?? ""),
+      moneda: v.moneda ?? "DOP",
+      referencia_viaje: f.referencia_viaje.trim() ? f.referencia_viaje : `${v.origen} → ${v.destino}`,
+    }));
+  };
+
+  const bloqueado = !!viajeSel && viajeSel !== "otro";
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const monto = Number(form.monto);
@@ -70,7 +99,7 @@ function SolicitudPagoTransportePage() {
       const res = await fetch("/api/public/solicitud-pago-transporte", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...form, monto }),
+        body: JSON.stringify({ ...form, monto, catalogo_viaje_id: bloqueado ? viajeSel : null }),
       });
       const json = await res.json();
       if (!res.ok || !json?.numero_control) throw new Error(json?.error ?? "No se pudo registrar la solicitud.");
