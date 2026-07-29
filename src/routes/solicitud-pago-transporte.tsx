@@ -53,6 +53,7 @@ function SolicitudPagoTransportePage() {
     transportista_rnc: "",
     telefono: "",
     monto: "",
+    cantidad: "1",
     moneda: "DOP",
     referencia_viaje: "",
     descripcion: "",
@@ -78,15 +79,37 @@ function SolicitudPagoTransportePage() {
     if (id === "otro") return;
     const v = viajes.find((x) => x.id === id);
     if (!v) return;
-    setForm((f) => ({
-      ...f,
-      monto: String(v.precio ?? ""),
-      moneda: v.moneda ?? "DOP",
-      referencia_viaje: f.referencia_viaje.trim() ? f.referencia_viaje : `${v.origen} → ${v.destino}`,
-    }));
+    setForm((f) => {
+      const cant = Math.max(1, Math.floor(Number(f.cantidad) || 1));
+      return {
+        ...f,
+        cantidad: String(cant),
+        monto: String((Number(v.precio) || 0) * cant),
+        moneda: v.moneda ?? "DOP",
+        referencia_viaje: f.referencia_viaje.trim() ? f.referencia_viaje : `${v.origen} → ${v.destino}`,
+      };
+    });
   };
 
   const bloqueado = !!viajeSel && viajeSel !== "otro";
+  const viajeActual = bloqueado ? viajes.find((x) => x.id === viajeSel) ?? null : null;
+  const cantidadNum = Math.max(1, Math.floor(Number(form.cantidad) || 1));
+
+  const cambiarCantidad = (raw: string) => {
+    const v = raw.replace(/[^\d]/g, "");
+    setForm((f) => {
+      const cant = Math.max(1, Math.floor(Number(v) || 1));
+      return {
+        ...f,
+        cantidad: v,
+        monto: viajeActual ? String((Number(viajeActual.precio) || 0) * cant) : f.monto,
+      };
+    });
+  };
+
+  const fmt = (n: number) =>
+    n.toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
