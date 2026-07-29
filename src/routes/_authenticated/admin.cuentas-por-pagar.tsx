@@ -40,6 +40,8 @@ type Row = {
   id: string;
   proveedor_nombre: string;
   proveedor_rnc: string | null;
+  numero_factura: string | null;
+  ncf_proveedor: string | null;
   monto_total: number;
   monto_pagado: number;
   moneda: Moneda;
@@ -51,6 +53,7 @@ type Row = {
   gasto_operativo_id: string | null;
   expediente_id: string | null;
 };
+
 
 const fmtMoney = (n: number, m: string) =>
   `${m === "USD" ? "US$" : m === "EUR" ? "€" : "RD$"} ${(n || 0).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
