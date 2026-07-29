@@ -49,6 +49,7 @@ type Row = {
   transportista_rnc: string | null;
   telefono: string | null;
   monto: number;
+  cantidad_viajes: number | null;
   moneda: string;
   referencia_viaje: string | null;
   descripcion: string | null;
