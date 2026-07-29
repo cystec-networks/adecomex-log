@@ -335,6 +335,9 @@ function CuentasPorPagarPage() {
                 <tr>
                   <th className="text-left px-3 py-2">Proveedor</th>
                   <th className="text-left px-3 py-2">RNC</th>
+                  <th className="text-left px-3 py-2">No. Factura</th>
+                  <th className="text-left px-3 py-2">NCF</th>
+
                   <th className="text-right px-3 py-2">Total</th>
                   <th className="text-right px-3 py-2">Pagado</th>
                   <th className="text-right px-3 py-2">Saldo</th>
