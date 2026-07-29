@@ -14,6 +14,7 @@ import { Trash2, AlarmClock, AlertTriangle, Clock } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
+import { TruncatedCell } from "@/components/truncated-cell";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
