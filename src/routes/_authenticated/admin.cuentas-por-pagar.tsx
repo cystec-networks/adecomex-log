@@ -184,6 +184,9 @@ function CuentasPorPagarPage() {
       const payload: any = {
         proveedor_nombre: form.proveedor_nombre.trim(),
         proveedor_rnc: form.proveedor_rnc.trim() || null,
+        numero_factura: form.numero_factura.trim() || null,
+        ncf_proveedor: form.ncf_proveedor.trim() || null,
+
         monto_total: monto,
         moneda: form.moneda,
         fecha_factura: form.fecha_factura || null,
