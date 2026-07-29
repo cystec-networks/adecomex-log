@@ -253,9 +253,9 @@ function SolicitudesPagoTransportePage() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={10} className="py-6 text-center text-muted-foreground">Cargando…</td></tr>
+                <tr><td colSpan={11} className="py-6 text-center text-muted-foreground">Cargando…</td></tr>
               ) : filtradas.length === 0 ? (
-                <tr><td colSpan={10} className="py-6 text-center text-muted-foreground">Sin solicitudes</td></tr>
+                <tr><td colSpan={11} className="py-6 text-center text-muted-foreground">Sin solicitudes</td></tr>
               ) : filtradas.map((r) => (
                 <tr key={r.id} className="border-b last:border-0">
                   <td className="py-2 pr-3 font-mono">{r.numero_control}</td>
