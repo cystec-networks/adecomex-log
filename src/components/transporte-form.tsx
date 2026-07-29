@@ -188,6 +188,29 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
     return { costos, ingreso, margen, pct, costoViaje, cxc, netoPagar };
   }, [form.costo_viaje, form.descuento_cxc, form.costo_combustible, form.costo_peajes, form.costo_chofer, form.costo_otros, form.ingreso_facturado]);
 
+  const buscarSolicitudPago = async () => {
+    const nc = (form.numero_control_pago ?? "").trim();
+    if (!nc) return toast.error("Escribe un número de control");
+    setBuscandoSpt(true);
+    const { data, error } = await (supabase as any)
+      .from("solicitudes_pago_transporte")
+      .select("numero_control, transportista_nombre, monto, moneda, estado")
+      .eq("numero_control", nc)
+      .eq("estado", "pendiente")
+      .maybeSingle();
+    setBuscandoSpt(false);
+    if (error) return toast.error(error.message);
+    if (!data) return toast.error("No se encontró ninguna solicitud con ese número de control");
+    setForm((f) => ({
+      ...f,
+      transportista: data.transportista_nombre ?? f.transportista,
+      flete_monto: data.monto != null ? String(data.monto) : f.flete_monto,
+      flete_moneda: data.moneda ?? f.flete_moneda,
+    }));
+    toast.success(`Datos autocompletados desde la solicitud ${data.numero_control}`);
+  };
+
+
   const save = useMutation({
     mutationFn: async () => {
       if (form.estado === "facturado" && !form.factura_ecf_id) {
