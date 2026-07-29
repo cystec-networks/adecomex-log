@@ -438,6 +438,18 @@ function CuentasPorPagarPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="min-w-[150px]">
+              <Label className="text-xs">Agrupar por</Label>
+              <Select value={agrupar} onValueChange={(v) => setAgrupar(v as Agrupacion)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ninguna">Sin agrupar</SelectItem>
+                  <SelectItem value="semana">Semana</SelectItem>
+                  <SelectItem value="mes">Mes</SelectItem>
+                  <SelectItem value="anio">Año</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex-1 min-w-[200px]">
               <Label className="text-xs">Proveedor</Label>
               <Input value={fProveedor} onChange={(e) => setFProveedor(e.target.value)} placeholder="Buscar por nombre…" />
