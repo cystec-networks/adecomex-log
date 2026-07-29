@@ -105,6 +105,70 @@ function SolicitudesPagoTransportePage() {
     }
   };
 
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [form, setForm] = useState({
+    transportista_nombre: "", transportista_rnc: "", telefono: "",
+    monto: "", moneda: "DOP", referencia_viaje: "", descripcion: "",
+  });
+  const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const [eliminando, setEliminando] = useState<Row | null>(null);
+
+  const abrirEdicion = (r: Row) => {
+    setEditing(r);
+    setForm({
+      transportista_nombre: r.transportista_nombre ?? "",
+      transportista_rnc: r.transportista_rnc ?? "",
+      telefono: r.telefono ?? "",
+      monto: r.monto != null ? String(r.monto) : "",
+      moneda: r.moneda ?? "DOP",
+      referencia_viaje: r.referencia_viaje ?? "",
+      descripcion: r.descripcion ?? "",
+    });
+  };
+
+  const guardar = useMutation({
+    mutationFn: async () => {
+      if (!editing) return;
+      const monto = Number(form.monto);
+      if (!form.transportista_nombre.trim()) throw new Error("Indica el nombre del transportista");
+      if (!Number.isFinite(monto) || monto <= 0) throw new Error("Indica un monto mayor a 0");
+      const { error } = await supabase
+        .from("solicitudes_pago_transporte")
+        .update({
+          transportista_nombre: form.transportista_nombre.trim(),
+          transportista_rnc: form.transportista_rnc.trim() || null,
+          telefono: form.telefono.trim() || null,
+          monto,
+          moneda: form.moneda,
+          referencia_viaje: form.referencia_viaje.trim() || null,
+          descripcion: form.descripcion.trim() || null,
+        })
+        .eq("id", editing.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Solicitud actualizada");
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["solicitudes-pago-transporte"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo actualizar"),
+  });
+
+  const eliminar = useMutation({
+    mutationFn: async (r: Row) => {
+      const { error } = await supabase.from("solicitudes_pago_transporte").delete().eq("id", r.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Solicitud eliminada");
+      setEliminando(null);
+      qc.invalidateQueries({ queryKey: ["solicitudes-pago-transporte"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo eliminar"),
+  });
+
+
   return (
     <div className="p-6 space-y-6">
       <div>
