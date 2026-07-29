@@ -172,6 +172,16 @@ function CuentasPorPagarPage() {
     return acc;
   }, [rows]);
 
+  const resumenPagado = useMemo(() => {
+    const acc: Record<string, number> = {};
+    for (const r of rows) {
+      const pag = Number(r.monto_pagado || 0);
+      if (pag <= 0) continue;
+      acc[r.moneda] = (acc[r.moneda] ?? 0) + pag;
+    }
+    return acc;
+  }, [rows]);
+
   const createMut = useMutation({
     mutationFn: async () => {
       const monto = Number(form.monto_total);
