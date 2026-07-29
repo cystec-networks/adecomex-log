@@ -53,6 +53,7 @@ function SolicitudPagoTransportePage() {
     transportista_rnc: "",
     telefono: "",
     monto: "",
+    cantidad: "1",
     moneda: "DOP",
     referencia_viaje: "",
     descripcion: "",
@@ -78,15 +79,37 @@ function SolicitudPagoTransportePage() {
     if (id === "otro") return;
     const v = viajes.find((x) => x.id === id);
     if (!v) return;
-    setForm((f) => ({
-      ...f,
-      monto: String(v.precio ?? ""),
-      moneda: v.moneda ?? "DOP",
-      referencia_viaje: f.referencia_viaje.trim() ? f.referencia_viaje : `${v.origen} → ${v.destino}`,
-    }));
+    setForm((f) => {
+      const cant = Math.max(1, Math.floor(Number(f.cantidad) || 1));
+      return {
+        ...f,
+        cantidad: String(cant),
+        monto: String((Number(v.precio) || 0) * cant),
+        moneda: v.moneda ?? "DOP",
+        referencia_viaje: f.referencia_viaje.trim() ? f.referencia_viaje : `${v.origen} → ${v.destino}`,
+      };
+    });
   };
 
   const bloqueado = !!viajeSel && viajeSel !== "otro";
+  const viajeActual = bloqueado ? viajes.find((x) => x.id === viajeSel) ?? null : null;
+  const cantidadNum = Math.max(1, Math.floor(Number(form.cantidad) || 1));
+
+  const cambiarCantidad = (raw: string) => {
+    const v = raw.replace(/[^\d]/g, "");
+    setForm((f) => {
+      const cant = Math.max(1, Math.floor(Number(v) || 1));
+      return {
+        ...f,
+        cantidad: v,
+        monto: viajeActual ? String((Number(viajeActual.precio) || 0) * cant) : f.monto,
+      };
+    });
+  };
+
+  const fmt = (n: number) =>
+    n.toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,14 +122,19 @@ function SolicitudPagoTransportePage() {
       const res = await fetch("/api/public/solicitud-pago-transporte", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...form, monto, catalogo_viaje_id: bloqueado ? viajeSel : null }),
+        body: JSON.stringify({
+          ...form,
+          monto,
+          cantidad_viajes: cantidadNum,
+          catalogo_viaje_id: bloqueado ? viajeSel : null,
+        }),
       });
       const json = await res.json();
       if (!res.ok || !json?.numero_control) throw new Error(json?.error ?? "No se pudo registrar la solicitud.");
 
       const nc: string = json.numero_control;
       setNumeroControl(nc);
-      const msg = `Hola ADECOMEX, solicito el pago del servicio de transporte. Número de control: ${nc}. Transportista: ${form.transportista_nombre}. Monto: ${monto} ${form.moneda}. Adjunto la factura.`;
+      const msg = `Hola ADECOMEX, solicito el pago del servicio de transporte. Número de control: ${nc}. Transportista: ${form.transportista_nombre}. Cantidad de viajes: ${cantidadNum}. Monto total: ${monto} ${form.moneda}. Adjunto la factura.`;
       window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
     } catch (err: any) {
       toast.error(err.message ?? "Error inesperado");
@@ -170,6 +198,7 @@ function SolicitudPagoTransportePage() {
                     transportista_rnc: "",
                     telefono: "",
                     monto: "",
+                    cantidad: "1",
                     moneda: "DOP",
                     referencia_viaje: "",
                     descripcion: "",
@@ -222,8 +251,21 @@ function SolicitudPagoTransportePage() {
                     </SelectContent>
                   </Select>
                 </div>
+                {viajeActual && (
+                  <div className="grid gap-1.5 sm:col-span-2">
+                    <Label htmlFor="cantidad">Cantidad de viajes *</Label>
+                    <Input
+                      id="cantidad"
+                      inputMode="numeric"
+                      min={1}
+                      value={form.cantidad}
+                      onChange={(e) => cambiarCantidad(e.target.value)}
+                      onBlur={() => cambiarCantidad(String(cantidadNum))}
+                    />
+                  </div>
+                )}
                 <div className="grid gap-1.5">
-                  <Label htmlFor="monto">Monto *</Label>
+                  <Label htmlFor="monto">{viajeActual ? "Monto total *" : "Monto *"}</Label>
                   <Input
                     id="monto"
                     inputMode="decimal"
@@ -238,6 +280,12 @@ function SolicitudPagoTransportePage() {
                       if (v === "" || /^\d*\.?\d*$/.test(v)) set("monto", v);
                     }}
                   />
+                  {viajeActual && (
+                    <p className="text-xs text-muted-foreground">
+                      Precio por viaje: {fmt(Number(viajeActual.precio) || 0)} {form.moneda} × {cantidadNum} ={" "}
+                      {fmt((Number(viajeActual.precio) || 0) * cantidadNum)} {form.moneda}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid gap-1.5">
