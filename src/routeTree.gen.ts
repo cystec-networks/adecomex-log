@@ -46,6 +46,7 @@ import { Route as AuthenticatedExpedientesNuevoRouteImport } from './routes/_aut
 import { Route as AuthenticatedExpedientesDashboardRouteImport } from './routes/_authenticated/expedientes.dashboard'
 import { Route as AuthenticatedExpedientesIdRouteImport } from './routes/_authenticated/expedientes.$id'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
+import { Route as AuthenticatedAdminSolicitudesPagoTransporteRouteImport } from './routes/_authenticated/admin.solicitudes-pago-transporte'
 import { Route as AuthenticatedAdminReportesFiscalesRouteImport } from './routes/_authenticated/admin.reportes-fiscales'
 import { Route as AuthenticatedAdminGastosOperativosRouteImport } from './routes/_authenticated/admin.gastos-operativos'
 import { Route as AuthenticatedAdminFacturacionRouteImport } from './routes/_authenticated/admin.facturacion'
@@ -271,6 +272,12 @@ const AuthenticatedAdminUsuariosRoute =
     path: '/admin/usuarios',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminSolicitudesPagoTransporteRoute =
+  AuthenticatedAdminSolicitudesPagoTransporteRouteImport.update({
+    id: '/admin/solicitudes-pago-transporte',
+    path: '/admin/solicitudes-pago-transporte',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminReportesFiscalesRoute =
   AuthenticatedAdminReportesFiscalesRouteImport.update({
     id: '/admin/reportes-fiscales',
@@ -418,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRouteWithChildren
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
+  '/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
@@ -474,6 +482,7 @@ export interface FileRoutesByTo {
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRouteWithChildren
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
+  '/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
@@ -534,6 +543,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/facturacion': typeof AuthenticatedAdminFacturacionRouteWithChildren
   '/_authenticated/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/_authenticated/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
+  '/_authenticated/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/_authenticated/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
@@ -592,6 +602,7 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/gastos-operativos'
     | '/admin/reportes-fiscales'
+    | '/admin/solicitudes-pago-transporte'
     | '/admin/usuarios'
     | '/expedientes/$id'
     | '/expedientes/dashboard'
@@ -648,6 +659,7 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/gastos-operativos'
     | '/admin/reportes-fiscales'
+    | '/admin/solicitudes-pago-transporte'
     | '/admin/usuarios'
     | '/expedientes/$id'
     | '/expedientes/dashboard'
@@ -707,6 +719,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/facturacion'
     | '/_authenticated/admin/gastos-operativos'
     | '/_authenticated/admin/reportes-fiscales'
+    | '/_authenticated/admin/solicitudes-pago-transporte'
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/expedientes/$id'
     | '/_authenticated/expedientes/dashboard'
@@ -1014,6 +1027,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/solicitudes-pago-transporte': {
+      id: '/_authenticated/admin/solicitudes-pago-transporte'
+      path: '/admin/solicitudes-pago-transporte'
+      fullPath: '/admin/solicitudes-pago-transporte'
+      preLoaderRoute: typeof AuthenticatedAdminSolicitudesPagoTransporteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/reportes-fiscales': {
       id: '/_authenticated/admin/reportes-fiscales'
       path: '/admin/reportes-fiscales'
@@ -1190,6 +1210,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminFacturacionRoute: typeof AuthenticatedAdminFacturacionRouteWithChildren
   AuthenticatedAdminGastosOperativosRoute: typeof AuthenticatedAdminGastosOperativosRoute
   AuthenticatedAdminReportesFiscalesRoute: typeof AuthenticatedAdminReportesFiscalesRoute
+  AuthenticatedAdminSolicitudesPagoTransporteRoute: typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedExpedientesIdRoute: typeof AuthenticatedExpedientesIdRoute
   AuthenticatedExpedientesDashboardRoute: typeof AuthenticatedExpedientesDashboardRoute
@@ -1238,6 +1259,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAdminGastosOperativosRoute,
   AuthenticatedAdminReportesFiscalesRoute:
     AuthenticatedAdminReportesFiscalesRoute,
+  AuthenticatedAdminSolicitudesPagoTransporteRoute:
+    AuthenticatedAdminSolicitudesPagoTransporteRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedExpedientesIdRoute: AuthenticatedExpedientesIdRoute,
   AuthenticatedExpedientesDashboardRoute:
