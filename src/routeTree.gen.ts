@@ -53,6 +53,7 @@ import { Route as AuthenticatedAcademiaProgramasRouteImport } from './routes/_au
 import { Route as AuthenticatedAcademiaInscripcionesRouteImport } from './routes/_authenticated/academia.inscripciones'
 import { Route as AuthenticatedAcademiaEstudiantesRouteImport } from './routes/_authenticated/academia.estudiantes'
 import { Route as AuthenticatedAcademiaAccesosEstudiantesRouteImport } from './routes/_authenticated/academia.accesos-estudiantes'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedRrhhEmpleadosIndexRouteImport } from './routes/_authenticated/rrhh.empleados.index'
 import { Route as AuthenticatedLegalDocumentosIndexRouteImport } from './routes/_authenticated/legal.documentos.index'
 import { Route as PortalPortalExpedientesIdRouteImport } from './routes/_portal/portal.expedientes.$id'
@@ -308,6 +309,11 @@ const AuthenticatedAcademiaAccesosEstudiantesRoute =
     path: '/academia/accesos-estudiantes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRrhhEmpleadosIndexRoute =
   AuthenticatedRrhhEmpleadosIndexRouteImport.update({
     id: '/rrhh/empleados/',
@@ -354,6 +360,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/mi-cuenta': typeof AuthenticatedMiCuentaRoute
   '/reportes': typeof AuthenticatedReportesRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/academia/accesos-estudiantes': typeof AuthenticatedAcademiaAccesosEstudiantesRoute
   '/academia/estudiantes': typeof AuthenticatedAcademiaEstudiantesRoute
   '/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
@@ -403,6 +410,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/mi-cuenta': typeof AuthenticatedMiCuentaRoute
   '/reportes': typeof AuthenticatedReportesRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/academia/accesos-estudiantes': typeof AuthenticatedAcademiaAccesosEstudiantesRoute
   '/academia/estudiantes': typeof AuthenticatedAcademiaEstudiantesRoute
   '/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
@@ -456,6 +464,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/mi-cuenta': typeof AuthenticatedMiCuentaRoute
   '/_authenticated/reportes': typeof AuthenticatedReportesRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_authenticated/academia/accesos-estudiantes': typeof AuthenticatedAcademiaAccesosEstudiantesRoute
   '/_authenticated/academia/estudiantes': typeof AuthenticatedAcademiaEstudiantesRoute
   '/_authenticated/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
@@ -507,6 +516,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/mi-cuenta'
     | '/reportes'
+    | '/.lovable/oauth/consent'
     | '/academia/accesos-estudiantes'
     | '/academia/estudiantes'
     | '/academia/inscripciones'
@@ -556,6 +566,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/mi-cuenta'
     | '/reportes'
+    | '/.lovable/oauth/consent'
     | '/academia/accesos-estudiantes'
     | '/academia/estudiantes'
     | '/academia/inscripciones'
@@ -608,6 +619,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/mi-cuenta'
     | '/_authenticated/reportes'
+    | '/.lovable/oauth/consent'
     | '/_authenticated/academia/accesos-estudiantes'
     | '/_authenticated/academia/estudiantes'
     | '/_authenticated/academia/inscripciones'
@@ -656,6 +668,7 @@ export interface RootRouteChildren {
   PortalEstudianteRouteRoute: typeof PortalEstudianteRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -968,6 +981,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAcademiaAccesosEstudiantesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/rrhh/empleados/': {
       id: '/_authenticated/rrhh/empleados/'
       path: '/rrhh/empleados'
@@ -1165,6 +1185,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortalEstudianteRouteRoute: PortalEstudianteRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
