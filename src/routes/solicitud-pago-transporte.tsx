@@ -251,8 +251,21 @@ function SolicitudPagoTransportePage() {
                     </SelectContent>
                   </Select>
                 </div>
+                {viajeActual && (
+                  <div className="grid gap-1.5 sm:col-span-2">
+                    <Label htmlFor="cantidad">Cantidad de viajes *</Label>
+                    <Input
+                      id="cantidad"
+                      inputMode="numeric"
+                      min={1}
+                      value={form.cantidad}
+                      onChange={(e) => cambiarCantidad(e.target.value)}
+                      onBlur={() => cambiarCantidad(String(cantidadNum))}
+                    />
+                  </div>
+                )}
                 <div className="grid gap-1.5">
-                  <Label htmlFor="monto">Monto *</Label>
+                  <Label htmlFor="monto">{viajeActual ? "Monto total *" : "Monto *"}</Label>
                   <Input
                     id="monto"
                     inputMode="decimal"
@@ -267,6 +280,12 @@ function SolicitudPagoTransportePage() {
                       if (v === "" || /^\d*\.?\d*$/.test(v)) set("monto", v);
                     }}
                   />
+                  {viajeActual && (
+                    <p className="text-xs text-muted-foreground">
+                      Precio por viaje: {fmt(Number(viajeActual.precio) || 0)} {form.moneda} × {cantidadNum} ={" "}
+                      {fmt((Number(viajeActual.precio) || 0) * cantidadNum)} {form.moneda}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid gap-1.5">
