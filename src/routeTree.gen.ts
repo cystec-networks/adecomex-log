@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PortalEstudianteRouteRouteImport } from './routes/_portal-estudiante/route'
 import { Route as PortalRouteRouteImport } from './routes/_portal/route'
@@ -20,6 +21,8 @@ import { Route as AuthenticatedMiCuentaRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCopilotoRouteImport } from './routes/_authenticated/copiloto'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as PortalPortalIndexRouteImport } from './routes/_portal/portal.index'
 import { Route as PortalEstudiantePortalEstudianteIndexRouteImport } from './routes/_portal-estudiante/portal-estudiante.index'
 import { Route as AuthenticatedTransportesIndexRouteImport } from './routes/_authenticated/transportes.index'
@@ -53,6 +56,8 @@ import { Route as AuthenticatedAcademiaProgramasRouteImport } from './routes/_au
 import { Route as AuthenticatedAcademiaInscripcionesRouteImport } from './routes/_authenticated/academia.inscripciones'
 import { Route as AuthenticatedAcademiaEstudiantesRouteImport } from './routes/_authenticated/academia.estudiantes'
 import { Route as AuthenticatedAcademiaAccesosEstudiantesRouteImport } from './routes/_authenticated/academia.accesos-estudiantes'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedRrhhEmpleadosIndexRouteImport } from './routes/_authenticated/rrhh.empleados.index'
 import { Route as AuthenticatedLegalDocumentosIndexRouteImport } from './routes/_authenticated/legal.documentos.index'
 import { Route as PortalPortalExpedientesIdRouteImport } from './routes/_portal/portal.expedientes.$id'
@@ -63,6 +68,11 @@ import { Route as AuthenticatedAdminFacturacionPendientesRouteImport } from './r
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -112,6 +122,18 @@ const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PortalPortalIndexRoute = PortalPortalIndexRouteImport.update({
   id: '/portal/',
   path: '/portal/',
@@ -308,6 +330,17 @@ const AuthenticatedAcademiaAccesosEstudiantesRoute =
     path: '/academia/accesos-estudiantes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRrhhEmpleadosIndexRoute =
   AuthenticatedRrhhEmpleadosIndexRouteImport.update({
     id: '/rrhh/empleados/',
@@ -348,12 +381,17 @@ const AuthenticatedAdminFacturacionPendientesRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/copiloto': typeof AuthenticatedCopilotoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/mi-cuenta': typeof AuthenticatedMiCuentaRoute
   '/reportes': typeof AuthenticatedReportesRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/academia/accesos-estudiantes': typeof AuthenticatedAcademiaAccesosEstudiantesRoute
   '/academia/estudiantes': typeof AuthenticatedAcademiaEstudiantesRoute
   '/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
@@ -397,12 +435,17 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/copiloto': typeof AuthenticatedCopilotoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/mi-cuenta': typeof AuthenticatedMiCuentaRoute
   '/reportes': typeof AuthenticatedReportesRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/academia/accesos-estudiantes': typeof AuthenticatedAcademiaAccesosEstudiantesRoute
   '/academia/estudiantes': typeof AuthenticatedAcademiaEstudiantesRoute
   '/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
@@ -450,12 +493,17 @@ export interface FileRoutesById {
   '/_portal': typeof PortalRouteRouteWithChildren
   '/_portal-estudiante': typeof PortalEstudianteRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/copiloto': typeof AuthenticatedCopilotoRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/mi-cuenta': typeof AuthenticatedMiCuentaRoute
   '/_authenticated/reportes': typeof AuthenticatedReportesRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/academia/accesos-estudiantes': typeof AuthenticatedAcademiaAccesosEstudiantesRoute
   '/_authenticated/academia/estudiantes': typeof AuthenticatedAcademiaEstudiantesRoute
   '/_authenticated/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
@@ -501,12 +549,17 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/mcp'
     | '/reset-password'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/clientes'
     | '/copiloto'
     | '/dashboard'
     | '/mi-cuenta'
     | '/reportes'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/academia/accesos-estudiantes'
     | '/academia/estudiantes'
     | '/academia/inscripciones'
@@ -550,12 +603,17 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/mcp'
     | '/reset-password'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/clientes'
     | '/copiloto'
     | '/dashboard'
     | '/mi-cuenta'
     | '/reportes'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/academia/accesos-estudiantes'
     | '/academia/estudiantes'
     | '/academia/inscripciones'
@@ -602,12 +660,17 @@ export interface FileRouteTypes {
     | '/_portal'
     | '/_portal-estudiante'
     | '/auth'
+    | '/mcp'
     | '/reset-password'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/_authenticated/clientes'
     | '/_authenticated/copiloto'
     | '/_authenticated/dashboard'
     | '/_authenticated/mi-cuenta'
     | '/_authenticated/reportes'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/academia/accesos-estudiantes'
     | '/_authenticated/academia/estudiantes'
     | '/_authenticated/academia/inscripciones'
@@ -655,7 +718,12 @@ export interface RootRouteChildren {
   PortalRouteRoute: typeof PortalRouteRouteWithChildren
   PortalEstudianteRouteRoute: typeof PortalEstudianteRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  McpRoute: typeof McpRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -665,6 +733,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -736,6 +811,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/clientes'
       preLoaderRoute: typeof AuthenticatedClientesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_portal/portal/': {
       id: '/_portal/portal/'
@@ -968,6 +1057,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAcademiaAccesosEstudiantesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/rrhh/empleados/': {
       id: '/_authenticated/rrhh/empleados/'
       path: '/rrhh/empleados'
@@ -1164,8 +1267,24 @@ const rootRouteChildren: RootRouteChildren = {
   PortalRouteRoute: PortalRouteRouteWithChildren,
   PortalEstudianteRouteRoute: PortalEstudianteRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  McpRoute: McpRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
