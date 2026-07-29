@@ -1,0 +1,168 @@
+{
+  "version": 1,
+  "sdk_version": "0.25.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://ymiyjsuzdrbswjaduwhc.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "adecomex-mcp",
+      "version": "0.1.0",
+      "title": "ADECOMEX Gestión y Logística"
+    },
+    "tools": [
+      {
+        "name": "listar_expedientes",
+        "title": "Listar expedientes",
+        "description": "Lista expedientes de importación/exportación de ADECOMEX, con filtro opcional por estado o texto (número, BL/AWB, DUA, mercancía).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "estado": {
+              "description": "Estado exacto del expediente, ej. en_transito, facturado.",
+              "type": "string"
+            },
+            "buscar": {
+              "description": "Texto libre: número de expediente, BL/AWB, DUA o mercancía.",
+              "type": "string"
+            },
+            "limite": {
+              "description": "Máximo de filas a devolver (por defecto 20, máximo 100).",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "detalle_expediente",
+        "title": "Detalle de expediente",
+        "description": "Devuelve el detalle completo de un expediente por su número (ej. EXP-2026-001), incluyendo cliente, fechas de estado y datos aduanales.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "numero": {
+              "type": "string",
+              "description": "Número del expediente."
+            }
+          },
+          "required": [
+            "numero"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "listar_solicitudes",
+        "title": "Listar solicitudes",
+        "description": "Lista solicitudes de importación/exportación recibidas, con filtro opcional por estado o texto.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "estado": {
+              "description": "Estado exacto de la solicitud.",
+              "type": "string"
+            },
+            "buscar": {
+              "description": "Texto libre: número, BL/AWB o factura comercial.",
+              "type": "string"
+            },
+            "limite": {
+              "description": "Máximo de filas (por defecto 20, máximo 100).",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "listar_transportes",
+        "title": "Listar transportes",
+        "description": "Lista viajes de transporte (fletes marítimos, aéreos o terrestres) con filtro opcional por estado o texto.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "estado": {
+              "description": "Estado exacto del transporte.",
+              "type": "string"
+            },
+            "buscar": {
+              "description": "Texto libre: número de viaje, transportista o placa/contenedor.",
+              "type": "string"
+            },
+            "limite": {
+              "description": "Máximo de filas (por defecto 20, máximo 100).",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "buscar_clientes",
+        "title": "Buscar clientes",
+        "description": "Busca clientes de ADECOMEX por nombre o RNC y devuelve sus datos de contacto.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "buscar": {
+              "type": "string",
+              "description": "Nombre o RNC del cliente."
+            },
+            "limite": {
+              "description": "Máximo de filas (por defecto 10, máximo 50).",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "buscar"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
