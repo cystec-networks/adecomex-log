@@ -17,7 +17,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, CreditCard, Trash2 } from "lucide-react";
+import { Plus, CreditCard, Trash2, Pencil } from "lucide-react";
 import { fmtLocalDate, daysFromToday } from "@/lib/dates";
 import { EscanearFacturaCxpButton } from "@/components/escanear-factura-cxp-button";
 
