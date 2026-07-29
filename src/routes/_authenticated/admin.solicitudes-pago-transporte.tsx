@@ -278,9 +278,22 @@ function SolicitudesPagoTransportePage() {
                         </Link>
                       </Button>
                     ) : (
-                      <Button variant="outline" size="sm" onClick={() => copiar(r.numero_control)}>
-                        <Copy className="h-3.5 w-3.5 mr-1" /> Copiar número
-                      </Button>
+                      <div className="flex flex-wrap gap-1">
+                        <Button variant="outline" size="sm" onClick={() => copiar(r.numero_control)}>
+                          <Copy className="h-3.5 w-3.5 mr-1" /> Copiar número
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to="/transportes/nuevo" search={{ control: r.numero_control }}>
+                            <Truck className="h-3.5 w-3.5 mr-1" /> Convertir en Transporte
+                          </Link>
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => abrirEdicion(r)} title="Editar">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setEliminando(r)} title="Eliminar">
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      </div>
                     )}
                   </td>
                 </tr>
