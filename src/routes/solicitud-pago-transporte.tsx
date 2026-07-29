@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,9 +8,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, CheckCircle2, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/logo-adecomex.jpg.asset.json";
 
 const WHATSAPP = "18099313246";
+
+type Viaje = {
+  id: string;
+  origen: string;
+  destino: string;
+  tipo_servicio: string | null;
+  precio: number;
+  moneda: string;
+};
+
 
 export const Route = createFileRoute("/solicitud-pago-transporte")({
   ssr: false,
@@ -48,6 +59,35 @@ function SolicitudPagoTransportePage() {
   });
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
+  const [viajes, setViajes] = useState<Viaje[]>([]);
+  const [viajeSel, setViajeSel] = useState<string>("");
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("catalogo_viajes_transporte")
+        .select("id, origen, destino, tipo_servicio, precio, moneda")
+        .eq("activo", true)
+        .order("origen", { ascending: true });
+      setViajes((data ?? []) as Viaje[]);
+    })();
+  }, []);
+
+  const elegirViaje = (id: string) => {
+    setViajeSel(id);
+    if (id === "otro") return;
+    const v = viajes.find((x) => x.id === id);
+    if (!v) return;
+    setForm((f) => ({
+      ...f,
+      monto: String(v.precio ?? ""),
+      moneda: v.moneda ?? "DOP",
+      referencia_viaje: f.referencia_viaje.trim() ? f.referencia_viaje : `${v.origen} → ${v.destino}`,
+    }));
+  };
+
+  const bloqueado = !!viajeSel && viajeSel !== "otro";
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const monto = Number(form.monto);
@@ -59,7 +99,7 @@ function SolicitudPagoTransportePage() {
       const res = await fetch("/api/public/solicitud-pago-transporte", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...form, monto }),
+        body: JSON.stringify({ ...form, monto, catalogo_viaje_id: bloqueado ? viajeSel : null }),
       });
       const json = await res.json();
       if (!res.ok || !json?.numero_control) throw new Error(json?.error ?? "No se pudo registrar la solicitud.");
@@ -124,6 +164,7 @@ function SolicitudPagoTransportePage() {
                 variant="outline"
                 onClick={() => {
                   setNumeroControl(null);
+                  setViajeSel("");
                   setForm({
                     transportista_nombre: "",
                     transportista_rnc: "",
@@ -167,23 +208,41 @@ function SolicitudPagoTransportePage() {
                   <Label htmlFor="tel">Teléfono</Label>
                   <Input id="tel" maxLength={30} value={form.telefono} onChange={(e) => set("telefono", e.target.value)} />
                 </div>
+                <div className="grid gap-1.5 sm:col-span-2">
+                  <Label>Ruta / Viaje</Label>
+                  <Select value={viajeSel} onValueChange={elegirViaje}>
+                    <SelectTrigger><SelectValue placeholder="Selecciona la ruta del catálogo" /></SelectTrigger>
+                    <SelectContent>
+                      {viajes.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.origen} → {v.destino} — {Number(v.precio).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {v.moneda}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="otro">Otro (monto personalizado)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="monto">Monto *</Label>
                   <Input
                     id="monto"
                     inputMode="decimal"
                     required
+                    readOnly={bloqueado}
+                    className={bloqueado ? "bg-muted" : undefined}
                     placeholder="0.00"
                     value={form.monto}
                     onChange={(e) => {
+                      if (bloqueado) return;
                       const v = e.target.value.replace(",", ".");
                       if (v === "" || /^\d*\.?\d*$/.test(v)) set("monto", v);
                     }}
                   />
                 </div>
+
                 <div className="grid gap-1.5">
                   <Label>Moneda</Label>
-                  <Select value={form.moneda} onValueChange={(v) => set("moneda", v)}>
+                  <Select value={form.moneda} onValueChange={(v) => set("moneda", v)} disabled={bloqueado}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="DOP">DOP</SelectItem>
