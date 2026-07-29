@@ -93,6 +93,37 @@ function VencimientoBadge({ fecha, estado }: { fecha: string | null; estado: Est
   return <span className="text-xs">{fmtLocalDate(fecha)}</span>;
 }
 
+type Agrupacion = "ninguna" | "semana" | "mes" | "anio";
+
+const MESES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+function pad(n: number) { return String(n).padStart(2, "0"); }
+
+// Devuelve { key, label } del período al que pertenece la fila.
+function periodoDe(fecha: string | null, modo: Agrupacion): { key: string; label: string } {
+  if (!fecha) return { key: "0000-sin-fecha", label: "Sin fecha" };
+  const d = parseLocalDate(fecha);
+  if (isNaN(d.getTime())) return { key: "0000-sin-fecha", label: "Sin fecha" };
+  const y = d.getFullYear();
+  if (modo === "anio") return { key: `${y}`, label: `${y}` };
+  if (modo === "mes") return { key: `${y}-${pad(d.getMonth() + 1)}`, label: `${MESES[d.getMonth()]} ${y}` };
+  // semana: lunes a domingo
+  const lunes = new Date(d);
+  const dow = (d.getDay() + 6) % 7; // 0 = lunes
+  lunes.setDate(d.getDate() - dow);
+  const domingo = new Date(lunes);
+  domingo.setDate(lunes.getDate() + 6);
+  const key = `${lunes.getFullYear()}-${pad(lunes.getMonth() + 1)}-${pad(lunes.getDate())}`;
+  const label =
+    lunes.getMonth() === domingo.getMonth()
+      ? `Semana del ${lunes.getDate()} al ${domingo.getDate()} de ${MESES[lunes.getMonth()].toLowerCase()} ${lunes.getFullYear()}`
+      : `Semana del ${lunes.getDate()} de ${MESES[lunes.getMonth()].toLowerCase()} al ${domingo.getDate()} de ${MESES[domingo.getMonth()].toLowerCase()} ${domingo.getFullYear()}`;
+  return { key, label };
+}
+
 const emptyForm = {
   proveedor_nombre: "",
   proveedor_rnc: "",
