@@ -19,6 +19,8 @@ import {
 import { toast } from "sonner";
 import { Plus, CreditCard, Trash2 } from "lucide-react";
 import { fmtLocalDate, daysFromToday } from "@/lib/dates";
+import { EscanearFacturaCxpButton } from "@/components/escanear-factura-cxp-button";
+
 
 export const Route = createFileRoute("/_authenticated/admin/cuentas-por-pagar")({
   ssr: false,
@@ -40,6 +42,8 @@ type Row = {
   id: string;
   proveedor_nombre: string;
   proveedor_rnc: string | null;
+  numero_factura: string | null;
+  ncf_proveedor: string | null;
   monto_total: number;
   monto_pagado: number;
   moneda: Moneda;
@@ -51,6 +55,7 @@ type Row = {
   gasto_operativo_id: string | null;
   expediente_id: string | null;
 };
+
 
 const fmtMoney = (n: number, m: string) =>
   `${m === "USD" ? "US$" : m === "EUR" ? "€" : "RD$"} ${(n || 0).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -91,6 +96,9 @@ function VencimientoBadge({ fecha, estado }: { fecha: string | null; estado: Est
 const emptyForm = {
   proveedor_nombre: "",
   proveedor_rnc: "",
+  numero_factura: "",
+  ncf_proveedor: "",
+
   monto_total: "" as string,
   moneda: "DOP" as Moneda,
   fecha_factura: "" as string,
@@ -176,6 +184,9 @@ function CuentasPorPagarPage() {
       const payload: any = {
         proveedor_nombre: form.proveedor_nombre.trim(),
         proveedor_rnc: form.proveedor_rnc.trim() || null,
+        numero_factura: form.numero_factura.trim() || null,
+        ncf_proveedor: form.ncf_proveedor.trim() || null,
+
         monto_total: monto,
         moneda: form.moneda,
         fecha_factura: form.fecha_factura || null,
@@ -324,6 +335,9 @@ function CuentasPorPagarPage() {
                 <tr>
                   <th className="text-left px-3 py-2">Proveedor</th>
                   <th className="text-left px-3 py-2">RNC</th>
+                  <th className="text-left px-3 py-2">No. Factura</th>
+                  <th className="text-left px-3 py-2">NCF</th>
+
                   <th className="text-right px-3 py-2">Total</th>
                   <th className="text-right px-3 py-2">Pagado</th>
                   <th className="text-right px-3 py-2">Saldo</th>
@@ -335,10 +349,10 @@ function CuentasPorPagarPage() {
               </thead>
               <tbody>
                 {isLoading && (
-                  <tr><td colSpan={9} className="text-center py-6 text-muted-foreground">Cargando…</td></tr>
+                  <tr><td colSpan={11} className="text-center py-6 text-muted-foreground">Cargando…</td></tr>
                 )}
                 {!isLoading && rows.length === 0 && (
-                  <tr><td colSpan={9} className="text-center py-6 text-muted-foreground">Sin cuentas por pagar.</td></tr>
+                  <tr><td colSpan={11} className="text-center py-6 text-muted-foreground">Sin cuentas por pagar.</td></tr>
                 )}
                 {rows.map((r) => {
                   const saldo = Number(r.monto_total || 0) - Number(r.monto_pagado || 0);
@@ -349,6 +363,9 @@ function CuentasPorPagarPage() {
                         {r.notas && <div className="text-xs text-muted-foreground truncate max-w-[240px]">{r.notas}</div>}
                       </td>
                       <td className="px-3 py-2 tabular-nums text-xs">{r.proveedor_rnc || "—"}</td>
+                      <td className="px-3 py-2 text-xs tabular-nums">{r.numero_factura || "—"}</td>
+                      <td className="px-3 py-2 text-xs tabular-nums">{r.ncf_proveedor || "—"}</td>
+
                       <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.monto_total), r.moneda)}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.monto_pagado), r.moneda)}</td>
                       <td className="px-3 py-2 text-right tabular-nums font-medium">{fmtMoney(saldo, r.moneda)}</td>
@@ -382,6 +399,24 @@ function CuentasPorPagarPage() {
             <DialogDescription>Registro manual de un pago pendiente a un proveedor.</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2 flex items-center justify-between gap-2 rounded-md border bg-muted/20 px-3 py-2">
+              <span className="text-xs text-muted-foreground">
+                Escanea la factura del proveedor y edita los datos antes de guardar.
+              </span>
+              <EscanearFacturaCxpButton
+                onExtracted={(d) =>
+                  setForm((f) => ({
+                    ...f,
+                    proveedor_nombre: d.proveedor_nombre ?? f.proveedor_nombre,
+                    proveedor_rnc: d.proveedor_rnc ?? f.proveedor_rnc,
+                    numero_factura: d.numero_factura ?? f.numero_factura,
+                    ncf_proveedor: d.ncf_proveedor ?? f.ncf_proveedor,
+                    fecha_factura: d.fecha_factura ?? f.fecha_factura,
+                    monto_total: d.monto_total !== null ? String(d.monto_total) : f.monto_total,
+                  }))
+                }
+              />
+            </div>
             <div className="col-span-2">
               <Label>Proveedor *</Label>
               <Input value={form.proveedor_nombre} onChange={(e) => setForm({ ...form, proveedor_nombre: e.target.value })} />
@@ -390,6 +425,15 @@ function CuentasPorPagarPage() {
               <Label>RNC / Cédula</Label>
               <Input value={form.proveedor_rnc} onChange={(e) => setForm({ ...form, proveedor_rnc: e.target.value })} />
             </div>
+            <div>
+              <Label>No. de factura</Label>
+              <Input value={form.numero_factura} onChange={(e) => setForm({ ...form, numero_factura: e.target.value })} />
+            </div>
+            <div>
+              <Label>NCF del proveedor</Label>
+              <Input value={form.ncf_proveedor} onChange={(e) => setForm({ ...form, ncf_proveedor: e.target.value.toUpperCase() })} />
+            </div>
+
             <div>
               <Label>Moneda</Label>
               <Select value={form.moneda} onValueChange={(v) => setForm({ ...form, moneda: v as Moneda })}>
