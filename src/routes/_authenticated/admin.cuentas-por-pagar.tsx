@@ -421,12 +421,16 @@ function CuentasPorPagarPage() {
         </CardContent>
       </Card>
 
-      {/* Nueva cuenta */}
-      <Dialog open={openNew} onOpenChange={setOpenNew}>
+      {/* Nueva / editar cuenta */}
+      <Dialog open={openNew} onOpenChange={(o) => { setOpenNew(o); if (!o) { setEditingId(null); setForm(emptyForm); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Nueva cuenta por pagar</DialogTitle>
-            <DialogDescription>Registro manual de un pago pendiente a un proveedor.</DialogDescription>
+            <DialogTitle>{editingId ? "Editar cuenta por pagar" : "Nueva cuenta por pagar"}</DialogTitle>
+            <DialogDescription>
+              {editingId
+                ? "Modifica los datos de la cuenta por pagar. El estado se controla desde “Registrar pago”."
+                : "Registro manual de un pago pendiente a un proveedor."}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 flex items-center justify-between gap-2 rounded-md border bg-muted/20 px-3 py-2">
