@@ -215,6 +215,29 @@ function CuentasPorPagarPage() {
     return acc;
   }, [rows]);
 
+  const grupos = useMemo(() => {
+    if (agrupar === "ninguna") return [];
+    const map = new Map<string, { key: string; label: string; rows: Row[] }>();
+    for (const r of rows) {
+      const { key, label } = periodoDe(r.fecha_factura, agrupar);
+      if (!map.has(key)) map.set(key, { key, label, rows: [] });
+      map.get(key)!.rows.push(r);
+    }
+    return [...map.values()]
+      .sort((a, b) => (a.key < b.key ? 1 : a.key > b.key ? -1 : 0))
+      .map((g) => {
+        const tot: Record<string, { total: number; pagado: number }> = {};
+        for (const r of g.rows) {
+          const t = (tot[r.moneda] ??= { total: 0, pagado: 0 });
+          t.total += Number(r.monto_total || 0);
+          t.pagado += Number(r.monto_pagado || 0);
+        }
+        return { ...g, tot };
+      });
+  }, [rows, agrupar]);
+
+
+
   const createMut = useMutation({
     mutationFn: async () => {
       const monto = Number(form.monto_total);
