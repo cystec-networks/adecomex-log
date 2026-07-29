@@ -198,7 +198,8 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         "expediente_id","cliente_id","tipo","transportista","placa_contenedor","origen","destino",
         "fecha_salida","eta","observaciones","factura_numero","factura_fecha","numero_viaje",
         "pago_referencia","factura_costo_numero","factura_costo_fecha","contenedores_detalle",
-        "factura_ecf_id",
+        "factura_ecf_id","numero_control_pago",
+
       ];
       nullableStr.forEach((k) => { if (payload[k] === "") payload[k] = null; });
       const nullableNum = ["flete_monto","costo_viaje","descuento_cxc","costo_combustible","costo_peajes","costo_chofer","costo_otros","ingreso_facturado","contenedores_cantidad"];
