@@ -157,6 +157,8 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         contenedores_cantidad: existing.contenedores_cantidad?.toString() ?? "",
         contenedores_detalle: existing.contenedores_detalle ?? "",
         factura_ecf_id: existing.factura_ecf_id ?? "",
+        numero_control_pago: (existing as any).numero_control_pago ?? "",
+
       });
       setLoaded(true);
     }
