@@ -188,8 +188,8 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
     return { costos, ingreso, margen, pct, costoViaje, cxc, netoPagar };
   }, [form.costo_viaje, form.descuento_cxc, form.costo_combustible, form.costo_peajes, form.costo_chofer, form.costo_otros, form.ingreso_facturado]);
 
-  const buscarSolicitudPago = async () => {
-    const nc = (form.numero_control_pago ?? "").trim();
+  const buscarSolicitudPago = async (control?: string) => {
+    const nc = (control ?? form.numero_control_pago ?? "").trim();
     if (!nc) return toast.error("Escribe un número de control");
     setBuscandoSpt(true);
     const { data, error } = await (supabase as any)
