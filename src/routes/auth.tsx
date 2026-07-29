@@ -9,17 +9,34 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Ship, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+function safeNext(next: unknown): string | null {
+  if (typeof next !== "string") return null;
+  return next.startsWith("/") && !next.startsWith("//") ? next : null;
+}
+
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  beforeLoad: async () => {
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" ? s.next : undefined,
+  }),
+  beforeLoad: async ({ search }) => {
     const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect({ to: "/" });
+    if (data.user) {
+      const next = safeNext(search.next);
+      throw next ? redirect({ href: next }) : redirect({ to: "/" });
+    }
   },
   component: AuthPage,
 });
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { next: nextRaw } = Route.useSearch();
+  const next = safeNext(nextRaw);
+  const goNext = () => {
+    if (next) window.location.href = next;
+    else navigate({ to: "/" });
+  };
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,10 +47,11 @@ function AuthPage() {
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session) navigate({ to: "/" });
+      if (session) goNext();
     });
     return () => sub.subscription.unsubscribe();
-  }, [navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate, next]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +68,7 @@ function AuthPage() {
       localStorage.setItem("adecomex.loginAt", String(Date.now()));
     } catch {}
     toast.success("Sesión iniciada");
-    navigate({ to: "/" });
+    goNext();
   };
 
   const handleForgot = async (e: React.FormEvent) => {
