@@ -399,6 +399,24 @@ function CuentasPorPagarPage() {
             <DialogDescription>Registro manual de un pago pendiente a un proveedor.</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2 flex items-center justify-between gap-2 rounded-md border bg-muted/20 px-3 py-2">
+              <span className="text-xs text-muted-foreground">
+                Escanea la factura del proveedor y edita los datos antes de guardar.
+              </span>
+              <EscanearFacturaCxpButton
+                onExtracted={(d) =>
+                  setForm((f) => ({
+                    ...f,
+                    proveedor_nombre: d.proveedor_nombre ?? f.proveedor_nombre,
+                    proveedor_rnc: d.proveedor_rnc ?? f.proveedor_rnc,
+                    numero_factura: d.numero_factura ?? f.numero_factura,
+                    ncf_proveedor: d.ncf_proveedor ?? f.ncf_proveedor,
+                    fecha_factura: d.fecha_factura ?? f.fecha_factura,
+                    monto_total: d.monto_total !== null ? String(d.monto_total) : f.monto_total,
+                  }))
+                }
+              />
+            </div>
             <div className="col-span-2">
               <Label>Proveedor *</Label>
               <Input value={form.proveedor_nombre} onChange={(e) => setForm({ ...form, proveedor_nombre: e.target.value })} />
@@ -407,6 +425,15 @@ function CuentasPorPagarPage() {
               <Label>RNC / Cédula</Label>
               <Input value={form.proveedor_rnc} onChange={(e) => setForm({ ...form, proveedor_rnc: e.target.value })} />
             </div>
+            <div>
+              <Label>No. de factura</Label>
+              <Input value={form.numero_factura} onChange={(e) => setForm({ ...form, numero_factura: e.target.value })} />
+            </div>
+            <div>
+              <Label>NCF del proveedor</Label>
+              <Input value={form.ncf_proveedor} onChange={(e) => setForm({ ...form, ncf_proveedor: e.target.value.toUpperCase() })} />
+            </div>
+
             <div>
               <Label>Moneda</Label>
               <Select value={form.moneda} onValueChange={(v) => setForm({ ...form, moneda: v as Moneda })}>
