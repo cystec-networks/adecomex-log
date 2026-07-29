@@ -118,8 +118,11 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
     contenedores_cantidad: "",
     contenedores_detalle: "",
     factura_ecf_id: "" as string,
+    numero_control_pago: "",
   });
   const [loaded, setLoaded] = useState(false);
+  const [buscandoSpt, setBuscandoSpt] = useState(false);
+
 
   useEffect(() => {
     if (mode === "edit" && existing && !loaded) {
