@@ -403,6 +403,21 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
             />
           </div>
           <div className="grid gap-1.5">
+            <Label>Número de control de pago</Label>
+            <div className="flex gap-2">
+              <Input
+                value={form.numero_control_pago}
+                onChange={(e) => set("numero_control_pago", e.target.value)}
+                placeholder="SPT-000001"
+              />
+              <Button type="button" variant="outline" disabled={buscandoSpt} onClick={buscarSolicitudPago}>
+                {buscandoSpt ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Buscar
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-1.5">
             <Label>Tipo de Transporte</Label>
             <Select value={form.tipo || undefined} onValueChange={(v) => set("tipo", v)}>
               <SelectTrigger><SelectValue placeholder="Selecciona tipo" /></SelectTrigger>
