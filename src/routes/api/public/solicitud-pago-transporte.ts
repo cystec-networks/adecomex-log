@@ -50,6 +50,7 @@ export const Route = createFileRoute("/api/public/solicitud-pago-transporte")({
             moneda: parsed.data.moneda,
             referencia_viaje: parsed.data.referencia_viaje || null,
             descripcion: parsed.data.descripcion || null,
+            catalogo_viaje_id: parsed.data.catalogo_viaje_id || null,
           })
           .select("numero_control")
           .single();
