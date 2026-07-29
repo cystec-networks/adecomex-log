@@ -195,19 +195,26 @@ function CuentasPorPagarPage() {
         gasto_id: form.gasto_id || null,
         gasto_operativo_id: form.gasto_operativo_id || null,
         expediente_id,
-        created_by: u.user?.id ?? null,
         updated_by: u.user?.id ?? null,
       };
-      const { error } = await (supabase.from as any)("cuentas_por_pagar").insert(payload);
-      if (error) throw error;
+      if (editingId) {
+        const { error } = await (supabase.from as any)("cuentas_por_pagar")
+          .update(payload).eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase.from as any)("cuentas_por_pagar")
+          .insert({ ...payload, created_by: u.user?.id ?? null });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
-      toast.success("Cuenta por pagar creada");
-      setOpenNew(false); setForm(emptyForm);
+      toast.success(editingId ? "Cuenta por pagar actualizada" : "Cuenta por pagar creada");
+      setOpenNew(false); setForm(emptyForm); setEditingId(null);
       qc.invalidateQueries({ queryKey: ["cxp"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Error al crear"),
+    onError: (e: any) => toast.error(e.message ?? "Error al guardar"),
   });
+
 
   const payMut = useMutation({
     mutationFn: async ({ row, monto, quitarDisputa }: { row: Row; monto: number; quitarDisputa: boolean }) => {
