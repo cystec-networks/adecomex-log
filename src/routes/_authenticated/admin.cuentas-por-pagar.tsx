@@ -96,6 +96,9 @@ function VencimientoBadge({ fecha, estado }: { fecha: string | null; estado: Est
 const emptyForm = {
   proveedor_nombre: "",
   proveedor_rnc: "",
+  numero_factura: "",
+  ncf_proveedor: "",
+
   monto_total: "" as string,
   moneda: "DOP" as Moneda,
   fecha_factura: "" as string,
