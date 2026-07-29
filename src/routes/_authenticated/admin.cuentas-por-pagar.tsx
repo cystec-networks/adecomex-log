@@ -297,7 +297,7 @@ function CuentasPorPagarPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Cuentas por Pagar</h1>
           <p className="text-sm text-muted-foreground">Pagos pendientes a proveedores, transportistas y agentes en el exterior.</p>
         </div>
-        <Button onClick={() => setOpenNew(true)}><Plus className="h-4 w-4 mr-1" /> Nueva cuenta por pagar</Button>
+        <Button onClick={() => { setEditingId(null); setForm(emptyForm); setOpenNew(true); }}><Plus className="h-4 w-4 mr-1" /> Nueva cuenta por pagar</Button>
       </div>
 
       <Card>
