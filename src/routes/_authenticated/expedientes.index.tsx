@@ -223,11 +223,6 @@ function Expedientes() {
     return hito?.fecha_programada ?? hito?.fecha_cumplimiento ?? null;
   };
 
-  const TruncatedCell = ({ value, className = "", maxClass = "max-w-[160px]" }: { value: string | null; className?: string; maxClass?: string }) => (
-    <span title={value ?? undefined} className={`block truncate ${maxClass} ${className}`}>
-      {value ?? "—"}
-    </span>
-  );
 
   const MercanciaCell = ({ items }: { items: any[] }) => {
     const active = (items ?? [])

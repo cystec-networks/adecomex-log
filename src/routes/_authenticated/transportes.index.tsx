@@ -9,6 +9,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { TruncatedCell } from "@/components/truncated-cell";
 import { Trash2, Plus, Truck, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
