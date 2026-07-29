@@ -356,6 +356,41 @@ function CuentasPorPagarPage() {
     payMut.mutate({ row: payRow, monto, quitarDisputa: askDisputado });
   };
 
+  const renderRow = (r: Row) => {
+    const saldo = Number(r.monto_total || 0) - Number(r.monto_pagado || 0);
+    return (
+      <tr key={r.id} className="border-t hover:bg-muted/20">
+        <td className="px-3 py-2">
+          <div className="font-medium">{r.proveedor_nombre}</div>
+          {r.notas && <div className="text-xs text-muted-foreground truncate max-w-[240px]">{r.notas}</div>}
+        </td>
+        <td className="px-3 py-2 tabular-nums text-xs">{r.proveedor_rnc || "—"}</td>
+        <td className="px-3 py-2 text-xs tabular-nums">{r.numero_factura || "—"}</td>
+        <td className="px-3 py-2 text-xs tabular-nums">{r.ncf_proveedor || "—"}</td>
+        <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.monto_total), r.moneda)}</td>
+        <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.monto_pagado), r.moneda)}</td>
+        <td className="px-3 py-2 text-right tabular-nums font-medium">{fmtMoney(saldo, r.moneda)}</td>
+        <td className="px-3 py-2 text-xs">{fmtLocalDate(r.fecha_factura)}</td>
+        <td className="px-3 py-2"><VencimientoBadge fecha={r.fecha_vencimiento} estado={r.estado} /></td>
+        <td className="px-3 py-2"><EstadoBadge e={r.estado} /></td>
+        <td className="px-3 py-2 text-right">
+          <div className="flex justify-end gap-1">
+            <Button size="sm" variant="outline" onClick={() => handleOpenEdit(r)}>
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => handleOpenPay(r)} disabled={r.estado === "pagado"}>
+              <CreditCard className="h-3.5 w-3.5 mr-1" /> Pago
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setDelRow(r)}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </td>
+      </tr>
+    );
+  };
+
+
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4 flex-wrap">
