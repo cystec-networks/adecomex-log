@@ -547,6 +547,48 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_viajes_transporte: {
+        Row: {
+          activo: boolean
+          created_at: string
+          created_by: string | null
+          destino: string
+          id: string
+          moneda: string
+          notas: string | null
+          origen: string
+          precio: number
+          tipo_servicio: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          created_by?: string | null
+          destino: string
+          id?: string
+          moneda?: string
+          notas?: string | null
+          origen: string
+          precio?: number
+          tipo_servicio?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          created_by?: string | null
+          destino?: string
+          id?: string
+          moneda?: string
+          notas?: string | null
+          origen?: string
+          precio?: number
+          tipo_servicio?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cliente_usuarios: {
         Row: {
           activo: boolean
@@ -2811,6 +2853,7 @@ export type Database = {
       }
       solicitudes_pago_transporte: {
         Row: {
+          catalogo_viaje_id: string | null
           created_at: string
           descripcion: string | null
           estado: string
@@ -2825,6 +2868,7 @@ export type Database = {
           transportista_rnc: string | null
         }
         Insert: {
+          catalogo_viaje_id?: string | null
           created_at?: string
           descripcion?: string | null
           estado?: string
@@ -2839,6 +2883,7 @@ export type Database = {
           transportista_rnc?: string | null
         }
         Update: {
+          catalogo_viaje_id?: string | null
           created_at?: string
           descripcion?: string | null
           estado?: string
@@ -2853,6 +2898,13 @@ export type Database = {
           transportista_rnc?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "solicitudes_pago_transporte_catalogo_viaje_id_fkey"
+            columns: ["catalogo_viaje_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_viajes_transporte"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "solicitudes_pago_transporte_transporte_id_fkey"
             columns: ["transporte_id"]
