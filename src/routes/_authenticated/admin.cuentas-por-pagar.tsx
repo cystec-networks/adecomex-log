@@ -115,6 +115,8 @@ function CuentasPorPagarPage() {
   const [fProveedor, setFProveedor] = useState("");
   const [openNew, setOpenNew] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   const [payRow, setPayRow] = useState<Row | null>(null);
   const [payMonto, setPayMonto] = useState("");
   const [askDisputado, setAskDisputado] = useState(false);
