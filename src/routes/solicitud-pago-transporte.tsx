@@ -164,6 +164,7 @@ function SolicitudPagoTransportePage() {
                 variant="outline"
                 onClick={() => {
                   setNumeroControl(null);
+                  setViajeSel("");
                   setForm({
                     transportista_nombre: "",
                     transportista_rnc: "",
