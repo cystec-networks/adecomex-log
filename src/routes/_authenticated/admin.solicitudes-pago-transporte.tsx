@@ -302,6 +302,84 @@ function SolicitudesPagoTransportePage() {
           </table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar solicitud {editing?.numero_control}</DialogTitle>
+            <DialogDescription>Actualiza los datos enviados por el transportista.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-1.5 sm:col-span-2">
+              <Label>Nombre del transportista *</Label>
+              <Input value={form.transportista_nombre} maxLength={200} onChange={(e) => setF("transportista_nombre", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>RNC / Cédula</Label>
+              <Input value={form.transportista_rnc} maxLength={30} onChange={(e) => setF("transportista_rnc", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Teléfono</Label>
+              <Input value={form.telefono} maxLength={30} onChange={(e) => setF("telefono", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Monto *</Label>
+              <Input
+                inputMode="decimal"
+                value={form.monto}
+                onChange={(e) => {
+                  const v = e.target.value.replace(",", ".");
+                  if (v === "" || /^\d*\.?\d*$/.test(v)) setF("monto", v);
+                }}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Moneda</Label>
+              <Select value={form.moneda} onValueChange={(v) => setF("moneda", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DOP">DOP</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5 sm:col-span-2">
+              <Label>Referencia del viaje</Label>
+              <Input value={form.referencia_viaje} maxLength={120} onChange={(e) => setF("referencia_viaje", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5 sm:col-span-2">
+              <Label>Descripción</Label>
+              <Textarea rows={3} maxLength={1000} value={form.descripcion} onChange={(e) => setF("descripcion", e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
+            <Button onClick={() => guardar.mutate()} disabled={guardar.isPending}>
+              {guardar.isPending ? "Guardando…" : "Guardar cambios"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!eliminando} onOpenChange={(o) => !o && setEliminando(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar solicitud</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Seguro que deseas eliminar la solicitud {eliminando?.numero_control}? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); if (eliminando) eliminar.mutate(eliminando); }}
+              disabled={eliminar.isPending}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
