@@ -263,6 +263,7 @@ function SolicitudesPagoTransportePage() {
                   <td className="py-2 pr-3">{r.transportista_rnc || "—"}</td>
                   <td className="py-2 pr-3">{r.telefono || "—"}</td>
                   <td className="py-2 pr-3 text-right">{fmtMoney(Number(r.monto), r.moneda)}</td>
+                  <td className="py-2 pr-3 text-right">{r.cantidad_viajes ?? 1}</td>
                   <td className="py-2 pr-3">{r.moneda}</td>
                   <td className="py-2 pr-3">{r.referencia_viaje || "—"}</td>
                   <td className="py-2 pr-3">{fmtLocalDate(r.created_at)}</td>
