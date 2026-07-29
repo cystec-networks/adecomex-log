@@ -242,7 +242,9 @@ function SolicitudesPagoTransportePage() {
                 <th className="py-2 pr-3">RNC</th>
                 <th className="py-2 pr-3">Teléfono</th>
                 <th className="py-2 pr-3 text-right">Monto</th>
+                <th className="py-2 pr-3 text-right">Cantidad</th>
                 <th className="py-2 pr-3">Moneda</th>
+
                 <th className="py-2 pr-3">Referencia</th>
                 <th className="py-2 pr-3">Creada</th>
                 <th className="py-2 pr-3">Estado</th>
