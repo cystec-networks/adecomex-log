@@ -48,6 +48,7 @@ export const Route = createFileRoute("/api/public/solicitud-pago-transporte")({
             transportista_rnc: parsed.data.transportista_rnc || null,
             telefono: parsed.data.telefono || null,
             monto: parsed.data.monto,
+            cantidad_viajes: parsed.data.cantidad_viajes,
             moneda: parsed.data.moneda,
             referencia_viaje: parsed.data.referencia_viaje || null,
             descripcion: parsed.data.descripcion || null,
