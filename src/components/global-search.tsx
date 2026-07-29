@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { sanitizeSearchTerm } from "@/lib/search-filter";
 import { Search, Loader2, FolderKanban, Inbox, FileCheck2, Truck, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -49,7 +50,9 @@ export function GlobalSearch() {
     queryKey: ["global-search", debounced],
     enabled: debounced.length >= 2,
     queryFn: async (): Promise<Result[]> => {
-      const q = `%${debounced}%`;
+      const term = sanitizeSearchTerm(debounced);
+      if (!term) return [];
+      const q = `%${term}%`;
       const [exp, sol, per, tra, cli] = await Promise.all([
         supabase
           .from("expedientes")
