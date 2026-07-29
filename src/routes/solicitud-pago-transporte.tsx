@@ -193,6 +193,7 @@ function SolicitudPagoTransportePage() {
                     transportista_rnc: "",
                     telefono: "",
                     monto: "",
+                    cantidad: "1",
                     moneda: "DOP",
                     referencia_viaje: "",
                     descripcion: "",
