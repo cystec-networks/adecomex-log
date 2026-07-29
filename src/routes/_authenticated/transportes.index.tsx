@@ -9,6 +9,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { TruncatedCell } from "@/components/truncated-cell";
 import { Trash2, Plus, Truck, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -172,7 +173,7 @@ function Transportes() {
                       <td className="px-3 py-2 whitespace-nowrap">{t.clientes?.nombre ?? "—"}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{TRANSPORTE_TIPOS.find((x) => x.v === t.tipo)?.l ?? "—"}</td>
                       <td className="px-3 py-2 whitespace-nowrap">{t.transportista ?? "—"}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground text-xs tabular-nums">{t.placa_contenedor ?? "—"}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground text-xs tabular-nums"><TruncatedCell value={t.placa_contenedor} maxClass="max-w-[140px]" /></td>
                       <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{t.origen ?? "—"}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{t.destino ?? "—"}</td>
                       <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">{fmt(t.fecha_salida)}</td>
