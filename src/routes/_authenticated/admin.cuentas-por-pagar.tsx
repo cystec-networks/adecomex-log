@@ -363,6 +363,9 @@ function CuentasPorPagarPage() {
                         {r.notas && <div className="text-xs text-muted-foreground truncate max-w-[240px]">{r.notas}</div>}
                       </td>
                       <td className="px-3 py-2 tabular-nums text-xs">{r.proveedor_rnc || "—"}</td>
+                      <td className="px-3 py-2 text-xs tabular-nums">{r.numero_factura || "—"}</td>
+                      <td className="px-3 py-2 text-xs tabular-nums">{r.ncf_proveedor || "—"}</td>
+
                       <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.monto_total), r.moneda)}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.monto_pagado), r.moneda)}</td>
                       <td className="px-3 py-2 text-right tabular-nums font-medium">{fmtMoney(saldo, r.moneda)}</td>
