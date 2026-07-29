@@ -706,7 +706,9 @@ export type Database = {
           moneda: string
           monto_pagado: number
           monto_total: number
+          ncf_proveedor: string | null
           notas: string | null
+          numero_factura: string | null
           proveedor_nombre: string
           proveedor_rnc: string | null
           updated_at: string
@@ -725,7 +727,9 @@ export type Database = {
           moneda?: string
           monto_pagado?: number
           monto_total?: number
+          ncf_proveedor?: string | null
           notas?: string | null
+          numero_factura?: string | null
           proveedor_nombre: string
           proveedor_rnc?: string | null
           updated_at?: string
@@ -744,7 +748,9 @@ export type Database = {
           moneda?: string
           monto_pagado?: number
           monto_total?: number
+          ncf_proveedor?: string | null
           notas?: string | null
+          numero_factura?: string | null
           proveedor_nombre?: string
           proveedor_rnc?: string | null
           updated_at?: string
