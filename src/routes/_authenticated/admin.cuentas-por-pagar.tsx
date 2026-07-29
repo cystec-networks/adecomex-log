@@ -258,6 +258,24 @@ function CuentasPorPagarPage() {
     onError: (e: any) => toast.error(e.message ?? "Error"),
   });
 
+  const handleOpenEdit = (r: Row) => {
+    setEditingId(r.id);
+    setForm({
+      proveedor_nombre: r.proveedor_nombre ?? "",
+      proveedor_rnc: r.proveedor_rnc ?? "",
+      numero_factura: r.numero_factura ?? "",
+      ncf_proveedor: r.ncf_proveedor ?? "",
+      monto_total: r.monto_total != null ? String(r.monto_total) : "",
+      moneda: (r.moneda ?? "DOP") as Moneda,
+      fecha_factura: r.fecha_factura ?? "",
+      fecha_vencimiento: r.fecha_vencimiento ?? "",
+      notas: r.notas ?? "",
+      gasto_id: r.gasto_id ?? "",
+      gasto_operativo_id: r.gasto_operativo_id ?? "",
+    });
+    setOpenNew(true);
+  };
+
   const handleOpenPay = (r: Row) => {
     setPayRow(r); setPayMonto(""); setAskDisputado(false);
   };
