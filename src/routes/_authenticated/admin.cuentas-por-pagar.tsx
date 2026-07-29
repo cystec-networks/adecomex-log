@@ -144,6 +144,8 @@ function CuentasPorPagarPage() {
   const [fEstado, setFEstado] = useState<string>("todos");
   const [fMoneda, setFMoneda] = useState<string>("todas");
   const [fProveedor, setFProveedor] = useState("");
+  const [agrupar, setAgrupar] = useState<Agrupacion>("ninguna");
+  const [colapsados, setColapsados] = useState<Record<string, boolean>>({});
   const [openNew, setOpenNew] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
