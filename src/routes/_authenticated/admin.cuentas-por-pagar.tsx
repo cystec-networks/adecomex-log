@@ -349,10 +349,10 @@ function CuentasPorPagarPage() {
               </thead>
               <tbody>
                 {isLoading && (
-                  <tr><td colSpan={9} className="text-center py-6 text-muted-foreground">Cargando…</td></tr>
+                  <tr><td colSpan={11} className="text-center py-6 text-muted-foreground">Cargando…</td></tr>
                 )}
                 {!isLoading && rows.length === 0 && (
-                  <tr><td colSpan={9} className="text-center py-6 text-muted-foreground">Sin cuentas por pagar.</td></tr>
+                  <tr><td colSpan={11} className="text-center py-6 text-muted-foreground">Sin cuentas por pagar.</td></tr>
                 )}
                 {rows.map((r) => {
                   const saldo = Number(r.monto_total || 0) - Number(r.monto_pagado || 0);
