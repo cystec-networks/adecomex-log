@@ -241,7 +241,7 @@ function SolicitudPagoTransportePage() {
 
                 <div className="grid gap-1.5">
                   <Label>Moneda</Label>
-                  <Select value={form.moneda} onValueChange={(v) => set("moneda", v)}>
+                  <Select value={form.moneda} onValueChange={(v) => set("moneda", v)} disabled={bloqueado}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="DOP">DOP</SelectItem>
