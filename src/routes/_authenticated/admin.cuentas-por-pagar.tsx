@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,8 +17,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, CreditCard, Trash2, Pencil } from "lucide-react";
-import { fmtLocalDate, daysFromToday } from "@/lib/dates";
+import { Plus, CreditCard, Trash2, Pencil, ChevronDown, ChevronRight } from "lucide-react";
+import { fmtLocalDate, daysFromToday, parseLocalDate } from "@/lib/dates";
 import { EscanearFacturaCxpButton } from "@/components/escanear-factura-cxp-button";
 
 
@@ -93,6 +93,37 @@ function VencimientoBadge({ fecha, estado }: { fecha: string | null; estado: Est
   return <span className="text-xs">{fmtLocalDate(fecha)}</span>;
 }
 
+type Agrupacion = "ninguna" | "semana" | "mes" | "anio";
+
+const MESES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+function pad(n: number) { return String(n).padStart(2, "0"); }
+
+// Devuelve { key, label } del período al que pertenece la fila.
+function periodoDe(fecha: string | null, modo: Agrupacion): { key: string; label: string } {
+  if (!fecha) return { key: "0000-sin-fecha", label: "Sin fecha" };
+  const d = parseLocalDate(fecha);
+  if (isNaN(d.getTime())) return { key: "0000-sin-fecha", label: "Sin fecha" };
+  const y = d.getFullYear();
+  if (modo === "anio") return { key: `${y}`, label: `${y}` };
+  if (modo === "mes") return { key: `${y}-${pad(d.getMonth() + 1)}`, label: `${MESES[d.getMonth()]} ${y}` };
+  // semana: lunes a domingo
+  const lunes = new Date(d);
+  const dow = (d.getDay() + 6) % 7; // 0 = lunes
+  lunes.setDate(d.getDate() - dow);
+  const domingo = new Date(lunes);
+  domingo.setDate(lunes.getDate() + 6);
+  const key = `${lunes.getFullYear()}-${pad(lunes.getMonth() + 1)}-${pad(lunes.getDate())}`;
+  const label =
+    lunes.getMonth() === domingo.getMonth()
+      ? `Semana del ${lunes.getDate()} al ${domingo.getDate()} de ${MESES[lunes.getMonth()].toLowerCase()} ${lunes.getFullYear()}`
+      : `Semana del ${lunes.getDate()} de ${MESES[lunes.getMonth()].toLowerCase()} al ${domingo.getDate()} de ${MESES[domingo.getMonth()].toLowerCase()} ${domingo.getFullYear()}`;
+  return { key, label };
+}
+
 const emptyForm = {
   proveedor_nombre: "",
   proveedor_rnc: "",
@@ -113,6 +144,8 @@ function CuentasPorPagarPage() {
   const [fEstado, setFEstado] = useState<string>("todos");
   const [fMoneda, setFMoneda] = useState<string>("todas");
   const [fProveedor, setFProveedor] = useState("");
+  const [agrupar, setAgrupar] = useState<Agrupacion>("ninguna");
+  const [colapsados, setColapsados] = useState<Record<string, boolean>>({});
   const [openNew, setOpenNew] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -181,6 +214,29 @@ function CuentasPorPagarPage() {
     }
     return acc;
   }, [rows]);
+
+  const grupos = useMemo(() => {
+    if (agrupar === "ninguna") return [];
+    const map = new Map<string, { key: string; label: string; rows: Row[] }>();
+    for (const r of rows) {
+      const { key, label } = periodoDe(r.fecha_factura, agrupar);
+      if (!map.has(key)) map.set(key, { key, label, rows: [] });
+      map.get(key)!.rows.push(r);
+    }
+    return [...map.values()]
+      .sort((a, b) => (a.key < b.key ? 1 : a.key > b.key ? -1 : 0))
+      .map((g) => {
+        const tot: Record<string, { total: number; pagado: number }> = {};
+        for (const r of g.rows) {
+          const t = (tot[r.moneda] ??= { total: 0, pagado: 0 });
+          t.total += Number(r.monto_total || 0);
+          t.pagado += Number(r.monto_pagado || 0);
+        }
+        return { ...g, tot };
+      });
+  }, [rows, agrupar]);
+
+
 
   const createMut = useMutation({
     mutationFn: async () => {
@@ -300,6 +356,41 @@ function CuentasPorPagarPage() {
     payMut.mutate({ row: payRow, monto, quitarDisputa: askDisputado });
   };
 
+  const renderRow = (r: Row) => {
+    const saldo = Number(r.monto_total || 0) - Number(r.monto_pagado || 0);
+    return (
+      <tr key={r.id} className="border-t hover:bg-muted/20">
+        <td className="px-3 py-2">
+          <div className="font-medium">{r.proveedor_nombre}</div>
+          {r.notas && <div className="text-xs text-muted-foreground truncate max-w-[240px]">{r.notas}</div>}
+        </td>
+        <td className="px-3 py-2 tabular-nums text-xs">{r.proveedor_rnc || "—"}</td>
+        <td className="px-3 py-2 text-xs tabular-nums">{r.numero_factura || "—"}</td>
+        <td className="px-3 py-2 text-xs tabular-nums">{r.ncf_proveedor || "—"}</td>
+        <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.monto_total), r.moneda)}</td>
+        <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.monto_pagado), r.moneda)}</td>
+        <td className="px-3 py-2 text-right tabular-nums font-medium">{fmtMoney(saldo, r.moneda)}</td>
+        <td className="px-3 py-2 text-xs">{fmtLocalDate(r.fecha_factura)}</td>
+        <td className="px-3 py-2"><VencimientoBadge fecha={r.fecha_vencimiento} estado={r.estado} /></td>
+        <td className="px-3 py-2"><EstadoBadge e={r.estado} /></td>
+        <td className="px-3 py-2 text-right">
+          <div className="flex justify-end gap-1">
+            <Button size="sm" variant="outline" onClick={() => handleOpenEdit(r)}>
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => handleOpenPay(r)} disabled={r.estado === "pagado"}>
+              <CreditCard className="h-3.5 w-3.5 mr-1" /> Pago
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setDelRow(r)}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </td>
+      </tr>
+    );
+  };
+
+
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -382,6 +473,18 @@ function CuentasPorPagarPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="min-w-[150px]">
+              <Label className="text-xs">Agrupar por</Label>
+              <Select value={agrupar} onValueChange={(v) => setAgrupar(v as Agrupacion)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ninguna">Sin agrupar</SelectItem>
+                  <SelectItem value="semana">Semana</SelectItem>
+                  <SelectItem value="mes">Mes</SelectItem>
+                  <SelectItem value="anio">Año</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex-1 min-w-[200px]">
               <Label className="text-xs">Proveedor</Label>
               <Input value={fProveedor} onChange={(e) => setFProveedor(e.target.value)} placeholder="Buscar por nombre…" />
@@ -414,38 +517,37 @@ function CuentasPorPagarPage() {
                 {!isLoading && rows.length === 0 && (
                   <tr><td colSpan={11} className="text-center py-6 text-muted-foreground">Sin cuentas por pagar.</td></tr>
                 )}
-                {rows.map((r) => {
-                  const saldo = Number(r.monto_total || 0) - Number(r.monto_pagado || 0);
+                {!isLoading && agrupar === "ninguna" && rows.map((r) => renderRow(r))}
+                {!isLoading && agrupar !== "ninguna" && grupos.map((g) => {
+                  const abierto = !colapsados[g.key];
                   return (
-                    <tr key={r.id} className="border-t hover:bg-muted/20">
-                      <td className="px-3 py-2">
-                        <div className="font-medium">{r.proveedor_nombre}</div>
-                        {r.notas && <div className="text-xs text-muted-foreground truncate max-w-[240px]">{r.notas}</div>}
-                      </td>
-                      <td className="px-3 py-2 tabular-nums text-xs">{r.proveedor_rnc || "—"}</td>
-                      <td className="px-3 py-2 text-xs tabular-nums">{r.numero_factura || "—"}</td>
-                      <td className="px-3 py-2 text-xs tabular-nums">{r.ncf_proveedor || "—"}</td>
-
-                      <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.monto_total), r.moneda)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.monto_pagado), r.moneda)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums font-medium">{fmtMoney(saldo, r.moneda)}</td>
-                      <td className="px-3 py-2 text-xs">{fmtLocalDate(r.fecha_factura)}</td>
-                      <td className="px-3 py-2"><VencimientoBadge fecha={r.fecha_vencimiento} estado={r.estado} /></td>
-                      <td className="px-3 py-2"><EstadoBadge e={r.estado} /></td>
-                      <td className="px-3 py-2 text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="outline" onClick={() => handleOpenEdit(r)}>
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => handleOpenPay(r)} disabled={r.estado === "pagado"}>
-                            <CreditCard className="h-3.5 w-3.5 mr-1" /> Pago
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => setDelRow(r)}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
+                    <Fragment key={g.key}>
+                      <tr className="border-t bg-muted/50">
+                        <td colSpan={11} className="px-3 py-2">
+                          <button
+                            type="button"
+                            className="flex w-full items-center justify-between gap-4 text-left"
+                            onClick={() => setColapsados((c) => ({ ...c, [g.key]: !!abierto }))}
+                          >
+                            <span className="flex items-center gap-2 font-semibold">
+                              {abierto ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                              {g.label}
+                              <span className="text-xs font-normal text-muted-foreground">({g.rows.length})</span>
+                            </span>
+                            <span className="flex flex-wrap justify-end gap-4 text-xs tabular-nums">
+                              {Object.entries(g.tot).map(([m, t]) => (
+                                <span key={m} className="flex gap-3">
+                                  <span className="text-muted-foreground">Total: <span className="text-foreground font-medium">{fmtMoney(t.total, m)}</span></span>
+                                  <span className="text-muted-foreground">Pagado: <span className="text-foreground font-medium">{fmtMoney(t.pagado, m)}</span></span>
+                                  <span className="text-muted-foreground">Saldo: <span className="text-foreground font-medium">{fmtMoney(t.total - t.pagado, m)}</span></span>
+                                </span>
+                              ))}
+                            </span>
+                          </button>
+                        </td>
+                      </tr>
+                      {abierto && g.rows.map((r) => renderRow(r))}
+                    </Fragment>
                   );
                 })}
               </tbody>
