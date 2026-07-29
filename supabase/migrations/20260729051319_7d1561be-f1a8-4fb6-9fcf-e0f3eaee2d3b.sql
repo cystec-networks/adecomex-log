@@ -1,0 +1,1 @@
+ALTER TABLE public.solicitudes_pago_transporte ADD COLUMN IF NOT EXISTS cantidad_viajes integer NOT NULL DEFAULT 1;

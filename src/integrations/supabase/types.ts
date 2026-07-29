@@ -2853,6 +2853,7 @@ export type Database = {
       }
       solicitudes_pago_transporte: {
         Row: {
+          cantidad_viajes: number
           catalogo_viaje_id: string | null
           created_at: string
           descripcion: string | null
@@ -2868,6 +2869,7 @@ export type Database = {
           transportista_rnc: string | null
         }
         Insert: {
+          cantidad_viajes?: number
           catalogo_viaje_id?: string | null
           created_at?: string
           descripcion?: string | null
@@ -2883,6 +2885,7 @@ export type Database = {
           transportista_rnc?: string | null
         }
         Update: {
+          cantidad_viajes?: number
           catalogo_viaje_id?: string | null
           created_at?: string
           descripcion?: string | null
