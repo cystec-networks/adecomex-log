@@ -19,6 +19,8 @@ import {
 import { toast } from "sonner";
 import { Plus, CreditCard, Trash2 } from "lucide-react";
 import { fmtLocalDate, daysFromToday } from "@/lib/dates";
+import { EscanearFacturaCxpButton } from "@/components/escanear-factura-cxp-button";
+
 
 export const Route = createFileRoute("/_authenticated/admin/cuentas-por-pagar")({
   ssr: false,
