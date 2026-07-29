@@ -401,6 +401,9 @@ function CuentasPorPagarPage() {
                       <td className="px-3 py-2"><EstadoBadge e={r.estado} /></td>
                       <td className="px-3 py-2 text-right">
                         <div className="flex justify-end gap-1">
+                          <Button size="sm" variant="outline" onClick={() => handleOpenEdit(r)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
                           <Button size="sm" variant="outline" onClick={() => handleOpenPay(r)} disabled={r.estado === "pagado"}>
                             <CreditCard className="h-3.5 w-3.5 mr-1" /> Pago
                           </Button>
