@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,9 +8,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, CheckCircle2, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/logo-adecomex.jpg.asset.json";
 
 const WHATSAPP = "18099313246";
+
+type Viaje = {
+  id: string;
+  origen: string;
+  destino: string;
+  tipo_servicio: string | null;
+  precio: number;
+  moneda: string;
+};
+
 
 export const Route = createFileRoute("/solicitud-pago-transporte")({
   ssr: false,
