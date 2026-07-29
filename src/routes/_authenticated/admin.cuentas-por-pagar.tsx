@@ -310,26 +310,49 @@ function CuentasPorPagarPage() {
         <Button onClick={() => { setEditingId(null); setForm(emptyForm); setOpenNew(true); }}><Plus className="h-4 w-4 mr-1" /> Nueva cuenta por pagar</Button>
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Total pendiente por pagar</CardTitle>
-          <CardDescription>Suma de saldos abiertos, por moneda.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {Object.keys(resumen).length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sin saldos pendientes.</p>
-          ) : (
-            <div className="flex gap-6 flex-wrap">
-              {Object.entries(resumen).map(([m, v]) => (
-                <div key={m}>
-                  <div className="text-xs text-muted-foreground">{m}</div>
-                  <div className="text-xl font-semibold tabular-nums">{fmtMoney(v, m)}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Total pendiente por pagar</CardTitle>
+            <CardDescription>Suma de saldos abiertos, por moneda.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {Object.keys(resumen).length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sin saldos pendientes.</p>
+            ) : (
+              <div className="flex gap-6 flex-wrap">
+                {Object.entries(resumen).map(([m, v]) => (
+                  <div key={m}>
+                    <div className="text-xs text-muted-foreground">{m}</div>
+                    <div className="text-xl font-semibold tabular-nums">{fmtMoney(v, m)}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Total pagado</CardTitle>
+            <CardDescription>Suma de pagos registrados, por moneda.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {Object.keys(resumenPagado).length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sin pagos registrados.</p>
+            ) : (
+              <div className="flex gap-6 flex-wrap">
+                {Object.entries(resumenPagado).map(([m, v]) => (
+                  <div key={m}>
+                    <div className="text-xs text-muted-foreground">{m}</div>
+                    <div className="text-xl font-semibold tabular-nums">{fmtMoney(v, m)}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader className="pb-3">
