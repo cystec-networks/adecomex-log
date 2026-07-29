@@ -224,6 +224,7 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         payload.contenedores_detalle = null;
       }
 
+      let saved: any;
       if (mode === "new") {
         // If numero_viaje omitted, let DB default assign it
         if (!payload.numero_viaje) delete payload.numero_viaje;
@@ -231,13 +232,25 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
         payload.created_by = u.user?.id ?? null;
         const { data, error } = await supabase.from("transportes").insert(payload).select().single();
         if (error) throw error;
-        return data;
+        saved = data;
       } else {
         const { data, error } = await supabase.from("transportes").update(payload).eq("id", id!).select().single();
         if (error) throw error;
-        return data;
+        saved = data;
       }
+
+      // Vincular solicitud de pago pendiente si el número de control coincide
+      const nc = (form.numero_control_pago ?? "").trim();
+      if (nc) {
+        await (supabase as any)
+          .from("solicitudes_pago_transporte")
+          .update({ transporte_id: saved.id, estado: "vinculada" })
+          .eq("numero_control", nc)
+          .eq("estado", "pendiente");
+      }
+      return saved;
     },
+
     onSuccess: (row) => {
       qc.invalidateQueries({ queryKey: ["transportes"] });
       qc.invalidateQueries({ queryKey: ["transporte", id] });
