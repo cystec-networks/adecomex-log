@@ -6,6 +6,7 @@ const schema = z.object({
   transportista_rnc: z.string().trim().max(30).optional().nullable(),
   telefono: z.string().trim().max(30).optional().nullable(),
   monto: z.coerce.number().positive().max(1_000_000_000),
+  cantidad_viajes: z.coerce.number().int().min(1).max(10_000).default(1),
   moneda: z.enum(["DOP", "USD"]).default("DOP"),
   referencia_viaje: z.string().trim().max(120).optional().nullable(),
   descripcion: z.string().trim().max(1000).optional().nullable(),
