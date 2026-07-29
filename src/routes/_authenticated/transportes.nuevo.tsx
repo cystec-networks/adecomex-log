@@ -2,7 +2,7 @@ import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { z } from "zod";
 import { TransporteForm } from "@/components/transporte-form";
 
-const searchSchema = z.object({ expediente: z.string().optional() });
+const searchSchema = z.object({ expediente: z.string().optional(), control: z.string().optional() });
 
 export const Route = createFileRoute("/_authenticated/transportes/nuevo")({
   validateSearch: searchSchema,
@@ -10,6 +10,6 @@ export const Route = createFileRoute("/_authenticated/transportes/nuevo")({
 });
 
 function NuevoTransporte() {
-  const { expediente } = useSearch({ from: Route.id });
-  return <TransporteForm mode="new" expedienteId={expediente} />;
+  const { expediente, control } = useSearch({ from: Route.id });
+  return <TransporteForm mode="new" expedienteId={expediente} controlInicial={control} />
 }

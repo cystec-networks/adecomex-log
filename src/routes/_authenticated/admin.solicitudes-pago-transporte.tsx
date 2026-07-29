@@ -1,14 +1,21 @@
 import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Copy, ExternalLink } from "lucide-react";
+import { Copy, ExternalLink, Pencil, Trash2, Truck } from "lucide-react";
 import { fmtLocalDate } from "@/lib/dates";
 import { sanitizeSearchTerm } from "@/lib/search-filter";
 
@@ -97,6 +104,70 @@ function SolicitudesPagoTransportePage() {
       toast.error("No se pudo copiar al portapapeles");
     }
   };
+
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [form, setForm] = useState({
+    transportista_nombre: "", transportista_rnc: "", telefono: "",
+    monto: "", moneda: "DOP", referencia_viaje: "", descripcion: "",
+  });
+  const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const [eliminando, setEliminando] = useState<Row | null>(null);
+
+  const abrirEdicion = (r: Row) => {
+    setEditing(r);
+    setForm({
+      transportista_nombre: r.transportista_nombre ?? "",
+      transportista_rnc: r.transportista_rnc ?? "",
+      telefono: r.telefono ?? "",
+      monto: r.monto != null ? String(r.monto) : "",
+      moneda: r.moneda ?? "DOP",
+      referencia_viaje: r.referencia_viaje ?? "",
+      descripcion: r.descripcion ?? "",
+    });
+  };
+
+  const guardar = useMutation({
+    mutationFn: async () => {
+      if (!editing) return;
+      const monto = Number(form.monto);
+      if (!form.transportista_nombre.trim()) throw new Error("Indica el nombre del transportista");
+      if (!Number.isFinite(monto) || monto <= 0) throw new Error("Indica un monto mayor a 0");
+      const { error } = await supabase
+        .from("solicitudes_pago_transporte")
+        .update({
+          transportista_nombre: form.transportista_nombre.trim(),
+          transportista_rnc: form.transportista_rnc.trim() || null,
+          telefono: form.telefono.trim() || null,
+          monto,
+          moneda: form.moneda,
+          referencia_viaje: form.referencia_viaje.trim() || null,
+          descripcion: form.descripcion.trim() || null,
+        })
+        .eq("id", editing.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Solicitud actualizada");
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["solicitudes-pago-transporte"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo actualizar"),
+  });
+
+  const eliminar = useMutation({
+    mutationFn: async (r: Row) => {
+      const { error } = await supabase.from("solicitudes_pago_transporte").delete().eq("id", r.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Solicitud eliminada");
+      setEliminando(null);
+      qc.invalidateQueries({ queryKey: ["solicitudes-pago-transporte"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo eliminar"),
+  });
+
 
   return (
     <div className="p-6 space-y-6">
@@ -207,9 +278,22 @@ function SolicitudesPagoTransportePage() {
                         </Link>
                       </Button>
                     ) : (
-                      <Button variant="outline" size="sm" onClick={() => copiar(r.numero_control)}>
-                        <Copy className="h-3.5 w-3.5 mr-1" /> Copiar número
-                      </Button>
+                      <div className="flex flex-wrap gap-1">
+                        <Button variant="outline" size="sm" onClick={() => copiar(r.numero_control)}>
+                          <Copy className="h-3.5 w-3.5 mr-1" /> Copiar número
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to="/transportes/nuevo" search={{ control: r.numero_control }}>
+                            <Truck className="h-3.5 w-3.5 mr-1" /> Convertir en Transporte
+                          </Link>
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => abrirEdicion(r)} title="Editar">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setEliminando(r)} title="Eliminar">
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -218,6 +302,84 @@ function SolicitudesPagoTransportePage() {
           </table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar solicitud {editing?.numero_control}</DialogTitle>
+            <DialogDescription>Actualiza los datos enviados por el transportista.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-1.5 sm:col-span-2">
+              <Label>Nombre del transportista *</Label>
+              <Input value={form.transportista_nombre} maxLength={200} onChange={(e) => setF("transportista_nombre", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>RNC / Cédula</Label>
+              <Input value={form.transportista_rnc} maxLength={30} onChange={(e) => setF("transportista_rnc", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Teléfono</Label>
+              <Input value={form.telefono} maxLength={30} onChange={(e) => setF("telefono", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Monto *</Label>
+              <Input
+                inputMode="decimal"
+                value={form.monto}
+                onChange={(e) => {
+                  const v = e.target.value.replace(",", ".");
+                  if (v === "" || /^\d*\.?\d*$/.test(v)) setF("monto", v);
+                }}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Moneda</Label>
+              <Select value={form.moneda} onValueChange={(v) => setF("moneda", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DOP">DOP</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5 sm:col-span-2">
+              <Label>Referencia del viaje</Label>
+              <Input value={form.referencia_viaje} maxLength={120} onChange={(e) => setF("referencia_viaje", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5 sm:col-span-2">
+              <Label>Descripción</Label>
+              <Textarea rows={3} maxLength={1000} value={form.descripcion} onChange={(e) => setF("descripcion", e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
+            <Button onClick={() => guardar.mutate()} disabled={guardar.isPending}>
+              {guardar.isPending ? "Guardando…" : "Guardar cambios"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!eliminando} onOpenChange={(o) => !o && setEliminando(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar solicitud</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Seguro que deseas eliminar la solicitud {eliminando?.numero_control}? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); if (eliminando) eliminar.mutate(eliminando); }}
+              disabled={eliminar.isPending}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

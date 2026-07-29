@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +37,7 @@ export const PAGO_ESTADOS = [
   { v: "pagado", l: "Pagado" },
 ];
 
-type Props = { mode: "new" | "edit"; id?: string; expedienteId?: string };
+type Props = { mode: "new" | "edit"; id?: string; expedienteId?: string; controlInicial?: string };
 
 const fmtDOP = (n: number) =>
   `RD$ ${n.toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -63,7 +63,7 @@ function MoneyDOP({
   );
 }
 
-export function TransporteForm({ mode, id, expedienteId }: Props) {
+export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props) {
   const nav = useNavigate();
   const qc = useQueryClient();
 
@@ -118,7 +118,7 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
     contenedores_cantidad: "",
     contenedores_detalle: "",
     factura_ecf_id: "" as string,
-    numero_control_pago: "",
+    numero_control_pago: mode === "new" ? (controlInicial ?? "") : "",
   });
   const [loaded, setLoaded] = useState(false);
   const [buscandoSpt, setBuscandoSpt] = useState(false);
@@ -188,8 +188,8 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
     return { costos, ingreso, margen, pct, costoViaje, cxc, netoPagar };
   }, [form.costo_viaje, form.descuento_cxc, form.costo_combustible, form.costo_peajes, form.costo_chofer, form.costo_otros, form.ingreso_facturado]);
 
-  const buscarSolicitudPago = async () => {
-    const nc = (form.numero_control_pago ?? "").trim();
+  const buscarSolicitudPago = async (control?: string) => {
+    const nc = (control ?? form.numero_control_pago ?? "").trim();
     if (!nc) return toast.error("Escribe un número de control");
     setBuscandoSpt(true);
     const { data, error } = await (supabase as any)
@@ -209,6 +209,17 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
     }));
     toast.success(`Datos autocompletados desde la solicitud ${data.numero_control}`);
   };
+
+  const autoBuscado = useRef(false);
+  useEffect(() => {
+    if (mode !== "new" || autoBuscado.current) return;
+    const nc = (controlInicial ?? "").trim();
+    if (!nc) return;
+    autoBuscado.current = true;
+    void buscarSolicitudPago(nc);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controlInicial, mode]);
+
 
 
   const save = useMutation({
@@ -433,7 +444,7 @@ export function TransporteForm({ mode, id, expedienteId }: Props) {
                 onChange={(e) => set("numero_control_pago", e.target.value)}
                 placeholder="SPT-000001"
               />
-              <Button type="button" variant="outline" disabled={buscandoSpt} onClick={buscarSolicitudPago}>
+              <Button type="button" variant="outline" disabled={buscandoSpt} onClick={() => buscarSolicitudPago()}>
                 {buscandoSpt ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Buscar
               </Button>
