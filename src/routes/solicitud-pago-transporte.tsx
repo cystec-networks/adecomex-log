@@ -122,14 +122,19 @@ function SolicitudPagoTransportePage() {
       const res = await fetch("/api/public/solicitud-pago-transporte", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...form, monto, catalogo_viaje_id: bloqueado ? viajeSel : null }),
+        body: JSON.stringify({
+          ...form,
+          monto,
+          cantidad_viajes: cantidadNum,
+          catalogo_viaje_id: bloqueado ? viajeSel : null,
+        }),
       });
       const json = await res.json();
       if (!res.ok || !json?.numero_control) throw new Error(json?.error ?? "No se pudo registrar la solicitud.");
 
       const nc: string = json.numero_control;
       setNumeroControl(nc);
-      const msg = `Hola ADECOMEX, solicito el pago del servicio de transporte. Número de control: ${nc}. Transportista: ${form.transportista_nombre}. Monto: ${monto} ${form.moneda}. Adjunto la factura.`;
+      const msg = `Hola ADECOMEX, solicito el pago del servicio de transporte. Número de control: ${nc}. Transportista: ${form.transportista_nombre}. Cantidad de viajes: ${cantidadNum}. Monto total: ${monto} ${form.moneda}. Adjunto la factura.`;
       window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
     } catch (err: any) {
       toast.error(err.message ?? "Error inesperado");
