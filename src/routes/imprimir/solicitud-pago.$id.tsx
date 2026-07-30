@@ -34,15 +34,15 @@ function ImprimirSolicitudPago() {
 
   useEffect(() => {
     (async () => {
-      const { data: row } = await (supabase as any)
-        .from("solicitudes_pago_transporte")
-        .select(
-          "numero_control, transportista_nombre, transportista_rnc, telefono, referencia_viaje, placa_contenedor, cantidad_viajes, monto, moneda, descripcion, created_at",
-        )
-        .eq("id", id)
-        .maybeSingle();
-      setData((row as SolicitudPagoPrintData) ?? null);
-      setLoading(false);
+      try {
+        const res = await fetch(`/api/public/solicitud-pago-transporte/${id}`);
+        const json = await res.json();
+        setData(res.ok ? (json.solicitud as SolicitudPagoPrintData) : null);
+      } catch {
+        setData(null);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [id]);
 
