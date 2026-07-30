@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, CheckCircle2, Copy, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { SolicitudPagoPrintDialog } from "@/components/solicitud-pago-print";
 import logoAsset from "@/assets/logo-adecomex.jpg.asset.json";
 
 const WHATSAPP = "18099313246";
@@ -49,7 +48,7 @@ export const Route = createFileRoute("/solicitud-pago-transporte")({
 function SolicitudPagoTransportePage() {
   const [loading, setLoading] = useState(false);
   const [numeroControl, setNumeroControl] = useState<string | null>(null);
-  const [verComprobante, setVerComprobante] = useState(false);
+  const [solicitudId, setSolicitudId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     transportista_nombre: "",
@@ -138,6 +137,7 @@ function SolicitudPagoTransportePage() {
       if (!res.ok || !json?.numero_control) throw new Error(json?.error ?? "No se pudo registrar la solicitud.");
 
       const nc: string = json.numero_control;
+      setSolicitudId(json.id ?? null);
       setNumeroControl(nc);
       const msg = `Hola ADECOMEX, solicito el pago del servicio de transporte. Número de control: ${nc}. Transportista: ${form.transportista_nombre}. Cantidad de viajes: ${cantidadNum}. Monto total: ${monto} ${form.moneda}. Adjunto la factura.`;
       window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
@@ -194,13 +194,20 @@ function SolicitudPagoTransportePage() {
                 factura al 809-931-3246.
               </p>
               <div className="flex flex-wrap gap-2">
-                <Button type="button" onClick={() => setVerComprobante(true)}>
+                <Button
+                  type="button"
+                  disabled={!solicitudId}
+                  onClick={() =>
+                    window.open(`/imprimir/solicitud-pago/${solicitudId}`, "_blank", "noopener,noreferrer")
+                  }
+                >
                   <Printer className="mr-1 h-4 w-4" /> Descargar comprobante (PDF)
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => {
                     setNumeroControl(null);
+                    setSolicitudId(null);
                     setViajeSel("");
                     setForm({
                       transportista_nombre: "",
@@ -219,23 +226,6 @@ function SolicitudPagoTransportePage() {
                 </Button>
               </div>
 
-              <SolicitudPagoPrintDialog
-                open={verComprobante}
-                onOpenChange={setVerComprobante}
-                solicitud={{
-                  numero_control: numeroControl,
-                  transportista_nombre: form.transportista_nombre,
-                  transportista_rnc: form.transportista_rnc,
-                  telefono: form.telefono,
-                  referencia_viaje: form.referencia_viaje,
-                  placa_contenedor: form.placa_contenedor,
-                  cantidad_viajes: cantidadNum,
-                  monto: Number(form.monto) || 0,
-                  moneda: form.moneda,
-                  descripcion: form.descripcion,
-                  created_at: new Date().toISOString(),
-                }}
-              />
 
             </CardContent>
           </Card>
