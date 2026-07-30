@@ -58,7 +58,7 @@ export const Route = createFileRoute("/api/public/solicitud-pago-transporte")({
             catalogo_viaje_id: parsed.data.catalogo_viaje_id || null,
 
           })
-          .select("numero_control")
+          .select("id, numero_control")
           .single();
 
         if (error) {
@@ -66,7 +66,7 @@ export const Route = createFileRoute("/api/public/solicitud-pago-transporte")({
           return Response.json({ error: "No se pudo registrar la solicitud." }, { status: 500, headers: CORS });
         }
 
-        return Response.json({ success: true, numero_control: data.numero_control }, { headers: CORS });
+        return Response.json({ success: true, id: data.id, numero_control: data.numero_control }, { headers: CORS });
       },
     },
   },
