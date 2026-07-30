@@ -117,6 +117,7 @@ function SolicitudesPagoTransportePage() {
   });
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [eliminando, setEliminando] = useState<Row | null>(null);
+  const [imprimiendo, setImprimiendo] = useState<Row | null>(null);
 
   const abrirEdicion = (r: Row) => {
     setEditing(r);
