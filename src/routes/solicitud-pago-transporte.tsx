@@ -193,27 +193,50 @@ function SolicitudPagoTransportePage() {
                 Guarda este número. Si WhatsApp no abrió automáticamente, cópialo y envíalo tú mismo junto con tu
                 factura al 809-931-3246.
               </p>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setNumeroControl(null);
-                  setViajeSel("");
-                  setForm({
-                    transportista_nombre: "",
-                    transportista_rnc: "",
-                    telefono: "",
-                    monto: "",
-                    cantidad: "1",
-                    moneda: "DOP",
-                    referencia_viaje: "",
-                    placa_contenedor: "",
-                    descripcion: "",
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" onClick={() => setVerComprobante(true)}>
+                  <Printer className="mr-1 h-4 w-4" /> Descargar comprobante (PDF)
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setNumeroControl(null);
+                    setViajeSel("");
+                    setForm({
+                      transportista_nombre: "",
+                      transportista_rnc: "",
+                      telefono: "",
+                      monto: "",
+                      cantidad: "1",
+                      moneda: "DOP",
+                      referencia_viaje: "",
+                      placa_contenedor: "",
+                      descripcion: "",
+                    });
+                  }}
+                >
+                  Crear otra solicitud
+                </Button>
+              </div>
 
-                  });
+              <SolicitudPagoPrintDialog
+                open={verComprobante}
+                onOpenChange={setVerComprobante}
+                solicitud={{
+                  numero_control: numeroControl,
+                  transportista_nombre: form.transportista_nombre,
+                  transportista_rnc: form.transportista_rnc,
+                  telefono: form.telefono,
+                  referencia_viaje: form.referencia_viaje,
+                  placa_contenedor: form.placa_contenedor,
+                  cantidad_viajes: cantidadNum,
+                  monto: Number(form.monto) || 0,
+                  moneda: form.moneda,
+                  descripcion: form.descripcion,
+                  created_at: new Date().toISOString(),
                 }}
-              >
-                Crear otra solicitud
-              </Button>
+              />
+
             </CardContent>
           </Card>
         ) : (
