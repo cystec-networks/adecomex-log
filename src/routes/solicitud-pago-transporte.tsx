@@ -56,7 +56,9 @@ function SolicitudPagoTransportePage() {
     cantidad: "1",
     moneda: "DOP",
     referencia_viaje: "",
+    placa_contenedor: "",
     descripcion: "",
+
   });
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -201,7 +203,9 @@ function SolicitudPagoTransportePage() {
                     cantidad: "1",
                     moneda: "DOP",
                     referencia_viaje: "",
+                    placa_contenedor: "",
                     descripcion: "",
+
                   });
                 }}
               >
@@ -302,6 +306,17 @@ function SolicitudPagoTransportePage() {
                   <Label htmlFor="ref">Referencia del viaje</Label>
                   <Input id="ref" maxLength={120} value={form.referencia_viaje} onChange={(e) => set("referencia_viaje", e.target.value)} />
                 </div>
+                <div className="grid gap-1.5 sm:col-span-2">
+                  <Label htmlFor="ctn">Número(s) de contenedor</Label>
+                  <Input
+                    id="ctn"
+                    maxLength={300}
+                    placeholder="Separa varios con coma"
+                    value={form.placa_contenedor}
+                    onChange={(e) => set("placa_contenedor", e.target.value)}
+                  />
+                </div>
+
                 <div className="grid gap-1.5 sm:col-span-2">
                   <Label htmlFor="desc">Descripción</Label>
                   <Textarea id="desc" maxLength={1000} rows={3} value={form.descripcion} onChange={(e) => set("descripcion", e.target.value)} />

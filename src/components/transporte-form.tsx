@@ -194,21 +194,74 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
     setBuscandoSpt(true);
     const { data, error } = await (supabase as any)
       .from("solicitudes_pago_transporte")
-      .select("numero_control, transportista_nombre, monto, moneda, estado")
+      .select(
+        "numero_control, transportista_nombre, transportista_rnc, telefono, monto, moneda, estado, referencia_viaje, descripcion, placa_contenedor, cantidad_viajes, catalogo_viaje_id",
+      )
       .eq("numero_control", nc)
       .eq("estado", "pendiente")
       .maybeSingle();
+    if (error) {
+      setBuscandoSpt(false);
+      return toast.error(error.message);
+    }
+    if (!data) {
+      setBuscandoSpt(false);
+      return toast.error("No se encontró ninguna solicitud con ese número de control");
+    }
+
+    let ruta: { origen: string; destino: string; tipo_servicio: string | null } | null = null;
+    if (data.catalogo_viaje_id) {
+      const { data: v } = await (supabase as any)
+        .from("catalogo_viajes_transporte")
+        .select("origen, destino, tipo_servicio")
+        .eq("id", data.catalogo_viaje_id)
+        .maybeSingle();
+      if (v) ruta = v;
+    }
     setBuscandoSpt(false);
-    if (error) return toast.error(error.message);
-    if (!data) return toast.error("No se encontró ninguna solicitud con ese número de control");
+
+    let origen: string | null = ruta?.origen ?? null;
+    let destino: string | null = ruta?.destino ?? null;
+    if (!origen && !destino && typeof data.referencia_viaje === "string") {
+      const partes = data.referencia_viaje.split(/→|->/);
+      if (partes.length === 2) {
+        origen = partes[0].trim() || null;
+        destino = partes[1].trim() || null;
+      }
+    }
+
+    const extras: string[] = [];
+    if (data.transportista_rnc) extras.push(`RNC ${data.transportista_rnc}`);
+    if (data.telefono) extras.push(`Tel. ${data.telefono}`);
+    let linea = "";
+    if (extras.length || data.descripcion) {
+      linea = `Datos de la solicitud ${data.numero_control}: ${extras.join(", ")}${
+        extras.length && data.descripcion ? ". " : ""
+      }${data.descripcion ?? ""}`.trim();
+    }
+
     setForm((f) => ({
       ...f,
-      transportista: data.transportista_nombre ?? f.transportista,
-      flete_monto: data.monto != null ? String(data.monto) : f.flete_monto,
-      flete_moneda: data.moneda ?? f.flete_moneda,
+      transportista: f.transportista?.trim() ? f.transportista : data.transportista_nombre ?? f.transportista,
+      flete_monto:
+        f.flete_monto !== "" && f.flete_monto != null
+          ? f.flete_monto
+          : data.monto != null
+            ? String(data.monto)
+            : f.flete_monto,
+      flete_moneda: f.flete_moneda || data.moneda || f.flete_moneda,
+      placa_contenedor: f.placa_contenedor?.trim() ? f.placa_contenedor : data.placa_contenedor ?? f.placa_contenedor,
+      origen: f.origen?.trim() ? f.origen : origen ?? f.origen,
+      destino: f.destino?.trim() ? f.destino : destino ?? f.destino,
+      observaciones: linea
+        ? f.observaciones?.trim()
+          ? `${f.observaciones}\n${linea}`
+          : linea
+        : f.observaciones,
     }));
     toast.success(`Datos autocompletados desde la solicitud ${data.numero_control}`);
   };
+
 
   const autoBuscado = useRef(false);
   useEffect(() => {
