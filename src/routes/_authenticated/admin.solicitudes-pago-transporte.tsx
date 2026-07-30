@@ -279,31 +279,37 @@ function SolicitudesPagoTransportePage() {
                     )}
                   </td>
                   <td className="py-2 pr-3">
-                    {r.estado === "vinculada" && r.transporte_id ? (
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to="/transportes/$id" params={{ id: r.transporte_id }}>
-                          <ExternalLink className="h-3.5 w-3.5 mr-1" /> Ver transporte
-                        </Link>
+                    <div className="flex flex-wrap gap-1">
+                      <Button variant="outline" size="sm" onClick={() => setImprimiendo(r)} title="Descargar PDF">
+                        <Printer className="h-3.5 w-3.5 mr-1" /> PDF
                       </Button>
-                    ) : (
-                      <div className="flex flex-wrap gap-1">
-                        <Button variant="outline" size="sm" onClick={() => copiar(r.numero_control)}>
-                          <Copy className="h-3.5 w-3.5 mr-1" /> Copiar número
-                        </Button>
+                      {r.estado === "vinculada" && r.transporte_id ? (
                         <Button variant="outline" size="sm" asChild>
-                          <Link to="/transportes/nuevo" search={{ control: r.numero_control }}>
-                            <Truck className="h-3.5 w-3.5 mr-1" /> Convertir en Transporte
+                          <Link to="/transportes/$id" params={{ id: r.transporte_id }}>
+                            <ExternalLink className="h-3.5 w-3.5 mr-1" /> Ver transporte
                           </Link>
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => abrirEdicion(r)} title="Editar">
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => setEliminando(r)} title="Eliminar">
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                        </Button>
-                      </div>
-                    )}
+                      ) : (
+                        <>
+                          <Button variant="outline" size="sm" onClick={() => copiar(r.numero_control)}>
+                            <Copy className="h-3.5 w-3.5 mr-1" /> Copiar número
+                          </Button>
+                          <Button variant="outline" size="sm" asChild>
+                            <Link to="/transportes/nuevo" search={{ control: r.numero_control }}>
+                              <Truck className="h-3.5 w-3.5 mr-1" /> Convertir en Transporte
+                            </Link>
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => abrirEdicion(r)} title="Editar">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => setEliminando(r)} title="Eliminar">
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </td>
+
                 </tr>
               ))}
             </tbody>
