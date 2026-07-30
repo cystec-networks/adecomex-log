@@ -394,6 +394,13 @@ function SolicitudesPagoTransportePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SolicitudPagoPrintDialog
+        solicitud={imprimiendo}
+        open={!!imprimiendo}
+        onOpenChange={(o) => !o && setImprimiendo(null)}
+      />
     </div>
+
   );
 }
