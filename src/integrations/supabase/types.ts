@@ -2862,6 +2862,7 @@ export type Database = {
           moneda: string
           monto: number
           numero_control: string | null
+          placa_contenedor: string | null
           referencia_viaje: string | null
           telefono: string | null
           transporte_id: string | null
@@ -2878,6 +2879,7 @@ export type Database = {
           moneda?: string
           monto?: number
           numero_control?: string | null
+          placa_contenedor?: string | null
           referencia_viaje?: string | null
           telefono?: string | null
           transporte_id?: string | null
@@ -2894,6 +2896,7 @@ export type Database = {
           moneda?: string
           monto?: number
           numero_control?: string | null
+          placa_contenedor?: string | null
           referencia_viaje?: string | null
           telefono?: string | null
           transporte_id?: string | null
