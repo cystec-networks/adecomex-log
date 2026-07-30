@@ -33,6 +33,13 @@ const PRINT_CSS = `
     padding: 0; margin: 0; border: 0; box-shadow: none;
   }
   .spt-no-print { display: none !important; }
+  [role="dialog"] {
+    position: static !important;
+    max-height: none !important;
+    overflow: visible !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
   @page { size: A4 portrait; margin: 16mm; }
 }
 `;
