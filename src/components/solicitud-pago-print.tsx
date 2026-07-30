@@ -28,9 +28,11 @@ const PRINT_CSS = `
   body * { visibility: hidden !important; }
   #spt-print-area, #spt-print-area * { visibility: visible !important; }
   #spt-print-area {
-    position: absolute !important;
+    position: fixed !important;
     left: 0; top: 0; width: 100%;
-    padding: 0; margin: 0; border: 0; box-shadow: none;
+    margin: 0 auto !important;
+    max-width: 180mm !important;
+    padding: 0 !important; border: 0 !important; box-shadow: none !important;
   }
   .spt-no-print { display: none !important; }
   [role="dialog"] {
@@ -40,6 +42,19 @@ const PRINT_CSS = `
     transform: none !important;
     box-shadow: none !important;
   }
+  #spt-print-area .mt-5,
+  #spt-print-area .mt-4,
+  #spt-print-area .mt-8 { margin-top: 0.5rem !important; }
+  #spt-print-area .p-4,
+  #spt-print-area .p-6 { padding: 0.5rem !important; }
+  #spt-print-area .gap-4 { gap: 0.5rem !important; }
+  #spt-print-area .gap-10 { gap: 1rem !important; }
+  #spt-print-area .pb-4 { padding-bottom: 0.5rem !important; }
+  #spt-print-area .pt-2,
+  #spt-print-area .pt-3 { padding-top: 0.5rem !important; }
+  #spt-print-area .text-3xl { font-size: 1.25rem !important; line-height: 1.5rem !important; }
+  #spt-print-area .text-2xl { font-size: 1.125rem !important; line-height: 1.5rem !important; }
+  #spt-print-area .rounded-md { border-radius: 0.25rem !important; }
   @page { size: A4 portrait; margin: 16mm; }
 }
 `;
