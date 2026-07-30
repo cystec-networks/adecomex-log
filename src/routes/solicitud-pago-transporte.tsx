@@ -49,6 +49,8 @@ export const Route = createFileRoute("/solicitud-pago-transporte")({
 function SolicitudPagoTransportePage() {
   const [loading, setLoading] = useState(false);
   const [numeroControl, setNumeroControl] = useState<string | null>(null);
+  const [verComprobante, setVerComprobante] = useState(false);
+
   const [form, setForm] = useState({
     transportista_nombre: "",
     transportista_rnc: "",
