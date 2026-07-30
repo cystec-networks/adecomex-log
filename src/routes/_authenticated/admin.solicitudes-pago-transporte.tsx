@@ -15,9 +15,10 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Copy, ExternalLink, Pencil, Trash2, Truck } from "lucide-react";
+import { Copy, ExternalLink, Pencil, Printer, Trash2, Truck } from "lucide-react";
 import { fmtLocalDate } from "@/lib/dates";
 import { sanitizeSearchTerm } from "@/lib/search-filter";
+import { SolicitudPagoPrintDialog } from "@/components/solicitud-pago-print";
 
 export const Route = createFileRoute("/_authenticated/admin/solicitudes-pago-transporte")({
   ssr: false,
