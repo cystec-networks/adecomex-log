@@ -53,11 +53,13 @@ type Row = {
   cantidad_viajes: number | null;
   moneda: string;
   referencia_viaje: string | null;
+  placa_contenedor: string | null;
   descripcion: string | null;
   transporte_id: string | null;
   estado: string;
   created_at: string;
 };
+
 
 const fmtMoney = (n: number, m: string) =>
   `${m === "USD" ? "US$" : m === "EUR" ? "€" : "RD$"} ${(n || 0).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
