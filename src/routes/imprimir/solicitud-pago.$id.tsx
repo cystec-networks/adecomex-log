@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { SolicitudPagoPrintView, type SolicitudPagoPrintData } from "@/components/solicitud-pago-print";
 
 export const Route = createFileRoute("/imprimir/solicitud-pago/$id")({
