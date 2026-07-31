@@ -17,7 +17,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2, Copy, AlertTriangle } from "lucide-react";
+import { Pencil, Plus, Trash2, Copy, AlertTriangle, CreditCard } from "lucide-react";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
@@ -50,6 +50,22 @@ function ymOf(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).p
 type Moneda = "DOP" | "USD" | "EUR";
 type TipoId = "RNC" | "CEDULA" | "PASAPORTE";
 type FormaPago = "efectivo" | "cheque_transferencia" | "tarjeta" | "credito" | "permuta" | "nota_credito" | "mixto";
+
+const FORMA_PAGO_LABEL: Record<FormaPago, string> = {
+  efectivo: "Efectivo",
+  cheque_transferencia: "Cheque / Transferencia",
+  tarjeta: "Tarjeta de Crédito",
+  credito: "Crédito",
+  permuta: "Permuta",
+  nota_credito: "Nota de Crédito",
+  mixto: "Mixto",
+};
+const FORMA_PAGO_ORDEN: FormaPago[] = ["efectivo", "cheque_transferencia", "tarjeta", "credito", "permuta", "nota_credito", "mixto"];
+
+function montoTotalGasto(r: Row): number {
+  const fiscal = Number(r.monto_facturado_servicios ?? 0) + Number(r.monto_facturado_bienes ?? 0) + Number(r.itbis_facturado ?? 0);
+  return fiscal > 0 ? fiscal : Number(r.monto || 0);
+}
 type Row = {
   id: string; concepto: string; monto: number; moneda: Moneda; fecha: string;
   es_recurrente: boolean; comprobante_url: string | null; notas: string | null;
@@ -118,6 +134,21 @@ function GastosOperativosPage() {
   const totalUSD = useMemo(() =>
     rows.filter(r => r.moneda === "USD").reduce((s, r) => s + Number(r.monto || 0), 0), [rows]);
   const recurrentes = rows.filter(r => r.es_recurrente).length;
+
+  const resumenFormaPago = useMemo(() => {
+    const map = new Map<string, { key: FormaPago; moneda: Moneda; total: number; count: number }>();
+    for (const r of rows) {
+      if (!r.forma_pago) continue;
+      const key = `${r.forma_pago}::${r.moneda}`;
+      const cur = map.get(key) ?? { key: r.forma_pago as FormaPago, moneda: r.moneda, total: 0, count: 0 };
+      cur.total += montoTotalGasto(r);
+      cur.count += 1;
+      map.set(key, cur);
+    }
+    return [...map.values()].sort(
+      (a, b) => FORMA_PAGO_ORDEN.indexOf(a.key) - FORMA_PAGO_ORDEN.indexOf(b.key) || a.moneda.localeCompare(b.moneda),
+    );
+  }, [rows]);
 
   // Alerta: recurrentes del mes anterior aún no registrados este mes
   const conceptosEsteMes = new Set(rows.map(r => `${r.concepto}::${r.moneda}`));
@@ -200,6 +231,37 @@ function GastosOperativosPage() {
           <Card><CardHeader className="pb-2"><CardDescription>Registros / Recurrentes</CardDescription><CardTitle>{rows.length} <span className="text-sm font-normal text-muted-foreground">/ {recurrentes} rec.</span></CardTitle></CardHeader></Card>
         </div>
 
+        {resumenFormaPago.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Resumen por forma de pago</CardTitle>
+              <CardDescription>Total del mes (monto facturado con ITBIS cuando hay datos fiscales)</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {resumenFormaPago.map((g) => {
+                const esTarjeta = g.key === "tarjeta";
+                return (
+                  <div
+                    key={`${g.key}-${g.moneda}`}
+                    className={`rounded-lg border p-3 ${esTarjeta ? "border-amber-500/50 bg-amber-500/10" : "bg-muted/30"}`}
+                  >
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {esTarjeta && <CreditCard className="h-4 w-4 text-amber-600" />}
+                      {FORMA_PAGO_LABEL[g.key]} · {g.moneda}
+                    </div>
+                    <div className={`text-lg font-semibold ${esTarjeta ? "text-amber-700 dark:text-amber-300" : ""}`}>
+                      {fmt(g.total, g.moneda)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {g.count} gasto{g.count === 1 ? "" : "s"}{esTarjeta ? " · pendiente en estado de cuenta" : ""}
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader><CardTitle>Gastos del mes</CardTitle></CardHeader>
           <CardContent>
@@ -264,7 +326,7 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
       if (ncf && !NCF_RE.test(ncf)) throw new Error("NCF debe tener 11 o 13 caracteres alfanuméricos");
       if (ncfMod && !NCF_RE.test(ncfMod)) throw new Error("NCF modificado debe tener 11 o 13 caracteres alfanuméricos");
       const { data: u } = await supabase.auth.getUser();
-      const montoFact = Number(form.monto_facturado_servicios ?? 0) + Number(form.monto_facturado_bienes ?? 0);
+      const montoFact = Number(form.monto_facturado_servicios ?? 0) + Number(form.monto_facturado_bienes ?? 0) + Number(form.itbis_facturado ?? 0);
       const payload = {
         concepto: form.concepto.trim(),
         monto: Number(form.monto),
@@ -501,7 +563,7 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
               </div>
             </div>
             <div className="text-xs text-muted-foreground">
-              Monto facturado total: <b>{(Number(form.monto_facturado_servicios ?? 0) + Number(form.monto_facturado_bienes ?? 0)).toFixed(2)}</b>
+              Monto facturado total (con ITBIS): <b>{(Number(form.monto_facturado_servicios ?? 0) + Number(form.monto_facturado_bienes ?? 0) + Number(form.itbis_facturado ?? 0)).toFixed(2)}</b>
             </div>
             <div>
               <Label>Forma de pago</Label>
