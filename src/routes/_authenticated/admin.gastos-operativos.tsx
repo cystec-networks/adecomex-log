@@ -17,7 +17,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2, Copy, AlertTriangle } from "lucide-react";
+import { Pencil, Plus, Trash2, Copy, AlertTriangle, CreditCard } from "lucide-react";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
@@ -50,6 +50,22 @@ function ymOf(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).p
 type Moneda = "DOP" | "USD" | "EUR";
 type TipoId = "RNC" | "CEDULA" | "PASAPORTE";
 type FormaPago = "efectivo" | "cheque_transferencia" | "tarjeta" | "credito" | "permuta" | "nota_credito" | "mixto";
+
+const FORMA_PAGO_LABEL: Record<FormaPago, string> = {
+  efectivo: "Efectivo",
+  cheque_transferencia: "Cheque / Transferencia",
+  tarjeta: "Tarjeta de Crédito",
+  credito: "Crédito",
+  permuta: "Permuta",
+  nota_credito: "Nota de Crédito",
+  mixto: "Mixto",
+};
+const FORMA_PAGO_ORDEN: FormaPago[] = ["efectivo", "cheque_transferencia", "tarjeta", "credito", "permuta", "nota_credito", "mixto"];
+
+function montoTotalGasto(r: Row): number {
+  const fiscal = Number(r.monto_facturado_servicios ?? 0) + Number(r.monto_facturado_bienes ?? 0) + Number(r.itbis_facturado ?? 0);
+  return fiscal > 0 ? fiscal : Number(r.monto || 0);
+}
 type Row = {
   id: string; concepto: string; monto: number; moneda: Moneda; fecha: string;
   es_recurrente: boolean; comprobante_url: string | null; notas: string | null;
