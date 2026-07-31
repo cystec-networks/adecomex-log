@@ -264,7 +264,7 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
       if (ncf && !NCF_RE.test(ncf)) throw new Error("NCF debe tener 11 o 13 caracteres alfanuméricos");
       if (ncfMod && !NCF_RE.test(ncfMod)) throw new Error("NCF modificado debe tener 11 o 13 caracteres alfanuméricos");
       const { data: u } = await supabase.auth.getUser();
-      const montoFact = Number(form.monto_facturado_servicios ?? 0) + Number(form.monto_facturado_bienes ?? 0);
+      const montoFact = Number(form.monto_facturado_servicios ?? 0) + Number(form.monto_facturado_bienes ?? 0) + Number(form.itbis_facturado ?? 0);
       const payload = {
         concepto: form.concepto.trim(),
         monto: Number(form.monto),
@@ -501,7 +501,7 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
               </div>
             </div>
             <div className="text-xs text-muted-foreground">
-              Monto facturado total: <b>{(Number(form.monto_facturado_servicios ?? 0) + Number(form.monto_facturado_bienes ?? 0)).toFixed(2)}</b>
+              Monto facturado total (con ITBIS): <b>{(Number(form.monto_facturado_servicios ?? 0) + Number(form.monto_facturado_bienes ?? 0) + Number(form.itbis_facturado ?? 0)).toFixed(2)}</b>
             </div>
             <div>
               <Label>Forma de pago</Label>
