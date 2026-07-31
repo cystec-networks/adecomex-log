@@ -135,6 +135,21 @@ function GastosOperativosPage() {
     rows.filter(r => r.moneda === "USD").reduce((s, r) => s + Number(r.monto || 0), 0), [rows]);
   const recurrentes = rows.filter(r => r.es_recurrente).length;
 
+  const resumenFormaPago = useMemo(() => {
+    const map = new Map<string, { key: FormaPago; moneda: Moneda; total: number; count: number }>();
+    for (const r of rows) {
+      if (!r.forma_pago) continue;
+      const key = `${r.forma_pago}::${r.moneda}`;
+      const cur = map.get(key) ?? { key: r.forma_pago as FormaPago, moneda: r.moneda, total: 0, count: 0 };
+      cur.total += montoTotalGasto(r);
+      cur.count += 1;
+      map.set(key, cur);
+    }
+    return [...map.values()].sort(
+      (a, b) => FORMA_PAGO_ORDEN.indexOf(a.key) - FORMA_PAGO_ORDEN.indexOf(b.key) || a.moneda.localeCompare(b.moneda),
+    );
+  }, [rows]);
+
   // Alerta: recurrentes del mes anterior aún no registrados este mes
   const conceptosEsteMes = new Set(rows.map(r => `${r.concepto}::${r.moneda}`));
   const faltantes = (data?.prevRecurrentes ?? []).filter(
