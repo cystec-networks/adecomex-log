@@ -200,6 +200,37 @@ function GastosOperativosPage() {
           <Card><CardHeader className="pb-2"><CardDescription>Registros / Recurrentes</CardDescription><CardTitle>{rows.length} <span className="text-sm font-normal text-muted-foreground">/ {recurrentes} rec.</span></CardTitle></CardHeader></Card>
         </div>
 
+        {resumenFormaPago.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Resumen por forma de pago</CardTitle>
+              <CardDescription>Total del mes (monto facturado con ITBIS cuando hay datos fiscales)</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {resumenFormaPago.map((g) => {
+                const esTarjeta = g.key === "tarjeta";
+                return (
+                  <div
+                    key={`${g.key}-${g.moneda}`}
+                    className={`rounded-lg border p-3 ${esTarjeta ? "border-amber-500/50 bg-amber-500/10" : "bg-muted/30"}`}
+                  >
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {esTarjeta && <CreditCard className="h-4 w-4 text-amber-600" />}
+                      {FORMA_PAGO_LABEL[g.key]} · {g.moneda}
+                    </div>
+                    <div className={`text-lg font-semibold ${esTarjeta ? "text-amber-700 dark:text-amber-300" : ""}`}>
+                      {fmt(g.total, g.moneda)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {g.count} gasto{g.count === 1 ? "" : "s"}{esTarjeta ? " · pendiente en estado de cuenta" : ""}
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader><CardTitle>Gastos del mes</CardTitle></CardHeader>
           <CardContent>
