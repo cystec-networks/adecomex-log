@@ -32,6 +32,7 @@ import { Route as AuthenticatedPermisosIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedExpedientesIndexRouteImport } from './routes/_authenticated/expedientes.index'
 import { Route as ImprimirSolicitudPagoIdRouteImport } from './routes/imprimir/solicitud-pago.$id'
 import { Route as ApiPublicSolicitudPagoTransporteRouteImport } from './routes/api/public/solicitud-pago-transporte'
+import { Route as ApiPublicCatalogoViajesTransporteRouteImport } from './routes/api/public/catalogo-viajes-transporte'
 import { Route as PortalPortalCambiarPasswordRouteImport } from './routes/_portal/portal.cambiar-password'
 import { Route as PortalEstudiantePortalEstudianteCambiarPasswordRouteImport } from './routes/_portal-estudiante/portal-estudiante.cambiar-password'
 import { Route as AuthenticatedTransportesNuevoRouteImport } from './routes/_authenticated/transportes.nuevo'
@@ -189,6 +190,12 @@ const ApiPublicSolicitudPagoTransporteRoute =
   ApiPublicSolicitudPagoTransporteRouteImport.update({
     id: '/api/public/solicitud-pago-transporte',
     path: '/api/public/solicitud-pago-transporte',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCatalogoViajesTransporteRoute =
+  ApiPublicCatalogoViajesTransporteRouteImport.update({
+    id: '/api/public/catalogo-viajes-transporte',
+    path: '/api/public/catalogo-viajes-transporte',
     getParentRoute: () => rootRouteImport,
   } as any)
 const PortalPortalCambiarPasswordRoute =
@@ -462,6 +469,7 @@ export interface FileRoutesByFullPath {
   '/transportes/nuevo': typeof AuthenticatedTransportesNuevoRoute
   '/portal-estudiante/cambiar-password': typeof PortalEstudiantePortalEstudianteCambiarPasswordRoute
   '/portal/cambiar-password': typeof PortalPortalCambiarPasswordRoute
+  '/api/public/catalogo-viajes-transporte': typeof ApiPublicCatalogoViajesTransporteRoute
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
   '/expedientes/': typeof AuthenticatedExpedientesIndexRoute
@@ -522,6 +530,7 @@ export interface FileRoutesByTo {
   '/transportes/nuevo': typeof AuthenticatedTransportesNuevoRoute
   '/portal-estudiante/cambiar-password': typeof PortalEstudiantePortalEstudianteCambiarPasswordRoute
   '/portal/cambiar-password': typeof PortalPortalCambiarPasswordRoute
+  '/api/public/catalogo-viajes-transporte': typeof ApiPublicCatalogoViajesTransporteRoute
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
   '/expedientes': typeof AuthenticatedExpedientesIndexRoute
@@ -586,6 +595,7 @@ export interface FileRoutesById {
   '/_authenticated/transportes/nuevo': typeof AuthenticatedTransportesNuevoRoute
   '/_portal-estudiante/portal-estudiante/cambiar-password': typeof PortalEstudiantePortalEstudianteCambiarPasswordRoute
   '/_portal/portal/cambiar-password': typeof PortalPortalCambiarPasswordRoute
+  '/api/public/catalogo-viajes-transporte': typeof ApiPublicCatalogoViajesTransporteRoute
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
   '/_authenticated/expedientes/': typeof AuthenticatedExpedientesIndexRoute
@@ -648,6 +658,7 @@ export interface FileRouteTypes {
     | '/transportes/nuevo'
     | '/portal-estudiante/cambiar-password'
     | '/portal/cambiar-password'
+    | '/api/public/catalogo-viajes-transporte'
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/solicitud-pago/$id'
     | '/expedientes/'
@@ -708,6 +719,7 @@ export interface FileRouteTypes {
     | '/transportes/nuevo'
     | '/portal-estudiante/cambiar-password'
     | '/portal/cambiar-password'
+    | '/api/public/catalogo-viajes-transporte'
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/solicitud-pago/$id'
     | '/expedientes'
@@ -771,6 +783,7 @@ export interface FileRouteTypes {
     | '/_authenticated/transportes/nuevo'
     | '/_portal-estudiante/portal-estudiante/cambiar-password'
     | '/_portal/portal/cambiar-password'
+    | '/api/public/catalogo-viajes-transporte'
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/solicitud-pago/$id'
     | '/_authenticated/expedientes/'
@@ -801,6 +814,7 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiPublicCatalogoViajesTransporteRoute: typeof ApiPublicCatalogoViajesTransporteRoute
   ApiPublicSolicitudPagoTransporteRoute: typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   ImprimirSolicitudPagoIdRoute: typeof ImprimirSolicitudPagoIdRoute
 }
@@ -966,6 +980,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/solicitud-pago-transporte'
       fullPath: '/api/public/solicitud-pago-transporte'
       preLoaderRoute: typeof ApiPublicSolicitudPagoTransporteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/catalogo-viajes-transporte': {
+      id: '/api/public/catalogo-viajes-transporte'
+      path: '/api/public/catalogo-viajes-transporte'
+      fullPath: '/api/public/catalogo-viajes-transporte'
+      preLoaderRoute: typeof ApiPublicCatalogoViajesTransporteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_portal/portal/cambiar-password': {
@@ -1417,6 +1438,8 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiPublicCatalogoViajesTransporteRoute:
+    ApiPublicCatalogoViajesTransporteRoute,
   ApiPublicSolicitudPagoTransporteRoute:
     ApiPublicSolicitudPagoTransporteRouteWithChildren,
   ImprimirSolicitudPagoIdRoute: ImprimirSolicitudPagoIdRoute,
