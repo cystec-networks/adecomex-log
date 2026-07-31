@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, CheckCircle2, Copy, Printer } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/logo-adecomex.jpg.asset.json";
 
 const WHATSAPP = "18099313246";
@@ -69,14 +68,16 @@ function SolicitudPagoTransportePage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await (supabase as any)
-        .from("catalogo_viajes_transporte")
-        .select("id, origen, destino, tipo_servicio, precio, moneda")
-        .eq("activo", true)
-        .order("origen", { ascending: true });
-      setViajes((data ?? []) as Viaje[]);
+      try {
+        const res = await fetch("/api/public/catalogo-viajes-transporte");
+        const json = await res.json();
+        setViajes((json?.viajes ?? []) as Viaje[]);
+      } catch {
+        setViajes([]);
+      }
     })();
   }, []);
+
 
   const elegirViaje = (id: string) => {
     setViajeSel(id);
