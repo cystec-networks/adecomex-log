@@ -911,8 +911,13 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                   <td className="text-xs">{fmtLocalDate(d.fecha_recepcion)}</td>
                   <td className={`text-xs ${vencido ? "text-destructive font-medium" : ""}`}>{fmtLocalDate(d.fecha_vencimiento)}</td>
                   <td className="px-4 py-2 text-right">
-                    {d.storage_path && <DocumentoPreviewButton path={d.storage_path} variant="ghost" size="sm" label="Ver" />}
+                    <div className="flex items-center justify-end gap-1">
+                      {d.storage_path && <DocumentoPreviewButton path={d.storage_path} variant="ghost" size="sm" label="Ver" />}
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(d)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => eliminar(d)} title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
                   </td>
+
                 </tr>
               );
             })}
