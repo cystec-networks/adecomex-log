@@ -778,6 +778,8 @@ function CompletarEtapaDialog({ etapa, onConfirm }: { etapa: any; onConfirm: (c:
 function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editPath, setEditPath] = useState<string | null>(null);
   const [tipo, setTipo] = useState(TIPOS_DOC[0]);
   const [venc, setVenc] = useState("");
   const [obs, setObs] = useState("");
@@ -789,29 +791,73 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
     queryFn: async () => (await supabase.from("documentos").select("*").eq("expediente_id", expedienteId).order("created_at", { ascending: false })).data ?? [],
   });
 
+  const resetForm = () => { setEditId(null); setEditPath(null); setTipo(TIPOS_DOC[0]); setVenc(""); setObs(""); setFile(null); };
+
+  const openNuevo = () => { resetForm(); setOpen(true); };
+
+  const openEdit = (d: any) => {
+    setEditId(d.id);
+    setEditPath(d.storage_path ?? null);
+    setTipo(d.tipo ?? TIPOS_DOC[0]);
+    setVenc(d.fecha_vencimiento ?? "");
+    setObs(d.observaciones ?? "");
+    setFile(null);
+    setOpen(true);
+  };
+
   const upload = async () => {
     setUploading(true);
     try {
-      let path: string | null = null;
-      if (file) {
-        path = `${expedienteId}/${Date.now()}_${file.name}`;
-        const { error } = await supabase.storage.from("documentos").upload(path, file);
-        if (error) throw error;
+      if (editId) {
+        let path = editPath;
+        if (file) {
+          const newPath = `${expedienteId}/${Date.now()}_${file.name}`;
+          const { error } = await supabase.storage.from("documentos").upload(newPath, file);
+          if (error) throw error;
+          if (editPath) await supabase.storage.from("documentos").remove([editPath]);
+          path = newPath;
+        }
+        const { error: e2 } = await supabase.from("documentos").update({
+          tipo, storage_path: path,
+          fecha_vencimiento: venc || null, observaciones: obs || null,
+        }).eq("id", editId);
+        if (e2) throw e2;
+        toast.success("Documento actualizado");
+      } else {
+        let path: string | null = null;
+        if (file) {
+          path = `${expedienteId}/${Date.now()}_${file.name}`;
+          const { error } = await supabase.storage.from("documentos").upload(path, file);
+          if (error) throw error;
+        }
+        const { error: e2 } = await supabase.from("documentos").insert({
+          expediente_id: expedienteId, tipo, storage_path: path,
+          estado: file ? "recibido" : "pendiente",
+          fecha_recepcion: file ? new Date().toISOString().slice(0, 10) : null,
+          fecha_vencimiento: venc || null, observaciones: obs || null,
+        });
+        if (e2) throw e2;
+        toast.success("Documento agregado");
       }
-      const { error: e2 } = await supabase.from("documentos").insert({
-        expediente_id: expedienteId, tipo, storage_path: path,
-        estado: file ? "recibido" : "pendiente",
-        fecha_recepcion: file ? new Date().toISOString().slice(0, 10) : null,
-        fecha_vencimiento: venc || null, observaciones: obs || null,
-      });
-      if (e2) throw e2;
-      toast.success("Documento agregado");
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
-      setOpen(false); setFile(null); setVenc(""); setObs("");
+      setOpen(false); resetForm();
     } catch (e: any) {
       toast.error(e.message);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const eliminar = async (d: any) => {
+    if (!confirm("¿Eliminar este documento? Esta acción no se puede deshacer.")) return;
+    try {
+      if (d.storage_path) await supabase.storage.from("documentos").remove([d.storage_path]);
+      const { error } = await supabase.from("documentos").delete().eq("id", d.id);
+      if (error) throw error;
+      toast.success("Documento eliminado");
+      qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
+    } catch (e: any) {
+      toast.error(e.message);
     }
   };
 
@@ -825,10 +871,10 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-base">Documentos ({docs?.length ?? 0})</CardTitle>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button size="sm"><Upload className="h-4 w-4 mr-1" />Subir documento</Button></DialogTrigger>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
+          <Button size="sm" onClick={openNuevo}><Upload className="h-4 w-4 mr-1" />Subir documento</Button>
           <DialogContent>
-            <DialogHeader><DialogTitle>Nuevo documento</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editId ? "Editar documento" : "Nuevo documento"}</DialogTitle></DialogHeader>
             <div className="grid gap-3">
               <div className="grid gap-1.5"><Label>Tipo</Label>
                 <Select value={tipo} onValueChange={setTipo}>
@@ -836,7 +882,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                   <SelectContent>{TIPOS_DOC.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-1.5"><Label>Archivo</Label><Input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></div>
+              <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}</Label><Input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></div>
               <div className="grid gap-1.5"><Label>Fecha vencimiento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
               <div className="grid gap-1.5"><Label>Observaciones</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
             </div>
@@ -844,6 +890,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           </DialogContent>
         </Dialog>
       </CardHeader>
+
       <CardContent className="p-0">
         <table className="w-full text-sm">
           <thead className="text-xs text-muted-foreground border-b bg-muted/30">
@@ -864,8 +911,13 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                   <td className="text-xs">{fmtLocalDate(d.fecha_recepcion)}</td>
                   <td className={`text-xs ${vencido ? "text-destructive font-medium" : ""}`}>{fmtLocalDate(d.fecha_vencimiento)}</td>
                   <td className="px-4 py-2 text-right">
-                    {d.storage_path && <DocumentoPreviewButton path={d.storage_path} variant="ghost" size="sm" label="Ver" />}
+                    <div className="flex items-center justify-end gap-1">
+                      {d.storage_path && <DocumentoPreviewButton path={d.storage_path} variant="ghost" size="sm" label="Ver" />}
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(d)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => eliminar(d)} title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
                   </td>
+
                 </tr>
               );
             })}
