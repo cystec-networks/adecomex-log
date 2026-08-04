@@ -161,7 +161,9 @@ function EmpleadoDetalle() {
               <div />
               <Campo label="Número TSS"><Input value={form.numero_tss ?? ""} onChange={(e) => setForm({ ...form, numero_tss: e.target.value })} /></Campo>
               <Campo label="AFP"><Input value={form.afp ?? ""} onChange={(e) => setForm({ ...form, afp: e.target.value })} /></Campo>
+              <Campo label="AFP - Monto mensual fijo"><Input type="number" step="0.01" value={form.afp_monto_fijo ?? ""} onChange={(e) => setForm({ ...form, afp_monto_fijo: e.target.value })} /></Campo>
               <Campo label="ARS"><Input value={form.ars ?? ""} onChange={(e) => setForm({ ...form, ars: e.target.value })} /></Campo>
+              <Campo label="ARS - Monto mensual fijo"><Input type="number" step="0.01" value={form.ars_monto_fijo ?? ""} onChange={(e) => setForm({ ...form, ars_monto_fijo: e.target.value })} /></Campo>
               <div className="col-span-3">
                 <Campo label="Notas"><Textarea value={form.notas ?? ""} onChange={(e) => setForm({ ...form, notas: e.target.value })} /></Campo>
               </div>
