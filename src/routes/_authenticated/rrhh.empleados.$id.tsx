@@ -169,7 +169,12 @@ function EmpleadoDetalle() {
         <TabsContent value="vacaciones" className="mt-4">
           <VacacionesTab empleadoId={id} fechaIngreso={emp.fecha_ingreso} />
         </TabsContent>
+
+        <TabsContent value="prestamos" className="mt-4">
+          <PrestamosEmpleado empleadoId={id} />
+        </TabsContent>
       </Tabs>
+
     </div>
   );
 }
