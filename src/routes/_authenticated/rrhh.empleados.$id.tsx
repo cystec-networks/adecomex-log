@@ -389,11 +389,22 @@ function VacacionesTab({ empleadoId, fechaIngreso }: { empleadoId: string; fecha
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3">
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Acumuladas (Ley 16-92)</div><div className="text-2xl font-bold">{acumulado ?? 0}</div><div className="text-xs">días</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Tomadas</div><div className="text-2xl font-bold">{tomadas}</div><div className="text-xs">días</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Disponibles</div><div className={`text-2xl font-bold ${disponibles < 0 ? "text-destructive" : "text-emerald-600"}`}>{disponibles}</div><div className="text-xs">días</div></CardContent></Card>
+      <Card className="border-primary/40">
+        <CardContent className="p-5">
+          <div className="text-sm text-muted-foreground">Días disponibles (año de servicio actual)</div>
+          <div className={`text-4xl font-bold ${(vigentes ?? 0) <= 0 ? "text-destructive" : "text-emerald-600"}`}>{vigentes ?? 0}</div>
+          <div className="text-xs text-muted-foreground">días · {tomadasUltimoAnio} tomados en los últimos 12 meses</div>
+          <p className="text-[11px] leading-snug text-muted-foreground mt-3 max-w-3xl">
+            Los días de vacaciones corresponden a cada año de servicio y vencen si no se disfrutan dentro del año — no se acumulan de un año a otro (Art. 177, Código de Trabajo). Cálculo de referencia, confirma con tu asesor laboral antes de aprobar o negar una solicitud.
+          </p>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Card><CardContent className="p-3"><div className="text-[11px] text-muted-foreground">Total histórico devengado</div><div className="text-base font-semibold">{acumulado ?? 0} días</div></CardContent></Card>
+        <Card><CardContent className="p-3"><div className="text-[11px] text-muted-foreground">Tomadas (histórico)</div><div className="text-base font-semibold">{tomadas} días</div></CardContent></Card>
       </div>
+
 
       <Card>
         <CardHeader><CardTitle>Registrar período de vacaciones</CardTitle></CardHeader>
