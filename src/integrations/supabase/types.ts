@@ -1006,6 +1006,65 @@ export type Database = {
           },
         ]
       }
+      empleado_prestamos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          empleado_id: string
+          estado: Database["public"]["Enums"]["prestamo_estado"]
+          fecha_prestamo: string
+          id: string
+          moneda: string
+          monto_pagado: number
+          monto_prestado: number
+          motivo: string | null
+          notas: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          empleado_id: string
+          estado?: Database["public"]["Enums"]["prestamo_estado"]
+          fecha_prestamo?: string
+          id?: string
+          moneda?: string
+          monto_pagado?: number
+          monto_prestado?: number
+          motivo?: string | null
+          notas?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          empleado_id?: string
+          estado?: Database["public"]["Enums"]["prestamo_estado"]
+          fecha_prestamo?: string
+          id?: string
+          moneda?: string
+          monto_pagado?: number
+          monto_prestado?: number
+          motivo?: string | null
+          notas?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empleado_prestamos_empleado_id_fkey"
+            columns: ["empleado_id"]
+            isOneToOne: false
+            referencedRelation: "empleados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       empleado_vacaciones: {
         Row: {
           created_at: string
@@ -3613,6 +3672,7 @@ export type Database = {
         | "zoosanitario"
         | "ministerio_salud"
         | "otro"
+      prestamo_estado: "activo" | "pagado" | "cancelado"
       prioridad: "baja" | "media" | "alta" | "urgente"
       programa_estado:
         | "planificado"
@@ -3841,6 +3901,7 @@ export const Constants = {
         "ministerio_salud",
         "otro",
       ],
+      prestamo_estado: ["activo", "pagado", "cancelado"],
       prioridad: ["baja", "media", "alta", "urgente"],
       programa_estado: [
         "planificado",

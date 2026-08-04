@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
+import { PrestamosEmpleado } from "@/components/prestamos-empleado";
+
 import { ArrowLeft, Save, Trash2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -104,7 +106,9 @@ function EmpleadoDetalle() {
           <TabsTrigger value="info">Información</TabsTrigger>
           <TabsTrigger value="documentos">Documentos</TabsTrigger>
           <TabsTrigger value="vacaciones">Vacaciones</TabsTrigger>
+          <TabsTrigger value="prestamos">Préstamos</TabsTrigger>
         </TabsList>
+
 
         <TabsContent value="info" className="space-y-4 mt-4">
           <Card>
@@ -167,7 +171,12 @@ function EmpleadoDetalle() {
         <TabsContent value="vacaciones" className="mt-4">
           <VacacionesTab empleadoId={id} fechaIngreso={emp.fecha_ingreso} />
         </TabsContent>
+
+        <TabsContent value="prestamos" className="mt-4">
+          <PrestamosEmpleado empleadoId={id} />
+        </TabsContent>
       </Tabs>
+
     </div>
   );
 }
