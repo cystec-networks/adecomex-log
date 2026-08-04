@@ -44,9 +44,13 @@ const EMPTY = () => {
 export function RecibosPagoEmpleado({
   empleadoId,
   salarioBase,
+  afpMontoFijo = null,
+  arsMontoFijo = null,
 }: {
   empleadoId: string;
   salarioBase: number | null;
+  afpMontoFijo?: number | null;
+  arsMontoFijo?: number | null;
 }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
