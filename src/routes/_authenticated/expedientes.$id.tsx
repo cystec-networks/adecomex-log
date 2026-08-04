@@ -2306,20 +2306,60 @@ function LiquidacionEstimadaBlock({
 
   const tc = useTasaCambioForExpediente(exp);
   const [rateInput, setRateInput] = useState("");
+  const [editandoTasa, setEditandoTasa] = useState(false);
+  const qcTasa = useQueryClient();
   const tasa = tc.tasa;
   const rd = (n: number) => tasa != null ? fmt(n * tasa) : "—";
 
+  const mostrarCaptura = !tc.congelado && (tc.needsCapture || editandoTasa);
+
   return (
     <div className="grid gap-4 pt-4 border-t">
-      {tc.needsCapture && (
+      {!tc.congelado && (
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="grid gap-1">
+            <Label className="text-xs">Fecha de la operación (para la tasa)</Label>
+            <Input
+              type="date"
+              className="w-44"
+              value={tc.fecha}
+              onChange={async (e) => {
+                const v = e.target.value;
+                if (!v) return;
+                const { error } = await supabase.from("expedientes").update({ fecha_tasa_manual: v } as any).eq("id", exp.id);
+                if (error) { toast.error(error.message); return; }
+                toast.success("Fecha de tasa actualizada");
+                qcTasa.invalidateQueries({ queryKey: ["expediente", exp.id] });
+              }}
+            />
+          </div>
+          {!mostrarCaptura && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setRateInput(tasa != null ? tasa.toFixed(4) : ""); setEditandoTasa(true); }}
+            >
+              Editar tasa
+            </Button>
+          )}
+        </div>
+      )}
+
+      {mostrarCaptura && (
         <div className="rounded-lg border border-amber-400 bg-amber-50 p-4">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="h-4 w-4 text-amber-700" />
-            <div className="font-semibold text-sm text-amber-900">Tasa de Cambio requerida</div>
+            <div className="font-semibold text-sm text-amber-900">
+              {tc.needsCapture ? "Tasa de Cambio requerida" : "Editar Tasa de Cambio"}
+            </div>
           </div>
           <p className="text-xs text-amber-900 mb-3">
-            No existe una Tasa Oficial DGA para <b>{tc.fechaLabel}</b>. Ingrésala una sola vez y quedará
-            guardada en el catálogo para todos los expedientes de ese día.
+            {tc.needsCapture ? (
+              <>No existe una Tasa Oficial DGA para <b>{tc.fechaLabel}</b>. Ingrésala una sola vez y quedará
+              guardada en el catálogo para todos los expedientes de ese día.</>
+            ) : (
+              <>Actualizarás la Tasa Oficial DGA de <b>{tc.fechaLabel}</b> en el catálogo y en este expediente.</>
+            )}
           </p>
           <div className="flex flex-wrap items-end gap-3">
             <div className="grid gap-1">
@@ -2335,17 +2375,23 @@ function LiquidacionEstimadaBlock({
             <a href="https://www.aduanas.gob.do/tasa-de-cambio/" target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 underline flex items-center gap-1 pb-2.5">
               Ver tasa oficial en aduanas.gob.do <ExternalLink className="h-3 w-3" />
             </a>
-            <Button
-              size="sm"
-              className="ml-auto"
-              disabled={tc.guardar.isPending || !rateInput || Number(rateInput) <= 0}
-              onClick={() => tc.guardar.mutate(Number(rateInput), {
-                onSuccess: () => { toast.success(`Tasa RD$ ${rateInput} guardada para ${tc.fechaLabel}`); setRateInput(""); },
-                onError: (e: any) => toast.error(e.message),
-              })}
-            >
-              {tc.guardar.isPending ? "Guardando…" : "Guardar tasa"}
-            </Button>
+            <div className="ml-auto flex items-center gap-2">
+              {editandoTasa && (
+                <Button variant="ghost" size="sm" onClick={() => { setEditandoTasa(false); setRateInput(""); }}>
+                  Cancelar
+                </Button>
+              )}
+              <Button
+                size="sm"
+                disabled={tc.guardar.isPending || !rateInput || Number(rateInput) <= 0}
+                onClick={() => tc.guardar.mutate(Number(rateInput), {
+                  onSuccess: () => { toast.success(`Tasa RD$ ${rateInput} guardada para ${tc.fechaLabel}`); setRateInput(""); setEditandoTasa(false); },
+                  onError: (e: any) => toast.error(e.message),
+                })}
+              >
+                {tc.guardar.isPending ? "Guardando…" : "Guardar tasa"}
+              </Button>
+            </div>
           </div>
         </div>
       )}
