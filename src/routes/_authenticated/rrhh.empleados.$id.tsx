@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
+import { PrestamosEmpleado } from "@/components/prestamos-empleado";
+
 import { ArrowLeft, Save, Trash2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
