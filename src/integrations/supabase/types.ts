@@ -3739,6 +3739,10 @@ export type Database = {
         Args: { _fecha_ingreso: string }
         Returns: number
       }
+      calcular_vacaciones_vigentes: {
+        Args: { _dias_tomados_ultimo_anio: number; _fecha_ingreso: string }
+        Returns: number
+      }
       marcar_password_cambiada_cliente: { Args: never; Returns: undefined }
       marcar_password_cambiada_estudiante: { Args: never; Returns: undefined }
       show_limit: { Args: never; Returns: number }
