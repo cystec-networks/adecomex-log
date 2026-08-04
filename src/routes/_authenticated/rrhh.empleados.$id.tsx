@@ -331,7 +331,29 @@ function VacacionesTab({ empleadoId, fechaIngreso }: { empleadoId: string; fecha
   });
 
   const tomadas = (registros ?? []).reduce((s: number, r: any) => s + Number(r.dias_tomados ?? 0), 0);
-  const disponibles = (acumulado ?? 0) - tomadas;
+
+  // Días tomados dentro de los últimos 12 meses (solo estado 'tomada')
+  const desde12m = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    return d.toISOString().slice(0, 10);
+  })();
+  const tomadasUltimoAnio = (registros ?? [])
+    .filter((r: any) => (r.estado ?? "tomada") === "tomada" && (r.fecha_inicio ?? "") >= desde12m)
+    .reduce((s: number, r: any) => s + Number(r.dias_tomados ?? 0), 0);
+
+  const { data: vigentes } = useQuery({
+    queryKey: ["rrhh-vac-vigentes", empleadoId, fechaIngreso, tomadasUltimoAnio],
+    enabled: !!fechaIngreso && !!registros,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("calcular_vacaciones_vigentes", {
+        _fecha_ingreso: fechaIngreso,
+        _dias_tomados_ultimo_anio: tomadasUltimoAnio,
+      });
+      if (error) throw error;
+      return data as number;
+    },
+  });
 
   const add = useMutation({
     mutationFn: async () => {
