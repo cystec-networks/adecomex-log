@@ -103,6 +103,8 @@ export function RecibosPagoEmpleado({
     setForm({
       ...base,
       salario_quincena: salarioBase ? String(Number(salarioBase) / 2) : "",
+      afp_monto: afpMontoFijo ? String(Number(afpMontoFijo) / 2) : "",
+      ars_monto: arsMontoFijo ? String(Number(arsMontoFijo) / 2) : "",
     });
     setOpen(true);
   };
