@@ -1112,7 +1112,9 @@ export type Database = {
       empleados: {
         Row: {
           afp: string | null
+          afp_monto_fijo: number | null
           ars: string | null
+          ars_monto_fijo: number | null
           cargo: string | null
           cedula: string | null
           created_at: string
@@ -1139,7 +1141,9 @@ export type Database = {
         }
         Insert: {
           afp?: string | null
+          afp_monto_fijo?: number | null
           ars?: string | null
+          ars_monto_fijo?: number | null
           cargo?: string | null
           cedula?: string | null
           created_at?: string
@@ -1166,7 +1170,9 @@ export type Database = {
         }
         Update: {
           afp?: string | null
+          afp_monto_fijo?: number | null
           ars?: string | null
+          ars_monto_fijo?: number | null
           cargo?: string | null
           cedula?: string | null
           created_at?: string

@@ -44,9 +44,13 @@ const EMPTY = () => {
 export function RecibosPagoEmpleado({
   empleadoId,
   salarioBase,
+  afpMontoFijo = null,
+  arsMontoFijo = null,
 }: {
   empleadoId: string;
   salarioBase: number | null;
+  afpMontoFijo?: number | null;
+  arsMontoFijo?: number | null;
 }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -99,6 +103,8 @@ export function RecibosPagoEmpleado({
     setForm({
       ...base,
       salario_quincena: salarioBase ? String(Number(salarioBase) / 2) : "",
+      afp_monto: afpMontoFijo ? String(Number(afpMontoFijo) / 2) : "",
+      ars_monto: arsMontoFijo ? String(Number(arsMontoFijo) / 2) : "",
     });
     setOpen(true);
   };

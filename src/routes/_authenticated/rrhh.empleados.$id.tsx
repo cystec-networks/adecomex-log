@@ -67,6 +67,8 @@ function EmpleadoDetalle() {
       delete clean.deleted_by;
       for (const k of Object.keys(clean)) if (clean[k] === "") clean[k] = null;
       if (clean.salario_base != null) clean.salario_base = Number(clean.salario_base);
+      if (clean.afp_monto_fijo != null) clean.afp_monto_fijo = Number(clean.afp_monto_fijo);
+      if (clean.ars_monto_fijo != null) clean.ars_monto_fijo = Number(clean.ars_monto_fijo);
       const { error } = await (supabase as any).from("empleados").update(clean).eq("id", id);
       if (error) throw error;
     },
@@ -159,7 +161,9 @@ function EmpleadoDetalle() {
               <div />
               <Campo label="Número TSS"><Input value={form.numero_tss ?? ""} onChange={(e) => setForm({ ...form, numero_tss: e.target.value })} /></Campo>
               <Campo label="AFP"><Input value={form.afp ?? ""} onChange={(e) => setForm({ ...form, afp: e.target.value })} /></Campo>
+              <Campo label="AFP - Monto mensual fijo"><Input type="number" step="0.01" value={form.afp_monto_fijo ?? ""} onChange={(e) => setForm({ ...form, afp_monto_fijo: e.target.value })} /></Campo>
               <Campo label="ARS"><Input value={form.ars ?? ""} onChange={(e) => setForm({ ...form, ars: e.target.value })} /></Campo>
+              <Campo label="ARS - Monto mensual fijo"><Input type="number" step="0.01" value={form.ars_monto_fijo ?? ""} onChange={(e) => setForm({ ...form, ars_monto_fijo: e.target.value })} /></Campo>
               <div className="col-span-3">
                 <Campo label="Notas"><Textarea value={form.notas ?? ""} onChange={(e) => setForm({ ...form, notas: e.target.value })} /></Campo>
               </div>
@@ -180,7 +184,12 @@ function EmpleadoDetalle() {
         </TabsContent>
 
         <TabsContent value="recibos" className="mt-4">
-          <RecibosPagoEmpleado empleadoId={id} salarioBase={emp.salario_base ?? null} />
+          <RecibosPagoEmpleado
+            empleadoId={id}
+            salarioBase={emp.salario_base ?? null}
+            afpMontoFijo={(emp as any).afp_monto_fijo ?? null}
+            arsMontoFijo={(emp as any).ars_monto_fijo ?? null}
+          />
         </TabsContent>
 
       </Tabs>
