@@ -184,7 +184,12 @@ function EmpleadoDetalle() {
         </TabsContent>
 
         <TabsContent value="recibos" className="mt-4">
-          <RecibosPagoEmpleado empleadoId={id} salarioBase={emp.salario_base ?? null} />
+          <RecibosPagoEmpleado
+            empleadoId={id}
+            salarioBase={emp.salario_base ?? null}
+            afpMontoFijo={(emp as any).afp_monto_fijo ?? null}
+            arsMontoFijo={(emp as any).ars_monto_fijo ?? null}
+          />
         </TabsContent>
 
       </Tabs>
