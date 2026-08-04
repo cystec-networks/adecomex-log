@@ -104,7 +104,9 @@ function EmpleadoDetalle() {
           <TabsTrigger value="info">Información</TabsTrigger>
           <TabsTrigger value="documentos">Documentos</TabsTrigger>
           <TabsTrigger value="vacaciones">Vacaciones</TabsTrigger>
+          <TabsTrigger value="prestamos">Préstamos</TabsTrigger>
         </TabsList>
+
 
         <TabsContent value="info" className="space-y-4 mt-4">
           <Card>
