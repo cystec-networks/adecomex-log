@@ -167,6 +167,9 @@ const GROUPS: Group[] = [
     items: [
       { to: "/rrhh/empleados", label: "Empleados", icon: IdCard, roles: ["admin","rrhh"],
         match: (p) => p.startsWith("/rrhh/empleados") },
+      { to: "/rrhh/prestamos", label: "Préstamos", icon: HandCoins, roles: ["admin","rrhh"],
+        match: (p) => p.startsWith("/rrhh/prestamos") },
+
     ],
   },
   {
