@@ -5,7 +5,7 @@ import {
   ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3, Library, Settings,
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
   GraduationCap, BookOpen, UserPlus, ClipboardCheck,
-  Briefcase, IdCard,
+  Briefcase, IdCard, HandCoins,
   Scale,
 
 } from "lucide-react";
