@@ -2887,6 +2887,84 @@ export type Database = {
         }
         Relationships: []
       }
+      recibos_pago: {
+        Row: {
+          afp_monto: number
+          ars_monto: number
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          descuento_prestamo: number
+          empleado_id: string
+          id: string
+          isr_monto: number
+          neto_pagado: number
+          notas: string | null
+          otros_descuentos: number
+          otros_descuentos_concepto: string | null
+          periodo_fin: string
+          periodo_inicio: string
+          prestamo_id: string | null
+          salario_quincena: number
+        }
+        Insert: {
+          afp_monto?: number
+          ars_monto?: number
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          descuento_prestamo?: number
+          empleado_id: string
+          id?: string
+          isr_monto?: number
+          neto_pagado?: number
+          notas?: string | null
+          otros_descuentos?: number
+          otros_descuentos_concepto?: string | null
+          periodo_fin: string
+          periodo_inicio: string
+          prestamo_id?: string | null
+          salario_quincena?: number
+        }
+        Update: {
+          afp_monto?: number
+          ars_monto?: number
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          descuento_prestamo?: number
+          empleado_id?: string
+          id?: string
+          isr_monto?: number
+          neto_pagado?: number
+          notas?: string | null
+          otros_descuentos?: number
+          otros_descuentos_concepto?: string | null
+          periodo_fin?: string
+          periodo_inicio?: string
+          prestamo_id?: string | null
+          salario_quincena?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recibos_pago_empleado_id_fkey"
+            columns: ["empleado_id"]
+            isOneToOne: false
+            referencedRelation: "empleados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recibos_pago_prestamo_id_fkey"
+            columns: ["prestamo_id"]
+            isOneToOne: false
+            referencedRelation: "empleado_prestamos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       solicitudes: {
         Row: {
           bl_awb: string | null
