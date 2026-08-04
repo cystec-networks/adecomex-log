@@ -108,7 +108,9 @@ function EmpleadoDetalle() {
           <TabsTrigger value="documentos">Documentos</TabsTrigger>
           <TabsTrigger value="vacaciones">Vacaciones</TabsTrigger>
           <TabsTrigger value="prestamos">Préstamos</TabsTrigger>
+          <TabsTrigger value="recibos">Recibos de Pago</TabsTrigger>
         </TabsList>
+
 
 
         <TabsContent value="info" className="space-y-4 mt-4">
