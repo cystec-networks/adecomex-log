@@ -67,6 +67,8 @@ function EmpleadoDetalle() {
       delete clean.deleted_by;
       for (const k of Object.keys(clean)) if (clean[k] === "") clean[k] = null;
       if (clean.salario_base != null) clean.salario_base = Number(clean.salario_base);
+      if (clean.afp_monto_fijo != null) clean.afp_monto_fijo = Number(clean.afp_monto_fijo);
+      if (clean.ars_monto_fijo != null) clean.ars_monto_fijo = Number(clean.ars_monto_fijo);
       const { error } = await (supabase as any).from("empleados").update(clean).eq("id", id);
       if (error) throw error;
     },
