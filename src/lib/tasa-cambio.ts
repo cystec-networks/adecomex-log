@@ -90,7 +90,7 @@ export function useTasaCambioForExpediente(exp: any) {
     mutationFn: async (valor: number) => {
       const { data, error } = await supabase
         .from("catalogo_tasas_cambio")
-        .insert({ fecha, tasa: valor })
+        .upsert({ fecha, tasa: valor }, { onConflict: "fecha" })
         .select("*")
         .maybeSingle();
       if (error) throw error;
