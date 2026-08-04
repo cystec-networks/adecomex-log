@@ -178,6 +178,11 @@ function EmpleadoDetalle() {
         <TabsContent value="prestamos" className="mt-4">
           <PrestamosEmpleado empleadoId={id} />
         </TabsContent>
+
+        <TabsContent value="recibos" className="mt-4">
+          <RecibosPagoEmpleado empleadoId={id} salarioBase={emp.salario_base ?? null} />
+        </TabsContent>
+
       </Tabs>
 
     </div>
