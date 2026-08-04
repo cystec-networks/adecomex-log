@@ -2722,6 +2722,63 @@ export type Database = {
           },
         ]
       }
+      prestamos_terceros: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          estado: Database["public"]["Enums"]["prestamo_tercero_estado"]
+          fecha_prestamo: string
+          id: string
+          moneda: string
+          monto_pagado: number
+          monto_prestado: number
+          nombre_deudor: string
+          notas: string | null
+          relacion: string | null
+          tasa_interes_pct: number
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          estado?: Database["public"]["Enums"]["prestamo_tercero_estado"]
+          fecha_prestamo?: string
+          id?: string
+          moneda?: string
+          monto_pagado?: number
+          monto_prestado?: number
+          nombre_deudor: string
+          notas?: string | null
+          relacion?: string | null
+          tasa_interes_pct?: number
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          estado?: Database["public"]["Enums"]["prestamo_tercero_estado"]
+          fecha_prestamo?: string
+          id?: string
+          moneda?: string
+          monto_pagado?: number
+          monto_prestado?: number
+          nombre_deudor?: string
+          notas?: string | null
+          relacion?: string | null
+          tasa_interes_pct?: number
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           activo: boolean
@@ -3590,6 +3647,10 @@ export type Database = {
     }
     Functions: {
       calc_itbis_periodo: { Args: { _periodo: string }; Returns: Json }
+      calcular_interes_prestamo_tercero: {
+        Args: { _fecha_prestamo: string; _monto: number; _tasa_pct: number }
+        Returns: number
+      }
       calcular_vacaciones_acumuladas: {
         Args: { _fecha_ingreso: string }
         Returns: number
@@ -3673,6 +3734,7 @@ export type Database = {
         | "ministerio_salud"
         | "otro"
       prestamo_estado: "activo" | "pagado" | "cancelado"
+      prestamo_tercero_estado: "activo" | "pagado" | "cancelado"
       prioridad: "baja" | "media" | "alta" | "urgente"
       programa_estado:
         | "planificado"
@@ -3902,6 +3964,7 @@ export const Constants = {
         "otro",
       ],
       prestamo_estado: ["activo", "pagado", "cancelado"],
+      prestamo_tercero_estado: ["activo", "pagado", "cancelado"],
       prioridad: ["baja", "media", "alta", "urgente"],
       programa_estado: [
         "planificado",
