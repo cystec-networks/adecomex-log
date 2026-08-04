@@ -65,6 +65,7 @@ import { Route as AuthenticatedAcademiaAccesosEstudiantesRouteImport } from './r
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedRrhhPrestamosIndexRouteImport } from './routes/_authenticated/rrhh.prestamos.index'
+import { Route as AuthenticatedRrhhPrestamosTercerosIndexRouteImport } from './routes/_authenticated/rrhh.prestamos-terceros.index'
 import { Route as AuthenticatedRrhhEmpleadosIndexRouteImport } from './routes/_authenticated/rrhh.empleados.index'
 import { Route as AuthenticatedLegalDocumentosIndexRouteImport } from './routes/_authenticated/legal.documentos.index'
 import { Route as ApiPublicSolicitudPagoTransporteIdRouteImport } from './routes/api/public/solicitud-pago-transporte.$id'
@@ -389,6 +390,12 @@ const AuthenticatedRrhhPrestamosIndexRoute =
     path: '/rrhh/prestamos/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedRrhhPrestamosTercerosIndexRoute =
+  AuthenticatedRrhhPrestamosTercerosIndexRouteImport.update({
+    id: '/rrhh/prestamos-terceros/',
+    path: '/rrhh/prestamos-terceros/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRrhhEmpleadosIndexRoute =
   AuthenticatedRrhhEmpleadosIndexRouteImport.update({
     id: '/rrhh/empleados/',
@@ -492,6 +499,7 @@ export interface FileRoutesByFullPath {
   '/api/public/solicitud-pago-transporte/$id': typeof ApiPublicSolicitudPagoTransporteIdRoute
   '/legal/documentos/': typeof AuthenticatedLegalDocumentosIndexRoute
   '/rrhh/empleados/': typeof AuthenticatedRrhhEmpleadosIndexRoute
+  '/rrhh/prestamos-terceros/': typeof AuthenticatedRrhhPrestamosTercerosIndexRoute
   '/rrhh/prestamos/': typeof AuthenticatedRrhhPrestamosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -554,6 +562,7 @@ export interface FileRoutesByTo {
   '/api/public/solicitud-pago-transporte/$id': typeof ApiPublicSolicitudPagoTransporteIdRoute
   '/legal/documentos': typeof AuthenticatedLegalDocumentosIndexRoute
   '/rrhh/empleados': typeof AuthenticatedRrhhEmpleadosIndexRoute
+  '/rrhh/prestamos-terceros': typeof AuthenticatedRrhhPrestamosTercerosIndexRoute
   '/rrhh/prestamos': typeof AuthenticatedRrhhPrestamosIndexRoute
 }
 export interface FileRoutesById {
@@ -620,6 +629,7 @@ export interface FileRoutesById {
   '/api/public/solicitud-pago-transporte/$id': typeof ApiPublicSolicitudPagoTransporteIdRoute
   '/_authenticated/legal/documentos/': typeof AuthenticatedLegalDocumentosIndexRoute
   '/_authenticated/rrhh/empleados/': typeof AuthenticatedRrhhEmpleadosIndexRoute
+  '/_authenticated/rrhh/prestamos-terceros/': typeof AuthenticatedRrhhPrestamosTercerosIndexRoute
   '/_authenticated/rrhh/prestamos/': typeof AuthenticatedRrhhPrestamosIndexRoute
 }
 export interface FileRouteTypes {
@@ -684,6 +694,7 @@ export interface FileRouteTypes {
     | '/api/public/solicitud-pago-transporte/$id'
     | '/legal/documentos/'
     | '/rrhh/empleados/'
+    | '/rrhh/prestamos-terceros/'
     | '/rrhh/prestamos/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -746,6 +757,7 @@ export interface FileRouteTypes {
     | '/api/public/solicitud-pago-transporte/$id'
     | '/legal/documentos'
     | '/rrhh/empleados'
+    | '/rrhh/prestamos-terceros'
     | '/rrhh/prestamos'
   id:
     | '__root__'
@@ -811,6 +823,7 @@ export interface FileRouteTypes {
     | '/api/public/solicitud-pago-transporte/$id'
     | '/_authenticated/legal/documentos/'
     | '/_authenticated/rrhh/empleados/'
+    | '/_authenticated/rrhh/prestamos-terceros/'
     | '/_authenticated/rrhh/prestamos/'
   fileRoutesById: FileRoutesById
 }
@@ -1226,6 +1239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRrhhPrestamosIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/rrhh/prestamos-terceros/': {
+      id: '/_authenticated/rrhh/prestamos-terceros/'
+      path: '/rrhh/prestamos-terceros'
+      fullPath: '/rrhh/prestamos-terceros/'
+      preLoaderRoute: typeof AuthenticatedRrhhPrestamosTercerosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/rrhh/empleados/': {
       id: '/_authenticated/rrhh/empleados/'
       path: '/rrhh/empleados'
@@ -1333,6 +1353,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRrhhEmpleadosIdRoute: typeof AuthenticatedRrhhEmpleadosIdRoute
   AuthenticatedLegalDocumentosIndexRoute: typeof AuthenticatedLegalDocumentosIndexRoute
   AuthenticatedRrhhEmpleadosIndexRoute: typeof AuthenticatedRrhhEmpleadosIndexRoute
+  AuthenticatedRrhhPrestamosTercerosIndexRoute: typeof AuthenticatedRrhhPrestamosTercerosIndexRoute
   AuthenticatedRrhhPrestamosIndexRoute: typeof AuthenticatedRrhhPrestamosIndexRoute
 }
 
@@ -1389,6 +1410,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLegalDocumentosIndexRoute:
     AuthenticatedLegalDocumentosIndexRoute,
   AuthenticatedRrhhEmpleadosIndexRoute: AuthenticatedRrhhEmpleadosIndexRoute,
+  AuthenticatedRrhhPrestamosTercerosIndexRoute:
+    AuthenticatedRrhhPrestamosTercerosIndexRoute,
   AuthenticatedRrhhPrestamosIndexRoute: AuthenticatedRrhhPrestamosIndexRoute,
 }
 

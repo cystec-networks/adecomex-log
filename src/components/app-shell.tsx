@@ -168,7 +168,9 @@ const GROUPS: Group[] = [
       { to: "/rrhh/empleados", label: "Empleados", icon: IdCard, roles: ["admin","rrhh"],
         match: (p) => p.startsWith("/rrhh/empleados") },
       { to: "/rrhh/prestamos", label: "Préstamos", icon: HandCoins, roles: ["admin","rrhh"],
-        match: (p) => p.startsWith("/rrhh/prestamos") },
+        match: (p) => p === "/rrhh/prestamos" || p.startsWith("/rrhh/prestamos/") },
+      { to: "/rrhh/prestamos-terceros", label: "Préstamos a Terceros", icon: HandCoins, roles: ["admin","rrhh"],
+        match: (p) => p.startsWith("/rrhh/prestamos-terceros") },
 
     ],
   },
