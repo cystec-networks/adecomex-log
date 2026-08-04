@@ -12,8 +12,9 @@ export type TasaCambioRow = {
   updated_at: string;
 };
 
-/** Fecha (YYYY-MM-DD) que rige la tasa: usa created_at del expediente. */
-export function fechaTasa(exp: { created_at?: string | null }): string {
+/** Fecha (YYYY-MM-DD) que rige la tasa: fecha_tasa_manual si existe, si no created_at. */
+export function fechaTasa(exp: { created_at?: string | null; fecha_tasa_manual?: string | null }): string {
+  if (exp.fecha_tasa_manual) return String(exp.fecha_tasa_manual).slice(0, 10);
   const iso = exp.created_at ?? new Date().toISOString();
   return iso.slice(0, 10);
 }
@@ -89,7 +90,7 @@ export function useTasaCambioForExpediente(exp: any) {
     mutationFn: async (valor: number) => {
       const { data, error } = await supabase
         .from("catalogo_tasas_cambio")
-        .insert({ fecha, tasa: valor })
+        .upsert({ fecha, tasa: valor }, { onConflict: "fecha" })
         .select("*")
         .maybeSingle();
       if (error) throw error;
