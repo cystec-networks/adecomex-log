@@ -13,6 +13,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { PrestamosEmpleado } from "@/components/prestamos-empleado";
+import { RecibosPagoEmpleado } from "@/components/recibos-pago-empleado";
 
 import { ArrowLeft, Save, Trash2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -107,7 +108,9 @@ function EmpleadoDetalle() {
           <TabsTrigger value="documentos">Documentos</TabsTrigger>
           <TabsTrigger value="vacaciones">Vacaciones</TabsTrigger>
           <TabsTrigger value="prestamos">Préstamos</TabsTrigger>
+          <TabsTrigger value="recibos">Recibos de Pago</TabsTrigger>
         </TabsList>
+
 
 
         <TabsContent value="info" className="space-y-4 mt-4">
@@ -175,6 +178,11 @@ function EmpleadoDetalle() {
         <TabsContent value="prestamos" className="mt-4">
           <PrestamosEmpleado empleadoId={id} />
         </TabsContent>
+
+        <TabsContent value="recibos" className="mt-4">
+          <RecibosPagoEmpleado empleadoId={id} salarioBase={emp.salario_base ?? null} />
+        </TabsContent>
+
       </Tabs>
 
     </div>
