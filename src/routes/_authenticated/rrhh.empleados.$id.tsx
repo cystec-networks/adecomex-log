@@ -13,6 +13,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { PrestamosEmpleado } from "@/components/prestamos-empleado";
+import { RecibosPagoEmpleado } from "@/components/recibos-pago-empleado";
 
 import { ArrowLeft, Save, Trash2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
