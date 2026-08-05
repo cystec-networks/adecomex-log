@@ -86,6 +86,10 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
   const [newClientOpen, setNewClientOpen] = useState(false);
   const [newClient, setNewClient] = useState({ nombre: "", rnc: "", contacto: "", email: "", telefono: "" });
 
+  const [splitOpen, setSplitOpen] = useState(false);
+  const [splitData, setSplitData] = useState({ contenedor: "", expediente_id: "", monto: "" });
+
+
   const [form, setForm] = useState({
     numero_viaje: "",
     expediente_id: expedienteId ?? "",
