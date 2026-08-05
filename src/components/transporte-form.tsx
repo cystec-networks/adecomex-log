@@ -198,7 +198,6 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
         "numero_control, transportista_nombre, transportista_rnc, telefono, monto, moneda, estado, referencia_viaje, descripcion, placa_contenedor, cantidad_viajes, catalogo_viaje_id",
       )
       .eq("numero_control", nc)
-      .eq("estado", "pendiente")
       .maybeSingle();
     if (error) {
       setBuscandoSpt(false);
