@@ -367,6 +367,66 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
     onError: (e: any) => toast.error(e.message),
   });
 
+  const dividir = useMutation({
+    mutationFn: async () => {
+      if (!existing) throw new Error("Transporte no cargado");
+      const contenedor = splitData.contenedor.trim();
+      if (!contenedor) throw new Error("Escribe el número de contenedor a mover");
+      const monto = splitData.monto === "" ? 0 : Number(splitData.monto);
+      if (Number.isNaN(monto) || monto < 0) throw new Error("Monto inválido");
+
+      const src: any = existing;
+      const nuevo: any = {
+        transportista: src.transportista,
+        tipo: src.tipo,
+        origen: src.origen,
+        destino: src.destino,
+        fecha_salida: src.fecha_salida,
+        eta: src.eta,
+        flete_moneda: src.flete_moneda,
+        numero_control_pago: src.numero_control_pago,
+        solicitud_pago_id: src.solicitud_pago_id,
+        cliente_id: src.cliente_id,
+        placa_contenedor: contenedor,
+        expediente_id: splitData.expediente_id || null,
+        flete_monto: monto,
+        observaciones: `Dividido del transporte ${src.numero_viaje}`,
+      };
+      const { data: creado, error: e1 } = await supabase.from("transportes").insert(nuevo).select("id,numero_viaje").single();
+      if (e1) throw e1;
+
+      const restantes = String(form.placa_contenedor ?? "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s && s.toLowerCase() !== contenedor.toLowerCase())
+        .join(", ");
+      const fleteActual = form.flete_monto === "" ? 0 : Number(form.flete_monto);
+      const nuevoFlete = Math.max(0, Number((fleteActual - monto).toFixed(2)));
+      const linea = `Dividido: contenedor ${contenedor} movido al transporte ${creado.numero_viaje}`;
+      const obs = form.observaciones?.trim() ? `${form.observaciones}\n${linea}` : linea;
+
+      const { error: e2 } = await supabase
+        .from("transportes")
+        .update({ placa_contenedor: restantes, flete_monto: nuevoFlete, observaciones: obs })
+        .eq("id", id!);
+      if (e2) throw e2;
+
+      return { creado, restantes, nuevoFlete, obs };
+    },
+    onSuccess: ({ creado, restantes, nuevoFlete, obs }) => {
+      setForm((f) => ({ ...f, placa_contenedor: restantes, flete_monto: String(nuevoFlete), observaciones: obs }));
+      setSplitOpen(false);
+      setSplitData({ contenedor: "", expediente_id: "", monto: "" });
+      qc.invalidateQueries({ queryKey: ["transportes"] });
+      qc.invalidateQueries({ queryKey: ["transporte", id] });
+      qc.invalidateQueries({ queryKey: ["transportes-por-expediente"] });
+      toast.success(`Transporte ${creado.numero_viaje} creado a partir de la división`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+
+
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-5">
       <div className="flex items-center gap-3 flex-wrap">
