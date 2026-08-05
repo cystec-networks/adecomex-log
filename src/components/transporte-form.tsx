@@ -443,6 +443,18 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
             {mode === "new" ? "Registra un viaje vinculado a un expediente." : "Edita los datos del viaje."}
           </p>
         </div>
+        {mode === "edit" && existing && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              const half = form.flete_monto === "" ? 0 : Number(form.flete_monto) / 2;
+              setSplitData({ contenedor: "", expediente_id: "", monto: half ? half.toFixed(2) : "" });
+              setSplitOpen(true);
+            }}
+          >
+            <Split className="h-4 w-4 mr-1" />Dividir este Transporte
+          </Button>
+        )}
         <Button variant="outline" onClick={() => nav({ to: "/transportes" })}>
           <X className="h-4 w-4 mr-1" />Cancelar
         </Button>
@@ -450,6 +462,60 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
           <Check className="h-4 w-4 mr-1" />{save.isPending ? "Guardando…" : mode === "new" ? "Crear transporte" : "Guardar cambios"}
         </Button>
       </div>
+
+      <Dialog open={splitOpen} onOpenChange={setSplitOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Dividir en un nuevo Transporte</DialogTitle></DialogHeader>
+          <div className="rounded-md border bg-muted/40 p-3 text-xs space-y-1">
+            <div><span className="text-muted-foreground">Contenedor(es) actual:</span> {form.placa_contenedor || "—"}</div>
+            <div>
+              <span className="text-muted-foreground">Expediente actual:</span>{" "}
+              {(expedientes ?? []).find((e: any) => e.id === form.expediente_id)?.numero ?? "—"}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Flete actual:</span>{" "}
+              {fmtDOP(form.flete_monto === "" ? 0 : Number(form.flete_monto))}
+            </div>
+          </div>
+          <div className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label>Número de contenedor a mover</Label>
+              <Input
+                value={splitData.contenedor}
+                onChange={(e) => setSplitData((s) => ({ ...s, contenedor: e.target.value }))}
+                placeholder="Ej. MSCU1234567"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Expediente del nuevo registro</Label>
+              <Select
+                value={splitData.expediente_id || NO_EXPEDIENTE}
+                onValueChange={(v) => setSplitData((s) => ({ ...s, expediente_id: v === NO_EXPEDIENTE ? "" : v }))}
+              >
+                <SelectTrigger><SelectValue placeholder="— Sin expediente —" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_EXPEDIENTE}>— Sin expediente —</SelectItem>
+                  {(expedientes ?? []).map((e: any) => (
+                    <SelectItem key={e.id} value={e.id}>{e.numero} · {e.clientes?.nombre ?? "—"}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Monto de flete a asignar al nuevo registro</Label>
+              <MoneyDOP value={splitData.monto} onChange={(v) => setSplitData((s) => ({ ...s, monto: v }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSplitOpen(false)}>Cancelar</Button>
+            <Button onClick={() => dividir.mutate()} disabled={dividir.isPending}>
+              {dividir.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Split className="h-4 w-4 mr-1" />}
+              Dividir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <Card>
         <CardHeader className="pb-3 border-b">
