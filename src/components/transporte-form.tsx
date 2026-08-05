@@ -326,15 +326,28 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
         saved = data;
       }
 
-      // Vincular solicitud de pago pendiente si el número de control coincide
+      // Vincular solicitud de pago (una solicitud puede originar varios transportes)
       const nc = (form.numero_control_pago ?? "").trim();
       if (nc) {
-        await (supabase as any)
+        const { data: spt } = await (supabase as any)
           .from("solicitudes_pago_transporte")
-          .update({ transporte_id: saved.id, estado: "vinculada" })
+          .select("id, estado")
           .eq("numero_control", nc)
-          .eq("estado", "pendiente");
+          .maybeSingle();
+        if (spt?.id) {
+          await (supabase as any)
+            .from("transportes")
+            .update({ solicitud_pago_id: spt.id })
+            .eq("id", saved.id);
+          if (spt.estado === "pendiente") {
+            await (supabase as any)
+              .from("solicitudes_pago_transporte")
+              .update({ transporte_id: saved.id, estado: "vinculada" })
+              .eq("id", spt.id);
+          }
+        }
       }
+
       return saved;
     },
 
