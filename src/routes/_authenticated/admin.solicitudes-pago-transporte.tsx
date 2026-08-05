@@ -304,22 +304,33 @@ function SolicitudesPagoTransportePage() {
                       <Button variant="outline" size="sm" onClick={() => window.open(`/imprimir/solicitud-pago/${r.id}`, "_blank", "noopener,noreferrer")} title="Descargar PDF">
                         <Printer className="h-3.5 w-3.5 mr-1" /> PDF
                       </Button>
-                      {r.estado === "vinculada" && r.transporte_id ? (
-                        <Button variant="outline" size="sm" asChild>
-                          <Link to="/transportes/$id" params={{ id: r.transporte_id }}>
-                            <ExternalLink className="h-3.5 w-3.5 mr-1" /> Ver transporte
-                          </Link>
-                        </Button>
-                      ) : (
+                      {(transportesPorSolicitud[r.id]?.length ?? 0) > 0 && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                              Ver transportes ({transportesPorSolicitud[r.id].length})
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            {transportesPorSolicitud[r.id].map((t) => (
+                              <DropdownMenuItem key={t.id} asChild>
+                                <Link to="/transportes/$id" params={{ id: t.id }}>{t.numero_viaje}</Link>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                      <Button variant="outline" size="sm" onClick={() => copiar(r.numero_control)}>
+                        <Copy className="h-3.5 w-3.5 mr-1" /> Copiar número
+                      </Button>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to="/transportes/nuevo" search={{ control: r.numero_control }}>
+                          <Truck className="h-3.5 w-3.5 mr-1" /> Convertir en Transporte
+                        </Link>
+                      </Button>
+                      {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
                         <>
-                          <Button variant="outline" size="sm" onClick={() => copiar(r.numero_control)}>
-                            <Copy className="h-3.5 w-3.5 mr-1" /> Copiar número
-                          </Button>
-                          <Button variant="outline" size="sm" asChild>
-                            <Link to="/transportes/nuevo" search={{ control: r.numero_control }}>
-                              <Truck className="h-3.5 w-3.5 mr-1" /> Convertir en Transporte
-                            </Link>
-                          </Button>
                           <Button variant="outline" size="sm" onClick={() => abrirEdicion(r)} title="Editar">
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
@@ -328,6 +339,7 @@ function SolicitudesPagoTransportePage() {
                           </Button>
                         </>
                       )}
+
                     </div>
                   </td>
 
