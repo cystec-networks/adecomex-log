@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, Check, X, Plus, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, X, Plus, Loader2, Split } from "lucide-react";
 import { toast } from "sonner";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
@@ -85,6 +85,10 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
 
   const [newClientOpen, setNewClientOpen] = useState(false);
   const [newClient, setNewClient] = useState({ nombre: "", rnc: "", contacto: "", email: "", telefono: "" });
+
+  const [splitOpen, setSplitOpen] = useState(false);
+  const [splitData, setSplitData] = useState({ contenedor: "", expediente_id: "", monto: "" });
+
 
   const [form, setForm] = useState({
     numero_viaje: "",
@@ -363,6 +367,66 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
     onError: (e: any) => toast.error(e.message),
   });
 
+  const dividir = useMutation({
+    mutationFn: async () => {
+      if (!existing) throw new Error("Transporte no cargado");
+      const contenedor = splitData.contenedor.trim();
+      if (!contenedor) throw new Error("Escribe el número de contenedor a mover");
+      const monto = splitData.monto === "" ? 0 : Number(splitData.monto);
+      if (Number.isNaN(monto) || monto < 0) throw new Error("Monto inválido");
+
+      const src: any = existing;
+      const nuevo: any = {
+        transportista: src.transportista,
+        tipo: src.tipo,
+        origen: src.origen,
+        destino: src.destino,
+        fecha_salida: src.fecha_salida,
+        eta: src.eta,
+        flete_moneda: src.flete_moneda,
+        numero_control_pago: src.numero_control_pago,
+        solicitud_pago_id: src.solicitud_pago_id,
+        cliente_id: src.cliente_id,
+        placa_contenedor: contenedor,
+        expediente_id: splitData.expediente_id || null,
+        flete_monto: monto,
+        observaciones: `Dividido del transporte ${src.numero_viaje}`,
+      };
+      const { data: creado, error: e1 } = await supabase.from("transportes").insert(nuevo).select("id,numero_viaje").single();
+      if (e1) throw e1;
+
+      const restantes = String(form.placa_contenedor ?? "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s && s.toLowerCase() !== contenedor.toLowerCase())
+        .join(", ");
+      const fleteActual = form.flete_monto === "" ? 0 : Number(form.flete_monto);
+      const nuevoFlete = Math.max(0, Number((fleteActual - monto).toFixed(2)));
+      const linea = `Dividido: contenedor ${contenedor} movido al transporte ${creado.numero_viaje}`;
+      const obs = form.observaciones?.trim() ? `${form.observaciones}\n${linea}` : linea;
+
+      const { error: e2 } = await supabase
+        .from("transportes")
+        .update({ placa_contenedor: restantes, flete_monto: nuevoFlete, observaciones: obs })
+        .eq("id", id!);
+      if (e2) throw e2;
+
+      return { creado, restantes, nuevoFlete, obs };
+    },
+    onSuccess: ({ creado, restantes, nuevoFlete, obs }) => {
+      setForm((f) => ({ ...f, placa_contenedor: restantes, flete_monto: String(nuevoFlete), observaciones: obs }));
+      setSplitOpen(false);
+      setSplitData({ contenedor: "", expediente_id: "", monto: "" });
+      qc.invalidateQueries({ queryKey: ["transportes"] });
+      qc.invalidateQueries({ queryKey: ["transporte", id] });
+      qc.invalidateQueries({ queryKey: ["transportes-por-expediente"] });
+      toast.success(`Transporte ${creado.numero_viaje} creado a partir de la división`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+
+
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-5">
       <div className="flex items-center gap-3 flex-wrap">
@@ -379,6 +443,18 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
             {mode === "new" ? "Registra un viaje vinculado a un expediente." : "Edita los datos del viaje."}
           </p>
         </div>
+        {mode === "edit" && existing && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              const half = form.flete_monto === "" ? 0 : Number(form.flete_monto) / 2;
+              setSplitData({ contenedor: "", expediente_id: "", monto: half ? half.toFixed(2) : "" });
+              setSplitOpen(true);
+            }}
+          >
+            <Split className="h-4 w-4 mr-1" />Dividir este Transporte
+          </Button>
+        )}
         <Button variant="outline" onClick={() => nav({ to: "/transportes" })}>
           <X className="h-4 w-4 mr-1" />Cancelar
         </Button>
@@ -386,6 +462,60 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
           <Check className="h-4 w-4 mr-1" />{save.isPending ? "Guardando…" : mode === "new" ? "Crear transporte" : "Guardar cambios"}
         </Button>
       </div>
+
+      <Dialog open={splitOpen} onOpenChange={setSplitOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Dividir en un nuevo Transporte</DialogTitle></DialogHeader>
+          <div className="rounded-md border bg-muted/40 p-3 text-xs space-y-1">
+            <div><span className="text-muted-foreground">Contenedor(es) actual:</span> {form.placa_contenedor || "—"}</div>
+            <div>
+              <span className="text-muted-foreground">Expediente actual:</span>{" "}
+              {(expedientes ?? []).find((e: any) => e.id === form.expediente_id)?.numero ?? "—"}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Flete actual:</span>{" "}
+              {fmtDOP(form.flete_monto === "" ? 0 : Number(form.flete_monto))}
+            </div>
+          </div>
+          <div className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label>Número de contenedor a mover</Label>
+              <Input
+                value={splitData.contenedor}
+                onChange={(e) => setSplitData((s) => ({ ...s, contenedor: e.target.value }))}
+                placeholder="Ej. MSCU1234567"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Expediente del nuevo registro</Label>
+              <Select
+                value={splitData.expediente_id || NO_EXPEDIENTE}
+                onValueChange={(v) => setSplitData((s) => ({ ...s, expediente_id: v === NO_EXPEDIENTE ? "" : v }))}
+              >
+                <SelectTrigger><SelectValue placeholder="— Sin expediente —" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_EXPEDIENTE}>— Sin expediente —</SelectItem>
+                  {(expedientes ?? []).map((e: any) => (
+                    <SelectItem key={e.id} value={e.id}>{e.numero} · {e.clientes?.nombre ?? "—"}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Monto de flete a asignar al nuevo registro</Label>
+              <MoneyDOP value={splitData.monto} onChange={(v) => setSplitData((s) => ({ ...s, monto: v }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSplitOpen(false)}>Cancelar</Button>
+            <Button onClick={() => dividir.mutate()} disabled={dividir.isPending}>
+              {dividir.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Split className="h-4 w-4 mr-1" />}
+              Dividir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <Card>
         <CardHeader className="pb-3 border-b">
