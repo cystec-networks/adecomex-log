@@ -79,6 +79,29 @@ function SolicitudesPagoTransportePage() {
     },
   });
 
+  const { data: vinculados = [] } = useQuery({
+    queryKey: ["transportes-por-solicitud-pago", rows.map((r) => r.id).join(",")],
+    enabled: rows.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("transportes")
+        .select("id, numero_viaje, solicitud_pago_id")
+        .in("solicitud_pago_id", rows.map((r) => r.id));
+      if (error) throw error;
+      return (data ?? []) as { id: string; numero_viaje: string; solicitud_pago_id: string | null }[];
+    },
+  });
+
+  const transportesPorSolicitud = useMemo(() => {
+    const map: Record<string, { id: string; numero_viaje: string }[]> = {};
+    for (const t of vinculados) {
+      if (!t.solicitud_pago_id) continue;
+      (map[t.solicitud_pago_id] ??= []).push({ id: t.id, numero_viaje: t.numero_viaje });
+    }
+    return map;
+  }, [vinculados]);
+
+
   const filtradas = useMemo(() => {
     const term = sanitizeSearchTerm(q).toLowerCase();
     return rows.filter((r) => {
