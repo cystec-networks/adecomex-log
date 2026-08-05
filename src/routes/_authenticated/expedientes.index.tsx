@@ -417,7 +417,7 @@ function Expedientes() {
             <AlarmClock className="h-3.5 w-3.5" />
             <span className="text-xs">Solo urgentes ETA</span>
           </Toggle>
-          <Input placeholder="Buscar por BL/AWB, expediente, cliente o mercancía…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
+          <Input placeholder="Buscar por BL/AWB, expediente, cliente, mercancía o contenedor..." value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
         </CardHeader>
         <CardContent className="p-0">
           {filtered.length === 0 && (
