@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -78,6 +79,29 @@ function SolicitudesPagoTransportePage() {
       return (data ?? []) as Row[];
     },
   });
+
+  const { data: vinculados = [] } = useQuery({
+    queryKey: ["transportes-por-solicitud-pago", rows.map((r) => r.id).join(",")],
+    enabled: rows.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("transportes")
+        .select("id, numero_viaje, solicitud_pago_id")
+        .in("solicitud_pago_id", rows.map((r) => r.id));
+      if (error) throw error;
+      return (data ?? []) as { id: string; numero_viaje: string; solicitud_pago_id: string | null }[];
+    },
+  });
+
+  const transportesPorSolicitud = useMemo(() => {
+    const map: Record<string, { id: string; numero_viaje: string }[]> = {};
+    for (const t of vinculados) {
+      if (!t.solicitud_pago_id) continue;
+      (map[t.solicitud_pago_id] ??= []).push({ id: t.id, numero_viaje: t.numero_viaje });
+    }
+    return map;
+  }, [vinculados]);
+
 
   const filtradas = useMemo(() => {
     const term = sanitizeSearchTerm(q).toLowerCase();
@@ -281,22 +305,33 @@ function SolicitudesPagoTransportePage() {
                       <Button variant="outline" size="sm" onClick={() => window.open(`/imprimir/solicitud-pago/${r.id}`, "_blank", "noopener,noreferrer")} title="Descargar PDF">
                         <Printer className="h-3.5 w-3.5 mr-1" /> PDF
                       </Button>
-                      {r.estado === "vinculada" && r.transporte_id ? (
-                        <Button variant="outline" size="sm" asChild>
-                          <Link to="/transportes/$id" params={{ id: r.transporte_id }}>
-                            <ExternalLink className="h-3.5 w-3.5 mr-1" /> Ver transporte
-                          </Link>
-                        </Button>
-                      ) : (
+                      {(transportesPorSolicitud[r.id]?.length ?? 0) > 0 && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                              Ver transportes ({transportesPorSolicitud[r.id].length})
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            {transportesPorSolicitud[r.id].map((t) => (
+                              <DropdownMenuItem key={t.id} asChild>
+                                <Link to="/transportes/$id" params={{ id: t.id }}>{t.numero_viaje}</Link>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                      <Button variant="outline" size="sm" onClick={() => copiar(r.numero_control)}>
+                        <Copy className="h-3.5 w-3.5 mr-1" /> Copiar número
+                      </Button>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to="/transportes/nuevo" search={{ control: r.numero_control }}>
+                          <Truck className="h-3.5 w-3.5 mr-1" /> Convertir en Transporte
+                        </Link>
+                      </Button>
+                      {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
                         <>
-                          <Button variant="outline" size="sm" onClick={() => copiar(r.numero_control)}>
-                            <Copy className="h-3.5 w-3.5 mr-1" /> Copiar número
-                          </Button>
-                          <Button variant="outline" size="sm" asChild>
-                            <Link to="/transportes/nuevo" search={{ control: r.numero_control }}>
-                              <Truck className="h-3.5 w-3.5 mr-1" /> Convertir en Transporte
-                            </Link>
-                          </Button>
                           <Button variant="outline" size="sm" onClick={() => abrirEdicion(r)} title="Editar">
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
@@ -305,6 +340,7 @@ function SolicitudesPagoTransportePage() {
                           </Button>
                         </>
                       )}
+
                     </div>
                   </td>
 

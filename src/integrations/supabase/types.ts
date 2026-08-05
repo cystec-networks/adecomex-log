@@ -3185,6 +3185,7 @@ export type Database = {
             | null
           pago_referencia: string | null
           placa_contenedor: string | null
+          solicitud_pago_id: string | null
           tipo: Database["public"]["Enums"]["transporte_tipo"] | null
           transportista: string | null
           updated_at: string
@@ -3226,6 +3227,7 @@ export type Database = {
             | null
           pago_referencia?: string | null
           placa_contenedor?: string | null
+          solicitud_pago_id?: string | null
           tipo?: Database["public"]["Enums"]["transporte_tipo"] | null
           transportista?: string | null
           updated_at?: string
@@ -3267,6 +3269,7 @@ export type Database = {
             | null
           pago_referencia?: string | null
           placa_contenedor?: string | null
+          solicitud_pago_id?: string | null
           tipo?: Database["public"]["Enums"]["transporte_tipo"] | null
           transportista?: string | null
           updated_at?: string
@@ -3319,6 +3322,13 @@ export type Database = {
             columns: ["factura_ecf_id"]
             isOneToOne: false
             referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transportes_solicitud_pago_id_fkey"
+            columns: ["solicitud_pago_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes_pago_transporte"
             referencedColumns: ["id"]
           },
         ]
