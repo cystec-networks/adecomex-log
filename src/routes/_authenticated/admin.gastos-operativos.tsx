@@ -302,6 +302,24 @@ function GastosOperativosPage() {
           </Card>
         )}
 
+        {resumenCategoria.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Resumen por categoría</CardTitle>
+              <CardDescription>Total del mes por categoría (monto facturado con ITBIS cuando hay datos fiscales)</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {resumenCategoria.map((g) => (
+                <div key={g.key} className="rounded-lg border bg-muted/30 p-3">
+                  <div className="text-xs text-muted-foreground">{CATEGORIA_LABEL[g.key]}</div>
+                  <div className="text-lg font-semibold">{fmt(g.total, "DOP")}</div>
+                  <div className="text-xs text-muted-foreground">{g.count} gasto{g.count === 1 ? "" : "s"}</div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader><CardTitle>Gastos del mes</CardTitle></CardHeader>
           <CardContent>
