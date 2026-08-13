@@ -2128,6 +2128,7 @@ export type Database = {
       }
       gastos_operativos: {
         Row: {
+          categoria: Database["public"]["Enums"]["gasto_categoria"]
           comprobante_url: string | null
           concepto: string
           created_at: string
@@ -2164,6 +2165,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          categoria?: Database["public"]["Enums"]["gasto_categoria"]
           comprobante_url?: string | null
           concepto: string
           created_at?: string
@@ -2200,6 +2202,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          categoria?: Database["public"]["Enums"]["gasto_categoria"]
           comprobante_url?: string | null
           concepto?: string
           created_at?: string
@@ -3806,6 +3809,13 @@ export type Database = {
         | "facturar"
         | "despachado"
         | "entregado"
+      gasto_categoria:
+        | "nomina"
+        | "gastos_menores_ncf"
+        | "gastos_financieros_ncf"
+        | "pago_transportes_ncf"
+        | "compras_ncf"
+        | "otros"
       hito_estado: "pendiente" | "en_curso" | "completado" | "no_aplica"
       incidencia_estado: "abierta" | "en_gestion" | "resuelta" | "cerrada"
       incidencia_severidad: "baja" | "media" | "alta" | "critica"
@@ -4032,6 +4042,14 @@ export const Constants = {
         "facturar",
         "despachado",
         "entregado",
+      ],
+      gasto_categoria: [
+        "nomina",
+        "gastos_menores_ncf",
+        "gastos_financieros_ncf",
+        "pago_transportes_ncf",
+        "compras_ncf",
+        "otros",
       ],
       hito_estado: ["pendiente", "en_curso", "completado", "no_aplica"],
       incidencia_estado: ["abierta", "en_gestion", "resuelta", "cerrada"],

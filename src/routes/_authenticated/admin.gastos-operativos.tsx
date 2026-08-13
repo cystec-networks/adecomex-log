@@ -50,6 +50,7 @@ function ymOf(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).p
 type Moneda = "DOP" | "USD" | "EUR";
 type TipoId = "RNC" | "CEDULA" | "PASAPORTE";
 type FormaPago = "efectivo" | "cheque_transferencia" | "tarjeta" | "credito" | "permuta" | "nota_credito" | "mixto";
+type Categoria = "nomina" | "gastos_menores_ncf" | "gastos_financieros_ncf" | "pago_transportes_ncf" | "compras_ncf" | "otros";
 
 const FORMA_PAGO_LABEL: Record<FormaPago, string> = {
   efectivo: "Efectivo",
@@ -62,12 +63,22 @@ const FORMA_PAGO_LABEL: Record<FormaPago, string> = {
 };
 const FORMA_PAGO_ORDEN: FormaPago[] = ["efectivo", "cheque_transferencia", "tarjeta", "credito", "permuta", "nota_credito", "mixto"];
 
+const CATEGORIA_LABEL: Record<Categoria, string> = {
+  nomina: "Nómina",
+  gastos_menores_ncf: "Gastos Menores NCF",
+  gastos_financieros_ncf: "Gastos Financieros NCF",
+  pago_transportes_ncf: "Pago Transportes NCF",
+  compras_ncf: "Compras con NCF",
+  otros: "Otros",
+};
+const CATEGORIA_ORDEN: Categoria[] = ["nomina", "gastos_menores_ncf", "gastos_financieros_ncf", "pago_transportes_ncf", "compras_ncf", "otros"];
+
 function montoTotalGasto(r: Row): number {
   const fiscal = Number(r.monto_facturado_servicios ?? 0) + Number(r.monto_facturado_bienes ?? 0) + Number(r.itbis_facturado ?? 0);
   return fiscal > 0 ? fiscal : Number(r.monto || 0);
 }
 type Row = {
-  id: string; concepto: string; monto: number; moneda: Moneda; fecha: string;
+  id: string; concepto: string; categoria: Categoria; monto: number; moneda: Moneda; fecha: string;
   es_recurrente: boolean; comprobante_url: string | null; notas: string | null;
   rnc_cedula_proveedor?: string | null;
   tipo_id_proveedor?: TipoId | null;
@@ -100,6 +111,7 @@ function GastosOperativosPage() {
   const [anchor, setAnchor] = useState<Date>(() => new Date());
   const [editing, setEditing] = useState<Row | null>(null);
   const [copyOpen, setCopyOpen] = useState(false);
+  const [fCategoria, setFCategoria] = useState<Categoria | "todas">("todas");
 
   const from = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
   const to = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
@@ -110,13 +122,14 @@ function GastosOperativosPage() {
   const prevTo = new Date(anchor.getFullYear(), anchor.getMonth(), 0);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["gastos-op", ymOf(anchor)],
+    queryKey: ["gastos-op", ymOf(anchor), fCategoria],
     queryFn: async () => {
+      const curQ = supabase.from("gastos_operativos").select("*")
+        .is("eliminado_en", null)
+        .gte("fecha", fromStr).lte("fecha", toStr);
+      if (fCategoria !== "todas") curQ.eq("categoria", fCategoria);
       const [cur, prev] = await Promise.all([
-        supabase.from("gastos_operativos").select("*")
-          .is("eliminado_en", null)
-          .gte("fecha", fromStr).lte("fecha", toStr)
-          .order("fecha", { ascending: false }),
+        curQ.order("fecha", { ascending: false }),
         supabase.from("gastos_operativos").select("*")
           .is("eliminado_en", null).eq("es_recurrente", true)
           .gte("fecha", prevFrom.toISOString().slice(0, 10))
@@ -150,6 +163,20 @@ function GastosOperativosPage() {
     );
   }, [rows]);
 
+  const resumenCategoria = useMemo(() => {
+    const map = new Map<Categoria, { key: Categoria; total: number; count: number }>();
+    for (const r of rows) {
+      const cat = r.categoria ?? "otros";
+      const cur = map.get(cat) ?? { key: cat, total: 0, count: 0 };
+      cur.total += montoTotalGasto(r);
+      cur.count += 1;
+      map.set(cat, cur);
+    }
+    return [...map.values()].sort(
+      (a, b) => CATEGORIA_ORDEN.indexOf(a.key) - CATEGORIA_ORDEN.indexOf(b.key),
+    );
+  }, [rows]);
+
   // Alerta: recurrentes del mes anterior aún no registrados este mes
   const conceptosEsteMes = new Set(rows.map(r => `${r.concepto}::${r.moneda}`));
   const faltantes = (data?.prevRecurrentes ?? []).filter(
@@ -174,7 +201,7 @@ function GastosOperativosPage() {
       const { data: u } = await supabase.auth.getUser();
       const newFecha = `${ymOf(anchor)}-${String(Math.min(new Date().getDate(), 28)).padStart(2, "0")}`;
       const payload = items.map(r => ({
-        concepto: r.concepto, monto: r.monto, moneda: r.moneda,
+        concepto: r.concepto, categoria: r.categoria, monto: r.monto, moneda: r.moneda,
         fecha: newFecha, es_recurrente: true, notas: r.notas,
         created_by: u.user?.id,
       }));
@@ -194,13 +221,26 @@ function GastosOperativosPage() {
             <h1 className="text-2xl font-bold">Gastos Operativos</h1>
             <p className="text-sm text-muted-foreground">Gastos generales/fijos del negocio, independientes de expedientes y transportes.</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1))}>◄</Button>
             <div className="font-medium w-32 text-center capitalize">
               {anchor.toLocaleDateString("es-DO", { month: "long", year: "numeric" })}
             </div>
             <Button variant="outline" size="sm" onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1))}>►</Button>
-            <Button onClick={() => setEditing({ id: "", concepto: "", monto: 0, moneda: "DOP", fecha: new Date().toISOString().slice(0, 10), es_recurrente: false, comprobante_url: null, notas: null, rnc_cedula_proveedor: null, tipo_id_proveedor: null, ncf_proveedor: null, tipo_ncf_proveedor: null, ncf_modificado: null, monto_facturado: 0, itbis_facturado: 0, itbis_retenido: 0, isr_retenido: 0, forma_pago: null })}>
+            <div className="min-w-[180px]">
+              <Select value={fCategoria} onValueChange={(v) => setFCategoria(v as Categoria | "todas")}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas las categorías</SelectItem>
+                  {CATEGORIA_ORDEN.map((c) => (
+                    <SelectItem key={c} value={c}>{CATEGORIA_LABEL[c]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={() => setEditing({ id: "", concepto: "", categoria: "otros", monto: 0, moneda: "DOP", fecha: new Date().toISOString().slice(0, 10), es_recurrente: false, comprobante_url: null, notas: null, rnc_cedula_proveedor: null, tipo_id_proveedor: null, ncf_proveedor: null, tipo_ncf_proveedor: null, ncf_modificado: null, monto_facturado: 0, itbis_facturado: 0, itbis_retenido: 0, isr_retenido: 0, forma_pago: null })}>
               <Plus className="h-4 w-4 mr-1" /> Nuevo gasto
             </Button>
           </div>
@@ -262,6 +302,24 @@ function GastosOperativosPage() {
           </Card>
         )}
 
+        {resumenCategoria.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Resumen por categoría</CardTitle>
+              <CardDescription>Total del mes por categoría (monto facturado con ITBIS cuando hay datos fiscales)</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {resumenCategoria.map((g) => (
+                <div key={g.key} className="rounded-lg border bg-muted/30 p-3">
+                  <div className="text-xs text-muted-foreground">{CATEGORIA_LABEL[g.key]}</div>
+                  <div className="text-lg font-semibold">{fmt(g.total, "DOP")}</div>
+                  <div className="text-xs text-muted-foreground">{g.count} gasto{g.count === 1 ? "" : "s"}</div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader><CardTitle>Gastos del mes</CardTitle></CardHeader>
           <CardContent>
@@ -272,6 +330,7 @@ function GastosOperativosPage() {
                   <thead className="text-left border-b text-muted-foreground">
                     <tr>
                       <th className="py-2 pr-3">Fecha</th>
+                      <th className="py-2 pr-3">Categoría</th>
                       <th className="py-2 pr-3">Concepto</th>
                       <th className="py-2 pr-3 text-right">Monto</th>
                       <th className="py-2 pr-3">Recurrente</th>
@@ -283,6 +342,7 @@ function GastosOperativosPage() {
                     {rows.map(r => (
                       <tr key={r.id} className="border-b hover:bg-muted/40">
                         <td className="py-2 pr-3 whitespace-nowrap">{r.fecha}</td>
+                        <td className="py-2 pr-3"><Badge variant="outline">{CATEGORIA_LABEL[r.categoria]}</Badge></td>
                         <td className="py-2 pr-3">{r.concepto}</td>
                         <td className="py-2 pr-3 text-right whitespace-nowrap">{fmt(Number(r.monto), r.moneda)}</td>
                         <td className="py-2 pr-3">{r.es_recurrente ? <Badge variant="secondary">Sí</Badge> : "—"}</td>
@@ -329,6 +389,7 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
       const montoFact = Number(form.monto_facturado_servicios ?? 0) + Number(form.monto_facturado_bienes ?? 0) + Number(form.itbis_facturado ?? 0);
       const payload = {
         concepto: form.concepto.trim(),
+        categoria: form.categoria,
         monto: Number(form.monto),
         moneda: form.moneda,
         fecha: form.fecha,
@@ -417,6 +478,17 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
             <Label>Concepto</Label>
             <Input list="conceptos-op" value={form.concepto} onChange={(e) => setForm({ ...form, concepto: e.target.value })} placeholder="Ej: Nómina, Alquiler…" />
             <datalist id="conceptos-op">{CONCEPTOS.map(c => <option key={c} value={c} />)}</datalist>
+          </div>
+          <div>
+            <Label>Categoría</Label>
+            <Select value={form.categoria} onValueChange={(v) => setForm({ ...form, categoria: v as Categoria })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {CATEGORIA_ORDEN.map((c) => (
+                  <SelectItem key={c} value={c}>{CATEGORIA_LABEL[c]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

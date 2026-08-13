@@ -742,10 +742,22 @@ function CuentasPorPagarPage() {
 
 type TipoId = "RNC" | "CEDULA" | "PASAPORTE";
 type FormaPago = "efectivo" | "cheque_transferencia" | "tarjeta" | "credito" | "permuta" | "nota_credito" | "mixto";
+type Categoria = "nomina" | "gastos_menores_ncf" | "gastos_financieros_ncf" | "pago_transportes_ncf" | "compras_ncf" | "otros";
+
+const CATEGORIA_LABEL: Record<Categoria, string> = {
+  nomina: "Nómina",
+  gastos_menores_ncf: "Gastos Menores NCF",
+  gastos_financieros_ncf: "Gastos Financieros NCF",
+  pago_transportes_ncf: "Pago Transportes NCF",
+  compras_ncf: "Compras con NCF",
+  otros: "Otros",
+};
+const CATEGORIA_ORDEN: Categoria[] = ["nomina", "gastos_menores_ncf", "gastos_financieros_ncf", "pago_transportes_ncf", "compras_ncf", "otros"];
 
 function ConvertirGastoDialog({ row, onClose, onDone }: { row: Row; onClose: () => void; onDone: () => void }) {
   const [form, setForm] = useState({
     concepto: `Pago a ${row.proveedor_nombre}`,
+    categoria: "pago_transportes_ncf" as Categoria,
     fecha: row.fecha_factura ?? new Date().toISOString().slice(0, 10),
     monto: String(row.monto_total ?? 0),
     moneda: (row.moneda ?? "DOP") as Moneda,
@@ -775,6 +787,7 @@ function ConvertirGastoDialog({ row, onClose, onDone }: { row: Row; onClose: () 
       const itbis = Number(form.itbis_facturado || 0);
       const { data: ins, error } = await supabase.from("gastos_operativos").insert({
         concepto: form.concepto.trim(),
+        categoria: form.categoria,
         fecha: form.fecha,
         monto,
         moneda: form.moneda,
@@ -818,6 +831,17 @@ function ConvertirGastoDialog({ row, onClose, onDone }: { row: Row; onClose: () 
           <div>
             <Label>Concepto</Label>
             <Input value={form.concepto} onChange={(e) => set("concepto", e.target.value)} />
+          </div>
+          <div>
+            <Label>Categoría</Label>
+            <Select value={form.categoria} onValueChange={(v) => set("categoria", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {CATEGORIA_ORDEN.map((c) => (
+                  <SelectItem key={c} value={c}>{CATEGORIA_LABEL[c]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
