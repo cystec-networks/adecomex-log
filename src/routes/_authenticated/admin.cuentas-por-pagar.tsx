@@ -17,7 +17,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, CreditCard, Trash2, Pencil, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, CreditCard, Trash2, Pencil, ChevronDown, ChevronRight, FileOutput } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { TIPOS_BIENES_SERVICIOS } from "@/lib/fiscal-606";
 import { fmtLocalDate, daysFromToday, parseLocalDate } from "@/lib/dates";
 import { EscanearFacturaCxpButton } from "@/components/escanear-factura-cxp-button";
 
@@ -154,6 +156,8 @@ function CuentasPorPagarPage() {
   const [payMonto, setPayMonto] = useState("");
   const [askDisputado, setAskDisputado] = useState(false);
   const [delRow, setDelRow] = useState<Row | null>(null);
+  const [convRow, setConvRow] = useState<Row | null>(null);
+
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["cxp", fEstado, fMoneda, fProveedor],
@@ -381,6 +385,11 @@ function CuentasPorPagarPage() {
             <Button size="sm" variant="outline" onClick={() => handleOpenPay(r)} disabled={r.estado === "pagado"}>
               <CreditCard className="h-3.5 w-3.5 mr-1" /> Pago
             </Button>
+            {r.estado === "pagado" && !r.gasto_operativo_id && (
+              <Button size="sm" variant="outline" onClick={() => setConvRow(r)} title="Convertir a Gasto Operativo">
+                <FileOutput className="h-3.5 w-3.5" />
+              </Button>
+            )}
             <Button size="sm" variant="ghost" onClick={() => setDelRow(r)}>
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
@@ -719,6 +728,201 @@ function CuentasPorPagarPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {convRow && (
+        <ConvertirGastoDialog
+          row={convRow}
+          onClose={() => setConvRow(null)}
+          onDone={() => { setConvRow(null); qc.invalidateQueries({ queryKey: ["cxp"] }); qc.invalidateQueries({ queryKey: ["cxp-gastos-op"] }); }}
+        />
+      )}
     </div>
+  );
+}
+
+type TipoId = "RNC" | "CEDULA" | "PASAPORTE";
+type FormaPago = "efectivo" | "cheque_transferencia" | "tarjeta" | "credito" | "permuta" | "nota_credito" | "mixto";
+
+function ConvertirGastoDialog({ row, onClose, onDone }: { row: Row; onClose: () => void; onDone: () => void }) {
+  const [form, setForm] = useState({
+    concepto: `Pago a ${row.proveedor_nombre}`,
+    fecha: row.fecha_factura ?? new Date().toISOString().slice(0, 10),
+    monto: String(row.monto_total ?? 0),
+    moneda: (row.moneda ?? "DOP") as Moneda,
+    es_recurrente: false,
+    notas: "",
+    rnc_cedula_proveedor: row.proveedor_rnc ?? "",
+    tipo_id_proveedor: "" as "" | TipoId,
+    ncf_proveedor: (row.ncf_proveedor ?? "").trim(),
+    tipo_bienes_servicios: "" as string,
+    monto_facturado_bienes: "0",
+    monto_facturado_servicios: String(row.monto_total ?? 0),
+    itbis_facturado: "0",
+    itbis_retenido: "0",
+    isr_retenido: "0",
+    forma_pago: "" as "" | FormaPago,
+  });
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!form.concepto.trim()) throw new Error("Concepto requerido");
+      if (!form.fecha) throw new Error("Fecha requerida");
+      const monto = Number(form.monto);
+      if (!isFinite(monto) || monto < 0) throw new Error("Monto inválido");
+      const { data: u } = await supabase.auth.getUser();
+      const servicios = Number(form.monto_facturado_servicios || 0);
+      const bienes = Number(form.monto_facturado_bienes || 0);
+      const itbis = Number(form.itbis_facturado || 0);
+      const { data: ins, error } = await supabase.from("gastos_operativos").insert({
+        concepto: form.concepto.trim(),
+        fecha: form.fecha,
+        monto,
+        moneda: form.moneda,
+        es_recurrente: form.es_recurrente,
+        notas: form.notas.trim() || null,
+        rnc_cedula_proveedor: form.rnc_cedula_proveedor.trim() || null,
+        tipo_id_proveedor: form.tipo_id_proveedor || null,
+        ncf_proveedor: form.ncf_proveedor.trim() || null,
+        tipo_bienes_servicios: form.tipo_bienes_servicios ? Number(form.tipo_bienes_servicios) : null,
+        monto_facturado_bienes: bienes,
+        monto_facturado_servicios: servicios,
+        monto_facturado: servicios + bienes + itbis,
+        itbis_facturado: itbis,
+        itbis_retenido: Number(form.itbis_retenido || 0),
+        isr_retenido: Number(form.isr_retenido || 0),
+        forma_pago: form.forma_pago || null,
+        created_by: u.user?.id ?? null,
+      } as any).select("id").single();
+      if (error) throw error;
+      const { error: upErr } = await (supabase.from as any)("cuentas_por_pagar")
+        .update({ gasto_operativo_id: ins.id, updated_by: u.user?.id ?? null })
+        .eq("id", row.id);
+      if (upErr) throw upErr;
+    },
+    onSuccess: () => { toast.success("Cuenta por pagar convertida a gasto operativo"); onDone(); },
+    onError: (e: any) => toast.error(e.message ?? "Error al convertir"),
+  });
+
+  const set = (k: string, v: any) => setForm((p) => ({ ...p, [k]: v }));
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Convertir a Gasto Operativo</DialogTitle>
+          <DialogDescription>
+            {row.proveedor_nombre} · {fmtMoney(Number(row.monto_total), row.moneda)}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Concepto</Label>
+            <Input value={form.concepto} onChange={(e) => set("concepto", e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Monto</Label>
+              <Input type="number" step="0.01" value={form.monto} onChange={(e) => set("monto", e.target.value)} />
+            </div>
+            <div>
+              <Label>Moneda</Label>
+              <Select value={form.moneda} onValueChange={(v) => set("moneda", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DOP">DOP</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="EUR">EUR</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div>
+            <Label>Fecha</Label>
+            <Input type="date" value={form.fecha} onChange={(e) => set("fecha", e.target.value)} />
+          </div>
+          <label className="flex items-center gap-2">
+            <Checkbox checked={form.es_recurrente} onCheckedChange={(v) => set("es_recurrente", !!v)} />
+            <span className="text-sm">Es recurrente (se repite cada mes)</span>
+          </label>
+          <div>
+            <Label>Notas</Label>
+            <Textarea rows={2} value={form.notas} onChange={(e) => set("notas", e.target.value)} />
+          </div>
+
+          <fieldset className="border rounded-md p-3 space-y-3">
+            <legend className="text-sm font-semibold px-1">Datos fiscales del proveedor (606)</legend>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Tipo de ID</Label>
+                <Select value={form.tipo_id_proveedor} onValueChange={(v) => set("tipo_id_proveedor", v)}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="RNC">RNC</SelectItem>
+                    <SelectItem value="CEDULA">Cédula</SelectItem>
+                    <SelectItem value="PASAPORTE">Pasaporte</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>RNC / Cédula</Label>
+                <Input value={form.rnc_cedula_proveedor} onChange={(e) => set("rnc_cedula_proveedor", e.target.value)} placeholder="9 u 11 dígitos" />
+              </div>
+              <div>
+                <Label>NCF</Label>
+                <Input value={form.ncf_proveedor} onChange={(e) => set("ncf_proveedor", e.target.value)} placeholder="11 o 13 caracteres" />
+              </div>
+              <div>
+                <Label>Tipo bienes / servicios</Label>
+                <Select value={form.tipo_bienes_servicios} onValueChange={(v) => set("tipo_bienes_servicios", v)}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    {TIPOS_BIENES_SERVICIOS.map((o) => <SelectItem key={o.v} value={String(o.v)}>{o.l}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Monto facturado servicios</Label>
+                <Input type="number" step="0.01" value={form.monto_facturado_servicios} onChange={(e) => set("monto_facturado_servicios", e.target.value)} />
+              </div>
+              <div>
+                <Label>Monto facturado bienes</Label>
+                <Input type="number" step="0.01" value={form.monto_facturado_bienes} onChange={(e) => set("monto_facturado_bienes", e.target.value)} />
+              </div>
+              <div>
+                <Label>ITBIS facturado</Label>
+                <Input type="number" step="0.01" value={form.itbis_facturado} onChange={(e) => set("itbis_facturado", e.target.value)} />
+              </div>
+              <div>
+                <Label>ITBIS retenido</Label>
+                <Input type="number" step="0.01" value={form.itbis_retenido} onChange={(e) => set("itbis_retenido", e.target.value)} />
+              </div>
+              <div>
+                <Label>ISR retenido</Label>
+                <Input type="number" step="0.01" value={form.isr_retenido} onChange={(e) => set("isr_retenido", e.target.value)} />
+              </div>
+              <div>
+                <Label>Forma de pago</Label>
+                <Select value={form.forma_pago} onValueChange={(v) => set("forma_pago", v)}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="efectivo">Efectivo</SelectItem>
+                    <SelectItem value="cheque_transferencia">Cheque / Transferencia</SelectItem>
+                    <SelectItem value="tarjeta">Tarjeta de Crédito</SelectItem>
+                    <SelectItem value="credito">Crédito</SelectItem>
+                    <SelectItem value="permuta">Permuta</SelectItem>
+                    <SelectItem value="nota_credito">Nota de Crédito</SelectItem>
+                    <SelectItem value="mixto">Mixto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>Convertir</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
