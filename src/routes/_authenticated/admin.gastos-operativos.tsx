@@ -163,6 +163,20 @@ function GastosOperativosPage() {
     );
   }, [rows]);
 
+  const resumenCategoria = useMemo(() => {
+    const map = new Map<Categoria, { key: Categoria; total: number; count: number }>();
+    for (const r of rows) {
+      const cat = r.categoria ?? "otros";
+      const cur = map.get(cat) ?? { key: cat, total: 0, count: 0 };
+      cur.total += montoTotalGasto(r);
+      cur.count += 1;
+      map.set(cat, cur);
+    }
+    return [...map.values()].sort(
+      (a, b) => CATEGORIA_ORDEN.indexOf(a.key) - CATEGORIA_ORDEN.indexOf(b.key),
+    );
+  }, [rows]);
+
   // Alerta: recurrentes del mes anterior aún no registrados este mes
   const conceptosEsteMes = new Set(rows.map(r => `${r.concepto}::${r.moneda}`));
   const faltantes = (data?.prevRecurrentes ?? []).filter(
