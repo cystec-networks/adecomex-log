@@ -17,7 +17,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, CreditCard, Trash2, Pencil, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, CreditCard, Trash2, Pencil, ChevronDown, ChevronRight, FileOutput } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { TIPOS_BIENES_SERVICIOS } from "@/lib/fiscal-606";
 import { fmtLocalDate, daysFromToday, parseLocalDate } from "@/lib/dates";
 import { EscanearFacturaCxpButton } from "@/components/escanear-factura-cxp-button";
 
