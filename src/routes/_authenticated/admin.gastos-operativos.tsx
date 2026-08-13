@@ -201,7 +201,7 @@ function GastosOperativosPage() {
       const { data: u } = await supabase.auth.getUser();
       const newFecha = `${ymOf(anchor)}-${String(Math.min(new Date().getDate(), 28)).padStart(2, "0")}`;
       const payload = items.map(r => ({
-        concepto: r.concepto, monto: r.monto, moneda: r.moneda,
+        concepto: r.concepto, categoria: r.categoria, monto: r.monto, moneda: r.moneda,
         fecha: newFecha, es_recurrente: true, notas: r.notas,
         created_by: u.user?.id,
       }));
