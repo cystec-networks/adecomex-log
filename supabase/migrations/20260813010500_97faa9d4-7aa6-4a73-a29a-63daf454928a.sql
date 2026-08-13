@@ -1,0 +1,2 @@
+CREATE TYPE public.gasto_categoria AS ENUM ('nomina', 'gastos_menores_ncf', 'gastos_financieros_ncf', 'pago_transportes_ncf', 'compras_ncf', 'otros');
+ALTER TABLE public.gastos_operativos ADD COLUMN categoria public.gasto_categoria NOT NULL DEFAULT 'otros';
