@@ -757,6 +757,7 @@ const CATEGORIA_ORDEN: Categoria[] = ["nomina", "gastos_menores_ncf", "gastos_fi
 function ConvertirGastoDialog({ row, onClose, onDone }: { row: Row; onClose: () => void; onDone: () => void }) {
   const [form, setForm] = useState({
     concepto: `Pago a ${row.proveedor_nombre}`,
+    categoria: "pago_transportes_ncf" as Categoria,
     fecha: row.fecha_factura ?? new Date().toISOString().slice(0, 10),
     monto: String(row.monto_total ?? 0),
     moneda: (row.moneda ?? "DOP") as Moneda,
