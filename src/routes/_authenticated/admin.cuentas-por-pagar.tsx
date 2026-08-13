@@ -832,6 +832,17 @@ function ConvertirGastoDialog({ row, onClose, onDone }: { row: Row; onClose: () 
             <Label>Concepto</Label>
             <Input value={form.concepto} onChange={(e) => set("concepto", e.target.value)} />
           </div>
+          <div>
+            <Label>Categoría</Label>
+            <Select value={form.categoria} onValueChange={(v) => set("categoria", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {CATEGORIA_ORDEN.map((c) => (
+                  <SelectItem key={c} value={c}>{CATEGORIA_LABEL[c]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Monto</Label>
