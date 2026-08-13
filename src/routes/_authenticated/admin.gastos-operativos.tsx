@@ -122,13 +122,14 @@ function GastosOperativosPage() {
   const prevTo = new Date(anchor.getFullYear(), anchor.getMonth(), 0);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["gastos-op", ymOf(anchor)],
+    queryKey: ["gastos-op", ymOf(anchor), fCategoria],
     queryFn: async () => {
+      const curQ = supabase.from("gastos_operativos").select("*")
+        .is("eliminado_en", null)
+        .gte("fecha", fromStr).lte("fecha", toStr);
+      if (fCategoria !== "todas") curQ.eq("categoria", fCategoria);
       const [cur, prev] = await Promise.all([
-        supabase.from("gastos_operativos").select("*")
-          .is("eliminado_en", null)
-          .gte("fecha", fromStr).lte("fecha", toStr)
-          .order("fecha", { ascending: false }),
+        curQ.order("fecha", { ascending: false }),
         supabase.from("gastos_operativos").select("*")
           .is("eliminado_en", null).eq("es_recurrente", true)
           .gte("fecha", prevFrom.toISOString().slice(0, 10))
