@@ -742,6 +742,17 @@ function CuentasPorPagarPage() {
 
 type TipoId = "RNC" | "CEDULA" | "PASAPORTE";
 type FormaPago = "efectivo" | "cheque_transferencia" | "tarjeta" | "credito" | "permuta" | "nota_credito" | "mixto";
+type Categoria = "nomina" | "gastos_menores_ncf" | "gastos_financieros_ncf" | "pago_transportes_ncf" | "compras_ncf" | "otros";
+
+const CATEGORIA_LABEL: Record<Categoria, string> = {
+  nomina: "Nómina",
+  gastos_menores_ncf: "Gastos Menores NCF",
+  gastos_financieros_ncf: "Gastos Financieros NCF",
+  pago_transportes_ncf: "Pago Transportes NCF",
+  compras_ncf: "Compras con NCF",
+  otros: "Otros",
+};
+const CATEGORIA_ORDEN: Categoria[] = ["nomina", "gastos_menores_ncf", "gastos_financieros_ncf", "pago_transportes_ncf", "compras_ncf", "otros"];
 
 function ConvertirGastoDialog({ row, onClose, onDone }: { row: Row; onClose: () => void; onDone: () => void }) {
   const [form, setForm] = useState({
