@@ -330,6 +330,7 @@ function GastosOperativosPage() {
                   <thead className="text-left border-b text-muted-foreground">
                     <tr>
                       <th className="py-2 pr-3">Fecha</th>
+                      <th className="py-2 pr-3">Categoría</th>
                       <th className="py-2 pr-3">Concepto</th>
                       <th className="py-2 pr-3 text-right">Monto</th>
                       <th className="py-2 pr-3">Recurrente</th>
@@ -341,6 +342,7 @@ function GastosOperativosPage() {
                     {rows.map(r => (
                       <tr key={r.id} className="border-b hover:bg-muted/40">
                         <td className="py-2 pr-3 whitespace-nowrap">{r.fecha}</td>
+                        <td className="py-2 pr-3"><Badge variant="outline">{CATEGORIA_LABEL[r.categoria]}</Badge></td>
                         <td className="py-2 pr-3">{r.concepto}</td>
                         <td className="py-2 pr-3 text-right whitespace-nowrap">{fmt(Number(r.monto), r.moneda)}</td>
                         <td className="py-2 pr-3">{r.es_recurrente ? <Badge variant="secondary">Sí</Badge> : "—"}</td>
