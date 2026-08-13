@@ -389,6 +389,7 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
       const montoFact = Number(form.monto_facturado_servicios ?? 0) + Number(form.monto_facturado_bienes ?? 0) + Number(form.itbis_facturado ?? 0);
       const payload = {
         concepto: form.concepto.trim(),
+        categoria: form.categoria,
         monto: Number(form.monto),
         moneda: form.moneda,
         fecha: form.fecha,
