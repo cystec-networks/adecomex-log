@@ -479,6 +479,17 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
             <Input list="conceptos-op" value={form.concepto} onChange={(e) => setForm({ ...form, concepto: e.target.value })} placeholder="Ej: Nómina, Alquiler…" />
             <datalist id="conceptos-op">{CONCEPTOS.map(c => <option key={c} value={c} />)}</datalist>
           </div>
+          <div>
+            <Label>Categoría</Label>
+            <Select value={form.categoria} onValueChange={(v) => setForm({ ...form, categoria: v as Categoria })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {CATEGORIA_ORDEN.map((c) => (
+                  <SelectItem key={c} value={c}>{CATEGORIA_LABEL[c]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Monto</Label>
