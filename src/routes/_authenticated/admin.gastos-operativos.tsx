@@ -50,6 +50,7 @@ function ymOf(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).p
 type Moneda = "DOP" | "USD" | "EUR";
 type TipoId = "RNC" | "CEDULA" | "PASAPORTE";
 type FormaPago = "efectivo" | "cheque_transferencia" | "tarjeta" | "credito" | "permuta" | "nota_credito" | "mixto";
+type Categoria = "nomina" | "gastos_menores_ncf" | "gastos_financieros_ncf" | "pago_transportes_ncf" | "compras_ncf" | "otros";
 
 const FORMA_PAGO_LABEL: Record<FormaPago, string> = {
   efectivo: "Efectivo",
@@ -62,12 +63,22 @@ const FORMA_PAGO_LABEL: Record<FormaPago, string> = {
 };
 const FORMA_PAGO_ORDEN: FormaPago[] = ["efectivo", "cheque_transferencia", "tarjeta", "credito", "permuta", "nota_credito", "mixto"];
 
+const CATEGORIA_LABEL: Record<Categoria, string> = {
+  nomina: "Nómina",
+  gastos_menores_ncf: "Gastos Menores NCF",
+  gastos_financieros_ncf: "Gastos Financieros NCF",
+  pago_transportes_ncf: "Pago Transportes NCF",
+  compras_ncf: "Compras con NCF",
+  otros: "Otros",
+};
+const CATEGORIA_ORDEN: Categoria[] = ["nomina", "gastos_menores_ncf", "gastos_financieros_ncf", "pago_transportes_ncf", "compras_ncf", "otros"];
+
 function montoTotalGasto(r: Row): number {
   const fiscal = Number(r.monto_facturado_servicios ?? 0) + Number(r.monto_facturado_bienes ?? 0) + Number(r.itbis_facturado ?? 0);
   return fiscal > 0 ? fiscal : Number(r.monto || 0);
 }
 type Row = {
-  id: string; concepto: string; monto: number; moneda: Moneda; fecha: string;
+  id: string; concepto: string; categoria: Categoria; monto: number; moneda: Moneda; fecha: string;
   es_recurrente: boolean; comprobante_url: string | null; notas: string | null;
   rnc_cedula_proveedor?: string | null;
   tipo_id_proveedor?: TipoId | null;
