@@ -111,6 +111,7 @@ function GastosOperativosPage() {
   const [anchor, setAnchor] = useState<Date>(() => new Date());
   const [editing, setEditing] = useState<Row | null>(null);
   const [copyOpen, setCopyOpen] = useState(false);
+  const [fCategoria, setFCategoria] = useState<Categoria | "todas">("todas");
 
   const from = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
   const to = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
