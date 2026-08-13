@@ -787,6 +787,7 @@ function ConvertirGastoDialog({ row, onClose, onDone }: { row: Row; onClose: () 
       const itbis = Number(form.itbis_facturado || 0);
       const { data: ins, error } = await supabase.from("gastos_operativos").insert({
         concepto: form.concepto.trim(),
+        categoria: form.categoria,
         fecha: form.fecha,
         monto,
         moneda: form.moneda,
