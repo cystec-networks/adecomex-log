@@ -385,6 +385,11 @@ function CuentasPorPagarPage() {
             <Button size="sm" variant="outline" onClick={() => handleOpenPay(r)} disabled={r.estado === "pagado"}>
               <CreditCard className="h-3.5 w-3.5 mr-1" /> Pago
             </Button>
+            {r.estado === "pagado" && !r.gasto_operativo_id && (
+              <Button size="sm" variant="outline" onClick={() => setConvRow(r)} title="Convertir a Gasto Operativo">
+                <FileOutput className="h-3.5 w-3.5" />
+              </Button>
+            )}
             <Button size="sm" variant="ghost" onClick={() => setDelRow(r)}>
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
