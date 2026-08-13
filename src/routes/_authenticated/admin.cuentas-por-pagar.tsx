@@ -156,6 +156,8 @@ function CuentasPorPagarPage() {
   const [payMonto, setPayMonto] = useState("");
   const [askDisputado, setAskDisputado] = useState(false);
   const [delRow, setDelRow] = useState<Row | null>(null);
+  const [convRow, setConvRow] = useState<Row | null>(null);
+
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["cxp", fEstado, fMoneda, fProveedor],
