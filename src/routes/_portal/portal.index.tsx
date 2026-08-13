@@ -32,7 +32,7 @@ function normalizeSearch(text: string | null | undefined): string {
 }
 
 function PortalListado() {
-  const navigate = useNavigate({ from: "/_portal/portal" });
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
 
   const { data: expedientes, isLoading } = useQuery({
