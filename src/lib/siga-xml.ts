@@ -34,11 +34,20 @@ export const DEFAULT_BROKER: BrokerConfig = {
   defaultNationality: "214",
 };
 
+// Migra valores ISO alfa-2 antiguos ("DO") al código numérico DGA (214)
+function migrarNat(v: string | undefined, fallback: string): string {
+  if (!v) return fallback;
+  return /^[A-Za-z]{2,3}$/.test(v) ? "214" : v;
+}
+
 export function loadBrokerConfig(): BrokerConfig {
   try {
     const raw = localStorage.getItem(BROKER_KEY);
     if (!raw) return DEFAULT_BROKER;
-    return { ...DEFAULT_BROKER, ...JSON.parse(raw) };
+    const cfg = { ...DEFAULT_BROKER, ...JSON.parse(raw) } as BrokerConfig;
+    cfg.defaultNationality = migrarNat(cfg.defaultNationality, "214");
+    cfg.transportNationality = migrarNat(cfg.transportNationality, "214");
+    return cfg;
   } catch {
     return DEFAULT_BROKER;
   }
