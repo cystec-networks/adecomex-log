@@ -78,11 +78,25 @@ export function DgaCombobox({
     return () => window.clearTimeout(debounceRef.current);
   }, [q, open, table, filterCodPais, cfg.cols, nameCol]);
 
+  // Resuelve el nombre cuando solo tenemos el código guardado.
+  const [resolved, setResolved] = useState("");
+  useEffect(() => {
+    let cancel = false;
+    if (!codigo || value) { setResolved(""); return; }
+    (async () => {
+      const { data } = await supabase.from(table).select(cfg.cols).eq("codigo", codigo).maybeSingle();
+      if (!cancel && data) setResolved(cfg.label(data as Row));
+    })();
+    return () => { cancel = true; };
+  }, [codigo, value, table, cfg]);
+
   const display = useMemo(() => {
-    if (!value && !codigo) return "";
-    if (value && codigo) return `${codigo} · ${value}`;
-    return value || codigo || "";
-  }, [value, codigo]);
+    const nombre = value || resolved;
+    if (!nombre && !codigo) return "";
+    if (nombre && codigo) return `${codigo} · ${nombre}`;
+    return nombre || codigo || "";
+  }, [value, resolved, codigo]);
+
 
   return (
     <div className={cn("relative", className)}>
