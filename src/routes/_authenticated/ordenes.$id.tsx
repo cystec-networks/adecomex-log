@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ORDEN_ESTADOS, ORDEN_ESTADO_CLASS, ordenEstadoLabel } from "@/lib/estados-orden";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, FolderPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
@@ -37,6 +37,13 @@ function DetalleOrden() {
   const { data: o } = useQuery({
     queryKey: ["orden", id],
     queryFn: async () => (await supabase.from("ordenes").select("*, clientes(nombre)").eq("id", id).maybeSingle()).data,
+  });
+
+  const { data: expedienteVinculado } = useQuery({
+    queryKey: ["expediente-de-orden", id],
+    enabled: !!o,
+    queryFn: async () =>
+      (await supabase.from("expedientes").select("id,numero").eq("orden_id", id).maybeSingle()).data,
   });
 
   const [form, setForm] = useState<any>(null);
@@ -75,6 +82,19 @@ function DetalleOrden() {
             {(o as any).clientes?.nombre ?? "Sin cliente"} · creada el {fmtLocalDate(o.created_at?.slice(0, 10))}
           </p>
         </div>
+        {expedienteVinculado ? (
+          <Button variant="outline" asChild>
+            <Link to="/expedientes/$id" params={{ id: expedienteVinculado.id }}>
+              <FolderPlus className="h-4 w-4 mr-1" />Ver Expediente {expedienteVinculado.numero} ↗
+            </Link>
+          </Button>
+        ) : canEdit ? (
+          <Button variant="outline" asChild>
+            <Link to="/expedientes/nuevo" search={{ orden: id }}>
+              <FolderPlus className="h-4 w-4 mr-1" />Crear Expediente
+            </Link>
+          </Button>
+        ) : null}
         {canEdit && (
           <Button onClick={() => save.mutate()} disabled={save.isPending}><Save className="h-4 w-4 mr-1" />Guardar cambios</Button>
         )}

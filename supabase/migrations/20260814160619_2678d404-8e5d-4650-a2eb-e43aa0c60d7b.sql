@@ -1,0 +1,2 @@
+ALTER TABLE public.expedientes ADD COLUMN IF NOT EXISTS orden_id uuid REFERENCES public.ordenes(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_expedientes_orden ON public.expedientes(orden_id);

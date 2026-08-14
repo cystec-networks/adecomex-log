@@ -1718,6 +1718,7 @@ export type Database = {
           numero_vuce: string | null
           numeros_contenedores: string | null
           observaciones: string | null
+          orden_id: string | null
           otros: number | null
           pais_origen: string | null
           pais_origen_codigo: string | null
@@ -1789,6 +1790,7 @@ export type Database = {
           numero_vuce?: string | null
           numeros_contenedores?: string | null
           observaciones?: string | null
+          orden_id?: string | null
           otros?: number | null
           pais_origen?: string | null
           pais_origen_codigo?: string | null
@@ -1860,6 +1862,7 @@ export type Database = {
           numero_vuce?: string | null
           numeros_contenedores?: string | null
           observaciones?: string | null
+          orden_id?: string | null
           otros?: number | null
           pais_origen?: string | null
           pais_origen_codigo?: string | null
@@ -1908,6 +1911,13 @@ export type Database = {
             columns: ["factura_ecf_id"]
             isOneToOne: false
             referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expedientes_orden_id_fkey"
+            columns: ["orden_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes"
             referencedColumns: ["id"]
           },
           {
