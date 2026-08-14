@@ -734,6 +734,95 @@ export type Database = {
           },
         ]
       }
+      cotizacion_productos: {
+        Row: {
+          aplica_isc: boolean | null
+          cantidad: number | null
+          cod_marca: string | null
+          cod_modelo: string | null
+          codigo_arancelario: string | null
+          cotizacion_id: string
+          created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          detalle_producto: string | null
+          especificaciones: string | null
+          id: string
+          item_no: number | null
+          marca: string | null
+          modelo: string | null
+          pct_gravamen: number | null
+          pct_isc: number | null
+          pct_itbis: number | null
+          peso: number | null
+          product_code: string | null
+          unidad_codigo: string | null
+          unidad_medida: string | null
+          updated_at: string
+          valor_fob: number | null
+        }
+        Insert: {
+          aplica_isc?: boolean | null
+          cantidad?: number | null
+          cod_marca?: string | null
+          cod_modelo?: string | null
+          codigo_arancelario?: string | null
+          cotizacion_id: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          detalle_producto?: string | null
+          especificaciones?: string | null
+          id?: string
+          item_no?: number | null
+          marca?: string | null
+          modelo?: string | null
+          pct_gravamen?: number | null
+          pct_isc?: number | null
+          pct_itbis?: number | null
+          peso?: number | null
+          product_code?: string | null
+          unidad_codigo?: string | null
+          unidad_medida?: string | null
+          updated_at?: string
+          valor_fob?: number | null
+        }
+        Update: {
+          aplica_isc?: boolean | null
+          cantidad?: number | null
+          cod_marca?: string | null
+          cod_modelo?: string | null
+          codigo_arancelario?: string | null
+          cotizacion_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          detalle_producto?: string | null
+          especificaciones?: string | null
+          id?: string
+          item_no?: number | null
+          marca?: string | null
+          modelo?: string | null
+          pct_gravamen?: number | null
+          pct_isc?: number | null
+          pct_itbis?: number | null
+          peso?: number | null
+          product_code?: string | null
+          unidad_codigo?: string | null
+          unidad_medida?: string | null
+          updated_at?: string
+          valor_fob?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotizacion_productos_cotizacion_id_fkey"
+            columns: ["cotizacion_id"]
+            isOneToOne: false
+            referencedRelation: "cotizaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cotizaciones: {
         Row: {
           cliente_id: string | null
@@ -2858,6 +2947,95 @@ export type Database = {
           },
         ]
       }
+      orden_productos: {
+        Row: {
+          aplica_isc: boolean | null
+          cantidad: number | null
+          cod_marca: string | null
+          cod_modelo: string | null
+          codigo_arancelario: string | null
+          created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          detalle_producto: string | null
+          especificaciones: string | null
+          id: string
+          item_no: number | null
+          marca: string | null
+          modelo: string | null
+          orden_id: string
+          pct_gravamen: number | null
+          pct_isc: number | null
+          pct_itbis: number | null
+          peso: number | null
+          product_code: string | null
+          unidad_codigo: string | null
+          unidad_medida: string | null
+          updated_at: string
+          valor_fob: number | null
+        }
+        Insert: {
+          aplica_isc?: boolean | null
+          cantidad?: number | null
+          cod_marca?: string | null
+          cod_modelo?: string | null
+          codigo_arancelario?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          detalle_producto?: string | null
+          especificaciones?: string | null
+          id?: string
+          item_no?: number | null
+          marca?: string | null
+          modelo?: string | null
+          orden_id: string
+          pct_gravamen?: number | null
+          pct_isc?: number | null
+          pct_itbis?: number | null
+          peso?: number | null
+          product_code?: string | null
+          unidad_codigo?: string | null
+          unidad_medida?: string | null
+          updated_at?: string
+          valor_fob?: number | null
+        }
+        Update: {
+          aplica_isc?: boolean | null
+          cantidad?: number | null
+          cod_marca?: string | null
+          cod_modelo?: string | null
+          codigo_arancelario?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          detalle_producto?: string | null
+          especificaciones?: string | null
+          id?: string
+          item_no?: number | null
+          marca?: string | null
+          modelo?: string | null
+          orden_id?: string
+          pct_gravamen?: number | null
+          pct_isc?: number | null
+          pct_itbis?: number | null
+          peso?: number | null
+          product_code?: string | null
+          unidad_codigo?: string | null
+          unidad_medida?: string | null
+          updated_at?: string
+          valor_fob?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orden_productos_orden_id_fkey"
+            columns: ["orden_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ordenes: {
         Row: {
           cliente_id: string | null
@@ -3302,6 +3480,95 @@ export type Database = {
             columns: ["prestamo_id"]
             isOneToOne: false
             referencedRelation: "empleado_prestamos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solicitud_productos: {
+        Row: {
+          aplica_isc: boolean | null
+          cantidad: number | null
+          cod_marca: string | null
+          cod_modelo: string | null
+          codigo_arancelario: string | null
+          created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          detalle_producto: string | null
+          especificaciones: string | null
+          id: string
+          item_no: number | null
+          marca: string | null
+          modelo: string | null
+          pct_gravamen: number | null
+          pct_isc: number | null
+          pct_itbis: number | null
+          peso: number | null
+          product_code: string | null
+          solicitud_id: string
+          unidad_codigo: string | null
+          unidad_medida: string | null
+          updated_at: string
+          valor_fob: number | null
+        }
+        Insert: {
+          aplica_isc?: boolean | null
+          cantidad?: number | null
+          cod_marca?: string | null
+          cod_modelo?: string | null
+          codigo_arancelario?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          detalle_producto?: string | null
+          especificaciones?: string | null
+          id?: string
+          item_no?: number | null
+          marca?: string | null
+          modelo?: string | null
+          pct_gravamen?: number | null
+          pct_isc?: number | null
+          pct_itbis?: number | null
+          peso?: number | null
+          product_code?: string | null
+          solicitud_id: string
+          unidad_codigo?: string | null
+          unidad_medida?: string | null
+          updated_at?: string
+          valor_fob?: number | null
+        }
+        Update: {
+          aplica_isc?: boolean | null
+          cantidad?: number | null
+          cod_marca?: string | null
+          cod_modelo?: string | null
+          codigo_arancelario?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          detalle_producto?: string | null
+          especificaciones?: string | null
+          id?: string
+          item_no?: number | null
+          marca?: string | null
+          modelo?: string | null
+          pct_gravamen?: number | null
+          pct_isc?: number | null
+          pct_itbis?: number | null
+          peso?: number | null
+          product_code?: string | null
+          solicitud_id?: string
+          unidad_codigo?: string | null
+          unidad_medida?: string | null
+          updated_at?: string
+          valor_fob?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitud_productos_solicitud_id_fkey"
+            columns: ["solicitud_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes"
             referencedColumns: ["id"]
           },
         ]
