@@ -2882,6 +2882,7 @@ export type Database = {
           id: string
           notas: string | null
           numero: string | null
+          solicitud_id: string | null
           updated_at: string
           vendedor_id: string | null
         }
@@ -2908,6 +2909,7 @@ export type Database = {
           id?: string
           notas?: string | null
           numero?: string | null
+          solicitud_id?: string | null
           updated_at?: string
           vendedor_id?: string | null
         }
@@ -2934,6 +2936,7 @@ export type Database = {
           id?: string
           notas?: string | null
           numero?: string | null
+          solicitud_id?: string | null
           updated_at?: string
           vendedor_id?: string | null
         }
@@ -2950,6 +2953,13 @@ export type Database = {
             columns: ["cotizacion_id"]
             isOneToOne: true
             referencedRelation: "cotizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordenes_solicitud_id_fkey"
+            columns: ["solicitud_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes"
             referencedColumns: ["id"]
           },
         ]
@@ -3313,7 +3323,6 @@ export type Database = {
           medio_transporte: string | null
           numero: string
           observaciones: string | null
-          orden_id: string | null
           origen: string | null
           origen_codigo: string | null
           prioridad: Database["public"]["Enums"]["prioridad"]
@@ -3340,7 +3349,6 @@ export type Database = {
           medio_transporte?: string | null
           numero?: string
           observaciones?: string | null
-          orden_id?: string | null
           origen?: string | null
           origen_codigo?: string | null
           prioridad?: Database["public"]["Enums"]["prioridad"]
@@ -3367,7 +3375,6 @@ export type Database = {
           medio_transporte?: string | null
           numero?: string
           observaciones?: string | null
-          orden_id?: string | null
           origen?: string | null
           origen_codigo?: string | null
           prioridad?: Database["public"]["Enums"]["prioridad"]
@@ -3384,13 +3391,6 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "solicitudes_orden_id_fkey"
-            columns: ["orden_id"]
-            isOneToOne: false
-            referencedRelation: "ordenes"
             referencedColumns: ["id"]
           },
         ]
