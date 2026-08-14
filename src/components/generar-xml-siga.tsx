@@ -101,8 +101,22 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
                   <ul className="list-disc pl-5 mt-2 space-y-0.5 text-sm">
                     {issues.map((i) => <li key={i.field}>{i.label}</li>)}
                   </ul>
+                  {issues.some((i) => i.field === "area_aduanera_codigo") && (
+                    <div className="mt-3 rounded-md border bg-background p-3 space-y-1.5">
+                      <Label className="text-xs">Selecciona el Área / Administración aduanera</Label>
+                      <DgaCombobox
+                        table="dga_areas"
+                        codigo={exp?.area_aduanera_codigo ?? ""}
+                        onChange={(_n, codigo) => guardarArea(codigo)}
+                        placeholder="Buscar área (catálogo DGA)"
+                        disabled={savingArea}
+                      />
+                      <p className="text-[11px] text-muted-foreground">Se guarda en el expediente al seleccionarla.</p>
+                    </div>
+                  )}
                 </AlertDescription>
               </Alert>
+
             ) : pending.length > 0 ? (
               <Alert className="border-yellow-500/50 bg-yellow-500/10">
                 <Info className="h-4 w-4 text-yellow-700" />
