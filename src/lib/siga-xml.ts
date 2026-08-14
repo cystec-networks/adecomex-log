@@ -75,12 +75,35 @@ function num(v: unknown): string {
   return isFinite(n) ? String(n) : "0";
 }
 
-// Formato de identificación SIGA: [RNC|CED|PAS]<número>
-function personCode(id?: string | null): string {
+// Formato de identificación SIGA: [RNC|CED|PAS] + código país DGA + número
+// Ej.: RNC + 214 + 130594181 => RNC214130594181
+export function personCode(id?: string | null, countryCode = "214"): string {
   if (!id) return "";
-  const clean = String(id).trim().replace(/[-\s]/g, "");
-  if (/^(RNC|CED|PAS)/i.test(clean)) return clean.toUpperCase();
-  return `RNC${clean}`;
+  let clean = String(id).trim().replace(/[-\s.]/g, "").toUpperCase();
+  let prefix = "RNC";
+  const m = /^(RNC|CED|PAS)(.*)$/.exec(clean);
+  if (m) { prefix = m[1]; clean = m[2]; }
+  const cc = String(countryCode || "").trim();
+  if (cc && clean.startsWith(cc)) return `${prefix}${clean}`;
+  return `${prefix}${cc}${clean}`;
+}
+
+// Códigos RDOC de la DGA (catálogo de documentos requeridos)
+export const RDOC = {
+  FACTURA_COMERCIAL: "RDOC-001",
+  BL_MANIFIESTO: "RDOC-010-R1-1",
+} as const;
+
+// Régimen: nombre mostrado en el formulario -> código SIGA
+const REGIMEN_CODIGOS: Record<string, string> = {
+  "despacho a consumo": "1",
+};
+
+export function resolveRegimenCode(exp: any, regimenMap?: Record<string, string>): string {
+  if (exp?.regimen_codigo) return String(exp.regimen_codigo);
+  const nombre = String(exp?.regimen_aduanero ?? "").trim().toLowerCase();
+  if (!nombre) return "";
+  return regimenMap?.[nombre] ?? REGIMEN_CODIGOS[nombre] ?? "";
 }
 
 export type ValidationIssue = { field: string; label: string };
