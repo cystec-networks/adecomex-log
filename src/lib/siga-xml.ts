@@ -33,7 +33,7 @@ export const DEFAULT_BROKER: BrokerConfig = {
   declarantCode: "00108459645",
   declarantName: "FRANCISCO ENERIO LOPEZ MARTINEZ",
   declarantNationality: "214",
-  clearanceType: "IM4",
+  clearanceType: "IC38-002",
   clearanceTypeName: "",
   transportCompanyCode: "",
   transportNationality: "214",
@@ -245,9 +245,6 @@ export function pendingDgaCodes(exp: any, maps?: SigaMaps, items?: any[]): Valid
   check(resolveAgreementCode(exp, maps?.acuerdo), "acuerdo_codigo", "Acuerdo / Preferencia comercial (AgreementCode)");
   check(exp?.pais_procedencia_codigo, "pais_procedencia_codigo", "País de procedencia (DepartureCountryCode)");
   if (exp?.numero_vuce) check(maps?.vuceDocCode, "vuce_doc_code", "Código de documento del Permiso VUCE (RequiredDocumentCode)");
-  (items ?? []).forEach((it, i) => {
-    check(it?.estado_producto_codigo, `items[${i}].estado_producto_codigo`, `Ítem ${it?.item_no ?? i + 1}: Estado del producto (ProductStatusCode)`);
-  });
   return pending;
 }
 
