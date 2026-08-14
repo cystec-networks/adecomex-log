@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { DgaCombobox } from "@/components/dga-combobox";
+import { useMyRoles } from "@/lib/auth-hooks";
+import { ORDEN_ESTADO_CLASS, ordenEstadoLabel } from "@/lib/estados-orden";
 
 export const Route = createFileRoute("/_authenticated/solicitudes/$id")({
   component: DetalleSolicitud,
@@ -27,6 +29,9 @@ const PRIORIDADES = ["baja", "media", "alta", "urgente"];
 function DetalleSolicitud() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
+  const { data: roles } = useMyRoles();
+  const canEdit = (roles ?? []).some((r) => r === "admin" || r === "vendedor" || r === "operaciones");
+  
   
 
   const { data: s } = useQuery({
@@ -81,6 +86,59 @@ function DetalleSolicitud() {
     queryKey: ["expediente-de-solicitud", id],
     queryFn: async () => (await supabase.from("expedientes").select("id,numero").eq("solicitud_id", id).maybeSingle()).data,
     enabled: !!s,
+  });
+
+  const { data: ordenesVinculadas } = useQuery({
+    queryKey: ["ordenes-de-solicitud", id],
+    queryFn: async () =>
+      (await supabase
+        .from("ordenes")
+        .select("id,numero,estado,cot_tipo_mercancia,clientes(nombre)")
+        .eq("solicitud_id", id)
+        .order("numero")).data ?? [],
+  });
+
+  const { data: ordenesLibres } = useQuery({
+    queryKey: ["ordenes-libres"],
+    queryFn: async () =>
+      (await supabase
+        .from("ordenes")
+        .select("id,numero,clientes(nombre)")
+        .is("solicitud_id", null)
+        .order("numero")).data ?? [],
+  });
+
+  const refreshOrdenes = () => {
+    qc.invalidateQueries({ queryKey: ["ordenes-de-solicitud", id] });
+    qc.invalidateQueries({ queryKey: ["ordenes-libres"] });
+    qc.invalidateQueries({ queryKey: ["ordenes"] });
+  };
+
+  const agregarOrden = useMutation({
+    mutationFn: async (ordenId: string) => {
+      const { data: orden } = await supabase.from("ordenes").select("estado").eq("id", ordenId).maybeSingle();
+      const { error } = await supabase.from("ordenes").update({ solicitud_id: id }).eq("id", ordenId);
+      if (error) throw error;
+      if (orden?.estado === "abierta") {
+        await supabase.from("ordenes").update({ estado: "en_transito" }).eq("id", ordenId).eq("estado", "abierta");
+      }
+      await supabase.from("auditoria").insert({
+        entidad: "ordenes",
+        entidad_id: ordenId,
+        accion: `consolidada:${s?.numero ?? ""}`,
+      });
+    },
+    onSuccess: () => { toast.success("Orden agregada a la solicitud"); refreshOrdenes(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const quitarOrden = useMutation({
+    mutationFn: async (ordenId: string) => {
+      const { error } = await supabase.from("ordenes").update({ solicitud_id: null }).eq("id", ordenId);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Orden desvinculada"); refreshOrdenes(); },
+    onError: (e: any) => toast.error(e.message),
   });
 
 
@@ -161,6 +219,61 @@ function DetalleSolicitud() {
               <SelectContent>{PRIORIDADES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Órdenes consolidadas</CardTitle></CardHeader>
+        <CardContent className="grid gap-4">
+          {(ordenesVinculadas ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sin órdenes vinculadas</p>
+          ) : (
+            <div className="grid gap-2">
+              {(ordenesVinculadas ?? []).map((o: any) => (
+                <div key={o.id} className="flex items-center gap-3 flex-wrap rounded-md border p-3">
+                  <Link to="/ordenes/$id" params={{ id: o.id }} className="font-medium text-primary underline">
+                    {o.numero}
+                  </Link>
+                  <span className="text-sm text-muted-foreground">{o.clientes?.nombre ?? "Sin cliente"}</span>
+                  <span className="text-sm text-muted-foreground">{o.cot_tipo_mercancia ?? "—"}</span>
+                  <Badge className={ORDEN_ESTADO_CLASS[o.estado] ?? ""}>{ordenEstadoLabel(o.estado)}</Badge>
+                  {canEdit && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="ml-auto text-destructive"
+                      disabled={quitarOrden.isPending}
+                      onClick={() => {
+                        if (confirm(`¿Quitar la orden ${o.numero} de esta solicitud?`)) quitarOrden.mutate(o.id);
+                      }}
+                    >
+                      Quitar
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {canEdit && (
+            <div className="grid gap-1.5 md:max-w-md">
+              <Label>Agregar orden a esta solicitud</Label>
+              <Select value="" onValueChange={(v) => agregarOrden.mutate(v)} disabled={agregarOrden.isPending}>
+                <SelectTrigger><SelectValue placeholder="Selecciona una orden sin consolidar" /></SelectTrigger>
+                <SelectContent>
+                  {(ordenesLibres ?? []).length === 0 ? (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">No hay órdenes disponibles</div>
+                  ) : (
+                    (ordenesLibres ?? []).map((o: any) => (
+                      <SelectItem key={o.id} value={o.id}>
+                        {o.numero} · {o.clientes?.nombre ?? "Sin cliente"}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </CardContent>
       </Card>
 

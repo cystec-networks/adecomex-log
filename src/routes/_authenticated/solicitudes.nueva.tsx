@@ -73,10 +73,10 @@ function NuevaSolicitud() {
       const payload = { ...form };
       if (!payload.cliente_id) delete payload.cliente_id;
       if (!payload.fecha_arribo_est) delete payload.fecha_arribo_est;
-      if (ordenId) payload.orden_id = ordenId;
       const { data, error } = await supabase.from("solicitudes").insert(payload).select().single();
       if (error) throw error;
       if (ordenId) {
+        await supabase.from("ordenes").update({ solicitud_id: data.id }).eq("id", ordenId);
         if ((ord as any)?.estado === "abierta") {
           await supabase.from("ordenes").update({ estado: "en_transito" }).eq("id", ordenId).eq("estado", "abierta");
         }
