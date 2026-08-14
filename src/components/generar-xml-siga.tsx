@@ -202,7 +202,7 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
               <Input
                 value={broker.brokerCompanyCode}
                 onChange={(e) => setBroker({ ...broker, brokerCompanyCode: e.target.value })}
-                placeholder="130594181 → se emite RNC214130594181"
+                placeholder="130481301 → se emite RNC214130481301"
               />
             </div>
             <div className="grid gap-1.5">
