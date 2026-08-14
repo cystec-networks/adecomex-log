@@ -2231,9 +2231,29 @@ function MercanciaItemsBlock({
       </p>
 
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingId ? "Editar ítem" : "Nuevo ítem"}</DialogTitle></DialogHeader>
+          <div className="rounded-md border bg-muted/30 p-3">
+            <DgaProductoSearch
+              onSelect={(p, reusarCodigo) => {
+                setF((prev) => ({
+                  ...prev,
+                  product_code: reusarCodigo ? (p.codigo_producto ?? "") : "",
+                  codigo_arancelario: prev.codigo_arancelario || (p.partida_arancelaria ?? ""),
+                  detalle_producto: prev.detalle_producto || (p.nombre_producto ?? ""),
+                  cod_marca: p.cod_marca ?? "",
+                  marca: p.marca ?? "",
+                  cod_modelo: p.cod_modelo ?? "",
+                  modelo: p.modelo ?? "",
+                  especificaciones: p.especificaciones ?? "",
+                  unidad_medida: prev.unidad_medida || (p.unidad ?? ""),
+                }));
+                toast.success(reusarCodigo ? "Producto copiado con su ProductCode" : "Datos copiados — SIGA asignará un ProductCode nuevo");
+              }}
+            />
+          </div>
           <div className="grid gap-3 md:grid-cols-2">
+
             <div className="grid gap-1.5">
               <Label>Código Arancelario</Label>
               <Input
