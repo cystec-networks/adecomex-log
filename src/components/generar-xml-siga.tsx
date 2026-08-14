@@ -42,9 +42,26 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
       (await supabase.from("mercancia_items").select("*").eq("expediente_id", expedienteId).is("deleted_at", null).order("item_no")).data ?? [],
   });
 
-  const issues = useMemo(() => (exp ? validateExpediente(exp, items ?? [], broker) : []), [exp, items, broker]);
-  const pending = useMemo(() => (exp ? pendingDgaCodes(exp) : []), [exp]);
-  const xml = useMemo(() => (exp ? buildImportDUAXml(exp, items ?? [], broker) : ""), [exp, items, broker]);
+  const { data: regimenes } = useQuery({
+    queryKey: ["catalogo-regimenes-xml", open],
+    enabled: open,
+    queryFn: async () => (await supabase.from("catalogo_regimenes").select("codigo, nombre")).data ?? [],
+  });
+
+  const regimenMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    (regimenes ?? []).forEach((r: any) => { if (r.nombre && r.codigo) m[String(r.nombre).trim().toLowerCase()] = String(r.codigo); });
+    return m;
+  }, [regimenes]);
+
+  const expConRegimen = useMemo(
+    () => (exp ? { ...exp, regimen_codigo: resolveRegimenCode(exp, regimenMap) || null } : exp),
+    [exp, regimenMap],
+  );
+
+  const issues = useMemo(() => (expConRegimen ? validateExpediente(expConRegimen, items ?? [], broker) : []), [expConRegimen, items, broker]);
+  const pending = useMemo(() => (expConRegimen ? pendingDgaCodes(expConRegimen) : []), [expConRegimen]);
+  const xml = useMemo(() => (expConRegimen ? buildImportDUAXml(expConRegimen, items ?? [], broker, regimenMap) : ""), [expConRegimen, items, broker, regimenMap]);
   const valid = issues.length === 0;
 
   const handleDownload = () => {
