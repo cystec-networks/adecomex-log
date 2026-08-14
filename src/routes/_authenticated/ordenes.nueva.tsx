@@ -66,7 +66,13 @@ function NuevaOrden() {
       };
       const { data, error } = await supabase.from("ordenes").insert(payload).select().single();
       if (error) throw error;
+      if (productos.length > 0) {
+        const filas = productos.map(({ id, ...p }: any, i: number) => ({ ...p, orden_id: data.id, item_no: i + 1 }));
+        const { error: eProd } = await (supabase.from("orden_productos") as any).insert(filas);
+        if (eProd) throw eProd;
+      }
       return data;
+
     },
     onSuccess: (o: any) => {
       toast.success(`Orden ${o.numero} creada`);
