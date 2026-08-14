@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { copiarProductos } from "@/lib/copiar-productos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,6 +82,10 @@ function NuevaSolicitud() {
           await supabase.from("ordenes").update({ estado: "en_transito" }).eq("id", ordenId).eq("estado", "abierta");
         }
         await supabase.from("auditoria").insert({ entidad: "ordenes", entidad_id: ordenId, accion: `solicitud:${data.numero}` });
+        await copiarProductos({
+          origenTabla: "orden_productos", origenCol: "orden_id", origenId: ordenId,
+          destinoTabla: "solicitud_productos", destinoCol: "solicitud_id", destinoId: data.id,
+        });
       }
       return data;
     },

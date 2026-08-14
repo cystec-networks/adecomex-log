@@ -14,6 +14,8 @@ import { useEffect, useState } from "react";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { BadgeVigencia } from "@/components/badge-vigencia";
 import { useMyRoles } from "@/lib/auth-hooks";
+import { ProductosCard } from "@/components/productos-card";
+import { copiarProductos } from "@/lib/copiar-productos";
 import { fmtLocalDate } from "@/lib/dates";
 import {
   COTIZACION_ESTADOS, COTIZACION_ESTADO_CLASS, cotizacionEstadoLabel, TIPOS_MERCANCIA,
@@ -118,6 +120,10 @@ function DetalleCotizacion() {
       const { error: e2 } = await supabase.from("cotizaciones")
         .update({ orden_id: orden.id, estado: "aprobada" }).eq("id", id);
       if (e2) throw e2;
+      await copiarProductos({
+        origenTabla: "cotizacion_productos", origenCol: "cotizacion_id", origenId: id,
+        destinoTabla: "orden_productos", destinoCol: "orden_id", destinoId: orden.id,
+      });
       return orden;
     },
     onSuccess: (o: any) => {
@@ -225,6 +231,8 @@ function DetalleCotizacion() {
           <div className="grid gap-1.5"><Label>Fecha de vigencia</Label><Input type="date" value={form.fecha_vigencia ?? ""} readOnly={readOnly} onChange={(e) => set("fecha_vigencia", e.target.value)} /></div>
         </CardContent>
       </Card>
+
+      <ProductosCard tabla="cotizacion_productos" parentId={id} readOnly={readOnly} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Notas / observaciones</CardTitle></CardHeader>

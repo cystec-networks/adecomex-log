@@ -17,6 +17,8 @@ import { useEffect, useState } from "react";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { DgaCombobox } from "@/components/dga-combobox";
 import { useMyRoles } from "@/lib/auth-hooks";
+import { ProductosCard } from "@/components/productos-card";
+import { copiarProductos } from "@/lib/copiar-productos";
 import { ORDEN_ESTADO_CLASS, ordenEstadoLabel } from "@/lib/estados-orden";
 
 export const Route = createFileRoute("/_authenticated/solicitudes/$id")({
@@ -127,8 +129,16 @@ function DetalleSolicitud() {
         entidad_id: ordenId,
         accion: `consolidada:${s?.numero ?? ""}`,
       });
+      await copiarProductos({
+        origenTabla: "orden_productos", origenCol: "orden_id", origenId: ordenId,
+        destinoTabla: "solicitud_productos", destinoCol: "solicitud_id", destinoId: id,
+      });
     },
-    onSuccess: () => { toast.success("Orden agregada a la solicitud"); refreshOrdenes(); },
+    onSuccess: () => {
+      toast.success("Orden agregada a la solicitud");
+      refreshOrdenes();
+      qc.invalidateQueries({ queryKey: ["solicitud_productos", id] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -325,6 +335,8 @@ function DetalleSolicitud() {
           </CardContent>
         </Card>
       </div>
+
+      <ProductosCard tabla="solicitud_productos" parentId={id} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Observaciones</CardTitle></CardHeader>
