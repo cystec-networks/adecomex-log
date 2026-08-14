@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { FileCode2, AlertTriangle, Download, Settings2, CheckCircle2, Info } from "lucide-react";
 import { toast } from "sonner";
+import { DgaCombobox } from "@/components/dga-combobox";
 import {
   buildImportDUAXml,
   downloadXml,
@@ -18,10 +19,14 @@ import {
   type BrokerConfig,
 } from "@/lib/siga-xml";
 
+
 export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string }) {
   const [open, setOpen] = useState(false);
   const [cfgOpen, setCfgOpen] = useState(false);
   const [broker, setBroker] = useState<BrokerConfig>(() => loadBrokerConfig());
+  const [savingArea, setSavingArea] = useState(false);
+  const queryClient = useQueryClient();
+
 
   const { data: exp } = useQuery({
     queryKey: ["expediente-xml", expedienteId, open],
@@ -56,6 +61,18 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
     toast.success("Configuración de agencia guardada");
   };
 
+  const guardarArea = async (codigo: string) => {
+    if (!codigo) return;
+    setSavingArea(true);
+    const { error } = await supabase.from("expedientes").update({ area_aduanera_codigo: codigo }).eq("id", expedienteId);
+    setSavingArea(false);
+    if (error) return toast.error("No se pudo guardar el área aduanera");
+    await queryClient.invalidateQueries({ queryKey: ["expediente-xml", expedienteId, open] });
+    await queryClient.invalidateQueries({ queryKey: ["expediente", expedienteId] });
+    toast.success("Área aduanera guardada");
+  };
+
+
   return (
     <>
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
@@ -84,8 +101,22 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
                   <ul className="list-disc pl-5 mt-2 space-y-0.5 text-sm">
                     {issues.map((i) => <li key={i.field}>{i.label}</li>)}
                   </ul>
+                  {issues.some((i) => i.field === "area_aduanera_codigo") && (
+                    <div className="mt-3 rounded-md border bg-background p-3 space-y-1.5">
+                      <Label className="text-xs">Selecciona el Área / Administración aduanera</Label>
+                      <DgaCombobox
+                        table="dga_areas"
+                        codigo={exp?.area_aduanera_codigo ?? ""}
+                        onChange={(_n, codigo) => guardarArea(codigo)}
+                        placeholder="Buscar área (catálogo DGA)"
+                        disabled={savingArea}
+                      />
+                      <p className="text-[11px] text-muted-foreground">Se guarda en el expediente al seleccionarla.</p>
+                    </div>
+                  )}
                 </AlertDescription>
               </Alert>
+
             ) : pending.length > 0 ? (
               <Alert className="border-yellow-500/50 bg-yellow-500/10">
                 <Info className="h-4 w-4 text-yellow-700" />
