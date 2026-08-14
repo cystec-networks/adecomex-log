@@ -36,15 +36,13 @@ function DetalleOrden() {
 
   const { data: o } = useQuery({
     queryKey: ["orden", id],
-    queryFn: async () => (await supabase.from("ordenes").select("*, clientes(nombre)").eq("id", id).maybeSingle()).data,
+    queryFn: async () =>
+      (await supabase.from("ordenes").select("*, clientes(nombre), solicitudes(id,numero)").eq("id", id).maybeSingle())
+        .data,
   });
 
-  const { data: solicitudVinculada } = useQuery({
-    queryKey: ["solicitud-de-orden", id],
-    enabled: !!o,
-    queryFn: async () =>
-      (await supabase.from("solicitudes").select("id,numero").eq("orden_id", id).maybeSingle()).data,
-  });
+  const solicitudVinculada = (o as any)?.solicitudes ?? null;
+
 
 
   const [form, setForm] = useState<any>(null);
