@@ -143,6 +143,7 @@ function NuevoExpediente() {
   });
 
   if (solicitudId && isLoading) return <div className="p-8 text-center text-muted-foreground">Cargando solicitud…</div>;
+  if (ordenId && loadingOrden) return <div className="p-8 text-center text-muted-foreground">Cargando orden…</div>;
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-5">
