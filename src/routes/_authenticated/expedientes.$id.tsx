@@ -2060,7 +2060,14 @@ function MercanciaItemsBlock({
         aplica_isc: !!f.aplica_isc,
         pct_isc: f.aplica_isc && f.pct_isc !== "" ? Number(f.pct_isc) : null,
         pct_itbis: f.pct_itbis === "" ? null : Number(f.pct_itbis),
+        product_code: f.product_code?.trim() || null,
+        cod_marca: f.cod_marca?.trim() || null,
+        marca: f.marca?.trim() || null,
+        cod_modelo: f.cod_modelo?.trim() || null,
+        modelo: f.modelo?.trim() || null,
+        especificaciones: f.especificaciones?.trim() || null,
       };
+
       if (editingId) {
         const { error } = await supabase.from("mercancia_items").update(payload).eq("id", editingId);
         if (error) throw error;
