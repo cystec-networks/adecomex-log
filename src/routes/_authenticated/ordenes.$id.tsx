@@ -112,7 +112,10 @@ function DetalleOrden() {
         <CardHeader><CardTitle className="text-base">Orden</CardTitle></CardHeader>
         <CardContent className="grid gap-4">
           <div className="grid gap-1.5 md:max-w-xs"><Label>Estado</Label>
-            <Input value={form.estado} readOnly={!canEdit} onChange={(e) => setForm({ ...form, estado: e.target.value })} />
+            <Select value={form.estado} onValueChange={(v) => setForm({ ...form, estado: v })} disabled={!canEdit}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{ORDEN_ESTADOS.map((e) => <SelectItem key={e} value={e}>{ordenEstadoLabel(e)}</SelectItem>)}</SelectContent>
+            </Select>
           </div>
           <div className="grid gap-1.5"><Label>Notas</Label>
             <Textarea rows={4} value={form.notas} readOnly={!canEdit} onChange={(e) => setForm({ ...form, notas: e.target.value })} />
