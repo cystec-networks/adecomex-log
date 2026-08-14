@@ -261,19 +261,19 @@ ${T("ForeignSupplierNationality", origen, "      ")}
     const desc = it.detalle_producto ?? "";
     return `    <ImpDeclarationProduct>
 ${T("HSCode", it.codigo_arancelario, "      ")}
-${T("ProductCode", "", "      ")}
+${T("ProductCode", it.product_code, "      ")}
 ${T("productname", desc, "      ")}
-${T("BrandCode", "", "      ")}
-${T("BrandName", "N/A", "      ")}
-${T("ModelCode", "", "      ")}
-${T("ModelName", "N/A", "      ")}
+${T("BrandCode", it.cod_marca, "      ")}
+${T("BrandName", it.marca || "N/A", "      ")}
+${T("ModelCode", it.cod_modelo, "      ")}
+${T("ModelName", it.modelo || "N/A", "      ")}
 ${T("ProductStatusCode", "", "      ")}
 ${T("ProductYear", "", "      ")}
 ${T("FOBValue", unitFob(it.valor_fob, it.cantidad), "      ")}
 ${T("UnitCode", it.unidad_codigo, "      ")}
 ${T("Qty", num(it.cantidad), "      ")}
 ${T("Weight", num(it.peso), "      ")}
-${T("ProductSpecification", "", "      ")}
+${T("ProductSpecification", it.especificaciones, "      ")}
 ${T("TempProductYN", "false", "      ")}
 ${T("CertificateOrignYN", certOrigen, "      ")}
 ${T("CertificateOriginNo", exp.numero_certificado_origen, "      ")}
