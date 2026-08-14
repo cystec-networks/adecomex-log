@@ -249,10 +249,10 @@ ${T("Remark", "", "      ")}
   }).join("\n");
 
   const docs: Array<{ code: string; desc: string; num: string }> = [];
-  if (exp.factura_comercial) docs.push({ code: "380", desc: "Factura comercial", num: exp.factura_comercial });
-  if (exp.bl_awb) docs.push({ code: "705", desc: "Conocimiento de embarque / AWB", num: exp.bl_awb });
-  if (exp.numero_certificado_origen) docs.push({ code: "861", desc: "Certificado de Origen", num: exp.numero_certificado_origen });
-  if (exp.numero_vuce) docs.push({ code: "VUCE", desc: "Solicitud de Permiso VUCE", num: exp.numero_vuce });
+  if (exp.factura_comercial) docs.push({ code: RDOC.FACTURA_COMERCIAL, desc: "Factura comercial", num: exp.factura_comercial });
+  if (exp.bl_awb) docs.push({ code: RDOC.BL_MANIFIESTO, desc: "Conocimiento de embarque / Manifiesto", num: exp.bl_awb });
+  if (exp.numero_certificado_origen) docs.push({ code: "", desc: "Certificado de Origen", num: exp.numero_certificado_origen });
+  if (exp.numero_vuce) docs.push({ code: "", desc: "Solicitud de Permiso VUCE", num: exp.numero_vuce });
 
   const documentos = docs.map((d) => `    <ImpDeclarationDocument>
 ${T("RequiredDocumentCode", d.code, "      ")}
