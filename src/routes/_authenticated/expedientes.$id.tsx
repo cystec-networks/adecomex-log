@@ -2340,7 +2340,38 @@ function MercanciaItemsBlock({
               </div>
               <p className="text-[11px] text-muted-foreground mt-2">Por defecto 18%. Solo editar si aplica una excepción.</p>
             </div>
+
+            <div className="md:col-span-2 border-t pt-3 mt-1">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Datos del producto (SIGA)</div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-1.5">
+                  <Label>ProductCode</Label>
+                  <Input value={f.product_code} onChange={(e) => setF({ ...f, product_code: e.target.value })} placeholder="Vacío = SIGA asigna uno nuevo" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Cód. Marca</Label>
+                  <Input value={f.cod_marca} onChange={(e) => setF({ ...f, cod_marca: e.target.value })} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Marca</Label>
+                  <Input value={f.marca} onChange={(e) => setF({ ...f, marca: e.target.value })} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Cód. Modelo</Label>
+                  <Input value={f.cod_modelo} onChange={(e) => setF({ ...f, cod_modelo: e.target.value })} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Modelo</Label>
+                  <Input value={f.modelo} onChange={(e) => setF({ ...f, modelo: e.target.value })} />
+                </div>
+                <div className="grid gap-1.5 md:col-span-2">
+                  <Label>Especificaciones</Label>
+                  <Textarea rows={2} value={f.especificaciones} onChange={(e) => setF({ ...f, especificaciones: e.target.value })} />
+                </div>
+              </div>
+            </div>
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button onClick={() => guardar.mutate()} disabled={guardar.isPending}>{guardar.isPending ? "Guardando…" : (editingId ? "Actualizar" : "Agregar")}</Button>
