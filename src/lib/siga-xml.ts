@@ -143,7 +143,7 @@ export function validateExpediente(exp: any, items: any[], broker: BrokerConfig)
 export function pendingDgaCodes(exp: any): ValidationIssue[] {
   const pending: ValidationIssue[] = [];
   const check = (v: any, field: string, label: string) => { if (!v) pending.push({ field, label }); };
-  check(exp?.regimen_codigo, "regimen_codigo", "Régimen aduanero (RegimenCode)");
+  check(resolveRegimenCode(exp), "regimen_codigo", "Régimen aduanero (RegimenCode)");
   check(exp?.metodo_transporte_codigo, "metodo_transporte_codigo", "Método de transporte (TransportMethod)");
   check(exp?.acuerdo_codigo, "acuerdo_codigo", "Acuerdo / Preferencia comercial (AgreementCode)");
   check(exp?.pais_procedencia_codigo, "pais_procedencia_codigo", "País de procedencia (DepartureCountryCode)");
