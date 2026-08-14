@@ -429,11 +429,23 @@ function TabInfo({ exp }: { exp: any }) {
         <AutoField label="Suplidor" value={form.suplidor} onChange={(v) => set("suplidor", v)} suggestion={sug.suplidor ?? []} />
         <div className="grid gap-1.5">
           <Label>País de origen</Label>
-          <CatalogCombobox
-            table="catalogo_paises"
+          <DgaCombobox
+            table="dga_paises"
             value={form.pais_origen}
             codigo={form.pais_origen_codigo}
             onChange={(nombre, codigo) => setForm((f) => ({ ...f, pais_origen: nombre, pais_origen_codigo: codigo }))}
+            placeholder="Selecciona país (catálogo DGA)"
+          />
+          {form.pais_origen && !form.pais_origen_codigo && (
+            <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el país del catálogo para el XML.</span>
+          )}
+        </div>
+        <div className="grid gap-1.5">
+          <Label>País de procedencia</Label>
+          <DgaCombobox
+            table="dga_paises"
+            codigo={form.pais_procedencia_codigo}
+            onChange={(_n, codigo) => setForm((f) => ({ ...f, pais_procedencia_codigo: codigo }))}
             placeholder="Selecciona país (catálogo DGA)"
           />
         </div>
