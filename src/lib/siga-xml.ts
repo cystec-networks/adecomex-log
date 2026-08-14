@@ -134,8 +134,6 @@ export function validateExpediente(exp: any, items: any[], broker: BrokerConfig)
   need(broker.brokerCompanyCode, "broker.company", "Código de agencia (BrokerCompanyCode)");
   need(broker.brokerEmployeeCode, "broker.employee", "Código de tramitador (BrokerEmployeeCode)");
   need(broker.brokerRnc, "broker.rnc", "RNC de la agencia");
-  need(broker.declarantCode, "broker.declarantCode", "Código del declarante (DeclarantCode)");
-  need(broker.declarantName, "broker.declarantName", "Nombre del declarante");
   need(broker.clearanceType, "broker.clearanceType", "Tipo de despacho SIGA (ClearanceType)");
   return missing;
 }
