@@ -96,7 +96,7 @@ function Ordenes() {
                   <td className="text-muted-foreground">{o.cot_tipo_mercancia ?? "—"}</td>
                   <td>{o.cot_origen ?? "—"}</td>
                   <td>{o.cot_destino ?? "—"}</td>
-                  <td><Badge className="bg-primary/10 text-primary border-transparent">{o.estado}</Badge></td>
+                  <td><Badge className={ORDEN_ESTADO_CLASS[o.estado] ?? ""}>{ordenEstadoLabel(o.estado)}</Badge></td>
                   <td className="text-xs text-muted-foreground">{fmtLocalDate(o.created_at?.slice(0, 10))}</td>
                   <td className="px-4 py-2 text-right whitespace-nowrap">
                     {canEdit && (
