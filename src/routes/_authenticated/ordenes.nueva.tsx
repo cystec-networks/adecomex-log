@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { TIPOS_MERCANCIA } from "@/lib/estados-cotizacion";
 import { useMyRoles } from "@/lib/auth-hooks";
+import { ProductosCard } from "@/components/productos-card";
+
 
 export const Route = createFileRoute("/_authenticated/ordenes/nueva")({
   component: NuevaOrden,
@@ -28,6 +30,8 @@ function NuevaOrden() {
     incoterm: "", peso_kg: "", volumen_m3: "", tarifa_propuesta: "", moneda: "USD", notas: "",
   });
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
+  const [productos, setProductos] = useState<any[]>([]);
+
 
   const { data: clientes } = useQuery({
     queryKey: ["clientes-select"],
@@ -62,7 +66,13 @@ function NuevaOrden() {
       };
       const { data, error } = await supabase.from("ordenes").insert(payload).select().single();
       if (error) throw error;
+      if (productos.length > 0) {
+        const filas = productos.map(({ id, ...p }: any, i: number) => ({ ...p, orden_id: data.id, item_no: i + 1 }));
+        const { error: eProd } = await (supabase.from("orden_productos") as any).insert(filas);
+        if (eProd) throw eProd;
+      }
       return data;
+
     },
     onSuccess: (o: any) => {
       toast.success(`Orden ${o.numero} creada`);
@@ -139,6 +149,9 @@ function NuevaOrden() {
             </div>
           </CardContent>
         </Card>
+
+        <ProductosCard tabla="orden_productos" items={productos} onItemsChange={setProductos} />
+
 
         <Card>
           <CardHeader><CardTitle className="text-base">Notas / observaciones</CardTitle></CardHeader>

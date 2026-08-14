@@ -15,6 +15,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { DgaCombobox } from "@/components/dga-combobox";
+import { ProductosCard } from "@/components/productos-card";
+
 
 const searchSchema = z.object({ orden: z.string().optional() });
 
@@ -41,6 +43,7 @@ function NuevaSolicitud() {
     fecha_arribo_est: "", incoterm: "", medio_transporte: "Marítimo",
     prioridad: "media", observaciones: "", bl_awb: "", factura_comercial: "",
   });
+  const [productos, setProductos] = useState<any[]>([]);
 
   const { data: clientes } = useQuery({
     queryKey: ["clientes-select"],
@@ -78,6 +81,13 @@ function NuevaSolicitud() {
       if (!payload.fecha_arribo_est) delete payload.fecha_arribo_est;
       const { data, error } = await supabase.from("solicitudes").insert(payload).select().single();
       if (error) throw error;
+      if (productos.length > 0) {
+        const filas = productos.map(({ id, ...p }: any, i: number) => ({
+          ...p, solicitud_id: data.id, item_no: i + 1,
+        }));
+        const { error: eProd } = await (supabase.from("solicitud_productos") as any).insert(filas);
+        if (eProd) throw eProd;
+      }
       if (ordenId) {
         await supabase.from("ordenes").update({ solicitud_id: data.id }).eq("id", ordenId);
         await supabase.from("auditoria").insert({ entidad: "ordenes", entidad_id: ordenId, accion: `solicitud:${data.numero}` });
@@ -94,6 +104,7 @@ function NuevaSolicitud() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
 
   if (ordenId && loadingOrden) return <div className="p-8 text-center text-muted-foreground">Cargando orden…</div>;
 
@@ -222,6 +233,10 @@ function NuevaSolicitud() {
             <div className="grid gap-1.5 md:col-span-2"><Label>Observaciones</Label><Textarea rows={3} value={form.observaciones} onChange={(e) => setForm({ ...form, observaciones: e.target.value })} /></div>
           </CardContent>
         </Card>
+
+        <ProductosCard tabla="solicitud_productos" items={productos} onItemsChange={setProductos} />
+
+
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={volver}>Cancelar</Button>

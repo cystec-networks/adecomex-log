@@ -30,20 +30,29 @@ export function ProductosCard({
   tabla,
   parentId,
   readOnly = false,
+  items: itemsProp,
+  onItemsChange,
 }: {
   tabla: ProductosTabla;
-  parentId: string;
+  parentId?: string;
   readOnly?: boolean;
+  /** Modo borrador: líneas en memoria (aún sin registro padre en la base). */
+  items?: any[];
+  onItemsChange?: (items: any[]) => void;
 }) {
+  const local = !!onItemsChange;
   const qc = useQueryClient();
   const parentCol = PARENT_COL[tabla];
   const queryKey = [tabla, parentId];
 
-  const { data: items } = useQuery({
+  const { data: remoteItems } = useQuery({
     queryKey,
+    enabled: !local && !!parentId,
     queryFn: async () =>
       (await (supabase.from(tabla) as any).select("*").eq(parentCol, parentId).is("deleted_at", null).order("item_no")).data ?? [],
   });
+
+  const items = local ? (itemsProp ?? []) : (remoteItems ?? []);
 
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -51,52 +60,70 @@ export function ProductosCard({
 
   const invalidate = () => qc.invalidateQueries({ queryKey });
   const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const totalFob = ((items ?? []) as any[]).reduce((s, it) => s + (Number(it.valor_fob) || 0), 0);
+  const totalFob = (items as any[]).reduce((s, it) => s + (Number(it.valor_fob) || 0), 0);
+
+  const buildPayload = () => ({
+    codigo_arancelario: f.codigo_arancelario.trim() || null,
+    detalle_producto: f.detalle_producto || null,
+    unidad_medida: f.unidad_medida || null,
+    unidad_codigo: f.unidad_codigo || null,
+    cantidad: f.cantidad === "" ? 0 : Number(f.cantidad),
+    peso: f.peso === "" ? 0 : Number(f.peso),
+    valor_fob: f.valor_fob === "" ? 0 : Number(f.valor_fob),
+    product_code: f.product_code?.trim() || null,
+    cod_marca: f.cod_marca?.trim() || null,
+    marca: f.marca?.trim() || null,
+    cod_modelo: f.cod_modelo?.trim() || null,
+    modelo: f.modelo?.trim() || null,
+    especificaciones: f.especificaciones?.trim() || null,
+  });
+
+  const renumerar = (arr: any[]) => arr.map((it, i) => ({ ...it, item_no: i + 1 }));
 
   const guardar = useMutation({
     mutationFn: async () => {
-      const payload: any = {
-        codigo_arancelario: f.codigo_arancelario.trim() || null,
-        detalle_producto: f.detalle_producto || null,
-        unidad_medida: f.unidad_medida || null,
-        unidad_codigo: f.unidad_codigo || null,
-        cantidad: f.cantidad === "" ? 0 : Number(f.cantidad),
-        peso: f.peso === "" ? 0 : Number(f.peso),
-        valor_fob: f.valor_fob === "" ? 0 : Number(f.valor_fob),
-        product_code: f.product_code?.trim() || null,
-        cod_marca: f.cod_marca?.trim() || null,
-        marca: f.marca?.trim() || null,
-        cod_modelo: f.cod_modelo?.trim() || null,
-        modelo: f.modelo?.trim() || null,
-        especificaciones: f.especificaciones?.trim() || null,
-      };
+      const payload: any = buildPayload();
+      if (local) {
+        const arr = items as any[];
+        const next = editingId
+          ? arr.map((it) => (it.id === editingId ? { ...it, ...payload } : it))
+          : [...arr, { ...payload, id: crypto.randomUUID() }];
+        onItemsChange!(renumerar(next));
+        return;
+      }
       if (editingId) {
         const { error } = await (supabase.from(tabla) as any).update(payload).eq("id", editingId);
         if (error) throw error;
       } else {
-        const nextNo = ((items ?? []) as any[]).reduce((m, it) => Math.max(m, it.item_no || 0), 0) + 1;
+        const nextNo = (items as any[]).reduce((m, it) => Math.max(m, it.item_no || 0), 0) + 1;
         const { error } = await (supabase.from(tabla) as any).insert({ ...payload, [parentCol]: parentId, item_no: nextNo });
         if (error) throw error;
       }
     },
     onSuccess: () => {
       toast.success(editingId ? "Producto actualizado" : "Producto agregado");
-      setOpen(false); setEditingId(null); setF(emptyForm); invalidate();
+      setOpen(false); setEditingId(null); setF(emptyForm);
+      if (!local) invalidate();
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   const eliminar = useMutation({
     mutationFn: async (id: string) => {
+      if (local) {
+        onItemsChange!(renumerar((items as any[]).filter((it) => it.id !== id)));
+        return;
+      }
       const { data: userRes } = await supabase.auth.getUser();
       const { error } = await (supabase.from(tabla) as any)
         .update({ deleted_at: new Date().toISOString(), deleted_by: userRes.user?.id ?? null })
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Producto eliminado"); invalidate(); },
+    onSuccess: () => { toast.success("Producto eliminado"); if (!local) invalidate(); },
     onError: (e: any) => toast.error(e.message),
   });
+
 
   const startNew = () => { setEditingId(null); setF(emptyForm); setOpen(true); };
   const startEdit = (it: any) => {
