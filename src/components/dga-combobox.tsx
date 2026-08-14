@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { sanitizeSearchTerm } from "@/lib/search-filter";
+import { sanitizeSearchTerm, normalizarNombre, patronSinTildes } from "@/lib/search-filter";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -89,6 +89,29 @@ export function DgaCombobox({
     })();
     return () => { cancel = true; };
   }, [codigo, value, table, cfg]);
+
+  // Refuerzo: si hay nombre pero no código, resuelve el código por coincidencia exacta
+  // (sin distinguir mayúsculas ni tildes) contra el catálogo DGA.
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  useEffect(() => {
+    let cancel = false;
+    const nombre = (value ?? "").trim();
+    if (!nombre || codigo) return;
+    (async () => {
+      const patron = patronSinTildes(nombre);
+      if (!patron) return;
+      const { data } = await (supabase.from(table) as any)
+        .select(cfg.cols)
+        .ilike(nameCol, patron)
+        .limit(20);
+      if (cancel || !data) return;
+      const matches = (data as Row[]).filter((r) => normalizarNombre(cfg.label(r)) === normalizarNombre(nombre));
+      if (matches.length === 1) onChangeRef.current(cfg.label(matches[0]), matches[0].codigo, matches[0]);
+    })();
+    return () => { cancel = true; };
+  }, [value, codigo, table, cfg, nameCol]);
+
 
   const display = useMemo(() => {
     const nombre = value || resolved;
