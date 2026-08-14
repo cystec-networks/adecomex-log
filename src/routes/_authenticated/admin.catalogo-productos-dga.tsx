@@ -173,8 +173,8 @@ function CatalogoProductosDgaPage() {
         <CardHeader>
           <CardTitle className="text-base">Cargar reporte .xlsx de la DGA</CardTitle>
           <CardDescription>
-            Sube el archivo tal cual lo descargas de SIGA/DGA. Se hace <b>upsert por Código Producto</b>: si ya existe se actualiza, si es nuevo se agrega.
-            Columnas esperadas: Código Producto, Partida Arancelaria, Nombre Producto, Cod. Marca, Marca, Cod. Modelo, Modelo, Unidad, País, Especificaciones, Régimen, Estado.
+            Sube el archivo tal cual lo descargas de SIGA/DGA. Se hace <b>upsert por Código de Producto</b>: si ya existe se actualiza, si es nuevo se agrega.
+            Columnas esperadas: Código de Producto, Partida Arancelaria, Nombre de Producto, Cod. Marca, Marca, Cod. Modelo, Modelo, Unidad, País, Especificaciones, Régimen, Estado. Los encabezados se reconocen sin importar tildes, mayúsculas o espacios.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
