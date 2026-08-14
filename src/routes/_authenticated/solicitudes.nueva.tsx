@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { copiarProductos } from "@/lib/copiar-productos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,8 +57,19 @@ function NuevaSolicitud() {
       : null,
   });
 
+  const { data: productosOrden } = useQuery({
+    queryKey: ["orden-productos", ordenId],
+    enabled: !!ordenId,
+    queryFn: async () => ordenId
+      ? (await supabase.from("orden_productos").select("*").eq("orden_id", ordenId).is("deleted_at", null).order("item_no")).data ?? []
+      : [],
+  });
+
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
+    console.log("DEBUG ordenId", ordenId);
+    console.log("DEBUG ord", ord);
+    console.log("DEBUG productosOrden", productosOrden);
     if (ord && !loaded) {
       setForm((f: any) => ({
         ...f,
@@ -70,9 +80,15 @@ function NuevaSolicitud() {
         observaciones: (ord as any).notas ?? "",
         puerto_llegada: (ord as any).cot_destino ?? "",
       }));
+      const precargados = (productosOrden ?? []).map((p: any, i: number) => ({
+        ...p,
+        id: crypto.randomUUID(),
+        item_no: i + 1,
+      }));
+      setProductos(precargados);
       setLoaded(true);
     }
-  }, [ord, loaded]);
+  }, [ord, productosOrden, loaded]);
 
   const create = useMutation({
     mutationFn: async () => {
@@ -91,10 +107,6 @@ function NuevaSolicitud() {
       if (ordenId) {
         await supabase.from("ordenes").update({ solicitud_id: data.id }).eq("id", ordenId);
         await supabase.from("auditoria").insert({ entidad: "ordenes", entidad_id: ordenId, accion: `solicitud:${data.numero}` });
-        await copiarProductos({
-          origenTabla: "orden_productos", origenCol: "orden_id", origenId: ordenId,
-          destinoTabla: "solicitud_productos", destinoCol: "solicitud_id", destinoId: data.id,
-        });
       }
       return data;
     },
@@ -117,11 +129,11 @@ function NuevaSolicitud() {
         <Button variant="ghost" size="sm" onClick={volver}><ArrowLeft className="h-4 w-4 mr-1" />Volver</Button>
         <div>
           <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
-            {ord ? "Abrir Solicitud desde Orden" : "Nueva solicitud"}
+            {ord ? "Convertir Orden en Solicitud" : "Nueva solicitud"}
             {ord && <Badge variant="outline">← {ord.numero}</Badge>}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {ord ? "Revisa los datos precargados y confirma." : "Formulario rápido de captura."}
+            {ord ? "Revisa los datos y productos precargados de la Orden y confirma la conversión." : "Formulario rápido de captura."}
           </p>
         </div>
       </div>
