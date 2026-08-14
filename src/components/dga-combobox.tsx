@@ -90,6 +90,30 @@ export function DgaCombobox({
     return () => { cancel = true; };
   }, [codigo, value, table, cfg]);
 
+  // Refuerzo: si hay nombre pero no código, resuelve el código por coincidencia exacta
+  // (sin distinguir mayúsculas ni tildes) contra el catálogo DGA.
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  useEffect(() => {
+    let cancel = false;
+    const nombre = (value ?? "").trim();
+    if (!nombre || codigo) return;
+    (async () => {
+      const term = sanitizeSearchTerm(nombre);
+      if (!term) return;
+      const { data } = await (supabase.from(table) as any)
+        .select(cfg.cols)
+        .ilike(nameCol, `%${term}%`)
+        .limit(20);
+      if (cancel || !data) return;
+      const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+      const matches = (data as Row[]).filter((r) => norm(cfg.label(r)) === norm(nombre));
+      if (matches.length === 1) onChangeRef.current(cfg.label(matches[0]), matches[0].codigo, matches[0]);
+    })();
+    return () => { cancel = true; };
+  }, [value, codigo, table, cfg, nameCol]);
+
+
   const display = useMemo(() => {
     const nombre = value || resolved;
     if (!nombre && !codigo) return "";
