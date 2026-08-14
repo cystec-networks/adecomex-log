@@ -140,6 +140,10 @@ function NuevaCotizacion() {
           </CardContent>
         </Card>
 
+        <ProductosCard tabla="cotizacion_productos" items={productos} onItemsChange={setProductos} />
+
+
+
         <Card>
           <CardHeader><CardTitle className="text-base">Notas / observaciones</CardTitle></CardHeader>
           <CardContent><Textarea rows={4} value={form.notas} onChange={(e) => set("notas", e.target.value)} /></CardContent>
