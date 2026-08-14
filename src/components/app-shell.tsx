@@ -67,6 +67,17 @@ type MenuEntry =
 
 const GROUPS: Group[] = [
   {
+    id: "comercial",
+    label: "COMERCIAL",
+    icon: FileSpreadsheet,
+    items: [
+      { to: "/cotizaciones", label: "Cotizaciones", icon: FileSpreadsheet,
+        match: (p) => p === "/cotizaciones" || p.startsWith("/cotizaciones/") },
+      { to: "/ordenes", label: "Órdenes", icon: ClipboardList,
+        match: (p) => p === "/ordenes" || p.startsWith("/ordenes/") },
+    ],
+  },
+  {
     id: "solicitudes",
     label: "SOLICITUDES",
     icon: Inbox,
@@ -80,6 +91,7 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/copiloto") },
     ],
   },
+
   {
     id: "expedientes",
     label: "EXPEDIENTES",
