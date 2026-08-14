@@ -234,6 +234,10 @@ function NuevaSolicitud() {
           </CardContent>
         </Card>
 
+        <ProductosCard tabla="solicitud_productos" items={productos} onItemsChange={setProductos} />
+
+
+
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={volver}>Cancelar</Button>
           <Button type="submit" disabled={create.isPending}>Registrar solicitud</Button>
