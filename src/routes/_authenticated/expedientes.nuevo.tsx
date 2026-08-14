@@ -92,6 +92,22 @@ function NuevoExpediente() {
     }
   }, [sol, loaded]);
 
+  useEffect(() => {
+    if (ord && !loaded) {
+      setForm((f) => ({
+        ...f,
+        cliente_id: (ord as any).cliente_id ?? "",
+        bl_awb: (ord as any).bl_awb ?? f.bl_awb,
+        factura_comercial: (ord as any).factura_comercial ?? f.factura_comercial,
+        pais_origen: (ord as any).cot_origen ?? "",
+        incoterm: (ord as any).cot_incoterm ?? "",
+        tipo_carga: (ord as any).cot_tipo_mercancia ?? "",
+        observaciones: (ord as any).notas ?? "",
+      }));
+      setLoaded(true);
+    }
+  }, [ord, loaded]);
+
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
   const confirmar = useMutation({
