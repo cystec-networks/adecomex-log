@@ -198,17 +198,9 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
               <Label>Código de tramitador (BrokerEmployeeCode)</Label>
               <Input value={broker.brokerEmployeeCode} onChange={(e) => setBroker({ ...broker, brokerEmployeeCode: e.target.value })} />
             </div>
-            <div className="grid gap-1.5">
-              <Label>Código del declarante (DeclarantCode)</Label>
-              <Input value={broker.declarantCode} onChange={(e) => setBroker({ ...broker, declarantCode: e.target.value })} placeholder="CED00112345678" />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Nombre del declarante</Label>
-              <Input value={broker.declarantName} onChange={(e) => setBroker({ ...broker, declarantName: e.target.value })} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Nacionalidad del declarante</Label>
-              <Input value={broker.declarantNationality} onChange={(e) => setBroker({ ...broker, declarantNationality: e.target.value })} placeholder="DO" />
+            <div className="rounded-md border bg-muted/30 p-2.5 text-[11px] text-muted-foreground">
+              El Declarante (DeclarantCode / DeclarantName / DeclarantNationality) se toma del <strong>Importador</strong> del expediente,
+              igual que en el XML de referencia. No se configura aquí.
             </div>
             <div className="grid gap-1.5">
               <Label>Tipo de despacho SIGA (ClearanceType)</Label>
@@ -219,8 +211,12 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
               <Input value={broker.transportCompanyCode} onChange={(e) => setBroker({ ...broker, transportCompanyCode: e.target.value })} />
             </div>
             <div className="grid gap-1.5">
-              <Label>Nacionalidad del transportista</Label>
-              <Input value={broker.transportNationality} onChange={(e) => setBroker({ ...broker, transportNationality: e.target.value })} placeholder="DO" />
+              <Label>Nacionalidad del transportista (código DGA)</Label>
+              <Input value={broker.transportNationality} onChange={(e) => setBroker({ ...broker, transportNationality: e.target.value })} placeholder="214" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Nacionalidad por defecto (código DGA)</Label>
+              <Input value={broker.defaultNationality} onChange={(e) => setBroker({ ...broker, defaultNationality: e.target.value })} placeholder="214 = República Dominicana" />
             </div>
           </div>
           <DialogFooter>
