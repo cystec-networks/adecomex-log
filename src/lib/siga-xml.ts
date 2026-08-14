@@ -236,7 +236,7 @@ export function buildImportDUAXml(
     T("BrokerCompanyCode", personCode(broker.brokerCompanyCode, nat)),
     T("DeclarantCode", cleanId(broker.declarantCode)),
     T("DeclarantName", broker.declarantName),
-    T("DeclarantNationality", broker.declarantNationality || nat),
+    T("DeclarantNationality", migrarNat(broker.declarantNationality, nat)),
     T("RegimenCode", resolveRegimenCode(exp, regimenMap)),
     T("AgreementCode", exp.acuerdo_codigo),
     T("TotalFOB", num(exp.total_fob)),
