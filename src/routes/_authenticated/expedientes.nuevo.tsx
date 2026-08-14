@@ -97,8 +97,6 @@ function NuevoExpediente() {
       setForm((f) => ({
         ...f,
         cliente_id: (ord as any).cliente_id ?? "",
-        bl_awb: (ord as any).bl_awb ?? f.bl_awb,
-        factura_comercial: (ord as any).factura_comercial ?? f.factura_comercial,
         pais_origen: (ord as any).cot_origen ?? "",
         incoterm: (ord as any).cot_incoterm ?? "",
         tipo_carga: (ord as any).cot_tipo_mercancia ?? "",
@@ -272,7 +270,13 @@ function NuevoExpediente() {
       </Card>
 
       <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => nav({ to: sol ? "/solicitudes/$id" : "/expedientes", params: sol ? { id: sol.id } : undefined as any })}>Cancelar</Button>
+        <Button variant="outline" onClick={() =>
+          ord
+            ? nav({ to: "/ordenes/$id", params: { id: ord.id } })
+            : nav({ to: sol ? "/solicitudes/$id" : "/expedientes", params: sol ? { id: sol.id } : undefined as any })
+        }>
+          Cancelar
+        </Button>
         <Button onClick={() => confirmar.mutate()} disabled={confirmar.isPending}>
           <Check className="h-4 w-4 mr-1" />{confirmar.isPending ? "Creando…" : "Confirmar conversión"}
         </Button>
