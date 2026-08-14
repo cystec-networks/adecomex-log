@@ -127,8 +127,16 @@ function DetalleSolicitud() {
         entidad_id: ordenId,
         accion: `consolidada:${s?.numero ?? ""}`,
       });
+      await copiarProductos({
+        origenTabla: "orden_productos", origenCol: "orden_id", origenId: ordenId,
+        destinoTabla: "solicitud_productos", destinoCol: "solicitud_id", destinoId: id,
+      });
     },
-    onSuccess: () => { toast.success("Orden agregada a la solicitud"); refreshOrdenes(); },
+    onSuccess: () => {
+      toast.success("Orden agregada a la solicitud");
+      refreshOrdenes();
+      qc.invalidateQueries({ queryKey: ["solicitud_productos", id] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
