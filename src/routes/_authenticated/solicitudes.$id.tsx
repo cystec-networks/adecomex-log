@@ -85,6 +85,59 @@ function DetalleSolicitud() {
     enabled: !!s,
   });
 
+  const { data: ordenesVinculadas } = useQuery({
+    queryKey: ["ordenes-de-solicitud", id],
+    queryFn: async () =>
+      (await supabase
+        .from("ordenes")
+        .select("id,numero,estado,cot_tipo_mercancia,clientes(nombre)")
+        .eq("solicitud_id", id)
+        .order("numero")).data ?? [],
+  });
+
+  const { data: ordenesLibres } = useQuery({
+    queryKey: ["ordenes-libres"],
+    queryFn: async () =>
+      (await supabase
+        .from("ordenes")
+        .select("id,numero,clientes(nombre)")
+        .is("solicitud_id", null)
+        .order("numero")).data ?? [],
+  });
+
+  const refreshOrdenes = () => {
+    qc.invalidateQueries({ queryKey: ["ordenes-de-solicitud", id] });
+    qc.invalidateQueries({ queryKey: ["ordenes-libres"] });
+    qc.invalidateQueries({ queryKey: ["ordenes"] });
+  };
+
+  const agregarOrden = useMutation({
+    mutationFn: async (ordenId: string) => {
+      const { data: orden } = await supabase.from("ordenes").select("estado").eq("id", ordenId).maybeSingle();
+      const { error } = await supabase.from("ordenes").update({ solicitud_id: id }).eq("id", ordenId);
+      if (error) throw error;
+      if (orden?.estado === "abierta") {
+        await supabase.from("ordenes").update({ estado: "en_transito" }).eq("id", ordenId).eq("estado", "abierta");
+      }
+      await supabase.from("auditoria").insert({
+        entidad: "ordenes",
+        entidad_id: ordenId,
+        accion: `consolidada:${s?.numero ?? ""}`,
+      });
+    },
+    onSuccess: () => { toast.success("Orden agregada a la solicitud"); refreshOrdenes(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const quitarOrden = useMutation({
+    mutationFn: async (ordenId: string) => {
+      const { error } = await supabase.from("ordenes").update({ solicitud_id: null }).eq("id", ordenId);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Orden desvinculada"); refreshOrdenes(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
 
 
   if (!s || !form) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
