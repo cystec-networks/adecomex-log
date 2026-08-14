@@ -14,6 +14,7 @@ export type BrokerConfig = {
   clearanceType: string;
   transportCompanyCode: string;
   transportNationality: string;
+  /** Código numérico DGA del país (214 = República Dominicana) */
   defaultNationality: string;
 };
 
@@ -25,19 +26,28 @@ export const DEFAULT_BROKER: BrokerConfig = {
   brokerRnc: "",
   brokerName: "ADECOMEX SRL",
   declarantCode: "",
-  declarantName: "ADECOMEX SRL",
-  declarantNationality: "DO",
+  declarantName: "",
+  declarantNationality: "",
   clearanceType: "IM4",
   transportCompanyCode: "",
-  transportNationality: "DO",
-  defaultNationality: "DO",
+  transportNationality: "214",
+  defaultNationality: "214",
 };
+
+// Migra valores ISO alfa-2 antiguos ("DO") al código numérico DGA (214)
+function migrarNat(v: string | undefined, fallback: string): string {
+  if (!v) return fallback;
+  return /^[A-Za-z]{2,3}$/.test(v) ? "214" : v;
+}
 
 export function loadBrokerConfig(): BrokerConfig {
   try {
     const raw = localStorage.getItem(BROKER_KEY);
     if (!raw) return DEFAULT_BROKER;
-    return { ...DEFAULT_BROKER, ...JSON.parse(raw) };
+    const cfg = { ...DEFAULT_BROKER, ...JSON.parse(raw) } as BrokerConfig;
+    cfg.defaultNationality = migrarNat(cfg.defaultNationality, "214");
+    cfg.transportNationality = migrarNat(cfg.transportNationality, "214");
+    return cfg;
   } catch {
     return DEFAULT_BROKER;
   }
@@ -74,12 +84,35 @@ function num(v: unknown): string {
   return isFinite(n) ? String(n) : "0";
 }
 
-// Formato de identificación SIGA: [RNC|CED|PAS]<número>
-function personCode(id?: string | null): string {
+// Formato de identificación SIGA: [RNC|CED|PAS] + código país DGA + número
+// Ej.: RNC + 214 + 130594181 => RNC214130594181
+export function personCode(id?: string | null, countryCode = "214"): string {
   if (!id) return "";
-  const clean = String(id).trim().replace(/[-\s]/g, "");
-  if (/^(RNC|CED|PAS)/i.test(clean)) return clean.toUpperCase();
-  return `RNC${clean}`;
+  let clean = String(id).trim().replace(/[-\s.]/g, "").toUpperCase();
+  let prefix = "RNC";
+  const m = /^(RNC|CED|PAS)(.*)$/.exec(clean);
+  if (m) { prefix = m[1]; clean = m[2]; }
+  const cc = String(countryCode || "").trim();
+  if (cc && clean.startsWith(cc)) return `${prefix}${clean}`;
+  return `${prefix}${cc}${clean}`;
+}
+
+// Códigos RDOC de la DGA (catálogo de documentos requeridos)
+export const RDOC = {
+  FACTURA_COMERCIAL: "RDOC-001",
+  BL_MANIFIESTO: "RDOC-010-R1-1",
+} as const;
+
+// Régimen: nombre mostrado en el formulario -> código SIGA
+const REGIMEN_CODIGOS: Record<string, string> = {
+  "despacho a consumo": "1",
+};
+
+export function resolveRegimenCode(exp: any, regimenMap?: Record<string, string>): string {
+  if (exp?.regimen_codigo) return String(exp.regimen_codigo);
+  const nombre = String(exp?.regimen_aduanero ?? "").trim().toLowerCase();
+  if (!nombre) return "";
+  return regimenMap?.[nombre] ?? REGIMEN_CODIGOS[nombre] ?? "";
 }
 
 export type ValidationIssue = { field: string; label: string };
@@ -110,8 +143,6 @@ export function validateExpediente(exp: any, items: any[], broker: BrokerConfig)
   need(broker.brokerCompanyCode, "broker.company", "Código de agencia (BrokerCompanyCode)");
   need(broker.brokerEmployeeCode, "broker.employee", "Código de tramitador (BrokerEmployeeCode)");
   need(broker.brokerRnc, "broker.rnc", "RNC de la agencia");
-  need(broker.declarantCode, "broker.declarantCode", "Código del declarante (DeclarantCode)");
-  need(broker.declarantName, "broker.declarantName", "Nombre del declarante");
   need(broker.clearanceType, "broker.clearanceType", "Tipo de despacho SIGA (ClearanceType)");
   return missing;
 }
@@ -121,26 +152,36 @@ export function validateExpediente(exp: any, items: any[], broker: BrokerConfig)
 export function pendingDgaCodes(exp: any): ValidationIssue[] {
   const pending: ValidationIssue[] = [];
   const check = (v: any, field: string, label: string) => { if (!v) pending.push({ field, label }); };
-  check(exp?.regimen_codigo, "regimen_codigo", "Régimen aduanero (RegimenCode)");
+  check(resolveRegimenCode(exp), "regimen_codigo", "Régimen aduanero (RegimenCode)");
   check(exp?.metodo_transporte_codigo, "metodo_transporte_codigo", "Método de transporte (TransportMethod)");
   check(exp?.acuerdo_codigo, "acuerdo_codigo", "Acuerdo / Preferencia comercial (AgreementCode)");
   check(exp?.pais_procedencia_codigo, "pais_procedencia_codigo", "País de procedencia (DepartureCountryCode)");
   return pending;
 }
 
-export function buildImportDUAXml(exp: any, items: any[], broker: BrokerConfig): string {
+export function buildImportDUAXml(
+  exp: any,
+  items: any[],
+  broker: BrokerConfig,
+  regimenMap?: Record<string, string>,
+): string {
   const cliente = exp.clientes ?? {};
-  const nat = broker.defaultNationality || "DO";
-  const importerCode = personCode(cliente.rnc);
+  const nat = broker.defaultNationality || "214";
+  // El declarante es el propio Importador (igual que en el modelo de referencia)
+  const importerCode = personCode(cliente.rnc, nat);
   const origen = exp.pais_origen_codigo ?? "";
 
   const T = (name: string, value: unknown, indent = "    ") =>
     `${indent}<${name}>${value === null || value === undefined ? "" : esc(value)}</${name}>`;
 
   const cabecera = [
+    T("FormNo", ""),
+    T("DeclarationDate", ""),
     T("ClearanceType", broker.clearanceType),
     T("AreaCode", exp.area_aduanera_codigo),
     T("BLNo", exp.bl_awb),
+    T("ManifestNo", ""),
+    T("CargoControlNo", ""),
     T("ConsigneeCode", importerCode),
     T("ConsigneeName", cliente.nombre),
     T("ConsigneeNationality", nat),
@@ -158,10 +199,10 @@ export function buildImportDUAXml(exp: any, items: any[], broker: BrokerConfig):
     T("ImporterNationality", nat),
     T("BrokerEmployeeCode", broker.brokerEmployeeCode),
     T("BrokerCompanyCode", broker.brokerCompanyCode),
-    T("DeclarantCode", broker.declarantCode),
-    T("DeclarantName", broker.declarantName),
-    T("DeclarantNationality", broker.declarantNationality || nat),
-    T("RegimenCode", exp.regimen_codigo),
+    T("DeclarantCode", importerCode),
+    T("DeclarantName", cliente.nombre),
+    T("DeclarantNationality", nat),
+    T("RegimenCode", resolveRegimenCode(exp, regimenMap)),
     T("AgreementCode", exp.acuerdo_codigo),
     T("TotalFOB", num(exp.total_fob)),
     T("InsuranceValue", num(exp.seguro)),
@@ -175,7 +216,7 @@ export function buildImportDUAXml(exp: any, items: any[], broker: BrokerConfig):
 
   const supplier = `    <ImpDeclarationSupplier>
 ${T("ForeignSupplierName", exp.suplidor, "      ")}
-${T("ForeignSupplierCode", personCode(exp.suplidor_rnc), "      ")}
+${T("ForeignSupplierCode", personCode(exp.suplidor_rnc, origen), "      ")}
 ${T("ForeignSupplierNationality", origen, "      ")}
     </ImpDeclarationSupplier>`;
 
@@ -217,10 +258,10 @@ ${T("Remark", "", "      ")}
   }).join("\n");
 
   const docs: Array<{ code: string; desc: string; num: string }> = [];
-  if (exp.factura_comercial) docs.push({ code: "380", desc: "Factura comercial", num: exp.factura_comercial });
-  if (exp.bl_awb) docs.push({ code: "705", desc: "Conocimiento de embarque / AWB", num: exp.bl_awb });
-  if (exp.numero_certificado_origen) docs.push({ code: "861", desc: "Certificado de Origen", num: exp.numero_certificado_origen });
-  if (exp.numero_vuce) docs.push({ code: "VUCE", desc: "Solicitud de Permiso VUCE", num: exp.numero_vuce });
+  if (exp.factura_comercial) docs.push({ code: RDOC.FACTURA_COMERCIAL, desc: "Factura comercial", num: exp.factura_comercial });
+  if (exp.bl_awb) docs.push({ code: RDOC.BL_MANIFIESTO, desc: "Conocimiento de embarque / Manifiesto", num: exp.bl_awb });
+  if (exp.numero_certificado_origen) docs.push({ code: "", desc: "Certificado de Origen", num: exp.numero_certificado_origen });
+  if (exp.numero_vuce) docs.push({ code: "", desc: "Solicitud de Permiso VUCE", num: exp.numero_vuce });
 
   const documentos = docs.map((d) => `    <ImpDeclarationDocument>
 ${T("RequiredDocumentCode", d.code, "      ")}
