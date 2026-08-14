@@ -207,7 +207,7 @@ export function buildImportDUAXml(
 
   const supplier = `    <ImpDeclarationSupplier>
 ${T("ForeignSupplierName", exp.suplidor, "      ")}
-${T("ForeignSupplierCode", personCode(exp.suplidor_rnc), "      ")}
+${T("ForeignSupplierCode", personCode(exp.suplidor_rnc, origen), "      ")}
 ${T("ForeignSupplierNationality", origen, "      ")}
     </ImpDeclarationSupplier>`;
 
