@@ -83,19 +83,20 @@ function DetalleOrden() {
             {(o as any).clientes?.nombre ?? "Sin cliente"} · creada el {fmtLocalDate(o.created_at?.slice(0, 10))}
           </p>
         </div>
-        {expedienteVinculado ? (
+        {solicitudVinculada ? (
           <Button variant="outline" asChild>
-            <Link to="/expedientes/$id" params={{ id: expedienteVinculado.id }}>
-              <FolderPlus className="h-4 w-4 mr-1" />Ver Expediente {expedienteVinculado.numero} ↗
+            <Link to="/solicitudes/$id" params={{ id: solicitudVinculada.id }}>
+              <FolderPlus className="h-4 w-4 mr-1" />Ver Solicitud {solicitudVinculada.numero} ↗
             </Link>
           </Button>
         ) : canEdit ? (
           <Button variant="outline" asChild>
-            <Link to="/expedientes/nuevo" search={{ orden: id }}>
-              <FolderPlus className="h-4 w-4 mr-1" />Crear Expediente
+            <Link to="/solicitudes/nueva" search={{ orden: id }}>
+              <FolderPlus className="h-4 w-4 mr-1" />Abrir Solicitud
             </Link>
           </Button>
         ) : null}
+
         {canEdit && (
           <Button onClick={() => save.mutate()} disabled={save.isPending}><Save className="h-4 w-4 mr-1" />Guardar cambios</Button>
         )}
