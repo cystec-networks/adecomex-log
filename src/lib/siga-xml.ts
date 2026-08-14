@@ -150,19 +150,29 @@ export function pendingDgaCodes(exp: any): ValidationIssue[] {
   return pending;
 }
 
-export function buildImportDUAXml(exp: any, items: any[], broker: BrokerConfig): string {
+export function buildImportDUAXml(
+  exp: any,
+  items: any[],
+  broker: BrokerConfig,
+  regimenMap?: Record<string, string>,
+): string {
   const cliente = exp.clientes ?? {};
-  const nat = broker.defaultNationality || "DO";
-  const importerCode = personCode(cliente.rnc);
+  const nat = broker.defaultNationality || "214";
+  // El declarante es el propio Importador (igual que en el modelo de referencia)
+  const importerCode = personCode(cliente.rnc, nat);
   const origen = exp.pais_origen_codigo ?? "";
 
   const T = (name: string, value: unknown, indent = "    ") =>
     `${indent}<${name}>${value === null || value === undefined ? "" : esc(value)}</${name}>`;
 
   const cabecera = [
+    T("FormNo", ""),
+    T("DeclarationDate", ""),
     T("ClearanceType", broker.clearanceType),
     T("AreaCode", exp.area_aduanera_codigo),
     T("BLNo", exp.bl_awb),
+    T("ManifestNo", ""),
+    T("CargoControlNo", ""),
     T("ConsigneeCode", importerCode),
     T("ConsigneeName", cliente.nombre),
     T("ConsigneeNationality", nat),
@@ -180,10 +190,10 @@ export function buildImportDUAXml(exp: any, items: any[], broker: BrokerConfig):
     T("ImporterNationality", nat),
     T("BrokerEmployeeCode", broker.brokerEmployeeCode),
     T("BrokerCompanyCode", broker.brokerCompanyCode),
-    T("DeclarantCode", broker.declarantCode),
-    T("DeclarantName", broker.declarantName),
-    T("DeclarantNationality", broker.declarantNationality || nat),
-    T("RegimenCode", exp.regimen_codigo),
+    T("DeclarantCode", importerCode),
+    T("DeclarantName", cliente.nombre),
+    T("DeclarantNationality", nat),
+    T("RegimenCode", resolveRegimenCode(exp, regimenMap)),
     T("AgreementCode", exp.acuerdo_codigo),
     T("TotalFOB", num(exp.total_fob)),
     T("InsuranceValue", num(exp.seguro)),
