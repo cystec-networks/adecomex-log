@@ -92,16 +92,16 @@ function DetalleOrden() {
           o.estado === "en_transito" ? (
             <Button variant="outline" asChild>
               <Link to="/solicitudes/nueva" search={{ orden: id }}>
-                <FolderPlus className="h-4 w-4 mr-1" />Abrir Solicitud
+                <FolderPlus className="h-4 w-4 mr-1" />Convertir en Solicitud
               </Link>
             </Button>
           ) : (
             <Button
               variant="outline"
               disabled
-              title="Cambia el estado a 'En Tránsito' para poder abrir la Solicitud"
+              title="Cambia el estado a 'En Tránsito' para poder convertir en Solicitud"
             >
-              <FolderPlus className="h-4 w-4 mr-1" />Abrir Solicitud
+              <FolderPlus className="h-4 w-4 mr-1" />Convertir en Solicitud
             </Button>
           )
         ) : null}
