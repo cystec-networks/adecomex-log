@@ -24,7 +24,7 @@ export type BrokerConfig = {
 const BROKER_KEY = "adecomex.siga.broker";
 
 export const DEFAULT_BROKER: BrokerConfig = {
-  brokerCompanyCode: "",
+  brokerCompanyCode: "130481301",
   brokerEmployeeCode: "072-08",
   brokerRnc: "130481301",
   brokerName: "ADECOMEX SRL",
@@ -50,6 +50,12 @@ export function loadBrokerConfig(): BrokerConfig {
     const cfg = { ...DEFAULT_BROKER, ...JSON.parse(raw) } as BrokerConfig;
     cfg.defaultNationality = migrarNat(cfg.defaultNationality, "214");
     cfg.transportNationality = migrarNat(cfg.transportNationality, "214");
+    cfg.declarantNationality = migrarNat(cfg.declarantNationality, "214");
+    // BrokerCompanyCode debe ser el RNC de la agencia, no la licencia (072-08)
+    const bcc = cleanId(cfg.brokerCompanyCode);
+    if (!bcc || bcc.length < 9 || bcc === cleanId(cfg.brokerEmployeeCode)) {
+      cfg.brokerCompanyCode = DEFAULT_BROKER.brokerCompanyCode;
+    }
     // RNC de relleno usado en pruebas (ATIVA) → RNC real de ADECOMEX
     if (!cfg.brokerRnc || cfg.brokerRnc.replace(/\D/g, "") === "130594181") {
       cfg.brokerRnc = DEFAULT_BROKER.brokerRnc;
