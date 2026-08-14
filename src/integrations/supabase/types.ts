@@ -734,6 +734,96 @@ export type Database = {
           },
         ]
       }
+      cotizaciones: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          created_by: string | null
+          destino: string | null
+          eliminado_en: string | null
+          eliminado_por: string | null
+          estado: Database["public"]["Enums"]["cotizacion_estado"]
+          fecha_emision: string
+          fecha_vigencia: string | null
+          id: string
+          incoterm: string | null
+          moneda: Database["public"]["Enums"]["moneda"]
+          notas: string | null
+          numero: string | null
+          orden_id: string | null
+          origen: string | null
+          peso_kg: number | null
+          tarifa_propuesta: number | null
+          tipo_mercancia: string | null
+          updated_at: string
+          vendedor_id: string | null
+          volumen_m3: number | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          destino?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
+          estado?: Database["public"]["Enums"]["cotizacion_estado"]
+          fecha_emision?: string
+          fecha_vigencia?: string | null
+          id?: string
+          incoterm?: string | null
+          moneda?: Database["public"]["Enums"]["moneda"]
+          notas?: string | null
+          numero?: string | null
+          orden_id?: string | null
+          origen?: string | null
+          peso_kg?: number | null
+          tarifa_propuesta?: number | null
+          tipo_mercancia?: string | null
+          updated_at?: string
+          vendedor_id?: string | null
+          volumen_m3?: number | null
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          destino?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
+          estado?: Database["public"]["Enums"]["cotizacion_estado"]
+          fecha_emision?: string
+          fecha_vigencia?: string | null
+          id?: string
+          incoterm?: string | null
+          moneda?: Database["public"]["Enums"]["moneda"]
+          notas?: string | null
+          numero?: string | null
+          orden_id?: string | null
+          origen?: string | null
+          peso_kg?: number | null
+          tarifa_propuesta?: number | null
+          tipo_mercancia?: string | null
+          updated_at?: string
+          vendedor_id?: string | null
+          volumen_m3?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotizaciones_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizaciones_orden_fk"
+            columns: ["orden_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cuentas_por_pagar: {
         Row: {
           created_at: string
@@ -2758,6 +2848,102 @@ export type Database = {
           },
         ]
       }
+      ordenes: {
+        Row: {
+          cliente_id: string | null
+          cot_destino: string | null
+          cot_fecha_emision: string | null
+          cot_fecha_vigencia: string | null
+          cot_incoterm: string | null
+          cot_moneda: Database["public"]["Enums"]["moneda"] | null
+          cot_notas: string | null
+          cot_numero: string | null
+          cot_origen: string | null
+          cot_peso_kg: number | null
+          cot_tarifa_propuesta: number | null
+          cot_tipo_mercancia: string | null
+          cot_volumen_m3: number | null
+          cotizacion_id: string | null
+          created_at: string
+          created_by: string | null
+          eliminado_en: string | null
+          eliminado_por: string | null
+          estado: string
+          id: string
+          notas: string | null
+          numero: string | null
+          updated_at: string
+          vendedor_id: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          cot_destino?: string | null
+          cot_fecha_emision?: string | null
+          cot_fecha_vigencia?: string | null
+          cot_incoterm?: string | null
+          cot_moneda?: Database["public"]["Enums"]["moneda"] | null
+          cot_notas?: string | null
+          cot_numero?: string | null
+          cot_origen?: string | null
+          cot_peso_kg?: number | null
+          cot_tarifa_propuesta?: number | null
+          cot_tipo_mercancia?: string | null
+          cot_volumen_m3?: number | null
+          cotizacion_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
+          estado?: string
+          id?: string
+          notas?: string | null
+          numero?: string | null
+          updated_at?: string
+          vendedor_id?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          cot_destino?: string | null
+          cot_fecha_emision?: string | null
+          cot_fecha_vigencia?: string | null
+          cot_incoterm?: string | null
+          cot_moneda?: Database["public"]["Enums"]["moneda"] | null
+          cot_notas?: string | null
+          cot_numero?: string | null
+          cot_origen?: string | null
+          cot_peso_kg?: number | null
+          cot_tarifa_propuesta?: number | null
+          cot_tipo_mercancia?: string | null
+          cot_volumen_m3?: number | null
+          cotizacion_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
+          estado?: string
+          id?: string
+          notas?: string | null
+          numero?: string | null
+          updated_at?: string
+          vendedor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordenes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordenes_cotizacion_id_fkey"
+            columns: ["cotizacion_id"]
+            isOneToOne: true
+            referencedRelation: "cotizaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permisos: {
         Row: {
           cliente_id: string | null
@@ -3888,6 +4074,7 @@ export type Database = {
         Args: { _dias_tomados_ultimo_anio: number; _fecha_ingreso: string }
         Returns: number
       }
+      expirar_cotizaciones_vencidas: { Args: never; Returns: number }
       immutable_unaccent: { Args: { "": string }; Returns: string }
       marcar_password_cambiada_cliente: { Args: never; Returns: undefined }
       marcar_password_cambiada_estudiante: { Args: never; Returns: undefined }
@@ -3907,6 +4094,14 @@ export type Database = {
         | "contabilidad"
         | "academia"
         | "rrhh"
+        | "vendedor"
+      cotizacion_estado:
+        | "solicitada"
+        | "en_proceso"
+        | "cotizada"
+        | "aprobada"
+        | "rechazada"
+        | "expirada"
       cuota_estado: "pendiente" | "pagada" | "disputada"
       cxp_estado: "pendiente" | "parcial" | "pagado" | "disputado"
       doc_estado:
@@ -4142,6 +4337,15 @@ export const Constants = {
         "contabilidad",
         "academia",
         "rrhh",
+        "vendedor",
+      ],
+      cotizacion_estado: [
+        "solicitada",
+        "en_proceso",
+        "cotizada",
+        "aprobada",
+        "rechazada",
+        "expirada",
       ],
       cuota_estado: ["pendiente", "pagada", "disputada"],
       cxp_estado: ["pendiente", "parcial", "pagado", "disputado"],
