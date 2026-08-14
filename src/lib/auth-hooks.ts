@@ -13,7 +13,9 @@ export type AppRole =
   | "finanzas"
   | "contabilidad"
   | "academia"
-  | "rrhh";
+  | "rrhh"
+  | "vendedor";
+
 
 export function useCurrentUser() {
   const [user, setUser] = useState<User | null>(null);
