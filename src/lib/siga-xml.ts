@@ -356,7 +356,7 @@ ${T("Remark", desc, "   ")}
   // Emisor de los documentos: se toma de los datos capturados en el expediente,
   // con el cliente y el agente (ADECOMEX) como respaldo cuando falten.
   const cli = exp.clientes ?? {};
-  const tel = String(cli.telefono || broker.brokerRnc ? cli.telefono || "" : "").trim() || "809-000-0000";
+  const tel = String(cli.telefono || "").trim() || "809-000-0000";
   const mail = String(cli.email || "").trim() || "info@adecomex.com.do";
   const nombreSuplidor = (exp.suplidor || "").trim();
   const nombreNaviera = (exp.naviera || "").trim();
