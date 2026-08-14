@@ -25,11 +25,11 @@ const BROKER_KEY = "adecomex.siga.broker";
 
 export const DEFAULT_BROKER: BrokerConfig = {
   brokerCompanyCode: "",
-  brokerEmployeeCode: "",
-  brokerRnc: "",
+  brokerEmployeeCode: "072-08",
+  brokerRnc: "130481301",
   brokerName: "ADECOMEX SRL",
-  declarantCode: "",
-  declarantName: "",
+  declarantCode: "00108459645",
+  declarantName: "FRANCISCO ENERIO LOPEZ MARTINEZ",
   declarantNationality: "214",
   clearanceType: "IM4",
   transportCompanyCode: "",
@@ -50,11 +50,19 @@ export function loadBrokerConfig(): BrokerConfig {
     const cfg = { ...DEFAULT_BROKER, ...JSON.parse(raw) } as BrokerConfig;
     cfg.defaultNationality = migrarNat(cfg.defaultNationality, "214");
     cfg.transportNationality = migrarNat(cfg.transportNationality, "214");
+    // RNC de relleno usado en pruebas (ATIVA) → RNC real de ADECOMEX
+    if (!cfg.brokerRnc || cfg.brokerRnc.replace(/\D/g, "") === "130594181") {
+      cfg.brokerRnc = DEFAULT_BROKER.brokerRnc;
+    }
+    if (!cfg.declarantCode) cfg.declarantCode = DEFAULT_BROKER.declarantCode;
+    if (!cfg.declarantName) cfg.declarantName = DEFAULT_BROKER.declarantName;
+    if (!cfg.brokerEmployeeCode) cfg.brokerEmployeeCode = DEFAULT_BROKER.brokerEmployeeCode;
     return cfg;
   } catch {
     return DEFAULT_BROKER;
   }
 }
+
 
 export function saveBrokerConfig(cfg: BrokerConfig) {
   localStorage.setItem(BROKER_KEY, JSON.stringify(cfg));
