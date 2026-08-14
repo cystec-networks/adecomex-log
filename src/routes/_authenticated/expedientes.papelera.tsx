@@ -72,6 +72,26 @@ function Papelera() {
       .order("eliminado_en", { ascending: false })).data ?? [],
   });
 
+  const cotizaciones = useQuery({
+    queryKey: ["papelera-cotizaciones"],
+    enabled: !!isAdmin,
+    queryFn: async () => (await supabase
+      .from("cotizaciones")
+      .select("*, clientes(nombre)")
+      .not("eliminado_en", "is", null)
+      .order("eliminado_en", { ascending: false })).data ?? [],
+  });
+
+  const ordenes = useQuery({
+    queryKey: ["papelera-ordenes"],
+    enabled: !!isAdmin,
+    queryFn: async () => (await supabase
+      .from("ordenes")
+      .select("*, clientes(nombre)")
+      .not("eliminado_en", "is", null)
+      .order("eliminado_en", { ascending: false })).data ?? [],
+  });
+
   const restoreMut = useMutation({
     mutationFn: async ({ kind, id }: { kind: Kind; id: string }) => {
       const { error } = await supabase
@@ -86,7 +106,10 @@ function Papelera() {
         solicitudes: "Solicitud restaurada",
         permisos: "Permiso restaurado",
         transportes: "Transporte restaurado",
+        cotizaciones: "Cotización restaurada",
+        ordenes: "Orden restaurada",
       };
+
       toast.success(label[vars.kind]);
       qc.invalidateQueries({ queryKey: [vars.kind] });
       qc.invalidateQueries({ queryKey: [`papelera-${vars.kind}`] });
