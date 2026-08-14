@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { TIPOS_MERCANCIA } from "@/lib/estados-cotizacion";
 import { useMyRoles } from "@/lib/auth-hooks";
+import { ProductosCard } from "@/components/productos-card";
+
 
 export const Route = createFileRoute("/_authenticated/ordenes/nueva")({
   component: NuevaOrden,

@@ -31,6 +31,8 @@ function NuevaCotizacion() {
     fecha_emision: new Date().toISOString().slice(0, 10), fecha_vigencia: "", notas: "",
   });
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
+  const [productos, setProductos] = useState<any[]>([]);
+
 
   const { data: clientes } = useQuery({
     queryKey: ["clientes-select"],
@@ -52,7 +54,13 @@ function NuevaCotizacion() {
       }
       const { data, error } = await supabase.from("cotizaciones").insert(payload).select().single();
       if (error) throw error;
+      if (productos.length > 0) {
+        const filas = productos.map(({ id, ...p }: any, i: number) => ({ ...p, cotizacion_id: data.id, item_no: i + 1 }));
+        const { error: eProd } = await (supabase.from("cotizacion_productos") as any).insert(filas);
+        if (eProd) throw eProd;
+      }
       return data;
+
     },
     onSuccess: (c: any) => {
       toast.success(`Cotización ${c.numero} creada`);
