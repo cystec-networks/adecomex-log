@@ -69,7 +69,7 @@ function DetalleOrden() {
         <div className="flex-1 min-w-0">
           <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
             {o.numero}
-            <Badge className="bg-primary/10 text-primary border-transparent">{o.estado}</Badge>
+            <Badge className={ORDEN_ESTADO_CLASS[form.estado] ?? ""}>{ordenEstadoLabel(form.estado)}</Badge>
           </h1>
           <p className="text-sm text-muted-foreground">
             {(o as any).clientes?.nombre ?? "Sin cliente"} · creada el {fmtLocalDate(o.created_at?.slice(0, 10))}
