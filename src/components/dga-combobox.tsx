@@ -84,7 +84,7 @@ export function DgaCombobox({
     let cancel = false;
     if (!codigo || value) { setResolved(""); return; }
     (async () => {
-      const { data } = await supabase.from(table).select(cfg.cols).eq("codigo", codigo).maybeSingle();
+      const { data } = await (supabase.from(table) as any).select(cfg.cols).eq("codigo", codigo).maybeSingle();
       if (!cancel && data) setResolved(cfg.label(data as Row));
     })();
     return () => { cancel = true; };
