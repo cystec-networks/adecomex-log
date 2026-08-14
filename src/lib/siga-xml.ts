@@ -15,6 +15,8 @@ export type BrokerConfig = {
   declarantName: string;
   declarantNationality: string;
   clearanceType: string;
+  /** Nombre del tipo de despacho (solo para mostrar en la UI) */
+  clearanceTypeName?: string;
   transportCompanyCode: string;
   transportNationality: string;
   /** Código numérico DGA del país (214 = República Dominicana) */
@@ -32,6 +34,7 @@ export const DEFAULT_BROKER: BrokerConfig = {
   declarantName: "FRANCISCO ENERIO LOPEZ MARTINEZ",
   declarantNationality: "214",
   clearanceType: "IM4",
+  clearanceTypeName: "",
   transportCompanyCode: "",
   transportNationality: "214",
   defaultNationality: "214",
@@ -141,12 +144,55 @@ const REGIMEN_CODIGOS: Record<string, string> = {
   "despacho a consumo": "1",
 };
 
+/** Normaliza un texto para comparar contra nombres de catálogo (sin acentos, minúsculas) */
+export function normNombre(v: unknown): string {
+  return String(v ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+/** Busca un código en un mapa nombre→código de forma flexible (exacto o por inclusión) */
+function lookupCode(nombre: string, map?: Record<string, string>): string {
+  if (!nombre || !map) return "";
+  if (map[nombre]) return map[nombre];
+  for (const [k, v] of Object.entries(map)) {
+    if (k && (k === nombre || k.includes(nombre) || nombre.includes(k))) return v;
+  }
+  return "";
+}
+
 export function resolveRegimenCode(exp: any, regimenMap?: Record<string, string>): string {
   if (exp?.regimen_codigo) return String(exp.regimen_codigo);
-  const nombre = String(exp?.regimen_aduanero ?? "").trim().toLowerCase();
+  const nombre = normNombre(exp?.regimen_aduanero);
   if (!nombre) return "";
-  return regimenMap?.[nombre] ?? REGIMEN_CODIGOS[nombre] ?? "";
+  return lookupCode(nombre, regimenMap) || REGIMEN_CODIGOS[nombre] || "";
 }
+
+/** Método de transporte: traduce exp.medio_transporte (texto) al código de catalogo_metodos_transporte */
+export function resolveTransportMethodCode(exp: any, map?: Record<string, string>): string {
+  if (exp?.metodo_transporte_codigo) return String(exp.metodo_transporte_codigo);
+  const nombre = normNombre(exp?.medio_transporte);
+  if (!nombre) return "";
+  return lookupCode(nombre, map);
+}
+
+/** Acuerdo comercial: traduce exp.acuerdo_comercial (texto) al código de catalogo_acuerdos */
+export function resolveAgreementCode(exp: any, map?: Record<string, string>): string {
+  if (exp?.acuerdo_codigo) return String(exp.acuerdo_codigo);
+  const nombre = normNombre(exp?.acuerdo_comercial);
+  if (!nombre || nombre === "n/a" || nombre === "ninguno") return "";
+  return lookupCode(nombre, map);
+}
+
+export type SigaMaps = {
+  regimen?: Record<string, string>;
+  transporte?: Record<string, string>;
+  acuerdo?: Record<string, string>;
+  /** Código RDOC del permiso VUCE (catalogo_documentos_requeridos) */
+  vuceDocCode?: string;
+};
 
 export type ValidationIssue = { field: string; label: string };
 
@@ -184,13 +230,17 @@ export function validateExpediente(exp: any, items: any[], broker: BrokerConfig)
 
 // NO bloquean la descarga: códigos pendientes de homologación con la DGA.
 // Se emiten como etiquetas XML vacías.
-export function pendingDgaCodes(exp: any): ValidationIssue[] {
+export function pendingDgaCodes(exp: any, maps?: SigaMaps, items?: any[]): ValidationIssue[] {
   const pending: ValidationIssue[] = [];
   const check = (v: any, field: string, label: string) => { if (!v) pending.push({ field, label }); };
-  check(resolveRegimenCode(exp), "regimen_codigo", "Régimen aduanero (RegimenCode)");
-  check(exp?.metodo_transporte_codigo, "metodo_transporte_codigo", "Método de transporte (TransportMethod)");
-  check(exp?.acuerdo_codigo, "acuerdo_codigo", "Acuerdo / Preferencia comercial (AgreementCode)");
+  check(resolveRegimenCode(exp, maps?.regimen), "regimen_codigo", "Régimen aduanero (RegimenCode)");
+  check(resolveTransportMethodCode(exp, maps?.transporte), "metodo_transporte_codigo", "Método de transporte (TransportMethod)");
+  check(resolveAgreementCode(exp, maps?.acuerdo), "acuerdo_codigo", "Acuerdo / Preferencia comercial (AgreementCode)");
   check(exp?.pais_procedencia_codigo, "pais_procedencia_codigo", "País de procedencia (DepartureCountryCode)");
+  if (exp?.numero_vuce) check(maps?.vuceDocCode, "vuce_doc_code", "Código de documento del Permiso VUCE (RequiredDocumentCode)");
+  (items ?? []).forEach((it, i) => {
+    check(it?.estado_producto_codigo, `items[${i}].estado_producto_codigo`, `Ítem ${it?.item_no ?? i + 1}: Estado del producto (ProductStatusCode)`);
+  });
   return pending;
 }
 
@@ -198,7 +248,7 @@ export function buildImportDUAXml(
   exp: any,
   items: any[],
   broker: BrokerConfig,
-  regimenMap?: Record<string, string>,
+  maps?: SigaMaps,
 ): string {
   const cliente = exp.clientes ?? {};
   const nat = broker.defaultNationality || "214";
@@ -226,7 +276,7 @@ export function buildImportDUAXml(
     T("DepartureCountryCode", exp.pais_procedencia_codigo || origen),
     T("TransportCompanyCode", broker.transportCompanyCode),
     T("TransportNationality", broker.transportNationality || nat),
-    T("TransportMethod", exp.metodo_transporte_codigo),
+    T("TransportMethod", resolveTransportMethodCode(exp, maps?.transporte)),
     T("EntryPlanDate", fmtDate(exp.fecha_compromiso)),
     T("EntryDate", fmtDate(exp.fecha_recibido || exp.fecha_compromiso)),
     T("ImporterCode", importerCode),
@@ -237,8 +287,8 @@ export function buildImportDUAXml(
     T("DeclarantCode", cleanId(broker.declarantCode)),
     T("DeclarantName", broker.declarantName),
     T("DeclarantNationality", migrarNat(broker.declarantNationality, nat)),
-    T("RegimenCode", resolveRegimenCode(exp, regimenMap)),
-    T("AgreementCode", exp.acuerdo_codigo),
+    T("RegimenCode", resolveRegimenCode(exp, maps?.regimen)),
+    T("AgreementCode", resolveAgreementCode(exp, maps?.acuerdo)),
     T("TotalFOB", num(exp.total_fob)),
     T("InsuranceValue", num(exp.seguro)),
     T("FreightValue", num(exp.flete)),
@@ -261,19 +311,19 @@ ${T("ForeignSupplierNationality", origen, "      ")}
     const desc = it.detalle_producto ?? "";
     return `    <ImpDeclarationProduct>
 ${T("HSCode", it.codigo_arancelario, "      ")}
-${T("ProductCode", "", "      ")}
+${T("ProductCode", it.product_code, "      ")}
 ${T("productname", desc, "      ")}
-${T("BrandCode", "", "      ")}
-${T("BrandName", "N/A", "      ")}
-${T("ModelCode", "", "      ")}
-${T("ModelName", "N/A", "      ")}
-${T("ProductStatusCode", "", "      ")}
+${T("BrandCode", it.cod_marca, "      ")}
+${T("BrandName", it.marca || "N/A", "      ")}
+${T("ModelCode", it.cod_modelo, "      ")}
+${T("ModelName", it.modelo || "N/A", "      ")}
+${T("ProductStatusCode", it.estado_producto_codigo, "      ")}
 ${T("ProductYear", "", "      ")}
 ${T("FOBValue", unitFob(it.valor_fob, it.cantidad), "      ")}
 ${T("UnitCode", it.unidad_codigo, "      ")}
 ${T("Qty", num(it.cantidad), "      ")}
 ${T("Weight", num(it.peso), "      ")}
-${T("ProductSpecification", "", "      ")}
+${T("ProductSpecification", it.especificaciones, "      ")}
 ${T("TempProductYN", "false", "      ")}
 ${T("CertificateOrignYN", certOrigen, "      ")}
 ${T("CertificateOriginNo", exp.numero_certificado_origen, "      ")}
@@ -296,7 +346,7 @@ ${T("Remark", "", "      ")}
   if (exp.factura_comercial) docs.push({ code: RDOC.FACTURA_COMERCIAL, desc: "Factura comercial", num: exp.factura_comercial });
   if (exp.bl_awb) docs.push({ code: RDOC.BL_MANIFIESTO, desc: "Conocimiento de embarque / Manifiesto", num: exp.bl_awb });
   if (exp.numero_certificado_origen) docs.push({ code: "", desc: "Certificado de Origen", num: exp.numero_certificado_origen });
-  if (exp.numero_vuce) docs.push({ code: "", desc: "Solicitud de Permiso VUCE", num: exp.numero_vuce });
+  if (exp.numero_vuce) docs.push({ code: maps?.vuceDocCode ?? "", desc: "Solicitud de Permiso VUCE", num: exp.numero_vuce });
 
   const documentos = docs.map((d) => `    <ImpDeclarationDocument>
 ${T("RequiredDocumentCode", d.code, "      ")}

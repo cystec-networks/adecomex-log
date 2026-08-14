@@ -293,6 +293,7 @@ function TabInfo({ exp }: { exp: any }) {
     flete: exp.flete ?? "",
     otros: exp.otros ?? "",
     regimen_aduanero: exp.regimen_aduanero ?? "",
+    acuerdo_comercial: exp.acuerdo_comercial ?? "",
     observaciones: exp.observaciones ?? "",
     pais_origen_codigo: exp.pais_origen_codigo ?? "",
     pais_procedencia_codigo: exp.pais_procedencia_codigo ?? "",
@@ -369,6 +370,7 @@ function TabInfo({ exp }: { exp: any }) {
       if (!payload.liq_siga_numero) payload.liq_siga_numero = null;
       if (!payload.liq_siga_estado) payload.liq_siga_estado = null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
+      if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
       // Congelar la tasa cuando el expediente pasa a despachado o registra resultado oficial DGA.
       if (debeCongelar({ estado: exp.estado, liq_oficial_total: payload.liq_oficial_total, tasa_cambio_congelada: exp.tasa_cambio_congelada })) {
         payload.tasa_cambio_congelada = true;
@@ -680,6 +682,15 @@ function TabInfo({ exp }: { exp: any }) {
                         {REGIMENES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="grid gap-1.5 md:col-span-2">
+                    <Label>Acuerdo Comercial <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+                    <CatalogCombobox
+                      table="catalogo_acuerdos"
+                      value={form.acuerdo_comercial}
+                      onChange={(nombre) => set("acuerdo_comercial", nombre)}
+                      placeholder="N/A / Ninguno"
+                    />
                   </div>
                 </div>
               </div>
@@ -2010,6 +2021,7 @@ function MercanciaItemsBlock({
     cantidad: "", peso: "", valor_fob: "",
     pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "18",
     product_code: "", cod_marca: "", marca: "", cod_modelo: "", modelo: "", especificaciones: "",
+    estado_producto_codigo: "",
   };
 
   const [f, setF] = useState(emptyForm);
@@ -2068,6 +2080,7 @@ function MercanciaItemsBlock({
         cod_modelo: f.cod_modelo?.trim() || null,
         modelo: f.modelo?.trim() || null,
         especificaciones: f.especificaciones?.trim() || null,
+        estado_producto_codigo: f.estado_producto_codigo?.trim() || null,
       };
 
       if (editingId) {
@@ -2115,6 +2128,7 @@ function MercanciaItemsBlock({
       cod_modelo: it.cod_modelo ?? "",
       modelo: it.modelo ?? "",
       especificaciones: it.especificaciones ?? "",
+      estado_producto_codigo: it.estado_producto_codigo ?? "",
     });
 
     setOpen(true);
@@ -2363,6 +2377,15 @@ function MercanciaItemsBlock({
                 <div className="grid gap-1.5">
                   <Label>Modelo</Label>
                   <Input value={f.modelo} onChange={(e) => setF({ ...f, modelo: e.target.value })} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Estado del Producto</Label>
+                  <CatalogCombobox
+                    table="catalogo_estados_producto"
+                    codigo={f.estado_producto_codigo}
+                    onChange={(_n, codigo) => setF({ ...f, estado_producto_codigo: codigo })}
+                    placeholder="Selecciona estado (catálogo DGA)"
+                  />
                 </div>
                 <div className="grid gap-1.5 md:col-span-2">
                   <Label>Especificaciones</Label>
