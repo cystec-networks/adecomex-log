@@ -19,6 +19,8 @@ import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
 import { AutocompleteInput } from "@/components/autocomplete-input";
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { DgaCombobox } from "@/components/dga-combobox";
+import { DgaProductoSearch } from "@/components/dga-producto-search";
+
 import { GenerarXmlSigaButton } from "@/components/generar-xml-siga";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
