@@ -2128,6 +2128,7 @@ function MercanciaItemsBlock({
       cod_modelo: it.cod_modelo ?? "",
       modelo: it.modelo ?? "",
       especificaciones: it.especificaciones ?? "",
+      estado_producto_codigo: it.estado_producto_codigo ?? "",
     });
 
     setOpen(true);
@@ -2376,6 +2377,15 @@ function MercanciaItemsBlock({
                 <div className="grid gap-1.5">
                   <Label>Modelo</Label>
                   <Input value={f.modelo} onChange={(e) => setF({ ...f, modelo: e.target.value })} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Estado del Producto</Label>
+                  <CatalogCombobox
+                    table="catalogo_estados_producto"
+                    codigo={f.estado_producto_codigo}
+                    onChange={(_n, codigo) => setF({ ...f, estado_producto_codigo: codigo })}
+                    placeholder="Selecciona estado (catálogo DGA)"
+                  />
                 </div>
                 <div className="grid gap-1.5 md:col-span-2">
                   <Label>Especificaciones</Label>

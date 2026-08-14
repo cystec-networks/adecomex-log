@@ -24,6 +24,7 @@ const emptyForm = {
   codigo_arancelario: "", detalle_producto: "", unidad_medida: "", unidad_codigo: "",
   cantidad: "", peso: "", valor_fob: "",
   product_code: "", cod_marca: "", marca: "", cod_modelo: "", modelo: "", especificaciones: "",
+  estado_producto_codigo: "",
 };
 
 export function ProductosCard({
@@ -76,6 +77,7 @@ export function ProductosCard({
     cod_modelo: f.cod_modelo?.trim() || null,
     modelo: f.modelo?.trim() || null,
     especificaciones: f.especificaciones?.trim() || null,
+    estado_producto_codigo: f.estado_producto_codigo?.trim() || null,
   });
 
   const renumerar = (arr: any[]) => arr.map((it, i) => ({ ...it, item_no: i + 1 }));
@@ -142,6 +144,7 @@ export function ProductosCard({
       cod_modelo: it.cod_modelo ?? "",
       modelo: it.modelo ?? "",
       especificaciones: it.especificaciones ?? "",
+      estado_producto_codigo: it.estado_producto_codigo ?? "",
     });
     setOpen(true);
   };
@@ -271,6 +274,15 @@ export function ProductosCard({
                 <div className="grid gap-1.5"><Label>Marca</Label><Input value={f.marca} onChange={(e) => setF({ ...f, marca: e.target.value })} /></div>
                 <div className="grid gap-1.5"><Label>Cód. Modelo</Label><Input value={f.cod_modelo} onChange={(e) => setF({ ...f, cod_modelo: e.target.value })} /></div>
                 <div className="grid gap-1.5"><Label>Modelo</Label><Input value={f.modelo} onChange={(e) => setF({ ...f, modelo: e.target.value })} /></div>
+                <div className="grid gap-1.5">
+                  <Label>Estado del Producto</Label>
+                  <CatalogCombobox
+                    table="catalogo_estados_producto"
+                    codigo={f.estado_producto_codigo}
+                    onChange={(_n, codigo) => setF({ ...f, estado_producto_codigo: codigo })}
+                    placeholder="Selecciona estado (catálogo DGA)"
+                  />
+                </div>
                 <div className="grid gap-1.5 md:col-span-2"><Label>Especificaciones</Label><Textarea rows={2} value={f.especificaciones} onChange={(e) => setF({ ...f, especificaciones: e.target.value })} /></div>
               </div>
             </div>
