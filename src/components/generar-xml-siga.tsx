@@ -61,6 +61,18 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
     toast.success("Configuración de agencia guardada");
   };
 
+  const guardarArea = async (codigo: string) => {
+    if (!codigo) return;
+    setSavingArea(true);
+    const { error } = await supabase.from("expedientes").update({ area_aduanera_codigo: codigo }).eq("id", expedienteId);
+    setSavingArea(false);
+    if (error) return toast.error("No se pudo guardar el área aduanera");
+    await queryClient.invalidateQueries({ queryKey: ["expediente-xml", expedienteId, open] });
+    await queryClient.invalidateQueries({ queryKey: ["expediente", expedienteId] });
+    toast.success("Área aduanera guardada");
+  };
+
+
   return (
     <>
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
