@@ -20,7 +20,8 @@ function NuevaSolicitud() {
   const nav = useNavigate();
   const [form, setForm] = useState<any>({
     cliente_id: "", contacto: "", tipo_operacion: "Importación", tipo_carga: "",
-    origen: "", puerto_llegada: "", fecha_arribo_est: "", incoterm: "", medio_transporte: "Marítimo",
+    origen: "", origen_codigo: "", puerto_llegada: "", puerto_llegada_codigo: "",
+    fecha_arribo_est: "", incoterm: "", medio_transporte: "Marítimo",
     prioridad: "media", observaciones: "", bl_awb: "", factura_comercial: "",
   });
 
