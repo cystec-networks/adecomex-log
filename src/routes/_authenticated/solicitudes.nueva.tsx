@@ -57,7 +57,7 @@ function NuevaSolicitud() {
       : null,
   });
 
-  const { data: productosOrden } = useQuery({
+  const { data: productosOrden, isLoading: loadingProductosOrden } = useQuery({
     queryKey: ["orden-productos", ordenId],
     enabled: !!ordenId,
     queryFn: async () => ordenId
@@ -65,9 +65,10 @@ function NuevaSolicitud() {
       : [],
   });
 
+
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    if (ord && !loaded) {
+    if (ord && !loadingProductosOrden && !loaded) {
       setForm((f: any) => ({
         ...f,
         cliente_id: (ord as any).cliente_id ?? "",
@@ -101,7 +102,8 @@ function NuevaSolicitud() {
       setProductos(precargados);
       setLoaded(true);
     }
-  }, [ord, productosOrden, loaded]);
+  }, [ord, productosOrden, loadingProductosOrden, loaded]);
+
 
   const create = useMutation({
     mutationFn: async () => {
