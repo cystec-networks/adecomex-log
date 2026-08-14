@@ -49,15 +49,12 @@ function NuevaSolicitud() {
     queryFn: async () => (await supabase.from("clientes").select("id,nombre").order("nombre")).data ?? [],
   });
 
-  const { data: ord, isLoading: loadingOrden, error: ordError } = useQuery({
+  const { data: ord, isLoading: loadingOrden } = useQuery({
     queryKey: ["orden-solicitud", ordenId],
     enabled: !!ordenId,
-    queryFn: async () => {
-      if (!ordenId) return null;
-      const r = await supabase.from("ordenes").select("*, clientes(id,nombre), cotizaciones(id,numero)").eq("id", ordenId).maybeSingle();
-      console.log("DEBUG query orden", r.data, r.error);
-      return r.data;
-    },
+    queryFn: async () => ordenId
+      ? (await supabase.from("ordenes").select("*, clientes(id,nombre)").eq("id", ordenId).maybeSingle()).data
+      : null,
   });
 
   const { data: productosOrden } = useQuery({
