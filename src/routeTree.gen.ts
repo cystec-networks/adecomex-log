@@ -46,12 +46,14 @@ import { Route as AuthenticatedSolicitudesNuevaRouteImport } from './routes/_aut
 import { Route as AuthenticatedSolicitudesIdRouteImport } from './routes/_authenticated/solicitudes.$id'
 import { Route as AuthenticatedPermisosNuevoRouteImport } from './routes/_authenticated/permisos.nuevo'
 import { Route as AuthenticatedPermisosIdRouteImport } from './routes/_authenticated/permisos.$id'
+import { Route as AuthenticatedOrdenesOcrRouteImport } from './routes/_authenticated/ordenes.ocr'
 import { Route as AuthenticatedOrdenesNuevaRouteImport } from './routes/_authenticated/ordenes.nueva'
 import { Route as AuthenticatedOrdenesIdRouteImport } from './routes/_authenticated/ordenes.$id'
 import { Route as AuthenticatedExpedientesPapeleraRouteImport } from './routes/_authenticated/expedientes.papelera'
 import { Route as AuthenticatedExpedientesNuevoRouteImport } from './routes/_authenticated/expedientes.nuevo'
 import { Route as AuthenticatedExpedientesDashboardRouteImport } from './routes/_authenticated/expedientes.dashboard'
 import { Route as AuthenticatedExpedientesIdRouteImport } from './routes/_authenticated/expedientes.$id'
+import { Route as AuthenticatedCotizacionesOcrRouteImport } from './routes/_authenticated/cotizaciones.ocr'
 import { Route as AuthenticatedCotizacionesNuevaRouteImport } from './routes/_authenticated/cotizaciones.nueva'
 import { Route as AuthenticatedCotizacionesIdRouteImport } from './routes/_authenticated/cotizaciones.$id'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
@@ -285,6 +287,11 @@ const AuthenticatedPermisosIdRoute = AuthenticatedPermisosIdRouteImport.update({
   path: '/permisos/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOrdenesOcrRoute = AuthenticatedOrdenesOcrRouteImport.update({
+  id: '/ordenes/ocr',
+  path: '/ordenes/ocr',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOrdenesNuevaRoute =
   AuthenticatedOrdenesNuevaRouteImport.update({
     id: '/ordenes/nueva',
@@ -318,6 +325,12 @@ const AuthenticatedExpedientesIdRoute =
   AuthenticatedExpedientesIdRouteImport.update({
     id: '/expedientes/$id',
     path: '/expedientes/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCotizacionesOcrRoute =
+  AuthenticatedCotizacionesOcrRouteImport.update({
+    id: '/cotizaciones/ocr',
+    path: '/cotizaciones/ocr',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedCotizacionesNuevaRoute =
@@ -532,12 +545,14 @@ export interface FileRoutesByFullPath {
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/cotizaciones/$id': typeof AuthenticatedCotizacionesIdRoute
   '/cotizaciones/nueva': typeof AuthenticatedCotizacionesNuevaRoute
+  '/cotizaciones/ocr': typeof AuthenticatedCotizacionesOcrRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
   '/ordenes/nueva': typeof AuthenticatedOrdenesNuevaRoute
+  '/ordenes/ocr': typeof AuthenticatedOrdenesOcrRoute
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
@@ -604,12 +619,14 @@ export interface FileRoutesByTo {
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/cotizaciones/$id': typeof AuthenticatedCotizacionesIdRoute
   '/cotizaciones/nueva': typeof AuthenticatedCotizacionesNuevaRoute
+  '/cotizaciones/ocr': typeof AuthenticatedCotizacionesOcrRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
   '/ordenes/nueva': typeof AuthenticatedOrdenesNuevaRoute
+  '/ordenes/ocr': typeof AuthenticatedOrdenesOcrRoute
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
@@ -680,12 +697,14 @@ export interface FileRoutesById {
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/cotizaciones/$id': typeof AuthenticatedCotizacionesIdRoute
   '/_authenticated/cotizaciones/nueva': typeof AuthenticatedCotizacionesNuevaRoute
+  '/_authenticated/cotizaciones/ocr': typeof AuthenticatedCotizacionesOcrRoute
   '/_authenticated/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/_authenticated/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/_authenticated/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
   '/_authenticated/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/_authenticated/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
   '/_authenticated/ordenes/nueva': typeof AuthenticatedOrdenesNuevaRoute
+  '/_authenticated/ordenes/ocr': typeof AuthenticatedOrdenesOcrRoute
   '/_authenticated/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/_authenticated/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
   '/_authenticated/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
@@ -754,12 +773,14 @@ export interface FileRouteTypes {
     | '/admin/usuarios'
     | '/cotizaciones/$id'
     | '/cotizaciones/nueva'
+    | '/cotizaciones/ocr'
     | '/expedientes/$id'
     | '/expedientes/dashboard'
     | '/expedientes/nuevo'
     | '/expedientes/papelera'
     | '/ordenes/$id'
     | '/ordenes/nueva'
+    | '/ordenes/ocr'
     | '/permisos/$id'
     | '/permisos/nuevo'
     | '/solicitudes/$id'
@@ -826,12 +847,14 @@ export interface FileRouteTypes {
     | '/admin/usuarios'
     | '/cotizaciones/$id'
     | '/cotizaciones/nueva'
+    | '/cotizaciones/ocr'
     | '/expedientes/$id'
     | '/expedientes/dashboard'
     | '/expedientes/nuevo'
     | '/expedientes/papelera'
     | '/ordenes/$id'
     | '/ordenes/nueva'
+    | '/ordenes/ocr'
     | '/permisos/$id'
     | '/permisos/nuevo'
     | '/solicitudes/$id'
@@ -901,12 +924,14 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/cotizaciones/$id'
     | '/_authenticated/cotizaciones/nueva'
+    | '/_authenticated/cotizaciones/ocr'
     | '/_authenticated/expedientes/$id'
     | '/_authenticated/expedientes/dashboard'
     | '/_authenticated/expedientes/nuevo'
     | '/_authenticated/expedientes/papelera'
     | '/_authenticated/ordenes/$id'
     | '/_authenticated/ordenes/nueva'
+    | '/_authenticated/ordenes/ocr'
     | '/_authenticated/permisos/$id'
     | '/_authenticated/permisos/nuevo'
     | '/_authenticated/solicitudes/$id'
@@ -1222,6 +1247,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPermisosIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ordenes/ocr': {
+      id: '/_authenticated/ordenes/ocr'
+      path: '/ordenes/ocr'
+      fullPath: '/ordenes/ocr'
+      preLoaderRoute: typeof AuthenticatedOrdenesOcrRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ordenes/nueva': {
       id: '/_authenticated/ordenes/nueva'
       path: '/ordenes/nueva'
@@ -1262,6 +1294,13 @@ declare module '@tanstack/react-router' {
       path: '/expedientes/$id'
       fullPath: '/expedientes/$id'
       preLoaderRoute: typeof AuthenticatedExpedientesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cotizaciones/ocr': {
+      id: '/_authenticated/cotizaciones/ocr'
+      path: '/cotizaciones/ocr'
+      fullPath: '/cotizaciones/ocr'
+      preLoaderRoute: typeof AuthenticatedCotizacionesOcrRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/cotizaciones/nueva': {
@@ -1516,12 +1555,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedCotizacionesIdRoute: typeof AuthenticatedCotizacionesIdRoute
   AuthenticatedCotizacionesNuevaRoute: typeof AuthenticatedCotizacionesNuevaRoute
+  AuthenticatedCotizacionesOcrRoute: typeof AuthenticatedCotizacionesOcrRoute
   AuthenticatedExpedientesIdRoute: typeof AuthenticatedExpedientesIdRoute
   AuthenticatedExpedientesDashboardRoute: typeof AuthenticatedExpedientesDashboardRoute
   AuthenticatedExpedientesNuevoRoute: typeof AuthenticatedExpedientesNuevoRoute
   AuthenticatedExpedientesPapeleraRoute: typeof AuthenticatedExpedientesPapeleraRoute
   AuthenticatedOrdenesIdRoute: typeof AuthenticatedOrdenesIdRoute
   AuthenticatedOrdenesNuevaRoute: typeof AuthenticatedOrdenesNuevaRoute
+  AuthenticatedOrdenesOcrRoute: typeof AuthenticatedOrdenesOcrRoute
   AuthenticatedPermisosIdRoute: typeof AuthenticatedPermisosIdRoute
   AuthenticatedPermisosNuevoRoute: typeof AuthenticatedPermisosNuevoRoute
   AuthenticatedSolicitudesIdRoute: typeof AuthenticatedSolicitudesIdRoute
@@ -1578,6 +1619,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedCotizacionesIdRoute: AuthenticatedCotizacionesIdRoute,
   AuthenticatedCotizacionesNuevaRoute: AuthenticatedCotizacionesNuevaRoute,
+  AuthenticatedCotizacionesOcrRoute: AuthenticatedCotizacionesOcrRoute,
   AuthenticatedExpedientesIdRoute: AuthenticatedExpedientesIdRoute,
   AuthenticatedExpedientesDashboardRoute:
     AuthenticatedExpedientesDashboardRoute,
@@ -1585,6 +1627,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedExpedientesPapeleraRoute: AuthenticatedExpedientesPapeleraRoute,
   AuthenticatedOrdenesIdRoute: AuthenticatedOrdenesIdRoute,
   AuthenticatedOrdenesNuevaRoute: AuthenticatedOrdenesNuevaRoute,
+  AuthenticatedOrdenesOcrRoute: AuthenticatedOrdenesOcrRoute,
   AuthenticatedPermisosIdRoute: AuthenticatedPermisosIdRoute,
   AuthenticatedPermisosNuevoRoute: AuthenticatedPermisosNuevoRoute,
   AuthenticatedSolicitudesIdRoute: AuthenticatedSolicitudesIdRoute,
