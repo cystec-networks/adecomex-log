@@ -39,12 +39,13 @@ function DetalleOrden() {
     queryFn: async () => (await supabase.from("ordenes").select("*, clientes(nombre)").eq("id", id).maybeSingle()).data,
   });
 
-  const { data: expedienteVinculado } = useQuery({
-    queryKey: ["expediente-de-orden", id],
+  const { data: solicitudVinculada } = useQuery({
+    queryKey: ["solicitud-de-orden", id],
     enabled: !!o,
     queryFn: async () =>
-      (await supabase.from("expedientes").select("id,numero").eq("orden_id", id).maybeSingle()).data,
+      (await supabase.from("solicitudes").select("id,numero").eq("orden_id", id).maybeSingle()).data,
   });
+
 
   const [form, setForm] = useState<any>(null);
   useEffect(() => {
