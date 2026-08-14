@@ -141,12 +141,55 @@ const REGIMEN_CODIGOS: Record<string, string> = {
   "despacho a consumo": "1",
 };
 
+/** Normaliza un texto para comparar contra nombres de catálogo (sin acentos, minúsculas) */
+export function normNombre(v: unknown): string {
+  return String(v ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+/** Busca un código en un mapa nombre→código de forma flexible (exacto o por inclusión) */
+function lookupCode(nombre: string, map?: Record<string, string>): string {
+  if (!nombre || !map) return "";
+  if (map[nombre]) return map[nombre];
+  for (const [k, v] of Object.entries(map)) {
+    if (k && (k === nombre || k.includes(nombre) || nombre.includes(k))) return v;
+  }
+  return "";
+}
+
 export function resolveRegimenCode(exp: any, regimenMap?: Record<string, string>): string {
   if (exp?.regimen_codigo) return String(exp.regimen_codigo);
-  const nombre = String(exp?.regimen_aduanero ?? "").trim().toLowerCase();
+  const nombre = normNombre(exp?.regimen_aduanero);
   if (!nombre) return "";
-  return regimenMap?.[nombre] ?? REGIMEN_CODIGOS[nombre] ?? "";
+  return lookupCode(nombre, regimenMap) || REGIMEN_CODIGOS[nombre] || "";
 }
+
+/** Método de transporte: traduce exp.medio_transporte (texto) al código de catalogo_metodos_transporte */
+export function resolveTransportMethodCode(exp: any, map?: Record<string, string>): string {
+  if (exp?.metodo_transporte_codigo) return String(exp.metodo_transporte_codigo);
+  const nombre = normNombre(exp?.medio_transporte);
+  if (!nombre) return "";
+  return lookupCode(nombre, map);
+}
+
+/** Acuerdo comercial: traduce exp.acuerdo_comercial (texto) al código de catalogo_acuerdos */
+export function resolveAgreementCode(exp: any, map?: Record<string, string>): string {
+  if (exp?.acuerdo_codigo) return String(exp.acuerdo_codigo);
+  const nombre = normNombre(exp?.acuerdo_comercial);
+  if (!nombre || nombre === "n/a" || nombre === "ninguno") return "";
+  return lookupCode(nombre, map);
+}
+
+export type SigaMaps = {
+  regimen?: Record<string, string>;
+  transporte?: Record<string, string>;
+  acuerdo?: Record<string, string>;
+  /** Código RDOC del permiso VUCE (catalogo_documentos_requeridos) */
+  vuceDocCode?: string;
+};
 
 export type ValidationIssue = { field: string; label: string };
 
