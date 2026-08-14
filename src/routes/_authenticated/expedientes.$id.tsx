@@ -2100,7 +2100,14 @@ function MercanciaItemsBlock({
       aplica_isc: !!it.aplica_isc,
       pct_isc: it.pct_isc != null ? String(it.pct_isc) : "",
       pct_itbis: it.pct_itbis != null ? String(it.pct_itbis) : "18",
+      product_code: it.product_code ?? "",
+      cod_marca: it.cod_marca ?? "",
+      marca: it.marca ?? "",
+      cod_modelo: it.cod_modelo ?? "",
+      modelo: it.modelo ?? "",
+      especificaciones: it.especificaciones ?? "",
     });
+
     setOpen(true);
   };
 
