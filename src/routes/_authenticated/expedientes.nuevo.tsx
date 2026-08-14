@@ -149,20 +149,31 @@ function NuevoExpediente() {
     <div className="p-6 max-w-5xl mx-auto space-y-5">
       <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" size="sm" asChild>
-          <Link to={sol ? "/solicitudes/$id" : "/expedientes"} params={sol ? { id: sol.id } : undefined as any}>
-            <ArrowLeft className="h-4 w-4 mr-1" />Volver
-          </Link>
+          {ord ? (
+            <Link to="/ordenes/$id" params={{ id: ord.id }}><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link>
+          ) : (
+            <Link to={sol ? "/solicitudes/$id" : "/expedientes"} params={sol ? { id: sol.id } : undefined as any}>
+              <ArrowLeft className="h-4 w-4 mr-1" />Volver
+            </Link>
+          )}
         </Button>
         <div className="flex-1 min-w-0">
           <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
-            {sol ? "Convertir Solicitud en Expediente" : "Nuevo Expediente"}
-            {sol && <Badge variant="outline">← {sol.numero}</Badge>}
+            {ord ? "Crear Expediente desde Orden" : sol ? "Convertir Solicitud en Expediente" : "Nuevo Expediente"}
+            {ord ? <Badge variant="outline">← {ord.numero}</Badge> : sol && <Badge variant="outline">← {sol.numero}</Badge>}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {sol ? "Revisa los datos precargados y confirma. El número del expediente se genera automáticamente." : "Completa los datos del nuevo expediente."}
+            {ord || sol ? "Revisa los datos precargados y confirma. El número del expediente se genera automáticamente." : "Completa los datos del nuevo expediente."}
           </p>
         </div>
-        <Button variant="outline" onClick={() => nav({ to: sol ? "/solicitudes/$id" : "/expedientes", params: sol ? { id: sol.id } : undefined as any })}>
+        <Button
+          variant="outline"
+          onClick={() =>
+            ord
+              ? nav({ to: "/ordenes/$id", params: { id: ord.id } })
+              : nav({ to: sol ? "/solicitudes/$id" : "/expedientes", params: sol ? { id: sol.id } : (undefined as any) })
+          }
+        >
           <X className="h-4 w-4 mr-1" />Cancelar
         </Button>
         <Button onClick={() => confirmar.mutate()} disabled={confirmar.isPending}>
