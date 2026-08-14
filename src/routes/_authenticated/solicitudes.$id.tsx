@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { DgaCombobox } from "@/components/dga-combobox";
+import { useMyRoles } from "@/lib/auth-hooks";
+import { ORDEN_ESTADO_CLASS, ordenEstadoLabel } from "@/lib/estados-orden";
 
 export const Route = createFileRoute("/_authenticated/solicitudes/$id")({
   component: DetalleSolicitud,
