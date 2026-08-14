@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { FileCode2, AlertTriangle, Download, Settings2, CheckCircle2, Info } from "lucide-react";
 import { toast } from "sonner";
 import { DgaCombobox } from "@/components/dga-combobox";
+import { CatalogCombobox } from "@/components/catalog-combobox";
 import {
   buildImportDUAXml,
   downloadXml,
@@ -17,6 +18,8 @@ import {
   validateExpediente,
   pendingDgaCodes,
   resolveRegimenCode,
+  normNombre,
+  type SigaMaps,
   type BrokerConfig,
 } from "@/lib/siga-xml";
 
@@ -56,11 +59,46 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
     queryFn: async () => (await supabase.from("catalogo_regimenes").select("codigo, nombre")).data ?? [],
   });
 
-  const regimenMap = useMemo(() => {
+  const { data: metodos } = useQuery({
+    queryKey: ["catalogo-metodos-transporte-xml", open],
+    enabled: open,
+    queryFn: async () => (await supabase.from("catalogo_metodos_transporte").select("codigo, nombre")).data ?? [],
+  });
+
+  const { data: acuerdos } = useQuery({
+    queryKey: ["catalogo-acuerdos-xml", open],
+    enabled: open,
+    queryFn: async () => (await supabase.from("catalogo_acuerdos").select("codigo, nombre")).data ?? [],
+  });
+
+  const { data: docsRequeridos } = useQuery({
+    queryKey: ["catalogo-documentos-requeridos-xml", open],
+    enabled: open,
+    queryFn: async () => (await supabase.from("catalogo_documentos_requeridos").select("codigo, nombre")).data ?? [],
+  });
+
+  const toMap = (rows: any[] | undefined) => {
     const m: Record<string, string> = {};
-    (regimenes ?? []).forEach((r: any) => { if (r.nombre && r.codigo) m[String(r.nombre).trim().toLowerCase()] = String(r.codigo); });
+    (rows ?? []).forEach((r: any) => { if (r?.nombre && r?.codigo) m[normNombre(r.nombre)] = String(r.codigo); });
     return m;
-  }, [regimenes]);
+  };
+
+  const regimenMap = useMemo(() => toMap(regimenes as any[]), [regimenes]);
+  const transporteMap = useMemo(() => toMap(metodos as any[]), [metodos]);
+  const acuerdoMap = useMemo(() => toMap(acuerdos as any[]), [acuerdos]);
+
+  const vuceDocCode = useMemo(() => {
+    const row = (docsRequeridos as any[] | undefined)?.find((r) => {
+      const n = normNombre(r?.nombre);
+      return n.includes("vuce") || (n.includes("permiso") && !n.includes("sin permiso"));
+    });
+    return row?.codigo ? String(row.codigo) : "";
+  }, [docsRequeridos]);
+
+  const maps: SigaMaps = useMemo(
+    () => ({ regimen: regimenMap, transporte: transporteMap, acuerdo: acuerdoMap, vuceDocCode }),
+    [regimenMap, transporteMap, acuerdoMap, vuceDocCode],
+  );
 
   const expConRegimen = useMemo(
     () => (exp ? { ...exp, regimen_codigo: resolveRegimenCode(exp, regimenMap) || null } : exp),
@@ -68,8 +106,8 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
   );
 
   const issues = useMemo(() => (expConRegimen ? validateExpediente(expConRegimen, items ?? [], broker) : []), [expConRegimen, items, broker]);
-  const pending = useMemo(() => (expConRegimen ? pendingDgaCodes(expConRegimen) : []), [expConRegimen]);
-  const xml = useMemo(() => (expConRegimen ? buildImportDUAXml(expConRegimen, items ?? [], broker, regimenMap) : ""), [expConRegimen, items, broker, regimenMap]);
+  const pending = useMemo(() => (expConRegimen ? pendingDgaCodes(expConRegimen, maps, items ?? []) : []), [expConRegimen, maps, items]);
+  const xml = useMemo(() => (expConRegimen ? buildImportDUAXml(expConRegimen, items ?? [], broker, maps) : ""), [expConRegimen, items, broker, maps]);
   const valid = issues.length === 0;
 
   const handleDownload = () => {
@@ -244,7 +282,13 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
             </div>
             <div className="grid gap-1.5">
               <Label>Tipo de despacho SIGA (ClearanceType)</Label>
-              <Input value={broker.clearanceType} onChange={(e) => setBroker({ ...broker, clearanceType: e.target.value })} placeholder="IM4" />
+              <CatalogCombobox
+                table="catalogo_tipos_despacho"
+                value={broker.clearanceTypeName ?? ""}
+                codigo={broker.clearanceType}
+                onChange={(nombre, codigo) => setBroker({ ...broker, clearanceType: codigo, clearanceTypeName: nombre })}
+                placeholder="Selecciona tipo de despacho (catálogo DGA)"
+              />
             </div>
             <div className="grid gap-1.5">
               <Label>Código transportista (TransportCompanyCode)</Label>
