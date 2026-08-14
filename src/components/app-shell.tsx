@@ -283,8 +283,12 @@ function AppSidebarInner() {
         {renderSimpleItem({ id: "dashboard", to: "/dashboard", label: "Dashboard", icon: LayoutDashboard,
           match: (p) => p === "/dashboard" })}
 
+        {/* Comercial group (Cotizaciones → Órdenes) */}
+        {renderGroup(visibleGroups.find((g) => g.id === "comercial")!)}
+
         {/* Solicitudes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "solicitudes")!)}
+
 
         {/* Expedientes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "expedientes")!)}
