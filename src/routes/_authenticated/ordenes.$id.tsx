@@ -4,9 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ORDEN_ESTADOS, ORDEN_ESTADO_CLASS, ordenEstadoLabel } from "@/lib/estados-orden";
 import { ArrowLeft, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -67,7 +69,7 @@ function DetalleOrden() {
         <div className="flex-1 min-w-0">
           <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
             {o.numero}
-            <Badge className="bg-primary/10 text-primary border-transparent">{o.estado}</Badge>
+            <Badge className={ORDEN_ESTADO_CLASS[form.estado] ?? ""}>{ordenEstadoLabel(form.estado)}</Badge>
           </h1>
           <p className="text-sm text-muted-foreground">
             {(o as any).clientes?.nombre ?? "Sin cliente"} · creada el {fmtLocalDate(o.created_at?.slice(0, 10))}
@@ -110,7 +112,10 @@ function DetalleOrden() {
         <CardHeader><CardTitle className="text-base">Orden</CardTitle></CardHeader>
         <CardContent className="grid gap-4">
           <div className="grid gap-1.5 md:max-w-xs"><Label>Estado</Label>
-            <Input value={form.estado} readOnly={!canEdit} onChange={(e) => setForm({ ...form, estado: e.target.value })} />
+            <Select value={form.estado} onValueChange={(v) => setForm({ ...form, estado: v })} disabled={!canEdit}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{ORDEN_ESTADOS.map((e) => <SelectItem key={e} value={e}>{ordenEstadoLabel(e)}</SelectItem>)}</SelectContent>
+            </Select>
           </div>
           <div className="grid gap-1.5"><Label>Notas</Label>
             <Textarea rows={4} value={form.notas} readOnly={!canEdit} onChange={(e) => setForm({ ...form, notas: e.target.value })} />
