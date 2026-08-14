@@ -89,11 +89,21 @@ function DetalleOrden() {
             </Link>
           </Button>
         ) : canEdit ? (
-          <Button variant="outline" asChild>
-            <Link to="/solicitudes/nueva" search={{ orden: id }}>
+          o.estado === "en_transito" ? (
+            <Button variant="outline" asChild>
+              <Link to="/solicitudes/nueva" search={{ orden: id }}>
+                <FolderPlus className="h-4 w-4 mr-1" />Abrir Solicitud
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              disabled
+              title="Cambia el estado a 'En Tránsito' para poder abrir la Solicitud"
+            >
               <FolderPlus className="h-4 w-4 mr-1" />Abrir Solicitud
-            </Link>
-          </Button>
+            </Button>
+          )
         ) : null}
 
         {canEdit && (

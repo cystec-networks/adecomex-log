@@ -107,6 +107,7 @@ function DetalleSolicitud() {
         .from("ordenes")
         .select("id,numero,clientes(nombre)")
         .is("solicitud_id", null)
+        .eq("estado", "en_transito")
         .order("numero")).data ?? [],
   });
 
@@ -118,12 +119,8 @@ function DetalleSolicitud() {
 
   const agregarOrden = useMutation({
     mutationFn: async (ordenId: string) => {
-      const { data: orden } = await supabase.from("ordenes").select("estado").eq("id", ordenId).maybeSingle();
       const { error } = await supabase.from("ordenes").update({ solicitud_id: id }).eq("id", ordenId);
       if (error) throw error;
-      if (orden?.estado === "abierta") {
-        await supabase.from("ordenes").update({ estado: "en_transito" }).eq("id", ordenId).eq("estado", "abierta");
-      }
       await supabase.from("auditoria").insert({
         entidad: "ordenes",
         entidad_id: ordenId,

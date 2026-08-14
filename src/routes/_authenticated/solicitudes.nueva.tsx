@@ -64,6 +64,8 @@ function NuevaSolicitud() {
         tipo_carga: (ord as any).cot_tipo_mercancia ?? "",
         origen: (ord as any).cot_origen ?? "",
         incoterm: (ord as any).cot_incoterm ?? "",
+        observaciones: (ord as any).notas ?? "",
+        puerto_llegada: (ord as any).cot_destino ?? "",
       }));
       setLoaded(true);
     }
@@ -78,9 +80,6 @@ function NuevaSolicitud() {
       if (error) throw error;
       if (ordenId) {
         await supabase.from("ordenes").update({ solicitud_id: data.id }).eq("id", ordenId);
-        if ((ord as any)?.estado === "abierta") {
-          await supabase.from("ordenes").update({ estado: "en_transito" }).eq("id", ordenId).eq("estado", "abierta");
-        }
         await supabase.from("auditoria").insert({ entidad: "ordenes", entidad_id: ordenId, accion: `solicitud:${data.numero}` });
         await copiarProductos({
           origenTabla: "orden_productos", origenCol: "orden_id", origenId: ordenId,
