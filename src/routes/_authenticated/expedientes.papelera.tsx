@@ -156,6 +156,9 @@ function Papelera() {
   const solRows = solicitudes.data ?? [];
   const perRows = permisos.data ?? [];
   const trRows = transportes.data ?? [];
+  const cotRows = cotizaciones.data ?? [];
+  const ordRows = ordenes.data ?? [];
+
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-[1600px] mx-auto">
