@@ -12,6 +12,7 @@ import { ArrowLeft, Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { DgaCombobox } from "@/components/dga-combobox";
 
 const searchSchema = z.object({ solicitud: z.string().optional() });
 
