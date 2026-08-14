@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { DgaCombobox } from "@/components/dga-combobox";
 
-const searchSchema = z.object({ solicitud: z.string().optional(), orden: z.string().optional() });
+const searchSchema = z.object({ solicitud: z.string().optional() });
 
 export const Route = createFileRoute("/_authenticated/expedientes/nuevo")({
   validateSearch: searchSchema,
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/expedientes/nuevo")({
 const PUERTOS_ARRIBO = ["Puerto Multimodal Caucedo", "Puerto de Haina Oriental", "Puerto de Haina Occidental", "Puerto de Río Haina", "Puerto de Boca Chica", "Puerto de Manzanillo", "Puerto Plata", "AILA (Las Américas)", "AIC (Cibao)", "AIP (Punta Cana)", "Aeropuerto La Isabela"];
 
 function NuevoExpediente() {
-  const { solicitud: solicitudId, orden: ordenId } = useSearch({ from: Route.id });
+  const { solicitud: solicitudId } = useSearch({ from: Route.id });
   const nav = useNavigate();
   const qc = useQueryClient();
 
@@ -36,13 +36,6 @@ function NuevoExpediente() {
     enabled: !!solicitudId,
   });
 
-  const { data: ord, isLoading: loadingOrden } = useQuery({
-    queryKey: ["orden-convert", ordenId],
-    queryFn: async () => ordenId
-      ? (await supabase.from("ordenes").select("*, clientes(id,nombre), cotizaciones(id,numero)").eq("id", ordenId).maybeSingle()).data
-      : null,
-    enabled: !!ordenId,
-  });
 
   const { data: clientes } = useQuery({
     queryKey: ["clientes-lite"],
@@ -92,20 +85,6 @@ function NuevoExpediente() {
     }
   }, [sol, loaded]);
 
-  useEffect(() => {
-    if (ord && !loaded) {
-      setForm((f) => ({
-        ...f,
-        cliente_id: (ord as any).cliente_id ?? "",
-        pais_origen: (ord as any).cot_origen ?? "",
-        incoterm: (ord as any).cot_incoterm ?? "",
-        tipo_carga: (ord as any).cot_tipo_mercancia ?? "",
-        observaciones: (ord as any).notas ?? "",
-      }));
-      setLoaded(true);
-    }
-  }, [ord, loaded]);
-
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
   const confirmar = useMutation({
@@ -114,18 +93,11 @@ function NuevoExpediente() {
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
       if (!payload.cliente_id) payload.cliente_id = null;
       if (solicitudId) payload.solicitud_id = solicitudId;
-      if (ordenId) payload.orden_id = ordenId;
       const { data, error } = await supabase.from("expedientes").insert(payload).select().single();
       if (error) throw error;
       if (solicitudId) {
         await supabase.from("solicitudes").update({ estado: "convertida" }).eq("id", solicitudId);
         await supabase.from("auditoria").insert({ entidad: "solicitudes", entidad_id: solicitudId, accion: `convertida:${data.numero}` });
-      }
-      if (ordenId) {
-        if ((ord as any)?.estado === "abierta") {
-          await supabase.from("ordenes").update({ estado: "en_transito" }).eq("id", ordenId).eq("estado", "abierta");
-        }
-        await supabase.from("auditoria").insert({ entidad: "ordenes", entidad_id: ordenId, accion: `expediente:${data.numero}` });
       }
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: data.id, accion: "creado" });
       return data;
@@ -133,7 +105,6 @@ function NuevoExpediente() {
     onSuccess: (exp) => {
       qc.invalidateQueries({ queryKey: ["expedientes"] });
       qc.invalidateQueries({ queryKey: ["solicitudes"] });
-      qc.invalidateQueries({ queryKey: ["ordenes"] });
       toast.success(`Expediente ${exp.numero} creado`);
       nav({ to: "/expedientes/$id", params: { id: exp.id } });
     },
@@ -141,35 +112,29 @@ function NuevoExpediente() {
   });
 
   if (solicitudId && isLoading) return <div className="p-8 text-center text-muted-foreground">Cargando solicitud…</div>;
-  if (ordenId && loadingOrden) return <div className="p-8 text-center text-muted-foreground">Cargando orden…</div>;
+
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-5">
       <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" size="sm" asChild>
-          {ord ? (
-            <Link to="/ordenes/$id" params={{ id: ord.id }}><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link>
-          ) : (
-            <Link to={sol ? "/solicitudes/$id" : "/expedientes"} params={sol ? { id: sol.id } : undefined as any}>
-              <ArrowLeft className="h-4 w-4 mr-1" />Volver
-            </Link>
-          )}
+          <Link to={sol ? "/solicitudes/$id" : "/expedientes"} params={sol ? { id: sol.id } : undefined as any}>
+            <ArrowLeft className="h-4 w-4 mr-1" />Volver
+          </Link>
         </Button>
         <div className="flex-1 min-w-0">
           <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
-            {ord ? "Crear Expediente desde Orden" : sol ? "Convertir Solicitud en Expediente" : "Nuevo Expediente"}
-            {ord ? <Badge variant="outline">← {ord.numero}</Badge> : sol && <Badge variant="outline">← {sol.numero}</Badge>}
+            {sol ? "Convertir Solicitud en Expediente" : "Nuevo Expediente"}
+            {sol && <Badge variant="outline">← {sol.numero}</Badge>}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {ord || sol ? "Revisa los datos precargados y confirma. El número del expediente se genera automáticamente." : "Completa los datos del nuevo expediente."}
+            {sol ? "Revisa los datos precargados y confirma. El número del expediente se genera automáticamente." : "Completa los datos del nuevo expediente."}
           </p>
         </div>
         <Button
           variant="outline"
           onClick={() =>
-            ord
-              ? nav({ to: "/ordenes/$id", params: { id: ord.id } })
-              : nav({ to: sol ? "/solicitudes/$id" : "/expedientes", params: sol ? { id: sol.id } : (undefined as any) })
+            nav({ to: sol ? "/solicitudes/$id" : "/expedientes", params: sol ? { id: sol.id } : (undefined as any) })
           }
         >
           <X className="h-4 w-4 mr-1" />Cancelar
@@ -179,28 +144,7 @@ function NuevoExpediente() {
         </Button>
       </div>
 
-      {ord && (
-        <Card className="bg-muted/30 border-dashed">
-          <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center justify-between">
-              <span>Datos de la Orden Original</span>
-              <Link to="/ordenes/$id" params={{ id: ord.id }} className="text-xs font-normal text-primary underline">
-                {ord.numero} ↗
-              </Link>
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Referencia de la Orden y su Cotización (solo lectura).</p>
-          </CardHeader>
-          <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <ReadOnly label="N° de Orden" value={ord.numero ?? undefined} />
-            <ReadOnly label="N° de Cotización" value={(ord as any).cot_numero ?? (ord as any).cotizaciones?.numero ?? undefined} />
-            <ReadOnly label="Cliente" value={(ord as any).clientes?.nombre ?? undefined} />
-            <ReadOnly label="Tipo de mercancía" value={(ord as any).cot_tipo_mercancia ?? undefined} />
-            <ReadOnly label="Origen" value={(ord as any).cot_origen ?? undefined} />
-            <ReadOnly label="Destino" value={(ord as any).cot_destino ?? undefined} />
-            <ReadOnly label="Incoterm" value={(ord as any).cot_incoterm ?? undefined} />
-          </CardContent>
-        </Card>
-      )}
+
 
       {sol && (
         <Card className="bg-muted/30 border-dashed">
@@ -271,12 +215,11 @@ function NuevoExpediente() {
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={() =>
-          ord
-            ? nav({ to: "/ordenes/$id", params: { id: ord.id } })
-            : nav({ to: sol ? "/solicitudes/$id" : "/expedientes", params: sol ? { id: sol.id } : undefined as any })
+          nav({ to: sol ? "/solicitudes/$id" : "/expedientes", params: sol ? { id: sol.id } : undefined as any })
         }>
           Cancelar
         </Button>
+
         <Button onClick={() => confirmar.mutate()} disabled={confirmar.isPending}>
           <Check className="h-4 w-4 mr-1" />{confirmar.isPending ? "Creando…" : "Confirmar conversión"}
         </Button>

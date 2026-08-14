@@ -1,24 +1,39 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { z } from "zod";
 import { toast } from "sonner";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { DgaCombobox } from "@/components/dga-combobox";
 
+const searchSchema = z.object({ orden: z.string().optional() });
+
 export const Route = createFileRoute("/_authenticated/solicitudes/nueva")({
+  validateSearch: searchSchema,
   component: NuevaSolicitud,
 });
 
+function ReadOnly({ label, value }: { label: string; value?: any }) {
+  return (
+    <div className="grid gap-1">
+      <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className="text-sm">{value === null || value === undefined || value === "" ? "—" : String(value)}</span>
+    </div>
+  );
+}
+
 function NuevaSolicitud() {
   const nav = useNavigate();
+  const { orden: ordenId } = useSearch({ from: Route.id });
   const [form, setForm] = useState<any>({
     cliente_id: "", contacto: "", tipo_operacion: "Importación", tipo_carga: "",
     origen: "", origen_codigo: "", puerto_llegada: "", puerto_llegada_codigo: "",
@@ -31,13 +46,42 @@ function NuevaSolicitud() {
     queryFn: async () => (await supabase.from("clientes").select("id,nombre").order("nombre")).data ?? [],
   });
 
+  const { data: ord, isLoading: loadingOrden } = useQuery({
+    queryKey: ["orden-solicitud", ordenId],
+    enabled: !!ordenId,
+    queryFn: async () => ordenId
+      ? (await supabase.from("ordenes").select("*, clientes(id,nombre), cotizaciones(id,numero)").eq("id", ordenId).maybeSingle()).data
+      : null,
+  });
+
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    if (ord && !loaded) {
+      setForm((f: any) => ({
+        ...f,
+        cliente_id: (ord as any).cliente_id ?? "",
+        tipo_carga: (ord as any).cot_tipo_mercancia ?? "",
+        origen: (ord as any).cot_origen ?? "",
+        incoterm: (ord as any).cot_incoterm ?? "",
+      }));
+      setLoaded(true);
+    }
+  }, [ord, loaded]);
+
   const create = useMutation({
     mutationFn: async () => {
       const payload = { ...form };
       if (!payload.cliente_id) delete payload.cliente_id;
       if (!payload.fecha_arribo_est) delete payload.fecha_arribo_est;
+      if (ordenId) payload.orden_id = ordenId;
       const { data, error } = await supabase.from("solicitudes").insert(payload).select().single();
       if (error) throw error;
+      if (ordenId) {
+        if ((ord as any)?.estado === "abierta") {
+          await supabase.from("ordenes").update({ estado: "en_transito" }).eq("id", ordenId).eq("estado", "abierta");
+        }
+        await supabase.from("auditoria").insert({ entidad: "ordenes", entidad_id: ordenId, accion: `solicitud:${data.numero}` });
+      }
       return data;
     },
     onSuccess: (s) => {
@@ -47,15 +91,47 @@ function NuevaSolicitud() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  if (ordenId && loadingOrden) return <div className="p-8 text-center text-muted-foreground">Cargando orden…</div>;
+
+  const volver = () =>
+    ord ? nav({ to: "/ordenes/$id", params: { id: ord.id } }) : nav({ to: "/solicitudes" });
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" asChild><Link to="/solicitudes"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link></Button>
+        <Button variant="ghost" size="sm" onClick={volver}><ArrowLeft className="h-4 w-4 mr-1" />Volver</Button>
         <div>
-          <h1 className="font-display text-2xl font-bold">Nueva solicitud</h1>
-          <p className="text-sm text-muted-foreground">Formulario rápido de captura.</p>
+          <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
+            {ord ? "Abrir Solicitud desde Orden" : "Nueva solicitud"}
+            {ord && <Badge variant="outline">← {ord.numero}</Badge>}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {ord ? "Revisa los datos precargados y confirma." : "Formulario rápido de captura."}
+          </p>
         </div>
       </div>
+
+      {ord && (
+        <Card className="bg-muted/30 border-dashed">
+          <CardHeader className="pb-3 border-b">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center justify-between">
+              <span>Datos de la Orden Original</span>
+              <Link to="/ordenes/$id" params={{ id: ord.id }} className="text-xs font-normal text-primary underline">
+                {ord.numero} ↗
+              </Link>
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Referencia de la Orden y su Cotización (solo lectura).</p>
+          </CardHeader>
+          <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <ReadOnly label="N° de Orden" value={ord.numero} />
+            <ReadOnly label="N° de Cotización" value={(ord as any).cot_numero ?? (ord as any).cotizaciones?.numero} />
+            <ReadOnly label="Cliente" value={(ord as any).clientes?.nombre} />
+            <ReadOnly label="Tipo de mercancía" value={(ord as any).cot_tipo_mercancia} />
+            <ReadOnly label="Origen" value={(ord as any).cot_origen} />
+            <ReadOnly label="Incoterm" value={(ord as any).cot_incoterm} />
+          </CardContent>
+        </Card>
+      )}
 
       <form onSubmit={(e) => { e.preventDefault(); create.mutate(); }} className="space-y-6">
         <Card>
@@ -144,7 +220,7 @@ function NuevaSolicitud() {
         </Card>
 
         <div className="flex justify-end gap-2">
-          <Button variant="outline" asChild><Link to="/solicitudes">Cancelar</Link></Button>
+          <Button type="button" variant="outline" onClick={volver}>Cancelar</Button>
           <Button type="submit" disabled={create.isPending}>Registrar solicitud</Button>
         </div>
       </form>

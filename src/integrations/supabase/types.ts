@@ -3313,6 +3313,7 @@ export type Database = {
           medio_transporte: string | null
           numero: string
           observaciones: string | null
+          orden_id: string | null
           origen: string | null
           origen_codigo: string | null
           prioridad: Database["public"]["Enums"]["prioridad"]
@@ -3339,6 +3340,7 @@ export type Database = {
           medio_transporte?: string | null
           numero?: string
           observaciones?: string | null
+          orden_id?: string | null
           origen?: string | null
           origen_codigo?: string | null
           prioridad?: Database["public"]["Enums"]["prioridad"]
@@ -3365,6 +3367,7 @@ export type Database = {
           medio_transporte?: string | null
           numero?: string
           observaciones?: string | null
+          orden_id?: string | null
           origen?: string | null
           origen_codigo?: string | null
           prioridad?: Database["public"]["Enums"]["prioridad"]
@@ -3381,6 +3384,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitudes_orden_id_fkey"
+            columns: ["orden_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes"
             referencedColumns: ["id"]
           },
         ]
