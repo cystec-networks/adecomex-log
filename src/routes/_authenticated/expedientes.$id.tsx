@@ -465,12 +465,24 @@ function TabInfo({ exp }: { exp: any }) {
           <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} />
           <div className="grid gap-1.5">
             <Label>Puerto de arribo</Label>
-            <CatalogCombobox
-              table="catalogo_puertos"
+            <DgaCombobox
+              table="dga_puertos"
               value={form.puerto_arribo}
               codigo={form.puerto_arribo_codigo}
               onChange={(nombre, codigo) => setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo }))}
               placeholder="Buscar puerto (catálogo DGA)"
+            />
+            {form.puerto_arribo && !form.puerto_arribo_codigo && (
+              <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo para el XML.</span>
+            )}
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Área / Administración aduanera</Label>
+            <DgaCombobox
+              table="dga_areas"
+              codigo={form.area_aduanera_codigo}
+              onChange={(_n, codigo) => setForm((f) => ({ ...f, area_aduanera_codigo: codigo }))}
+              placeholder="Buscar área (catálogo DGA)"
             />
           </div>
         </CardContent>
