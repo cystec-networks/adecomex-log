@@ -747,6 +747,7 @@ export type Database = {
           deleted_by: string | null
           detalle_producto: string | null
           especificaciones: string | null
+          estado_producto_codigo: string | null
           id: string
           item_no: number | null
           marca: string | null
@@ -773,6 +774,7 @@ export type Database = {
           deleted_by?: string | null
           detalle_producto?: string | null
           especificaciones?: string | null
+          estado_producto_codigo?: string | null
           id?: string
           item_no?: number | null
           marca?: string | null
@@ -799,6 +801,7 @@ export type Database = {
           deleted_by?: string | null
           detalle_producto?: string | null
           especificaciones?: string | null
+          estado_producto_codigo?: string | null
           id?: string
           item_no?: number | null
           marca?: string | null
@@ -1766,6 +1769,7 @@ export type Database = {
       expedientes: {
         Row: {
           acuerdo_codigo: string | null
+          acuerdo_comercial: string | null
           area_aduanera_codigo: string | null
           bl_awb: string | null
           canal_riesgo: string | null
@@ -1838,6 +1842,7 @@ export type Database = {
         }
         Insert: {
           acuerdo_codigo?: string | null
+          acuerdo_comercial?: string | null
           area_aduanera_codigo?: string | null
           bl_awb?: string | null
           canal_riesgo?: string | null
@@ -1910,6 +1915,7 @@ export type Database = {
         }
         Update: {
           acuerdo_codigo?: string | null
+          acuerdo_comercial?: string | null
           area_aduanera_codigo?: string | null
           bl_awb?: string | null
           canal_riesgo?: string | null
@@ -2849,6 +2855,7 @@ export type Database = {
           deleted_by: string | null
           detalle_producto: string | null
           especificaciones: string | null
+          estado_producto_codigo: string | null
           expediente_id: string
           id: string
           item_no: number
@@ -2875,6 +2882,7 @@ export type Database = {
           deleted_by?: string | null
           detalle_producto?: string | null
           especificaciones?: string | null
+          estado_producto_codigo?: string | null
           expediente_id: string
           id?: string
           item_no: number
@@ -2901,6 +2909,7 @@ export type Database = {
           deleted_by?: string | null
           detalle_producto?: string | null
           especificaciones?: string | null
+          estado_producto_codigo?: string | null
           expediente_id?: string
           id?: string
           item_no?: number
@@ -2959,6 +2968,7 @@ export type Database = {
           deleted_by: string | null
           detalle_producto: string | null
           especificaciones: string | null
+          estado_producto_codigo: string | null
           id: string
           item_no: number | null
           marca: string | null
@@ -2985,6 +2995,7 @@ export type Database = {
           deleted_by?: string | null
           detalle_producto?: string | null
           especificaciones?: string | null
+          estado_producto_codigo?: string | null
           id?: string
           item_no?: number | null
           marca?: string | null
@@ -3011,6 +3022,7 @@ export type Database = {
           deleted_by?: string | null
           detalle_producto?: string | null
           especificaciones?: string | null
+          estado_producto_codigo?: string | null
           id?: string
           item_no?: number | null
           marca?: string | null
@@ -3496,6 +3508,7 @@ export type Database = {
           deleted_by: string | null
           detalle_producto: string | null
           especificaciones: string | null
+          estado_producto_codigo: string | null
           id: string
           item_no: number | null
           marca: string | null
@@ -3522,6 +3535,7 @@ export type Database = {
           deleted_by?: string | null
           detalle_producto?: string | null
           especificaciones?: string | null
+          estado_producto_codigo?: string | null
           id?: string
           item_no?: number | null
           marca?: string | null
@@ -3548,6 +3562,7 @@ export type Database = {
           deleted_by?: string | null
           detalle_producto?: string | null
           especificaciones?: string | null
+          estado_producto_codigo?: string | null
           id?: string
           item_no?: number | null
           marca?: string | null
