@@ -26,12 +26,12 @@ export const DEFAULT_BROKER: BrokerConfig = {
   brokerRnc: "",
   brokerName: "ADECOMEX SRL",
   declarantCode: "",
-  declarantName: "ADECOMEX SRL",
-  declarantNationality: "DO",
+  declarantName: "",
+  declarantNationality: "",
   clearanceType: "IM4",
   transportCompanyCode: "",
-  transportNationality: "DO",
-  defaultNationality: "DO",
+  transportNationality: "214",
+  defaultNationality: "214",
 };
 
 export function loadBrokerConfig(): BrokerConfig {
