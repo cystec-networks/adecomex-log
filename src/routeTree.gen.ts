@@ -58,6 +58,7 @@ import { Route as AuthenticatedAdminCuentasPorPagarRouteImport } from './routes/
 import { Route as AuthenticatedAdminConfiguracionRouteImport } from './routes/_authenticated/admin.configuracion'
 import { Route as AuthenticatedAdminCatalogosRouteImport } from './routes/_authenticated/admin.catalogos'
 import { Route as AuthenticatedAdminCatalogoViajesTransporteRouteImport } from './routes/_authenticated/admin.catalogo-viajes-transporte'
+import { Route as AuthenticatedAdminCatalogoProductosDgaRouteImport } from './routes/_authenticated/admin.catalogo-productos-dga'
 import { Route as AuthenticatedAdminAccesosClientesRouteImport } from './routes/_authenticated/admin.accesos-clientes'
 import { Route as AuthenticatedAcademiaProgramasRouteImport } from './routes/_authenticated/academia.programas'
 import { Route as AuthenticatedAcademiaInscripcionesRouteImport } from './routes/_authenticated/academia.inscripciones'
@@ -350,6 +351,12 @@ const AuthenticatedAdminCatalogoViajesTransporteRoute =
     path: '/admin/catalogo-viajes-transporte',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminCatalogoProductosDgaRoute =
+  AuthenticatedAdminCatalogoProductosDgaRouteImport.update({
+    id: '/admin/catalogo-productos-dga',
+    path: '/admin/catalogo-productos-dga',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminAccesosClientesRoute =
   AuthenticatedAdminAccesosClientesRouteImport.update({
     id: '/admin/accesos-clientes',
@@ -471,6 +478,7 @@ export interface FileRoutesByFullPath {
   '/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
   '/academia/programas': typeof AuthenticatedAcademiaProgramasRoute
   '/admin/accesos-clientes': typeof AuthenticatedAdminAccesosClientesRoute
+  '/admin/catalogo-productos-dga': typeof AuthenticatedAdminCatalogoProductosDgaRoute
   '/admin/catalogo-viajes-transporte': typeof AuthenticatedAdminCatalogoViajesTransporteRoute
   '/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
@@ -536,6 +544,7 @@ export interface FileRoutesByTo {
   '/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
   '/academia/programas': typeof AuthenticatedAcademiaProgramasRoute
   '/admin/accesos-clientes': typeof AuthenticatedAdminAccesosClientesRoute
+  '/admin/catalogo-productos-dga': typeof AuthenticatedAdminCatalogoProductosDgaRoute
   '/admin/catalogo-viajes-transporte': typeof AuthenticatedAdminCatalogoViajesTransporteRoute
   '/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
@@ -605,6 +614,7 @@ export interface FileRoutesById {
   '/_authenticated/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
   '/_authenticated/academia/programas': typeof AuthenticatedAcademiaProgramasRoute
   '/_authenticated/admin/accesos-clientes': typeof AuthenticatedAdminAccesosClientesRoute
+  '/_authenticated/admin/catalogo-productos-dga': typeof AuthenticatedAdminCatalogoProductosDgaRoute
   '/_authenticated/admin/catalogo-viajes-transporte': typeof AuthenticatedAdminCatalogoViajesTransporteRoute
   '/_authenticated/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/_authenticated/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
@@ -672,6 +682,7 @@ export interface FileRouteTypes {
     | '/academia/inscripciones'
     | '/academia/programas'
     | '/admin/accesos-clientes'
+    | '/admin/catalogo-productos-dga'
     | '/admin/catalogo-viajes-transporte'
     | '/admin/catalogos'
     | '/admin/configuracion'
@@ -737,6 +748,7 @@ export interface FileRouteTypes {
     | '/academia/inscripciones'
     | '/academia/programas'
     | '/admin/accesos-clientes'
+    | '/admin/catalogo-productos-dga'
     | '/admin/catalogo-viajes-transporte'
     | '/admin/catalogos'
     | '/admin/configuracion'
@@ -805,6 +817,7 @@ export interface FileRouteTypes {
     | '/_authenticated/academia/inscripciones'
     | '/_authenticated/academia/programas'
     | '/_authenticated/admin/accesos-clientes'
+    | '/_authenticated/admin/catalogo-productos-dga'
     | '/_authenticated/admin/catalogo-viajes-transporte'
     | '/_authenticated/admin/catalogos'
     | '/_authenticated/admin/configuracion'
@@ -1216,6 +1229,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCatalogoViajesTransporteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/catalogo-productos-dga': {
+      id: '/_authenticated/admin/catalogo-productos-dga'
+      path: '/admin/catalogo-productos-dga'
+      fullPath: '/admin/catalogo-productos-dga'
+      preLoaderRoute: typeof AuthenticatedAdminCatalogoProductosDgaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/accesos-clientes': {
       id: '/_authenticated/admin/accesos-clientes'
       path: '/admin/accesos-clientes'
@@ -1364,6 +1384,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAcademiaInscripcionesRoute: typeof AuthenticatedAcademiaInscripcionesRoute
   AuthenticatedAcademiaProgramasRoute: typeof AuthenticatedAcademiaProgramasRoute
   AuthenticatedAdminAccesosClientesRoute: typeof AuthenticatedAdminAccesosClientesRoute
+  AuthenticatedAdminCatalogoProductosDgaRoute: typeof AuthenticatedAdminCatalogoProductosDgaRoute
   AuthenticatedAdminCatalogoViajesTransporteRoute: typeof AuthenticatedAdminCatalogoViajesTransporteRoute
   AuthenticatedAdminCatalogosRoute: typeof AuthenticatedAdminCatalogosRoute
   AuthenticatedAdminConfiguracionRoute: typeof AuthenticatedAdminConfiguracionRoute
@@ -1411,6 +1432,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAcademiaProgramasRoute: AuthenticatedAcademiaProgramasRoute,
   AuthenticatedAdminAccesosClientesRoute:
     AuthenticatedAdminAccesosClientesRoute,
+  AuthenticatedAdminCatalogoProductosDgaRoute:
+    AuthenticatedAdminCatalogoProductosDgaRoute,
   AuthenticatedAdminCatalogoViajesTransporteRoute:
     AuthenticatedAdminCatalogoViajesTransporteRoute,
   AuthenticatedAdminCatalogosRoute: AuthenticatedAdminCatalogosRoute,

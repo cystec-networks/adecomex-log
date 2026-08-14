@@ -19,6 +19,8 @@ import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
 import { AutocompleteInput } from "@/components/autocomplete-input";
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { DgaCombobox } from "@/components/dga-combobox";
+import { DgaProductoSearch } from "@/components/dga-producto-search";
+
 import { GenerarXmlSigaButton } from "@/components/generar-xml-siga";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
@@ -2007,7 +2009,9 @@ function MercanciaItemsBlock({
     codigo_arancelario: "", detalle_producto: "", unidad_medida: "", unidad_codigo: "",
     cantidad: "", peso: "", valor_fob: "",
     pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "18",
+    product_code: "", cod_marca: "", marca: "", cod_modelo: "", modelo: "", especificaciones: "",
   };
+
   const [f, setF] = useState(emptyForm);
 
   const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
@@ -2058,7 +2062,14 @@ function MercanciaItemsBlock({
         aplica_isc: !!f.aplica_isc,
         pct_isc: f.aplica_isc && f.pct_isc !== "" ? Number(f.pct_isc) : null,
         pct_itbis: f.pct_itbis === "" ? null : Number(f.pct_itbis),
+        product_code: f.product_code?.trim() || null,
+        cod_marca: f.cod_marca?.trim() || null,
+        marca: f.marca?.trim() || null,
+        cod_modelo: f.cod_modelo?.trim() || null,
+        modelo: f.modelo?.trim() || null,
+        especificaciones: f.especificaciones?.trim() || null,
       };
+
       if (editingId) {
         const { error } = await supabase.from("mercancia_items").update(payload).eq("id", editingId);
         if (error) throw error;
@@ -2098,7 +2109,14 @@ function MercanciaItemsBlock({
       aplica_isc: !!it.aplica_isc,
       pct_isc: it.pct_isc != null ? String(it.pct_isc) : "",
       pct_itbis: it.pct_itbis != null ? String(it.pct_itbis) : "18",
+      product_code: it.product_code ?? "",
+      cod_marca: it.cod_marca ?? "",
+      marca: it.marca ?? "",
+      cod_modelo: it.cod_modelo ?? "",
+      modelo: it.modelo ?? "",
+      especificaciones: it.especificaciones ?? "",
     });
+
     setOpen(true);
   };
 
@@ -2215,9 +2233,29 @@ function MercanciaItemsBlock({
       </p>
 
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingId ? "Editar ítem" : "Nuevo ítem"}</DialogTitle></DialogHeader>
+          <div className="rounded-md border bg-muted/30 p-3">
+            <DgaProductoSearch
+              onSelect={(p, reusarCodigo) => {
+                setF((prev) => ({
+                  ...prev,
+                  product_code: reusarCodigo ? (p.codigo_producto ?? "") : "",
+                  codigo_arancelario: prev.codigo_arancelario || (p.partida_arancelaria ?? ""),
+                  detalle_producto: prev.detalle_producto || (p.nombre_producto ?? ""),
+                  cod_marca: p.cod_marca ?? "",
+                  marca: p.marca ?? "",
+                  cod_modelo: p.cod_modelo ?? "",
+                  modelo: p.modelo ?? "",
+                  especificaciones: p.especificaciones ?? "",
+                  unidad_medida: prev.unidad_medida || (p.unidad ?? ""),
+                }));
+                toast.success(reusarCodigo ? "Producto copiado con su ProductCode" : "Datos copiados — SIGA asignará un ProductCode nuevo");
+              }}
+            />
+          </div>
           <div className="grid gap-3 md:grid-cols-2">
+
             <div className="grid gap-1.5">
               <Label>Código Arancelario</Label>
               <Input
@@ -2302,7 +2340,38 @@ function MercanciaItemsBlock({
               </div>
               <p className="text-[11px] text-muted-foreground mt-2">Por defecto 18%. Solo editar si aplica una excepción.</p>
             </div>
+
+            <div className="md:col-span-2 border-t pt-3 mt-1">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Datos del producto (SIGA)</div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-1.5">
+                  <Label>ProductCode</Label>
+                  <Input value={f.product_code} onChange={(e) => setF({ ...f, product_code: e.target.value })} placeholder="Vacío = SIGA asigna uno nuevo" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Cód. Marca</Label>
+                  <Input value={f.cod_marca} onChange={(e) => setF({ ...f, cod_marca: e.target.value })} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Marca</Label>
+                  <Input value={f.marca} onChange={(e) => setF({ ...f, marca: e.target.value })} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Cód. Modelo</Label>
+                  <Input value={f.cod_modelo} onChange={(e) => setF({ ...f, cod_modelo: e.target.value })} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Modelo</Label>
+                  <Input value={f.modelo} onChange={(e) => setF({ ...f, modelo: e.target.value })} />
+                </div>
+                <div className="grid gap-1.5 md:col-span-2">
+                  <Label>Especificaciones</Label>
+                  <Textarea rows={2} value={f.especificaciones} onChange={(e) => setF({ ...f, especificaciones: e.target.value })} />
+                </div>
+              </div>
+            </div>
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button onClick={() => guardar.mutate()} disabled={guardar.isPending}>{guardar.isPending ? "Guardando…" : (editingId ? "Actualizar" : "Agregar")}</Button>

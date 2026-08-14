@@ -124,7 +124,10 @@ const GROUPS: Group[] = [
       { to: "/admin/accesos-clientes", label: "Accesos de clientes", icon: UserCog, adminOnly: true,
         match: (p) => p.startsWith("/admin/accesos-clientes") },
       { to: "/admin/catalogos", label: "Catálogos DGA", icon: Library, adminOnly: true,
-        match: (p) => p.startsWith("/admin/catalogos") },
+        match: (p) => p.startsWith("/admin/catalogos") && !p.startsWith("/admin/catalogo-productos-dga") },
+      { to: "/admin/catalogo-productos-dga", label: "Productos DGA (histórico)", icon: Library, adminOnly: true,
+        match: (p) => p.startsWith("/admin/catalogo-productos-dga") },
+
       { to: "/admin/configuracion", label: "Configuración", icon: Settings, adminOnly: true,
         match: (p) => p.startsWith("/admin/configuracion") },
       { to: "/admin/facturacion", label: "Facturación (e-CF)", icon: Receipt, roles: ["admin","contabilidad"],
