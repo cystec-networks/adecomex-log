@@ -78,9 +78,25 @@ function NuevaSolicitud() {
         puerto_llegada: (ord as any).cot_destino ?? "",
       }));
       const precargados = (productosOrden ?? []).map((p: any, i: number) => ({
-        ...p,
         id: crypto.randomUUID(),
         item_no: i + 1,
+        codigo_arancelario: p.codigo_arancelario,
+        detalle_producto: p.detalle_producto,
+        unidad_medida: p.unidad_medida,
+        unidad_codigo: p.unidad_codigo,
+        cantidad: p.cantidad,
+        peso: p.peso,
+        valor_fob: p.valor_fob,
+        product_code: p.product_code,
+        cod_marca: p.cod_marca,
+        marca: p.marca,
+        cod_modelo: p.cod_modelo,
+        modelo: p.modelo,
+        especificaciones: p.especificaciones,
+        pct_gravamen: p.pct_gravamen,
+        aplica_isc: p.aplica_isc,
+        pct_isc: p.pct_isc,
+        pct_itbis: p.pct_itbis,
       }));
       setProductos(precargados);
       setLoaded(true);
