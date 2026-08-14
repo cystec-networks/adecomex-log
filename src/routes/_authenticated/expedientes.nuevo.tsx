@@ -147,29 +147,23 @@ function NuevoExpediente() {
     <div className="p-6 max-w-5xl mx-auto space-y-5">
       <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" size="sm" asChild>
-          {ord ? (
-            <Link to="/ordenes/$id" params={{ id: ord.id }}><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link>
-          ) : (
-            <Link to={sol ? "/solicitudes/$id" : "/expedientes"} params={sol ? { id: sol.id } : undefined as any}>
-              <ArrowLeft className="h-4 w-4 mr-1" />Volver
-            </Link>
-          )}
+          <Link to={sol ? "/solicitudes/$id" : "/expedientes"} params={sol ? { id: sol.id } : undefined as any}>
+            <ArrowLeft className="h-4 w-4 mr-1" />Volver
+          </Link>
         </Button>
         <div className="flex-1 min-w-0">
           <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
-            {ord ? "Crear Expediente desde Orden" : sol ? "Convertir Solicitud en Expediente" : "Nuevo Expediente"}
-            {ord ? <Badge variant="outline">← {ord.numero}</Badge> : sol && <Badge variant="outline">← {sol.numero}</Badge>}
+            {sol ? "Convertir Solicitud en Expediente" : "Nuevo Expediente"}
+            {sol && <Badge variant="outline">← {sol.numero}</Badge>}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {ord || sol ? "Revisa los datos precargados y confirma. El número del expediente se genera automáticamente." : "Completa los datos del nuevo expediente."}
+            {sol ? "Revisa los datos precargados y confirma. El número del expediente se genera automáticamente." : "Completa los datos del nuevo expediente."}
           </p>
         </div>
         <Button
           variant="outline"
           onClick={() =>
-            ord
-              ? nav({ to: "/ordenes/$id", params: { id: ord.id } })
-              : nav({ to: sol ? "/solicitudes/$id" : "/expedientes", params: sol ? { id: sol.id } : (undefined as any) })
+            nav({ to: sol ? "/solicitudes/$id" : "/expedientes", params: sol ? { id: sol.id } : (undefined as any) })
           }
         >
           <X className="h-4 w-4 mr-1" />Cancelar
@@ -179,28 +173,7 @@ function NuevoExpediente() {
         </Button>
       </div>
 
-      {ord && (
-        <Card className="bg-muted/30 border-dashed">
-          <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center justify-between">
-              <span>Datos de la Orden Original</span>
-              <Link to="/ordenes/$id" params={{ id: ord.id }} className="text-xs font-normal text-primary underline">
-                {ord.numero} ↗
-              </Link>
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Referencia de la Orden y su Cotización (solo lectura).</p>
-          </CardHeader>
-          <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <ReadOnly label="N° de Orden" value={ord.numero ?? undefined} />
-            <ReadOnly label="N° de Cotización" value={(ord as any).cot_numero ?? (ord as any).cotizaciones?.numero ?? undefined} />
-            <ReadOnly label="Cliente" value={(ord as any).clientes?.nombre ?? undefined} />
-            <ReadOnly label="Tipo de mercancía" value={(ord as any).cot_tipo_mercancia ?? undefined} />
-            <ReadOnly label="Origen" value={(ord as any).cot_origen ?? undefined} />
-            <ReadOnly label="Destino" value={(ord as any).cot_destino ?? undefined} />
-            <ReadOnly label="Incoterm" value={(ord as any).cot_incoterm ?? undefined} />
-          </CardContent>
-        </Card>
-      )}
+
 
       {sol && (
         <Card className="bg-muted/30 border-dashed">
