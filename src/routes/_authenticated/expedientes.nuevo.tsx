@@ -271,12 +271,11 @@ function NuevoExpediente() {
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={() =>
-          ord
-            ? nav({ to: "/ordenes/$id", params: { id: ord.id } })
-            : nav({ to: sol ? "/solicitudes/$id" : "/expedientes", params: sol ? { id: sol.id } : undefined as any })
+          nav({ to: sol ? "/solicitudes/$id" : "/expedientes", params: sol ? { id: sol.id } : undefined as any })
         }>
           Cancelar
         </Button>
+
         <Button onClick={() => confirmar.mutate()} disabled={confirmar.isPending}>
           <Check className="h-4 w-4 mr-1" />{confirmar.isPending ? "Creando…" : "Confirmar conversión"}
         </Button>
