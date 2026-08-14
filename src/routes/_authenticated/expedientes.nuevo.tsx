@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { DgaCombobox } from "@/components/dga-combobox";
 
-const searchSchema = z.object({ solicitud: z.string().optional() });
+const searchSchema = z.object({ solicitud: z.string().optional(), orden: z.string().optional() });
 
 export const Route = createFileRoute("/_authenticated/expedientes/nuevo")({
   validateSearch: searchSchema,
