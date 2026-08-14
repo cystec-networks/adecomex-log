@@ -256,20 +256,22 @@ export function buildImportDUAXml(
   const importerCode = personCode(cliente.rnc, nat);
   const origen = exp.pais_origen_codigo ?? "";
 
-  const T = (name: string, value: unknown, indent = "    ") =>
+  const T = (name: string, value: unknown, indent = "  ") =>
     `${indent}<${name}>${value === null || value === undefined ? "" : esc(value)}</${name}>`;
 
+  // ORDEN DE ETIQUETAS: debe coincidir EXACTAMENTE con la secuencia del XSD de SIGA.
+  // (validado contra un XML real aceptado por la DGA)
   const cabecera = [
-    T("FormNo", ""),
     T("DeclarationDate", ""),
     T("ClearanceType", broker.clearanceType),
     T("AreaCode", exp.area_aduanera_codigo),
+    T("FormNo", ""),
     T("BLNo", exp.bl_awb),
     T("ManifestNo", ""),
-    T("CargoControlNo", ""),
     T("ConsigneeCode", importerCode),
     T("ConsigneeName", cliente.nombre),
     T("ConsigneeNationality", nat),
+    T("CargoControlNo", ""),
     T("CommercialInvoiceno", exp.factura_comercial),
     T("DestinationLocationCode", exp.puerto_arribo_codigo),
     T("EntryPort", exp.puerto_arribo_codigo),
@@ -299,74 +301,77 @@ export function buildImportDUAXml(
     T("Remark", exp.observaciones),
   ].join("\n");
 
-  const supplier = `    <ImpDeclarationSupplier>
-${T("ForeignSupplierName", exp.suplidor, "      ")}
-${T("ForeignSupplierCode", personCode(exp.suplidor_rnc, origen), "      ")}
-${T("ForeignSupplierNationality", origen, "      ")}
-    </ImpDeclarationSupplier>`;
+  // SIGA rechaza el suplidor sin código: usa el comodín oficial cuando no se conoce el RNC.
+  const supplierCode = exp.suplidor_rnc ? personCode(exp.suplidor_rnc, origen) : SUPPLIER_NO_ASIGNADO.code;
+  const supplierName = exp.suplidor_rnc ? exp.suplidor : (exp.suplidor || SUPPLIER_NO_ASIGNADO.name);
+  const supplier = `  <ImpDeclarationSupplier>
+${T("ForeignSupplierName", supplierName, "   ")}
+${T("ForeignSupplierCode", supplierCode, "   ")}
+${T("ForeignSupplierNationality", exp.suplidor_rnc ? origen : "", "   ")}
+  </ImpDeclarationSupplier>`;
 
   const certOrigen = exp.numero_certificado_origen ? "true" : "false";
 
   const productos = (items ?? []).map((it) => {
     const desc = it.detalle_producto ?? "";
-    return `    <ImpDeclarationProduct>
-${T("HSCode", it.codigo_arancelario, "      ")}
-${T("ProductCode", it.product_code, "      ")}
-${T("productname", desc, "      ")}
-${T("BrandCode", it.cod_marca, "      ")}
-${T("BrandName", it.marca || "N/A", "      ")}
-${T("ModelCode", it.cod_modelo, "      ")}
-${T("ModelName", it.modelo || "N/A", "      ")}
-${T("ProductStatusCode", it.estado_producto_codigo, "      ")}
-${T("ProductYear", "", "      ")}
-${T("FOBValue", unitFob(it.valor_fob, it.cantidad), "      ")}
-${T("UnitCode", it.unidad_codigo, "      ")}
-${T("Qty", num(it.cantidad), "      ")}
-${T("Weight", num(it.peso), "      ")}
-${T("ProductSpecification", it.especificaciones, "      ")}
-${T("TempProductYN", "false", "      ")}
-${T("CertificateOrignYN", certOrigen, "      ")}
-${T("CertificateOriginNo", exp.numero_certificado_origen, "      ")}
-${T("OriginCountry", origen, "      ")}
-${T("OrganicYN", "false", "      ")}
-${T("GradeAlcohol", "", "      ")}
-${T("CustomerSalesPrice", "", "      ")}
-${T("ProductSerialNo", "", "      ")}
-${T("VehicleType", "", "      ")}
-${T("VehicleChassis", "", "      ")}
-${T("VehicleColor", "", "      ")}
-${T("VehicleMotor", "", "      ")}
-${T("VehicleCC", "", "      ")}
-${T("ProductDescription", desc, "      ")}
-${T("Remark", "", "      ")}
-    </ImpDeclarationProduct>`;
+    return `  <ImpDeclarationProduct>
+${T("HSCode", it.codigo_arancelario, "   ")}
+${T("ProductCode", it.product_code, "   ")}
+${T("productname", desc, "   ")}
+${T("BrandCode", it.cod_marca || "NA", "   ")}
+${T("BrandName", it.marca || "N/A", "   ")}
+${T("ModelCode", it.cod_modelo || "NA", "   ")}
+${T("ModelName", it.modelo || "N/A", "   ")}
+${T("ProductStatusCode", it.estado_producto_codigo || ESTADO_PRODUCTO_NUEVO, "   ")}
+${T("ProductYear", "", "   ")}
+${T("FOBValue", unitFob(it.valor_fob, it.cantidad), "   ")}
+${T("UnitCode", it.unidad_codigo, "   ")}
+${T("Qty", num(it.cantidad), "   ")}
+${T("Weight", num(it.peso), "   ")}
+${T("ProductSpecification", it.especificaciones, "   ")}
+${T("TempProductYN", "false", "   ")}
+${T("CertificateOrignYN", certOrigen, "   ")}
+${T("CertificateOriginNo", exp.numero_certificado_origen, "   ")}
+${T("OriginCountry", origen, "   ")}
+${T("OrganicYN", "false", "   ")}
+${T("GradeAlcohol", "0", "   ")}
+${T("CustomerSalesPrice", "0", "   ")}
+${T("ProductSerialNo", "", "   ")}
+${T("VehicleType", "", "   ")}
+${T("VehicleChassis", "", "   ")}
+${T("VehicleColor", "", "   ")}
+${T("VehicleMotor", "", "   ")}
+${T("VehicleCC", "", "   ")}
+${T("ProductDescription", desc, "   ")}
+${T("Remark", desc, "   ")}
+  </ImpDeclarationProduct>`;
   }).join("\n");
 
-  const docs: Array<{ code: string; desc: string; num: string }> = [];
-  if (exp.factura_comercial) docs.push({ code: RDOC.FACTURA_COMERCIAL, desc: "Factura comercial", num: exp.factura_comercial });
-  if (exp.bl_awb) docs.push({ code: RDOC.BL_MANIFIESTO, desc: "Conocimiento de embarque / Manifiesto", num: exp.bl_awb });
-  if (exp.numero_certificado_origen) docs.push({ code: "", desc: "Certificado de Origen", num: exp.numero_certificado_origen });
-  if (exp.numero_vuce) docs.push({ code: maps?.vuceDocCode ?? "", desc: "Solicitud de Permiso VUCE", num: exp.numero_vuce });
+  const docs: Array<{ code: string; num: string }> = [];
+  if (exp.bl_awb) docs.push({ code: RDOC.BL_MANIFIESTO, num: exp.bl_awb });
+  if (exp.factura_comercial) docs.push({ code: RDOC.FACTURA_COMERCIAL, num: exp.factura_comercial });
+  if (exp.numero_vuce && maps?.vuceDocCode) docs.push({ code: maps.vuceDocCode, num: exp.numero_vuce });
 
-  const documentos = docs.map((d) => `    <ImpDeclarationDocument>
-${T("RequiredDocumentCode", d.code, "      ")}
-${T("OtherDocTypeDesc", d.desc, "      ")}
-${T("RequiredDocumentNo", d.num, "      ")}
-${T("BizDocIssuerName", exp.suplidor || broker.brokerName, "      ")}
-${T("BizDocIssuerEmail", "", "      ")}
-${T("BizDocIssuerTel", "", "      ")}
-    </ImpDeclarationDocument>`).join("\n");
+  // Los documentos sin código RDOC hacen fallar la carga en SIGA: se omiten.
+  const documentos = docs.filter((d) => d.code).map((d) => `  <ImpDeclarationDocument>
+${T("RequiredDocumentCode", d.code, "   ")}
+${T("OtherDocTypeDesc", "", "   ")}
+${T("RequiredDocumentNo", d.num, "   ")}
+${T("BizDocIssuerName", "", "   ")}
+${T("BizDocIssuerEmail", "", "   ")}
+${T("BizDocIssuerTel", "", "   ")}
+  </ImpDeclarationDocument>`).join("\n");
 
-  return `<?xml version="1.0" encoding="utf-8"?>
-<ImportDUA xmlns="http://aduanas.gob.do/XSD/ImportClearance/ImportDUA.xsd">
-  <ImpDeclaration xmlns="">
+  return `<ImportDUA xmlns="http://aduanas.gob.do/XSD/ImportClearance/ImportDUA.xsd">
+ <ImpDeclaration xmlns="">
 ${cabecera}
 ${supplier}
 ${productos}${documentos ? "\n" + documentos : ""}
-  </ImpDeclaration>
+</ImpDeclaration>
 </ImportDUA>
 `;
 }
+
 
 export function downloadXml(filename: string, xml: string) {
   const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
