@@ -102,33 +102,54 @@ function DetalleOrden() {
         )}
       </div>
 
-      <Card className="bg-muted/30 border-dashed">
-        <CardHeader className="pb-3 border-b">
-          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center justify-between">
-            <span>Datos de la Cotización Original</span>
-            {o.cotizacion_id && (
-              <Link to="/cotizaciones/$id" params={{ id: o.cotizacion_id }} className="text-xs font-normal text-primary underline">
-                {o.cot_numero} ↗
-              </Link>
+      {o.cotizacion_id || o.cot_numero ? (
+        <Card className="bg-muted/30 border-dashed">
+          <CardHeader className="pb-3 border-b">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center justify-between">
+              <span>Datos de la Cotización Original</span>
+              {o.cotizacion_id && (
+                <Link to="/cotizaciones/$id" params={{ id: o.cotizacion_id }} className="text-xs font-normal text-primary underline">
+                  {o.cot_numero} ↗
+                </Link>
+              )}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Referencia conservada al momento de la conversión (solo lectura).</p>
+          </CardHeader>
+          <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <ReadOnlyField label="N° Cotización" value={o.cot_numero} />
+            <ReadOnlyField label="Cliente" value={(o as any).clientes?.nombre} />
+            <ReadOnlyField label="Tipo de mercancía" value={o.cot_tipo_mercancia} />
+            <ReadOnlyField label="Origen" value={o.cot_origen} />
+            <ReadOnlyField label="Destino" value={o.cot_destino} />
+            <ReadOnlyField label="Incoterm" value={o.cot_incoterm} />
+            <ReadOnlyField label="Peso estimado (kg)" value={o.cot_peso_kg} />
+            <ReadOnlyField label="Volumen estimado (m³)" value={o.cot_volumen_m3} />
+            <ReadOnlyField label="Tarifa propuesta" value={money(o.cot_tarifa_propuesta, o.cot_moneda)} />
+            <ReadOnlyField label="Fecha de emisión" value={fmtLocalDate(o.cot_fecha_emision)} />
+            <ReadOnlyField label="Fecha de vigencia" value={fmtLocalDate(o.cot_fecha_vigencia)} />
+            <ReadOnlyField label="Notas de la cotización" value={o.cot_notas} />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="bg-muted/30 border-dashed">
+          <CardHeader className="pb-3 border-b">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Datos de la Orden</CardTitle>
+            <p className="text-xs text-muted-foreground">Orden directa: no proviene de una cotización.</p>
+          </CardHeader>
+          <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <ReadOnlyField label="Cliente" value={(o as any).clientes?.nombre} />
+            {o.cot_tipo_mercancia && <ReadOnlyField label="Tipo de mercancía" value={o.cot_tipo_mercancia} />}
+            {o.cot_origen && <ReadOnlyField label="Origen" value={o.cot_origen} />}
+            {o.cot_destino && <ReadOnlyField label="Destino" value={o.cot_destino} />}
+            {o.cot_incoterm && <ReadOnlyField label="Incoterm" value={o.cot_incoterm} />}
+            {o.cot_peso_kg != null && <ReadOnlyField label="Peso estimado (kg)" value={o.cot_peso_kg} />}
+            {o.cot_volumen_m3 != null && <ReadOnlyField label="Volumen estimado (m³)" value={o.cot_volumen_m3} />}
+            {o.cot_tarifa_propuesta != null && (
+              <ReadOnlyField label="Tarifa propuesta" value={money(o.cot_tarifa_propuesta, o.cot_moneda)} />
             )}
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">Referencia conservada al momento de la conversión (solo lectura).</p>
-        </CardHeader>
-        <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <ReadOnlyField label="N° Cotización" value={o.cot_numero} />
-          <ReadOnlyField label="Cliente" value={(o as any).clientes?.nombre} />
-          <ReadOnlyField label="Tipo de mercancía" value={o.cot_tipo_mercancia} />
-          <ReadOnlyField label="Origen" value={o.cot_origen} />
-          <ReadOnlyField label="Destino" value={o.cot_destino} />
-          <ReadOnlyField label="Incoterm" value={o.cot_incoterm} />
-          <ReadOnlyField label="Peso estimado (kg)" value={o.cot_peso_kg} />
-          <ReadOnlyField label="Volumen estimado (m³)" value={o.cot_volumen_m3} />
-          <ReadOnlyField label="Tarifa propuesta" value={money(o.cot_tarifa_propuesta, o.cot_moneda)} />
-          <ReadOnlyField label="Fecha de emisión" value={fmtLocalDate(o.cot_fecha_emision)} />
-          <ReadOnlyField label="Fecha de vigencia" value={fmtLocalDate(o.cot_fecha_vigencia)} />
-          <ReadOnlyField label="Notas de la cotización" value={o.cot_notas} />
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader><CardTitle className="text-base">Orden</CardTitle></CardHeader>

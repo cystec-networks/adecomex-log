@@ -46,6 +46,7 @@ import { Route as AuthenticatedSolicitudesNuevaRouteImport } from './routes/_aut
 import { Route as AuthenticatedSolicitudesIdRouteImport } from './routes/_authenticated/solicitudes.$id'
 import { Route as AuthenticatedPermisosNuevoRouteImport } from './routes/_authenticated/permisos.nuevo'
 import { Route as AuthenticatedPermisosIdRouteImport } from './routes/_authenticated/permisos.$id'
+import { Route as AuthenticatedOrdenesNuevaRouteImport } from './routes/_authenticated/ordenes.nueva'
 import { Route as AuthenticatedOrdenesIdRouteImport } from './routes/_authenticated/ordenes.$id'
 import { Route as AuthenticatedExpedientesPapeleraRouteImport } from './routes/_authenticated/expedientes.papelera'
 import { Route as AuthenticatedExpedientesNuevoRouteImport } from './routes/_authenticated/expedientes.nuevo'
@@ -284,6 +285,12 @@ const AuthenticatedPermisosIdRoute = AuthenticatedPermisosIdRouteImport.update({
   path: '/permisos/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOrdenesNuevaRoute =
+  AuthenticatedOrdenesNuevaRouteImport.update({
+    id: '/ordenes/nueva',
+    path: '/ordenes/nueva',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOrdenesIdRoute = AuthenticatedOrdenesIdRouteImport.update({
   id: '/ordenes/$id',
   path: '/ordenes/$id',
@@ -530,6 +537,7 @@ export interface FileRoutesByFullPath {
   '/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
+  '/ordenes/nueva': typeof AuthenticatedOrdenesNuevaRoute
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
@@ -601,6 +609,7 @@ export interface FileRoutesByTo {
   '/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
+  '/ordenes/nueva': typeof AuthenticatedOrdenesNuevaRoute
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
@@ -676,6 +685,7 @@ export interface FileRoutesById {
   '/_authenticated/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
   '/_authenticated/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/_authenticated/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
+  '/_authenticated/ordenes/nueva': typeof AuthenticatedOrdenesNuevaRoute
   '/_authenticated/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/_authenticated/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
   '/_authenticated/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
@@ -749,6 +759,7 @@ export interface FileRouteTypes {
     | '/expedientes/nuevo'
     | '/expedientes/papelera'
     | '/ordenes/$id'
+    | '/ordenes/nueva'
     | '/permisos/$id'
     | '/permisos/nuevo'
     | '/solicitudes/$id'
@@ -820,6 +831,7 @@ export interface FileRouteTypes {
     | '/expedientes/nuevo'
     | '/expedientes/papelera'
     | '/ordenes/$id'
+    | '/ordenes/nueva'
     | '/permisos/$id'
     | '/permisos/nuevo'
     | '/solicitudes/$id'
@@ -894,6 +906,7 @@ export interface FileRouteTypes {
     | '/_authenticated/expedientes/nuevo'
     | '/_authenticated/expedientes/papelera'
     | '/_authenticated/ordenes/$id'
+    | '/_authenticated/ordenes/nueva'
     | '/_authenticated/permisos/$id'
     | '/_authenticated/permisos/nuevo'
     | '/_authenticated/solicitudes/$id'
@@ -1209,6 +1222,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPermisosIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ordenes/nueva': {
+      id: '/_authenticated/ordenes/nueva'
+      path: '/ordenes/nueva'
+      fullPath: '/ordenes/nueva'
+      preLoaderRoute: typeof AuthenticatedOrdenesNuevaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ordenes/$id': {
       id: '/_authenticated/ordenes/$id'
       path: '/ordenes/$id'
@@ -1501,6 +1521,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedExpedientesNuevoRoute: typeof AuthenticatedExpedientesNuevoRoute
   AuthenticatedExpedientesPapeleraRoute: typeof AuthenticatedExpedientesPapeleraRoute
   AuthenticatedOrdenesIdRoute: typeof AuthenticatedOrdenesIdRoute
+  AuthenticatedOrdenesNuevaRoute: typeof AuthenticatedOrdenesNuevaRoute
   AuthenticatedPermisosIdRoute: typeof AuthenticatedPermisosIdRoute
   AuthenticatedPermisosNuevoRoute: typeof AuthenticatedPermisosNuevoRoute
   AuthenticatedSolicitudesIdRoute: typeof AuthenticatedSolicitudesIdRoute
@@ -1563,6 +1584,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedExpedientesNuevoRoute: AuthenticatedExpedientesNuevoRoute,
   AuthenticatedExpedientesPapeleraRoute: AuthenticatedExpedientesPapeleraRoute,
   AuthenticatedOrdenesIdRoute: AuthenticatedOrdenesIdRoute,
+  AuthenticatedOrdenesNuevaRoute: AuthenticatedOrdenesNuevaRoute,
   AuthenticatedPermisosIdRoute: AuthenticatedPermisosIdRoute,
   AuthenticatedPermisosNuevoRoute: AuthenticatedPermisosNuevoRoute,
   AuthenticatedSolicitudesIdRoute: AuthenticatedSolicitudesIdRoute,
