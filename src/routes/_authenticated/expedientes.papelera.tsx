@@ -177,6 +177,9 @@ function Papelera() {
           <TabsTrigger value="solicitudes">Solicitudes ({solRows.length})</TabsTrigger>
           <TabsTrigger value="permisos">Permisos ({perRows.length})</TabsTrigger>
           <TabsTrigger value="transportes">Transportes ({trRows.length})</TabsTrigger>
+          <TabsTrigger value="cotizaciones">Cotizaciones ({cotRows.length})</TabsTrigger>
+          <TabsTrigger value="ordenes">Órdenes ({ordRows.length})</TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="expedientes">
