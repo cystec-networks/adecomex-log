@@ -2868,7 +2868,7 @@ export type Database = {
           created_by: string | null
           eliminado_en: string | null
           eliminado_por: string | null
-          estado: string
+          estado: Database["public"]["Enums"]["orden_estado"]
           id: string
           notas: string | null
           numero: string | null
@@ -2894,7 +2894,7 @@ export type Database = {
           created_by?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
-          estado?: string
+          estado?: Database["public"]["Enums"]["orden_estado"]
           id?: string
           notas?: string | null
           numero?: string | null
@@ -2920,7 +2920,7 @@ export type Database = {
           created_by?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
-          estado?: string
+          estado?: Database["public"]["Enums"]["orden_estado"]
           id?: string
           notas?: string | null
           numero?: string | null
@@ -4155,6 +4155,13 @@ export type Database = {
         | "retirado"
         | "cancelado"
       moneda: "USD" | "DOP" | "EUR"
+      orden_estado:
+        | "abierta"
+        | "en_transito"
+        | "declarada"
+        | "impuestos_pagados"
+        | "despachada"
+        | "entregada"
       permiso_estado:
         | "solicitado"
         | "en_tramite"
@@ -4400,6 +4407,14 @@ export const Constants = {
         "cancelado",
       ],
       moneda: ["USD", "DOP", "EUR"],
+      orden_estado: [
+        "abierta",
+        "en_transito",
+        "declarada",
+        "impuestos_pagados",
+        "despachada",
+        "entregada",
+      ],
       permiso_estado: [
         "solicitado",
         "en_tramite",
