@@ -843,6 +843,60 @@ export type Database = {
           },
         ]
       }
+      dga_areas: {
+        Row: {
+          area: string
+          codigo: string
+          localizacion: string | null
+        }
+        Insert: {
+          area: string
+          codigo: string
+          localizacion?: string | null
+        }
+        Update: {
+          area?: string
+          codigo?: string
+          localizacion?: string | null
+        }
+        Relationships: []
+      }
+      dga_paises: {
+        Row: {
+          codigo: string
+          pais: string
+        }
+        Insert: {
+          codigo: string
+          pais: string
+        }
+        Update: {
+          codigo?: string
+          pais?: string
+        }
+        Relationships: []
+      }
+      dga_puertos: {
+        Row: {
+          codigo: string
+          codigo_pais: string | null
+          pais: string | null
+          puerto: string
+        }
+        Insert: {
+          codigo: string
+          codigo_pais?: string | null
+          pais?: string | null
+          puerto: string
+        }
+        Update: {
+          codigo?: string
+          codigo_pais?: string | null
+          pais?: string | null
+          puerto?: string
+        }
+        Relationships: []
+      }
       documentos: {
         Row: {
           created_at: string
@@ -2992,8 +3046,10 @@ export type Database = {
           numero: string
           observaciones: string | null
           origen: string | null
+          origen_codigo: string | null
           prioridad: Database["public"]["Enums"]["prioridad"]
           puerto_llegada: string | null
+          puerto_llegada_codigo: string | null
           responsable_id: string | null
           tipo_carga: string | null
           tipo_operacion: string | null
@@ -3016,8 +3072,10 @@ export type Database = {
           numero?: string
           observaciones?: string | null
           origen?: string | null
+          origen_codigo?: string | null
           prioridad?: Database["public"]["Enums"]["prioridad"]
           puerto_llegada?: string | null
+          puerto_llegada_codigo?: string | null
           responsable_id?: string | null
           tipo_carga?: string | null
           tipo_operacion?: string | null
@@ -3040,8 +3098,10 @@ export type Database = {
           numero?: string
           observaciones?: string | null
           origen?: string | null
+          origen_codigo?: string | null
           prioridad?: Database["public"]["Enums"]["prioridad"]
           puerto_llegada?: string | null
+          puerto_llegada_codigo?: string | null
           responsable_id?: string | null
           tipo_carga?: string | null
           tipo_operacion?: string | null

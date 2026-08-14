@@ -11,6 +11,7 @@ import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
+import { DgaCombobox } from "@/components/dga-combobox";
 
 export const Route = createFileRoute("/_authenticated/solicitudes/nueva")({
   component: NuevaSolicitud,
@@ -20,7 +21,8 @@ function NuevaSolicitud() {
   const nav = useNavigate();
   const [form, setForm] = useState<any>({
     cliente_id: "", contacto: "", tipo_operacion: "Importación", tipo_carga: "",
-    origen: "", puerto_llegada: "", fecha_arribo_est: "", incoterm: "", medio_transporte: "Marítimo",
+    origen: "", origen_codigo: "", puerto_llegada: "", puerto_llegada_codigo: "",
+    fecha_arribo_est: "", incoterm: "", medio_transporte: "Marítimo",
     prioridad: "media", observaciones: "", bl_awb: "", factura_comercial: "",
   });
 
@@ -99,15 +101,29 @@ function NuevaSolicitud() {
               <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => setForm({ ...form, tipo_carga: v })} placeholder="Escribe o selecciona…" />
             </div>
             <div className="grid gap-1.5"><Label>Origen</Label>
-              <CatalogoAutocomplete tabla="catalogo_paises" value={form.origen} onChange={(v) => setForm({ ...form, origen: v })} placeholder="Escribe o selecciona…" />
+              <DgaCombobox
+                table="dga_paises"
+                value={form.origen}
+                codigo={form.origen_codigo}
+                onChange={(nombre, codigo) => setForm({ ...form, origen: nombre, origen_codigo: codigo })}
+                placeholder="Selecciona país (catálogo DGA)"
+              />
+              {form.origen && !form.origen_codigo && (
+                <span className="text-[11px] text-amber-700">Sin código DGA.</span>
+              )}
             </div>
             <div className="grid gap-1.5"><Label>Puerto / Aeropuerto de llegada</Label>
-              <Select value={form.puerto_llegada} onValueChange={(v) => setForm({ ...form, puerto_llegada: v })}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
-                <SelectContent>
-                  {["Puerto de Haina","Puerto de Caucedo","Puerto Multimodal Caucedo","Puerto de Río Haina","Puerto de Puerto Plata","Puerto de Manzanillo","Puerto de Boca Chica","AILA (Las Américas)","Aeropuerto del Cibao (STI)","Aeropuerto de Punta Cana","Aeropuerto de Puerto Plata","Frontera Jimaní","Frontera Dajabón"].map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <DgaCombobox
+                table="dga_puertos"
+                value={form.puerto_llegada}
+                codigo={form.puerto_llegada_codigo}
+                filterCodPais={form.origen_codigo || undefined}
+                onChange={(nombre, codigo) => setForm({ ...form, puerto_llegada: nombre, puerto_llegada_codigo: codigo })}
+                placeholder="Buscar puerto (catálogo DGA)"
+              />
+              {form.puerto_llegada && !form.puerto_llegada_codigo && (
+                <span className="text-[11px] text-amber-700">Sin código DGA.</span>
+              )}
             </div>
             <div className="grid gap-1.5"><Label>Fecha estimada de arribo</Label><Input type="date" value={form.fecha_arribo_est} onChange={(e) => setForm({ ...form, fecha_arribo_est: e.target.value })} /></div>
             <div className="grid gap-1.5"><Label>Incoterm</Label>

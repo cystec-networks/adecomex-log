@@ -12,6 +12,7 @@ import { ArrowLeft, Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { DgaCombobox } from "@/components/dga-combobox";
 
 const searchSchema = z.object({ solicitud: z.string().optional() });
 
@@ -45,6 +46,7 @@ function NuevoExpediente() {
     bl_awb: "",
     factura_comercial: "",
     puerto_arribo: "",
+    puerto_arribo_codigo: "",
     fecha_compromiso: "",
     sla_dias: 5,
     observaciones: "",
@@ -52,6 +54,7 @@ function NuevoExpediente() {
     tipo_operacion: "",
     tipo_carga: "",
     pais_origen: "",
+    pais_origen_codigo: "",
     incoterm: "",
     medio_transporte: "",
     contacto_solicitud: "",
@@ -64,11 +67,13 @@ function NuevoExpediente() {
         ...f,
         cliente_id: sol.cliente_id ?? "",
         puerto_arribo: sol.puerto_llegada ?? "",
+        puerto_arribo_codigo: (sol as any).puerto_llegada_codigo ?? "",
         fecha_compromiso: sol.fecha_arribo_est ?? "",
         observaciones: sol.observaciones ?? "",
         tipo_operacion: sol.tipo_operacion ?? "",
         tipo_carga: sol.tipo_carga ?? "",
         pais_origen: sol.origen ?? "",
+        pais_origen_codigo: (sol as any).origen_codigo ?? "",
         incoterm: sol.incoterm ?? "",
         medio_transporte: sol.medio_transporte ?? "",
         contacto_solicitud: sol.contacto ?? "",
@@ -172,15 +177,16 @@ function NuevoExpediente() {
           <div className="grid gap-1.5"><Label>Factura comercial</Label><Input value={form.factura_comercial} onChange={(e) => set("factura_comercial", e.target.value)} /></div>
           <div className="grid gap-1.5">
             <Label>Puerto de arribo</Label>
-            <Select value={form.puerto_arribo || undefined} onValueChange={(v) => set("puerto_arribo", v)}>
-              <SelectTrigger><SelectValue placeholder="Selecciona puerto" /></SelectTrigger>
-              <SelectContent>
-                {PUERTOS_ARRIBO.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                {form.puerto_arribo && !PUERTOS_ARRIBO.includes(form.puerto_arribo) && (
-                  <SelectItem value={form.puerto_arribo}>{form.puerto_arribo}</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+            <DgaCombobox
+              table="dga_puertos"
+              value={form.puerto_arribo}
+              codigo={form.puerto_arribo_codigo}
+              onChange={(nombre, codigo) => setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo }))}
+              placeholder="Buscar puerto (catálogo DGA)"
+            />
+            {form.puerto_arribo && !form.puerto_arribo_codigo && (
+              <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo para el XML.</span>
+            )}
           </div>
           <div className="grid gap-1.5"><Label>ETA / Fecha de llegada</Label><Input type="date" value={form.fecha_compromiso ?? ""} onChange={(e) => set("fecha_compromiso", e.target.value)} /></div>
           <div className="grid gap-1.5"><Label>SLA (días)</Label><Input type="number" value={form.sla_dias} onChange={(e) => set("sla_dias", Number(e.target.value))} /></div>

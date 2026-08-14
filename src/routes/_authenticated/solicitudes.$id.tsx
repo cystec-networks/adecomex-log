@@ -15,6 +15,7 @@ import { SearchEmailButton } from "@/components/search-email-button";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
+import { DgaCombobox } from "@/components/dga-combobox";
 
 export const Route = createFileRoute("/_authenticated/solicitudes/$id")({
   component: DetalleSolicitud,
@@ -50,7 +51,9 @@ function DetalleSolicitud() {
         tipo_operacion: s.tipo_operacion ?? "",
         tipo_carga: s.tipo_carga ?? "",
         origen: s.origen ?? "",
+        origen_codigo: s.origen_codigo ?? "",
         puerto_llegada: s.puerto_llegada ?? "",
+        puerto_llegada_codigo: s.puerto_llegada_codigo ?? "",
         fecha_arribo_est: s.fecha_arribo_est ?? "",
         incoterm: s.incoterm ?? "",
         medio_transporte: s.medio_transporte ?? "",
@@ -180,7 +183,29 @@ function DetalleSolicitud() {
           <CardContent className="grid gap-3">
             <div className="grid gap-1.5"><Label>Tipo de operación</Label><Input value={form.tipo_operacion} onChange={(e) => set("tipo_operacion", e.target.value)} /></div>
             <div className="grid gap-1.5"><Label>Tipo de carga</Label><CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} /></div>
-            <div className="grid gap-3 grid-cols-2 md:grid-cols-2"><div className="grid gap-1.5"><Label>Origen</Label><CatalogoAutocomplete tabla="catalogo_paises" value={form.origen} onChange={(v) => set("origen", v)} /></div><div className="grid gap-1.5"><Label>Puerto llegada</Label><Input value={form.puerto_llegada} onChange={(e) => set("puerto_llegada", e.target.value)} /></div></div>
+            <div className="grid gap-3 grid-cols-2 md:grid-cols-2">
+              <div className="grid gap-1.5"><Label>Origen</Label>
+                <DgaCombobox
+                  table="dga_paises"
+                  value={form.origen}
+                  codigo={form.origen_codigo}
+                  onChange={(nombre, codigo) => setForm((f: any) => ({ ...f, origen: nombre, origen_codigo: codigo }))}
+                  placeholder="Selecciona país (catálogo DGA)"
+                />
+                {form.origen && !form.origen_codigo && <span className="text-[11px] text-amber-700">Sin código DGA.</span>}
+              </div>
+              <div className="grid gap-1.5"><Label>Puerto llegada</Label>
+                <DgaCombobox
+                  table="dga_puertos"
+                  value={form.puerto_llegada}
+                  codigo={form.puerto_llegada_codigo}
+                  filterCodPais={form.origen_codigo || undefined}
+                  onChange={(nombre, codigo) => setForm((f: any) => ({ ...f, puerto_llegada: nombre, puerto_llegada_codigo: codigo }))}
+                  placeholder="Buscar puerto (catálogo DGA)"
+                />
+                {form.puerto_llegada && !form.puerto_llegada_codigo && <span className="text-[11px] text-amber-700">Sin código DGA.</span>}
+              </div>
+            </div>
             <div className="grid gap-3 grid-cols-2"><div className="grid gap-1.5"><Label>Fecha estimada arribo</Label><Input type="date" value={form.fecha_arribo_est ?? ""} onChange={(e) => set("fecha_arribo_est", e.target.value)} /></div><div className="grid gap-1.5"><Label>Incoterm</Label><CatalogoAutocomplete tabla="catalogo_incoterms" value={form.incoterm} onChange={(v) => set("incoterm", v)} /></div></div>
             <div className="grid gap-1.5"><Label>Medio de transporte</Label><Input value={form.medio_transporte} onChange={(e) => set("medio_transporte", e.target.value)} /></div>
             <div className="grid gap-3 grid-cols-2"><div className="grid gap-1.5"><Label>BL / AWB</Label><Input value={form.bl_awb} onChange={(e) => set("bl_awb", e.target.value)} /></div><div className="grid gap-1.5"><Label>Factura comercial</Label><Input value={form.factura_comercial} onChange={(e) => set("factura_comercial", e.target.value)} /></div></div>

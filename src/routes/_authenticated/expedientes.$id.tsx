@@ -18,6 +18,7 @@ import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
 import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
 import { AutocompleteInput } from "@/components/autocomplete-input";
 import { CatalogCombobox } from "@/components/catalog-combobox";
+import { DgaCombobox } from "@/components/dga-combobox";
 import { GenerarXmlSigaButton } from "@/components/generar-xml-siga";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
@@ -294,6 +295,7 @@ function TabInfo({ exp }: { exp: any }) {
     pais_origen_codigo: exp.pais_origen_codigo ?? "",
     pais_procedencia_codigo: exp.pais_procedencia_codigo ?? "",
     puerto_arribo_codigo: exp.puerto_arribo_codigo ?? "",
+    area_aduanera_codigo: exp.area_aduanera_codigo ?? "",
     liq_siga_numero: exp.liq_siga_numero ?? "",
     liq_siga_estado: exp.liq_siga_estado ?? "",
     liq_oficial_total: exp.liq_oficial_total ?? "",
@@ -428,11 +430,23 @@ function TabInfo({ exp }: { exp: any }) {
         <AutoField label="Suplidor" value={form.suplidor} onChange={(v) => set("suplidor", v)} suggestion={sug.suplidor ?? []} />
         <div className="grid gap-1.5">
           <Label>País de origen</Label>
-          <CatalogCombobox
-            table="catalogo_paises"
+          <DgaCombobox
+            table="dga_paises"
             value={form.pais_origen}
             codigo={form.pais_origen_codigo}
             onChange={(nombre, codigo) => setForm((f) => ({ ...f, pais_origen: nombre, pais_origen_codigo: codigo }))}
+            placeholder="Selecciona país (catálogo DGA)"
+          />
+          {form.pais_origen && !form.pais_origen_codigo && (
+            <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el país del catálogo para el XML.</span>
+          )}
+        </div>
+        <div className="grid gap-1.5">
+          <Label>País de procedencia</Label>
+          <DgaCombobox
+            table="dga_paises"
+            codigo={form.pais_procedencia_codigo}
+            onChange={(_n, codigo) => setForm((f) => ({ ...f, pais_procedencia_codigo: codigo }))}
             placeholder="Selecciona país (catálogo DGA)"
           />
         </div>
@@ -452,12 +466,24 @@ function TabInfo({ exp }: { exp: any }) {
           <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} />
           <div className="grid gap-1.5">
             <Label>Puerto de arribo</Label>
-            <CatalogCombobox
-              table="catalogo_puertos"
+            <DgaCombobox
+              table="dga_puertos"
               value={form.puerto_arribo}
               codigo={form.puerto_arribo_codigo}
               onChange={(nombre, codigo) => setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo }))}
               placeholder="Buscar puerto (catálogo DGA)"
+            />
+            {form.puerto_arribo && !form.puerto_arribo_codigo && (
+              <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo para el XML.</span>
+            )}
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Área / Administración aduanera</Label>
+            <DgaCombobox
+              table="dga_areas"
+              codigo={form.area_aduanera_codigo}
+              onChange={(_n, codigo) => setForm((f) => ({ ...f, area_aduanera_codigo: codigo }))}
+              placeholder="Buscar área (catálogo DGA)"
             />
           </div>
         </CardContent>
