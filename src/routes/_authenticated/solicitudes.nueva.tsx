@@ -41,6 +41,7 @@ function NuevaSolicitud() {
     fecha_arribo_est: "", incoterm: "", medio_transporte: "Marítimo",
     prioridad: "media", observaciones: "", bl_awb: "", factura_comercial: "",
   });
+  const [productos, setProductos] = useState<any[]>([]);
 
   const { data: clientes } = useQuery({
     queryKey: ["clientes-select"],
