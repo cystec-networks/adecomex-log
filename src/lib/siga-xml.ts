@@ -353,19 +353,45 @@ ${T("Remark", desc, "   ")}
   </ImpDeclarationProduct>`;
   }).join("\n");
 
-  const docs: Array<{ code: string; num: string }> = [];
-  if (exp.bl_awb) docs.push({ code: RDOC.BL_MANIFIESTO, num: exp.bl_awb });
-  if (exp.factura_comercial) docs.push({ code: RDOC.FACTURA_COMERCIAL, num: exp.factura_comercial });
-  if (exp.numero_vuce && maps?.vuceDocCode) docs.push({ code: maps.vuceDocCode, num: exp.numero_vuce });
+  // Emisor de los documentos: se toma de los datos capturados en el expediente,
+  // con el cliente y el agente (ADECOMEX) como respaldo cuando falten.
+  const cli = exp.clientes ?? {};
+  const tel = String(cli.telefono || "").trim() || "809-000-0000";
+  const mail = String(cli.email || "").trim() || "info@adecomex.com.do";
+  const nombreSuplidor = (exp.suplidor || "").trim();
+  const nombreNaviera = (exp.naviera || "").trim();
+
+  const docs: Array<{ code: string; num: string; issuer: string }> = [];
+  if (exp.bl_awb) {
+    docs.push({
+      code: RDOC.BL_MANIFIESTO,
+      num: exp.bl_awb,
+      issuer: nombreNaviera || nombreSuplidor || cli.nombre || broker.brokerName,
+    });
+  }
+  if (exp.factura_comercial) {
+    docs.push({
+      code: RDOC.FACTURA_COMERCIAL,
+      num: exp.factura_comercial,
+      issuer: nombreSuplidor || cli.nombre || broker.brokerName,
+    });
+  }
+  if (exp.numero_vuce && maps?.vuceDocCode) {
+    docs.push({
+      code: maps.vuceDocCode,
+      num: exp.numero_vuce,
+      issuer: "VENTANILLA UNICA DE COMERCIO EXTERIOR",
+    });
+  }
 
   // Los documentos sin código RDOC hacen fallar la carga en SIGA: se omiten.
   const documentos = docs.filter((d) => d.code).map((d) => `  <ImpDeclarationDocument>
 ${T("RequiredDocumentCode", d.code, "   ")}
 ${T("OtherDocTypeDesc", "", "   ")}
 ${T("RequiredDocumentNo", d.num, "   ")}
-${T("BizDocIssuerName", "", "   ")}
-${T("BizDocIssuerEmail", "", "   ")}
-${T("BizDocIssuerTel", "", "   ")}
+${T("BizDocIssuerName", d.issuer || broker.brokerName, "   ")}
+${T("BizDocIssuerEmail", mail, "   ")}
+${T("BizDocIssuerTel", tel, "   ")}
   </ImpDeclarationDocument>`).join("\n");
 
   return `<ImportDUA xmlns="http://aduanas.gob.do/XSD/ImportClearance/ImportDUA.xsd">
