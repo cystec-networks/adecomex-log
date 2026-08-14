@@ -65,6 +65,8 @@ export function loadBrokerConfig(): BrokerConfig {
     }
     if (!cfg.declarantCode) cfg.declarantCode = DEFAULT_BROKER.declarantCode;
     if (!cfg.declarantName) cfg.declarantName = DEFAULT_BROKER.declarantName;
+    // Los tipos de despacho antiguos ("IM4") no existen en SIGA: se migran al código oficial.
+    if (!cfg.clearanceType || !/^IC38-/.test(cfg.clearanceType)) cfg.clearanceType = DEFAULT_BROKER.clearanceType;
     if (!cfg.brokerEmployeeCode) cfg.brokerEmployeeCode = DEFAULT_BROKER.brokerEmployeeCode;
     return cfg;
   } catch {
