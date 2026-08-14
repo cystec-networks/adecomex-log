@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { DgaCombobox } from "@/components/dga-combobox";
 
-const searchSchema = z.object({ solicitud: z.string().optional(), orden: z.string().optional() });
+const searchSchema = z.object({ solicitud: z.string().optional() });
 
 export const Route = createFileRoute("/_authenticated/expedientes/nuevo")({
   validateSearch: searchSchema,
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/expedientes/nuevo")({
 const PUERTOS_ARRIBO = ["Puerto Multimodal Caucedo", "Puerto de Haina Oriental", "Puerto de Haina Occidental", "Puerto de Río Haina", "Puerto de Boca Chica", "Puerto de Manzanillo", "Puerto Plata", "AILA (Las Américas)", "AIC (Cibao)", "AIP (Punta Cana)", "Aeropuerto La Isabela"];
 
 function NuevoExpediente() {
-  const { solicitud: solicitudId, orden: ordenId } = useSearch({ from: Route.id });
+  const { solicitud: solicitudId } = useSearch({ from: Route.id });
   const nav = useNavigate();
   const qc = useQueryClient();
 
@@ -36,13 +36,6 @@ function NuevoExpediente() {
     enabled: !!solicitudId,
   });
 
-  const { data: ord, isLoading: loadingOrden } = useQuery({
-    queryKey: ["orden-convert", ordenId],
-    queryFn: async () => ordenId
-      ? (await supabase.from("ordenes").select("*, clientes(id,nombre), cotizaciones(id,numero)").eq("id", ordenId).maybeSingle()).data
-      : null,
-    enabled: !!ordenId,
-  });
 
   const { data: clientes } = useQuery({
     queryKey: ["clientes-lite"],
