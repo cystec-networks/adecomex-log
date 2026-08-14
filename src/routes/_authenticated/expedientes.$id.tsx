@@ -2007,7 +2007,9 @@ function MercanciaItemsBlock({
     codigo_arancelario: "", detalle_producto: "", unidad_medida: "", unidad_codigo: "",
     cantidad: "", peso: "", valor_fob: "",
     pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "18",
+    product_code: "", cod_marca: "", marca: "", cod_modelo: "", modelo: "", especificaciones: "",
   };
+
   const [f, setF] = useState(emptyForm);
 
   const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
