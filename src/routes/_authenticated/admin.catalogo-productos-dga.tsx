@@ -37,39 +37,50 @@ export const Route = createFileRoute("/_authenticated/admin/catalogo-productos-d
   }),
 });
 
-// Nombres de columna del reporte de la DGA (se aceptan variantes con/sin acentos)
+// Encabezados reales del reporte de la DGA. El matching es tolerante:
+// se ignoran tildes, mayúsculas, puntuación, espacios extra y las palabras "de"/"del".
 const COLUMN_ALIASES: Record<string, string[]> = {
-  codigo_producto: ["codigo producto", "codigo del producto", "codigo", "product code", "cod producto"],
-  partida_arancelaria: ["partida arancelaria", "partida", "hscode", "hs code", "codigo arancelario"],
-  nombre_producto: ["nombre producto", "nombre del producto", "producto", "nombre", "descripcion"],
-  cod_marca: ["cod marca", "codigo marca", "cod de marca", "brand code"],
-  marca: ["marca", "brand"],
-  cod_modelo: ["cod modelo", "codigo modelo", "cod de modelo", "model code"],
-  modelo: ["modelo", "model"],
-  unidad: ["unidad", "unidad de medida", "um"],
-  pais: ["pais", "pais origen", "pais de origen", "country"],
-  especificaciones: ["especificaciones", "especificacion", "specification"],
-  regimen: ["regimen", "regimen aduanero"],
-  estado: ["estado", "status"],
+  codigo_producto: ["Código de Producto", "Código Producto", "Codigo", "Product Code", "Cod Producto"],
+  partida_arancelaria: ["Partida Arancelaria", "Partida", "HS Code", "Código Arancelario"],
+  nombre_producto: ["Nombre de Producto", "Nombre Producto", "Producto", "Nombre", "Descripción"],
+  cod_marca: ["Cod. Marca", "Código Marca", "Brand Code"],
+  marca: ["Marca", "Brand"],
+  cod_modelo: ["Cod. Modelo", "Código Modelo", "Model Code"],
+  modelo: ["Modelo", "Model"],
+  unidad: ["Unidad", "Unidad de Medida", "UM"],
+  pais: ["País", "País Origen", "País de Origen", "Country"],
+  especificaciones: ["Especificaciones", "Especificación", "Specification"],
+  regimen: ["Régimen", "Régimen Aduanero"],
+  estado: ["Estado", "Status"],
 };
 
-function normHeader(h: string) {
-  return normalizeBusqueda(String(h ?? "")).replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+/** Clave tolerante: sin tildes, sin mayúsculas, sin puntuación, sin "de/del", sin espacios. */
+function headerKey(h: string) {
+  return normalizeBusqueda(String(h ?? ""))
+    .replace(/[^a-z0-9 ]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w && w !== "de" && w !== "del")
+    .join("");
 }
+
+const ALIAS_KEYS: Record<string, string[]> = Object.fromEntries(
+  Object.entries(COLUMN_ALIASES).map(([f, a]) => [f, a.map(headerKey)]),
+);
 
 function mapRow(row: Record<string, any>) {
   const normalized: Record<string, any> = {};
-  for (const [k, v] of Object.entries(row)) normalized[normHeader(k)] = v;
+  for (const [k, v] of Object.entries(row)) normalized[headerKey(k)] = v;
   const out: Record<string, string | null> = {};
-  for (const [field, aliases] of Object.entries(COLUMN_ALIASES)) {
+  for (const [field, keys] of Object.entries(ALIAS_KEYS)) {
     let val: any = undefined;
-    for (const a of aliases) {
+    for (const a of keys) {
       if (normalized[a] != null && String(normalized[a]).trim() !== "") { val = normalized[a]; break; }
     }
     out[field] = val === undefined ? null : String(val).trim();
   }
   return out;
 }
+
 
 function CatalogoProductosDgaPage() {
   const qc = useQueryClient();
@@ -121,7 +132,7 @@ function CatalogoProductosDgaPage() {
       const json = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: "" });
       const mapped = json.map(mapRow).filter((r) => r.codigo_producto);
       if (mapped.length === 0) {
-        toast.error("No se encontraron filas con 'Código Producto' en el archivo.");
+        toast.error("No se encontraron filas con 'Código de Producto' en el archivo.");
         return;
       }
       // Deduplicar por codigo_producto dentro del mismo archivo
@@ -162,8 +173,8 @@ function CatalogoProductosDgaPage() {
         <CardHeader>
           <CardTitle className="text-base">Cargar reporte .xlsx de la DGA</CardTitle>
           <CardDescription>
-            Sube el archivo tal cual lo descargas de SIGA/DGA. Se hace <b>upsert por Código Producto</b>: si ya existe se actualiza, si es nuevo se agrega.
-            Columnas esperadas: Código Producto, Partida Arancelaria, Nombre Producto, Cod. Marca, Marca, Cod. Modelo, Modelo, Unidad, País, Especificaciones, Régimen, Estado.
+            Sube el archivo tal cual lo descargas de SIGA/DGA. Se hace <b>upsert por Código de Producto</b>: si ya existe se actualiza, si es nuevo se agrega.
+            Columnas esperadas: Código de Producto, Partida Arancelaria, Nombre de Producto, Cod. Marca, Marca, Cod. Modelo, Modelo, Unidad, País, Especificaciones, Régimen, Estado. Los encabezados se reconocen sin importar tildes, mayúsculas o espacios.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
