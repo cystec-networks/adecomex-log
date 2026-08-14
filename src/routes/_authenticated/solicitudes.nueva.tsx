@@ -151,7 +151,7 @@ function NuevaSolicitud() {
           </CardHeader>
           <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <ReadOnly label="N° de Orden" value={ord.numero} />
-            <ReadOnly label="N° de Cotización" value={(ord as any).cot_numero ?? (ord as any).cotizaciones?.numero} />
+            <ReadOnly label="N° de Cotización" value={(ord as any).cot_numero} />
             <ReadOnly label="Cliente" value={(ord as any).clientes?.nombre} />
             <ReadOnly label="Tipo de mercancía" value={(ord as any).cot_tipo_mercancia} />
             <ReadOnly label="Origen" value={(ord as any).cot_origen} />
