@@ -273,7 +273,7 @@ export function buildImportDUAXml(
     T("DepartureCountryCode", exp.pais_procedencia_codigo || origen),
     T("TransportCompanyCode", broker.transportCompanyCode),
     T("TransportNationality", broker.transportNationality || nat),
-    T("TransportMethod", exp.metodo_transporte_codigo),
+    T("TransportMethod", resolveTransportMethodCode(exp, maps?.transporte)),
     T("EntryPlanDate", fmtDate(exp.fecha_compromiso)),
     T("EntryDate", fmtDate(exp.fecha_recibido || exp.fecha_compromiso)),
     T("ImporterCode", importerCode),
@@ -284,8 +284,8 @@ export function buildImportDUAXml(
     T("DeclarantCode", cleanId(broker.declarantCode)),
     T("DeclarantName", broker.declarantName),
     T("DeclarantNationality", migrarNat(broker.declarantNationality, nat)),
-    T("RegimenCode", resolveRegimenCode(exp, regimenMap)),
-    T("AgreementCode", exp.acuerdo_codigo),
+    T("RegimenCode", resolveRegimenCode(exp, maps?.regimen)),
+    T("AgreementCode", resolveAgreementCode(exp, maps?.acuerdo)),
     T("TotalFOB", num(exp.total_fob)),
     T("InsuranceValue", num(exp.seguro)),
     T("FreightValue", num(exp.flete)),
@@ -314,7 +314,7 @@ ${T("BrandCode", it.cod_marca, "      ")}
 ${T("BrandName", it.marca || "N/A", "      ")}
 ${T("ModelCode", it.cod_modelo, "      ")}
 ${T("ModelName", it.modelo || "N/A", "      ")}
-${T("ProductStatusCode", "", "      ")}
+${T("ProductStatusCode", it.estado_producto_codigo, "      ")}
 ${T("ProductYear", "", "      ")}
 ${T("FOBValue", unitFob(it.valor_fob, it.cantidad), "      ")}
 ${T("UnitCode", it.unidad_codigo, "      ")}
@@ -343,7 +343,7 @@ ${T("Remark", "", "      ")}
   if (exp.factura_comercial) docs.push({ code: RDOC.FACTURA_COMERCIAL, desc: "Factura comercial", num: exp.factura_comercial });
   if (exp.bl_awb) docs.push({ code: RDOC.BL_MANIFIESTO, desc: "Conocimiento de embarque / Manifiesto", num: exp.bl_awb });
   if (exp.numero_certificado_origen) docs.push({ code: "", desc: "Certificado de Origen", num: exp.numero_certificado_origen });
-  if (exp.numero_vuce) docs.push({ code: "", desc: "Solicitud de Permiso VUCE", num: exp.numero_vuce });
+  if (exp.numero_vuce) docs.push({ code: maps?.vuceDocCode ?? "", desc: "Solicitud de Permiso VUCE", num: exp.numero_vuce });
 
   const documentos = docs.map((d) => `    <ImpDeclarationDocument>
 ${T("RequiredDocumentCode", d.code, "      ")}
