@@ -57,13 +57,14 @@ function NuevaSolicitud() {
       : null,
   });
 
-  const { data: productosOrden } = useQuery({
+  const { data: productosOrden, isLoading: loadingProductosOrden } = useQuery({
     queryKey: ["orden-productos", ordenId],
     enabled: !!ordenId,
     queryFn: async () => ordenId
       ? (await supabase.from("orden_productos").select("*").eq("orden_id", ordenId).is("deleted_at", null).order("item_no")).data ?? []
       : [],
   });
+
 
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
