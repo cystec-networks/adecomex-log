@@ -4,7 +4,7 @@ const CAMPOS = [
   "codigo_arancelario", "detalle_producto", "unidad_medida", "unidad_codigo",
   "cantidad", "peso", "valor_fob", "product_code", "cod_marca", "marca",
   "cod_modelo", "modelo", "especificaciones", "pct_gravamen", "aplica_isc",
-  "pct_isc", "pct_itbis",
+  "pct_isc", "pct_itbis", "estado_producto_codigo",
 ] as const;
 
 type Origen = "cotizacion_productos" | "orden_productos" | "solicitud_productos";

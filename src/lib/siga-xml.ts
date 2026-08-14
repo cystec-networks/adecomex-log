@@ -15,6 +15,8 @@ export type BrokerConfig = {
   declarantName: string;
   declarantNationality: string;
   clearanceType: string;
+  /** Nombre del tipo de despacho (solo para mostrar en la UI) */
+  clearanceTypeName?: string;
   transportCompanyCode: string;
   transportNationality: string;
   /** Código numérico DGA del país (214 = República Dominicana) */
@@ -32,6 +34,7 @@ export const DEFAULT_BROKER: BrokerConfig = {
   declarantName: "FRANCISCO ENERIO LOPEZ MARTINEZ",
   declarantNationality: "214",
   clearanceType: "IM4",
+  clearanceTypeName: "",
   transportCompanyCode: "",
   transportNationality: "214",
   defaultNationality: "214",

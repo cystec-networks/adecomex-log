@@ -9,8 +9,20 @@ import { cn } from "@/lib/utils";
 
 type Row = { codigo: string; nombre: string; pais?: string | null; cod_pais?: string | null; tipo?: string | null };
 
+export type CatalogTable =
+  | "catalogo_paises"
+  | "catalogo_puertos"
+  | "catalogo_unidades"
+  | "catalogo_acuerdos"
+  | "catalogo_tipos_despacho"
+  | "catalogo_estados_producto"
+  | "catalogo_metodos_transporte";
+
+// Catálogos que usan la columna booleana `activo`; el resto usa `estado` (texto).
+const TABLAS_ACTIVO = new Set(["catalogo_paises", "catalogo_puertos", "catalogo_unidades"]);
+
 type Props = {
-  table: "catalogo_paises" | "catalogo_puertos" | "catalogo_unidades";
+  table: CatalogTable;
   value?: string; // nombre visible
   codigo?: string;
   onChange: (nombre: string, codigo: string, extra?: Row) => void;
@@ -38,7 +50,8 @@ export function CatalogCombobox({
         table === "catalogo_puertos" ? "codigo, nombre, cod_pais, pais"
         : table === "catalogo_unidades" ? "codigo, nombre, tipo"
         : "codigo, nombre";
-      let query: any = supabase.from(table).select(cols).eq("activo", true);
+      let query: any = supabase.from(table).select(cols);
+      if (TABLAS_ACTIVO.has(table)) query = query.eq("activo", true);
       const term = sanitizeSearchTerm(q);
       if (term) query = query.or(`nombre.ilike.%${term}%,codigo.ilike.%${term}%`);
       if (table === "catalogo_puertos" && filterCodPais) query = query.eq("cod_pais", filterCodPais);
