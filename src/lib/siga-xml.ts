@@ -139,6 +139,13 @@ export const RDOC = {
   BL_MANIFIESTO: "RDOC-010-R1-1",
 } as const;
 
+/** Estado del producto por defecto en SIGA (IC04-001 = Nuevo) */
+export const ESTADO_PRODUCTO_NUEVO = "IC04-001";
+
+/** Comodín oficial de SIGA para suplidor extranjero sin código registrado */
+export const SUPPLIER_NO_ASIGNADO = { code: "999999999999", name: "*** NO ASIGNADO ***" } as const;
+
+
 // Régimen: nombre mostrado en el formulario -> código SIGA
 const REGIMEN_CODIGOS: Record<string, string> = {
   "despacho a consumo": "1",
