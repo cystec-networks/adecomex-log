@@ -69,6 +69,9 @@ function Ordenes() {
         <CardHeader className="flex-row items-center gap-3">
           <CardTitle className="text-base flex-1">{filtered.length} órdenes</CardTitle>
           <Input placeholder="Buscar…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
+          {canEdit && (
+            <Button asChild><Link to="/ordenes/nueva"><Plus className="h-4 w-4 mr-1" />Nueva orden</Link></Button>
+          )}
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-sm">
