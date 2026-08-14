@@ -176,15 +176,16 @@ function NuevoExpediente() {
           <div className="grid gap-1.5"><Label>Factura comercial</Label><Input value={form.factura_comercial} onChange={(e) => set("factura_comercial", e.target.value)} /></div>
           <div className="grid gap-1.5">
             <Label>Puerto de arribo</Label>
-            <Select value={form.puerto_arribo || undefined} onValueChange={(v) => set("puerto_arribo", v)}>
-              <SelectTrigger><SelectValue placeholder="Selecciona puerto" /></SelectTrigger>
-              <SelectContent>
-                {PUERTOS_ARRIBO.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                {form.puerto_arribo && !PUERTOS_ARRIBO.includes(form.puerto_arribo) && (
-                  <SelectItem value={form.puerto_arribo}>{form.puerto_arribo}</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+            <DgaCombobox
+              table="dga_puertos"
+              value={form.puerto_arribo}
+              codigo={form.puerto_arribo_codigo}
+              onChange={(nombre, codigo) => setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo }))}
+              placeholder="Buscar puerto (catálogo DGA)"
+            />
+            {form.puerto_arribo && !form.puerto_arribo_codigo && (
+              <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo para el XML.</span>
+            )}
           </div>
           <div className="grid gap-1.5"><Label>ETA / Fecha de llegada</Label><Input type="date" value={form.fecha_compromiso ?? ""} onChange={(e) => set("fecha_compromiso", e.target.value)} /></div>
           <div className="grid gap-1.5"><Label>SLA (días)</Label><Input type="number" value={form.sla_dias} onChange={(e) => set("sla_dias", Number(e.target.value))} /></div>
