@@ -876,6 +876,60 @@ export type Database = {
         }
         Relationships: []
       }
+      dga_productos_historico: {
+        Row: {
+          busqueda: string | null
+          cod_marca: string | null
+          cod_modelo: string | null
+          codigo_producto: string
+          created_at: string
+          especificaciones: string | null
+          estado: string | null
+          marca: string | null
+          modelo: string | null
+          nombre_producto: string | null
+          pais: string | null
+          partida_arancelaria: string | null
+          regimen: string | null
+          unidad: string | null
+          updated_at: string
+        }
+        Insert: {
+          busqueda?: string | null
+          cod_marca?: string | null
+          cod_modelo?: string | null
+          codigo_producto: string
+          created_at?: string
+          especificaciones?: string | null
+          estado?: string | null
+          marca?: string | null
+          modelo?: string | null
+          nombre_producto?: string | null
+          pais?: string | null
+          partida_arancelaria?: string | null
+          regimen?: string | null
+          unidad?: string | null
+          updated_at?: string
+        }
+        Update: {
+          busqueda?: string | null
+          cod_marca?: string | null
+          cod_modelo?: string | null
+          codigo_producto?: string
+          created_at?: string
+          especificaciones?: string | null
+          estado?: string | null
+          marca?: string | null
+          modelo?: string | null
+          nombre_producto?: string | null
+          pais?: string | null
+          partida_arancelaria?: string | null
+          regimen?: string | null
+          unidad?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       dga_puertos: {
         Row: {
           codigo: string
@@ -2598,18 +2652,24 @@ export type Database = {
         Row: {
           aplica_isc: boolean | null
           cantidad: number | null
+          cod_marca: string | null
+          cod_modelo: string | null
           codigo_arancelario: string | null
           created_at: string
           deleted_at: string | null
           deleted_by: string | null
           detalle_producto: string | null
+          especificaciones: string | null
           expediente_id: string
           id: string
           item_no: number
+          marca: string | null
+          modelo: string | null
           pct_gravamen: number | null
           pct_isc: number | null
           pct_itbis: number | null
           peso: number | null
+          product_code: string | null
           unidad_codigo: string | null
           unidad_medida: string | null
           updated_at: string
@@ -2618,18 +2678,24 @@ export type Database = {
         Insert: {
           aplica_isc?: boolean | null
           cantidad?: number | null
+          cod_marca?: string | null
+          cod_modelo?: string | null
           codigo_arancelario?: string | null
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
           detalle_producto?: string | null
+          especificaciones?: string | null
           expediente_id: string
           id?: string
           item_no: number
+          marca?: string | null
+          modelo?: string | null
           pct_gravamen?: number | null
           pct_isc?: number | null
           pct_itbis?: number | null
           peso?: number | null
+          product_code?: string | null
           unidad_codigo?: string | null
           unidad_medida?: string | null
           updated_at?: string
@@ -2638,18 +2704,24 @@ export type Database = {
         Update: {
           aplica_isc?: boolean | null
           cantidad?: number | null
+          cod_marca?: string | null
+          cod_modelo?: string | null
           codigo_arancelario?: string | null
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
           detalle_producto?: string | null
+          especificaciones?: string | null
           expediente_id?: string
           id?: string
           item_no?: number
+          marca?: string | null
+          modelo?: string | null
           pct_gravamen?: number | null
           pct_isc?: number | null
           pct_itbis?: number | null
           peso?: number | null
+          product_code?: string | null
           unidad_codigo?: string | null
           unidad_medida?: string | null
           updated_at?: string
@@ -3816,10 +3888,12 @@ export type Database = {
         Args: { _dias_tomados_ultimo_anio: number; _fecha_ingreso: string }
         Returns: number
       }
+      immutable_unaccent: { Args: { "": string }; Returns: string }
       marcar_password_cambiada_cliente: { Args: never; Returns: undefined }
       marcar_password_cambiada_estudiante: { Args: never; Returns: undefined }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
       app_role:
