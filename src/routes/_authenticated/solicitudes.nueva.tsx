@@ -15,6 +15,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { DgaCombobox } from "@/components/dga-combobox";
+import { ProductosCard } from "@/components/productos-card";
+
 
 const searchSchema = z.object({ orden: z.string().optional() });
 
