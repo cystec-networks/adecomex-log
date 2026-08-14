@@ -78,6 +78,13 @@ function NuevaSolicitud() {
       if (!payload.fecha_arribo_est) delete payload.fecha_arribo_est;
       const { data, error } = await supabase.from("solicitudes").insert(payload).select().single();
       if (error) throw error;
+      if (productos.length > 0) {
+        const filas = productos.map(({ id, ...p }: any, i: number) => ({
+          ...p, solicitud_id: data.id, item_no: i + 1,
+        }));
+        const { error: eProd } = await (supabase.from("solicitud_productos") as any).insert(filas);
+        if (eProd) throw eProd;
+      }
       if (ordenId) {
         await supabase.from("ordenes").update({ solicitud_id: data.id }).eq("id", ordenId);
         await supabase.from("auditoria").insert({ entidad: "ordenes", entidad_id: ordenId, accion: `solicitud:${data.numero}` });
@@ -94,6 +101,7 @@ function NuevaSolicitud() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
 
   if (ordenId && loadingOrden) return <div className="p-8 text-center text-muted-foreground">Cargando orden…</div>;
 
