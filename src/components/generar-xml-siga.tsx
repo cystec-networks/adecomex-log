@@ -43,6 +43,13 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
       (await supabase.from("mercancia_items").select("*").eq("expediente_id", expedienteId).is("deleted_at", null).order("item_no")).data ?? [],
   });
 
+  const { data: empleados } = useQuery({
+    queryKey: ["empleados-despachantes", cfgOpen],
+    enabled: cfgOpen,
+    queryFn: async () =>
+      (await supabase.from("empleados").select("id, nombre, cedula").is("deleted_at", null).eq("estado", "activo").order("nombre")).data ?? [],
+  });
+
   const { data: regimenes } = useQuery({
     queryKey: ["catalogo-regimenes-xml", open],
     enabled: open,
@@ -191,16 +198,49 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
               <Input value={broker.brokerRnc} onChange={(e) => setBroker({ ...broker, brokerRnc: e.target.value })} />
             </div>
             <div className="grid gap-1.5">
-              <Label>Código de agencia (BrokerCompanyCode)</Label>
-              <Input value={broker.brokerCompanyCode} onChange={(e) => setBroker({ ...broker, brokerCompanyCode: e.target.value })} />
+              <Label>RNC de ADECOMEX para BrokerCompanyCode</Label>
+              <Input
+                value={broker.brokerCompanyCode}
+                onChange={(e) => setBroker({ ...broker, brokerCompanyCode: e.target.value })}
+                placeholder="130594181 → se emite RNC214130594181"
+              />
             </div>
             <div className="grid gap-1.5">
-              <Label>Código de tramitador (BrokerEmployeeCode)</Label>
-              <Input value={broker.brokerEmployeeCode} onChange={(e) => setBroker({ ...broker, brokerEmployeeCode: e.target.value })} />
+              <Label>Licencia / código del despachante (BrokerEmployeeCode)</Label>
+              <Input value={broker.brokerEmployeeCode} onChange={(e) => setBroker({ ...broker, brokerEmployeeCode: e.target.value })} placeholder="072-08" />
             </div>
-            <div className="rounded-md border bg-muted/30 p-2.5 text-[11px] text-muted-foreground">
-              El Declarante (DeclarantCode / DeclarantName / DeclarantNationality) se toma del <strong>Importador</strong> del expediente,
-              igual que en el XML de referencia. No se configura aquí.
+            <div className="rounded-md border bg-muted/30 p-2.5 space-y-2">
+              <p className="text-[11px] text-muted-foreground">
+                <strong>Declarante</strong>: es el agente aduanero (persona) que despacha, no el importador ni la razón social.
+              </p>
+              <div className="grid gap-1.5">
+                <Label className="text-xs">Tomar de un empleado</Label>
+                <select
+                  className="h-9 rounded-md border bg-background px-2 text-sm"
+                  value=""
+                  onChange={(e) => {
+                    const emp = (empleados ?? []).find((x: any) => x.id === e.target.value);
+                    if (emp) setBroker({ ...broker, declarantName: emp.nombre?.toUpperCase() ?? "", declarantCode: emp.cedula ?? "" });
+                  }}
+                >
+                  <option value="">Seleccionar empleado…</option>
+                  {(empleados ?? []).map((e: any) => (
+                    <option key={e.id} value={e.id}>{e.nombre}{e.cedula ? ` · ${e.cedula}` : ""}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs">Nombre del despachante (DeclarantName)</Label>
+                <Input value={broker.declarantName} onChange={(e) => setBroker({ ...broker, declarantName: e.target.value })} placeholder="FRANCISCO ENERIO LOPEZ MARTINEZ" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs">Cédula del despachante (DeclarantCode)</Label>
+                <Input value={broker.declarantCode} onChange={(e) => setBroker({ ...broker, declarantCode: e.target.value })} placeholder="00108459645" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs">Nacionalidad del declarante (código DGA)</Label>
+                <Input value={broker.declarantNationality} onChange={(e) => setBroker({ ...broker, declarantNationality: e.target.value })} placeholder="214" />
+              </div>
             </div>
             <div className="grid gap-1.5">
               <Label>Tipo de despacho SIGA (ClearanceType)</Label>

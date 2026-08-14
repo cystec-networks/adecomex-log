@@ -3,12 +3,15 @@
 // http://aduanas.gob.do/XSD/ImportClearance/ImportDUA.xsd
 
 export type BrokerConfig = {
+  /** RNC de ADECOMEX SRL (se emite como RNC214XXXXXXXXX en BrokerCompanyCode) */
   brokerCompanyCode: string;
+  /** Licencia/código del despachante (ej. 072-08) */
   brokerEmployeeCode: string;
   brokerRnc: string;
   brokerName: string;
-  // Datos adicionales requeridos por el esquema ImportDUA
+  /** Cédula del agente aduanero que despacha (DeclarantCode) */
   declarantCode: string;
+  /** Nombre de la PERSONA despachante (DeclarantName) */
   declarantName: string;
   declarantNationality: string;
   clearanceType: string;
@@ -27,7 +30,7 @@ export const DEFAULT_BROKER: BrokerConfig = {
   brokerName: "ADECOMEX SRL",
   declarantCode: "",
   declarantName: "",
-  declarantNationality: "",
+  declarantNationality: "214",
   clearanceType: "IM4",
   transportCompanyCode: "",
   transportNationality: "214",
@@ -97,6 +100,22 @@ export function personCode(id?: string | null, countryCode = "214"): string {
   return `${prefix}${cc}${clean}`;
 }
 
+/** Limpia una cédula/RNC dejando solo dígitos y letras (sin guiones ni espacios) */
+export function cleanId(id?: string | null): string {
+  return id ? String(id).trim().replace(/[-\s.]/g, "") : "";
+}
+
+/** FOB unitario = FOB total de la línea / cantidad (mínimo 4 decimales) */
+export function unitFob(fobTotal: unknown, qty: unknown): string {
+  const t = Number(fobTotal ?? 0);
+  const q = Number(qty ?? 0);
+  if (!isFinite(t) || !isFinite(q) || q === 0) return num(fobTotal);
+  const u = t / q;
+  if (!isFinite(u)) return "0";
+  const s = u.toFixed(Math.max(4, 6));
+  return s.replace(/(\.\d{4}\d*?)0+$/, "$1");
+}
+
 // Códigos RDOC de la DGA (catálogo de documentos requeridos)
 export const RDOC = {
   FACTURA_COMERCIAL: "RDOC-001",
@@ -140,8 +159,10 @@ export function validateExpediente(exp: any, items: any[], broker: BrokerConfig)
     need(it.cantidad != null, `items[${i}].cantidad`, `Ítem ${it.item_no ?? i + 1}: Cantidad`);
     need(it.valor_fob != null, `items[${i}].valor_fob`, `Ítem ${it.item_no ?? i + 1}: Valor FOB`);
   });
-  need(broker.brokerCompanyCode, "broker.company", "Código de agencia (BrokerCompanyCode)");
-  need(broker.brokerEmployeeCode, "broker.employee", "Código de tramitador (BrokerEmployeeCode)");
+  need(broker.brokerCompanyCode, "broker.company", "RNC de la agencia (BrokerCompanyCode)");
+  need(broker.brokerEmployeeCode, "broker.employee", "Licencia/código del despachante (BrokerEmployeeCode)");
+  need(broker.declarantCode, "broker.declarantCode", "Cédula del despachante (DeclarantCode)");
+  need(broker.declarantName, "broker.declarantName", "Nombre del despachante (DeclarantName)");
   need(broker.brokerRnc, "broker.rnc", "RNC de la agencia");
   need(broker.clearanceType, "broker.clearanceType", "Tipo de despacho SIGA (ClearanceType)");
   return missing;
@@ -198,10 +219,10 @@ export function buildImportDUAXml(
     T("ImporterName", cliente.nombre),
     T("ImporterNationality", nat),
     T("BrokerEmployeeCode", broker.brokerEmployeeCode),
-    T("BrokerCompanyCode", broker.brokerCompanyCode),
-    T("DeclarantCode", importerCode),
-    T("DeclarantName", cliente.nombre),
-    T("DeclarantNationality", nat),
+    T("BrokerCompanyCode", personCode(broker.brokerCompanyCode, nat)),
+    T("DeclarantCode", cleanId(broker.declarantCode)),
+    T("DeclarantName", broker.declarantName),
+    T("DeclarantNationality", broker.declarantNationality || nat),
     T("RegimenCode", resolveRegimenCode(exp, regimenMap)),
     T("AgreementCode", exp.acuerdo_codigo),
     T("TotalFOB", num(exp.total_fob)),
@@ -234,7 +255,7 @@ ${T("ModelCode", "", "      ")}
 ${T("ModelName", "N/A", "      ")}
 ${T("ProductStatusCode", "", "      ")}
 ${T("ProductYear", "", "      ")}
-${T("FOBValue", num(it.valor_fob), "      ")}
+${T("FOBValue", unitFob(it.valor_fob, it.cantidad), "      ")}
 ${T("UnitCode", it.unidad_codigo, "      ")}
 ${T("Qty", num(it.cantidad), "      ")}
 ${T("Weight", num(it.peso), "      ")}
