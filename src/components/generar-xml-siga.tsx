@@ -24,6 +24,9 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
   const [open, setOpen] = useState(false);
   const [cfgOpen, setCfgOpen] = useState(false);
   const [broker, setBroker] = useState<BrokerConfig>(() => loadBrokerConfig());
+  const [savingArea, setSavingArea] = useState(false);
+  const queryClient = useQueryClient();
+
 
   const { data: exp } = useQuery({
     queryKey: ["expediente-xml", expedienteId, open],
