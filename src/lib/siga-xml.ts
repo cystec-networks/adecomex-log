@@ -227,13 +227,17 @@ export function validateExpediente(exp: any, items: any[], broker: BrokerConfig)
 
 // NO bloquean la descarga: códigos pendientes de homologación con la DGA.
 // Se emiten como etiquetas XML vacías.
-export function pendingDgaCodes(exp: any): ValidationIssue[] {
+export function pendingDgaCodes(exp: any, maps?: SigaMaps, items?: any[]): ValidationIssue[] {
   const pending: ValidationIssue[] = [];
   const check = (v: any, field: string, label: string) => { if (!v) pending.push({ field, label }); };
-  check(resolveRegimenCode(exp), "regimen_codigo", "Régimen aduanero (RegimenCode)");
-  check(exp?.metodo_transporte_codigo, "metodo_transporte_codigo", "Método de transporte (TransportMethod)");
-  check(exp?.acuerdo_codigo, "acuerdo_codigo", "Acuerdo / Preferencia comercial (AgreementCode)");
+  check(resolveRegimenCode(exp, maps?.regimen), "regimen_codigo", "Régimen aduanero (RegimenCode)");
+  check(resolveTransportMethodCode(exp, maps?.transporte), "metodo_transporte_codigo", "Método de transporte (TransportMethod)");
+  check(resolveAgreementCode(exp, maps?.acuerdo), "acuerdo_codigo", "Acuerdo / Preferencia comercial (AgreementCode)");
   check(exp?.pais_procedencia_codigo, "pais_procedencia_codigo", "País de procedencia (DepartureCountryCode)");
+  if (exp?.numero_vuce) check(maps?.vuceDocCode, "vuce_doc_code", "Código de documento del Permiso VUCE (RequiredDocumentCode)");
+  (items ?? []).forEach((it, i) => {
+    check(it?.estado_producto_codigo, `items[${i}].estado_producto_codigo`, `Ítem ${it?.item_no ?? i + 1}: Estado del producto (ProductStatusCode)`);
+  });
   return pending;
 }
 
@@ -241,7 +245,7 @@ export function buildImportDUAXml(
   exp: any,
   items: any[],
   broker: BrokerConfig,
-  regimenMap?: Record<string, string>,
+  maps?: SigaMaps,
 ): string {
   const cliente = exp.clientes ?? {};
   const nat = broker.defaultNationality || "214";
