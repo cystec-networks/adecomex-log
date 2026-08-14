@@ -1,11 +1,20 @@
 // Generador de XML SIGA (ImportDUA) para la DGA - República Dominicana
-// Basado en la estructura oficial ImportDUA.
+// Replica EXACTAMENTE la estructura del esquema oficial
+// http://aduanas.gob.do/XSD/ImportClearance/ImportDUA.xsd
 
 export type BrokerConfig = {
   brokerCompanyCode: string;
   brokerEmployeeCode: string;
   brokerRnc: string;
   brokerName: string;
+  // Datos adicionales requeridos por el esquema ImportDUA
+  declarantCode: string;
+  declarantName: string;
+  declarantNationality: string;
+  clearanceType: string;
+  transportCompanyCode: string;
+  transportNationality: string;
+  defaultNationality: string;
 };
 
 const BROKER_KEY = "adecomex.siga.broker";
@@ -15,6 +24,13 @@ export const DEFAULT_BROKER: BrokerConfig = {
   brokerEmployeeCode: "",
   brokerRnc: "",
   brokerName: "ADECOMEX SRL",
+  declarantCode: "",
+  declarantName: "ADECOMEX SRL",
+  declarantNationality: "DO",
+  clearanceType: "IM4",
+  transportCompanyCode: "",
+  transportNationality: "DO",
+  defaultNationality: "DO",
 };
 
 export function loadBrokerConfig(): BrokerConfig {
@@ -43,20 +59,27 @@ function esc(v: unknown): string {
     .replace(/'/g, "&apos;");
 }
 
-function tag(name: string, value: unknown, indent = "    "): string {
-  const v = value === null || value === undefined || value === "" ? "" : esc(value);
-  return `${indent}<${name}>${v}</${name}>`;
-}
-
 function fmtDate(d?: string | null): string {
   if (!d) return "";
-  // Devuelve YYYY-MM-DDTHH:mm:ss-04:00, interpretando fechas YYYY-MM-DD como locales.
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d);
   if (m) return `${m[1]}-${m[2]}-${m[3]}T00:00:00${TZ}`;
   const date = new Date(d);
   if (isNaN(date.getTime())) return "";
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T00:00:00${TZ}`;
+}
+
+function num(v: unknown): string {
+  const n = Number(v ?? 0);
+  return isFinite(n) ? String(n) : "0";
+}
+
+// Formato de identificación SIGA: [RNC|CED|PAS]<número>
+function personCode(id?: string | null): string {
+  if (!id) return "";
+  const clean = String(id).trim().replace(/[-\s]/g, "");
+  if (/^(RNC|CED|PAS)/i.test(clean)) return clean.toUpperCase();
+  return `RNC${clean}`;
 }
 
 export type ValidationIssue = { field: string; label: string };
@@ -71,8 +94,9 @@ export function validateExpediente(exp: any, items: any[], broker: BrokerConfig)
   need(exp?.clientes?.nombre, "cliente.nombre", "Nombre del cliente");
   need(exp?.area_aduanera_codigo, "area_aduanera_codigo", "Código de Área/Administración aduanera");
   need(exp?.pais_origen_codigo, "pais_origen_codigo", "Código de País de origen");
-  need(exp?.puerto_arribo_codigo, "puerto_arribo_codigo", "Código de Puerto de arribo");
+  need(exp?.puerto_arribo_codigo, "puerto_arribo_codigo", "Código de Puerto de arribo (EntryPort)");
   need(exp?.bl_awb, "bl_awb", "BL / AWB");
+  need(exp?.factura_comercial, "factura_comercial", "Número de factura comercial");
   need(exp?.total_fob != null, "total_fob", "Total FOB");
   need(exp?.total_cif != null, "total_cif", "Total CIF");
   need(exp?.peso_bruto != null, "peso_bruto", "Peso bruto");
@@ -86,94 +110,134 @@ export function validateExpediente(exp: any, items: any[], broker: BrokerConfig)
   need(broker.brokerCompanyCode, "broker.company", "Código de agencia (BrokerCompanyCode)");
   need(broker.brokerEmployeeCode, "broker.employee", "Código de tramitador (BrokerEmployeeCode)");
   need(broker.brokerRnc, "broker.rnc", "RNC de la agencia");
+  need(broker.declarantCode, "broker.declarantCode", "Código del declarante (DeclarantCode)");
+  need(broker.declarantName, "broker.declarantName", "Nombre del declarante");
+  need(broker.clearanceType, "broker.clearanceType", "Tipo de despacho SIGA (ClearanceType)");
   return missing;
 }
 
 // NO bloquean la descarga: códigos pendientes de homologación con la DGA.
-// Se emiten como etiquetas XML vacías (opción a).
+// Se emiten como etiquetas XML vacías.
 export function pendingDgaCodes(exp: any): ValidationIssue[] {
   const pending: ValidationIssue[] = [];
   const check = (v: any, field: string, label: string) => { if (!v) pending.push({ field, label }); };
-  check(exp?.regimen_codigo, "regimen_codigo", "Régimen aduanero");
-  check(exp?.tipo_despacho_codigo, "tipo_despacho_codigo", "Tipo de despacho");
-  check(exp?.metodo_transporte_codigo, "metodo_transporte_codigo", "Método de transporte");
-  check(exp?.acuerdo_codigo, "acuerdo_codigo", "Acuerdo / Preferencia comercial");
+  check(exp?.regimen_codigo, "regimen_codigo", "Régimen aduanero (RegimenCode)");
+  check(exp?.metodo_transporte_codigo, "metodo_transporte_codigo", "Método de transporte (TransportMethod)");
+  check(exp?.acuerdo_codigo, "acuerdo_codigo", "Acuerdo / Preferencia comercial (AgreementCode)");
+  check(exp?.pais_procedencia_codigo, "pais_procedencia_codigo", "País de procedencia (DepartureCountryCode)");
   return pending;
 }
 
 export function buildImportDUAXml(exp: any, items: any[], broker: BrokerConfig): string {
-  const now = fmtDate(new Date().toISOString());
-  const eta = fmtDate(exp.fecha_compromiso);
   const cliente = exp.clientes ?? {};
+  const nat = broker.defaultNationality || "DO";
+  const importerCode = personCode(cliente.rnc);
+  const origen = exp.pais_origen_codigo ?? "";
 
-  const productos = (items ?? []).map((it, i) => {
-    const num = it.item_no ?? i + 1;
+  const T = (name: string, value: unknown, indent = "    ") =>
+    `${indent}<${name}>${value === null || value === undefined ? "" : esc(value)}</${name}>`;
+
+  const cabecera = [
+    T("ClearanceType", broker.clearanceType),
+    T("AreaCode", exp.area_aduanera_codigo),
+    T("BLNo", exp.bl_awb),
+    T("ConsigneeCode", importerCode),
+    T("ConsigneeName", cliente.nombre),
+    T("ConsigneeNationality", nat),
+    T("CommercialInvoiceno", exp.factura_comercial),
+    T("DestinationLocationCode", exp.puerto_arribo_codigo),
+    T("EntryPort", exp.puerto_arribo_codigo),
+    T("DepartureCountryCode", exp.pais_procedencia_codigo || origen),
+    T("TransportCompanyCode", broker.transportCompanyCode),
+    T("TransportNationality", broker.transportNationality || nat),
+    T("TransportMethod", exp.metodo_transporte_codigo),
+    T("EntryPlanDate", fmtDate(exp.fecha_compromiso)),
+    T("EntryDate", fmtDate(exp.fecha_recibido || exp.fecha_compromiso)),
+    T("ImporterCode", importerCode),
+    T("ImporterName", cliente.nombre),
+    T("ImporterNationality", nat),
+    T("BrokerEmployeeCode", broker.brokerEmployeeCode),
+    T("BrokerCompanyCode", broker.brokerCompanyCode),
+    T("DeclarantCode", broker.declarantCode),
+    T("DeclarantName", broker.declarantName),
+    T("DeclarantNationality", broker.declarantNationality || nat),
+    T("RegimenCode", exp.regimen_codigo),
+    T("AgreementCode", exp.acuerdo_codigo),
+    T("TotalFOB", num(exp.total_fob)),
+    T("InsuranceValue", num(exp.seguro)),
+    T("FreightValue", num(exp.flete)),
+    T("OtherValue", num(exp.otros)),
+    T("TotalCIF", num(exp.total_cif)),
+    T("TotalWeight", num(exp.peso_bruto)),
+    T("NetWeight", num(exp.peso_neto ?? exp.peso_bruto)),
+    T("Remark", exp.observaciones),
+  ].join("\n");
+
+  const supplier = `    <ImpDeclarationSupplier>
+${T("ForeignSupplierName", exp.suplidor, "      ")}
+${T("ForeignSupplierCode", personCode(exp.suplidor_rnc), "      ")}
+${T("ForeignSupplierNationality", origen, "      ")}
+    </ImpDeclarationSupplier>`;
+
+  const certOrigen = exp.numero_certificado_origen ? "true" : "false";
+
+  const productos = (items ?? []).map((it) => {
+    const desc = it.detalle_producto ?? "";
     return `    <ImpDeclarationProduct>
-      <LineNumber>${num}</LineNumber>
-      <HSCode>${esc(it.codigo_arancelario)}</HSCode>
-      <ProductDescription>${esc(it.detalle_producto ?? "")}</ProductDescription>
-      <UnitOfMeasureCode>${esc(it.unidad_codigo)}</UnitOfMeasureCode>
-      <Quantity>${Number(it.cantidad ?? 0)}</Quantity>
-      <NetWeight>${Number(it.peso ?? 0)}</NetWeight>
-      <FOBValue>${Number(it.valor_fob ?? 0)}</FOBValue>
-      <CountryOfOriginCode>${esc(exp.pais_origen_codigo)}</CountryOfOriginCode>
+${T("HSCode", it.codigo_arancelario, "      ")}
+${T("ProductCode", "", "      ")}
+${T("productname", desc, "      ")}
+${T("BrandCode", "", "      ")}
+${T("BrandName", "N/A", "      ")}
+${T("ModelCode", "", "      ")}
+${T("ModelName", "N/A", "      ")}
+${T("ProductStatusCode", "", "      ")}
+${T("ProductYear", "", "      ")}
+${T("FOBValue", num(it.valor_fob), "      ")}
+${T("UnitCode", it.unidad_codigo, "      ")}
+${T("Qty", num(it.cantidad), "      ")}
+${T("Weight", num(it.peso), "      ")}
+${T("ProductSpecification", "", "      ")}
+${T("TempProductYN", "false", "      ")}
+${T("CertificateOrignYN", certOrigen, "      ")}
+${T("CertificateOriginNo", exp.numero_certificado_origen, "      ")}
+${T("OriginCountry", origen, "      ")}
+${T("OrganicYN", "false", "      ")}
+${T("GradeAlcohol", "", "      ")}
+${T("CustomerSalesPrice", "", "      ")}
+${T("ProductSerialNo", "", "      ")}
+${T("VehicleType", "", "      ")}
+${T("VehicleChassis", "", "      ")}
+${T("VehicleColor", "", "      ")}
+${T("VehicleMotor", "", "      ")}
+${T("VehicleCC", "", "      ")}
+${T("ProductDescription", desc, "      ")}
+${T("Remark", "", "      ")}
     </ImpDeclarationProduct>`;
   }).join("\n");
 
-  const contenedores = (exp.numeros_contenedores ?? "")
-    .split(/[\s,;]+/).filter(Boolean)
-    .map((c: string) => `    <ImpDeclarationContainer>\n      <ContainerNumber>${esc(c)}</ContainerNumber>\n    </ImpDeclarationContainer>`)
-    .join("\n");
+  const docs: Array<{ code: string; desc: string; num: string }> = [];
+  if (exp.factura_comercial) docs.push({ code: "380", desc: "Factura comercial", num: exp.factura_comercial });
+  if (exp.bl_awb) docs.push({ code: "705", desc: "Conocimiento de embarque / AWB", num: exp.bl_awb });
+  if (exp.numero_certificado_origen) docs.push({ code: "861", desc: "Certificado de Origen", num: exp.numero_certificado_origen });
+  if (exp.numero_vuce) docs.push({ code: "VUCE", desc: "Solicitud de Permiso VUCE", num: exp.numero_vuce });
 
-  const documentos = [
-    { code: "380", desc: "Factura comercial", num: exp.factura_comercial },
-    { code: "705", desc: "Bill of Lading / AWB", num: exp.bl_awb },
-    exp.numero_certificado_origen && { code: "861", desc: "Certificado de Origen", num: exp.numero_certificado_origen },
-    exp.numero_vuce && { code: "VUCE", desc: "Solicitud de Permiso VUCE", num: exp.numero_vuce },
-  ].filter(Boolean).map((d: any) => `    <ImpDeclarationDocument>
-      <DocumentTypeCode>${esc(d.code)}</DocumentTypeCode>
-      <DocumentNumber>${esc(d.num)}</DocumentNumber>
-      <DocumentDescription>${esc(d.desc)}</DocumentDescription>
+  const documentos = docs.map((d) => `    <ImpDeclarationDocument>
+${T("RequiredDocumentCode", d.code, "      ")}
+${T("OtherDocTypeDesc", d.desc, "      ")}
+${T("RequiredDocumentNo", d.num, "      ")}
+${T("BizDocIssuerName", exp.suplidor || broker.brokerName, "      ")}
+${T("BizDocIssuerEmail", "", "      ")}
+${T("BizDocIssuerTel", "", "      ")}
     </ImpDeclarationDocument>`).join("\n");
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<ImportDUA xmlns="http://www.dga.gov.do/siga/importdua">
-  <Header>
-${tag("DeclarationNumber", exp.numero)}
-${tag("DeclarationDate", now)}
-${tag("CustomsOfficeCode", exp.area_aduanera_codigo)}
-${tag("RegimeCode", exp.regimen_codigo)}
-${tag("DispatchTypeCode", exp.tipo_despacho_codigo)}
-${tag("TransportMethodCode", exp.metodo_transporte_codigo)}
-${tag("TradeAgreementCode", exp.acuerdo_codigo)}
-${tag("CountryOfOriginCode", exp.pais_origen_codigo)}
-${tag("CountryOfDispatchCode", exp.pais_procedencia_codigo || exp.pais_origen_codigo)}
-${tag("ArrivalPortCode", exp.puerto_arribo_codigo)}
-${tag("EstimatedArrivalDate", eta)}
-${tag("BLNumber", exp.bl_awb)}
-${tag("VesselName", exp.naviera)}
-${tag("Incoterm", exp.incoterm)}
-${tag("TotalFOB", exp.total_fob ?? 0)}
-${tag("TotalInsurance", exp.seguro ?? 0)}
-${tag("TotalFreight", exp.flete ?? 0)}
-${tag("TotalOther", exp.otros ?? 0)}
-${tag("TotalCIF", exp.total_cif ?? 0)}
-${tag("GrossWeight", exp.peso_bruto ?? 0)}
-${tag("NetWeight", exp.peso_neto ?? 0)}
-  </Header>
-  <ImpDeclarationSupplier>
-${tag("ImporterRNC", cliente.rnc)}
-${tag("ImporterName", cliente.nombre)}
-${tag("ImporterAddress", cliente.direccion)}
-${tag("SupplierName", exp.suplidor)}
-${tag("BrokerCompanyCode", broker.brokerCompanyCode)}
-${tag("BrokerCompanyRNC", broker.brokerRnc)}
-${tag("BrokerCompanyName", broker.brokerName)}
-${tag("BrokerEmployeeCode", broker.brokerEmployeeCode)}
-  </ImpDeclarationSupplier>
-${productos}
-${contenedores}
-${documentos}
+  return `<?xml version="1.0" encoding="utf-8"?>
+<ImportDUA xmlns="http://aduanas.gob.do/XSD/ImportClearance/ImportDUA.xsd">
+  <ImpDeclaration xmlns="">
+${cabecera}
+${supplier}
+${productos}${documentos ? "\n" + documentos : ""}
+  </ImpDeclaration>
 </ImportDUA>
 `;
 }

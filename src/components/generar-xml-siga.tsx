@@ -158,7 +158,7 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
       </Dialog>
 
       <Dialog open={cfgOpen} onOpenChange={setCfgOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>Configuración de la agencia</DialogTitle>
             <DialogDescription>Datos de ADECOMEX usados en todos los XML SIGA. Se guardan localmente en este navegador.</DialogDescription>
@@ -180,6 +180,30 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
               <Label>Código de tramitador (BrokerEmployeeCode)</Label>
               <Input value={broker.brokerEmployeeCode} onChange={(e) => setBroker({ ...broker, brokerEmployeeCode: e.target.value })} />
             </div>
+            <div className="grid gap-1.5">
+              <Label>Código del declarante (DeclarantCode)</Label>
+              <Input value={broker.declarantCode} onChange={(e) => setBroker({ ...broker, declarantCode: e.target.value })} placeholder="CED00112345678" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Nombre del declarante</Label>
+              <Input value={broker.declarantName} onChange={(e) => setBroker({ ...broker, declarantName: e.target.value })} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Nacionalidad del declarante</Label>
+              <Input value={broker.declarantNationality} onChange={(e) => setBroker({ ...broker, declarantNationality: e.target.value })} placeholder="DO" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Tipo de despacho SIGA (ClearanceType)</Label>
+              <Input value={broker.clearanceType} onChange={(e) => setBroker({ ...broker, clearanceType: e.target.value })} placeholder="IM4" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Código transportista (TransportCompanyCode)</Label>
+              <Input value={broker.transportCompanyCode} onChange={(e) => setBroker({ ...broker, transportCompanyCode: e.target.value })} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Nacionalidad del transportista</Label>
+              <Input value={broker.transportNationality} onChange={(e) => setBroker({ ...broker, transportNationality: e.target.value })} placeholder="DO" />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCfgOpen(false)}>Cancelar</Button>
@@ -187,6 +211,7 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </>
   );
 }
