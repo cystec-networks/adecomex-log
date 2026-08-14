@@ -132,7 +132,7 @@ function CatalogoProductosDgaPage() {
       const json = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: "" });
       const mapped = json.map(mapRow).filter((r) => r.codigo_producto);
       if (mapped.length === 0) {
-        toast.error("No se encontraron filas con 'Código Producto' en el archivo.");
+        toast.error("No se encontraron filas con 'Código de Producto' en el archivo.");
         return;
       }
       // Deduplicar por codigo_producto dentro del mismo archivo
