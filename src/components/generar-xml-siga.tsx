@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { FileCode2, AlertTriangle, Download, Settings2, CheckCircle2, Info } from "lucide-react";
 import { toast } from "sonner";
+import { DgaCombobox } from "@/components/dga-combobox";
 import {
   buildImportDUAXml,
   downloadXml,
@@ -17,6 +18,7 @@ import {
   pendingDgaCodes,
   type BrokerConfig,
 } from "@/lib/siga-xml";
+
 
 export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string }) {
   const [open, setOpen] = useState(false);
