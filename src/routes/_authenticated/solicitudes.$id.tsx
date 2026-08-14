@@ -29,6 +29,9 @@ const PRIORIDADES = ["baja", "media", "alta", "urgente"];
 function DetalleSolicitud() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
+  const { data: roles } = useMyRoles();
+  const canEdit = (roles ?? []).some((r) => r === "admin" || r === "vendedor" || r === "operaciones");
+  
   
 
   const { data: s } = useQuery({
