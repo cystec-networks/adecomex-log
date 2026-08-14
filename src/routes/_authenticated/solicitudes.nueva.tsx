@@ -67,9 +67,6 @@ function NuevaSolicitud() {
 
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    console.log("DEBUG ordenId", ordenId);
-    console.log("DEBUG ord", ord);
-    console.log("DEBUG productosOrden", productosOrden);
     if (ord && !loaded) {
       setForm((f: any) => ({
         ...f,
