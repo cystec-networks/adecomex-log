@@ -14,6 +14,7 @@ export type BrokerConfig = {
   clearanceType: string;
   transportCompanyCode: string;
   transportNationality: string;
+  /** Código numérico DGA del país (214 = República Dominicana) */
   defaultNationality: string;
 };
 
