@@ -6,7 +6,8 @@ import {
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
   GraduationCap, BookOpen, UserPlus, ClipboardCheck,
   Briefcase, IdCard, HandCoins,
-  Scale,
+  Scale, FileSpreadsheet,
+
 
 } from "lucide-react";
 import type { AppRole } from "@/lib/auth-hooks";
@@ -67,6 +68,17 @@ type MenuEntry =
 
 const GROUPS: Group[] = [
   {
+    id: "comercial",
+    label: "COMERCIAL",
+    icon: FileSpreadsheet,
+    items: [
+      { to: "/cotizaciones", label: "Cotizaciones", icon: FileSpreadsheet,
+        match: (p) => p === "/cotizaciones" || p.startsWith("/cotizaciones/") },
+      { to: "/ordenes", label: "Órdenes", icon: ClipboardList,
+        match: (p) => p === "/ordenes" || p.startsWith("/ordenes/") },
+    ],
+  },
+  {
     id: "solicitudes",
     label: "SOLICITUDES",
     icon: Inbox,
@@ -80,6 +92,7 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/copiloto") },
     ],
   },
+
   {
     id: "expedientes",
     label: "EXPEDIENTES",
@@ -270,8 +283,12 @@ function AppSidebarInner() {
         {renderSimpleItem({ id: "dashboard", to: "/dashboard", label: "Dashboard", icon: LayoutDashboard,
           match: (p) => p === "/dashboard" })}
 
+        {/* Comercial group (Cotizaciones → Órdenes) */}
+        {renderGroup(visibleGroups.find((g) => g.id === "comercial")!)}
+
         {/* Solicitudes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "solicitudes")!)}
+
 
         {/* Expedientes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "expedientes")!)}

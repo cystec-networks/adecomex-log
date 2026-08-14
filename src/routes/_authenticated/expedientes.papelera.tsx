@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
 
-type Kind = "expedientes" | "solicitudes" | "permisos" | "transportes";
+type Kind = "expedientes" | "solicitudes" | "permisos" | "transportes" | "cotizaciones" | "ordenes";
 
 export const Route = createFileRoute("/_authenticated/expedientes/papelera")({
   component: Papelera,
@@ -72,6 +72,26 @@ function Papelera() {
       .order("eliminado_en", { ascending: false })).data ?? [],
   });
 
+  const cotizaciones = useQuery({
+    queryKey: ["papelera-cotizaciones"],
+    enabled: !!isAdmin,
+    queryFn: async () => (await supabase
+      .from("cotizaciones")
+      .select("*, clientes(nombre)")
+      .not("eliminado_en", "is", null)
+      .order("eliminado_en", { ascending: false })).data ?? [],
+  });
+
+  const ordenes = useQuery({
+    queryKey: ["papelera-ordenes"],
+    enabled: !!isAdmin,
+    queryFn: async () => (await supabase
+      .from("ordenes")
+      .select("*, clientes(nombre)")
+      .not("eliminado_en", "is", null)
+      .order("eliminado_en", { ascending: false })).data ?? [],
+  });
+
   const restoreMut = useMutation({
     mutationFn: async ({ kind, id }: { kind: Kind; id: string }) => {
       const { error } = await supabase
@@ -86,7 +106,10 @@ function Papelera() {
         solicitudes: "Solicitud restaurada",
         permisos: "Permiso restaurado",
         transportes: "Transporte restaurado",
+        cotizaciones: "Cotización restaurada",
+        ordenes: "Orden restaurada",
       };
+
       toast.success(label[vars.kind]);
       qc.invalidateQueries({ queryKey: [vars.kind] });
       qc.invalidateQueries({ queryKey: [`papelera-${vars.kind}`] });
@@ -133,6 +156,9 @@ function Papelera() {
   const solRows = solicitudes.data ?? [];
   const perRows = permisos.data ?? [];
   const trRows = transportes.data ?? [];
+  const cotRows = cotizaciones.data ?? [];
+  const ordRows = ordenes.data ?? [];
+
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-[1600px] mx-auto">
@@ -151,6 +177,9 @@ function Papelera() {
           <TabsTrigger value="solicitudes">Solicitudes ({solRows.length})</TabsTrigger>
           <TabsTrigger value="permisos">Permisos ({perRows.length})</TabsTrigger>
           <TabsTrigger value="transportes">Transportes ({trRows.length})</TabsTrigger>
+          <TabsTrigger value="cotizaciones">Cotizaciones ({cotRows.length})</TabsTrigger>
+          <TabsTrigger value="ordenes">Órdenes ({ordRows.length})</TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="expedientes">
@@ -362,7 +391,102 @@ function Papelera() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="cotizaciones">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Cotizaciones eliminadas: {cotRows.length}</CardTitle></CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              {cotRows.length === 0 ? (
+                <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin cotizaciones en papelera.</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-muted-foreground border-b bg-muted/20">
+                    <tr>
+                      <th className="text-left px-4 py-2">Número</th>
+                      <th className="text-left">Cliente</th>
+                      <th className="text-left">Mercancía</th>
+                      <th className="text-left">Origen</th>
+                      <th className="text-left">Destino</th>
+                      <th className="text-left">Vigencia</th>
+                      <th className="text-left">Estado</th>
+                      <th className="text-left">Eliminado el</th>
+                      <th className="text-right px-4 py-2">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cotRows.map((c: any) => (
+                      <tr key={c.id} className="border-b last:border-0 hover:bg-muted/40">
+                        <td className="px-4 py-2 font-medium">{c.numero}</td>
+                        <td>{c.clientes?.nombre ?? "—"}</td>
+                        <td className="text-muted-foreground">{c.tipo_mercancia ?? "—"}</td>
+                        <td>{c.origen ?? "—"}</td>
+                        <td>{c.destino ?? "—"}</td>
+                        <td className="text-xs">{fmtLocalDate(c.fecha_vigencia)}</td>
+                        <td><Badge variant="outline">{c.estado?.replace("_", " ")}</Badge></td>
+                        <td className="text-xs text-muted-foreground">{c.eliminado_en ? new Date(c.eliminado_en).toLocaleString("es-DO") : "—"}</td>
+                        <td className="px-4 py-2 text-right whitespace-nowrap">
+                          <Button variant="ghost" size="sm" onClick={() => setToRestore({ kind: "cotizaciones", id: c.id, numero: c.numero })}>
+                            <RotateCcw className="h-4 w-4 mr-1" /> Restaurar
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                            onClick={() => { setToDelete({ kind: "cotizaciones", id: c.id, numero: c.numero }); setConfirmText(""); }}>
+                            <Trash2 className="h-4 w-4 mr-1" /> Eliminar
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ordenes">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Órdenes eliminadas: {ordRows.length}</CardTitle></CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              {ordRows.length === 0 ? (
+                <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin órdenes en papelera.</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-muted-foreground border-b bg-muted/20">
+                    <tr>
+                      <th className="text-left px-4 py-2">Número</th>
+                      <th className="text-left">Cotización</th>
+                      <th className="text-left">Cliente</th>
+                      <th className="text-left">Estado</th>
+                      <th className="text-left">Eliminado el</th>
+                      <th className="text-right px-4 py-2">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ordRows.map((o: any) => (
+                      <tr key={o.id} className="border-b last:border-0 hover:bg-muted/40">
+                        <td className="px-4 py-2 font-medium">{o.numero}</td>
+                        <td className="text-xs text-muted-foreground">{o.cot_numero ?? "—"}</td>
+                        <td>{o.clientes?.nombre ?? "—"}</td>
+                        <td><Badge variant="outline">{o.estado}</Badge></td>
+                        <td className="text-xs text-muted-foreground">{o.eliminado_en ? new Date(o.eliminado_en).toLocaleString("es-DO") : "—"}</td>
+                        <td className="px-4 py-2 text-right whitespace-nowrap">
+                          <Button variant="ghost" size="sm" onClick={() => setToRestore({ kind: "ordenes", id: o.id, numero: o.numero })}>
+                            <RotateCcw className="h-4 w-4 mr-1" /> Restaurar
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                            onClick={() => { setToDelete({ kind: "ordenes", id: o.id, numero: o.numero }); setConfirmText(""); }}>
+                            <Trash2 className="h-4 w-4 mr-1" /> Eliminar
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
 
 
       <AlertDialog open={!!toRestore} onOpenChange={(o) => !o && setToRestore(null)}>

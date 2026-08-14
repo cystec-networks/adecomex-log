@@ -29,7 +29,9 @@ import { Route as PortalEstudiantePortalEstudianteIndexRouteImport } from './rou
 import { Route as AuthenticatedTransportesIndexRouteImport } from './routes/_authenticated/transportes.index'
 import { Route as AuthenticatedSolicitudesIndexRouteImport } from './routes/_authenticated/solicitudes.index'
 import { Route as AuthenticatedPermisosIndexRouteImport } from './routes/_authenticated/permisos.index'
+import { Route as AuthenticatedOrdenesIndexRouteImport } from './routes/_authenticated/ordenes.index'
 import { Route as AuthenticatedExpedientesIndexRouteImport } from './routes/_authenticated/expedientes.index'
+import { Route as AuthenticatedCotizacionesIndexRouteImport } from './routes/_authenticated/cotizaciones.index'
 import { Route as ImprimirSolicitudPagoIdRouteImport } from './routes/imprimir/solicitud-pago.$id'
 import { Route as ImprimirReciboPagoIdRouteImport } from './routes/imprimir/recibo-pago.$id'
 import { Route as ApiPublicSolicitudPagoTransporteRouteImport } from './routes/api/public/solicitud-pago-transporte'
@@ -44,10 +46,13 @@ import { Route as AuthenticatedSolicitudesNuevaRouteImport } from './routes/_aut
 import { Route as AuthenticatedSolicitudesIdRouteImport } from './routes/_authenticated/solicitudes.$id'
 import { Route as AuthenticatedPermisosNuevoRouteImport } from './routes/_authenticated/permisos.nuevo'
 import { Route as AuthenticatedPermisosIdRouteImport } from './routes/_authenticated/permisos.$id'
+import { Route as AuthenticatedOrdenesIdRouteImport } from './routes/_authenticated/ordenes.$id'
 import { Route as AuthenticatedExpedientesPapeleraRouteImport } from './routes/_authenticated/expedientes.papelera'
 import { Route as AuthenticatedExpedientesNuevoRouteImport } from './routes/_authenticated/expedientes.nuevo'
 import { Route as AuthenticatedExpedientesDashboardRouteImport } from './routes/_authenticated/expedientes.dashboard'
 import { Route as AuthenticatedExpedientesIdRouteImport } from './routes/_authenticated/expedientes.$id'
+import { Route as AuthenticatedCotizacionesNuevaRouteImport } from './routes/_authenticated/cotizaciones.nueva'
+import { Route as AuthenticatedCotizacionesIdRouteImport } from './routes/_authenticated/cotizaciones.$id'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as AuthenticatedAdminSolicitudesPagoTransporteRouteImport } from './routes/_authenticated/admin.solicitudes-pago-transporte'
 import { Route as AuthenticatedAdminReportesFiscalesRouteImport } from './routes/_authenticated/admin.reportes-fiscales'
@@ -180,10 +185,22 @@ const AuthenticatedPermisosIndexRoute =
     path: '/permisos/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOrdenesIndexRoute =
+  AuthenticatedOrdenesIndexRouteImport.update({
+    id: '/ordenes/',
+    path: '/ordenes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedExpedientesIndexRoute =
   AuthenticatedExpedientesIndexRouteImport.update({
     id: '/expedientes/',
     path: '/expedientes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCotizacionesIndexRoute =
+  AuthenticatedCotizacionesIndexRouteImport.update({
+    id: '/cotizaciones/',
+    path: '/cotizaciones/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const ImprimirSolicitudPagoIdRoute = ImprimirSolicitudPagoIdRouteImport.update({
@@ -267,6 +284,11 @@ const AuthenticatedPermisosIdRoute = AuthenticatedPermisosIdRouteImport.update({
   path: '/permisos/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOrdenesIdRoute = AuthenticatedOrdenesIdRouteImport.update({
+  id: '/ordenes/$id',
+  path: '/ordenes/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedExpedientesPapeleraRoute =
   AuthenticatedExpedientesPapeleraRouteImport.update({
     id: '/expedientes/papelera',
@@ -289,6 +311,18 @@ const AuthenticatedExpedientesIdRoute =
   AuthenticatedExpedientesIdRouteImport.update({
     id: '/expedientes/$id',
     path: '/expedientes/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCotizacionesNuevaRoute =
+  AuthenticatedCotizacionesNuevaRouteImport.update({
+    id: '/cotizaciones/nueva',
+    path: '/cotizaciones/nueva',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCotizacionesIdRoute =
+  AuthenticatedCotizacionesIdRouteImport.update({
+    id: '/cotizaciones/$id',
+    path: '/cotizaciones/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminUsuariosRoute =
@@ -489,10 +523,13 @@ export interface FileRoutesByFullPath {
   '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/cotizaciones/$id': typeof AuthenticatedCotizacionesIdRoute
+  '/cotizaciones/nueva': typeof AuthenticatedCotizacionesNuevaRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
+  '/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
@@ -507,7 +544,9 @@ export interface FileRoutesByFullPath {
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/recibo-pago/$id': typeof ImprimirReciboPagoIdRoute
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
+  '/cotizaciones/': typeof AuthenticatedCotizacionesIndexRoute
   '/expedientes/': typeof AuthenticatedExpedientesIndexRoute
+  '/ordenes/': typeof AuthenticatedOrdenesIndexRoute
   '/permisos/': typeof AuthenticatedPermisosIndexRoute
   '/solicitudes/': typeof AuthenticatedSolicitudesIndexRoute
   '/transportes/': typeof AuthenticatedTransportesIndexRoute
@@ -555,10 +594,13 @@ export interface FileRoutesByTo {
   '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/cotizaciones/$id': typeof AuthenticatedCotizacionesIdRoute
+  '/cotizaciones/nueva': typeof AuthenticatedCotizacionesNuevaRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
+  '/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
@@ -573,7 +615,9 @@ export interface FileRoutesByTo {
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/recibo-pago/$id': typeof ImprimirReciboPagoIdRoute
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
+  '/cotizaciones': typeof AuthenticatedCotizacionesIndexRoute
   '/expedientes': typeof AuthenticatedExpedientesIndexRoute
+  '/ordenes': typeof AuthenticatedOrdenesIndexRoute
   '/permisos': typeof AuthenticatedPermisosIndexRoute
   '/solicitudes': typeof AuthenticatedSolicitudesIndexRoute
   '/transportes': typeof AuthenticatedTransportesIndexRoute
@@ -625,10 +669,13 @@ export interface FileRoutesById {
   '/_authenticated/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/_authenticated/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/_authenticated/cotizaciones/$id': typeof AuthenticatedCotizacionesIdRoute
+  '/_authenticated/cotizaciones/nueva': typeof AuthenticatedCotizacionesNuevaRoute
   '/_authenticated/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
   '/_authenticated/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/_authenticated/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
   '/_authenticated/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
+  '/_authenticated/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
   '/_authenticated/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/_authenticated/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
   '/_authenticated/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
@@ -643,7 +690,9 @@ export interface FileRoutesById {
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/recibo-pago/$id': typeof ImprimirReciboPagoIdRoute
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
+  '/_authenticated/cotizaciones/': typeof AuthenticatedCotizacionesIndexRoute
   '/_authenticated/expedientes/': typeof AuthenticatedExpedientesIndexRoute
+  '/_authenticated/ordenes/': typeof AuthenticatedOrdenesIndexRoute
   '/_authenticated/permisos/': typeof AuthenticatedPermisosIndexRoute
   '/_authenticated/solicitudes/': typeof AuthenticatedSolicitudesIndexRoute
   '/_authenticated/transportes/': typeof AuthenticatedTransportesIndexRoute
@@ -693,10 +742,13 @@ export interface FileRouteTypes {
     | '/admin/reportes-fiscales'
     | '/admin/solicitudes-pago-transporte'
     | '/admin/usuarios'
+    | '/cotizaciones/$id'
+    | '/cotizaciones/nueva'
     | '/expedientes/$id'
     | '/expedientes/dashboard'
     | '/expedientes/nuevo'
     | '/expedientes/papelera'
+    | '/ordenes/$id'
     | '/permisos/$id'
     | '/permisos/nuevo'
     | '/solicitudes/$id'
@@ -711,7 +763,9 @@ export interface FileRouteTypes {
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/recibo-pago/$id'
     | '/imprimir/solicitud-pago/$id'
+    | '/cotizaciones/'
     | '/expedientes/'
+    | '/ordenes/'
     | '/permisos/'
     | '/solicitudes/'
     | '/transportes/'
@@ -759,10 +813,13 @@ export interface FileRouteTypes {
     | '/admin/reportes-fiscales'
     | '/admin/solicitudes-pago-transporte'
     | '/admin/usuarios'
+    | '/cotizaciones/$id'
+    | '/cotizaciones/nueva'
     | '/expedientes/$id'
     | '/expedientes/dashboard'
     | '/expedientes/nuevo'
     | '/expedientes/papelera'
+    | '/ordenes/$id'
     | '/permisos/$id'
     | '/permisos/nuevo'
     | '/solicitudes/$id'
@@ -777,7 +834,9 @@ export interface FileRouteTypes {
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/recibo-pago/$id'
     | '/imprimir/solicitud-pago/$id'
+    | '/cotizaciones'
     | '/expedientes'
+    | '/ordenes'
     | '/permisos'
     | '/solicitudes'
     | '/transportes'
@@ -828,10 +887,13 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/reportes-fiscales'
     | '/_authenticated/admin/solicitudes-pago-transporte'
     | '/_authenticated/admin/usuarios'
+    | '/_authenticated/cotizaciones/$id'
+    | '/_authenticated/cotizaciones/nueva'
     | '/_authenticated/expedientes/$id'
     | '/_authenticated/expedientes/dashboard'
     | '/_authenticated/expedientes/nuevo'
     | '/_authenticated/expedientes/papelera'
+    | '/_authenticated/ordenes/$id'
     | '/_authenticated/permisos/$id'
     | '/_authenticated/permisos/nuevo'
     | '/_authenticated/solicitudes/$id'
@@ -846,7 +908,9 @@ export interface FileRouteTypes {
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/recibo-pago/$id'
     | '/imprimir/solicitud-pago/$id'
+    | '/_authenticated/cotizaciones/'
     | '/_authenticated/expedientes/'
+    | '/_authenticated/ordenes/'
     | '/_authenticated/permisos/'
     | '/_authenticated/solicitudes/'
     | '/_authenticated/transportes/'
@@ -1026,11 +1090,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPermisosIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ordenes/': {
+      id: '/_authenticated/ordenes/'
+      path: '/ordenes'
+      fullPath: '/ordenes/'
+      preLoaderRoute: typeof AuthenticatedOrdenesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/expedientes/': {
       id: '/_authenticated/expedientes/'
       path: '/expedientes'
       fullPath: '/expedientes/'
       preLoaderRoute: typeof AuthenticatedExpedientesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cotizaciones/': {
+      id: '/_authenticated/cotizaciones/'
+      path: '/cotizaciones'
+      fullPath: '/cotizaciones/'
+      preLoaderRoute: typeof AuthenticatedCotizacionesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/imprimir/solicitud-pago/$id': {
@@ -1131,6 +1209,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPermisosIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ordenes/$id': {
+      id: '/_authenticated/ordenes/$id'
+      path: '/ordenes/$id'
+      fullPath: '/ordenes/$id'
+      preLoaderRoute: typeof AuthenticatedOrdenesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/expedientes/papelera': {
       id: '/_authenticated/expedientes/papelera'
       path: '/expedientes/papelera'
@@ -1157,6 +1242,20 @@ declare module '@tanstack/react-router' {
       path: '/expedientes/$id'
       fullPath: '/expedientes/$id'
       preLoaderRoute: typeof AuthenticatedExpedientesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cotizaciones/nueva': {
+      id: '/_authenticated/cotizaciones/nueva'
+      path: '/cotizaciones/nueva'
+      fullPath: '/cotizaciones/nueva'
+      preLoaderRoute: typeof AuthenticatedCotizacionesNuevaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cotizaciones/$id': {
+      id: '/_authenticated/cotizaciones/$id'
+      path: '/cotizaciones/$id'
+      fullPath: '/cotizaciones/$id'
+      preLoaderRoute: typeof AuthenticatedCotizacionesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/usuarios': {
@@ -1395,10 +1494,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminReportesFiscalesRoute: typeof AuthenticatedAdminReportesFiscalesRoute
   AuthenticatedAdminSolicitudesPagoTransporteRoute: typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
+  AuthenticatedCotizacionesIdRoute: typeof AuthenticatedCotizacionesIdRoute
+  AuthenticatedCotizacionesNuevaRoute: typeof AuthenticatedCotizacionesNuevaRoute
   AuthenticatedExpedientesIdRoute: typeof AuthenticatedExpedientesIdRoute
   AuthenticatedExpedientesDashboardRoute: typeof AuthenticatedExpedientesDashboardRoute
   AuthenticatedExpedientesNuevoRoute: typeof AuthenticatedExpedientesNuevoRoute
   AuthenticatedExpedientesPapeleraRoute: typeof AuthenticatedExpedientesPapeleraRoute
+  AuthenticatedOrdenesIdRoute: typeof AuthenticatedOrdenesIdRoute
   AuthenticatedPermisosIdRoute: typeof AuthenticatedPermisosIdRoute
   AuthenticatedPermisosNuevoRoute: typeof AuthenticatedPermisosNuevoRoute
   AuthenticatedSolicitudesIdRoute: typeof AuthenticatedSolicitudesIdRoute
@@ -1407,7 +1509,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTransportesIdRoute: typeof AuthenticatedTransportesIdRoute
   AuthenticatedTransportesDashboardRoute: typeof AuthenticatedTransportesDashboardRoute
   AuthenticatedTransportesNuevoRoute: typeof AuthenticatedTransportesNuevoRoute
+  AuthenticatedCotizacionesIndexRoute: typeof AuthenticatedCotizacionesIndexRoute
   AuthenticatedExpedientesIndexRoute: typeof AuthenticatedExpedientesIndexRoute
+  AuthenticatedOrdenesIndexRoute: typeof AuthenticatedOrdenesIndexRoute
   AuthenticatedPermisosIndexRoute: typeof AuthenticatedPermisosIndexRoute
   AuthenticatedSolicitudesIndexRoute: typeof AuthenticatedSolicitudesIndexRoute
   AuthenticatedTransportesIndexRoute: typeof AuthenticatedTransportesIndexRoute
@@ -1451,11 +1555,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminSolicitudesPagoTransporteRoute:
     AuthenticatedAdminSolicitudesPagoTransporteRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
+  AuthenticatedCotizacionesIdRoute: AuthenticatedCotizacionesIdRoute,
+  AuthenticatedCotizacionesNuevaRoute: AuthenticatedCotizacionesNuevaRoute,
   AuthenticatedExpedientesIdRoute: AuthenticatedExpedientesIdRoute,
   AuthenticatedExpedientesDashboardRoute:
     AuthenticatedExpedientesDashboardRoute,
   AuthenticatedExpedientesNuevoRoute: AuthenticatedExpedientesNuevoRoute,
   AuthenticatedExpedientesPapeleraRoute: AuthenticatedExpedientesPapeleraRoute,
+  AuthenticatedOrdenesIdRoute: AuthenticatedOrdenesIdRoute,
   AuthenticatedPermisosIdRoute: AuthenticatedPermisosIdRoute,
   AuthenticatedPermisosNuevoRoute: AuthenticatedPermisosNuevoRoute,
   AuthenticatedSolicitudesIdRoute: AuthenticatedSolicitudesIdRoute,
@@ -1465,7 +1572,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTransportesDashboardRoute:
     AuthenticatedTransportesDashboardRoute,
   AuthenticatedTransportesNuevoRoute: AuthenticatedTransportesNuevoRoute,
+  AuthenticatedCotizacionesIndexRoute: AuthenticatedCotizacionesIndexRoute,
   AuthenticatedExpedientesIndexRoute: AuthenticatedExpedientesIndexRoute,
+  AuthenticatedOrdenesIndexRoute: AuthenticatedOrdenesIndexRoute,
   AuthenticatedPermisosIndexRoute: AuthenticatedPermisosIndexRoute,
   AuthenticatedSolicitudesIndexRoute: AuthenticatedSolicitudesIndexRoute,
   AuthenticatedTransportesIndexRoute: AuthenticatedTransportesIndexRoute,

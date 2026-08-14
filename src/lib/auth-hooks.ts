@@ -13,7 +13,9 @@ export type AppRole =
   | "finanzas"
   | "contabilidad"
   | "academia"
-  | "rrhh";
+  | "rrhh"
+  | "vendedor";
+
 
 export function useCurrentUser() {
   const [user, setUser] = useState<User | null>(null);
@@ -75,4 +77,6 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   contabilidad: "Contabilidad",
   academia: "Academia",
   rrhh: "Gestión Humana",
+  vendedor: "Vendedor",
 };
+
