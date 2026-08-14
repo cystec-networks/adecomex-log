@@ -92,20 +92,6 @@ function NuevoExpediente() {
     }
   }, [sol, loaded]);
 
-  useEffect(() => {
-    if (ord && !loaded) {
-      setForm((f) => ({
-        ...f,
-        cliente_id: (ord as any).cliente_id ?? "",
-        pais_origen: (ord as any).cot_origen ?? "",
-        incoterm: (ord as any).cot_incoterm ?? "",
-        tipo_carga: (ord as any).cot_tipo_mercancia ?? "",
-        observaciones: (ord as any).notas ?? "",
-      }));
-      setLoaded(true);
-    }
-  }, [ord, loaded]);
-
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
   const confirmar = useMutation({
@@ -114,18 +100,11 @@ function NuevoExpediente() {
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
       if (!payload.cliente_id) payload.cliente_id = null;
       if (solicitudId) payload.solicitud_id = solicitudId;
-      if (ordenId) payload.orden_id = ordenId;
       const { data, error } = await supabase.from("expedientes").insert(payload).select().single();
       if (error) throw error;
       if (solicitudId) {
         await supabase.from("solicitudes").update({ estado: "convertida" }).eq("id", solicitudId);
         await supabase.from("auditoria").insert({ entidad: "solicitudes", entidad_id: solicitudId, accion: `convertida:${data.numero}` });
-      }
-      if (ordenId) {
-        if ((ord as any)?.estado === "abierta") {
-          await supabase.from("ordenes").update({ estado: "en_transito" }).eq("id", ordenId).eq("estado", "abierta");
-        }
-        await supabase.from("auditoria").insert({ entidad: "ordenes", entidad_id: ordenId, accion: `expediente:${data.numero}` });
       }
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: data.id, accion: "creado" });
       return data;
@@ -133,7 +112,6 @@ function NuevoExpediente() {
     onSuccess: (exp) => {
       qc.invalidateQueries({ queryKey: ["expedientes"] });
       qc.invalidateQueries({ queryKey: ["solicitudes"] });
-      qc.invalidateQueries({ queryKey: ["ordenes"] });
       toast.success(`Expediente ${exp.numero} creado`);
       nav({ to: "/expedientes/$id", params: { id: exp.id } });
     },
@@ -141,7 +119,7 @@ function NuevoExpediente() {
   });
 
   if (solicitudId && isLoading) return <div className="p-8 text-center text-muted-foreground">Cargando solicitud…</div>;
-  if (ordenId && loadingOrden) return <div className="p-8 text-center text-muted-foreground">Cargando orden…</div>;
+
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-5">
