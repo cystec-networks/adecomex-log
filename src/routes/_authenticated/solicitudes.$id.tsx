@@ -15,6 +15,7 @@ import { SearchEmailButton } from "@/components/search-email-button";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
+import { DgaCombobox } from "@/components/dga-combobox";
 
 export const Route = createFileRoute("/_authenticated/solicitudes/$id")({
   component: DetalleSolicitud,
