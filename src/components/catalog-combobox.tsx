@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { sanitizeSearchTerm } from "@/lib/search-filter";
+import { sanitizeSearchTerm, normalizarNombre, patronSinTildes } from "@/lib/search-filter";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -71,18 +71,17 @@ export function CatalogCombobox({
     const nombre = (value ?? "").trim();
     if (!nombre || codigo) return;
     (async () => {
-      const term = sanitizeSearchTerm(nombre);
-      if (!term) return;
+      const patron = patronSinTildes(nombre);
+      if (!patron) return;
       const cols =
         table === "catalogo_puertos" ? "codigo, nombre, cod_pais, pais"
         : table === "catalogo_unidades" ? "codigo, nombre, tipo"
         : "codigo, nombre";
-      let query: any = supabase.from(table).select(cols).ilike("nombre", `%${term}%`).limit(20);
+      let query: any = supabase.from(table).select(cols).ilike("nombre", patron).limit(20);
       if (TABLAS_ACTIVO.has(table)) query = query.eq("activo", true);
       const { data } = await query;
       if (cancel || !data) return;
-      const norm = (s: string) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
-      const matches = (data as Row[]).filter((r) => norm(r.nombre) === norm(nombre));
+      const matches = (data as Row[]).filter((r) => normalizarNombre(r.nombre) === normalizarNombre(nombre));
       if (matches.length === 1) onChangeRef.current(matches[0].nombre, matches[0].codigo, matches[0]);
     })();
     return () => { cancel = true; };

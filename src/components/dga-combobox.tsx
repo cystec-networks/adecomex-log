@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { sanitizeSearchTerm } from "@/lib/search-filter";
+import { sanitizeSearchTerm, normalizarNombre, patronSinTildes } from "@/lib/search-filter";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -99,15 +99,14 @@ export function DgaCombobox({
     const nombre = (value ?? "").trim();
     if (!nombre || codigo) return;
     (async () => {
-      const term = sanitizeSearchTerm(nombre);
-      if (!term) return;
+      const patron = patronSinTildes(nombre);
+      if (!patron) return;
       const { data } = await (supabase.from(table) as any)
         .select(cfg.cols)
-        .ilike(nameCol, `%${term}%`)
+        .ilike(nameCol, patron)
         .limit(20);
       if (cancel || !data) return;
-      const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
-      const matches = (data as Row[]).filter((r) => norm(cfg.label(r)) === norm(nombre));
+      const matches = (data as Row[]).filter((r) => normalizarNombre(cfg.label(r)) === normalizarNombre(nombre));
       if (matches.length === 1) onChangeRef.current(cfg.label(matches[0]), matches[0].codigo, matches[0]);
     })();
     return () => { cancel = true; };
