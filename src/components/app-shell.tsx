@@ -6,7 +6,8 @@ import {
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
   GraduationCap, BookOpen, UserPlus, ClipboardCheck,
   Briefcase, IdCard, HandCoins,
-  Scale,
+  Scale, FileSpreadsheet,
+
 
 } from "lucide-react";
 import type { AppRole } from "@/lib/auth-hooks";
