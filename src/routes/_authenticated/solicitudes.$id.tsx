@@ -17,6 +17,8 @@ import { useEffect, useState } from "react";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { DgaCombobox } from "@/components/dga-combobox";
 import { useMyRoles } from "@/lib/auth-hooks";
+import { ProductosCard } from "@/components/productos-card";
+import { copiarProductos } from "@/lib/copiar-productos";
 import { ORDEN_ESTADO_CLASS, ordenEstadoLabel } from "@/lib/estados-orden";
 
 export const Route = createFileRoute("/_authenticated/solicitudes/$id")({
@@ -333,6 +335,8 @@ function DetalleSolicitud() {
           </CardContent>
         </Card>
       </div>
+
+      <ProductosCard tabla="solicitud_productos" parentId={id} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Observaciones</CardTitle></CardHeader>

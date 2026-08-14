@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { copiarProductos } from "@/lib/copiar-productos";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -98,6 +99,10 @@ function NuevoExpediente() {
       if (solicitudId) {
         await supabase.from("solicitudes").update({ estado: "convertida" }).eq("id", solicitudId);
         await supabase.from("auditoria").insert({ entidad: "solicitudes", entidad_id: solicitudId, accion: `convertida:${data.numero}` });
+        await copiarProductos({
+          origenTabla: "solicitud_productos", origenCol: "solicitud_id", origenId: solicitudId,
+          destinoTabla: "mercancia_items", destinoCol: "expediente_id", destinoId: data.id,
+        });
       }
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: data.id, accion: "creado" });
       return data;
