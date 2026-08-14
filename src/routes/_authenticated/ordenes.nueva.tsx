@@ -30,6 +30,8 @@ function NuevaOrden() {
     incoterm: "", peso_kg: "", volumen_m3: "", tarifa_propuesta: "", moneda: "USD", notas: "",
   });
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
+  const [productos, setProductos] = useState<any[]>([]);
+
 
   const { data: clientes } = useQuery({
     queryKey: ["clientes-select"],
