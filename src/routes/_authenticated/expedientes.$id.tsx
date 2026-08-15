@@ -3250,8 +3250,10 @@ function LiquidacionFinalPdfButton({
       margin: { left: M, right: M },
     });
 
+    const summaryStartY = (doc as any).lastAutoTable.finalY + 12;
+
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 12,
+      startY: summaryStartY,
       head: [["Componentes de la Inversión Total (US$)", ""]],
       body: [
         ["FOB Total", nf(Number(exp.total_fob) || totalFobExp)],
@@ -3275,7 +3277,7 @@ function LiquidacionFinalPdfButton({
     const cp = (costosProducto ?? []) as any[];
 
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.previousStartY ?? ((doc as any).lastAutoTable.finalY - 12),
+      startY: summaryStartY,
       head: [["Costos del Producto", "Monto Real (DOP)", "Equivalente (USD)"]],
       body: cp.length
         ? cp.map((c) => [
