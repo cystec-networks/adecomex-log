@@ -63,9 +63,7 @@ const CONCEPTOS_COSTO_ADICIONALES = [
 ];
 const CONCEPTOS_COSTO = [
   "Flete internacional","Seguro","Gastos portuarios","Manejo de terminal","Honorarios",
-  "Aranceles","ITBIS","Transporte local",
-  ...CONCEPTOS_COSTO_ADICIONALES,
-  "Otros",
+  "Aranceles","ITBIS","Transporte local","Otros",
 ];
 
 const CONCEPTOS_FACTURA = [
