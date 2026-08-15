@@ -193,6 +193,17 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    id: "almacen",
+    label: "ALMACÉN",
+    icon: Warehouse,
+    items: [
+      { to: "/almacen", label: "Existencias", icon: Boxes,
+        match: (p) => p === "/almacen" || p.startsWith("/almacen/") },
+      { to: "/almacenes", label: "Almacenes", icon: Warehouse,
+        match: (p) => p === "/almacenes" || p.startsWith("/almacenes/") },
+    ],
+  },
+  {
     id: "legal",
     label: "LEGAL",
     icon: Scale,
