@@ -2954,11 +2954,23 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
       (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
   });
 
+  const { data: costosAdic } = useQuery({
+    queryKey: ["costos-adicionales", exp.id],
+    queryFn: async () =>
+      (await supabase
+        .from("costos")
+        .select("concepto,monto_real")
+        .eq("expediente_id", exp.id)
+        .in("concepto", CONCEPTOS_COSTO_ADICIONALES)).data ?? [],
+  });
+  const gastosAdicionales = (costosAdic ?? []).reduce((s: number, c: any) => s + (Number(c.monto_real) || 0), 0);
+
   const list = (items ?? []) as any[];
   const seguro = Number(exp.seguro) || 0;
   const flete = Number(exp.flete) || 0;
   const otros = Number(exp.otros) || 0;
   const totalFob = list.reduce((s, it) => s + (Number(it.valor_fob) || 0), 0);
+
 
   const finalizado = list.length > 0 && list.every((it) => it.liquidacion_final_en);
   const [reabierto, setReabierto] = useState(false);
