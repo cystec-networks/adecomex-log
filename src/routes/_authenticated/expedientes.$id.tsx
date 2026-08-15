@@ -3250,8 +3250,16 @@ function LiquidacionFinalPdfButton({
       margin: { left: M, right: M },
     });
 
+    let summaryStartY = (doc as any).lastAutoTable.finalY + 12;
+    // If the summary section won't fit on the current page, start it on a new one
+    if (summaryStartY + 260 > pageH - 40) {
+      doc.addPage();
+      summaryStartY = 50;
+    }
+
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 12,
+      startY: summaryStartY,
+      pageBreak: "avoid",
       head: [["Componentes de la Inversión Total (US$)", ""]],
       body: [
         ["FOB Total", nf(Number(exp.total_fob) || totalFobExp)],
@@ -3268,13 +3276,15 @@ function LiquidacionFinalPdfButton({
       bodyStyles: { fontSize: 8 },
       columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 180 }, 1: { halign: "right" } },
       margin: { left: M, right: M },
-      tableWidth: 420,
+      tableWidth: 360,
     });
+    const componentesFinalY = (doc as any).lastAutoTable.finalY;
 
     const cp = (costosProducto ?? []) as any[];
 
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 12,
+      startY: summaryStartY,
+      pageBreak: "avoid",
       head: [["Costos del Producto", "Monto Real (DOP)", "Equivalente (USD)"]],
       body: cp.length
         ? cp.map((c) => [
@@ -3293,12 +3303,20 @@ function LiquidacionFinalPdfButton({
       bodyStyles: { fontSize: 8 },
       footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 8 },
       columnStyles: { 0: { cellWidth: 180 }, 1: { halign: "right" }, 2: { halign: "right" } },
-      margin: { left: M, right: M },
-      tableWidth: 420,
+      margin: { left: M + 360 + 24, right: M },
+      tableWidth: 360,
     });
+    const costosFinalY = (doc as any).lastAutoTable.finalY;
+
+    let resumenStartY = Math.max(componentesFinalY, costosFinalY) + 12;
+    if (resumenStartY + 120 > pageH - 40) {
+      doc.addPage();
+      resumenStartY = 50;
+    }
 
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 12,
+      startY: resumenStartY,
+      pageBreak: "avoid",
       head: [["Resumen final (US$)", ""]],
       body: [
         ["Inversión total", nf(t.inv)],
