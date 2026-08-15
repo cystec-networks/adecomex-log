@@ -54,7 +54,11 @@ const TIPOS_DOC = [
   "Carta de instrucción","Póliza de seguro","DUA","Evidencia de entrega","Otro",
 ];
 
-const CHECKLIST_DOCUMENTOS_BASE = TIPOS_DOC.filter((t) => t !== "Otro");
+const CHECKLIST_DOCUMENTOS_BASE = [
+  "Factura comercial","Bill of Lading","Lista de empaque",
+  "Certificado de origen","Certificado sanitario",
+  "Certificado fitosanitario","Certificado de análisis",
+];
 
 const DOC_ESTADO_STYLE: Record<string, { dot: string; text: string; label: string }> = {
   pendiente: { dot: "bg-muted-foreground/40", text: "text-muted-foreground", label: "Pendiente" },
