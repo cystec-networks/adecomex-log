@@ -1230,6 +1230,135 @@ function TabCostos({ expedienteId }: { expedienteId: string }) {
   );
 }
 
+function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const emptyForm = { concepto: CONCEPTOS_COSTO_ADICIONALES[0], monto_estimado: 0, monto_real: 0, observaciones: "" };
+  const [f, setF] = useState<{ concepto: string; monto_estimado: number; monto_real: number; observaciones: string }>(emptyForm);
+
+  const { data: costos } = useQuery({
+    queryKey: ["costos_producto", expedienteId],
+    queryFn: async () =>
+      (await supabase.from("costos_producto").select("*").eq("expediente_id", expedienteId).order("created_at")).data ?? [],
+  });
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = { concepto: f.concepto, monto_estimado: f.monto_estimado, monto_real: f.monto_real, observaciones: f.observaciones || null };
+      if (editingId) {
+        const { error } = await supabase.from("costos_producto").update(payload).eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("costos_producto").insert({ expediente_id: expedienteId, ...payload });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success(editingId ? "Costo actualizado" : "Costo registrado");
+      qc.invalidateQueries({ queryKey: ["costos_producto", expedienteId] });
+      qc.invalidateQueries({ queryKey: ["costos-producto-liq", expedienteId] });
+      setOpen(false);
+      setEditingId(null);
+      setF(emptyForm);
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo guardar"),
+  });
+
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("costos_producto").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Costo eliminado");
+      qc.invalidateQueries({ queryKey: ["costos_producto", expedienteId] });
+      qc.invalidateQueries({ queryKey: ["costos-producto-liq", expedienteId] });
+    },
+  });
+
+  const openNew = () => { setEditingId(null); setF(emptyForm); setOpen(true); };
+  const openEdit = (c: any) => {
+    setEditingId(c.id);
+    setF({ concepto: c.concepto, monto_estimado: Number(c.monto_estimado ?? 0), monto_real: Number(c.monto_real ?? 0), observaciones: c.observaciones ?? "" });
+    setOpen(true);
+  };
+
+  const totalEst = (costos ?? []).reduce((s: number, c: any) => s + Number(c.monto_estimado || 0), 0);
+  const totalReal = (costos ?? []).reduce((s: number, c: any) => s + Number(c.monto_real || 0), 0);
+  const fmt = (n: number) => new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm">
+        Estos costos son del producto/mercancía, no del servicio de gestión aduanal — no afectan la rentabilidad del servicio en la Ficha de Finanzas.
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total estimado</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalEst)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total real</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalReal)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Diferencia</div><div className={`text-2xl font-display font-bold mt-1 ${totalReal - totalEst > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(totalReal - totalEst)}</div></CardContent></Card>
+      </div>
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costos del producto</CardTitle>
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
+            <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar</Button>
+            <DialogContent>
+              <DialogHeader><DialogTitle>{editingId ? "Editar costo de producto" : "Nuevo costo de producto"}</DialogTitle></DialogHeader>
+              <div className="grid gap-3">
+                <div className="grid gap-1.5"><Label>Concepto</Label>
+                  <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{CONCEPTOS_COSTO_ADICIONALES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-1.5"><Label>Monto estimado (DOP)</Label><Input type="number" step="0.01" value={f.monto_estimado} onChange={(e) => setF({ ...f, monto_estimado: Number(e.target.value) })} /></div>
+                  <div className="grid gap-1.5"><Label>Monto real (DOP)</Label><Input type="number" step="0.01" value={f.monto_real} onChange={(e) => setF({ ...f, monto_real: Number(e.target.value) })} /></div>
+                </div>
+                <div className="grid gap-1.5"><Label>Observaciones</Label><Input value={f.observaciones} onChange={(e) => setF({ ...f, observaciones: e.target.value })} /></div>
+              </div>
+              <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent className="p-0">
+          <table className="w-full text-sm">
+            <thead className="text-xs text-muted-foreground border-b bg-muted/30">
+              <tr><th className="text-left px-4 py-2">Concepto</th><th className="text-left">Observaciones</th><th className="text-right">Estimado</th><th className="text-right">Real</th><th className="text-right">Δ</th><th className="text-right pr-4 w-24">Acciones</th></tr>
+            </thead>
+            <tbody>
+              {(costos ?? []).map((c: any) => {
+                const diff = Number(c.monto_real) - Number(c.monto_estimado);
+                return (
+                  <tr key={c.id} className="border-b last:border-0">
+                    <td className="px-4 py-2">{c.concepto}</td>
+                    <td className="text-muted-foreground">{c.observaciones ?? "—"}</td>
+                    <td className="text-right">{fmt(Number(c.monto_estimado))}</td>
+                    <td className="text-right">{fmt(Number(c.monto_real))}</td>
+                    <td className={`text-right ${diff > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(diff)}</td>
+                    <td className="text-right pr-4">
+                      <div className="inline-flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(c)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("¿Eliminar este costo?")) del.mutate(c.id); }} title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {(!costos || costos.length === 0) && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Sin costos de producto registrados.</td></tr>}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+
+
 function fmtDOP(n: number) {
   return new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
 }
