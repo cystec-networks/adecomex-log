@@ -2928,3 +2928,226 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
 }
 
 
+
+// ---------------------------------------------------------------------------
+// Liquidación Final por producto → entrada a Almacén
+// ---------------------------------------------------------------------------
+function LiquidacionFinalSection({ exp }: { exp: any }) {
+  const qc = useQueryClient();
+  const { user } = useCurrentUser();
+  const { data: roles } = useMyRoles();
+  const isAdmin = (roles ?? []).some((r) => r === "admin");
+  const canEdit = (roles ?? []).some((r) => ["admin", "finanzas", "operaciones", "agente_aduanal", "contabilidad"].includes(r));
+
+  const { data: items } = useQuery({
+    queryKey: ["mercancia-items", exp.id],
+    queryFn: async () =>
+      (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
+  });
+
+  const list = (items ?? []) as any[];
+  const seguro = Number(exp.seguro) || 0;
+  const flete = Number(exp.flete) || 0;
+  const otros = Number(exp.otros) || 0;
+  const totalFob = list.reduce((s, it) => s + (Number(it.valor_fob) || 0), 0);
+
+  const finalizado = list.length > 0 && list.every((it) => it.liquidacion_final_en);
+  const [reabierto, setReabierto] = useState(false);
+  const editable = canEdit && (!finalizado || reabierto);
+
+  const [draft, setDraft] = useState<Record<string, Record<string, string>>>({});
+  const val = (it: any, campo: string) => {
+    const d = draft[it.id]?.[campo];
+    if (d !== undefined) return d;
+    const v = it[campo];
+    return v == null ? "" : String(v);
+  };
+  const num = (it: any, campo: string) => {
+    const v = val(it, campo);
+    return v === "" ? null : Number(v);
+  };
+  const setVal = (id: string, campo: string, v: string) =>
+    setDraft((p) => ({ ...p, [id]: { ...(p[id] ?? {}), [campo]: v } }));
+
+  const nf = (n: number | null) =>
+    n == null ? "—" : n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const calcFila = (it: any) => {
+    const fob = Number(it.valor_fob) || 0;
+    const est = calcImpuestosLinea(fob, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
+    const cant = Number(it.cantidad) || 0;
+    const gr = num(it, "gravamen_real");
+    const ir = num(it, "isc_real");
+    const tr = num(it, "itbis_real");
+    const cv = num(it, "costo_venta_unitario");
+    const costoUnit = cant > 0 ? (est.cifLinea + (gr ?? 0) + (ir ?? 0)) / cant : 0;
+    return { fob, est, cant, gr, ir, tr, cv, costoUnit };
+  };
+
+  const completo = list.length > 0 && list.every((it) => {
+    const c = calcFila(it);
+    return c.gr != null && c.ir != null && c.tr != null && c.cv != null;
+  });
+
+  const Diff = ({ real, est }: { real: number | null; est: number }) => {
+    if (real == null) return <span className="text-muted-foreground">—</span>;
+    const d = real - est;
+    const cls = d > 0 ? "text-destructive font-medium" : "text-emerald-600 font-medium";
+    return <span className={cls}>{d > 0 ? "+" : ""}{nf(d)}</span>;
+  };
+
+  const finalizar = useMutation({
+    mutationFn: async () => {
+      const ahora = new Date().toISOString();
+      for (const it of list) {
+        const c = calcFila(it);
+        const { error: e1 } = await supabase
+          .from("mercancia_items")
+          .update({
+            gravamen_real: c.gr,
+            isc_real: c.ir,
+            itbis_real: c.tr,
+            costo_venta_unitario: c.cv,
+            liquidacion_final_en: ahora,
+            liquidacion_final_por: user?.id ?? null,
+          } as any)
+          .eq("id", it.id);
+        if (e1) throw e1;
+
+        const { error: e2 } = await (supabase.from("almacen_stock" as any) as any).upsert(
+          {
+            expediente_id: exp.id,
+            mercancia_item_id: it.id,
+            producto: it.detalle_producto ?? "Producto",
+            codigo_arancelario: it.codigo_arancelario ?? null,
+            unidad: it.unidad_medida ?? null,
+            cantidad: c.cant,
+            cantidad_disponible: c.cant,
+            costo_unitario_real: Number(c.costoUnit.toFixed(2)),
+            costo_venta_unitario: c.cv,
+            fecha_entrada: ahora,
+            creado_por: user?.id ?? null,
+          },
+          { onConflict: "mercancia_item_id" },
+        );
+        if (e2) throw e2;
+      }
+      await supabase.from("auditoria").insert({
+        entidad: "expedientes",
+        entidad_id: exp.id,
+        accion: `liquidacion_final:${exp.numero}`,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Liquidación final registrada y enviada a Almacén");
+      setDraft({});
+      setReabierto(false);
+      qc.invalidateQueries({ queryKey: ["mercancia-items", exp.id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-3 border-b flex-row items-center justify-between gap-3 flex-wrap">
+        <div>
+          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Liquidación Final</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Montos reales pagados a la DGA por producto, comparados contra el estimado. Da entrada formal a Almacén.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {finalizado && <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">Finalizada</Badge>}
+          {finalizado && isAdmin && !reabierto && (
+            <Button variant="outline" size="sm" onClick={() => setReabierto(true)}>Reabrir liquidación</Button>
+          )}
+          {editable && (
+            <Button size="sm" disabled={!completo || finalizar.isPending} onClick={() => finalizar.mutate()}>
+              <FileCheck className="h-4 w-4 mr-1" />
+              Finalizar Liquidación y Enviar a Almacén
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="pt-4 overflow-x-auto">
+        {list.length === 0 ? (
+          <p className="text-sm text-muted-foreground">El expediente no tiene ítems de mercancía.</p>
+        ) : (
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b text-left text-muted-foreground">
+                <th className="py-2 pr-2">Descripción</th>
+                <th className="py-2 px-2 text-right">Cantidad</th>
+                <th className="py-2 px-2 text-right">Grav. Est.</th>
+                <th className="py-2 px-2 text-right">Grav. Real</th>
+                <th className="py-2 px-2 text-right">Dif.</th>
+                <th className="py-2 px-2 text-right">ISC Est.</th>
+                <th className="py-2 px-2 text-right">ISC Real</th>
+                <th className="py-2 px-2 text-right">Dif.</th>
+                <th className="py-2 px-2 text-right">ITBIS Est.</th>
+                <th className="py-2 px-2 text-right">ITBIS Real</th>
+                <th className="py-2 px-2 text-right">Dif.</th>
+                <th className="py-2 px-2 text-right">Costo Unit. Real</th>
+                <th className="py-2 pl-2 text-right">Costo de Venta</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((it) => {
+                const c = calcFila(it);
+                return (
+                  <tr key={it.id} className="border-b last:border-0">
+                    <td className="py-2 pr-2 max-w-[220px]">
+                      <div className="font-medium truncate">{it.detalle_producto ?? "—"}</div>
+                      <div className="text-muted-foreground">{it.codigo_arancelario ?? "—"}</div>
+                    </td>
+                    <td className="py-2 px-2 text-right">{nf(c.cant)} {it.unidad_medida ?? ""}</td>
+                    <td className="py-2 px-2 text-right text-muted-foreground">{nf(c.est.gravamen)}</td>
+                    <td className="py-2 px-2 text-right">
+                      {editable ? (
+                        <Input className="h-8 w-24 text-right" type="number" step="0.01" value={val(it, "gravamen_real")}
+                          onChange={(e) => setVal(it.id, "gravamen_real", e.target.value)} />
+                      ) : nf(c.gr)}
+                    </td>
+                    <td className="py-2 px-2 text-right"><Diff real={c.gr} est={c.est.gravamen} /></td>
+                    <td className="py-2 px-2 text-right text-muted-foreground">{nf(c.est.selectivo)}</td>
+                    <td className="py-2 px-2 text-right">
+                      {editable ? (
+                        <Input className="h-8 w-24 text-right" type="number" step="0.01" value={val(it, "isc_real")}
+                          onChange={(e) => setVal(it.id, "isc_real", e.target.value)} />
+                      ) : nf(c.ir)}
+                    </td>
+                    <td className="py-2 px-2 text-right"><Diff real={c.ir} est={c.est.selectivo} /></td>
+                    <td className="py-2 px-2 text-right text-muted-foreground">{nf(c.est.itbis)}</td>
+                    <td className="py-2 px-2 text-right">
+                      {editable ? (
+                        <Input className="h-8 w-24 text-right" type="number" step="0.01" value={val(it, "itbis_real")}
+                          onChange={(e) => setVal(it.id, "itbis_real", e.target.value)} />
+                      ) : nf(c.tr)}
+                    </td>
+                    <td className="py-2 px-2 text-right"><Diff real={c.tr} est={c.est.itbis} /></td>
+                    <td className="py-2 px-2 text-right font-medium">{nf(c.costoUnit)}</td>
+                    <td className="py-2 pl-2 text-right">
+                      {editable ? (
+                        <Input className="h-8 w-24 text-right" type="number" step="0.01" value={val(it, "costo_venta_unitario")}
+                          onChange={(e) => setVal(it.id, "costo_venta_unitario", e.target.value)} />
+                      ) : nf(c.cv)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+        {editable && !completo && list.length > 0 && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Completa Gravamen Real, ISC Real, ITBIS Real y Costo de Venta en todos los productos para poder finalizar.
+          </p>
+        )}
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          El Costo Unitario Real incluye FOB + prorrateo de flete, seguro y otros + Gravamen e ISC reales. El ITBIS no se
+          incluye por ser crédito fiscal recuperable.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
