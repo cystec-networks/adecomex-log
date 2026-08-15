@@ -3194,7 +3194,85 @@ function LiquidacionFinalPdfButton({
       margin: { left: M, right: M },
     });
 
+    // --- Desglose del Costo Unitario Real por componente ---
+    const seguroExp = Number(exp.seguro) || 0;
+    const fleteExp = Number(exp.flete) || 0;
+    const otrosExp = Number(exp.otros) || 0;
+    const totalFobExp = list.reduce((s, it) => s + (Number(it.valor_fob) || 0), 0);
+    const gastosAdicionalesUSD = tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0;
+
+    const td = { cant: 0, fob: 0, seg: 0, fle: 0, otr: 0, cif: 0, gr: 0, ir: 0, gp: 0, cu: 0 };
+    const bodyDesglose = list.map((it) => {
+      const c = calcFila(it);
+      const cant = c.cant;
+      const fob = c.fob;
+      const share = totalFobExp > 0 ? fob / totalFobExp : 0;
+      const segL = seguroExp * share;
+      const fleL = fleteExp * share;
+      const otrL = otrosExp * share;
+      const gpL = gastosAdicionalesUSD * share;
+      const u = (n: number) => (cant > 0 ? n / cant : 0);
+      td.cant += cant; td.fob += fob; td.seg += segL; td.fle += fleL; td.otr += otrL;
+      td.cif += c.est.cifLinea; td.gr += c.gr ?? 0; td.ir += c.ir ?? 0; td.gp += gpL;
+      td.cu += c.costoUnit * cant;
+      return [
+        it.detalle_producto ?? "—",
+        nf(cant),
+        nf(u(fob)), nf(u(segL)), nf(u(fleL)), nf(u(otrL)),
+        nf(u(c.est.cifLinea)), nf(u(c.gr ?? 0)), nf(u(c.ir ?? 0)), nf(u(gpL)),
+        nf(c.costoUnit),
+      ];
+    });
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 12,
+      head: [[
+        "Desglose del Costo Unitario Real por Producto", "Cantidad", "FOB Unit.", "Seguro Unit.",
+        "Flete Unit.", "Otros Unit.", "CIF Unit.", "Gravamen Real Unit.", "ISC Real Unit.",
+        "Gastos Prod. Unit.", "Costo Unit. Real",
+      ]],
+      body: bodyDesglose,
+      foot: [[
+        "TOTALES", nf(td.cant), nf(td.fob), nf(td.seg), nf(td.fle), nf(td.otr),
+        nf(td.cif), nf(td.gr), nf(td.ir), nf(td.gp), nf(td.cu),
+      ]],
+      theme: "grid",
+      headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
+      bodyStyles: { fontSize: 6.8 },
+      footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 7 },
+      columnStyles: {
+        0: { cellWidth: 150 },
+        1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" },
+        4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" },
+        7: { halign: "right" }, 8: { halign: "right" }, 9: { halign: "right" },
+        10: { halign: "right" },
+      },
+      margin: { left: M, right: M },
+    });
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 12,
+      head: [["Componentes de la Inversión Total (US$)", ""]],
+      body: [
+        ["FOB Total", nf(Number(exp.total_fob) || totalFobExp)],
+        ["Seguro Total", nf(seguroExp)],
+        ["Flete Total", nf(fleteExp)],
+        ["Otros Total", nf(otrosExp)],
+        ["Gravamen Real Total", nf(t.gReal)],
+        ["ISC Real Total", nf(t.iReal)],
+        ["Gastos del Producto (USD)", nf(gastosAdicionalesUSD)],
+        ["INVERSIÓN TOTAL", nf(t.inv)],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
+      bodyStyles: { fontSize: 8 },
+      columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 180 }, 1: { halign: "right" } },
+      margin: { left: M, right: M },
+      tableWidth: 420,
+    });
+
     const cp = (costosProducto ?? []) as any[];
+
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 12,
       head: [["Costos del Producto", "Monto Real (DOP)", "Equivalente (USD)"]],
