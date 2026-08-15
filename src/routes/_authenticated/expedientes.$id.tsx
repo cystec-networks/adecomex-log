@@ -3096,6 +3096,16 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
         {list.length === 0 ? (
           <p className="text-sm text-muted-foreground">El expediente no tiene ítems de mercancía.</p>
         ) : (
+          <>
+          <div className="mb-3 rounded-md border bg-muted/40 px-3 py-2 flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <div className="text-xs font-medium">Gastos adicionales prorrateados (DOP)</div>
+              <div className="text-[11px] text-muted-foreground">
+                Suma de costos operativos con monto real en: {CONCEPTOS_COSTO_ADICIONALES.join(", ")}. Se prorratean por línea según su participación en el FOB total y se incluyen en el Costo Unit. Real.
+              </div>
+            </div>
+            <div className="text-sm font-semibold tabular-nums">{nf(gastosAdicionales)}</div>
+          </div>
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
