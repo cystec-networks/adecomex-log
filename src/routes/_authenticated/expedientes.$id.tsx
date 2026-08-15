@@ -2890,14 +2890,41 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     }
 
     const fecha = new Date().toISOString().slice(0, 10);
-    doc.save(`PreLiquidacion_${exp.numero ?? "expediente"}_${fecha}.pdf`);
+    fileNameRef.current = `PreLiquidacion_${exp.numero ?? "expediente"}_${fecha}.pdf`;
+    docRef.current = doc;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(doc.output("bloburl").toString());
   };
 
   return (
-    <Button variant="outline" size="sm" onClick={generar}>
-      <FileText className="h-4 w-4 mr-1" />
-      Descargar Pre-Liquidación (PDF)
-    </Button>
+    <>
+      <Button variant="outline" size="sm" onClick={generar}>
+        <FileText className="h-4 w-4 mr-1" />
+        Descargar Pre-Liquidación (PDF)
+      </Button>
+
+      <Dialog open={!!previewUrl} onOpenChange={(o) => { if (!o) cerrarPreview(); }}>
+        <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-5 py-3 border-b">
+            <DialogTitle className="text-base">Vista previa — Pre-Liquidación</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 bg-muted/30">
+            {previewUrl && <iframe src={previewUrl} title="Pre-Liquidación" className="w-full h-full border-0" />}
+          </div>
+          <DialogFooter className="px-5 py-3 border-t gap-2 sm:justify-between">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => docRef.current?.save(fileNameRef.current)}
+            >
+              <FileText className="h-4 w-4 mr-1" /> Descargar
+            </Button>
+            <Button size="sm" onClick={cerrarPreview}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
+
 
