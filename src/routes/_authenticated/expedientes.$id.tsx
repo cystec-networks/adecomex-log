@@ -49,9 +49,24 @@ export const Route = createFileRoute("/_authenticated/expedientes/$id")({
 
 const TIPOS_DOC = [
   "Factura proforma","Factura comercial","Bill of Lading","Guía aérea","Lista de empaque",
-  "Certificado de origen","Certificado sanitario","Permiso previo","Orden de compra",
+  "Certificado de origen","Certificado sanitario","Certificado fitosanitario","Certificado de análisis",
+  "Permiso previo","Orden de compra",
   "Carta de instrucción","Póliza de seguro","DUA","Evidencia de entrega","Otro",
 ];
+
+const CHECKLIST_DOCUMENTOS_BASE = [
+  "Factura comercial","Bill of Lading","Lista de empaque",
+  "Certificado de origen","Certificado sanitario",
+  "Certificado fitosanitario","Certificado de análisis",
+];
+
+const DOC_ESTADO_STYLE: Record<string, { dot: string; text: string; label: string }> = {
+  pendiente: { dot: "bg-muted-foreground/40", text: "text-muted-foreground", label: "Pendiente" },
+  recibido: { dot: "bg-emerald-500", text: "text-emerald-600", label: "Recibido" },
+  observado: { dot: "bg-amber-500", text: "text-amber-600", label: "Observado" },
+  aprobado: { dot: "bg-emerald-700", text: "text-emerald-700", label: "Aprobado" },
+  vencido: { dot: "bg-destructive", text: "text-destructive", label: "Vencido" },
+};
 
 const TIPOS_INCIDENCIA = [
   "Documento faltante","Inconsistencia en factura","Diferencia de peso/cantidad",
