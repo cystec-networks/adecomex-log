@@ -59,7 +59,8 @@ const TIPOS_INCIDENCIA = [
 ];
 
 const CONCEPTOS_COSTO_ADICIONALES = [
-  "Gestión Aduanal","Almacenaje","Demora de contenedor","Uso de Chasis","Flete Terrestre","Cargos Locales",
+  "Gestión Aduanal", "Almacenaje", "Demora de contenedor", "Uso de Chasis", "Flete Terrestre", "Cargos Locales",
+  "Gastos en Puerto", "Otros",
 ];
 const CONCEPTOS_COSTO = [
   "Flete internacional","Seguro","Gastos portuarios","Manejo de terminal","Honorarios",
