@@ -3576,6 +3576,22 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
   const faltaTasa = gastosAdicionales > 0 && tasaCambio <= 0;
   const gastosAdicionalesUSD = tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0;
 
+  const { data: almacenes } = useQuery({
+    queryKey: ["almacenes-activos"],
+    queryFn: async () =>
+      (await (supabase.from("almacenes" as any) as any).select("id,nombre,ubicacion").eq("activo", true).order("nombre")).data ?? [],
+  });
+  const { data: stockExistente } = useQuery({
+    queryKey: ["almacen-stock-exp", exp.id],
+    queryFn: async () =>
+      (await (supabase.from("almacen_stock" as any) as any).select("almacen_id").eq("expediente_id", exp.id).limit(1)).data ?? [],
+  });
+  const [almacenId, setAlmacenId] = useState<string>("");
+  useEffect(() => {
+    const prev = (stockExistente ?? [])[0]?.almacen_id;
+    if (prev && !almacenId) setAlmacenId(prev);
+  }, [stockExistente]);
+
   const list = (items ?? []) as any[];
   const seguro = Number(exp.seguro) || 0;
   const flete = Number(exp.flete) || 0;
@@ -3618,7 +3634,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
     return { fob, est, cant, gr, ir, tr, cv, costoUnit, gastosAdicLinea };
   };
 
-  const completo = list.length > 0 && list.every((it) => {
+  const completo = !!almacenId && list.length > 0 && list.every((it) => {
     const c = calcFila(it);
     return c.gr != null && c.ir != null && c.tr != null && c.cv != null;
   });
@@ -3657,6 +3673,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             unidad: it.unidad_medida ?? null,
             cantidad: c.cant,
             cantidad_disponible: c.cant,
+            almacen_id: almacenId || null,
             costo_unitario_real: Number(c.costoUnit.toFixed(2)),
             costo_venta_unitario: c.cv,
             fecha_entrada: ahora,
@@ -3733,6 +3750,18 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
                 ({faltaTasa ? "sin tasa" : `USD ${nf(gastosAdicionalesUSD)}`})
               </span>
             </div>
+          </div>
+          <div className="mb-3 flex items-center gap-2 flex-wrap">
+            <Label className="text-xs">Almacén de destino *</Label>
+            <Select value={almacenId} onValueChange={setAlmacenId} disabled={!editable}>
+              <SelectTrigger className="h-8 w-64 text-xs"><SelectValue placeholder="Seleccionar almacén…" /></SelectTrigger>
+              <SelectContent>
+                {(almacenes ?? []).map((a: any) => (
+                  <SelectItem key={a.id} value={a.id}>{a.nombre}{a.ubicacion ? ` — ${a.ubicacion}` : ""}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!almacenId && <span className="text-[11px] text-muted-foreground">Requerido para finalizar la liquidación.</span>}
           </div>
           <table className="w-full text-xs">
             <thead>

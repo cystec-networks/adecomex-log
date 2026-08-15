@@ -32,6 +32,8 @@ import { Route as AuthenticatedPermisosIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedOrdenesIndexRouteImport } from './routes/_authenticated/ordenes.index'
 import { Route as AuthenticatedExpedientesIndexRouteImport } from './routes/_authenticated/expedientes.index'
 import { Route as AuthenticatedCotizacionesIndexRouteImport } from './routes/_authenticated/cotizaciones.index'
+import { Route as AuthenticatedAlmacenesIndexRouteImport } from './routes/_authenticated/almacenes.index'
+import { Route as AuthenticatedAlmacenIndexRouteImport } from './routes/_authenticated/almacen.index'
 import { Route as ImprimirSolicitudPagoIdRouteImport } from './routes/imprimir/solicitud-pago.$id'
 import { Route as ImprimirReciboPagoIdRouteImport } from './routes/imprimir/recibo-pago.$id'
 import { Route as ApiPublicSolicitudPagoTransporteRouteImport } from './routes/api/public/solicitud-pago-transporte'
@@ -204,6 +206,18 @@ const AuthenticatedCotizacionesIndexRoute =
   AuthenticatedCotizacionesIndexRouteImport.update({
     id: '/cotizaciones/',
     path: '/cotizaciones/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAlmacenesIndexRoute =
+  AuthenticatedAlmacenesIndexRouteImport.update({
+    id: '/almacenes/',
+    path: '/almacenes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAlmacenIndexRoute =
+  AuthenticatedAlmacenIndexRouteImport.update({
+    id: '/almacen/',
+    path: '/almacen/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const ImprimirSolicitudPagoIdRoute = ImprimirSolicitudPagoIdRouteImport.update({
@@ -567,6 +581,8 @@ export interface FileRoutesByFullPath {
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/recibo-pago/$id': typeof ImprimirReciboPagoIdRoute
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
+  '/almacen/': typeof AuthenticatedAlmacenIndexRoute
+  '/almacenes/': typeof AuthenticatedAlmacenesIndexRoute
   '/cotizaciones/': typeof AuthenticatedCotizacionesIndexRoute
   '/expedientes/': typeof AuthenticatedExpedientesIndexRoute
   '/ordenes/': typeof AuthenticatedOrdenesIndexRoute
@@ -641,6 +657,8 @@ export interface FileRoutesByTo {
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/recibo-pago/$id': typeof ImprimirReciboPagoIdRoute
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
+  '/almacen': typeof AuthenticatedAlmacenIndexRoute
+  '/almacenes': typeof AuthenticatedAlmacenesIndexRoute
   '/cotizaciones': typeof AuthenticatedCotizacionesIndexRoute
   '/expedientes': typeof AuthenticatedExpedientesIndexRoute
   '/ordenes': typeof AuthenticatedOrdenesIndexRoute
@@ -719,6 +737,8 @@ export interface FileRoutesById {
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/recibo-pago/$id': typeof ImprimirReciboPagoIdRoute
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
+  '/_authenticated/almacen/': typeof AuthenticatedAlmacenIndexRoute
+  '/_authenticated/almacenes/': typeof AuthenticatedAlmacenesIndexRoute
   '/_authenticated/cotizaciones/': typeof AuthenticatedCotizacionesIndexRoute
   '/_authenticated/expedientes/': typeof AuthenticatedExpedientesIndexRoute
   '/_authenticated/ordenes/': typeof AuthenticatedOrdenesIndexRoute
@@ -795,6 +815,8 @@ export interface FileRouteTypes {
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/recibo-pago/$id'
     | '/imprimir/solicitud-pago/$id'
+    | '/almacen/'
+    | '/almacenes/'
     | '/cotizaciones/'
     | '/expedientes/'
     | '/ordenes/'
@@ -869,6 +891,8 @@ export interface FileRouteTypes {
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/recibo-pago/$id'
     | '/imprimir/solicitud-pago/$id'
+    | '/almacen'
+    | '/almacenes'
     | '/cotizaciones'
     | '/expedientes'
     | '/ordenes'
@@ -946,6 +970,8 @@ export interface FileRouteTypes {
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/recibo-pago/$id'
     | '/imprimir/solicitud-pago/$id'
+    | '/_authenticated/almacen/'
+    | '/_authenticated/almacenes/'
     | '/_authenticated/cotizaciones/'
     | '/_authenticated/expedientes/'
     | '/_authenticated/ordenes/'
@@ -1147,6 +1173,20 @@ declare module '@tanstack/react-router' {
       path: '/cotizaciones'
       fullPath: '/cotizaciones/'
       preLoaderRoute: typeof AuthenticatedCotizacionesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/almacenes/': {
+      id: '/_authenticated/almacenes/'
+      path: '/almacenes'
+      fullPath: '/almacenes/'
+      preLoaderRoute: typeof AuthenticatedAlmacenesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/almacen/': {
+      id: '/_authenticated/almacen/'
+      path: '/almacen'
+      fullPath: '/almacen/'
+      preLoaderRoute: typeof AuthenticatedAlmacenIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/imprimir/solicitud-pago/$id': {
@@ -1571,6 +1611,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTransportesIdRoute: typeof AuthenticatedTransportesIdRoute
   AuthenticatedTransportesDashboardRoute: typeof AuthenticatedTransportesDashboardRoute
   AuthenticatedTransportesNuevoRoute: typeof AuthenticatedTransportesNuevoRoute
+  AuthenticatedAlmacenIndexRoute: typeof AuthenticatedAlmacenIndexRoute
+  AuthenticatedAlmacenesIndexRoute: typeof AuthenticatedAlmacenesIndexRoute
   AuthenticatedCotizacionesIndexRoute: typeof AuthenticatedCotizacionesIndexRoute
   AuthenticatedExpedientesIndexRoute: typeof AuthenticatedExpedientesIndexRoute
   AuthenticatedOrdenesIndexRoute: typeof AuthenticatedOrdenesIndexRoute
@@ -1637,6 +1679,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTransportesDashboardRoute:
     AuthenticatedTransportesDashboardRoute,
   AuthenticatedTransportesNuevoRoute: AuthenticatedTransportesNuevoRoute,
+  AuthenticatedAlmacenIndexRoute: AuthenticatedAlmacenIndexRoute,
+  AuthenticatedAlmacenesIndexRoute: AuthenticatedAlmacenesIndexRoute,
   AuthenticatedCotizacionesIndexRoute: AuthenticatedCotizacionesIndexRoute,
   AuthenticatedExpedientesIndexRoute: AuthenticatedExpedientesIndexRoute,
   AuthenticatedOrdenesIndexRoute: AuthenticatedOrdenesIndexRoute,

@@ -14,8 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      almacen_movimientos: {
+        Row: {
+          almacen_stock_id: string
+          cantidad: number
+          creado_por: string | null
+          created_at: string
+          destinatario: string | null
+          fecha: string
+          id: string
+          nota: string | null
+          tipo: string
+        }
+        Insert: {
+          almacen_stock_id: string
+          cantidad: number
+          creado_por?: string | null
+          created_at?: string
+          destinatario?: string | null
+          fecha?: string
+          id?: string
+          nota?: string | null
+          tipo?: string
+        }
+        Update: {
+          almacen_stock_id?: string
+          cantidad?: number
+          creado_por?: string | null
+          created_at?: string
+          destinatario?: string | null
+          fecha?: string
+          id?: string
+          nota?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "almacen_movimientos_almacen_stock_id_fkey"
+            columns: ["almacen_stock_id"]
+            isOneToOne: false
+            referencedRelation: "almacen_stock"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       almacen_stock: {
         Row: {
+          almacen_id: string | null
           cantidad: number
           cantidad_disponible: number
           codigo_arancelario: string | null
@@ -31,6 +76,7 @@ export type Database = {
           unidad: string | null
         }
         Insert: {
+          almacen_id?: string | null
           cantidad?: number
           cantidad_disponible?: number
           codigo_arancelario?: string | null
@@ -46,6 +92,7 @@ export type Database = {
           unidad?: string | null
         }
         Update: {
+          almacen_id?: string | null
           cantidad?: number
           cantidad_disponible?: number
           codigo_arancelario?: string | null
@@ -61,6 +108,13 @@ export type Database = {
           unidad?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "almacen_stock_almacen_id_fkey"
+            columns: ["almacen_id"]
+            isOneToOne: false
+            referencedRelation: "almacenes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "almacen_stock_expediente_id_fkey"
             columns: ["expediente_id"]
@@ -104,6 +158,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      almacenes: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          nombre: string
+          ubicacion: string | null
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre: string
+          ubicacion?: string | null
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre?: string
+          ubicacion?: string | null
+        }
+        Relationships: []
       }
       auditoria: {
         Row: {

@@ -6,7 +6,7 @@ import {
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
   GraduationCap, BookOpen, UserPlus, ClipboardCheck,
   Briefcase, IdCard, HandCoins,
-  Scale, FileSpreadsheet,
+  Scale, FileSpreadsheet, Warehouse, Boxes,
 
 
 } from "lucide-react";
@@ -193,6 +193,17 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    id: "almacen",
+    label: "ALMACÉN",
+    icon: Warehouse,
+    items: [
+      { to: "/almacen", label: "Existencias", icon: Boxes,
+        match: (p) => p === "/almacen" || p.startsWith("/almacen/") },
+      { to: "/almacenes", label: "Almacenes", icon: Warehouse,
+        match: (p) => p === "/almacenes" || p.startsWith("/almacenes/") },
+    ],
+  },
+  {
     id: "legal",
     label: "LEGAL",
     icon: Scale,
@@ -303,6 +314,9 @@ function AppSidebarInner() {
 
         {/* Gestión Humana group */}
         {renderGroup(visibleGroups.find((g) => g.id === "rrhh")!)}
+
+        {/* Almacén group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "almacen")!)}
 
         {/* Legal group */}
         {renderGroup(visibleGroups.find((g) => g.id === "legal")!)}
