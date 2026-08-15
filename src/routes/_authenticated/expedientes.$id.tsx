@@ -2679,7 +2679,18 @@ function HerramientasDgaVuce() {
 
 function PreLiquidacionPdfButton({ exp }: { exp: any }) {
   const { user } = useCurrentUser();
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const docRef = useRef<any>(null);
+  const fileNameRef = useRef<string>("PreLiquidacion.pdf");
+
+  const cerrarPreview = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    docRef.current = null;
+  };
+
   const { data: items } = useQuery({
+
     queryKey: ["mercancia-items", exp.id],
     queryFn: async () =>
       (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
