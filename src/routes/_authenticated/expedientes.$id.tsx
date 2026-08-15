@@ -3268,13 +3268,14 @@ function LiquidacionFinalPdfButton({
       bodyStyles: { fontSize: 8 },
       columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 180 }, 1: { halign: "right" } },
       margin: { left: M, right: M },
-      tableWidth: 420,
+      tableWidth: 360,
     });
+    const componentesFinalY = (doc as any).lastAutoTable.finalY;
 
     const cp = (costosProducto ?? []) as any[];
 
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 12,
+      startY: (doc as any).lastAutoTable.previousStartY ?? ((doc as any).lastAutoTable.finalY - 12),
       head: [["Costos del Producto", "Monto Real (DOP)", "Equivalente (USD)"]],
       body: cp.length
         ? cp.map((c) => [
@@ -3293,9 +3294,12 @@ function LiquidacionFinalPdfButton({
       bodyStyles: { fontSize: 8 },
       footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 8 },
       columnStyles: { 0: { cellWidth: 180 }, 1: { halign: "right" }, 2: { halign: "right" } },
-      margin: { left: M, right: M },
-      tableWidth: 420,
+      margin: { left: M + 360 + 24, right: M },
+      tableWidth: 360,
     });
+    const costosFinalY = (doc as any).lastAutoTable.finalY;
+
+    const resumenStartY = Math.max(componentesFinalY, costosFinalY) + 12;
 
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 12,
