@@ -58,9 +58,14 @@ const TIPOS_INCIDENCIA = [
   "Retención en aduana","Inspección física","Retraso de naviera","Cargo adicional","Dirección incorrecta","Otro",
 ];
 
+const CONCEPTOS_COSTO_ADICIONALES = [
+  "Gestión Aduanal","Almacenaje","Demora de contenedor","Uso de Chasis","Flete Terrestre","Cargos Locales",
+];
 const CONCEPTOS_COSTO = [
   "Flete internacional","Seguro","Gastos portuarios","Manejo de terminal","Honorarios",
-  "Aranceles","ITBIS","Transporte local","Otros",
+  "Aranceles","ITBIS","Transporte local",
+  ...CONCEPTOS_COSTO_ADICIONALES,
+  "Otros",
 ];
 
 const CONCEPTOS_FACTURA = [
@@ -2949,11 +2954,23 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
       (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
   });
 
+  const { data: costosAdic } = useQuery({
+    queryKey: ["costos-adicionales", exp.id],
+    queryFn: async () =>
+      (await supabase
+        .from("costos")
+        .select("concepto,monto_real")
+        .eq("expediente_id", exp.id)
+        .in("concepto", CONCEPTOS_COSTO_ADICIONALES)).data ?? [],
+  });
+  const gastosAdicionales = (costosAdic ?? []).reduce((s: number, c: any) => s + (Number(c.monto_real) || 0), 0);
+
   const list = (items ?? []) as any[];
   const seguro = Number(exp.seguro) || 0;
   const flete = Number(exp.flete) || 0;
   const otros = Number(exp.otros) || 0;
   const totalFob = list.reduce((s, it) => s + (Number(it.valor_fob) || 0), 0);
+
 
   const finalizado = list.length > 0 && list.every((it) => it.liquidacion_final_en);
   const [reabierto, setReabierto] = useState(false);
@@ -2980,12 +2997,14 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
     const fob = Number(it.valor_fob) || 0;
     const est = calcImpuestosLinea(fob, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
     const cant = Number(it.cantidad) || 0;
+    const shareLinea = totalFob > 0 ? fob / totalFob : 0;
+    const gastosAdicLinea = gastosAdicionales * shareLinea;
     const gr = num(it, "gravamen_real");
     const ir = num(it, "isc_real");
     const tr = num(it, "itbis_real");
     const cv = num(it, "costo_venta_unitario");
-    const costoUnit = cant > 0 ? (est.cifLinea + (gr ?? 0) + (ir ?? 0)) / cant : 0;
-    return { fob, est, cant, gr, ir, tr, cv, costoUnit };
+    const costoUnit = cant > 0 ? (est.cifLinea + (gr ?? 0) + (ir ?? 0) + gastosAdicLinea) / cant : 0;
+    return { fob, est, cant, gr, ir, tr, cv, costoUnit, gastosAdicLinea };
   };
 
   const completo = list.length > 0 && list.every((it) => {
@@ -3077,6 +3096,16 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
         {list.length === 0 ? (
           <p className="text-sm text-muted-foreground">El expediente no tiene ítems de mercancía.</p>
         ) : (
+          <>
+          <div className="mb-3 rounded-md border bg-muted/40 px-3 py-2 flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <div className="text-xs font-medium">Gastos adicionales prorrateados (DOP)</div>
+              <div className="text-[11px] text-muted-foreground">
+                Suma de costos operativos con monto real en: {CONCEPTOS_COSTO_ADICIONALES.join(", ")}. Se prorratean por línea según su participación en el FOB total y se incluyen en el Costo Unit. Real.
+              </div>
+            </div>
+            <div className="text-sm font-semibold tabular-nums">{nf(gastosAdicionales)}</div>
+          </div>
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
@@ -3141,6 +3170,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
               })}
             </tbody>
           </table>
+          </>
         )}
         {editable && !completo && list.length > 0 && (
           <p className="mt-3 text-xs text-muted-foreground">
@@ -3148,8 +3178,8 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
           </p>
         )}
         <p className="mt-3 text-[11px] text-muted-foreground">
-          El Costo Unitario Real incluye FOB + prorrateo de flete, seguro y otros + Gravamen e ISC reales. El ITBIS no se
-          incluye por ser crédito fiscal recuperable.
+          El Costo Unitario Real incluye FOB + prorrateo de flete, seguro y otros + Gravamen e ISC reales + prorrateo de
+          gastos adicionales. El ITBIS no se incluye por ser crédito fiscal recuperable.
         </p>
       </CardContent>
     </Card>
