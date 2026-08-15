@@ -3129,7 +3129,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
     const est = calcImpuestosLinea(fob, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
     const cant = Number(it.cantidad) || 0;
     const shareLinea = totalFob > 0 ? fob / totalFob : 0;
-    const gastosAdicLinea = gastosAdicionales * shareLinea;
+    const gastosAdicLinea = gastosAdicionalesUSD * shareLinea;
     const gr = num(it, "gravamen_real");
     const ir = num(it, "isc_real");
     const tr = num(it, "itbis_real");
