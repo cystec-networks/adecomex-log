@@ -3302,7 +3302,7 @@ function LiquidacionFinalPdfButton({
     const resumenStartY = Math.max(componentesFinalY, costosFinalY) + 12;
 
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 12,
+      startY: resumenStartY,
       head: [["Resumen final (US$)", ""]],
       body: [
         ["Inversión total", nf(t.inv)],
