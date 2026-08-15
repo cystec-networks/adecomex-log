@@ -58,9 +58,14 @@ const TIPOS_INCIDENCIA = [
   "Retención en aduana","Inspección física","Retraso de naviera","Cargo adicional","Dirección incorrecta","Otro",
 ];
 
+const CONCEPTOS_COSTO_ADICIONALES = [
+  "Gestión Aduanal","Almacenaje","Demora de contenedor","Uso de Chasis","Flete Terrestre","Cargos Locales",
+];
 const CONCEPTOS_COSTO = [
   "Flete internacional","Seguro","Gastos portuarios","Manejo de terminal","Honorarios",
-  "Aranceles","ITBIS","Transporte local","Otros",
+  "Aranceles","ITBIS","Transporte local",
+  ...CONCEPTOS_COSTO_ADICIONALES,
+  "Otros",
 ];
 
 const CONCEPTOS_FACTURA = [
