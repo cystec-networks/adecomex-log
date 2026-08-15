@@ -211,6 +211,7 @@ function DetalleExpediente() {
           <TabsTrigger value="transportes">Transportes</TabsTrigger>
           <TabsTrigger value="inc">Incidencias</TabsTrigger>
           <TabsTrigger value="cost">Finanzas</TabsTrigger>
+          <TabsTrigger value="costprod">Costos del Producto</TabsTrigger>
           <TabsTrigger value="aud">Auditoría</TabsTrigger>
         </TabsList>
 
