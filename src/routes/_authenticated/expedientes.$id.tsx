@@ -3252,7 +3252,7 @@ function LiquidacionFinalPdfButton({
 
     let summaryStartY = (doc as any).lastAutoTable.finalY + 12;
     // If the summary section won't fit on the current page, start it on a new one
-    if (summaryStartY + 240 > pageH - 40) {
+    if (summaryStartY + 260 > pageH - 40) {
       doc.addPage();
       summaryStartY = 50;
     }
