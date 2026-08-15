@@ -1036,17 +1036,25 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                     <div key={t} className="flex items-center gap-3 py-1.5 border-b last:border-0 border-border/50 text-sm">
                       <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${st.dot}`} />
                       <span className="flex-1 min-w-0 truncate">{t}</span>
-                      <span className={`text-xs w-24 shrink-0 ${st.text}`}>{d ? st.label : "Pendiente"}</span>
+                      <span className={`text-xs w-24 shrink-0 ${st.text} inline-flex items-center gap-1`}>
+                        {d ? st.label : "Pendiente"}
+                        {d?.estado === "recibido" && !d?.storage_path && <span className="text-[10px] text-muted-foreground leading-none">(sin archivo)</span>}
+                      </span>
                       <span className="text-xs text-muted-foreground w-24 shrink-0">{d?.fecha_recepcion ? fmtLocalDate(d.fecha_recepcion) : "—"}</span>
                       <div className="flex items-center gap-1 shrink-0">
                         {d?.storage_path && <DocumentoPreviewButton path={d.storage_path} variant="ghost" size="sm" label="Ver" />}
-                        {d ? (
+                        {d?.storage_path ? (
                           <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => openEdit(d)}>
                             <Upload className="h-3.5 w-3.5 mr-1" />Reemplazar
                           </Button>
                         ) : (
-                          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => openNuevo(t)}>
+                          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => d ? openEdit(d) : openNuevo(t)}>
                             <Upload className="h-3.5 w-3.5 mr-1" />Subir
+                          </Button>
+                        )}
+                        {(!d || d.estado === "pendiente") && (
+                          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => marcarRecibido(t, d)}>
+                            <Check className="h-3.5 w-3.5 mr-1" />Marcar recibido
                           </Button>
                         )}
                       </div>
