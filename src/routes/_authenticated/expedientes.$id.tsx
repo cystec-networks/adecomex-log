@@ -3751,6 +3751,18 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
               </span>
             </div>
           </div>
+          <div className="mb-3 flex items-center gap-2 flex-wrap">
+            <Label className="text-xs">Almacén de destino *</Label>
+            <Select value={almacenId} onValueChange={setAlmacenId} disabled={!editable}>
+              <SelectTrigger className="h-8 w-64 text-xs"><SelectValue placeholder="Seleccionar almacén…" /></SelectTrigger>
+              <SelectContent>
+                {(almacenes ?? []).map((a: any) => (
+                  <SelectItem key={a.id} value={a.id}>{a.nombre}{a.ubicacion ? ` — ${a.ubicacion}` : ""}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!almacenId && <span className="text-[11px] text-muted-foreground">Requerido para finalizar la liquidación.</span>}
+          </div>
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
