@@ -3170,6 +3170,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
               })}
             </tbody>
           </table>
+          </>
         )}
         {editable && !completo && list.length > 0 && (
           <p className="mt-3 text-xs text-muted-foreground">
