@@ -3250,10 +3250,16 @@ function LiquidacionFinalPdfButton({
       margin: { left: M, right: M },
     });
 
-    const summaryStartY = (doc as any).lastAutoTable.finalY + 12;
+    let summaryStartY = (doc as any).lastAutoTable.finalY + 12;
+    // If the summary section won't fit on the current page, start it on a new one
+    if (summaryStartY + 240 > pageH - 40) {
+      doc.addPage();
+      summaryStartY = 50;
+    }
 
     autoTable(doc, {
       startY: summaryStartY,
+      pageBreak: "avoid",
       head: [["Componentes de la Inversión Total (US$)", ""]],
       body: [
         ["FOB Total", nf(Number(exp.total_fob) || totalFobExp)],
@@ -3278,6 +3284,7 @@ function LiquidacionFinalPdfButton({
 
     autoTable(doc, {
       startY: summaryStartY,
+      pageBreak: "avoid",
       head: [["Costos del Producto", "Monto Real (DOP)", "Equivalente (USD)"]],
       body: cp.length
         ? cp.map((c) => [
@@ -3301,10 +3308,15 @@ function LiquidacionFinalPdfButton({
     });
     const costosFinalY = (doc as any).lastAutoTable.finalY;
 
-    const resumenStartY = Math.max(componentesFinalY, costosFinalY) + 12;
+    let resumenStartY = Math.max(componentesFinalY, costosFinalY) + 12;
+    if (resumenStartY + 90 > pageH - 40) {
+      doc.addPage();
+      resumenStartY = 50;
+    }
 
     autoTable(doc, {
       startY: resumenStartY,
+      pageBreak: "avoid",
       head: [["Resumen final (US$)", ""]],
       body: [
         ["Inversión total", nf(t.inv)],
