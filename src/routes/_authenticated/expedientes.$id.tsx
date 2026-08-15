@@ -3178,8 +3178,8 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
           </p>
         )}
         <p className="mt-3 text-[11px] text-muted-foreground">
-          El Costo Unitario Real incluye FOB + prorrateo de flete, seguro y otros + Gravamen e ISC reales. El ITBIS no se
-          incluye por ser crédito fiscal recuperable.
+          El Costo Unitario Real incluye FOB + prorrateo de flete, seguro y otros + Gravamen e ISC reales + prorrateo de
+          gastos adicionales. El ITBIS no se incluye por ser crédito fiscal recuperable.
         </p>
       </CardContent>
     </Card>
