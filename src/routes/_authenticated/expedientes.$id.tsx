@@ -3084,15 +3084,17 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
   });
 
   const { data: costosAdic } = useQuery({
-    queryKey: ["costos-adicionales", exp.id],
+    queryKey: ["costos-producto-liq", exp.id],
     queryFn: async () =>
       (await supabase
-        .from("costos")
-        .select("concepto,monto_real")
-        .eq("expediente_id", exp.id)
-        .in("concepto", CONCEPTOS_COSTO_ADICIONALES)).data ?? [],
+        .from("costos_producto")
+        .select("monto_real")
+        .eq("expediente_id", exp.id)).data ?? [],
   });
   const gastosAdicionales = (costosAdic ?? []).reduce((s: number, c: any) => s + (Number(c.monto_real) || 0), 0);
+  const tasaCambio = Number(exp.tasa_cambio_usada) || 0;
+  const faltaTasa = gastosAdicionales > 0 && tasaCambio <= 0;
+  const gastosAdicionalesUSD = tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0;
 
   const list = (items ?? []) as any[];
   const seguro = Number(exp.seguro) || 0;
