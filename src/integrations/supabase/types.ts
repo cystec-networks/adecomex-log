@@ -825,6 +825,68 @@ export type Database = {
           },
         ]
       }
+      costos_producto: {
+        Row: {
+          concepto: string
+          created_at: string
+          expediente_id: string
+          id: string
+          moneda: string
+          monto_estimado: number
+          monto_real: number
+          observaciones: string | null
+        }
+        Insert: {
+          concepto: string
+          created_at?: string
+          expediente_id: string
+          id?: string
+          moneda?: string
+          monto_estimado?: number
+          monto_real?: number
+          observaciones?: string | null
+        }
+        Update: {
+          concepto?: string
+          created_at?: string
+          expediente_id?: string
+          id?: string
+          moneda?: string
+          monto_estimado?: number
+          monto_real?: number
+          observaciones?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "costos_producto_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costos_producto_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costos_producto_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "costos_producto_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+        ]
+      }
       cotizacion_productos: {
         Row: {
           aplica_isc: boolean | null
