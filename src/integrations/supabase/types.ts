@@ -14,6 +14,97 @@ export type Database = {
   }
   public: {
     Tables: {
+      almacen_stock: {
+        Row: {
+          cantidad: number
+          cantidad_disponible: number
+          codigo_arancelario: string | null
+          costo_unitario_real: number
+          costo_venta_unitario: number
+          creado_por: string | null
+          created_at: string
+          expediente_id: string
+          fecha_entrada: string
+          id: string
+          mercancia_item_id: string
+          producto: string
+          unidad: string | null
+        }
+        Insert: {
+          cantidad?: number
+          cantidad_disponible?: number
+          codigo_arancelario?: string | null
+          costo_unitario_real?: number
+          costo_venta_unitario?: number
+          creado_por?: string | null
+          created_at?: string
+          expediente_id: string
+          fecha_entrada?: string
+          id?: string
+          mercancia_item_id: string
+          producto: string
+          unidad?: string | null
+        }
+        Update: {
+          cantidad?: number
+          cantidad_disponible?: number
+          codigo_arancelario?: string | null
+          costo_unitario_real?: number
+          costo_venta_unitario?: number
+          creado_por?: string | null
+          created_at?: string
+          expediente_id?: string
+          fecha_entrada?: string
+          id?: string
+          mercancia_item_id?: string
+          producto?: string
+          unidad?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "almacen_stock_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "almacen_stock_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "almacen_stock_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "almacen_stock_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "almacen_stock_mercancia_item_id_fkey"
+            columns: ["mercancia_item_id"]
+            isOneToOne: true
+            referencedRelation: "mercancia_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "almacen_stock_mercancia_item_id_fkey"
+            columns: ["mercancia_item_id"]
+            isOneToOne: true
+            referencedRelation: "v_mercancia_cliente"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auditoria: {
         Row: {
           accion: string
@@ -2850,6 +2941,7 @@ export type Database = {
           cod_marca: string | null
           cod_modelo: string | null
           codigo_arancelario: string | null
+          costo_venta_unitario: number | null
           created_at: string
           deleted_at: string | null
           deleted_by: string | null
@@ -2857,8 +2949,13 @@ export type Database = {
           especificaciones: string | null
           estado_producto_codigo: string | null
           expediente_id: string
+          gravamen_real: number | null
           id: string
+          isc_real: number | null
+          itbis_real: number | null
           item_no: number
+          liquidacion_final_en: string | null
+          liquidacion_final_por: string | null
           marca: string | null
           modelo: string | null
           pct_gravamen: number | null
@@ -2877,6 +2974,7 @@ export type Database = {
           cod_marca?: string | null
           cod_modelo?: string | null
           codigo_arancelario?: string | null
+          costo_venta_unitario?: number | null
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
@@ -2884,8 +2982,13 @@ export type Database = {
           especificaciones?: string | null
           estado_producto_codigo?: string | null
           expediente_id: string
+          gravamen_real?: number | null
           id?: string
+          isc_real?: number | null
+          itbis_real?: number | null
           item_no: number
+          liquidacion_final_en?: string | null
+          liquidacion_final_por?: string | null
           marca?: string | null
           modelo?: string | null
           pct_gravamen?: number | null
@@ -2904,6 +3007,7 @@ export type Database = {
           cod_marca?: string | null
           cod_modelo?: string | null
           codigo_arancelario?: string | null
+          costo_venta_unitario?: number | null
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
@@ -2911,8 +3015,13 @@ export type Database = {
           especificaciones?: string | null
           estado_producto_codigo?: string | null
           expediente_id?: string
+          gravamen_real?: number | null
           id?: string
+          isc_real?: number | null
+          itbis_real?: number | null
           item_no?: number
+          liquidacion_final_en?: string | null
+          liquidacion_final_por?: string | null
           marca?: string | null
           modelo?: string | null
           pct_gravamen?: number | null
