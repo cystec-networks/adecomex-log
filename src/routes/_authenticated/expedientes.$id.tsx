@@ -3634,7 +3634,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
     return { fob, est, cant, gr, ir, tr, cv, costoUnit, gastosAdicLinea };
   };
 
-  const completo = list.length > 0 && list.every((it) => {
+  const completo = !!almacenId && list.length > 0 && list.every((it) => {
     const c = calcFila(it);
     return c.gr != null && c.ir != null && c.tr != null && c.cv != null;
   });
