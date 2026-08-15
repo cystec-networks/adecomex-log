@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
@@ -54,7 +54,11 @@ const TIPOS_DOC = [
   "Carta de instrucción","Póliza de seguro","DUA","Evidencia de entrega","Otro",
 ];
 
-const CHECKLIST_DOCUMENTOS_BASE = TIPOS_DOC.filter((t) => t !== "Otro");
+const CHECKLIST_DOCUMENTOS_BASE = [
+  "Factura comercial","Bill of Lading","Lista de empaque",
+  "Certificado de origen","Certificado sanitario",
+  "Certificado fitosanitario","Certificado de análisis",
+];
 
 const DOC_ESTADO_STYLE: Record<string, { dot: string; text: string; label: string }> = {
   pendiente: { dot: "bg-muted-foreground/40", text: "text-muted-foreground", label: "Pendiente" },
@@ -977,6 +981,33 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
     qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
   };
 
+  const marcarRecibido = async (tipoDoc: string, d?: any) => {
+    const hoy = new Date().toLocaleDateString("en-CA");
+    try {
+      if (d) {
+        const { error } = await supabase.from("documentos").update({
+          estado: "recibido",
+          fecha_recepcion: d.fecha_recepcion ?? hoy,
+        }).eq("id", d.id);
+        if (error) throw error;
+        toast.success("Documento marcado como recibido");
+      } else {
+        const { error } = await supabase.from("documentos").insert({
+          expediente_id: expedienteId,
+          tipo: tipoDoc,
+          estado: "recibido",
+          fecha_recepcion: hoy,
+          storage_path: null,
+        });
+        if (error) throw error;
+        toast.success("Documento marcado como recibido");
+      }
+      qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
 
   return (
     <Card>
@@ -1032,17 +1063,25 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                     <div key={t} className="flex items-center gap-3 py-1.5 border-b last:border-0 border-border/50 text-sm">
                       <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${st.dot}`} />
                       <span className="flex-1 min-w-0 truncate">{t}</span>
-                      <span className={`text-xs w-24 shrink-0 ${st.text}`}>{d ? st.label : "Pendiente"}</span>
+                      <span className={`text-xs w-24 shrink-0 ${st.text} inline-flex items-center gap-1`}>
+                        {d ? st.label : "Pendiente"}
+                        {d?.estado === "recibido" && !d?.storage_path && <span className="text-[10px] text-muted-foreground leading-none">(sin archivo)</span>}
+                      </span>
                       <span className="text-xs text-muted-foreground w-24 shrink-0">{d?.fecha_recepcion ? fmtLocalDate(d.fecha_recepcion) : "—"}</span>
                       <div className="flex items-center gap-1 shrink-0">
                         {d?.storage_path && <DocumentoPreviewButton path={d.storage_path} variant="ghost" size="sm" label="Ver" />}
-                        {d ? (
+                        {d?.storage_path ? (
                           <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => openEdit(d)}>
                             <Upload className="h-3.5 w-3.5 mr-1" />Reemplazar
                           </Button>
                         ) : (
-                          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => openNuevo(t)}>
+                          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => d ? openEdit(d) : openNuevo(t)}>
                             <Upload className="h-3.5 w-3.5 mr-1" />Subir
+                          </Button>
+                        )}
+                        {(!d || d.estado === "pendiente") && (
+                          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => marcarRecibido(t, d)}>
+                            <Check className="h-3.5 w-3.5 mr-1" />Marcar recibido
                           </Button>
                         )}
                       </div>
