@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
 import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
@@ -84,9 +84,38 @@ function ReadOnlyField({ label, value }: { label: string; value?: string | null 
   );
 }
 
+const TAB_ORDER_KEY = "exp-tab-order-v1";
+const TAB_LABELS: Record<string, string> = {
+  info: "Información",
+  checklist: "Seguimiento Operativo",
+  liqfinal: "Liquidación Final",
+  docs: "Documentos",
+  permisos: "Permisos",
+  transportes: "Transportes",
+  inc: "Incidencias",
+  cost: "Finanzas",
+  costprod: "Costos del Producto",
+  aud: "Auditoría",
+};
+const DEFAULT_TAB_ORDER = Object.keys(TAB_LABELS);
+
 function DetalleExpediente() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
+  const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
+  const dragTab = useRef<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(TAB_ORDER_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as string[];
+      const valid = saved.filter((k) => DEFAULT_TAB_ORDER.includes(k));
+      const merged = [...valid, ...DEFAULT_TAB_ORDER.filter((k) => !valid.includes(k))];
+      setTabOrder(merged);
+    } catch { /* noop */ }
+  }, []);
+
 
   const { data: exp } = useQuery({
     queryKey: ["expediente", id],
@@ -201,20 +230,41 @@ function DetalleExpediente() {
 
 
       <Tabs defaultValue="info">
-        <TabsList>
-          <TabsTrigger value="info">Información</TabsTrigger>
-          <TabsTrigger value="checklist">Seguimiento Operativo</TabsTrigger>
-          
-          <TabsTrigger value="liqfinal">Liquidación Final</TabsTrigger>
-          <TabsTrigger value="docs">Documentos</TabsTrigger>
-
-          <TabsTrigger value="permisos">Permisos</TabsTrigger>
-          <TabsTrigger value="transportes">Transportes</TabsTrigger>
-          <TabsTrigger value="inc">Incidencias</TabsTrigger>
-          <TabsTrigger value="cost">Finanzas</TabsTrigger>
-          <TabsTrigger value="costprod">Costos del Producto</TabsTrigger>
-          <TabsTrigger value="aud">Auditoría</TabsTrigger>
+        <TabsList className="flex flex-wrap h-auto">
+          {tabOrder.map((key) => {
+            const label = TAB_LABELS[key];
+            if (!label) return null;
+            return (
+              <TabsTrigger
+                key={key}
+                value={key}
+                draggable
+                onDragStart={(e) => {
+                  dragTab.current = key;
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const from = dragTab.current;
+                  dragTab.current = null;
+                  if (!from || from === key) return;
+                  setTabOrder((prev) => {
+                    const next = prev.filter((k) => k !== from);
+                    next.splice(next.indexOf(key), 0, from);
+                    try { localStorage.setItem(TAB_ORDER_KEY, JSON.stringify(next)); } catch { /* noop */ }
+                    return next;
+                  });
+                }}
+                className="cursor-grab active:cursor-grabbing"
+                title="Arrastra para reordenar"
+              >
+                {label}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
+
 
         <TabsContent value="info"><TabInfo exp={exp} /></TabsContent>
         <TabsContent value="checklist"><ChecklistHitos expedienteId={id} /></TabsContent>
