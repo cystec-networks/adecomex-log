@@ -201,7 +201,9 @@ function DetalleExpediente() {
           <TabsTrigger value="info">Información</TabsTrigger>
           <TabsTrigger value="checklist">Seguimiento Operativo</TabsTrigger>
           
+          <TabsTrigger value="liqfinal">Liquidación Final</TabsTrigger>
           <TabsTrigger value="docs">Documentos</TabsTrigger>
+
           <TabsTrigger value="permisos">Permisos</TabsTrigger>
           <TabsTrigger value="transportes">Transportes</TabsTrigger>
           <TabsTrigger value="inc">Incidencias</TabsTrigger>
