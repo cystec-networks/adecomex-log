@@ -225,6 +225,7 @@ function DetalleExpediente() {
         <TabsContent value="transportes"><TabTransportesExp expedienteId={id} /></TabsContent>
         <TabsContent value="inc"><TabIncidencias expedienteId={id} /></TabsContent>
         <TabsContent value="cost"><TabCostos expedienteId={id} /></TabsContent>
+        <TabsContent value="costprod"><TabCostosProducto expedienteId={id} /></TabsContent>
         <TabsContent value="aud"><TabAuditoria expedienteId={id} /></TabsContent>
       </Tabs>
     </div>
