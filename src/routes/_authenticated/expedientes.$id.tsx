@@ -49,9 +49,24 @@ export const Route = createFileRoute("/_authenticated/expedientes/$id")({
 
 const TIPOS_DOC = [
   "Factura proforma","Factura comercial","Bill of Lading","Guía aérea","Lista de empaque",
-  "Certificado de origen","Certificado sanitario","Permiso previo","Orden de compra",
+  "Certificado de origen","Certificado sanitario","Certificado fitosanitario","Certificado de análisis",
+  "Permiso previo","Orden de compra",
   "Carta de instrucción","Póliza de seguro","DUA","Evidencia de entrega","Otro",
 ];
+
+const CHECKLIST_DOCUMENTOS_BASE = [
+  "Factura comercial","Bill of Lading","Lista de empaque",
+  "Certificado de origen","Certificado sanitario",
+  "Certificado fitosanitario","Certificado de análisis",
+];
+
+const DOC_ESTADO_STYLE: Record<string, { dot: string; text: string; label: string }> = {
+  pendiente: { dot: "bg-muted-foreground/40", text: "text-muted-foreground", label: "Pendiente" },
+  recibido: { dot: "bg-emerald-500", text: "text-emerald-600", label: "Recibido" },
+  observado: { dot: "bg-amber-500", text: "text-amber-600", label: "Observado" },
+  aprobado: { dot: "bg-emerald-700", text: "text-emerald-700", label: "Aprobado" },
+  vencido: { dot: "bg-destructive", text: "text-destructive", label: "Vencido" },
+};
 
 const TIPOS_INCIDENCIA = [
   "Documento faltante","Inconsistencia en factura","Diferencia de peso/cantidad",
@@ -893,7 +908,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
 
   const resetForm = () => { setEditId(null); setEditPath(null); setTipo(TIPOS_DOC[0]); setVenc(""); setObs(""); setFile(null); };
 
-  const openNuevo = () => { resetForm(); setOpen(true); };
+  const openNuevo = (tipoPre?: string) => { resetForm(); if (tipoPre) setTipo(tipoPre); setOpen(true); };
 
   const openEdit = (d: any) => {
     setEditId(d.id);
@@ -972,7 +987,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-base">Documentos ({docs?.length ?? 0})</CardTitle>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
-          <Button size="sm" onClick={openNuevo}><Upload className="h-4 w-4 mr-1" />Subir documento</Button>
+          <Button size="sm" onClick={() => openNuevo()}><Upload className="h-4 w-4 mr-1" />Subir documento</Button>
           <DialogContent>
             <DialogHeader><DialogTitle>{editId ? "Editar documento" : "Nuevo documento"}</DialogTitle></DialogHeader>
             <div className="grid gap-3">
@@ -992,6 +1007,56 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       </CardHeader>
 
       <CardContent className="p-0">
+        {(() => {
+          const latestByTipo = new Map<string, any>();
+          for (const d of (docs ?? []) as any[]) {
+            const prev = latestByTipo.get(d.tipo);
+            const t = (x: any) => new Date(x?.fecha_recepcion ?? x?.created_at ?? 0).getTime();
+            if (!prev || t(d) >= t(prev)) latestByTipo.set(d.tipo, d);
+          }
+          const recibidos = CHECKLIST_DOCUMENTOS_BASE.filter((t) => {
+            const d = latestByTipo.get(t);
+            return d && ["recibido", "aprobado", "observado"].includes(d.estado);
+          }).length;
+          const pct = Math.round((recibidos / CHECKLIST_DOCUMENTOS_BASE.length) * 100);
+          return (
+            <div className="px-4 py-4 border-b bg-muted/20">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm font-medium">Checklist de Recepción</div>
+                <div className="text-xs text-muted-foreground">{recibidos} de {CHECKLIST_DOCUMENTOS_BASE.length} documentos recibidos</div>
+              </div>
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden mb-3">
+                <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+              </div>
+              <div className="grid gap-1">
+                {CHECKLIST_DOCUMENTOS_BASE.map((t) => {
+                  const d = latestByTipo.get(t);
+                  const st = DOC_ESTADO_STYLE[d?.estado ?? "pendiente"] ?? DOC_ESTADO_STYLE.pendiente;
+                  return (
+                    <div key={t} className="flex items-center gap-3 py-1.5 border-b last:border-0 border-border/50 text-sm">
+                      <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${st.dot}`} />
+                      <span className="flex-1 min-w-0 truncate">{t}</span>
+                      <span className={`text-xs w-24 shrink-0 ${st.text}`}>{d ? st.label : "Pendiente"}</span>
+                      <span className="text-xs text-muted-foreground w-24 shrink-0">{d?.fecha_recepcion ? fmtLocalDate(d.fecha_recepcion) : "—"}</span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {d?.storage_path && <DocumentoPreviewButton path={d.storage_path} variant="ghost" size="sm" label="Ver" />}
+                        {d ? (
+                          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => openEdit(d)}>
+                            <Upload className="h-3.5 w-3.5 mr-1" />Reemplazar
+                          </Button>
+                        ) : (
+                          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => openNuevo(t)}>
+                            <Upload className="h-3.5 w-3.5 mr-1" />Subir
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
         <table className="w-full text-sm">
           <thead className="text-xs text-muted-foreground border-b bg-muted/30">
             <tr><th className="text-left px-4 py-2">Tipo</th><th className="text-left">Estado</th><th className="text-left">Recepción</th><th className="text-left">Vencimiento</th><th /></tr>
