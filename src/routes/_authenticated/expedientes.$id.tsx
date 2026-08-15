@@ -201,20 +201,41 @@ function DetalleExpediente() {
 
 
       <Tabs defaultValue="info">
-        <TabsList>
-          <TabsTrigger value="info">Información</TabsTrigger>
-          <TabsTrigger value="checklist">Seguimiento Operativo</TabsTrigger>
-          
-          <TabsTrigger value="liqfinal">Liquidación Final</TabsTrigger>
-          <TabsTrigger value="docs">Documentos</TabsTrigger>
-
-          <TabsTrigger value="permisos">Permisos</TabsTrigger>
-          <TabsTrigger value="transportes">Transportes</TabsTrigger>
-          <TabsTrigger value="inc">Incidencias</TabsTrigger>
-          <TabsTrigger value="cost">Finanzas</TabsTrigger>
-          <TabsTrigger value="costprod">Costos del Producto</TabsTrigger>
-          <TabsTrigger value="aud">Auditoría</TabsTrigger>
+        <TabsList className="flex flex-wrap h-auto">
+          {tabOrder.map((key) => {
+            const label = TAB_LABELS[key];
+            if (!label) return null;
+            return (
+              <TabsTrigger
+                key={key}
+                value={key}
+                draggable
+                onDragStart={(e) => {
+                  dragTab.current = key;
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const from = dragTab.current;
+                  dragTab.current = null;
+                  if (!from || from === key) return;
+                  setTabOrder((prev) => {
+                    const next = prev.filter((k) => k !== from);
+                    next.splice(next.indexOf(key), 0, from);
+                    try { localStorage.setItem(TAB_ORDER_KEY, JSON.stringify(next)); } catch { /* noop */ }
+                    return next;
+                  });
+                }}
+                className="cursor-grab active:cursor-grabbing"
+                title="Arrastra para reordenar"
+              >
+                {label}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
+
 
         <TabsContent value="info"><TabInfo exp={exp} /></TabsContent>
         <TabsContent value="checklist"><ChecklistHitos expedienteId={id} /></TabsContent>
