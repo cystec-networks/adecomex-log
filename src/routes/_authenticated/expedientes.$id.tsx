@@ -987,7 +987,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-base">Documentos ({docs?.length ?? 0})</CardTitle>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
-          <Button size="sm" onClick={openNuevo}><Upload className="h-4 w-4 mr-1" />Subir documento</Button>
+          <Button size="sm" onClick={() => openNuevo()}><Upload className="h-4 w-4 mr-1" />Subir documento</Button>
           <DialogContent>
             <DialogHeader><DialogTitle>{editId ? "Editar documento" : "Nuevo documento"}</DialogTitle></DialogHeader>
             <div className="grid gap-3">
