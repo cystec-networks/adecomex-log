@@ -981,6 +981,33 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
     qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
   };
 
+  const marcarRecibido = async (tipoDoc: string, d?: any) => {
+    const hoy = new Date().toLocaleDateString("en-CA");
+    try {
+      if (d) {
+        const { error } = await supabase.from("documentos").update({
+          estado: "recibido",
+          fecha_recepcion: d.fecha_recepcion ?? hoy,
+        }).eq("id", d.id);
+        if (error) throw error;
+        toast.success("Documento marcado como recibido");
+      } else {
+        const { error } = await supabase.from("documentos").insert({
+          expediente_id: expedienteId,
+          tipo: tipoDoc,
+          estado: "recibido",
+          fecha_recepcion: hoy,
+          storage_path: null,
+        });
+        if (error) throw error;
+        toast.success("Documento marcado como recibido");
+      }
+      qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
 
   return (
     <Card>
