@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
@@ -3065,6 +3065,225 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
   );
 }
 
+function LiquidacionFinalPdfButton({
+  exp,
+  list,
+  calcFila,
+  gastosAdicionales,
+  tasaCambio,
+}: {
+  exp: any;
+  list: any[];
+  calcFila: (it: any) => any;
+  gastosAdicionales: number;
+  tasaCambio: number;
+}) {
+  const { user } = useCurrentUser();
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const docRef = useRef<any>(null);
+  const fileNameRef = useRef<string>("LiquidacionFinal.pdf");
+
+  const { data: costosProducto } = useQuery({
+    queryKey: ["costos-producto-pdf", exp.id],
+    queryFn: async () =>
+      (await supabase
+        .from("costos_producto")
+        .select("concepto, monto_real")
+        .eq("expediente_id", exp.id)
+        .order("created_at")).data ?? [],
+  });
+
+  const cerrarPreview = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    docRef.current = null;
+  };
+
+  const generar = async () => {
+    if (list.length === 0) {
+      toast.error("El expediente no tiene ítems de mercancía.");
+      return;
+    }
+    const { jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+
+    const nf = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const M = 32;
+
+    const finalizadaEn = list.find((it) => it.liquidacion_final_en)?.liquidacion_final_en ?? null;
+
+    doc.setFontSize(13); doc.setFont("helvetica", "bold");
+    doc.text("ADECOMEX SRL — Gestión y Logística", M, 40);
+    doc.setFontSize(11);
+    doc.text("LIQUIDACIÓN FINAL DE PRODUCTO", M, 58);
+    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
+    doc.text(
+      `N° Expediente: ${exp.numero ?? "—"}   |   Cliente: ${exp.clientes?.nombre ?? "—"}`,
+      M,
+      70,
+    );
+    doc.text(
+      `Generado: ${new Date().toLocaleString("es-DO")}   |   Usuario: ${user?.email ?? "—"}`,
+      M,
+      82,
+    );
+    if (finalizadaEn) {
+      doc.setTextColor(16, 122, 87); doc.setFont("helvetica", "bold");
+      doc.text(`Finalizada el ${new Date(finalizadaEn).toLocaleString("es-DO")}`, M, 94);
+    } else {
+      doc.setTextColor(180, 40, 40); doc.setFont("helvetica", "bold");
+      doc.text("BORRADOR — liquidación aún no finalizada", M, 94);
+    }
+    doc.setFont("helvetica", "normal"); doc.setTextColor(0);
+
+    const t = { cant: 0, gEst: 0, gReal: 0, iEst: 0, iReal: 0, tEst: 0, tReal: 0, inv: 0, venta: 0 };
+    const body = list.map((it) => {
+      const c = calcFila(it);
+      const cv = c.cv ?? 0;
+      const margenUnit = cv - c.costoUnit;
+      const pct = cv > 0 ? (margenUnit / cv) * 100 : 0;
+      t.cant += c.cant;
+      t.gEst += c.est.gravamen; t.gReal += c.gr ?? 0;
+      t.iEst += c.est.selectivo; t.iReal += c.ir ?? 0;
+      t.tEst += c.est.itbis; t.tReal += c.tr ?? 0;
+      t.inv += c.costoUnit * c.cant;
+      t.venta += cv * c.cant;
+      return [
+        it.detalle_producto ?? "—",
+        nf(c.cant),
+        nf(c.est.gravamen), c.gr == null ? "—" : nf(c.gr),
+        nf(c.est.selectivo), c.ir == null ? "—" : nf(c.ir),
+        nf(c.est.itbis), c.tr == null ? "—" : nf(c.tr),
+        nf(c.costoUnit),
+        c.cv == null ? "—" : nf(c.cv),
+        c.cv == null ? "—" : nf(margenUnit),
+        c.cv == null ? "—" : `${pct.toFixed(1)}%`,
+      ];
+    });
+
+    const margenTotal = t.venta - t.inv;
+    const margenPct = t.venta > 0 ? (margenTotal / t.venta) * 100 : 0;
+
+    autoTable(doc, {
+      startY: 106,
+      head: [[
+        "Descripción", "Cantidad", "Gravamen Est.", "Gravamen Real", "ISC Est.", "ISC Real",
+        "ITBIS Est.", "ITBIS Real", "Costo Unit. Real", "Costo de Venta", "Margen Unit.", "% Margen",
+      ]],
+      body,
+      foot: [[
+        "TOTALES", nf(t.cant), nf(t.gEst), nf(t.gReal), nf(t.iEst), nf(t.iReal),
+        nf(t.tEst), nf(t.tReal), "", "", nf(margenTotal), `${margenPct.toFixed(1)}%`,
+      ]],
+      theme: "grid",
+      headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
+      bodyStyles: { fontSize: 6.8 },
+      footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 7 },
+      columnStyles: {
+        0: { cellWidth: 150 },
+        1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" },
+        4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" },
+        7: { halign: "right" }, 8: { halign: "right" }, 9: { halign: "right" },
+        10: { halign: "right" }, 11: { halign: "right" },
+      },
+      margin: { left: M, right: M },
+    });
+
+    const cp = (costosProducto ?? []) as any[];
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 12,
+      head: [["Costos del Producto", "Monto Real (DOP)", "Equivalente (USD)"]],
+      body: cp.length
+        ? cp.map((c) => [
+            c.concepto ?? "—",
+            nf(Number(c.monto_real) || 0),
+            tasaCambio > 0 ? nf((Number(c.monto_real) || 0) / tasaCambio) : "sin tasa",
+          ])
+        : [["Sin costos registrados", "—", "—"]],
+      foot: [[
+        "TOTAL",
+        nf(gastosAdicionales),
+        tasaCambio > 0 ? nf(gastosAdicionales / tasaCambio) : "sin tasa",
+      ]],
+      theme: "grid",
+      headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
+      bodyStyles: { fontSize: 8 },
+      footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 8 },
+      columnStyles: { 0: { cellWidth: 180 }, 1: { halign: "right" }, 2: { halign: "right" } },
+      margin: { left: M, right: M },
+      tableWidth: 420,
+    });
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 12,
+      head: [["Resumen final (US$)", ""]],
+      body: [
+        ["Inversión total", nf(t.inv)],
+        ["Valor de venta esperado", nf(t.venta)],
+        ["Margen esperado total", `${nf(margenTotal)}  (${margenPct.toFixed(1)}%)`],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
+      bodyStyles: { fontSize: 8 },
+      columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 180 }, 1: { halign: "right" } },
+      margin: { left: M, right: M },
+      tableWidth: 420,
+    });
+
+    const nota =
+      "El ITBIS no se incluye en el Costo Unitario Real por ser crédito fiscal recuperable. " +
+      "Los montos en DOP se convierten a USD con la tasa de cambio registrada en el Expediente (exp.tasa_cambio_usada).";
+    let notaY = (doc as any).lastAutoTable.finalY + 18;
+    doc.setFontSize(7.5); doc.setTextColor(110);
+    const lines = doc.splitTextToSize(nota, pageW - M * 2);
+    if (notaY + lines.length * 10 > pageH - 40) { doc.addPage(); notaY = 50; }
+    doc.text(lines, M, notaY);
+    doc.setTextColor(0);
+
+    const pages = doc.getNumberOfPages();
+    for (let i = 1; i <= pages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8); doc.setTextColor(120);
+      doc.text(`Página ${i} de ${pages}`, pageW - M, pageH - 20, { align: "right" });
+    }
+
+    const fecha = new Date().toISOString().slice(0, 10);
+    fileNameRef.current = `LiquidacionFinal_${exp.numero ?? "expediente"}_${fecha}.pdf`;
+    docRef.current = doc;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(doc.output("bloburl").toString());
+  };
+
+  return (
+    <>
+      <Button variant="outline" size="sm" onClick={generar}>
+        <FileText className="h-4 w-4 mr-1" />
+        Descargar Liquidación Final (PDF)
+      </Button>
+
+      <Dialog open={!!previewUrl} onOpenChange={(o) => { if (!o) cerrarPreview(); }}>
+        <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-5 py-3 border-b">
+            <DialogTitle className="text-base">Vista previa — Liquidación Final</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 bg-muted/30">
+            {previewUrl && <iframe src={previewUrl} title="Liquidación Final" className="w-full h-full border-0" />}
+          </div>
+          <DialogFooter className="px-5 py-3 border-t gap-2 sm:justify-between">
+            <Button variant="outline" size="sm" onClick={() => docRef.current?.save(fileNameRef.current)}>
+              <Download className="h-4 w-4 mr-1" /> Descargar PDF
+            </Button>
+            <Button size="sm" onClick={cerrarPreview}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
 
 // ---------------------------------------------------------------------------
@@ -3212,6 +3431,13 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
         </div>
         <div className="flex items-center gap-2">
           {finalizado && <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">Finalizada</Badge>}
+          <LiquidacionFinalPdfButton
+            exp={exp}
+            list={list}
+            calcFila={calcFila}
+            gastosAdicionales={gastosAdicionales}
+            tasaCambio={tasaCambio}
+          />
           {finalizado && isAdmin && !reabierto && (
             <Button variant="outline" size="sm" onClick={() => setReabierto(true)}>Reabrir liquidación</Button>
           )}
