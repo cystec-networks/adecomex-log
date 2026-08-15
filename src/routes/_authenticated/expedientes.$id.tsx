@@ -3250,17 +3250,36 @@ function LiquidacionFinalPdfButton({
       margin: { left: M, right: M },
     });
 
-    let summaryStartY = (doc as any).lastAutoTable.finalY + 12;
-    // If the summary section won't fit on the current page, start it on a new one
-    if (summaryStartY + 260 > pageH - 40) {
+    const cp = (costosProducto ?? []) as any[];
+
+    // --- Summary block: 3 tables side-by-side, always trying to fit on page 1 ---
+    const COL_W = 250;
+    const GAP = 14;
+    let summaryStartY = (doc as any).lastAutoTable.finalY + 10;
+    const availH = pageH - 40 - summaryStartY;
+    // tallest block is the costos table: header + rows + footer
+    const maxRows = Math.max(8, (cp.length || 1) + 1);
+    // shrink typography progressively so the block fits in the remaining space
+    let fs = 8;
+    let cellPad = 3;
+    const blockH = (f: number, p: number) => (maxRows + 1) * (f + p * 2 + 2) + 4;
+    while (fs > 5.5 && blockH(fs, cellPad) > availH) {
+      fs -= 0.5;
+      if (cellPad > 1.2) cellPad -= 0.4;
+    }
+    if (blockH(fs, cellPad) > availH) {
       doc.addPage();
       summaryStartY = 50;
+      fs = 8;
+      cellPad = 3;
     }
+    const sStyles = { fontSize: fs, cellPadding: cellPad } as any;
+    const sHead = { fillColor: [30, 58, 138] as [number, number, number], fontSize: fs, cellPadding: cellPad };
 
     autoTable(doc, {
       startY: summaryStartY,
       pageBreak: "avoid",
-      head: [["Componentes de la Inversión Total (US$)", ""]],
+      head: [["Componentes de la Inversión (US$)", ""]],
       body: [
         ["FOB Total", nf(Number(exp.total_fob) || totalFobExp)],
         ["Seguro Total", nf(seguroExp)],
@@ -3272,64 +3291,59 @@ function LiquidacionFinalPdfButton({
         ["INVERSIÓN TOTAL", nf(t.inv)],
       ],
       theme: "grid",
-      headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
-      bodyStyles: { fontSize: 8 },
-      columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 180 }, 1: { halign: "right" } },
+      headStyles: sHead,
+      bodyStyles: sStyles,
+      columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 140 }, 1: { halign: "right" } },
       margin: { left: M, right: M },
-      tableWidth: 360,
+      tableWidth: COL_W,
     });
     const componentesFinalY = (doc as any).lastAutoTable.finalY;
-
-    const cp = (costosProducto ?? []) as any[];
 
     autoTable(doc, {
       startY: summaryStartY,
       pageBreak: "avoid",
-      head: [["Costos del Producto", "Monto Real (DOP)", "Equivalente (USD)"]],
+      head: [["Costos del Producto", "DOP", "USD"]],
       body: cp.length
         ? cp.map((c) => [
             c.concepto ?? "—",
             nf(Number(c.monto_real) || 0),
-            tasaCambio > 0 ? nf((Number(c.monto_real) || 0) / tasaCambio) : "sin tasa",
+            tasaCambio > 0 ? nf((Number(c.monto_real) || 0) / tasaCambio) : "s/t",
           ])
         : [["Sin costos registrados", "—", "—"]],
       foot: [[
         "TOTAL",
         nf(gastosAdicionales),
-        tasaCambio > 0 ? nf(gastosAdicionales / tasaCambio) : "sin tasa",
+        tasaCambio > 0 ? nf(gastosAdicionales / tasaCambio) : "s/t",
       ]],
       theme: "grid",
-      headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
-      bodyStyles: { fontSize: 8 },
-      footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 8 },
-      columnStyles: { 0: { cellWidth: 180 }, 1: { halign: "right" }, 2: { halign: "right" } },
-      margin: { left: M + 360 + 24, right: M },
-      tableWidth: 360,
+      headStyles: sHead,
+      bodyStyles: sStyles,
+      footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: fs, cellPadding: cellPad },
+      columnStyles: { 0: { cellWidth: 110 }, 1: { halign: "right" }, 2: { halign: "right" } },
+      margin: { left: M + COL_W + GAP, right: M },
+      tableWidth: COL_W,
     });
     const costosFinalY = (doc as any).lastAutoTable.finalY;
 
-    let resumenStartY = Math.max(componentesFinalY, costosFinalY) + 12;
-    if (resumenStartY + 120 > pageH - 40) {
-      doc.addPage();
-      resumenStartY = 50;
-    }
-
     autoTable(doc, {
-      startY: resumenStartY,
+      startY: summaryStartY,
       pageBreak: "avoid",
       head: [["Resumen final (US$)", ""]],
       body: [
         ["Inversión total", nf(t.inv)],
         ["Valor de venta esperado", nf(t.venta)],
-        ["Margen esperado total", `${nf(margenTotal)}  (${margenPct.toFixed(1)}%)`],
+        ["Margen esperado total", `${nf(margenTotal)} (${margenPct.toFixed(1)}%)`],
       ],
       theme: "grid",
-      headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
-      bodyStyles: { fontSize: 8 },
-      columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 180 }, 1: { halign: "right" } },
-      margin: { left: M, right: M },
-      tableWidth: 420,
+      headStyles: sHead,
+      bodyStyles: sStyles,
+      columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 130 }, 1: { halign: "right" } },
+      margin: { left: M + (COL_W + GAP) * 2, right: M },
+      tableWidth: COL_W,
     });
+    const resumenFinalY = (doc as any).lastAutoTable.finalY;
+    (doc as any).lastAutoTable.finalY = Math.max(componentesFinalY, costosFinalY, resumenFinalY);
+
 
     const nota =
       "El ITBIS no se incluye en el Costo Unitario Real por ser crédito fiscal recuperable. " +
