@@ -32,7 +32,7 @@ import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
-import { useMyRoles } from "@/lib/auth-hooks";
+import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
@@ -148,6 +148,7 @@ function DetalleExpediente() {
           </p>
         </div>
         <GenerarXmlSigaButton expedienteId={id} />
+        <PreLiquidacionPdfButton exp={exp} />
         <div className="flex items-center gap-2">
           <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
@@ -2676,6 +2677,216 @@ function HerramientasDgaVuce() {
   );
 }
 
+function PreLiquidacionPdfButton({ exp }: { exp: any }) {
+  const { user } = useCurrentUser();
+  const { data: items } = useQuery({
+    queryKey: ["mercancia-items", exp.id],
+    queryFn: async () =>
+      (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
+  });
 
+  const generar = async () => {
+    const { jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
 
+    const list = items ?? [];
+    if (list.length === 0) {
+      toast.error("El expediente no tiene ítems de mercancía.");
+      return;
+    }
+    const seguro = Number(exp.seguro) || 0;
+    const flete = Number(exp.flete) || 0;
+    const otros = Number(exp.otros) || 0;
+    const totalFob = list.reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
+
+    const nf = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const M = 32;
+
+    doc.setFontSize(13); doc.setFont("helvetica", "bold");
+    doc.text("ADECOMEX SRL — Gestión y Logística", M, 40);
+    doc.setFontSize(11);
+    doc.text("PRE-LIQUIDACIÓN DE IMPUESTOS", M, 58);
+    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
+    doc.text("(Estimado interno — sujeto a la liquidación oficial de la DGA)", M, 70);
+    doc.text(
+      `Generado: ${new Date().toLocaleString("es-DO")}   |   Usuario: ${user?.email ?? "—"}`,
+      M,
+      82,
+    );
+    doc.setTextColor(0);
+
+    const c1: [string, string][] = [
+      ["N° Expediente", exp.numero ?? "—"],
+      ["BL/AWB", exp.bl_awb ?? "—"],
+      ["Régimen", exp.regimen_aduanero ?? "—"],
+      ["Estado", ESTADO_LABEL[exp.estado ?? ""] ?? (exp.estado ?? "—")],
+    ];
+    const c2: [string, string][] = [
+      ["Depósito/Puerto arribo", exp.puerto_arribo ?? "—"],
+      ["País de procedencia", exp.pais_procedencia_codigo ?? exp.pais_origen ?? "—"],
+      ["Manifiesto / DUA", exp.numero_dua ?? "—"],
+      ["Fecha de llegada", exp.fecha_compromiso ? fmtLocalDate(exp.fecha_compromiso) : "—"],
+    ];
+    const c3: [string, string][] = [
+      ["Importador", exp.clientes?.nombre ?? "—"],
+      ["RNC/Documento", exp.clientes?.rnc ?? "—"],
+      ["Agente Aduanero", "Francisco Enerio Lopez Martinez (072-08)"],
+      ["Suplidor", exp.suplidor ?? "—"],
+    ];
+    const infoBody = [0, 1, 2, 3].map((i) => [
+      c1[i][0], c1[i][1], c2[i][0], c2[i][1], c3[i][0], c3[i][1],
+    ]);
+    autoTable(doc, {
+      startY: 94,
+      body: infoBody,
+      theme: "grid",
+      styles: { fontSize: 7.5, cellPadding: 3 },
+      columnStyles: {
+        0: { fontStyle: "bold", textColor: 90, cellWidth: 72 },
+        2: { fontStyle: "bold", textColor: 90, cellWidth: 78 },
+        4: { fontStyle: "bold", textColor: 90, cellWidth: 72 },
+      },
+      margin: { left: M, right: M },
+    });
+
+    const totals = { fob: 0, cif: 0, grav: 0, isc: 0, itbis: 0, total: 0, cant: 0 };
+    const body = list.map((it: any) => {
+      const fob = Number(it.valor_fob) || 0;
+      const c = calcImpuestosLinea(fob, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
+      totals.fob += fob; totals.cif += c.cifLinea; totals.grav += c.gravamen;
+      totals.isc += c.selectivo; totals.itbis += c.itbis; totals.total += c.total;
+      totals.cant += Number(it.cantidad) || 0;
+      return [
+        it.item_no ?? "",
+        it.codigo_arancelario ?? "—",
+        it.detalle_producto ?? "—",
+        it.unidad_medida ?? "—",
+        exp.pais_origen ?? "—",
+        nf(Number(it.cantidad) || 0),
+        nf(fob),
+        nf(c.cifLinea),
+        nf(c.gravamen),
+        nf(c.selectivo),
+        nf(c.itbis),
+        nf(c.total),
+      ];
+    });
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 12,
+      head: [["Item", "Arancel", "Descripción", "Unidad", "Origen", "Cantidad", "FOB", "CIF", "Gravamen", "Selectivo", "ITBIS", "Total"]],
+      body,
+      foot: [[
+        "", "", "TOTALES", "", "", nf(totals.cant), nf(totals.fob), nf(totals.cif),
+        nf(totals.grav), nf(totals.isc), nf(totals.itbis), nf(totals.total),
+      ]],
+      theme: "grid",
+      headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
+      bodyStyles: { fontSize: 6.8 },
+      footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 7 },
+      columnStyles: {
+        0: { cellWidth: 20 }, 1: { cellWidth: 50 }, 3: { cellWidth: 34 }, 4: { cellWidth: 44 },
+        5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" },
+        8: { halign: "right" }, 9: { halign: "right" }, 10: { halign: "right" }, 11: { halign: "right" },
+      },
+      margin: { left: M, right: M },
+    });
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 12,
+      head: [["Peso de la mercancía", ""]],
+      body: [
+        ["Peso Bruto", exp.peso_bruto != null ? `${nf(Number(exp.peso_bruto))} kg` : "—"],
+        ["Peso Neto", exp.peso_neto != null ? `${nf(Number(exp.peso_neto))} kg` : "—"],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
+      bodyStyles: { fontSize: 8 },
+      columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 120 } },
+      margin: { left: M, right: M },
+      tableWidth: 300,
+    });
+
+    const contenedores = String(exp.numeros_contenedores ?? "").trim();
+    if (contenedores) {
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 12,
+        head: [["Contenedores"]],
+        body: contenedores.split(/[,;\n/]+/).map((c) => [c.trim()]).filter((r) => r[0]),
+        theme: "grid",
+        headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
+        bodyStyles: { fontSize: 8 },
+        margin: { left: M, right: M },
+        tableWidth: 300,
+      });
+    }
+
+    const startResumen = (doc as any).lastAutoTable.finalY + 14;
+    autoTable(doc, {
+      startY: startResumen,
+      head: [["Valores (US$)", ""]],
+      body: [
+        ["Total FOB", nf(Number(exp.total_fob) || totals.fob)],
+        ["Seguro", nf(seguro)],
+        ["Flete", nf(flete)],
+        ["Otros", nf(otros)],
+        ["Total CIF", nf(Number(exp.total_cif) || totals.cif)],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
+      bodyStyles: { fontSize: 8 },
+      columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 110 }, 1: { halign: "right" } },
+      margin: { left: M },
+      tableWidth: 240,
+    });
+    autoTable(doc, {
+      startY: startResumen,
+      head: [["Impuestos estimados (US$)", ""]],
+      body: [
+        ["Gravamen", nf(totals.grav)],
+        ["Selectivo (ISC)", nf(totals.isc)],
+        ["ITBIS", nf(totals.itbis)],
+        ["Total Impuestos Estimados", nf(totals.grav + totals.isc + totals.itbis)],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
+      bodyStyles: { fontSize: 8 },
+      columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 140 }, 1: { halign: "right" } },
+      margin: { left: pageW - M - 240 },
+      tableWidth: 240,
+    });
+
+    const nota =
+      "Este documento es una pre-liquidación estimada generada por ADECOMEX SRL con fines de planificación interna. " +
+      "Los montos aquí presentados son referenciales y están sujetos a la liquidación oficial que emita la Dirección General de Aduanas (DGA), " +
+      "la cual puede variar según revisión de valor, clasificación arancelaria, origen, cantidad u otros elementos determinados por la autoridad aduanera.";
+    let notaY = (doc as any).lastAutoTable.finalY + 18;
+    doc.setFontSize(7.5); doc.setTextColor(110);
+    const lines = doc.splitTextToSize(nota, pageW - M * 2);
+    if (notaY + lines.length * 10 > pageH - 40) { doc.addPage(); notaY = 50; }
+    doc.text(lines, M, notaY);
+    doc.setTextColor(0);
+
+    const pages = doc.getNumberOfPages();
+    for (let i = 1; i <= pages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8); doc.setTextColor(120);
+      doc.text(`Página ${i} de ${pages}`, pageW - M, pageH - 20, { align: "right" });
+    }
+
+    const fecha = new Date().toISOString().slice(0, 10);
+    doc.save(`PreLiquidacion_${exp.numero ?? "expediente"}_${fecha}.pdf`);
+  };
+
+  return (
+    <Button variant="outline" size="sm" onClick={generar}>
+      <FileText className="h-4 w-4 mr-1" />
+      Descargar Pre-Liquidación (PDF)
+    </Button>
+  );
+}
 
