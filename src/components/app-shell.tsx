@@ -315,6 +315,9 @@ function AppSidebarInner() {
         {/* Gestión Humana group */}
         {renderGroup(visibleGroups.find((g) => g.id === "rrhh")!)}
 
+        {/* Almacén group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "almacen")!)}
+
         {/* Legal group */}
         {renderGroup(visibleGroups.find((g) => g.id === "legal")!)}
 
