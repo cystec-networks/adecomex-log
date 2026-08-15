@@ -2719,7 +2719,6 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     );
     doc.setTextColor(0);
 
-    const col = (rows: [string, string][]) => rows.map(([k, v]) => [k, v]);
     const c1: [string, string][] = [
       ["N° Expediente", exp.numero ?? "—"],
       ["BL/AWB", exp.bl_awb ?? "—"],
@@ -2743,7 +2742,7 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     ]);
     autoTable(doc, {
       startY: 94,
-      body: col([]).length ? infoBody : infoBody,
+      body: infoBody,
       theme: "grid",
       styles: { fontSize: 7.5, cellPadding: 3 },
       columnStyles: {
