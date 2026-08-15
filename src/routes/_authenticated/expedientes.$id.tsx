@@ -2997,12 +2997,14 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
     const fob = Number(it.valor_fob) || 0;
     const est = calcImpuestosLinea(fob, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
     const cant = Number(it.cantidad) || 0;
+    const shareLinea = totalFob > 0 ? fob / totalFob : 0;
+    const gastosAdicLinea = gastosAdicionales * shareLinea;
     const gr = num(it, "gravamen_real");
     const ir = num(it, "isc_real");
     const tr = num(it, "itbis_real");
     const cv = num(it, "costo_venta_unitario");
-    const costoUnit = cant > 0 ? (est.cifLinea + (gr ?? 0) + (ir ?? 0)) / cant : 0;
-    return { fob, est, cant, gr, ir, tr, cv, costoUnit };
+    const costoUnit = cant > 0 ? (est.cifLinea + (gr ?? 0) + (ir ?? 0) + gastosAdicLinea) / cant : 0;
+    return { fob, est, cant, gr, ir, tr, cv, costoUnit, gastosAdicLinea };
   };
 
   const completo = list.length > 0 && list.every((it) => {
