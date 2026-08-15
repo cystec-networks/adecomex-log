@@ -309,14 +309,14 @@ function AppSidebarInner() {
         {/* Transportes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "transporte")!)}
 
+        {/* Almacén group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "almacen")!)}
+
         {/* Academia group */}
         {renderGroup(visibleGroups.find((g) => g.id === "academia")!)}
 
         {/* Gestión Humana group */}
         {renderGroup(visibleGroups.find((g) => g.id === "rrhh")!)}
-
-        {/* Almacén group */}
-        {renderGroup(visibleGroups.find((g) => g.id === "almacen")!)}
 
         {/* Legal group */}
         {renderGroup(visibleGroups.find((g) => g.id === "legal")!)}
