@@ -32,7 +32,7 @@ import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
-import { useMyRoles } from "@/lib/auth-hooks";
+import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
@@ -148,6 +148,7 @@ function DetalleExpediente() {
           </p>
         </div>
         <GenerarXmlSigaButton expedienteId={id} />
+        <PreLiquidacionPdfButton exp={exp} />
         <div className="flex items-center gap-2">
           <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
