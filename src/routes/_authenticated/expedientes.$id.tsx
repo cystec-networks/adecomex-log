@@ -3431,6 +3431,13 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
         </div>
         <div className="flex items-center gap-2">
           {finalizado && <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">Finalizada</Badge>}
+          <LiquidacionFinalPdfButton
+            exp={exp}
+            list={list}
+            calcFila={calcFila}
+            gastosAdicionales={gastosAdicionales}
+            tasaCambio={tasaCambio}
+          />
           {finalizado && isAdmin && !reabierto && (
             <Button variant="outline" size="sm" onClick={() => setReabierto(true)}>Reabrir liquidación</Button>
           )}
