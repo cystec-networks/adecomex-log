@@ -3309,7 +3309,7 @@ function LiquidacionFinalPdfButton({
     const costosFinalY = (doc as any).lastAutoTable.finalY;
 
     let resumenStartY = Math.max(componentesFinalY, costosFinalY) + 12;
-    if (resumenStartY + 90 > pageH - 40) {
+    if (resumenStartY + 120 > pageH - 40) {
       doc.addPage();
       resumenStartY = 50;
     }
