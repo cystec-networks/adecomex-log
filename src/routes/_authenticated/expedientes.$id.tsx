@@ -908,7 +908,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
 
   const resetForm = () => { setEditId(null); setEditPath(null); setTipo(TIPOS_DOC[0]); setVenc(""); setObs(""); setFile(null); };
 
-  const openNuevo = () => { resetForm(); setOpen(true); };
+  const openNuevo = (tipoPre?: string) => { resetForm(); if (tipoPre) setTipo(tipoPre); setOpen(true); };
 
   const openEdit = (d: any) => {
     setEditId(d.id);
