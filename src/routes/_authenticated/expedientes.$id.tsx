@@ -3673,6 +3673,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             unidad: it.unidad_medida ?? null,
             cantidad: c.cant,
             cantidad_disponible: c.cant,
+            almacen_id: almacenId || null,
             costo_unitario_real: Number(c.costoUnit.toFixed(2)),
             costo_venta_unitario: c.cv,
             fecha_entrada: ahora,
