@@ -3576,6 +3576,22 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
   const faltaTasa = gastosAdicionales > 0 && tasaCambio <= 0;
   const gastosAdicionalesUSD = tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0;
 
+  const { data: almacenes } = useQuery({
+    queryKey: ["almacenes-activos"],
+    queryFn: async () =>
+      (await (supabase.from("almacenes" as any) as any).select("id,nombre,ubicacion").eq("activo", true).order("nombre")).data ?? [],
+  });
+  const { data: stockExistente } = useQuery({
+    queryKey: ["almacen-stock-exp", exp.id],
+    queryFn: async () =>
+      (await (supabase.from("almacen_stock" as any) as any).select("almacen_id").eq("expediente_id", exp.id).limit(1)).data ?? [],
+  });
+  const [almacenId, setAlmacenId] = useState<string>("");
+  useEffect(() => {
+    const prev = (stockExistente ?? [])[0]?.almacen_id;
+    if (prev && !almacenId) setAlmacenId(prev);
+  }, [stockExistente]);
+
   const list = (items ?? []) as any[];
   const seguro = Number(exp.seguro) || 0;
   const flete = Number(exp.flete) || 0;
