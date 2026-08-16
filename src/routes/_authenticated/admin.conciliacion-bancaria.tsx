@@ -39,10 +39,19 @@ export const Route = createFileRoute("/_authenticated/admin/conciliacion-bancari
   component: ConciliacionBancariaPage,
 });
 
+const CUENTA_DEFAULT = "747315737";
+
+type BancoConfig = {
+  cuenta: string;
+  saldo_inicial: number;
+  fecha_saldo_inicial: string;
+};
+
 type Movimiento = {
   id: string;
   cuenta: string;
   fecha: string;
+  created_at?: string;
   referencia: string | null;
   monto: number;
   tipo: string;
@@ -181,6 +190,37 @@ function ConciliacionBancariaPage() {
     return { creditos, debitos, conciliados, pendientes, neto: creditos - debitos };
   }, [filtrados]);
 
+  const { data: config, isLoading: cargandoConfig } = useQuery({
+    queryKey: ["banco_config", CUENTA_DEFAULT],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("banco_config").select("*").eq("cuenta", CUENTA_DEFAULT).maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as unknown as BancoConfig | null;
+    },
+  });
+
+  // Balance corriente por movimiento (cronológico desde la fecha de saldo inicial)
+  const { balancePorMov, balanceActual } = useMemo(() => {
+    if (!config) return { balancePorMov: new Map<string, number>(), balanceActual: null as number | null };
+    const orden = movimientos
+      .filter((m) => m.cuenta === config.cuenta && m.fecha >= config.fecha_saldo_inicial)
+      .slice()
+      .sort((a, b) =>
+        a.fecha === b.fecha
+          ? String(a.created_at ?? "").localeCompare(String(b.created_at ?? ""))
+          : a.fecha < b.fecha ? -1 : 1,
+      );
+    let saldo = Number(config.saldo_inicial) || 0;
+    const map = new Map<string, number>();
+    for (const m of orden) {
+      saldo += m.tipo === "credito" ? Number(m.monto) : -Number(m.monto);
+      map.set(m.id, saldo);
+    }
+    return { balancePorMov: map, balanceActual: orden.length ? saldo : Number(config.saldo_inicial) || 0 };
+  }, [movimientos, config]);
+
+
   async function onImportar(file: File) {
     setImportando(true);
     try {
@@ -299,10 +339,21 @@ function ConciliacionBancariaPage() {
               {balanceBanco.trim() !== "" && isFinite(parseFloat(balanceBanco)) && (
                 <> · Diferencia: {fmtRD(parseFloat(balanceBanco) - resumen.neto)}</>
               )}
+              {balanceActual !== null && (
+                <>
+                  <br />Balance actual (calculado): <strong>{fmtRD(balanceActual)}</strong>
+                  {balanceBanco.trim() !== "" && isFinite(parseFloat(balanceBanco)) && (
+                    <> · Dif. vs banco: {fmtRD(parseFloat(balanceBanco) - balanceActual)}</>
+                  )}
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <BalanceInicialCard config={config ?? null} cargando={cargandoConfig} balanceActual={balanceActual} />
+
 
       {/* Filtros */}
       <Card>
@@ -354,16 +405,17 @@ function ConciliacionBancariaPage() {
                 <th className="py-2 pr-3">Referencia</th>
                 <th className="py-2 pr-3">Tipo</th>
                 <th className="py-2 pr-3 text-right">Monto</th>
+                <th className="py-2 pr-3 text-right">Balance calculado</th>
                 <th className="py-2 pr-3">Estado</th>
                 <th className="py-2 pr-3 text-right">Acción</th>
               </tr>
             </thead>
             <tbody>
               {isLoading && (
-                <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">Cargando…</td></tr>
+                <tr><td colSpan={8} className="py-6 text-center text-muted-foreground">Cargando…</td></tr>
               )}
               {!isLoading && filtrados.length === 0 && (
-                <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">
+                <tr><td colSpan={8} className="py-6 text-center text-muted-foreground">
                   No hay movimientos. Importa un archivo .txt del banco.
                 </td></tr>
               )}
@@ -381,6 +433,9 @@ function ConciliacionBancariaPage() {
                   </td>
                   <td className={`py-2 pr-3 text-right font-medium ${m.tipo === "credito" ? "text-emerald-600" : "text-destructive"}`}>
                     {fmtRD(Number(m.monto))}
+                  </td>
+                  <td className="py-2 pr-3 text-right font-mono text-xs whitespace-nowrap">
+                    {balancePorMov.has(m.id) ? fmtRD(balancePorMov.get(m.id)!) : "—"}
                   </td>
                   <td className="py-2 pr-3">
                     {m.conciliado ? (
@@ -415,6 +470,78 @@ function ConciliacionBancariaPage() {
 
       <ConciliarDialog mov={movSel} onClose={() => setMovSel(null)} />
     </div>
+  );
+}
+
+function BalanceInicialCard({
+  config, cargando, balanceActual,
+}: { config: BancoConfig | null; cargando: boolean; balanceActual: number | null }) {
+  const qc = useQueryClient();
+  const [fecha, setFecha] = useState("");
+  const [monto, setMonto] = useState("");
+  const [editado, setEditado] = useState(false);
+
+  const fechaVal = editado ? fecha : (config?.fecha_saldo_inicial ?? "2026-07-01");
+  const montoVal = editado ? monto : (config ? String(config.saldo_inicial) : "");
+
+  const guardar = useMutation({
+    mutationFn: async () => {
+      const n = parseFloat((montoVal || "").replace(/,/g, ""));
+      if (!fechaVal) throw new Error("Indica la fecha del saldo inicial");
+      if (!isFinite(n)) throw new Error("Indica un monto válido");
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await supabase.from("banco_config").upsert({
+        cuenta: CUENTA_DEFAULT,
+        saldo_inicial: n,
+        fecha_saldo_inicial: fechaVal,
+        actualizado_por: u.user?.id ?? null,
+      } as never, { onConflict: "cuenta" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Balance inicial guardado");
+      setEditado(false);
+      qc.invalidateQueries({ queryKey: ["banco_config", CUENTA_DEFAULT] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Balance Inicial · Cuenta {CUENTA_DEFAULT}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {!cargando && !config && (
+          <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm">
+            No hay un balance inicial configurado. Define la fecha de referencia y el saldo de esa
+            fecha para poder calcular el balance corriente; mientras tanto no se muestra ningún
+            balance calculado.
+          </div>
+        )}
+        <div className="grid gap-3 sm:grid-cols-3 items-end">
+          <div className="space-y-1">
+            <Label>Fecha del saldo inicial</Label>
+            <Input type="date" value={fechaVal}
+              onChange={(e) => { setEditado(true); setMonto(montoVal); setFecha(e.target.value); }} />
+          </div>
+          <div className="space-y-1">
+            <Label>Monto</Label>
+            <Input inputMode="decimal" placeholder="0.00" value={montoVal}
+              onChange={(e) => { setEditado(true); setFecha(fechaVal); setMonto(e.target.value); }} />
+          </div>
+          <Button onClick={() => guardar.mutate()} disabled={guardar.isPending}>
+            {guardar.isPending ? "Guardando…" : "Guardar"}
+          </Button>
+        </div>
+        {config && (
+          <div className="text-xs text-muted-foreground">
+            Desde {fmtLocalDate(config.fecha_saldo_inicial)} con {fmtRD(Number(config.saldo_inicial))}
+            {balanceActual !== null && <> · Balance actual calculado: <strong>{fmtRD(balanceActual)}</strong></>}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
