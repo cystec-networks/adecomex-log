@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { z } from "zod";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,11 +11,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, ClipboardList, Plus, Trash2, ExternalLink } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
 import { FacturaEcfFormDialog } from "@/components/factura-ecf-selector";
 import { TIPOS_COMPROBANTE, tipoLabel, tipoBadgeClass, fmtRD } from "@/lib/facturas-ecf";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
+import { buildDocumentoComercialPdf } from "@/lib/pdf-documento-comercial";
+import { FileText } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/facturacion")({
   ssr: false,
@@ -58,7 +61,7 @@ function FacturacionPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("facturas_ecf")
-        .select("*, expedientes:expedientes!expedientes_factura_ecf_id_fkey(id,numero), transportes:transportes!transportes_factura_ecf_id_fkey(id,numero_viaje)")
+        .select("*, facturas_ecf_lineas(*), expedientes:expedientes!expedientes_factura_ecf_id_fkey(id,numero), transportes:transportes!transportes_factura_ecf_id_fkey(id,numero_viaje)")
         .is("eliminado_en", null)
         .order("fecha_emision", { ascending: false });
       return data ?? [];
@@ -118,6 +121,49 @@ function FacturacionPage() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const docRef = useRef<any>(null);
+  const fileNameRef = useRef("Factura.pdf");
+  const cerrarPreview = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    docRef.current = null;
+  };
+
+  const generarFacturaPdf = async (f: any) => {
+    const cliente = (clientes ?? []).find((x: any) => x.id === f.cliente_id) as any;
+    const lineas = [...(f.facturas_ecf_lineas ?? [])].sort((a: any, b: any) => a.orden - b.orden);
+    const doc = await buildDocumentoComercialPdf({
+      tipo: "factura",
+      titulo: "Factura de Crédito Fiscal",
+      numero: f.encf || "—",
+      fecha: f.fecha_emision,
+      fechaSecundaria: f.fecha_vencimiento_pago ?? null,
+      cliente: {
+        nombre: f.cliente_razon_social ?? cliente?.nombre,
+        direccion: cliente?.direccion,
+        rnc: f.cliente_rnc ?? cliente?.rnc,
+      },
+      lineas: lineas.map((l: any) => ({
+        codigo: l.codigo,
+        descripcion: l.descripcion,
+        cantidad: Number(l.cantidad),
+        precio: Number(l.precio),
+        gravado: !!l.gravado,
+        monto: Number(l.valor || 0) - Number(l.itbis || 0),
+      })),
+      notas: f.notas,
+      subtotal: Number(f.subtotal_gravado || 0) + Number(f.subtotal_exento || 0),
+      impuesto: Number(f.total_itbis || 0),
+      total: Number(f.monto_total || 0),
+      saldoPendiente: Number(f.monto_total || 0),
+    });
+    fileNameRef.current = `${f.encf || "Factura"}.pdf`;
+    docRef.current = doc;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(doc.output("bloburl").toString());
+  };
 
   const totalMonto = filtered.reduce((s: number, f: any) => s + Number(f.monto_total || 0), 0);
 
@@ -264,6 +310,14 @@ function FacturacionPage() {
                         </div>
                       </td>
                       <td className="px-3 py-2 text-right">
+                        {(f.facturas_ecf_lineas ?? []).length > 0 && (
+                          <Button
+                            size="sm" variant="ghost" className="h-7"
+                            onClick={() => generarFacturaPdf(f)}
+                          >
+                            <FileText className="h-3.5 w-3.5 mr-1" /> PDF
+                          </Button>
+                        )}
                         {f.pdf_url && (
                           <DocumentoPreviewButton
                             path={f.pdf_url as string}
@@ -295,6 +349,23 @@ function FacturacionPage() {
       <div className="text-xs text-muted-foreground">
         Los totales calculados en este módulo son de referencia interna; el documento oficial de la DGII siempre prevalece.
       </div>
+
+      <Dialog open={!!previewUrl} onOpenChange={(o) => { if (!o) cerrarPreview(); }}>
+        <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-5 py-3 border-b">
+            <DialogTitle className="text-base">Vista previa — Factura</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 bg-muted/30">
+            {previewUrl && <iframe src={previewUrl} title="Factura" className="w-full h-full border-0" />}
+          </div>
+          <DialogFooter className="px-5 py-3 border-t gap-2 sm:justify-between">
+            <Button variant="outline" size="sm" onClick={() => docRef.current?.save(fileNameRef.current)}>
+              <FileText className="h-4 w-4 mr-1" /> Descargar
+            </Button>
+            <Button size="sm" onClick={cerrarPreview}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <FacturaEcfFormDialog open={openNew} onOpenChange={setOpenNew} />
       {editId && (

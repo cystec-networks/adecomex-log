@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,9 +16,10 @@ import {
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { FileText, Plus, Trash2, Pencil } from "lucide-react";
+import { FileText, Plus, Trash2, Pencil, Receipt, ExternalLink } from "lucide-react";
 import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
+import { buildDocumentoComercialPdf } from "@/lib/pdf-documento-comercial";
 
 export const Route = createFileRoute("/_authenticated/admin/cotizaciones-servicios")({
   ssr: false,
@@ -54,6 +55,7 @@ const nf = (n: number) =>
 
 type Tarifa = {
   id: string;
+  codigo: string | null;
   servicio: string;
   categoria: string | null;
   tarifa: number;
@@ -66,12 +68,16 @@ type Tarifa = {
 type Linea = {
   id?: string;
   orden: number;
+  codigo: string;
   servicio: string;
   descripcion: string;
   cantidad: number;
   tarifa_unitaria: number;
   moneda: string;
+  gravado: boolean;
 };
+
+const ITBIS_PCT = 0.18;
 
 function CotizacionesServiciosPage() {
   return (
@@ -130,6 +136,7 @@ function TarifarioTab() {
   const guardar = useMutation({
     mutationFn: async (t: Partial<Tarifa>) => {
       const payload = {
+        codigo: t.codigo || null,
         servicio: (t.servicio ?? "").trim(),
         categoria: t.categoria || null,
         tarifa: Number(t.tarifa) || 0,
@@ -189,6 +196,7 @@ function TarifarioTab() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-28">Código</TableHead>
               <TableHead>Servicio</TableHead>
               <TableHead>Categoría</TableHead>
               <TableHead className="text-right">Tarifa</TableHead>
@@ -200,10 +208,11 @@ function TarifarioTab() {
           </TableHeader>
           <TableBody>
             {filas.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Sin tarifas</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Sin tarifas</TableCell></TableRow>
             )}
             {filas.map((t) => (
               <TableRow key={t.id}>
+                <TableCell className="font-mono text-xs">{t.codigo ?? "—"}</TableCell>
                 <TableCell className="font-medium">{t.servicio}</TableCell>
                 <TableCell>{t.categoria ?? "—"}</TableCell>
                 <TableCell className="text-right tabular-nums">{nf(t.tarifa)}</TableCell>
@@ -234,9 +243,16 @@ function TarifarioTab() {
           </DialogHeader>
           {edit && (
             <div className="grid gap-3">
-              <div className="grid gap-1.5">
-                <Label className="text-xs">Servicio</Label>
-                <Input value={edit.servicio ?? ""} onChange={(e) => setEdit({ ...edit, servicio: e.target.value })} />
+              <div className="grid grid-cols-[8rem_1fr] gap-3">
+                <div className="grid gap-1.5">
+                  <Label className="text-xs">Código</Label>
+                  <Input value={edit.codigo ?? ""} placeholder="4001-01"
+                    onChange={(e) => setEdit({ ...edit, codigo: e.target.value })} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label className="text-xs">Servicio</Label>
+                  <Input value={edit.servicio ?? ""} onChange={(e) => setEdit({ ...edit, servicio: e.target.value })} />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
@@ -283,12 +299,13 @@ function CotizacionesTab() {
   const [nueva, setNueva] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const navigate = useNavigate();
   const docRef = useRef<any>(null);
   const fileNameRef = useRef("Cotizacion.pdf");
 
   const { data: clientes } = useQuery({
     queryKey: ["clientes-lite-cotserv"],
-    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc").order("nombre")).data ?? [],
+    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc,direccion").order("nombre")).data ?? [],
   });
 
   const { data: cotizaciones } = useQuery({
@@ -296,7 +313,7 @@ function CotizacionesTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cotizaciones_servicios")
-        .select("*, cotizaciones_servicios_lineas(*)")
+        .select("*, cotizaciones_servicios_lineas(*), facturas_ecf(id,encf)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -315,6 +332,67 @@ function CotizacionesTab() {
     onError: (e: any) => toast.error(e.message ?? "No se pudo actualizar"),
   });
 
+  const convertir = useMutation({
+    mutationFn: async (c: any) => {
+      if (c.factura_id) throw new Error("Esta cotización ya fue convertida en factura");
+      const lineas = [...(c.cotizaciones_servicios_lineas ?? [])].sort((a: any, b: any) => a.orden - b.orden);
+      if (lineas.length === 0) throw new Error("La cotización no tiene líneas");
+      const cliente = (clientes ?? []).find((x: any) => x.id === c.cliente_id);
+
+      const gravado = lineas.reduce(
+        (s: number, l: any) => s + (l.gravado === false ? 0 : Number(l.subtotal || 0)), 0);
+      const exento = lineas.reduce(
+        (s: number, l: any) => s + (l.gravado === false ? Number(l.subtotal || 0) : 0), 0);
+      const itbis = +(gravado * ITBIS_PCT).toFixed(2);
+
+      const { data: u } = await supabase.auth.getUser();
+      const { data: fac, error } = await supabase.from("facturas_ecf").insert({
+        encf: "",
+        tipo_comprobante: "31",
+        fecha_emision: new Date().toISOString().slice(0, 10),
+        cliente_id: c.cliente_id,
+        cliente_razon_social: cliente?.nombre ?? null,
+        cliente_rnc: cliente?.rnc ?? null,
+        subtotal_gravado: +gravado.toFixed(2),
+        subtotal_exento: +exento.toFixed(2),
+        total_itbis: itbis,
+        monto_total: +(gravado + exento + itbis).toFixed(2),
+        notas: c.notas ?? null,
+        created_by: u.user?.id ?? null,
+      }).select("id").single();
+      if (error) throw error;
+
+      const rows = lineas.map((l: any, i: number) => {
+        const sub = Number(l.subtotal || 0);
+        const li = l.gravado === false ? 0 : +(sub * ITBIS_PCT).toFixed(2);
+        return {
+          factura_id: fac.id,
+          orden: i + 1,
+          codigo: l.codigo ?? null,
+          descripcion: l.descripcion ? `${l.servicio} — ${l.descripcion}` : l.servicio,
+          cantidad: Number(l.cantidad) || 0,
+          precio: Number(l.tarifa_unitaria) || 0,
+          gravado: l.gravado !== false,
+          itbis: li,
+          valor: +(sub + li).toFixed(2),
+        };
+      });
+      const { error: lErr } = await supabase.from("facturas_ecf_lineas").insert(rows);
+      if (lErr) throw lErr;
+
+      const { error: uErr } = await supabase
+        .from("cotizaciones_servicios").update({ factura_id: fac.id }).eq("id", c.id);
+      if (uErr) throw uErr;
+      return fac.id as string;
+    },
+    onSuccess: (facturaId) => {
+      toast.success("Factura creada — completa los datos fiscales");
+      qc.invalidateQueries({ queryKey: ["cotizaciones-servicios"] });
+      navigate({ to: "/admin/facturacion", search: { editar: facturaId } });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo convertir"),
+  });
+
   const totalPorMoneda = (lineas: any[]) => {
     const acc: Record<string, number> = {};
     for (const l of lineas ?? []) acc[l.moneda] = (acc[l.moneda] ?? 0) + Number(l.subtotal || 0);
@@ -328,66 +406,34 @@ function CotizacionesTab() {
   };
 
   const generarPdf = async (c: any) => {
-    const { jsPDF } = await import("jspdf");
-    const autoTable = (await import("jspdf-autotable")).default;
     const cliente = (clientes ?? []).find((x: any) => x.id === c.cliente_id);
     const lineas = [...(c.cotizaciones_servicios_lineas ?? [])].sort((a: any, b: any) => a.orden - b.orden);
-
-    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
-    const pageW = doc.internal.pageSize.getWidth();
-    const pageH = doc.internal.pageSize.getHeight();
-    const M = 32;
-
-    doc.setFontSize(13); doc.setFont("helvetica", "bold");
-    doc.text("ADECOMEX SRL — Gestión y Logística", M, 40);
-    doc.setFontSize(11);
-    doc.text("COTIZACIÓN DE SERVICIOS", M, 58);
-    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
-    doc.text(`No. ${c.numero}   |   Fecha: ${fmtLocalDate(c.fecha)}`, M, 72);
-    doc.text(
-      `Cliente: ${cliente?.nombre ?? "—"}${cliente?.rnc ? `   |   RNC: ${cliente.rnc}` : ""}`,
-      M, 84,
+    const subtotal = lineas.reduce((s: number, l: any) => s + Number(l.subtotal || 0), 0);
+    const impuesto = lineas.reduce(
+      (s: number, l: any) => s + (l.gravado === false ? 0 : Number(l.subtotal || 0) * ITBIS_PCT), 0,
     );
-    doc.setTextColor(0);
 
-    autoTable(doc, {
-      startY: 98,
-      head: [["Servicio", "Descripción", "Cant.", "Tarifa", "Moneda", "Subtotal"]],
-      body: lineas.map((l: any) => [
-        l.servicio, l.descripcion ?? "—", nf(l.cantidad), nf(l.tarifa_unitaria), l.moneda, nf(l.subtotal),
-      ]),
-      theme: "grid",
-      styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [30, 58, 95], textColor: 255 },
-      columnStyles: { 2: { halign: "right" }, 3: { halign: "right" }, 5: { halign: "right" } },
-      margin: { left: M, right: M },
+    const doc = await buildDocumentoComercialPdf({
+      tipo: "cotizacion",
+      titulo: "Cotización de Servicios",
+      numero: c.numero,
+      fecha: c.fecha,
+      fechaSecundaria: c.fecha_vigencia,
+      cliente: { nombre: cliente?.nombre, direccion: cliente?.direccion, rnc: cliente?.rnc },
+      moneda: lineas[0]?.moneda ?? "DOP",
+      lineas: lineas.map((l: any) => ({
+        codigo: l.codigo,
+        descripcion: l.descripcion ? `${l.servicio} — ${l.descripcion}` : l.servicio,
+        cantidad: Number(l.cantidad),
+        precio: Number(l.tarifa_unitaria),
+        gravado: l.gravado !== false,
+        monto: Number(l.subtotal || 0),
+      })),
+      notas: c.notas,
+      subtotal,
+      impuesto,
+      total: subtotal + impuesto,
     });
-
-    let y = (doc as any).lastAutoTable.finalY + 14;
-    const totales = totalPorMoneda(lineas);
-    autoTable(doc, {
-      startY: y,
-      head: [["Total", "Monto"]],
-      body: Object.entries(totales).map(([m, v]) => [m, nf(v)]),
-      theme: "grid",
-      styles: { fontSize: 9, cellPadding: 4, fontStyle: "bold" },
-      headStyles: { fillColor: [30, 58, 95], textColor: 255 },
-      columnStyles: { 0: { cellWidth: 120 }, 1: { halign: "right" } },
-      tableWidth: 260,
-      margin: { left: pageW - M - 260, right: M },
-    });
-
-    y = (doc as any).lastAutoTable.finalY + 20;
-    doc.setFontSize(8); doc.setTextColor(60);
-    doc.text(`Vigencia: ${c.fecha_vigencia ? fmtLocalDate(c.fecha_vigencia) : "—"}`, M, y);
-    if (c.notas) { y += 12; doc.text(`Notas: ${c.notas}`, M, y, { maxWidth: pageW - M * 2 }); }
-    y += 22;
-    doc.setFontSize(7.5); doc.setTextColor(110);
-    doc.text(
-      "Tarifas sujetas a cambio sin previo aviso. Cotización válida hasta la fecha de vigencia indicada.",
-      M, Math.min(y, pageH - 40), { maxWidth: pageW - M * 2 },
-    );
-    doc.setTextColor(0);
 
     fileNameRef.current = `${c.numero}.pdf`;
     docRef.current = doc;
@@ -452,6 +498,26 @@ function CotizacionesTab() {
                     <Button variant="ghost" size="sm" onClick={() => generarPdf(c)}>
                       <FileText className="h-4 w-4 mr-1" /> PDF
                     </Button>
+                    {c.factura_id ? (
+                      <Button
+                        variant="ghost" size="sm"
+                        onClick={() => navigate({ to: "/admin/facturacion", search: { editar: c.factura_id } })}
+                      >
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        Ver Factura {c.facturas_ecf?.encf || ""}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant={c.estado === "aceptada" ? "default" : "ghost"}
+                        size="sm"
+                        disabled={convertir.isPending}
+                        onClick={() => {
+                          if (confirm(`¿Convertir la cotización ${c.numero} en factura?`)) convertir.mutate(c);
+                        }}
+                      >
+                        <Receipt className="h-4 w-4 mr-1" /> Convertir en Factura
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               );
@@ -509,11 +575,13 @@ function CotizacionDialog({
       .sort((a: any, b: any) => a.orden - b.orden)
       .map((l: any) => ({
         orden: l.orden,
+        codigo: l.codigo ?? "",
         servicio: l.servicio,
         descripcion: l.descripcion ?? "",
         cantidad: Number(l.cantidad),
         tarifa_unitaria: Number(l.tarifa_unitaria),
         moneda: l.moneda,
+        gravado: l.gravado ?? true,
       })),
   );
 
@@ -532,11 +600,13 @@ function CotizacionDialog({
     if (!t) return;
     setLineas((prev) => [...prev, {
       orden: prev.length + 1,
+      codigo: t.codigo ?? "",
       servicio: t.servicio,
       descripcion: t.descripcion ?? "",
       cantidad: 1,
       tarifa_unitaria: Number(t.tarifa) || 0,
       moneda: t.moneda,
+      gravado: true,
     }]);
   };
 
@@ -580,6 +650,8 @@ function CotizacionDialog({
       const rows = lineas.map((l, i) => ({
         cotizacion_id: id!,
         orden: i + 1,
+        codigo: l.codigo || null,
+        gravado: l.gravado,
         servicio: l.servicio,
         descripcion: l.descripcion || null,
         cantidad: Number(l.cantidad) || 0,
@@ -648,7 +720,7 @@ function CotizacionDialog({
             </div>
             <Button
               variant="outline"
-              onClick={() => setLineas((p) => [...p, { orden: p.length + 1, servicio: "", descripcion: "", cantidad: 1, tarifa_unitaria: 0, moneda: "DOP" }])}
+              onClick={() => setLineas((p) => [...p, { orden: p.length + 1, codigo: "", servicio: "", descripcion: "", cantidad: 1, tarifa_unitaria: 0, moneda: "DOP", gravado: true }])}
             >
               <Plus className="h-4 w-4 mr-1" /> Línea libre
             </Button>
@@ -658,21 +730,24 @@ function CotizacionDialog({
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-28">Código</TableHead>
                   <TableHead className="min-w-48">Servicio</TableHead>
                   <TableHead className="min-w-48">Descripción</TableHead>
                   <TableHead className="w-24">Cant.</TableHead>
                   <TableHead className="w-32">Tarifa</TableHead>
                   <TableHead className="w-24">Moneda</TableHead>
+                  <TableHead className="w-20">ITBIS</TableHead>
                   <TableHead className="w-28 text-right">Subtotal</TableHead>
                   <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {lineas.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Sin servicios</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">Sin servicios</TableCell></TableRow>
                 )}
                 {lineas.map((l, i) => (
                   <TableRow key={i}>
+                    <TableCell><Input value={l.codigo} onChange={(e) => setLinea(i, { codigo: e.target.value })} /></TableCell>
                     <TableCell><Input value={l.servicio} onChange={(e) => setLinea(i, { servicio: e.target.value })} /></TableCell>
                     <TableCell><Input value={l.descripcion} onChange={(e) => setLinea(i, { descripcion: e.target.value })} /></TableCell>
                     <TableCell><Input type="number" step="0.01" value={l.cantidad} onChange={(e) => setLinea(i, { cantidad: Number(e.target.value) })} /></TableCell>
@@ -682,6 +757,9 @@ function CotizacionDialog({
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>{MONEDAS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Switch checked={l.gravado} onCheckedChange={(v) => setLinea(i, { gravado: v })} />
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {nf((Number(l.cantidad) || 0) * (Number(l.tarifa_unitaria) || 0))}
