@@ -188,6 +188,8 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/admin/gastos-operativos") },
       { to: "/admin/cuentas-por-pagar", label: "Cuentas por Pagar", icon: Wallet, roles: ["admin","finanzas"],
         match: (p) => p.startsWith("/admin/cuentas-por-pagar") },
+      { to: "/admin/cuentas-por-cobrar", label: "Cuentas por Cobrar", icon: HandCoins, roles: ["admin","contabilidad"],
+        match: (p) => p.startsWith("/admin/cuentas-por-cobrar") },
       { to: "/admin/reportes-fiscales", label: "Reportes Fiscales DGII", icon: FileBarChart2, roles: ["admin","finanzas"],
         match: (p) => p.startsWith("/admin/reportes-fiscales") },
       { to: "/rrhh/prestamos", label: "Préstamos", icon: HandCoins, roles: ["admin","finanzas"],
