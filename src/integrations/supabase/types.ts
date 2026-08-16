@@ -2046,6 +2046,7 @@ export type Database = {
           otros: number | null
           pais_origen: string | null
           pais_origen_codigo: string | null
+          pais_procedencia: string | null
           pais_procedencia_codigo: string | null
           peso_bruto: number | null
           peso_neto: number | null
@@ -2119,6 +2120,7 @@ export type Database = {
           otros?: number | null
           pais_origen?: string | null
           pais_origen_codigo?: string | null
+          pais_procedencia?: string | null
           pais_procedencia_codigo?: string | null
           peso_bruto?: number | null
           peso_neto?: number | null
@@ -2192,6 +2194,7 @@ export type Database = {
           otros?: number | null
           pais_origen?: string | null
           pais_origen_codigo?: string | null
+          pais_procedencia?: string | null
           pais_procedencia_codigo?: string | null
           peso_bruto?: number | null
           peso_neto?: number | null
