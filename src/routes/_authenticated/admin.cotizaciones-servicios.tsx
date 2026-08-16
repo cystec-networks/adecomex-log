@@ -25,6 +25,7 @@ import { FileText, Plus, Trash2, Pencil, Receipt, ExternalLink } from "lucide-re
 import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
 import { buildDocumentoComercialPdf } from "@/lib/pdf-documento-comercial";
+import { AutocompleteInput } from "@/components/autocomplete-input";
 
 export const Route = createFileRoute("/_authenticated/admin/cotizaciones-servicios")({
   ssr: false,
