@@ -659,7 +659,7 @@ function CotizacionDialog({
             </div>
             <Button
               variant="outline"
-              onClick={() => setLineas((p) => [...p, { orden: p.length + 1, servicio: "", descripcion: "", cantidad: 1, tarifa_unitaria: 0, moneda: "DOP" }])}
+              onClick={() => setLineas((p) => [...p, { orden: p.length + 1, codigo: "", servicio: "", descripcion: "", cantidad: 1, tarifa_unitaria: 0, moneda: "DOP", gravado: true }])}
             >
               <Plus className="h-4 w-4 mr-1" /> Línea libre
             </Button>
