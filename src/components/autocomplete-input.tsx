@@ -23,16 +23,24 @@ export function AutocompleteInput({ value, onChange, suggestions, placeholder, c
 
   const filtered = suggestions.slice(0, 8);
 
+  const getContainer = () =>
+    inputRef.current?.closest<HTMLElement>("[role='dialog']") ?? null;
+
   const updatePos = () => {
     const input = inputRef.current;
     if (!input) return;
     const rect = input.getBoundingClientRect();
+    // If we portal into a transformed ancestor (Radix dialog), position:fixed
+    // resolves against that ancestor, so subtract its offset.
+    const container = getContainer();
+    const base = container?.getBoundingClientRect();
     setPos({
-      top: rect.bottom,
-      left: rect.left,
+      top: rect.bottom - (base?.top ?? 0),
+      left: rect.left - (base?.left ?? 0),
       width: rect.width,
     });
   };
+
 
   useEffect(() => {
     if (open) updatePos();
@@ -53,8 +61,13 @@ export function AutocompleteInput({ value, onChange, suggestions, placeholder, c
       if (open) updatePos();
     };
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    window.addEventListener("scroll", onResize, true);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onResize, true);
+    };
   }, [open]);
+
 
   const pick = (s: string) => {
     onChange(s);
@@ -104,8 +117,9 @@ export function AutocompleteInput({ value, onChange, suggestions, placeholder, c
       />
       {dropdown && typeof document !== "undefined" && createPortal(
         dropdown,
-        inputRef.current?.closest<HTMLElement>("[role='dialog']") ?? document.body,
+        getContainer() ?? document.body,
       )}
+
     </div>
   );
 }
