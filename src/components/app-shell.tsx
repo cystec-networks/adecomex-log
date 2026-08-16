@@ -302,7 +302,6 @@ function AppSidebarInner() {
         {/* Solicitudes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "solicitudes")!)}
 
-
         {/* Expedientes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "expedientes")!)}
 
@@ -315,17 +314,14 @@ function AppSidebarInner() {
         {/* Academia group */}
         {renderGroup(visibleGroups.find((g) => g.id === "academia")!)}
 
+        {/* Administración group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "administracion")!)}
+
         {/* Gestión Humana group */}
         {renderGroup(visibleGroups.find((g) => g.id === "rrhh")!)}
 
         {/* Legal group */}
         {renderGroup(visibleGroups.find((g) => g.id === "legal")!)}
-
-
-
-
-        {/* Administración group */}
-        {renderGroup(visibleGroups.find((g) => g.id === "administracion")!)}
 
         {/* Simple items */}
         {visibleSimpleItems.map((it) => renderSimpleItem(it))}
