@@ -222,13 +222,16 @@ export function FacturaEcfFormDialog({
 
     },
     onSuccess: (row) => {
-      toast.success("Factura e-CF registrada");
+      toast.success(editId ? "Factura e-CF actualizada" : "Factura e-CF registrada");
       qc.invalidateQueries({ queryKey: ["facturas-ecf"] });
       qc.invalidateQueries({ queryKey: ["facturas-ecf-lite"] });
       qc.invalidateQueries({ queryKey: ["ecf-pendientes"] });
+      qc.invalidateQueries({ queryKey: ["cxc-facturas"] });
+      if (editId) qc.invalidateQueries({ queryKey: ["factura-ecf-edit", editId] });
       onOpenChange(false);
       onCreated?.(row.id);
     },
+
     onError: (e: any) => toast.error(e.message ?? "No se pudo registrar la factura"),
   });
 
