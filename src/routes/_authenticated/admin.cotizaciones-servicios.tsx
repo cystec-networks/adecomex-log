@@ -242,9 +242,16 @@ function TarifarioTab() {
           </DialogHeader>
           {edit && (
             <div className="grid gap-3">
-              <div className="grid gap-1.5">
-                <Label className="text-xs">Servicio</Label>
-                <Input value={edit.servicio ?? ""} onChange={(e) => setEdit({ ...edit, servicio: e.target.value })} />
+              <div className="grid grid-cols-[8rem_1fr] gap-3">
+                <div className="grid gap-1.5">
+                  <Label className="text-xs">Código</Label>
+                  <Input value={edit.codigo ?? ""} placeholder="4001-01"
+                    onChange={(e) => setEdit({ ...edit, codigo: e.target.value })} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label className="text-xs">Servicio</Label>
+                  <Input value={edit.servicio ?? ""} onChange={(e) => setEdit({ ...edit, servicio: e.target.value })} />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
