@@ -21,6 +21,11 @@ import { Pencil, Plus, Trash2, Copy, AlertTriangle, CreditCard } from "lucide-re
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
+} from "recharts";
+
 
 export const Route = createFileRoute("/_authenticated/admin/gastos-operativos")({
   ssr: false,
