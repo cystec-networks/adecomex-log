@@ -23,16 +23,24 @@ export function AutocompleteInput({ value, onChange, suggestions, placeholder, c
 
   const filtered = suggestions.slice(0, 8);
 
+  const getContainer = () =>
+    inputRef.current?.closest<HTMLElement>("[role='dialog']") ?? null;
+
   const updatePos = () => {
     const input = inputRef.current;
     if (!input) return;
     const rect = input.getBoundingClientRect();
+    // If we portal into a transformed ancestor (Radix dialog), position:fixed
+    // resolves against that ancestor, so subtract its offset.
+    const container = getContainer();
+    const base = container?.getBoundingClientRect();
     setPos({
-      top: rect.bottom,
-      left: rect.left,
+      top: rect.bottom - (base?.top ?? 0),
+      left: rect.left - (base?.left ?? 0),
       width: rect.width,
     });
   };
+
 
   useEffect(() => {
     if (open) updatePos();
