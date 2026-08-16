@@ -343,66 +343,34 @@ function CotizacionesTab() {
   };
 
   const generarPdf = async (c: any) => {
-    const { jsPDF } = await import("jspdf");
-    const autoTable = (await import("jspdf-autotable")).default;
     const cliente = (clientes ?? []).find((x: any) => x.id === c.cliente_id);
     const lineas = [...(c.cotizaciones_servicios_lineas ?? [])].sort((a: any, b: any) => a.orden - b.orden);
-
-    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
-    const pageW = doc.internal.pageSize.getWidth();
-    const pageH = doc.internal.pageSize.getHeight();
-    const M = 32;
-
-    doc.setFontSize(13); doc.setFont("helvetica", "bold");
-    doc.text("ADECOMEX SRL — Gestión y Logística", M, 40);
-    doc.setFontSize(11);
-    doc.text("COTIZACIÓN DE SERVICIOS", M, 58);
-    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
-    doc.text(`No. ${c.numero}   |   Fecha: ${fmtLocalDate(c.fecha)}`, M, 72);
-    doc.text(
-      `Cliente: ${cliente?.nombre ?? "—"}${cliente?.rnc ? `   |   RNC: ${cliente.rnc}` : ""}`,
-      M, 84,
+    const subtotal = lineas.reduce((s: number, l: any) => s + Number(l.subtotal || 0), 0);
+    const impuesto = lineas.reduce(
+      (s: number, l: any) => s + (l.gravado === false ? 0 : Number(l.subtotal || 0) * ITBIS_PCT), 0,
     );
-    doc.setTextColor(0);
 
-    autoTable(doc, {
-      startY: 98,
-      head: [["Servicio", "Descripción", "Cant.", "Tarifa", "Moneda", "Subtotal"]],
-      body: lineas.map((l: any) => [
-        l.servicio, l.descripcion ?? "—", nf(l.cantidad), nf(l.tarifa_unitaria), l.moneda, nf(l.subtotal),
-      ]),
-      theme: "grid",
-      styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [30, 58, 95], textColor: 255 },
-      columnStyles: { 2: { halign: "right" }, 3: { halign: "right" }, 5: { halign: "right" } },
-      margin: { left: M, right: M },
+    const doc = await buildDocumentoComercialPdf({
+      tipo: "cotizacion",
+      titulo: "Cotización de Servicios",
+      numero: c.numero,
+      fecha: c.fecha,
+      fechaSecundaria: c.fecha_vigencia,
+      cliente: { nombre: cliente?.nombre, direccion: cliente?.direccion, rnc: cliente?.rnc },
+      moneda: lineas[0]?.moneda ?? "DOP",
+      lineas: lineas.map((l: any) => ({
+        codigo: l.codigo,
+        descripcion: l.descripcion ? `${l.servicio} — ${l.descripcion}` : l.servicio,
+        cantidad: Number(l.cantidad),
+        precio: Number(l.tarifa_unitaria),
+        gravado: l.gravado !== false,
+        monto: Number(l.subtotal || 0),
+      })),
+      notas: c.notas,
+      subtotal,
+      impuesto,
+      total: subtotal + impuesto,
     });
-
-    let y = (doc as any).lastAutoTable.finalY + 14;
-    const totales = totalPorMoneda(lineas);
-    autoTable(doc, {
-      startY: y,
-      head: [["Total", "Monto"]],
-      body: Object.entries(totales).map(([m, v]) => [m, nf(v)]),
-      theme: "grid",
-      styles: { fontSize: 9, cellPadding: 4, fontStyle: "bold" },
-      headStyles: { fillColor: [30, 58, 95], textColor: 255 },
-      columnStyles: { 0: { cellWidth: 120 }, 1: { halign: "right" } },
-      tableWidth: 260,
-      margin: { left: pageW - M - 260, right: M },
-    });
-
-    y = (doc as any).lastAutoTable.finalY + 20;
-    doc.setFontSize(8); doc.setTextColor(60);
-    doc.text(`Vigencia: ${c.fecha_vigencia ? fmtLocalDate(c.fecha_vigencia) : "—"}`, M, y);
-    if (c.notas) { y += 12; doc.text(`Notas: ${c.notas}`, M, y, { maxWidth: pageW - M * 2 }); }
-    y += 22;
-    doc.setFontSize(7.5); doc.setTextColor(110);
-    doc.text(
-      "Tarifas sujetas a cambio sin previo aviso. Cotización válida hasta la fecha de vigencia indicada.",
-      M, Math.min(y, pageH - 40), { maxWidth: pageW - M * 2 },
-    );
-    doc.setTextColor(0);
 
     fileNameRef.current = `${c.numero}.pdf`;
     docRef.current = doc;
