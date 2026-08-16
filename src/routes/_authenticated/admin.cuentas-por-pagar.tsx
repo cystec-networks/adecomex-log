@@ -234,6 +234,23 @@ function CuentasPorPagarPage() {
     return acc;
   }, [rows]);
 
+  const resumenCategoriaCxp = useMemo(() => {
+    const map = new Map<CategoriaCxp, { key: CategoriaCxp; total: number; saldo: number; count: number }>();
+    for (const r of rows) {
+      const cat = r.categoria ?? "otros";
+      const cur = map.get(cat) ?? { key: cat, total: 0, saldo: 0, count: 0 };
+      const total = Number(r.monto_total || 0);
+      const saldo = total - Number(r.monto_pagado || 0);
+      cur.total += total;
+      cur.saldo += saldo;
+      cur.count += 1;
+      map.set(cat, cur);
+    }
+    return [...map.values()].sort(
+      (a, b) => CATEGORIA_CXP_ORDEN.indexOf(a.key) - CATEGORIA_CXP_ORDEN.indexOf(b.key),
+    );
+  }, [rows]);
+
   const grupos = useMemo(() => {
     if (agrupar === "ninguna") return [];
     const map = new Map<string, { key: string; label: string; rows: Row[] }>();
