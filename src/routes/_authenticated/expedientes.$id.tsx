@@ -3005,8 +3005,10 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     const flete = Number(exp.flete) || 0;
     const otros = Number(exp.otros) || 0;
     const totalFob = list.reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
+    const tasaCambio = Number(exp.tasa_cambio_usada) || 0;
 
     const nf = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const rd = (n: number) => (tasaCambio > 0 ? nf(n * tasaCambio) : "—");
 
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
@@ -3019,10 +3021,17 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     doc.text("PRE-LIQUIDACIÓN DE IMPUESTOS", M, 58);
     doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
     doc.text("(Estimado interno — sujeto a la liquidación oficial de la DGA)", M, 70);
+    if (tasaCambio > 0) {
+      doc.text(`Tasa de cambio: RD$ ${nf(tasaCambio)} por US$1.00`, M, 82);
+    } else {
+      doc.setTextColor(180, 140, 30);
+      doc.text("Sin tasa de cambio registrada — los montos en RD$ no se pueden calcular", M, 82);
+      doc.setTextColor(100);
+    }
     doc.text(
       `Generado: ${new Date().toLocaleString("es-DO")}   |   Usuario: ${user?.email ?? "—"}`,
       M,
-      82,
+      94,
     );
     doc.setTextColor(0);
 
