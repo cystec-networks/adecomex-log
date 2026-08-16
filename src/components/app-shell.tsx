@@ -180,6 +180,8 @@ const GROUPS: Group[] = [
     items: [
       { to: "/admin/dashboard-financiero", label: "Dashboard Financiero", icon: PiggyBank, roles: ["admin","contabilidad"],
         match: (p) => p.startsWith("/admin/dashboard-financiero") },
+      { to: "/admin/cotizaciones-servicios", label: "Cotizaciones de Servicios", icon: FileSpreadsheet, roles: ["admin","finanzas","contabilidad"],
+        match: (p) => p.startsWith("/admin/cotizaciones-servicios") },
       { to: "/admin/facturacion", label: "Facturación (e-CF)", icon: Receipt, roles: ["admin","contabilidad"],
         match: (p) => p === "/admin/facturacion" || (p.startsWith("/admin/facturacion") && !p.includes("/pendientes")) },
       { to: "/admin/facturacion/pendientes", label: "Pendientes de vincular", icon: ClipboardList, roles: ["admin","contabilidad"],
