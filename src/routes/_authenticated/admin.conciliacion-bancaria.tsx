@@ -257,7 +257,11 @@ function ConciliacionBancariaPage() {
         return;
       }
 
-      const hashes = filas.map((f) => f.hash_linea);
+      // Incluye también los hashes "legacy" (sin sufijo de ocurrencia) para no
+      // reimportar filas guardadas antes de este cambio.
+      const hashes = Array.from(
+        new Set(filas.flatMap((f) => [f.hash_linea, f.hash_linea.replace(/-\d+$/, "")])),
+      );
       const existentes = new Set<string>();
       for (let i = 0; i < hashes.length; i += 500) {
         const chunk = hashes.slice(i, i + 500);
@@ -267,7 +271,11 @@ function ConciliacionBancariaPage() {
         for (const r of data ?? []) existentes.add((r as { hash_linea: string }).hash_linea);
       }
 
-      const nuevas = filas.filter((f) => !existentes.has(f.hash_linea));
+      const nuevas = filas.filter(
+        (f) => !existentes.has(f.hash_linea)
+          && !(f.hash_linea.endsWith("-1") && existentes.has(f.hash_linea.replace(/-\d+$/, ""))),
+      );
+
       if (nuevas.length > 0) {
         for (let i = 0; i < nuevas.length; i += 500) {
           const { error } = await supabase
