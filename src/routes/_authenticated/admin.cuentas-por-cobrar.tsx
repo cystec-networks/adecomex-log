@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
@@ -50,6 +52,7 @@ type Factura = {
   fecha_emision: string;
   fecha_vencimiento_pago: string | null;
   monto_total: number;
+  total_itbis: number | null;
   estado: string;
 };
 
@@ -62,7 +65,10 @@ type Pago = {
   referencia: string | null;
   notas: string | null;
   creado_por: string | null;
+  es_retencion?: boolean | null;
+  lote_pago?: string | null;
 };
+
 
 type Bucket = "al_dia" | "1_30" | "31_60" | "61_90" | "90_mas";
 
@@ -91,8 +97,9 @@ function CuentasPorCobrarPage() {
   const [soloSaldo, setSoloSaldo] = useState(true);
   const [expandido, setExpandido] = useState<Record<string, boolean>>({});
 
-  const [payRow, setPayRow] = useState<(Factura & { saldo: number }) | null>(null);
-  const [payMonto, setPayMonto] = useState("");
+  const [aplicarOpen, setAplicarOpen] = useState(false);
+  const [payCliente, setPayCliente] = useState("");
+  const [sel, setSel] = useState<Record<string, { ret: boolean; monto: string }>>({});
   const [payFecha, setPayFecha] = useState(() => new Date().toISOString().slice(0, 10));
   const [payMetodo, setPayMetodo] = useState("Transferencia");
   const [payRef, setPayRef] = useState("");
@@ -102,7 +109,8 @@ function CuentasPorCobrarPage() {
     queryKey: ["cxc-facturas"],
     queryFn: async () => {
       const { data, error } = await (supabase.from as any)("facturas_ecf")
-        .select("id, encf, cliente_razon_social, cliente_rnc, fecha_emision, fecha_vencimiento_pago, monto_total, estado")
+        .select("id, encf, cliente_razon_social, cliente_rnc, fecha_emision, fecha_vencimiento_pago, monto_total, total_itbis, estado")
+
         .is("eliminado_en", null)
         .neq("estado", "anulada")
         .order("fecha_emision", { ascending: false });
@@ -157,31 +165,113 @@ function CuentasPorCobrarPage() {
     });
   }, [enriquecidas, fCliente, fBucket, soloSaldo]);
 
-  const registrarPago = useMutation({
+  const clientesConSaldo = useMemo(() => {
+    const s = new Set<string>();
+    for (const f of enriquecidas) if (f.saldo > 0) s.add(f.cliente_razon_social ?? "—");
+    return Array.from(s).sort();
+  }, [enriquecidas]);
+
+  const facturasCliente = useMemo(
+    () => enriquecidas.filter((f) => f.saldo > 0 && (f.cliente_razon_social ?? "—") === payCliente),
+    [enriquecidas, payCliente],
+  );
+
+  const retencionDe = (f: { total_itbis: number | null }) =>
+    +(((Number(f.total_itbis) || 0) * 0.3).toFixed(2));
+
+  const marcadas = useMemo(
+    () => facturasCliente.filter((f) => !!sel[f.id]),
+    [facturasCliente, sel],
+  );
+
+  const resumen = useMemo(() => {
+    let efectivo = 0, retenciones = 0;
+    for (const f of marcadas) {
+      const s = sel[f.id];
+      efectivo += Number(s?.monto) || 0;
+      if (s?.ret) retenciones += Math.min(retencionDe(f), f.saldo);
+    }
+    return {
+      efectivo: +efectivo.toFixed(2),
+      retenciones: +retenciones.toFixed(2),
+      total: +(efectivo + retenciones).toFixed(2),
+    };
+  }, [marcadas, sel]);
+
+  const abrirAplicar = (f?: (typeof enriquecidas)[number]) => {
+    if (f) {
+      setPayCliente(f.cliente_razon_social ?? "—");
+      const ret = 0;
+      setSel({ [f.id]: { ret: false, monto: String(+(f.saldo - ret).toFixed(2)) } });
+    } else {
+      setPayCliente(""); setSel({});
+    }
+    setPayFecha(new Date().toISOString().slice(0, 10));
+    setPayMetodo("Transferencia"); setPayRef(""); setPayNotas("");
+    setAplicarOpen(true);
+  };
+
+  const toggleFactura = (f: (typeof enriquecidas)[number]) => {
+    setSel((prev) => {
+      const next = { ...prev };
+      if (next[f.id]) delete next[f.id];
+      else next[f.id] = { ret: false, monto: String(f.saldo) };
+      return next;
+    });
+  };
+
+  const toggleRetencion = (f: (typeof enriquecidas)[number], on: boolean) => {
+    setSel((prev) => {
+      const cur = prev[f.id];
+      if (!cur) return prev;
+      const ret = on ? Math.min(retencionDe(f), f.saldo) : 0;
+      const max = +(f.saldo - ret).toFixed(2);
+      return { ...prev, [f.id]: { ret: on, monto: String(Math.max(0, max)) } };
+    });
+  };
+
+  const aplicarPago = useMutation({
     mutationFn: async () => {
-      if (!payRow) return;
-      const monto = Number(payMonto);
-      if (!isFinite(monto) || monto <= 0) throw new Error("Monto inválido");
-      if (monto > payRow.saldo + 0.001) throw new Error("El monto excede el saldo pendiente");
+      if (marcadas.length === 0) throw new Error("Selecciona al menos una factura");
+      if (resumen.total <= 0) throw new Error("El total aplicado debe ser mayor que cero");
       const { data: u } = await supabase.auth.getUser();
-      const { error } = await (supabase.from as any)("cxc_pagos").insert({
-        factura_id: payRow.id,
-        monto,
-        fecha_pago: payFecha,
-        metodo_pago: payMetodo,
-        referencia: payRef || null,
-        notas: payNotas || null,
-        creado_por: u.user?.id ?? null,
-      });
+      const lote = crypto.randomUUID();
+      const rows: any[] = [];
+      for (const f of marcadas) {
+        const s = sel[f.id]!;
+        const ret = s.ret ? Math.min(retencionDe(f), f.saldo) : 0;
+        const monto = +(Number(s.monto) || 0).toFixed(2);
+        if (monto < 0) throw new Error("Monto inválido");
+        if (monto > +(f.saldo - ret).toFixed(2) + 0.001)
+          throw new Error(`El monto de ${f.encf} excede el saldo disponible`);
+        if (monto > 0) {
+          rows.push({
+            factura_id: f.id, monto, fecha_pago: payFecha, metodo_pago: payMetodo,
+            referencia: payRef || null, notas: payNotas || null,
+            creado_por: u.user?.id ?? null, es_retencion: false, lote_pago: lote,
+          });
+        }
+        if (ret > 0) {
+          rows.push({
+            factura_id: f.id, monto: ret, fecha_pago: payFecha,
+            metodo_pago: "Retención ITBIS 30% DGII",
+            referencia: payRef || null, notas: payNotas || null,
+            creado_por: u.user?.id ?? null, es_retencion: true, lote_pago: lote,
+          });
+        }
+      }
+      if (rows.length === 0) throw new Error("No hay montos que aplicar");
+      const { error } = await (supabase.from as any)("cxc_pagos").insert(rows);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Pago registrado");
-      setPayRow(null); setPayMonto(""); setPayRef(""); setPayNotas("");
+      toast.success("Pago aplicado");
+      setAplicarOpen(false); setSel({}); setPayRef(""); setPayNotas("");
       qc.invalidateQueries({ queryKey: ["cxc-pagos"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "No se pudo registrar el pago"),
+    onError: (e: any) => toast.error(e.message ?? "No se pudo aplicar el pago"),
   });
+
 
   const setVencimiento = useMutation({
     mutationFn: async ({ id, fecha }: { id: string; fecha: string }) => {
@@ -198,10 +288,12 @@ function CuentasPorCobrarPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <HandCoins className="h-5 w-5 text-primary" />
         <h1 className="text-2xl font-display font-bold">Cuentas por Cobrar</h1>
+        <Button className="ml-auto" onClick={() => abrirAplicar()}>Aplicar pago</Button>
       </div>
+
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {BUCKETS.map((b) => (
@@ -314,15 +406,12 @@ function CuentasPorCobrarPage() {
                       </td>
                       <td className="py-2 px-2 text-right">
                         {f.saldo > 0 && (
-                          <Button size="sm" variant="outline" onClick={() => {
-                            setPayRow(f);
-                            setPayMonto(String(f.saldo));
-                            setPayFecha(new Date().toISOString().slice(0, 10));
-                            setPayMetodo("Transferencia");
-                            setPayRef(""); setPayNotas("");
-                          }}>Registrar pago</Button>
+                          <Button size="sm" variant="outline" onClick={() => abrirAplicar(f)}>
+                            Registrar pago
+                          </Button>
                         )}
                       </td>
+
                     </tr>
                     {abierto && (
                       <tr className="bg-muted/30 border-b">
@@ -346,11 +435,21 @@ function CuentasPorCobrarPage() {
                                   <tr key={p.id} className="border-t">
                                     <td className="py-1">{fmtLocalDate(p.fecha_pago)}</td>
                                     <td className="py-1 text-right">{fmtRD(p.monto)}</td>
-                                    <td className="py-1">{p.metodo_pago ?? "—"}</td>
+                                    <td className="py-1">
+                                      <span className="inline-flex items-center gap-1">
+                                        {p.metodo_pago ?? "—"}
+                                        {p.es_retencion && (
+                                          <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+                                            Retención ITBIS
+                                          </Badge>
+                                        )}
+                                      </span>
+                                    </td>
                                     <td className="py-1">{p.referencia ?? "—"}</td>
                                     <td className="py-1">{p.notas ?? "—"}</td>
                                   </tr>
                                 ))}
+
                               </tbody>
                             </table>
                           )}
@@ -365,47 +464,123 @@ function CuentasPorCobrarPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!payRow} onOpenChange={(o) => !o && setPayRow(null)}>
-        <DialogContent>
+      <Dialog open={aplicarOpen} onOpenChange={(o) => setAplicarOpen(o)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Registrar pago</DialogTitle>
+            <DialogTitle>Aplicar pago</DialogTitle>
             <DialogDescription>
-              {payRow ? `${payRow.encf} — saldo pendiente ${fmtRD(payRow.saldo)}` : ""}
+              Aplica un mismo pago a una o varias facturas del cliente, con retención de ITBIS 30% (DGII) opcional por factura.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-3">
+
+          <div className="grid gap-4">
             <div className="grid gap-1.5">
-              <Label>Monto</Label>
-              <Input type="number" step="0.01" value={payMonto} onChange={(e) => setPayMonto(e.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Fecha de pago</Label>
-              <Input type="date" value={payFecha} onChange={(e) => setPayFecha(e.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Método de pago</Label>
-              <Select value={payMetodo} onValueChange={setPayMetodo}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Label>Cliente</Label>
+              <Select value={payCliente} onValueChange={(v) => { setPayCliente(v); setSel({}); }}>
+                <SelectTrigger><SelectValue placeholder="Selecciona un cliente…" /></SelectTrigger>
                 <SelectContent>
-                  {METODOS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                  {clientesConSaldo.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid gap-1.5">
-              <Label>Referencia</Label>
-              <Input value={payRef} onChange={(e) => setPayRef(e.target.value)} />
+
+            {payCliente && (
+              <div className="rounded-md border divide-y">
+                {facturasCliente.length === 0 && (
+                  <div className="p-3 text-sm text-muted-foreground">Este cliente no tiene facturas con saldo.</div>
+                )}
+                {facturasCliente.map((f) => {
+                  const s = sel[f.id];
+                  const ret = s?.ret ? Math.min(retencionDe(f), f.saldo) : 0;
+                  const max = +(f.saldo - ret).toFixed(2);
+                  return (
+                    <div key={f.id} className="p-3 space-y-2">
+                      <div className="flex items-start gap-3">
+                        <Checkbox checked={!!s} onCheckedChange={() => toggleFactura(f)} className="mt-1" />
+                        <div className="flex-1">
+                          <div className="font-mono text-xs">{f.encf}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Emitida {fmtLocalDate(f.fecha_emision)} · Saldo {fmtRD(f.saldo)}
+                          </div>
+                        </div>
+                      </div>
+                      {s && (
+                        <div className="grid gap-3 sm:grid-cols-3 pl-7">
+                          <div className="flex items-center gap-2 sm:col-span-2">
+                            <Checkbox
+                              id={`ret-${f.id}`}
+                              checked={s.ret}
+                              onCheckedChange={(v) => toggleRetencion(f, !!v)}
+                            />
+                            <Label htmlFor={`ret-${f.id}`} className="text-xs">
+                              Retención ITBIS 30% (DGII)
+                              {s.ret && <span className="ml-2 font-semibold text-amber-700">{fmtRD(ret)}</span>}
+                            </Label>
+                          </div>
+                          <div className="grid gap-1">
+                            <Label className="text-xs">Monto a pagar (máx. {fmtRD(max)})</Label>
+                            <Input
+                              type="number" step="0.01" min="0" max={max}
+                              value={s.monto}
+                              onChange={(e) =>
+                                setSel((prev) => ({ ...prev, [f.id]: { ...prev[f.id]!, monto: e.target.value } }))
+                              }
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <Label>Fecha de pago</Label>
+                <Input type="date" value={payFecha} onChange={(e) => setPayFecha(e.target.value)} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Método de pago</Label>
+                <Select value={payMetodo} onValueChange={setPayMetodo}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {METODOS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Referencia</Label>
+                <Input value={payRef} onChange={(e) => setPayRef(e.target.value)} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Notas</Label>
+                <Textarea value={payNotas} onChange={(e) => setPayNotas(e.target.value)} />
+              </div>
             </div>
-            <div className="grid gap-1.5">
-              <Label>Notas</Label>
-              <Textarea value={payNotas} onChange={(e) => setPayNotas(e.target.value)} />
+
+            <div className="rounded-md border bg-muted/40 p-3 text-sm space-y-1">
+              <div className="flex justify-between">
+                <span>Total en efectivo/transferencia</span><span>{fmtRD(resumen.efectivo)}</span>
+              </div>
+              <div className="flex justify-between text-amber-700">
+                <span>Total en retenciones ITBIS</span><span>{fmtRD(resumen.retenciones)}</span>
+              </div>
+              <div className="flex justify-between font-semibold border-t pt-1">
+                <span>Total aplicado a facturas</span><span>{fmtRD(resumen.total)}</span>
+              </div>
             </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPayRow(null)}>Cancelar</Button>
-            <Button onClick={() => registrarPago.mutate()} disabled={registrarPago.isPending}>Guardar pago</Button>
+            <Button variant="outline" onClick={() => setAplicarOpen(false)}>Cancelar</Button>
+            <Button onClick={() => aplicarPago.mutate()} disabled={aplicarPago.isPending || marcadas.length === 0}>
+              Confirmar pago
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }

@@ -1260,9 +1260,11 @@ export type Database = {
         Row: {
           creado_por: string | null
           created_at: string
+          es_retencion: boolean
           factura_id: string
           fecha_pago: string
           id: string
+          lote_pago: string | null
           metodo_pago: string | null
           monto: number
           notas: string | null
@@ -1271,9 +1273,11 @@ export type Database = {
         Insert: {
           creado_por?: string | null
           created_at?: string
+          es_retencion?: boolean
           factura_id: string
           fecha_pago?: string
           id?: string
+          lote_pago?: string | null
           metodo_pago?: string | null
           monto: number
           notas?: string | null
@@ -1282,9 +1286,11 @@ export type Database = {
         Update: {
           creado_por?: string | null
           created_at?: string
+          es_retencion?: boolean
           factura_id?: string
           fecha_pago?: string
           id?: string
+          lote_pago?: string | null
           metodo_pago?: string | null
           monto?: number
           notas?: string | null
