@@ -591,6 +591,42 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_tarifas_servicios: {
+        Row: {
+          activo: boolean
+          categoria: string | null
+          created_at: string
+          descripcion: string | null
+          id: string
+          moneda: string
+          servicio: string
+          tarifa: number
+          unidad: string
+        }
+        Insert: {
+          activo?: boolean
+          categoria?: string | null
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          moneda?: string
+          servicio: string
+          tarifa?: number
+          unidad?: string
+        }
+        Update: {
+          activo?: boolean
+          categoria?: string | null
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          moneda?: string
+          servicio?: string
+          tarifa?: number
+          unidad?: string
+        }
+        Relationships: []
+      }
       catalogo_tasas_arancelarias: {
         Row: {
           acuerdo_preferencial: string | null
@@ -1227,6 +1263,97 @@ export type Database = {
             columns: ["orden_id"]
             isOneToOne: false
             referencedRelation: "ordenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cotizaciones_servicios: {
+        Row: {
+          cliente_id: string | null
+          creado_por: string | null
+          created_at: string
+          estado: string
+          fecha: string
+          fecha_vigencia: string | null
+          id: string
+          notas: string | null
+          numero: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          creado_por?: string | null
+          created_at?: string
+          estado?: string
+          fecha?: string
+          fecha_vigencia?: string | null
+          id?: string
+          notas?: string | null
+          numero: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          creado_por?: string | null
+          created_at?: string
+          estado?: string
+          fecha?: string
+          fecha_vigencia?: string | null
+          id?: string
+          notas?: string | null
+          numero?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotizaciones_servicios_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cotizaciones_servicios_lineas: {
+        Row: {
+          cantidad: number
+          cotizacion_id: string
+          descripcion: string | null
+          id: string
+          moneda: string
+          orden: number
+          servicio: string
+          subtotal: number
+          tarifa_unitaria: number
+        }
+        Insert: {
+          cantidad?: number
+          cotizacion_id: string
+          descripcion?: string | null
+          id?: string
+          moneda?: string
+          orden?: number
+          servicio: string
+          subtotal?: number
+          tarifa_unitaria?: number
+        }
+        Update: {
+          cantidad?: number
+          cotizacion_id?: string
+          descripcion?: string | null
+          id?: string
+          moneda?: string
+          orden?: number
+          servicio?: string
+          subtotal?: number
+          tarifa_unitaria?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotizaciones_servicios_lineas_cotizacion_id_fkey"
+            columns: ["cotizacion_id"]
+            isOneToOne: false
+            referencedRelation: "cotizaciones_servicios"
             referencedColumns: ["id"]
           },
         ]
