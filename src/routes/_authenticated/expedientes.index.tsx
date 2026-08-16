@@ -10,7 +10,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2, AlarmClock, AlertTriangle, Clock } from "lucide-react";
+import { ChevronRight, Trash2, AlarmClock, AlertTriangle, Clock } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
@@ -36,7 +36,21 @@ function Expedientes() {
   const [estado, setEstado] = useState("todos");
   const [toTrash, setToTrash] = useState<{ id: string; numero: string } | null>(null);
   const [soloUrgentes, setSoloUrgentes] = useState(false);
+  const [colapsados, setColapsados] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem("expedientes-grupos-colapsados");
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  });
   const qc = useQueryClient();
+
+  const toggleGrupo = (key: string) => {
+    setColapsados((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      localStorage.setItem("expedientes-grupos-colapsados", JSON.stringify(next));
+      return next;
+    });
+  };
 
   const { data } = useQuery({
     queryKey: ["expedientes"],
@@ -245,17 +259,22 @@ function Expedientes() {
   const ESTADO_GRUPO_1 = ["digitar", "presentar", "verificar"];
   const ESTADO_GRUPO_3 = ["despachado", "entregado"];
 
-  const EstadoDivider = ({ label }: { label: string }) => (
-    <tr className="bg-muted/40">
-      <td colSpan={11} className="py-2 px-4">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">{label}</span>
-          <div className="flex-1 h-px bg-border" />
-        </div>
-      </td>
-    </tr>
-  );
+  const EstadoDivider = ({ label, groupKey, count }: { label: string; groupKey: string; count: number }) => {
+    const colapsado = !!colapsados[groupKey];
+    return (
+      <tr className="bg-muted/40 cursor-pointer hover:bg-muted/60" onClick={() => toggleGrupo(groupKey)}>
+        <td colSpan={11} className="py-2 px-4">
+          <div className="flex items-center gap-3">
+            <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${colapsado ? "" : "rotate-90"}`} />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+              {label} ({count})
+            </span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+        </td>
+      </tr>
+    );
+  };
 
   const ExpedienteRow = ({ e }: { e: any }) => (
     <tr key={e.id} className={`hover:bg-muted/30 transition-colors ${rowHighlight(e.estado)}`}>
@@ -456,14 +475,16 @@ function Expedientes() {
                       const g3 = rows.filter((e: any) => ESTADO_GRUPO_3.includes(e.estado)).sort(cmp);
                       const facturar = rows.filter((e: any) => e.estado === "facturar").sort(cmp);
                       return (
-                        <tbody className="divide-y">
-                          {g1.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
-                          {g1.length > 0 && transito.length > 0 && <EstadoDivider key={`div-transito-${g}`} label="En Tránsito" />}
-                          {transito.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
-                          {g3.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
-                          {facturar.length > 0 && (g1.length + transito.length + g3.length > 0) && <EstadoDivider key={`div-facturados-${g}`} label="Facturados" />}
-                          {facturar.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
-                        </tbody>
+                      <tbody className="divide-y">
+                        {g1.length > 0 && <EstadoDivider label="Por Procesar" groupKey="digitar_g1" count={g1.length} />}
+                        {!colapsados["digitar_g1"] && g1.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
+                        {transito.length > 0 && <EstadoDivider label="En Tránsito" groupKey="en_transito" count={transito.length} />}
+                        {!colapsados["en_transito"] && transito.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
+                        {g3.length > 0 && <EstadoDivider label="Despachado / Entregado" groupKey="despachado_g3" count={g3.length} />}
+                        {!colapsados["despachado_g3"] && g3.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
+                        {facturar.length > 0 && <EstadoDivider label="Facturados" groupKey="facturados" count={facturar.length} />}
+                        {!colapsados["facturados"] && facturar.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
+                      </tbody>
                       );
                     })()}
                   </table>
