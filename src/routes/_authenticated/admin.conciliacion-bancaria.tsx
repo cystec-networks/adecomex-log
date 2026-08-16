@@ -473,6 +473,78 @@ function ConciliacionBancariaPage() {
   );
 }
 
+function BalanceInicialCard({
+  config, cargando, balanceActual,
+}: { config: BancoConfig | null; cargando: boolean; balanceActual: number | null }) {
+  const qc = useQueryClient();
+  const [fecha, setFecha] = useState("");
+  const [monto, setMonto] = useState("");
+  const [editado, setEditado] = useState(false);
+
+  const fechaVal = editado ? fecha : (config?.fecha_saldo_inicial ?? "2026-07-01");
+  const montoVal = editado ? monto : (config ? String(config.saldo_inicial) : "");
+
+  const guardar = useMutation({
+    mutationFn: async () => {
+      const n = parseFloat((montoVal || "").replace(/,/g, ""));
+      if (!fechaVal) throw new Error("Indica la fecha del saldo inicial");
+      if (!isFinite(n)) throw new Error("Indica un monto válido");
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await supabase.from("banco_config").upsert({
+        cuenta: CUENTA_DEFAULT,
+        saldo_inicial: n,
+        fecha_saldo_inicial: fechaVal,
+        actualizado_por: u.user?.id ?? null,
+      } as never, { onConflict: "cuenta" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Balance inicial guardado");
+      setEditado(false);
+      qc.invalidateQueries({ queryKey: ["banco_config", CUENTA_DEFAULT] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Balance Inicial · Cuenta {CUENTA_DEFAULT}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {!cargando && !config && (
+          <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm">
+            No hay un balance inicial configurado. Define la fecha de referencia y el saldo de esa
+            fecha para poder calcular el balance corriente; mientras tanto no se muestra ningún
+            balance calculado.
+          </div>
+        )}
+        <div className="grid gap-3 sm:grid-cols-3 items-end">
+          <div className="space-y-1">
+            <Label>Fecha del saldo inicial</Label>
+            <Input type="date" value={fechaVal}
+              onChange={(e) => { setEditado(true); setMonto(montoVal); setFecha(e.target.value); }} />
+          </div>
+          <div className="space-y-1">
+            <Label>Monto</Label>
+            <Input inputMode="decimal" placeholder="0.00" value={montoVal}
+              onChange={(e) => { setEditado(true); setFecha(fechaVal); setMonto(e.target.value); }} />
+          </div>
+          <Button onClick={() => guardar.mutate()} disabled={guardar.isPending}>
+            {guardar.isPending ? "Guardando…" : "Guardar"}
+          </Button>
+        </div>
+        {config && (
+          <div className="text-xs text-muted-foreground">
+            Desde {fmtLocalDate(config.fecha_saldo_inicial)} con {fmtRD(Number(config.saldo_inicial))}
+            {balanceActual !== null && <> · Balance actual calculado: <strong>{fmtRD(balanceActual)}</strong></>}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function ConciliarDialog({ mov, onClose }: { mov: Movimiento | null; onClose: () => void }) {
   const qc = useQueryClient();
   const [nota, setNota] = useState("");
