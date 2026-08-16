@@ -197,7 +197,7 @@ function DetalleExpediente() {
         </div>
         <GenerarXmlSigaButton expedienteId={id} />
         <PreLiquidacionPdfButton exp={exp} />
-        <CotizacionServiciosExpedienteButton exp={exp} />
+
 
         <div className="flex items-center gap-2">
           <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>
@@ -292,7 +292,7 @@ function DetalleExpediente() {
         <TabsContent value="permisos"><TabPermisosExp expedienteId={id} /></TabsContent>
         <TabsContent value="transportes"><TabTransportesExp expedienteId={id} /></TabsContent>
         <TabsContent value="inc"><TabIncidencias expedienteId={id} /></TabsContent>
-        <TabsContent value="cost"><TabCostos expedienteId={id} /></TabsContent>
+        <TabsContent value="cost"><TabCostos expedienteId={id} exp={exp} /></TabsContent>
         <TabsContent value="costprod"><TabCostosProducto expedienteId={id} /></TabsContent>
         <TabsContent value="aud"><TabAuditoria expedienteId={id} /></TabsContent>
       </Tabs>
@@ -3020,7 +3020,7 @@ function CotizacionServiciosExpedienteButton({ exp }: { exp: any }) {
           cliente_id: exp.cliente_id ?? null,
           notas: `Expediente ${exp.numero}`,
           estado: "borrador",
-          created_by: u.user?.id ?? null,
+          creado_por: u.user?.id ?? null,
         } as any)
         .select("id")
         .single();
