@@ -86,6 +86,13 @@ type Linea = {
 };
 
 const ITBIS_PCT = 0.18;
+const DESCRIPCION_SUGERENCIAS = [
+  "IMPORTACION FURGON COMPLETO",
+  "IMPORTACION FURGON ADICIONAL",
+  "VUCE No. ",
+  "FURGON No. ",
+  "DESDE CAUCEDO HASTA SUS ALMACENES",
+];
 
 function CotizacionesServiciosPage() {
   return (
