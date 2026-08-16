@@ -21,11 +21,7 @@ export function AutocompleteInput({ value, onChange, suggestions, placeholder, c
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLUListElement>(null);
 
-  const q = (value ?? "").toString().toLowerCase().trim();
-  const filtered = (q
-    ? suggestions.filter((s) => s.toLowerCase().includes(q) && s.toLowerCase() !== q)
-    : suggestions
-  ).slice(0, 8);
+  const filtered = suggestions.slice(0, 8);
 
   const updatePos = () => {
     const input = inputRef.current;
