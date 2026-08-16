@@ -514,11 +514,13 @@ function CotizacionDialog({
       .sort((a: any, b: any) => a.orden - b.orden)
       .map((l: any) => ({
         orden: l.orden,
+        codigo: l.codigo ?? "",
         servicio: l.servicio,
         descripcion: l.descripcion ?? "",
         cantidad: Number(l.cantidad),
         tarifa_unitaria: Number(l.tarifa_unitaria),
         moneda: l.moneda,
+        gravado: l.gravado ?? true,
       })),
   );
 
