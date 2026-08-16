@@ -333,7 +333,7 @@ function CotizacionesTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cotizaciones_servicios")
-        .select("*, cotizaciones_servicios_lineas(*), facturas_ecf(id,encf), expedientes(id,numero)")
+        .select("*, cotizaciones_servicios_lineas(*), facturas_ecf(id,encf,eliminado_en), expedientes(id,numero)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
