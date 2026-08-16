@@ -19,6 +19,7 @@ import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/facturacion")({
   ssr: false,
+  validateSearch: z.object({ editar: z.string().optional() }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth" });
@@ -32,7 +33,15 @@ export const Route = createFileRoute("/_authenticated/admin/facturacion")({
 
 function FacturacionPage() {
   const qc = useQueryClient();
+  const { editar } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [openNew, setOpenNew] = useState(false);
+  const [editId, setEditId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (editar) setEditId(editar);
+  }, [editar]);
+
   const [clienteFiltro, setClienteFiltro] = useState<string>("__all__");
   const [tipoFiltro, setTipoFiltro] = useState<string>("__all__");
   const [desde, setDesde] = useState<string>("");
