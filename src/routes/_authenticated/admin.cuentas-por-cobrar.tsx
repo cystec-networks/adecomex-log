@@ -402,15 +402,12 @@ function CuentasPorCobrarPage() {
                       </td>
                       <td className="py-2 px-2 text-right">
                         {f.saldo > 0 && (
-                          <Button size="sm" variant="outline" onClick={() => {
-                            setPayRow(f);
-                            setPayMonto(String(f.saldo));
-                            setPayFecha(new Date().toISOString().slice(0, 10));
-                            setPayMetodo("Transferencia");
-                            setPayRef(""); setPayNotas("");
-                          }}>Registrar pago</Button>
+                          <Button size="sm" variant="outline" onClick={() => abrirAplicar(f)}>
+                            Registrar pago
+                          </Button>
                         )}
                       </td>
+
                     </tr>
                     {abierto && (
                       <tr className="bg-muted/30 border-b">
