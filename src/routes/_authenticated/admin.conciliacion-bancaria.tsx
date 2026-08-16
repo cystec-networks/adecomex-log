@@ -336,16 +336,16 @@ function ConciliacionBancariaPage() {
             />
             <div className="text-xs text-muted-foreground">
               Neto de movimientos filtrados: {fmtRD(resumen.neto)}
-              {balanceBanco.trim() !== "" && isFinite(parseFloat(balanceBanco)) && (
-                <> · Diferencia: {fmtRD(parseFloat(balanceBanco) - resumen.neto)}</>
-              )}
               {balanceActual !== null && (
                 <>
                   <br />Balance actual (calculado): <strong>{fmtRD(balanceActual)}</strong>
-                  {balanceBanco.trim() !== "" && isFinite(parseFloat(balanceBanco)) && (
-                    <> · Dif. vs banco: {fmtRD(parseFloat(balanceBanco) - balanceActual)}</>
+                  {balanceBancoNum !== null && (
+                    <> · Dif. vs banco: {fmtRD(balanceBancoNum - balanceActual)}</>
                   )}
                 </>
+              )}
+              {balanceActual === null && balanceBancoNum !== null && (
+                <> · Dif. vs neto: {fmtRD(balanceBancoNum - resumen.neto)}</>
               )}
             </div>
           </CardContent>
