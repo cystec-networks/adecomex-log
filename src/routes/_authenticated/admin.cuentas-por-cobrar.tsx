@@ -220,6 +220,10 @@ function CuentasPorCobrarPage() {
         ))}
       </div>
 
+      <EstadoCuentaCard filas={enriquecidas} />
+
+
+
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-base">Facturas emitidas</CardTitle>
