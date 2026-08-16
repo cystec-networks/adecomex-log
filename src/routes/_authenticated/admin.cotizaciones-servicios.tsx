@@ -743,7 +743,9 @@ function CotizacionDialog({
       };
       let id = cotizacion?.id as string | undefined;
       if (id) {
-        const { error } = await supabase.from("cotizaciones_servicios").update(cab).eq("id", id);
+        const payload: any = { ...cab };
+        if (!payload.numero) delete payload.numero;
+        const { error } = await supabase.from("cotizaciones_servicios").update(payload).eq("id", id);
         if (error) throw error;
         const { error: delErr } = await supabase
           .from("cotizaciones_servicios_lineas").delete().eq("cotizacion_id", id);
