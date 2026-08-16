@@ -190,6 +190,37 @@ function ConciliacionBancariaPage() {
     return { creditos, debitos, conciliados, pendientes, neto: creditos - debitos };
   }, [filtrados]);
 
+  const { data: config, isLoading: cargandoConfig } = useQuery({
+    queryKey: ["banco_config", CUENTA_DEFAULT],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("banco_config").select("*").eq("cuenta", CUENTA_DEFAULT).maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as unknown as BancoConfig | null;
+    },
+  });
+
+  // Balance corriente por movimiento (cronológico desde la fecha de saldo inicial)
+  const { balancePorMov, balanceActual } = useMemo(() => {
+    if (!config) return { balancePorMov: new Map<string, number>(), balanceActual: null as number | null };
+    const orden = movimientos
+      .filter((m) => m.cuenta === config.cuenta && m.fecha >= config.fecha_saldo_inicial)
+      .slice()
+      .sort((a, b) =>
+        a.fecha === b.fecha
+          ? String(a.created_at ?? "").localeCompare(String(b.created_at ?? ""))
+          : a.fecha < b.fecha ? -1 : 1,
+      );
+    let saldo = Number(config.saldo_inicial) || 0;
+    const map = new Map<string, number>();
+    for (const m of orden) {
+      saldo += m.tipo === "credito" ? Number(m.monto) : -Number(m.monto);
+      map.set(m.id, saldo);
+    }
+    return { balancePorMov: map, balanceActual: orden.length ? saldo : Number(config.saldo_inicial) || 0 };
+  }, [movimientos, config]);
+
+
   async function onImportar(file: File) {
     setImportando(true);
     try {
