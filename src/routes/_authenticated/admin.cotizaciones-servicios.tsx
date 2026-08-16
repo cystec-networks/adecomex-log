@@ -498,6 +498,26 @@ function CotizacionesTab() {
                     <Button variant="ghost" size="sm" onClick={() => generarPdf(c)}>
                       <FileText className="h-4 w-4 mr-1" /> PDF
                     </Button>
+                    {c.factura_id ? (
+                      <Button
+                        variant="ghost" size="sm"
+                        onClick={() => navigate({ to: "/admin/facturacion", search: { editar: c.factura_id } })}
+                      >
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        Ver Factura {c.facturas_ecf?.encf || ""}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant={c.estado === "aceptada" ? "default" : "ghost"}
+                        size="sm"
+                        disabled={convertir.isPending}
+                        onClick={() => {
+                          if (confirm(`¿Convertir la cotización ${c.numero} en factura?`)) convertir.mutate(c);
+                        }}
+                      >
+                        <Receipt className="h-4 w-4 mr-1" /> Convertir en Factura
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               );
