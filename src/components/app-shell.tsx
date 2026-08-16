@@ -205,16 +205,6 @@ const GROUPS: Group[] = [
         match: (p) => p === "/almacenes" || p.startsWith("/almacenes/") },
     ],
   },
-  {
-    id: "legal",
-    label: "LEGAL",
-    icon: Scale,
-    adminOnly: true,
-    items: [
-      { to: "/legal/documentos", label: "Documentos Legales", icon: FileText, adminOnly: true,
-        match: (p) => p.startsWith("/legal/documentos") },
-    ],
-  },
 ];
 
 
