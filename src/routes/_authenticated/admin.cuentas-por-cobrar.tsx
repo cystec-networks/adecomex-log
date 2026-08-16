@@ -95,8 +95,9 @@ function CuentasPorCobrarPage() {
   const [soloSaldo, setSoloSaldo] = useState(true);
   const [expandido, setExpandido] = useState<Record<string, boolean>>({});
 
-  const [payRow, setPayRow] = useState<(Factura & { saldo: number }) | null>(null);
-  const [payMonto, setPayMonto] = useState("");
+  const [aplicarOpen, setAplicarOpen] = useState(false);
+  const [payCliente, setPayCliente] = useState("");
+  const [sel, setSel] = useState<Record<string, { ret: boolean; monto: string }>>({});
   const [payFecha, setPayFecha] = useState(() => new Date().toISOString().slice(0, 10));
   const [payMetodo, setPayMetodo] = useState("Transferencia");
   const [payRef, setPayRef] = useState("");
@@ -106,7 +107,8 @@ function CuentasPorCobrarPage() {
     queryKey: ["cxc-facturas"],
     queryFn: async () => {
       const { data, error } = await (supabase.from as any)("facturas_ecf")
-        .select("id, encf, cliente_razon_social, cliente_rnc, fecha_emision, fecha_vencimiento_pago, monto_total, estado")
+        .select("id, encf, cliente_razon_social, cliente_rnc, fecha_emision, fecha_vencimiento_pago, monto_total, total_itbis, estado")
+
         .is("eliminado_en", null)
         .neq("estado", "anulada")
         .order("fecha_emision", { ascending: false });
