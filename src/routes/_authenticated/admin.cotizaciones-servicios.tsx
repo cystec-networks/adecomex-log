@@ -779,8 +779,15 @@ function CotizacionDialog({
       qc.invalidateQueries({ queryKey: ["cotizaciones-servicios"] });
       onClose();
     },
-    onError: (e: any) => toast.error(e.message ?? "No se pudo guardar"),
+    onError: (e: any) => {
+      if (e?.code === "23505" || /duplicate key|unique/i.test(e?.message ?? "")) {
+        toast.error("Ese número de cotización ya está en uso — elige otro.");
+        return;
+      }
+      toast.error(e.message ?? "No se pudo guardar");
+    },
   });
+
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
