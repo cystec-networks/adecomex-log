@@ -383,6 +383,8 @@ function TabInfo({ exp }: { exp: any }) {
   });
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
+
+
   // Pull existing values across expedientes to feed suggestions dynamically
   const { data: histDb } = useQuery({
     queryKey: ["expedientes-hist"],
@@ -431,6 +433,15 @@ function TabInfo({ exp }: { exp: any }) {
     () => (mercItems ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0),
     [mercItems],
   );
+
+  useEffect(() => {
+    const seguroActual = form.seguro;
+    const vacio = seguroActual === "" || seguroActual == null || Number(seguroActual) === 0;
+    if (vacio && sumFob > 0) {
+      set("seguro", (sumFob * 0.02).toFixed(2));
+    }
+  }, [sumFob]);
+
 
   const save = useMutation({
     mutationFn: async () => {
@@ -682,7 +693,7 @@ function TabInfo({ exp }: { exp: any }) {
             const fob = sumFob;
             const cif = fob + toN(form.seguro) + toN(form.flete) + toN(form.otros);
             const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const renderMoney = (label: string, k: "seguro" | "flete" | "otros") => {
+            const renderMoney = (label: string, k: "seguro" | "flete" | "otros", helper?: string) => {
               const raw = (form as any)[k];
               const rawStr = raw === "" || raw == null ? "" : String(raw);
               const isFocused = focusedMoney === k;
@@ -711,9 +722,11 @@ function TabInfo({ exp }: { exp: any }) {
                     placeholder="$0.00"
                     className="tabular-nums"
                   />
+                  {helper && <p className="text-[11px] text-muted-foreground leading-tight">{helper}</p>}
                 </div>
               );
             };
+
 
 
 
@@ -742,7 +755,7 @@ function TabInfo({ exp }: { exp: any }) {
                       {fmt(fob)}
                     </div>
                   </div>
-                  {renderMoney("Seguro", "seguro")}
+                  {renderMoney("Seguro", "seguro", "Por defecto 2% del FOB (valor de referencia). Edítalo si tienes el monto real de la póliza.")}
                   {renderMoney("Flete", "flete")}
                   {renderMoney("Otros", "otros")}
 
