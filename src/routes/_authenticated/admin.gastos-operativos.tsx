@@ -222,29 +222,43 @@ function GastosOperativosPage() {
             <p className="text-sm text-muted-foreground">Gastos generales/fijos del negocio, independientes de expedientes y transportes.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1))}>◄</Button>
-            <div className="font-medium w-32 text-center capitalize">
-              {anchor.toLocaleDateString("es-DO", { month: "long", year: "numeric" })}
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1))}>►</Button>
-            <div className="min-w-[180px]">
-              <Select value={fCategoria} onValueChange={(v) => setFCategoria(v as Categoria | "todas")}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas las categorías</SelectItem>
-                  {CATEGORIA_ORDEN.map((c) => (
-                    <SelectItem key={c} value={c}>{CATEGORIA_LABEL[c]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Tabs value={modo} onValueChange={(v) => setModo(v as "mes" | "anual")}>
+              <TabsList>
+                <TabsTrigger value="mes">Detalle mensual</TabsTrigger>
+                <TabsTrigger value="anual">Vista Anual</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            {modo === "mes" && (
+              <>
+                <Button variant="outline" size="sm" onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1))}>◄</Button>
+                <div className="font-medium w-32 text-center capitalize">
+                  {anchor.toLocaleDateString("es-DO", { month: "long", year: "numeric" })}
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1))}>►</Button>
+                <div className="min-w-[180px]">
+                  <Select value={fCategoria} onValueChange={(v) => setFCategoria(v as Categoria | "todas")}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Categoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas las categorías</SelectItem>
+                      {CATEGORIA_ORDEN.map((c) => (
+                        <SelectItem key={c} value={c}>{CATEGORIA_LABEL[c]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
             <Button onClick={() => setEditing({ id: "", concepto: "", categoria: "otros", monto: 0, moneda: "DOP", fecha: new Date().toISOString().slice(0, 10), es_recurrente: false, comprobante_url: null, notas: null, rnc_cedula_proveedor: null, tipo_id_proveedor: null, ncf_proveedor: null, tipo_ncf_proveedor: null, ncf_modificado: null, monto_facturado: 0, itbis_facturado: 0, itbis_retenido: 0, isr_retenido: 0, forma_pago: null })}>
               <Plus className="h-4 w-4 mr-1" /> Nuevo gasto
             </Button>
           </div>
         </div>
+
+        {modo === "mes" ? (
+          <>
+
 
         {faltantes.length > 0 && (
           <Card className="border-amber-500/40 bg-amber-500/5">
