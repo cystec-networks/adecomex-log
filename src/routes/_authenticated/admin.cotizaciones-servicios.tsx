@@ -823,6 +823,14 @@ function CotizacionDialog({
               </Select>
             </div>
             <div className="grid gap-1.5">
+              <Label className="text-xs">Número</Label>
+              <Input
+                value={numero}
+                onChange={(e) => setNumero(e.target.value)}
+                placeholder="Se genera automático si se deja vacío (COTSERV-000001, 002...)"
+              />
+            </div>
+            <div className="grid gap-1.5">
               <Label className="text-xs">Fecha</Label>
               <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
             </div>
