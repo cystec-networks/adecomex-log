@@ -6,7 +6,7 @@ import {
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
   GraduationCap, BookOpen, UserPlus, ClipboardCheck,
   Briefcase, IdCard, HandCoins,
-  Scale, FileSpreadsheet, Warehouse, Boxes,
+  Scale, FileSpreadsheet, Warehouse, Boxes, Landmark,
 
 
 } from "lucide-react";
