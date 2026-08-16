@@ -235,19 +235,22 @@ function CuentasPorPagarPage() {
   }, [rows]);
 
   const resumenCategoriaCxp = useMemo(() => {
-    const map = new Map<CategoriaCxp, { key: CategoriaCxp; total: number; saldo: number; count: number }>();
+    const map = new Map<string, { categoria: CategoriaCxp; moneda: Moneda; total: number; saldo: number; count: number }>();
     for (const r of rows) {
       const cat = r.categoria ?? "otros";
-      const cur = map.get(cat) ?? { key: cat, total: 0, saldo: 0, count: 0 };
+      const key = `${cat}::${r.moneda}`;
+      const cur = map.get(key) ?? { categoria: cat, moneda: r.moneda, total: 0, saldo: 0, count: 0 };
       const total = Number(r.monto_total || 0);
       const saldo = total - Number(r.monto_pagado || 0);
       cur.total += total;
       cur.saldo += saldo;
       cur.count += 1;
-      map.set(cat, cur);
+      map.set(key, cur);
     }
     return [...map.values()].sort(
-      (a, b) => CATEGORIA_CXP_ORDEN.indexOf(a.key) - CATEGORIA_CXP_ORDEN.indexOf(b.key),
+      (a, b) =>
+        CATEGORIA_CXP_ORDEN.indexOf(a.categoria) - CATEGORIA_CXP_ORDEN.indexOf(b.categoria) ||
+        a.moneda.localeCompare(b.moneda),
     );
   }, [rows]);
 
@@ -493,16 +496,30 @@ function CuentasPorPagarPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Resumen por categoría</CardTitle>
-            <CardDescription>Total y saldo pendiente por categoría de Cuentas por Pagar.</CardDescription>
+            <CardDescription>Total y saldo pendiente por categoría y moneda.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {resumenCategoriaCxp.map((g) => (
-              <div key={g.key} className="rounded-lg border bg-muted/30 p-3">
-                <div className="text-xs text-muted-foreground">{CATEGORIA_CXP_LABEL[g.key]}</div>
-                <div className="text-lg font-semibold">{fmtMoney(g.total, "DOP")}</div>
-                <div className="text-xs text-muted-foreground">{g.count} cuenta{g.count === 1 ? "" : "s"} · Saldo {fmtMoney(g.saldo, "DOP")}</div>
-              </div>
-            ))}
+            {CATEGORIA_CXP_ORDEN.map((cat) => {
+              const grupos = resumenCategoriaCxp.filter((g) => g.categoria === cat);
+              if (grupos.length === 0) return null;
+              const totalCount = grupos.reduce((acc, g) => acc + g.count, 0);
+              return (
+                <div key={cat} className="rounded-lg border bg-muted/30 p-3">
+                  <div className="text-xs text-muted-foreground">{CATEGORIA_CXP_LABEL[cat]}</div>
+                  <div className="flex flex-col gap-1 mt-1">
+                    {grupos.map((g) => (
+                      <div key={g.moneda} className="flex justify-between items-center gap-2">
+                        <span className="text-lg font-semibold tabular-nums">{fmtMoney(g.total, g.moneda)}</span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">Saldo {fmtMoney(g.saldo, g.moneda)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {totalCount} cuenta{totalCount === 1 ? "" : "s"}
+                  </div>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       )}
