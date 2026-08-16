@@ -486,7 +486,7 @@ function Panel606({ periodo }: { periodo: string }) {
           <div>
             <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5" /> Formato 606 · Compras</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              {isLoading ? "Cargando…" : `${merged.length} registro(s) encontrados en ${periodoLabel(periodo)}`}
+              {isLoading ? "Cargando…" : error ? "Error al cargar el reporte" : `${merged.length} registro(s) encontrados en ${periodoLabel(periodo)}`}
             </p>
           </div>
           <div className="flex gap-2">
