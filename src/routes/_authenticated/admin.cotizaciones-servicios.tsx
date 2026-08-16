@@ -669,21 +669,24 @@ function CotizacionDialog({
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-28">Código</TableHead>
                   <TableHead className="min-w-48">Servicio</TableHead>
                   <TableHead className="min-w-48">Descripción</TableHead>
                   <TableHead className="w-24">Cant.</TableHead>
                   <TableHead className="w-32">Tarifa</TableHead>
                   <TableHead className="w-24">Moneda</TableHead>
+                  <TableHead className="w-20">ITBIS</TableHead>
                   <TableHead className="w-28 text-right">Subtotal</TableHead>
                   <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {lineas.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Sin servicios</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">Sin servicios</TableCell></TableRow>
                 )}
                 {lineas.map((l, i) => (
                   <TableRow key={i}>
+                    <TableCell><Input value={l.codigo} onChange={(e) => setLinea(i, { codigo: e.target.value })} /></TableCell>
                     <TableCell><Input value={l.servicio} onChange={(e) => setLinea(i, { servicio: e.target.value })} /></TableCell>
                     <TableCell><Input value={l.descripcion} onChange={(e) => setLinea(i, { descripcion: e.target.value })} /></TableCell>
                     <TableCell><Input type="number" step="0.01" value={l.cantidad} onChange={(e) => setLinea(i, { cantidad: Number(e.target.value) })} /></TableCell>
