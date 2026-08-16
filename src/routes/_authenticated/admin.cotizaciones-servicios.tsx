@@ -195,6 +195,7 @@ function TarifarioTab() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-28">Código</TableHead>
               <TableHead>Servicio</TableHead>
               <TableHead>Categoría</TableHead>
               <TableHead className="text-right">Tarifa</TableHead>
