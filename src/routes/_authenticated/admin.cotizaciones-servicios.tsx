@@ -541,11 +541,17 @@ function CotizacionesTab() {
 
       {nueva && (
         <CotizacionDialog
+          key={editId ?? "nueva"}
           open={nueva}
           cotizacion={editando}
           clientes={clientes ?? []}
-          onClose={() => { setNueva(false); setEditId(null); }}
+          onClose={() => {
+            setNueva(false);
+            setEditId(null);
+            if (editar) navigate({ to: "/admin/cotizaciones-servicios", search: {} });
+          }}
         />
+
       )}
 
       <Dialog open={!!previewUrl} onOpenChange={(o) => { if (!o) cerrarPreview(); }}>
