@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,9 +14,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight, HandCoins } from "lucide-react";
+import { ChevronDown, ChevronRight, HandCoins, FileText } from "lucide-react";
 import { fmtLocalDate, daysFromToday } from "@/lib/dates";
 import { fmtRD } from "@/lib/facturas-ecf";
+
 
 export const Route = createFileRoute("/_authenticated/admin/cuentas-por-cobrar")({
   ssr: false,
@@ -219,6 +220,10 @@ function CuentasPorCobrarPage() {
         ))}
       </div>
 
+      <EstadoCuentaCard filas={enriquecidas} />
+
+
+
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-base">Facturas emitidas</CardTitle>
@@ -402,5 +407,216 @@ function CuentasPorCobrarPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+type FilaCxC = {
+  id: string;
+  encf: string;
+  cliente_razon_social: string | null;
+  cliente_rnc: string | null;
+  fecha_emision: string;
+  fecha_vencimiento_pago: string | null;
+  monto_total: number;
+  pagado: number;
+  saldo: number;
+  diasVencido: number;
+  bucket: Bucket;
+};
+
+function EstadoCuentaCard({ filas }: { filas: FilaCxC[] }) {
+  const [cliente, setCliente] = useState("");
+  const [desde, setDesde] = useState(() => {
+    const d = new Date(); d.setMonth(d.getMonth() - 3);
+    return d.toISOString().slice(0, 10);
+  });
+  const [hasta, setHasta] = useState(() => new Date().toISOString().slice(0, 10));
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const docRef = useRef<any>(null);
+  const fileNameRef = useRef<string>("EstadoCuenta.pdf");
+
+  const clientes = useMemo(() => {
+    const s = new Set<string>();
+    for (const f of filas) if (f.cliente_razon_social) s.add(f.cliente_razon_social);
+    return Array.from(s).sort((a, b) => a.localeCompare(b, "es"));
+  }, [filas]);
+
+  const cerrarPreview = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    docRef.current = null;
+  };
+
+  const generar = async () => {
+    if (!cliente) { toast.error("Selecciona un cliente"); return; }
+    const sel = filas
+      .filter((f) => (f.cliente_razon_social ?? "") === cliente)
+      .filter((f) => f.fecha_emision >= desde && f.fecha_emision <= hasta)
+      .sort((a, b) => a.fecha_emision.localeCompare(b.fecha_emision));
+    if (sel.length === 0) { toast.error("No hay facturas de ese cliente en el período"); return; }
+
+    const { jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+
+    const nf = (n: number) => (Number(n) || 0).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const M = 32;
+
+    const rnc = sel.find((f) => f.cliente_rnc)?.cliente_rnc ?? "—";
+
+    doc.setFontSize(13); doc.setFont("helvetica", "bold");
+    doc.text("ADECOMEX SRL — Gestión y Logística", M, 40);
+    doc.setFontSize(11);
+    doc.text("ESTADO DE CUENTA", M, 58);
+    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
+    doc.text(`Cliente: ${cliente}   |   RNC: ${rnc}`, M, 72);
+    doc.text(
+      `Período: ${fmtLocalDate(desde)} — ${fmtLocalDate(hasta)}   |   Generado: ${new Date().toLocaleString("es-DO")}`,
+      M, 84,
+    );
+    doc.setTextColor(0);
+
+    const tot = sel.reduce(
+      (a, f) => ({
+        monto: a.monto + Number(f.monto_total || 0),
+        pagado: a.pagado + Number(f.pagado || 0),
+        saldo: a.saldo + Number(f.saldo || 0),
+      }),
+      { monto: 0, pagado: 0, saldo: 0 },
+    );
+
+    autoTable(doc, {
+      startY: 96,
+      head: [["eNCF", "Emisión", "Vencimiento", "Monto", "Pagado", "Saldo", "Días venc."]],
+      body: sel.map((f) => [
+        f.encf,
+        fmtLocalDate(f.fecha_emision),
+        f.fecha_vencimiento_pago ? fmtLocalDate(f.fecha_vencimiento_pago) : "—",
+        nf(f.monto_total),
+        nf(f.pagado),
+        nf(f.saldo),
+        f.diasVencido > 0 ? String(f.diasVencido) : "—",
+      ]),
+      foot: [["TOTALES", "", "", nf(tot.monto), nf(tot.pagado), nf(tot.saldo), ""]],
+      theme: "grid",
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [30, 58, 95], textColor: 255 },
+      footStyles: { fillColor: [235, 239, 245], textColor: 20, fontStyle: "bold" },
+      columnStyles: {
+        3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" },
+      },
+      margin: { left: M, right: M },
+    });
+
+    let y = (doc as any).lastAutoTable.finalY + 16;
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Resumen", "RD$"]],
+      body: [
+        ["Total Facturado", nf(tot.monto)],
+        ["Total Pagado", nf(tot.pagado)],
+        ["Total Pendiente", nf(tot.saldo)],
+      ],
+      theme: "grid",
+      styles: { fontSize: 8.5, cellPadding: 4 },
+      headStyles: { fillColor: [30, 58, 95], textColor: 255 },
+      columnStyles: { 0: { fontStyle: "bold", cellWidth: 140 }, 1: { halign: "right" } },
+      margin: { left: M, right: M },
+      tableWidth: 260,
+      didParseCell: (d: any) => {
+        if (d.section === "body" && d.row.index === 2) {
+          d.cell.styles.fontStyle = "bold";
+          d.cell.styles.fillColor = [255, 240, 240];
+          d.cell.styles.textColor = [150, 20, 20];
+        }
+      },
+    });
+
+    const yResumen = (doc as any).lastAutoTable.finalY;
+
+    const antig: Record<Bucket, number> = { al_dia: 0, "1_30": 0, "31_60": 0, "61_90": 0, "90_mas": 0 };
+    for (const f of sel) if (f.saldo > 0) antig[f.bucket] += f.saldo;
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Antigüedad de saldos", "RD$"]],
+      body: BUCKETS.map((b) => [b.label, nf(antig[b.key])]),
+      theme: "grid",
+      styles: { fontSize: 8.5, cellPadding: 4 },
+      headStyles: { fillColor: [30, 58, 95], textColor: 255 },
+      columnStyles: { 0: { fontStyle: "bold", cellWidth: 140 }, 1: { halign: "right" } },
+      margin: { left: M + 280, right: M },
+      tableWidth: 260,
+    });
+
+    y = Math.max(yResumen, (doc as any).lastAutoTable.finalY) + 22;
+    doc.setFontSize(7.5); doc.setTextColor(110);
+    doc.text(
+      "Este estado de cuenta refleja los pagos aplicados hasta la fecha de generación. Cualquier pago reciente puede no estar reflejado.",
+      M, Math.min(y, pageH - 40), { maxWidth: pageW - M * 2 },
+    );
+    doc.setTextColor(0);
+
+    const pages = doc.getNumberOfPages();
+    for (let i = 1; i <= pages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8); doc.setTextColor(120);
+      doc.text(`Página ${i} de ${pages}`, pageW - M, pageH - 20, { align: "right" });
+    }
+
+    fileNameRef.current = `EstadoCuenta_${cliente.replace(/\s+/g, "")}_${desde}_${hasta}.pdf`;
+    docRef.current = doc;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(doc.output("bloburl").toString());
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Generar Estado de Cuenta</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-wrap items-end gap-3">
+        <div className="grid gap-1.5 min-w-64">
+          <Label className="text-xs">Cliente</Label>
+          <Select value={cliente} onValueChange={setCliente}>
+            <SelectTrigger className="w-72"><SelectValue placeholder="Selecciona cliente" /></SelectTrigger>
+            <SelectContent>
+              {clientes.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-1.5">
+          <Label className="text-xs">Desde</Label>
+          <Input type="date" className="w-40" value={desde} onChange={(e) => setDesde(e.target.value)} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label className="text-xs">Hasta</Label>
+          <Input type="date" className="w-40" value={hasta} onChange={(e) => setHasta(e.target.value)} />
+        </div>
+        <Button onClick={generar}>
+          <FileText className="h-4 w-4 mr-1" /> Generar PDF
+        </Button>
+      </CardContent>
+
+      <Dialog open={!!previewUrl} onOpenChange={(o) => { if (!o) cerrarPreview(); }}>
+        <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-5 py-3 border-b">
+            <DialogTitle className="text-base">Vista previa — Estado de Cuenta</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 bg-muted/30">
+            {previewUrl && <iframe src={previewUrl} title="Estado de Cuenta" className="w-full h-full border-0" />}
+          </div>
+          <DialogFooter className="px-5 py-3 border-t gap-2 sm:justify-between">
+            <Button variant="outline" size="sm" onClick={() => docRef.current?.save(fileNameRef.current)}>
+              <FileText className="h-4 w-4 mr-1" /> Descargar
+            </Button>
+            <Button size="sm" onClick={cerrarPreview}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 }
