@@ -65,6 +65,7 @@ type Tarifa = {
   unidad: string;
   descripcion: string | null;
   activo: boolean;
+  gravado: boolean;
 };
 
 type Linea = {
@@ -146,6 +147,7 @@ function TarifarioTab() {
         unidad: t.unidad || "Por gestión",
         descripcion: t.descripcion || null,
         activo: t.activo ?? true,
+        gravado: t.gravado ?? true,
       };
       if (!payload.servicio) throw new Error("El servicio es obligatorio");
       const { error } = t.id
@@ -188,7 +190,7 @@ function TarifarioTab() {
             <Label htmlFor="solo-activos" className="text-xs">Solo activos</Label>
           </div>
           {puedeEditar && (
-            <Button size="sm" onClick={() => setEdit({ moneda: "DOP", unidad: "Por gestión", activo: true, tarifa: 0 })}>
+            <Button size="sm" onClick={() => setEdit({ moneda: "DOP", unidad: "Por gestión", activo: true, tarifa: 0, gravado: true })}>
               <Plus className="h-4 w-4 mr-1" /> Nueva tarifa
             </Button>
           )}
@@ -281,6 +283,14 @@ function TarifarioTab() {
               <div className="grid gap-1.5">
                 <Label className="text-xs">Descripción</Label>
                 <Textarea rows={2} value={edit.descripcion ?? ""} onChange={(e) => setEdit({ ...edit, descripcion: e.target.value })} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="tarifa-gravado"
+                  checked={edit.gravado ?? true}
+                  onCheckedChange={(v) => setEdit({ ...edit, gravado: v })}
+                />
+                <Label htmlFor="tarifa-gravado" className="text-sm font-normal">Gravado con ITBIS</Label>
               </div>
             </div>
           )}
@@ -635,7 +645,7 @@ function CotizacionDialog({
       cantidad: 1,
       tarifa_unitaria: Number(t.tarifa) || 0,
       moneda: t.moneda,
-      gravado: true,
+      gravado: t.gravado !== false,
     }]);
   };
 

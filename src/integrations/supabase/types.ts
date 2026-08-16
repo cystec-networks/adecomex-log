@@ -598,6 +598,7 @@ export type Database = {
           codigo: string | null
           created_at: string
           descripcion: string | null
+          gravado: boolean
           id: string
           moneda: string
           servicio: string
@@ -610,6 +611,7 @@ export type Database = {
           codigo?: string | null
           created_at?: string
           descripcion?: string | null
+          gravado?: boolean
           id?: string
           moneda?: string
           servicio: string
@@ -622,6 +624,7 @@ export type Database = {
           codigo?: string | null
           created_at?: string
           descripcion?: string | null
+          gravado?: boolean
           id?: string
           moneda?: string
           servicio?: string
