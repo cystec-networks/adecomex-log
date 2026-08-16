@@ -433,11 +433,21 @@ function CuentasPorCobrarPage() {
                                   <tr key={p.id} className="border-t">
                                     <td className="py-1">{fmtLocalDate(p.fecha_pago)}</td>
                                     <td className="py-1 text-right">{fmtRD(p.monto)}</td>
-                                    <td className="py-1">{p.metodo_pago ?? "—"}</td>
+                                    <td className="py-1">
+                                      <span className="inline-flex items-center gap-1">
+                                        {p.metodo_pago ?? "—"}
+                                        {p.es_retencion && (
+                                          <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+                                            Retención ITBIS
+                                          </Badge>
+                                        )}
+                                      </span>
+                                    </td>
                                     <td className="py-1">{p.referencia ?? "—"}</td>
                                     <td className="py-1">{p.notas ?? "—"}</td>
                                   </tr>
                                 ))}
+
                               </tbody>
                             </table>
                           )}
