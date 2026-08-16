@@ -589,6 +589,8 @@ function CotizacionDialog({
       const rows = lineas.map((l, i) => ({
         cotizacion_id: id!,
         orden: i + 1,
+        codigo: l.codigo || null,
+        gravado: l.gravado,
         servicio: l.servicio,
         descripcion: l.descripcion || null,
         cantidad: Number(l.cantidad) || 0,
