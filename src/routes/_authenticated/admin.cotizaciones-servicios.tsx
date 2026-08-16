@@ -24,6 +24,7 @@ import { buildDocumentoComercialPdf } from "@/lib/pdf-documento-comercial";
 
 export const Route = createFileRoute("/_authenticated/admin/cotizaciones-servicios")({
   ssr: false,
+  validateSearch: z.object({ editar: z.string().optional() }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth" });
