@@ -1,5 +1,6 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
+import { z } from "zod";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,7 @@ import { buildDocumentoComercialPdf } from "@/lib/pdf-documento-comercial";
 
 export const Route = createFileRoute("/_authenticated/admin/cotizaciones-servicios")({
   ssr: false,
+  validateSearch: z.object({ editar: z.string().optional() }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth" });
@@ -296,6 +298,7 @@ function TarifarioTab() {
 
 function CotizacionesTab() {
   const qc = useQueryClient();
+  const { editar } = Route.useSearch();
   const [nueva, setNueva] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -313,12 +316,22 @@ function CotizacionesTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cotizaciones_servicios")
-        .select("*, cotizaciones_servicios_lineas(*), facturas_ecf(id,encf)")
+        .select("*, cotizaciones_servicios_lineas(*), facturas_ecf(id,encf), expedientes(id,numero)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
   });
+
+  useEffect(() => {
+    if (!editar) return;
+    const existe = (cotizaciones ?? []).some((c: any) => c.id === editar);
+    if (existe) {
+      setEditId(editar);
+      setNueva(true);
+    }
+  }, [editar, cotizaciones]);
+
 
   const cambiarEstado = useMutation({
     mutationFn: async ({ id, estado }: { id: string; estado: string }) => {
@@ -472,7 +485,17 @@ function CotizacionesTab() {
               const tot = totalPorMoneda(c.cotizaciones_servicios_lineas ?? []);
               return (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.numero}</TableCell>
+                  <TableCell className="font-medium">
+                    {c.numero}
+                    {c.expedientes?.id && (
+                      <Link to="/expedientes/$id" params={{ id: c.expedientes.id }} className="no-underline block">
+                        <Badge variant="outline" className="mt-1 cursor-pointer font-normal">
+                          ← Expediente {c.expedientes.numero}
+                        </Badge>
+                      </Link>
+                    )}
+                  </TableCell>
+
                   <TableCell>{(clientes ?? []).find((x: any) => x.id === c.cliente_id)?.nombre ?? "—"}</TableCell>
                   <TableCell>{fmtLocalDate(c.fecha)}</TableCell>
                   <TableCell>{c.fecha_vigencia ? fmtLocalDate(c.fecha_vigencia) : "—"}</TableCell>
@@ -528,11 +551,17 @@ function CotizacionesTab() {
 
       {nueva && (
         <CotizacionDialog
+          key={editId ?? "nueva"}
           open={nueva}
           cotizacion={editando}
           clientes={clientes ?? []}
-          onClose={() => { setNueva(false); setEditId(null); }}
+          onClose={() => {
+            setNueva(false);
+            setEditId(null);
+            if (editar) navigate({ to: "/admin/cotizaciones-servicios", search: {} });
+          }}
         />
+
       )}
 
       <Dialog open={!!previewUrl} onOpenChange={(o) => { if (!o) cerrarPreview(); }}>
@@ -674,9 +703,23 @@ function CotizacionDialog({
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{cotizacion ? `Editar ${cotizacion.numero}` : "Nueva cotización de servicios"}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2 flex-wrap">
+            {cotizacion ? `Editar ${cotizacion.numero}` : "Nueva cotización de servicios"}
+            {cotizacion?.expedientes?.id && (
+              <Link
+                to="/expedientes/$id"
+                params={{ id: cotizacion.expedientes.id }}
+                className="no-underline"
+              >
+                <Badge variant="outline" className="cursor-pointer">
+                  ← Expediente {cotizacion.expedientes.numero}
+                </Badge>
+              </Link>
+            )}
+          </DialogTitle>
           <DialogDescription>Selecciona el cliente y agrega los servicios a cotizar.</DialogDescription>
         </DialogHeader>
+
 
         <div className="grid gap-4">
           <div className="grid md:grid-cols-3 gap-3">

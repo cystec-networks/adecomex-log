@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -197,6 +197,8 @@ function DetalleExpediente() {
         </div>
         <GenerarXmlSigaButton expedienteId={id} />
         <PreLiquidacionPdfButton exp={exp} />
+        <CotizacionServiciosExpedienteButton exp={exp} />
+
         <div className="flex items-center gap-2">
           <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
@@ -2983,6 +2985,90 @@ function HerramientasDgaVuce() {
         </div>
       </div>
     </div>
+  );
+}
+
+function CotizacionServiciosExpedienteButton({ exp }: { exp: any }) {
+  const { data: roles } = useMyRoles();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const canEdit = (roles ?? []).some((r) =>
+    ["admin", "finanzas", "operaciones", "agente_aduanal", "contabilidad"].includes(r),
+  );
+
+  const { data: cot } = useQuery({
+    queryKey: ["cotserv-expediente", exp.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("cotizaciones_servicios")
+        .select("id,numero,factura_id, facturas_ecf(id,encf)")
+        .eq("expediente_id", exp.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const crear = useMutation({
+    mutationFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from("cotizaciones_servicios")
+        .insert({
+          expediente_id: exp.id,
+          cliente_id: exp.cliente_id ?? null,
+          notas: `Expediente ${exp.numero}`,
+          estado: "borrador",
+          created_by: u.user?.id ?? null,
+        } as any)
+        .select("id")
+        .single();
+      if (error) throw error;
+      return data.id as string;
+    },
+    onSuccess: (cotId) => {
+      toast.success("Cotización de servicios creada — agrega las líneas");
+      qc.invalidateQueries({ queryKey: ["cotserv-expediente", exp.id] });
+      qc.invalidateQueries({ queryKey: ["cotizaciones-servicios"] });
+      navigate({ to: "/admin/cotizaciones-servicios", search: { editar: cotId } });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo crear la cotización"),
+  });
+
+  if (!canEdit) return null;
+
+  if (cot?.factura_id) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => navigate({ to: "/admin/facturacion", search: { editar: cot.factura_id! } })}
+      >
+        <ExternalLink className="h-4 w-4 mr-1" />
+        Ver Factura {(cot as any).facturas_ecf?.encf || ""}
+      </Button>
+    );
+  }
+
+  if (cot) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => navigate({ to: "/admin/cotizaciones-servicios", search: { editar: cot.id } })}
+      >
+        <ExternalLink className="h-4 w-4 mr-1" />
+        Ver Cotización de Servicios {cot.numero}
+      </Button>
+    );
+  }
+
+  return (
+    <Button variant="outline" size="sm" disabled={crear.isPending} onClick={() => crear.mutate()}>
+      <FileText className="h-4 w-4 mr-1" />
+      Crear Cotización de Servicios
+    </Button>
   );
 }
 
