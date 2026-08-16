@@ -157,8 +157,7 @@ export function FacturaEcfFormDialog({
       if (!encf.trim()) throw new Error("El e-NCF es obligatorio");
       if (!clienteId) throw new Error("Selecciona el cliente");
       const { data: u } = await supabase.auth.getUser();
-      let pdf_url: string | null = null;
-      const { data, error } = await supabase.from("facturas_ecf").insert({
+      const campos = {
         encf: encf.trim().toUpperCase(),
         tipo_comprobante: tipo,
         fecha_emision: fechaEmision,
@@ -174,14 +173,26 @@ export function FacturaEcfFormDialog({
         total_itbis: totales.total_itbis,
         monto_total: totales.monto_total,
         notas: notas || null,
-        pdf_url,
         itbis_retenido_terceros: Number(itbisRetenidoTerceros) || 0,
         itbis_percibido_venta: Number(itbisPercibidoVenta) || 0,
         retencion_renta_terceros: Number(retencionRentaTerceros) || 0,
         isr_percibido_venta: Number(isrPercibidoVenta) || 0,
-        created_by: u.user?.id ?? null,
-      }).select().single();
-      if (error) throw error;
+      };
+
+      let data: any;
+      if (editId) {
+        const { data: upd, error } = await supabase.from("facturas_ecf")
+          .update(campos).eq("id", editId).select().single();
+        if (error) throw error;
+        data = upd;
+        await supabase.from("facturas_ecf_lineas").delete().eq("factura_id", editId);
+      } else {
+        const { data: ins, error } = await supabase.from("facturas_ecf")
+          .insert({ ...campos, pdf_url: null, created_by: u.user?.id ?? null })
+          .select().single();
+        if (error) throw error;
+        data = ins;
+      }
 
       if (pdfFile) {
         const path = `facturas-ecf/${data.id}/${pdfFile.name}`;
@@ -208,6 +219,7 @@ export function FacturaEcfFormDialog({
       if (lErr) throw lErr;
 
       return data;
+
     },
     onSuccess: (row) => {
       toast.success("Factura e-CF registrada");
