@@ -450,47 +450,123 @@ function CuentasPorCobrarPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!payRow} onOpenChange={(o) => !o && setPayRow(null)}>
-        <DialogContent>
+      <Dialog open={aplicarOpen} onOpenChange={(o) => setAplicarOpen(o)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Registrar pago</DialogTitle>
+            <DialogTitle>Aplicar pago</DialogTitle>
             <DialogDescription>
-              {payRow ? `${payRow.encf} — saldo pendiente ${fmtRD(payRow.saldo)}` : ""}
+              Aplica un mismo pago a una o varias facturas del cliente, con retención de ITBIS 30% (DGII) opcional por factura.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-3">
+
+          <div className="grid gap-4">
             <div className="grid gap-1.5">
-              <Label>Monto</Label>
-              <Input type="number" step="0.01" value={payMonto} onChange={(e) => setPayMonto(e.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Fecha de pago</Label>
-              <Input type="date" value={payFecha} onChange={(e) => setPayFecha(e.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Método de pago</Label>
-              <Select value={payMetodo} onValueChange={setPayMetodo}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Label>Cliente</Label>
+              <Select value={payCliente} onValueChange={(v) => { setPayCliente(v); setSel({}); }}>
+                <SelectTrigger><SelectValue placeholder="Selecciona un cliente…" /></SelectTrigger>
                 <SelectContent>
-                  {METODOS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                  {clientesConSaldo.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid gap-1.5">
-              <Label>Referencia</Label>
-              <Input value={payRef} onChange={(e) => setPayRef(e.target.value)} />
+
+            {payCliente && (
+              <div className="rounded-md border divide-y">
+                {facturasCliente.length === 0 && (
+                  <div className="p-3 text-sm text-muted-foreground">Este cliente no tiene facturas con saldo.</div>
+                )}
+                {facturasCliente.map((f) => {
+                  const s = sel[f.id];
+                  const ret = s?.ret ? Math.min(retencionDe(f), f.saldo) : 0;
+                  const max = +(f.saldo - ret).toFixed(2);
+                  return (
+                    <div key={f.id} className="p-3 space-y-2">
+                      <div className="flex items-start gap-3">
+                        <Checkbox checked={!!s} onCheckedChange={() => toggleFactura(f)} className="mt-1" />
+                        <div className="flex-1">
+                          <div className="font-mono text-xs">{f.encf}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Emitida {fmtLocalDate(f.fecha_emision)} · Saldo {fmtRD(f.saldo)}
+                          </div>
+                        </div>
+                      </div>
+                      {s && (
+                        <div className="grid gap-3 sm:grid-cols-3 pl-7">
+                          <div className="flex items-center gap-2 sm:col-span-2">
+                            <Checkbox
+                              id={`ret-${f.id}`}
+                              checked={s.ret}
+                              onCheckedChange={(v) => toggleRetencion(f, !!v)}
+                            />
+                            <Label htmlFor={`ret-${f.id}`} className="text-xs">
+                              Retención ITBIS 30% (DGII)
+                              {s.ret && <span className="ml-2 font-semibold text-amber-700">{fmtRD(ret)}</span>}
+                            </Label>
+                          </div>
+                          <div className="grid gap-1">
+                            <Label className="text-xs">Monto a pagar (máx. {fmtRD(max)})</Label>
+                            <Input
+                              type="number" step="0.01" min="0" max={max}
+                              value={s.monto}
+                              onChange={(e) =>
+                                setSel((prev) => ({ ...prev, [f.id]: { ...prev[f.id]!, monto: e.target.value } }))
+                              }
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <Label>Fecha de pago</Label>
+                <Input type="date" value={payFecha} onChange={(e) => setPayFecha(e.target.value)} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Método de pago</Label>
+                <Select value={payMetodo} onValueChange={setPayMetodo}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {METODOS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Referencia</Label>
+                <Input value={payRef} onChange={(e) => setPayRef(e.target.value)} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Notas</Label>
+                <Textarea value={payNotas} onChange={(e) => setPayNotas(e.target.value)} />
+              </div>
             </div>
-            <div className="grid gap-1.5">
-              <Label>Notas</Label>
-              <Textarea value={payNotas} onChange={(e) => setPayNotas(e.target.value)} />
+
+            <div className="rounded-md border bg-muted/40 p-3 text-sm space-y-1">
+              <div className="flex justify-between">
+                <span>Total en efectivo/transferencia</span><span>{fmtRD(resumen.efectivo)}</span>
+              </div>
+              <div className="flex justify-between text-amber-700">
+                <span>Total en retenciones ITBIS</span><span>{fmtRD(resumen.retenciones)}</span>
+              </div>
+              <div className="flex justify-between font-semibold border-t pt-1">
+                <span>Total aplicado a facturas</span><span>{fmtRD(resumen.total)}</span>
+              </div>
             </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPayRow(null)}>Cancelar</Button>
-            <Button onClick={() => registrarPago.mutate()} disabled={registrarPago.isPending}>Guardar pago</Button>
+            <Button variant="outline" onClick={() => setAplicarOpen(false)}>Cancelar</Button>
+            <Button onClick={() => aplicarPago.mutate()} disabled={aplicarPago.isPending || marcadas.length === 0}>
+              Confirmar pago
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }
