@@ -434,6 +434,9 @@ function ConciliacionBancariaPage() {
                   <td className={`py-2 pr-3 text-right font-medium ${m.tipo === "credito" ? "text-emerald-600" : "text-destructive"}`}>
                     {fmtRD(Number(m.monto))}
                   </td>
+                  <td className="py-2 pr-3 text-right font-mono text-xs whitespace-nowrap">
+                    {balancePorMov.has(m.id) ? fmtRD(balancePorMov.get(m.id)!) : "—"}
+                  </td>
                   <td className="py-2 pr-3">
                     {m.conciliado ? (
                       <div className="space-y-0.5">
