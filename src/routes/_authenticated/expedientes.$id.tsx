@@ -1284,7 +1284,7 @@ function RentabilidadCard({ expedienteId }: { expedienteId: string }) {
   );
 }
 
-function TabCostos({ expedienteId }: { expedienteId: string }) {
+function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
 
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
