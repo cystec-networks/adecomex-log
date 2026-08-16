@@ -383,13 +383,6 @@ function TabInfo({ exp }: { exp: any }) {
   });
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
-  useEffect(() => {
-    const seguroActual = form.seguro;
-    const vacio = seguroActual === "" || seguroActual == null || Number(seguroActual) === 0;
-    if (vacio && sumFob > 0) {
-      set("seguro", (sumFob * 0.02).toFixed(2));
-    }
-  }, [sumFob]);
 
 
   // Pull existing values across expedientes to feed suggestions dynamically
