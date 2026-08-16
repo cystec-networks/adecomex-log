@@ -163,31 +163,113 @@ function CuentasPorCobrarPage() {
     });
   }, [enriquecidas, fCliente, fBucket, soloSaldo]);
 
-  const registrarPago = useMutation({
+  const clientesConSaldo = useMemo(() => {
+    const s = new Set<string>();
+    for (const f of enriquecidas) if (f.saldo > 0) s.add(f.cliente_razon_social ?? "—");
+    return Array.from(s).sort();
+  }, [enriquecidas]);
+
+  const facturasCliente = useMemo(
+    () => enriquecidas.filter((f) => f.saldo > 0 && (f.cliente_razon_social ?? "—") === payCliente),
+    [enriquecidas, payCliente],
+  );
+
+  const retencionDe = (f: { total_itbis: number | null }) =>
+    +(((Number(f.total_itbis) || 0) * 0.3).toFixed(2));
+
+  const marcadas = useMemo(
+    () => facturasCliente.filter((f) => !!sel[f.id]),
+    [facturasCliente, sel],
+  );
+
+  const resumen = useMemo(() => {
+    let efectivo = 0, retenciones = 0;
+    for (const f of marcadas) {
+      const s = sel[f.id];
+      efectivo += Number(s?.monto) || 0;
+      if (s?.ret) retenciones += Math.min(retencionDe(f), f.saldo);
+    }
+    return {
+      efectivo: +efectivo.toFixed(2),
+      retenciones: +retenciones.toFixed(2),
+      total: +(efectivo + retenciones).toFixed(2),
+    };
+  }, [marcadas, sel]);
+
+  const abrirAplicar = (f?: (typeof enriquecidas)[number]) => {
+    if (f) {
+      setPayCliente(f.cliente_razon_social ?? "—");
+      const ret = 0;
+      setSel({ [f.id]: { ret: false, monto: String(+(f.saldo - ret).toFixed(2)) } });
+    } else {
+      setPayCliente(""); setSel({});
+    }
+    setPayFecha(new Date().toISOString().slice(0, 10));
+    setPayMetodo("Transferencia"); setPayRef(""); setPayNotas("");
+    setAplicarOpen(true);
+  };
+
+  const toggleFactura = (f: (typeof enriquecidas)[number]) => {
+    setSel((prev) => {
+      const next = { ...prev };
+      if (next[f.id]) delete next[f.id];
+      else next[f.id] = { ret: false, monto: String(f.saldo) };
+      return next;
+    });
+  };
+
+  const toggleRetencion = (f: (typeof enriquecidas)[number], on: boolean) => {
+    setSel((prev) => {
+      const cur = prev[f.id];
+      if (!cur) return prev;
+      const ret = on ? Math.min(retencionDe(f), f.saldo) : 0;
+      const max = +(f.saldo - ret).toFixed(2);
+      return { ...prev, [f.id]: { ret: on, monto: String(Math.max(0, max)) } };
+    });
+  };
+
+  const aplicarPago = useMutation({
     mutationFn: async () => {
-      if (!payRow) return;
-      const monto = Number(payMonto);
-      if (!isFinite(monto) || monto <= 0) throw new Error("Monto inválido");
-      if (monto > payRow.saldo + 0.001) throw new Error("El monto excede el saldo pendiente");
+      if (marcadas.length === 0) throw new Error("Selecciona al menos una factura");
+      if (resumen.total <= 0) throw new Error("El total aplicado debe ser mayor que cero");
       const { data: u } = await supabase.auth.getUser();
-      const { error } = await (supabase.from as any)("cxc_pagos").insert({
-        factura_id: payRow.id,
-        monto,
-        fecha_pago: payFecha,
-        metodo_pago: payMetodo,
-        referencia: payRef || null,
-        notas: payNotas || null,
-        creado_por: u.user?.id ?? null,
-      });
+      const lote = crypto.randomUUID();
+      const rows: any[] = [];
+      for (const f of marcadas) {
+        const s = sel[f.id]!;
+        const ret = s.ret ? Math.min(retencionDe(f), f.saldo) : 0;
+        const monto = +(Number(s.monto) || 0).toFixed(2);
+        if (monto < 0) throw new Error("Monto inválido");
+        if (monto > +(f.saldo - ret).toFixed(2) + 0.001)
+          throw new Error(`El monto de ${f.encf} excede el saldo disponible`);
+        if (monto > 0) {
+          rows.push({
+            factura_id: f.id, monto, fecha_pago: payFecha, metodo_pago: payMetodo,
+            referencia: payRef || null, notas: payNotas || null,
+            creado_por: u.user?.id ?? null, es_retencion: false, lote_pago: lote,
+          });
+        }
+        if (ret > 0) {
+          rows.push({
+            factura_id: f.id, monto: ret, fecha_pago: payFecha,
+            metodo_pago: "Retención ITBIS 30% DGII",
+            referencia: payRef || null, notas: payNotas || null,
+            creado_por: u.user?.id ?? null, es_retencion: true, lote_pago: lote,
+          });
+        }
+      }
+      if (rows.length === 0) throw new Error("No hay montos que aplicar");
+      const { error } = await (supabase.from as any)("cxc_pagos").insert(rows);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Pago registrado");
-      setPayRow(null); setPayMonto(""); setPayRef(""); setPayNotas("");
+      toast.success("Pago aplicado");
+      setAplicarOpen(false); setSel({}); setPayRef(""); setPayNotas("");
       qc.invalidateQueries({ queryKey: ["cxc-pagos"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "No se pudo registrar el pago"),
+    onError: (e: any) => toast.error(e.message ?? "No se pudo aplicar el pago"),
   });
+
 
   const setVencimiento = useMutation({
     mutationFn: async ({ id, fecha }: { id: string; fecha: string }) => {
