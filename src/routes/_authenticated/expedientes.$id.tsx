@@ -197,6 +197,8 @@ function DetalleExpediente() {
         </div>
         <GenerarXmlSigaButton expedienteId={id} />
         <PreLiquidacionPdfButton exp={exp} />
+        <CotizacionServiciosExpedienteButton exp={exp} />
+
         <div className="flex items-center gap-2">
           <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
