@@ -6,7 +6,7 @@ import {
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
   GraduationCap, BookOpen, UserPlus, ClipboardCheck,
   Briefcase, IdCard, HandCoins,
-  Scale, FileSpreadsheet, Warehouse, Boxes,
+  Scale, FileSpreadsheet, Warehouse, Boxes, Landmark,
 
 
 } from "lucide-react";
@@ -192,6 +192,9 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/admin/cuentas-por-cobrar") },
       { to: "/admin/reportes-fiscales", label: "Reportes Fiscales DGII", icon: FileBarChart2, roles: ["admin","finanzas"],
         match: (p) => p.startsWith("/admin/reportes-fiscales") },
+      { to: "/admin/conciliacion-bancaria", label: "Conciliación Bancaria", icon: Landmark, roles: ["admin","finanzas","contabilidad"],
+        match: (p) => p.startsWith("/admin/conciliacion-bancaria") },
+
       { to: "/rrhh/prestamos", label: "Préstamos", icon: HandCoins, roles: ["admin","finanzas"],
         match: (p) => p === "/rrhh/prestamos" || p.startsWith("/rrhh/prestamos/") },
       { to: "/rrhh/prestamos-terceros", label: "Préstamos a Terceros", icon: HandCoins, roles: ["admin","finanzas"],

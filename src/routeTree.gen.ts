@@ -67,6 +67,7 @@ import { Route as AuthenticatedAdminDashboardFinancieroRouteImport } from './rou
 import { Route as AuthenticatedAdminCuentasPorPagarRouteImport } from './routes/_authenticated/admin.cuentas-por-pagar'
 import { Route as AuthenticatedAdminCuentasPorCobrarRouteImport } from './routes/_authenticated/admin.cuentas-por-cobrar'
 import { Route as AuthenticatedAdminConfiguracionRouteImport } from './routes/_authenticated/admin.configuracion'
+import { Route as AuthenticatedAdminConciliacionBancariaRouteImport } from './routes/_authenticated/admin.conciliacion-bancaria'
 import { Route as AuthenticatedAdminCatalogosRouteImport } from './routes/_authenticated/admin.catalogos'
 import { Route as AuthenticatedAdminCatalogoViajesTransporteRouteImport } from './routes/_authenticated/admin.catalogo-viajes-transporte'
 import { Route as AuthenticatedAdminCatalogoProductosDgaRouteImport } from './routes/_authenticated/admin.catalogo-productos-dga'
@@ -414,6 +415,12 @@ const AuthenticatedAdminConfiguracionRoute =
     path: '/admin/configuracion',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminConciliacionBancariaRoute =
+  AuthenticatedAdminConciliacionBancariaRouteImport.update({
+    id: '/admin/conciliacion-bancaria',
+    path: '/admin/conciliacion-bancaria',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminCatalogosRoute =
   AuthenticatedAdminCatalogosRouteImport.update({
     id: '/admin/catalogos',
@@ -556,6 +563,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalogo-productos-dga': typeof AuthenticatedAdminCatalogoProductosDgaRoute
   '/admin/catalogo-viajes-transporte': typeof AuthenticatedAdminCatalogoViajesTransporteRoute
   '/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
+  '/admin/conciliacion-bancaria': typeof AuthenticatedAdminConciliacionBancariaRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
   '/admin/cuentas-por-cobrar': typeof AuthenticatedAdminCuentasPorCobrarRoute
   '/admin/cuentas-por-pagar': typeof AuthenticatedAdminCuentasPorPagarRoute
@@ -633,6 +641,7 @@ export interface FileRoutesByTo {
   '/admin/catalogo-productos-dga': typeof AuthenticatedAdminCatalogoProductosDgaRoute
   '/admin/catalogo-viajes-transporte': typeof AuthenticatedAdminCatalogoViajesTransporteRoute
   '/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
+  '/admin/conciliacion-bancaria': typeof AuthenticatedAdminConciliacionBancariaRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
   '/admin/cuentas-por-cobrar': typeof AuthenticatedAdminCuentasPorCobrarRoute
   '/admin/cuentas-por-pagar': typeof AuthenticatedAdminCuentasPorPagarRoute
@@ -714,6 +723,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/catalogo-productos-dga': typeof AuthenticatedAdminCatalogoProductosDgaRoute
   '/_authenticated/admin/catalogo-viajes-transporte': typeof AuthenticatedAdminCatalogoViajesTransporteRoute
   '/_authenticated/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
+  '/_authenticated/admin/conciliacion-bancaria': typeof AuthenticatedAdminConciliacionBancariaRoute
   '/_authenticated/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
   '/_authenticated/admin/cuentas-por-cobrar': typeof AuthenticatedAdminCuentasPorCobrarRoute
   '/_authenticated/admin/cuentas-por-pagar': typeof AuthenticatedAdminCuentasPorPagarRoute
@@ -793,6 +803,7 @@ export interface FileRouteTypes {
     | '/admin/catalogo-productos-dga'
     | '/admin/catalogo-viajes-transporte'
     | '/admin/catalogos'
+    | '/admin/conciliacion-bancaria'
     | '/admin/configuracion'
     | '/admin/cuentas-por-cobrar'
     | '/admin/cuentas-por-pagar'
@@ -870,6 +881,7 @@ export interface FileRouteTypes {
     | '/admin/catalogo-productos-dga'
     | '/admin/catalogo-viajes-transporte'
     | '/admin/catalogos'
+    | '/admin/conciliacion-bancaria'
     | '/admin/configuracion'
     | '/admin/cuentas-por-cobrar'
     | '/admin/cuentas-por-pagar'
@@ -950,6 +962,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/catalogo-productos-dga'
     | '/_authenticated/admin/catalogo-viajes-transporte'
     | '/_authenticated/admin/catalogos'
+    | '/_authenticated/admin/conciliacion-bancaria'
     | '/_authenticated/admin/configuracion'
     | '/_authenticated/admin/cuentas-por-cobrar'
     | '/_authenticated/admin/cuentas-por-pagar'
@@ -1433,6 +1446,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminConfiguracionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/conciliacion-bancaria': {
+      id: '/_authenticated/admin/conciliacion-bancaria'
+      path: '/admin/conciliacion-bancaria'
+      fullPath: '/admin/conciliacion-bancaria'
+      preLoaderRoute: typeof AuthenticatedAdminConciliacionBancariaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/catalogos': {
       id: '/_authenticated/admin/catalogos'
       path: '/admin/catalogos'
@@ -1590,6 +1610,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminCatalogoProductosDgaRoute: typeof AuthenticatedAdminCatalogoProductosDgaRoute
   AuthenticatedAdminCatalogoViajesTransporteRoute: typeof AuthenticatedAdminCatalogoViajesTransporteRoute
   AuthenticatedAdminCatalogosRoute: typeof AuthenticatedAdminCatalogosRoute
+  AuthenticatedAdminConciliacionBancariaRoute: typeof AuthenticatedAdminConciliacionBancariaRoute
   AuthenticatedAdminConfiguracionRoute: typeof AuthenticatedAdminConfiguracionRoute
   AuthenticatedAdminCuentasPorCobrarRoute: typeof AuthenticatedAdminCuentasPorCobrarRoute
   AuthenticatedAdminCuentasPorPagarRoute: typeof AuthenticatedAdminCuentasPorPagarRoute
@@ -1652,6 +1673,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminCatalogoViajesTransporteRoute:
     AuthenticatedAdminCatalogoViajesTransporteRoute,
   AuthenticatedAdminCatalogosRoute: AuthenticatedAdminCatalogosRoute,
+  AuthenticatedAdminConciliacionBancariaRoute:
+    AuthenticatedAdminConciliacionBancariaRoute,
   AuthenticatedAdminConfiguracionRoute: AuthenticatedAdminConfiguracionRoute,
   AuthenticatedAdminCuentasPorCobrarRoute:
     AuthenticatedAdminCuentasPorCobrarRoute,
