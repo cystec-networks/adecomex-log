@@ -86,7 +86,7 @@ import { Route as ApiPublicReciboPagoIdRouteImport } from './routes/api/public/r
 import { Route as PortalPortalExpedientesIdRouteImport } from './routes/_portal/portal.expedientes.$id'
 import { Route as PortalEstudiantePortalEstudianteProgramasIdRouteImport } from './routes/_portal-estudiante/portal-estudiante.programas.$id'
 import { Route as AuthenticatedRrhhEmpleadosIdRouteImport } from './routes/_authenticated/rrhh.empleados.$id'
-import { Route as AuthenticatedAdminFacturacionPendientesRouteImport } from './routes/_authenticated/admin.facturacion.pendientes'
+import { Route as AuthenticatedAdminFacturacionPendientesRouteImport } from './routes/_authenticated/admin.facturacion_.pendientes'
 
 const SolicitudPagoTransporteRoute = SolicitudPagoTransporteRouteImport.update({
   id: '/solicitud-pago-transporte',
@@ -528,9 +528,9 @@ const AuthenticatedRrhhEmpleadosIdRoute =
   } as any)
 const AuthenticatedAdminFacturacionPendientesRoute =
   AuthenticatedAdminFacturacionPendientesRouteImport.update({
-    id: '/pendientes',
-    path: '/pendientes',
-    getParentRoute: () => AuthenticatedAdminFacturacionRoute,
+    id: '/admin/facturacion_/pendientes',
+    path: '/admin/facturacion/pendientes',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -560,7 +560,7 @@ export interface FileRoutesByFullPath {
   '/admin/cuentas-por-cobrar': typeof AuthenticatedAdminCuentasPorCobrarRoute
   '/admin/cuentas-por-pagar': typeof AuthenticatedAdminCuentasPorPagarRoute
   '/admin/dashboard-financiero': typeof AuthenticatedAdminDashboardFinancieroRoute
-  '/admin/facturacion': typeof AuthenticatedAdminFacturacionRouteWithChildren
+  '/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
@@ -637,7 +637,7 @@ export interface FileRoutesByTo {
   '/admin/cuentas-por-cobrar': typeof AuthenticatedAdminCuentasPorCobrarRoute
   '/admin/cuentas-por-pagar': typeof AuthenticatedAdminCuentasPorPagarRoute
   '/admin/dashboard-financiero': typeof AuthenticatedAdminDashboardFinancieroRoute
-  '/admin/facturacion': typeof AuthenticatedAdminFacturacionRouteWithChildren
+  '/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
@@ -718,7 +718,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/cuentas-por-cobrar': typeof AuthenticatedAdminCuentasPorCobrarRoute
   '/_authenticated/admin/cuentas-por-pagar': typeof AuthenticatedAdminCuentasPorPagarRoute
   '/_authenticated/admin/dashboard-financiero': typeof AuthenticatedAdminDashboardFinancieroRoute
-  '/_authenticated/admin/facturacion': typeof AuthenticatedAdminFacturacionRouteWithChildren
+  '/_authenticated/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/_authenticated/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/_authenticated/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/_authenticated/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
@@ -757,7 +757,7 @@ export interface FileRoutesById {
   '/_authenticated/transportes/': typeof AuthenticatedTransportesIndexRoute
   '/_portal-estudiante/portal-estudiante/': typeof PortalEstudiantePortalEstudianteIndexRoute
   '/_portal/portal/': typeof PortalPortalIndexRoute
-  '/_authenticated/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
+  '/_authenticated/admin/facturacion_/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
   '/_authenticated/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/_portal-estudiante/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/_portal/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
@@ -993,7 +993,7 @@ export interface FileRouteTypes {
     | '/_authenticated/transportes/'
     | '/_portal-estudiante/portal-estudiante/'
     | '/_portal/portal/'
-    | '/_authenticated/admin/facturacion/pendientes'
+    | '/_authenticated/admin/facturacion_/pendientes'
     | '/_authenticated/rrhh/empleados/$id'
     | '/_portal-estudiante/portal-estudiante/programas/$id'
     | '/_portal/portal/expedientes/$id'
@@ -1566,30 +1566,15 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRrhhEmpleadosIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/facturacion/pendientes': {
-      id: '/_authenticated/admin/facturacion/pendientes'
-      path: '/pendientes'
+    '/_authenticated/admin/facturacion_/pendientes': {
+      id: '/_authenticated/admin/facturacion_/pendientes'
+      path: '/admin/facturacion/pendientes'
       fullPath: '/admin/facturacion/pendientes'
       preLoaderRoute: typeof AuthenticatedAdminFacturacionPendientesRouteImport
-      parentRoute: typeof AuthenticatedAdminFacturacionRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
-
-interface AuthenticatedAdminFacturacionRouteChildren {
-  AuthenticatedAdminFacturacionPendientesRoute: typeof AuthenticatedAdminFacturacionPendientesRoute
-}
-
-const AuthenticatedAdminFacturacionRouteChildren: AuthenticatedAdminFacturacionRouteChildren =
-  {
-    AuthenticatedAdminFacturacionPendientesRoute:
-      AuthenticatedAdminFacturacionPendientesRoute,
-  }
-
-const AuthenticatedAdminFacturacionRouteWithChildren =
-  AuthenticatedAdminFacturacionRoute._addFileChildren(
-    AuthenticatedAdminFacturacionRouteChildren,
-  )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
@@ -1609,7 +1594,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminCuentasPorCobrarRoute: typeof AuthenticatedAdminCuentasPorCobrarRoute
   AuthenticatedAdminCuentasPorPagarRoute: typeof AuthenticatedAdminCuentasPorPagarRoute
   AuthenticatedAdminDashboardFinancieroRoute: typeof AuthenticatedAdminDashboardFinancieroRoute
-  AuthenticatedAdminFacturacionRoute: typeof AuthenticatedAdminFacturacionRouteWithChildren
+  AuthenticatedAdminFacturacionRoute: typeof AuthenticatedAdminFacturacionRoute
   AuthenticatedAdminGastosOperativosRoute: typeof AuthenticatedAdminGastosOperativosRoute
   AuthenticatedAdminReportesFiscalesRoute: typeof AuthenticatedAdminReportesFiscalesRoute
   AuthenticatedAdminSolicitudesPagoTransporteRoute: typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
@@ -1640,6 +1625,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPermisosIndexRoute: typeof AuthenticatedPermisosIndexRoute
   AuthenticatedSolicitudesIndexRoute: typeof AuthenticatedSolicitudesIndexRoute
   AuthenticatedTransportesIndexRoute: typeof AuthenticatedTransportesIndexRoute
+  AuthenticatedAdminFacturacionPendientesRoute: typeof AuthenticatedAdminFacturacionPendientesRoute
   AuthenticatedRrhhEmpleadosIdRoute: typeof AuthenticatedRrhhEmpleadosIdRoute
   AuthenticatedLegalDocumentosIndexRoute: typeof AuthenticatedLegalDocumentosIndexRoute
   AuthenticatedRrhhEmpleadosIndexRoute: typeof AuthenticatedRrhhEmpleadosIndexRoute
@@ -1673,8 +1659,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAdminCuentasPorPagarRoute,
   AuthenticatedAdminDashboardFinancieroRoute:
     AuthenticatedAdminDashboardFinancieroRoute,
-  AuthenticatedAdminFacturacionRoute:
-    AuthenticatedAdminFacturacionRouteWithChildren,
+  AuthenticatedAdminFacturacionRoute: AuthenticatedAdminFacturacionRoute,
   AuthenticatedAdminGastosOperativosRoute:
     AuthenticatedAdminGastosOperativosRoute,
   AuthenticatedAdminReportesFiscalesRoute:
@@ -1710,6 +1695,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPermisosIndexRoute: AuthenticatedPermisosIndexRoute,
   AuthenticatedSolicitudesIndexRoute: AuthenticatedSolicitudesIndexRoute,
   AuthenticatedTransportesIndexRoute: AuthenticatedTransportesIndexRoute,
+  AuthenticatedAdminFacturacionPendientesRoute:
+    AuthenticatedAdminFacturacionPendientesRoute,
   AuthenticatedRrhhEmpleadosIdRoute: AuthenticatedRrhhEmpleadosIdRoute,
   AuthenticatedLegalDocumentosIndexRoute:
     AuthenticatedLegalDocumentosIndexRoute,

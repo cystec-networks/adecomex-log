@@ -12,7 +12,7 @@ import { fmtLocalDate } from "@/lib/dates";
 import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 import { fmtRD } from "@/lib/facturas-ecf";
 
-export const Route = createFileRoute("/_authenticated/admin/facturacion/pendientes")({
+export const Route = createFileRoute("/_authenticated/admin/facturacion_/pendientes")({
   ssr: false,
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
