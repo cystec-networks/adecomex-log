@@ -674,6 +674,7 @@ function CotizacionDialog({
 }: { open: boolean; cotizacion: any | null; clientes: any[]; onClose: () => void }) {
   const qc = useQueryClient();
   const [clienteId, setClienteId] = useState<string>(cotizacion?.cliente_id ?? "");
+  const [numero, setNumero] = useState<string>(cotizacion?.numero ?? "");
   const [fecha, setFecha] = useState<string>(cotizacion?.fecha ?? new Date().toISOString().slice(0, 10));
   const [vigencia, setVigencia] = useState<string>(cotizacion?.fecha_vigencia ?? addDays(15));
   const [notas, setNotas] = useState<string>(cotizacion?.notas ?? "");
@@ -735,13 +736,16 @@ function CotizacionDialog({
       if (lineas.length === 0) throw new Error("Agrega al menos un servicio");
       const cab = {
         cliente_id: clienteId || null,
+        numero: numero.trim(),
         fecha,
         fecha_vigencia: vigencia || null,
         notas: notas || null,
       };
       let id = cotizacion?.id as string | undefined;
       if (id) {
-        const { error } = await supabase.from("cotizaciones_servicios").update(cab).eq("id", id);
+        const payload: any = { ...cab };
+        if (!payload.numero) delete payload.numero;
+        const { error } = await supabase.from("cotizaciones_servicios").update(payload).eq("id", id);
         if (error) throw error;
         const { error: delErr } = await supabase
           .from("cotizaciones_servicios_lineas").delete().eq("cotizacion_id", id);
@@ -750,7 +754,7 @@ function CotizacionDialog({
         const { data: user } = await supabase.auth.getUser();
         const { data, error } = await supabase
           .from("cotizaciones_servicios")
-          .insert({ ...cab, numero: "", estado: "borrador", creado_por: user.user?.id ?? null })
+          .insert({ ...cab, numero: cab.numero || "", estado: "borrador", creado_por: user.user?.id ?? null })
           .select("id").single();
         if (error) throw error;
         id = data.id;
@@ -775,8 +779,15 @@ function CotizacionDialog({
       qc.invalidateQueries({ queryKey: ["cotizaciones-servicios"] });
       onClose();
     },
-    onError: (e: any) => toast.error(e.message ?? "No se pudo guardar"),
+    onError: (e: any) => {
+      if (e?.code === "23505" || /duplicate key|unique/i.test(e?.message ?? "")) {
+        toast.error("Ese número de cotización ya está en uso — elige otro.");
+        return;
+      }
+      toast.error(e.message ?? "No se pudo guardar");
+    },
   });
+
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -810,6 +821,14 @@ function CotizacionDialog({
                   {clientes.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs">Número</Label>
+              <Input
+                value={numero}
+                onChange={(e) => setNumero(e.target.value)}
+                placeholder="Se genera automático si se deja vacío (COTSERV-000001, 002...)"
+              />
             </div>
             <div className="grid gap-1.5">
               <Label className="text-xs">Fecha</Label>
