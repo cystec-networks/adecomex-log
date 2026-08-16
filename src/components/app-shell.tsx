@@ -312,8 +312,6 @@ function AppSidebarInner() {
         {/* Gestión Humana group */}
         {renderGroup(visibleGroups.find((g) => g.id === "rrhh")!)}
 
-        {/* Legal group */}
-        {renderGroup(visibleGroups.find((g) => g.id === "legal")!)}
 
         {/* Simple items */}
         {visibleSimpleItems.map((it) => renderSimpleItem(it))}
