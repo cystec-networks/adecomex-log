@@ -39,6 +39,7 @@ export const Route = createFileRoute("/_authenticated/admin/cuentas-por-pagar")(
 
 type Moneda = "DOP" | "USD" | "EUR";
 type Estado = "pendiente" | "parcial" | "pagado" | "disputado";
+type CategoriaCxp = "compras" | "transportes" | "servicios" | "miscelaneos" | "otros";
 
 type Row = {
   id: string;
@@ -53,10 +54,21 @@ type Row = {
   fecha_vencimiento: string | null;
   estado: Estado;
   notas: string | null;
+  categoria: CategoriaCxp;
   gasto_id: string | null;
   gasto_operativo_id: string | null;
   expediente_id: string | null;
 };
+
+const CATEGORIA_CXP_LABEL: Record<CategoriaCxp, string> = {
+  compras: "Compras",
+  transportes: "Transportes",
+  servicios: "Servicios",
+  miscelaneos: "Misceláneos",
+  otros: "Otros",
+};
+const CATEGORIA_CXP_ORDEN: CategoriaCxp[] = ["compras", "transportes", "servicios", "miscelaneos", "otros"];
+
 
 
 const fmtMoney = (n: number, m: string) =>
@@ -131,6 +143,7 @@ const emptyForm = {
   proveedor_rnc: "",
   numero_factura: "",
   ncf_proveedor: "",
+  categoria: "otros" as CategoriaCxp,
 
   monto_total: "" as string,
   moneda: "DOP" as Moneda,
@@ -145,6 +158,7 @@ function CuentasPorPagarPage() {
   const qc = useQueryClient();
   const [fEstado, setFEstado] = useState<string>("todos");
   const [fMoneda, setFMoneda] = useState<string>("todas");
+  const [fCategoria, setFCategoria] = useState<CategoriaCxp | "todas">("todas");
   const [fProveedor, setFProveedor] = useState("");
   const [agrupar, setAgrupar] = useState<Agrupacion>("ninguna");
   const [colapsados, setColapsados] = useState<Record<string, boolean>>({});
@@ -160,13 +174,14 @@ function CuentasPorPagarPage() {
 
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["cxp", fEstado, fMoneda, fProveedor],
+    queryKey: ["cxp", fEstado, fMoneda, fCategoria, fProveedor],
     queryFn: async () => {
       let q = (supabase.from as any)("cuentas_por_pagar")
         .select("*")
         .order("fecha_vencimiento", { ascending: true, nullsFirst: false });
       if (fEstado !== "todos") q = q.eq("estado", fEstado);
       if (fMoneda !== "todas") q = q.eq("moneda", fMoneda);
+      if (fCategoria !== "todas") q = q.eq("categoria", fCategoria);
       if (fProveedor.trim()) q = q.ilike("proveedor_nombre", `%${fProveedor.trim()}%`);
       const { data, error } = await q;
       if (error) throw error;
@@ -219,6 +234,23 @@ function CuentasPorPagarPage() {
     return acc;
   }, [rows]);
 
+  const resumenCategoriaCxp = useMemo(() => {
+    const map = new Map<CategoriaCxp, { key: CategoriaCxp; total: number; saldo: number; count: number }>();
+    for (const r of rows) {
+      const cat = r.categoria ?? "otros";
+      const cur = map.get(cat) ?? { key: cat, total: 0, saldo: 0, count: 0 };
+      const total = Number(r.monto_total || 0);
+      const saldo = total - Number(r.monto_pagado || 0);
+      cur.total += total;
+      cur.saldo += saldo;
+      cur.count += 1;
+      map.set(cat, cur);
+    }
+    return [...map.values()].sort(
+      (a, b) => CATEGORIA_CXP_ORDEN.indexOf(a.key) - CATEGORIA_CXP_ORDEN.indexOf(b.key),
+    );
+  }, [rows]);
+
   const grupos = useMemo(() => {
     if (agrupar === "ninguna") return [];
     const map = new Map<string, { key: string; label: string; rows: Row[] }>();
@@ -258,6 +290,7 @@ function CuentasPorPagarPage() {
         proveedor_rnc: form.proveedor_rnc.trim() || null,
         numero_factura: form.numero_factura.trim() || null,
         ncf_proveedor: form.ncf_proveedor.trim() || null,
+        categoria: form.categoria,
 
         monto_total: monto,
         moneda: form.moneda,
@@ -335,6 +368,7 @@ function CuentasPorPagarPage() {
       proveedor_rnc: r.proveedor_rnc ?? "",
       numero_factura: r.numero_factura ?? "",
       ncf_proveedor: r.ncf_proveedor ?? "",
+      categoria: (r.categoria ?? "otros") as CategoriaCxp,
       monto_total: r.monto_total != null ? String(r.monto_total) : "",
       moneda: (r.moneda ?? "DOP") as Moneda,
       fecha_factura: r.fecha_factura ?? "",
@@ -371,6 +405,7 @@ function CuentasPorPagarPage() {
         <td className="px-3 py-2 tabular-nums text-xs">{r.proveedor_rnc || "—"}</td>
         <td className="px-3 py-2 text-xs tabular-nums">{r.numero_factura || "—"}</td>
         <td className="px-3 py-2 text-xs tabular-nums">{r.ncf_proveedor || "—"}</td>
+        <td className="px-3 py-2"><Badge variant="outline">{CATEGORIA_CXP_LABEL[r.categoria]}</Badge></td>
         <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.monto_total), r.moneda)}</td>
         <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.monto_pagado), r.moneda)}</td>
         <td className="px-3 py-2 text-right tabular-nums font-medium">{fmtMoney(saldo, r.moneda)}</td>
@@ -454,6 +489,24 @@ function CuentasPorPagarPage() {
         </Card>
       </div>
 
+      {resumenCategoriaCxp.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Resumen por categoría</CardTitle>
+            <CardDescription>Total y saldo pendiente por categoría de Cuentas por Pagar.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {resumenCategoriaCxp.map((g) => (
+              <div key={g.key} className="rounded-lg border bg-muted/30 p-3">
+                <div className="text-xs text-muted-foreground">{CATEGORIA_CXP_LABEL[g.key]}</div>
+                <div className="text-lg font-semibold">{fmtMoney(g.total, "DOP")}</div>
+                <div className="text-xs text-muted-foreground">{g.count} cuenta{g.count === 1 ? "" : "s"} · Saldo {fmtMoney(g.saldo, "DOP")}</div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-wrap gap-3 items-end">
@@ -479,6 +532,18 @@ function CuentasPorPagarPage() {
                   <SelectItem value="DOP">DOP</SelectItem>
                   <SelectItem value="USD">USD</SelectItem>
                   <SelectItem value="EUR">EUR</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-[180px]">
+              <Label className="text-xs">Categoría</Label>
+              <Select value={fCategoria} onValueChange={(v) => setFCategoria(v as CategoriaCxp | "todas")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas las categorías</SelectItem>
+                  {CATEGORIA_CXP_ORDEN.map((c) => (
+                    <SelectItem key={c} value={c}>{CATEGORIA_CXP_LABEL[c]}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -509,6 +574,7 @@ function CuentasPorPagarPage() {
                   <th className="text-left px-3 py-2">RNC</th>
                   <th className="text-left px-3 py-2">No. Factura</th>
                   <th className="text-left px-3 py-2">NCF</th>
+                  <th className="text-left px-3 py-2">Categoría</th>
 
                   <th className="text-right px-3 py-2">Total</th>
                   <th className="text-right px-3 py-2">Pagado</th>
@@ -521,10 +587,10 @@ function CuentasPorPagarPage() {
               </thead>
               <tbody>
                 {isLoading && (
-                  <tr><td colSpan={11} className="text-center py-6 text-muted-foreground">Cargando…</td></tr>
+                  <tr><td colSpan={12} className="text-center py-6 text-muted-foreground">Cargando…</td></tr>
                 )}
                 {!isLoading && rows.length === 0 && (
-                  <tr><td colSpan={11} className="text-center py-6 text-muted-foreground">Sin cuentas por pagar.</td></tr>
+                  <tr><td colSpan={12} className="text-center py-6 text-muted-foreground">Sin cuentas por pagar.</td></tr>
                 )}
                 {!isLoading && agrupar === "ninguna" && rows.map((r) => renderRow(r))}
                 {!isLoading && agrupar !== "ninguna" && grupos.map((g) => {
@@ -532,7 +598,7 @@ function CuentasPorPagarPage() {
                   return (
                     <Fragment key={g.key}>
                       <tr className="border-t bg-muted/50">
-                        <td colSpan={11} className="px-3 py-2">
+                        <td colSpan={12} className="px-3 py-2">
                           <button
                             type="button"
                             className="flex w-full items-center justify-between gap-4 text-left"
@@ -610,6 +676,17 @@ function CuentasPorPagarPage() {
             <div>
               <Label>NCF del proveedor</Label>
               <Input value={form.ncf_proveedor} onChange={(e) => setForm({ ...form, ncf_proveedor: e.target.value.toUpperCase() })} />
+            </div>
+            <div>
+              <Label>Categoría</Label>
+              <Select value={form.categoria} onValueChange={(v) => setForm({ ...form, categoria: v as CategoriaCxp })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CATEGORIA_CXP_ORDEN.map((c) => (
+                    <SelectItem key={c} value={c}>{CATEGORIA_CXP_LABEL[c]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
