@@ -1276,6 +1276,7 @@ export type Database = {
           creado_por: string | null
           created_at: string
           estado: string
+          expediente_id: string | null
           factura_id: string | null
           fecha: string
           fecha_vigencia: string | null
@@ -1289,6 +1290,7 @@ export type Database = {
           creado_por?: string | null
           created_at?: string
           estado?: string
+          expediente_id?: string | null
           factura_id?: string | null
           fecha?: string
           fecha_vigencia?: string | null
@@ -1302,6 +1304,7 @@ export type Database = {
           creado_por?: string | null
           created_at?: string
           estado?: string
+          expediente_id?: string | null
           factura_id?: string | null
           fecha?: string
           fecha_vigencia?: string | null
@@ -1317,6 +1320,34 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clientes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizaciones_servicios_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizaciones_servicios_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizaciones_servicios_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "cotizaciones_servicios_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
           },
           {
             foreignKeyName: "cotizaciones_servicios_factura_id_fkey"
