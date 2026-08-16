@@ -288,10 +288,12 @@ function CuentasPorCobrarPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <HandCoins className="h-5 w-5 text-primary" />
         <h1 className="text-2xl font-display font-bold">Cuentas por Cobrar</h1>
+        <Button className="ml-auto" onClick={() => abrirAplicar()}>Aplicar pago</Button>
       </div>
+
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {BUCKETS.map((b) => (
