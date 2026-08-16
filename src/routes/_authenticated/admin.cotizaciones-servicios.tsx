@@ -207,10 +207,11 @@ function TarifarioTab() {
           </TableHeader>
           <TableBody>
             {filas.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Sin tarifas</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Sin tarifas</TableCell></TableRow>
             )}
             {filas.map((t) => (
               <TableRow key={t.id}>
+                <TableCell className="font-mono text-xs">{t.codigo ?? "—"}</TableCell>
                 <TableCell className="font-medium">{t.servicio}</TableCell>
                 <TableCell>{t.categoria ?? "—"}</TableCell>
                 <TableCell className="text-right tabular-nums">{nf(t.tarifa)}</TableCell>
