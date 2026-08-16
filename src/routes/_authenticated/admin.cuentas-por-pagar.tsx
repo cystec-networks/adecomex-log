@@ -534,6 +534,18 @@ function CuentasPorPagarPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="min-w-[180px]">
+              <Label className="text-xs">Categoría</Label>
+              <Select value={fCategoria} onValueChange={(v) => setFCategoria(v as CategoriaCxp | "todas")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas las categorías</SelectItem>
+                  {CATEGORIA_CXP_ORDEN.map((c) => (
+                    <SelectItem key={c} value={c}>{CATEGORIA_CXP_LABEL[c]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="min-w-[150px]">
               <Label className="text-xs">Agrupar por</Label>
               <Select value={agrupar} onValueChange={(v) => setAgrupar(v as Agrupacion)}>
