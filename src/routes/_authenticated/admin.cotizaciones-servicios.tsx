@@ -899,7 +899,14 @@ function CotizacionDialog({
                   <TableRow key={i}>
                     <TableCell><Input value={l.codigo} onChange={(e) => setLinea(i, { codigo: e.target.value })} /></TableCell>
                     <TableCell><Input value={l.servicio} onChange={(e) => setLinea(i, { servicio: e.target.value })} /></TableCell>
-                    <TableCell><Input value={l.descripcion} onChange={(e) => setLinea(i, { descripcion: e.target.value })} /></TableCell>
+                    <TableCell>
+                      <AutocompleteInput
+                        value={l.descripcion}
+                        onChange={(v) => setLinea(i, { descripcion: v })}
+                        suggestions={DESCRIPCION_SUGERENCIAS}
+                        placeholder="Descripción del servicio..."
+                      />
+                    </TableCell>
                     <TableCell><Input type="number" step="0.01" className="min-w-[90px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" value={Number.isFinite(l.cantidad) ? l.cantidad : ""} onChange={(e) => { const v = e.target.value; setLinea(i, { cantidad: v === "" ? 0 : Number(v) }); }} /></TableCell>
                     <TableCell><Input type="number" step="0.01" className="min-w-[120px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" value={Number.isFinite(l.tarifa_unitaria) ? l.tarifa_unitaria : ""} onChange={(e) => { const v = e.target.value; setLinea(i, { tarifa_unitaria: v === "" ? 0 : Number(v) }); }} /></TableCell>
 
