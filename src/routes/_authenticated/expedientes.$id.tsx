@@ -1346,6 +1346,21 @@ function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Diferencia</div><div className={`text-2xl font-display font-bold mt-1 ${totalReal - totalEst > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(totalReal - totalEst)}</div></CardContent></Card>
       </div>
 
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="flex-row items-center justify-between pb-3">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2 text-primary">
+              <FileText className="h-4 w-4" />
+              Cotización / Pre-factura de servicios
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Genera una pre-factura desde este expediente y conviértela en la factura e-CF definitiva.
+            </p>
+          </div>
+          <CotizacionServiciosExpedienteButton exp={exp} />
+        </CardHeader>
+      </Card>
+
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costos del expediente</CardTitle>
