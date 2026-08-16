@@ -552,41 +552,46 @@ function CotizacionesTab() {
                       <FileText className="h-4 w-4 mr-1" /> PDF
                     </Button>
                     {canEdit && (
-                      <AlertDialog open={borrarId === c.id} onOpenChange={(o) => setBorrarId(o ? c.id : null)}>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost" size="sm"
-                            disabled={!!c.factura_id}
-                            title={c.factura_id ? "No se puede borrar: ya fue convertida en factura" : "Eliminar cotización"}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>¿Eliminar cotización {c.numero}?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Esta acción no se puede deshacer.
-                              {c.expedientes?.id && (
-                                <>
-                                  <br /><br />
-                                  Esta cotización está vinculada al Expediente {c.expedientes.numero} — al borrarla, ese vínculo se perderá.
-                                </>
-                              )}
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel onClick={() => setBorrarId(null)}>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              onClick={() => borrar.mutate(c.id)}
-                              disabled={borrar.isPending}
-                            >
-                              Eliminar
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      c.factura_id ? (
+                        <Button
+                          variant="ghost" size="sm" disabled
+                          title="No se puede borrar: ya fue convertida en factura"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                        </Button>
+                      ) : (
+                        <AlertDialog open={borrarId === c.id} onOpenChange={(o) => setBorrarId(o ? c.id : null)}>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" title="Eliminar cotización">
+                              <Trash2 className="h-4 w-4 mr-1" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Eliminar cotización {c.numero}?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta acción no se puede deshacer.
+                                {c.expedientes?.id && (
+                                  <>
+                                    <br /><br />
+                                    Esta cotización está vinculada al Expediente {c.expedientes.numero} — al borrarla, ese vínculo se perderá.
+                                  </>
+                                )}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={() => setBorrarId(null)}>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() => borrar.mutate(c.id)}
+                                disabled={borrar.isPending}
+                              >
+                                Eliminar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )
                     )}
                     {c.factura_id ? (
                       <Button
