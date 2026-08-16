@@ -213,6 +213,30 @@ export type Database = {
         }
         Relationships: []
       }
+      banco_config: {
+        Row: {
+          actualizado_por: string | null
+          cuenta: string
+          fecha_saldo_inicial: string
+          saldo_inicial: number
+          updated_at: string
+        }
+        Insert: {
+          actualizado_por?: string | null
+          cuenta: string
+          fecha_saldo_inicial: string
+          saldo_inicial?: number
+          updated_at?: string
+        }
+        Update: {
+          actualizado_por?: string | null
+          cuenta?: string
+          fecha_saldo_inicial?: string
+          saldo_inicial?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       banco_movimientos: {
         Row: {
           codigo_transaccion: string | null
