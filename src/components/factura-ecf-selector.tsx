@@ -26,6 +26,8 @@ const TERMINOS_PAGO = [
   { value: "60", label: "60 días" },
   { value: "90", label: "90 días" },
 ];
+
+export type FacturaEcfFormPreload = {
   cliente_id?: string | null;
   encf?: string;
   monto_total?: number;
