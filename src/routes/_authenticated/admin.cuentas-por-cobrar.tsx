@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,9 +14,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight, HandCoins } from "lucide-react";
+import { ChevronDown, ChevronRight, HandCoins, FileText } from "lucide-react";
 import { fmtLocalDate, daysFromToday } from "@/lib/dates";
 import { fmtRD } from "@/lib/facturas-ecf";
+
 
 export const Route = createFileRoute("/_authenticated/admin/cuentas-por-cobrar")({
   ssr: false,
