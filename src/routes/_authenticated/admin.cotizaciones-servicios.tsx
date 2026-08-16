@@ -697,6 +697,9 @@ function CotizacionDialog({
                         <SelectContent>{MONEDAS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
                       </Select>
                     </TableCell>
+                    <TableCell>
+                      <Switch checked={l.gravado} onCheckedChange={(v) => setLinea(i, { gravado: v })} />
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {nf((Number(l.cantidad) || 0) * (Number(l.tarifa_unitaria) || 0))}
                     </TableCell>
