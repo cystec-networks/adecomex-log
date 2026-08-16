@@ -539,11 +539,13 @@ function CotizacionDialog({
     if (!t) return;
     setLineas((prev) => [...prev, {
       orden: prev.length + 1,
+      codigo: t.codigo ?? "",
       servicio: t.servicio,
       descripcion: t.descripcion ?? "",
       cantidad: 1,
       tarifa_unitaria: Number(t.tarifa) || 0,
       moneda: t.moneda,
+      gravado: true,
     }]);
   };
 
