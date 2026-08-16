@@ -210,12 +210,7 @@ const GROUPS: Group[] = [
 ];
 
 
-const SIMPLE_ITEMS: SimpleItem[] = [
-  { id: "reportes", to: "/reportes", label: "Reportes", icon: BarChart3,
-    match: (p) => p === "/reportes" || p.startsWith("/reportes/") },
-  { id: "clientes", to: "/clientes", label: "Clientes", icon: Users,
-    match: (p) => p === "/clientes" || p.startsWith("/clientes/") },
-];
+const SIMPLE_ITEMS: SimpleItem[] = [];
 
 function AppSidebarInner() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
