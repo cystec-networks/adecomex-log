@@ -412,10 +412,10 @@ function ConciliacionBancariaPage() {
             </thead>
             <tbody>
               {isLoading && (
-                <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">Cargando…</td></tr>
+                <tr><td colSpan={8} className="py-6 text-center text-muted-foreground">Cargando…</td></tr>
               )}
               {!isLoading && filtrados.length === 0 && (
-                <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">
+                <tr><td colSpan={8} className="py-6 text-center text-muted-foreground">
                   No hay movimientos. Importa un archivo .txt del banco.
                 </td></tr>
               )}
