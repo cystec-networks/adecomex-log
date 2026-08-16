@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,9 +16,10 @@ import {
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { FileText, Plus, Trash2, Pencil } from "lucide-react";
+import { FileText, Plus, Trash2, Pencil, Receipt, ExternalLink } from "lucide-react";
 import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
+import { buildDocumentoComercialPdf } from "@/lib/pdf-documento-comercial";
 
 export const Route = createFileRoute("/_authenticated/admin/cotizaciones-servicios")({
   ssr: false,
@@ -303,7 +304,7 @@ function CotizacionesTab() {
 
   const { data: clientes } = useQuery({
     queryKey: ["clientes-lite-cotserv"],
-    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc").order("nombre")).data ?? [],
+    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc,direccion").order("nombre")).data ?? [],
   });
 
   const { data: cotizaciones } = useQuery({
