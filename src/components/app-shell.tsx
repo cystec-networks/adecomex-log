@@ -157,6 +157,8 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/admin/dashboard-financiero") },
       { to: "/admin/reportes-fiscales", label: "Reportes Fiscales DGII", icon: FileBarChart2, roles: ["admin","finanzas"],
         match: (p) => p.startsWith("/admin/reportes-fiscales") },
+      { to: "/legal/documentos", label: "Documentos Legales", icon: Scale, adminOnly: true,
+        match: (p) => p.startsWith("/legal/documentos") },
       { to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
         match: (p) => p === "/expedientes/papelera" },
     ],
