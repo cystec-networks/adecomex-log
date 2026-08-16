@@ -218,7 +218,7 @@ function Panel606({ periodo }: { periodo: string }) {
   const nextM = new Date(+y, +m, 1);
   const to = `${nextM.getFullYear()}-${String(nextM.getMonth() + 1).padStart(2, "0")}-01`;
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["reporte-606", periodo],
     queryFn: async (): Promise<Row[]> => {
       const cols = "id,fecha,proveedor,concepto,rnc_cedula_proveedor,tipo_id_proveedor,ncf_proveedor,tipo_ncf_proveedor,ncf_modificado,monto_facturado,itbis_facturado,itbis_retenido,isr_retenido,forma_pago,tipo_bienes_servicios,monto_facturado_servicios,monto_facturado_bienes,tipo_retencion_isr,itbis_proporcionalidad_349,itbis_llevado_costo,itbis_percibido_compras,isr_percibido_compras,impuesto_selectivo_consumo,otros_impuestos_tasas,monto_propina_legal";
@@ -230,7 +230,7 @@ function Panel606({ periodo }: { periodo: string }) {
         supabase.from("gastos_operativos").select(cols)
           .not("rnc_cedula_proveedor", "is", null)
           .gte("fecha", from).lt("fecha", to)
-          .is("deleted_at", null),
+          .is("eliminado_en", null),
       ]);
       if (g.error) throw g.error;
       if (go.error) throw go.error;
