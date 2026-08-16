@@ -61,8 +61,13 @@ export function AutocompleteInput({ value, onChange, suggestions, placeholder, c
       if (open) updatePos();
     };
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    window.addEventListener("scroll", onResize, true);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onResize, true);
+    };
   }, [open]);
+
 
   const pick = (s: string) => {
     onChange(s);
