@@ -302,7 +302,7 @@ export function FacturaEcfFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>
             Este registro es solo para control interno. El e-NCF, la firma digital y el código de seguridad deben provenir de un comprobante ya validado por la Oficina Virtual de la DGII.
           </DialogDescription>
@@ -388,9 +388,10 @@ export function FacturaEcfFormDialog({
             <Label>PDF (opcional)</Label>
             <div className="flex items-center gap-2">
               <Input type="file" accept="application/pdf" onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)} />
-              {preload?.pdf_url && (
-                <DocumentoPreviewButton path={preload.pdf_url} label="Ver actual" />
+              {(existingPdfUrl ?? preload?.pdf_url) && (
+                <DocumentoPreviewButton path={(existingPdfUrl ?? preload?.pdf_url) as string} label="Ver actual" />
               )}
+
             </div>
           </div>
         </div>
@@ -493,7 +494,7 @@ export function FacturaEcfFormDialog({
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={() => save.mutate()} disabled={save.isPending}>
-            {save.isPending ? "Guardando…" : "Registrar factura"}
+            {save.isPending ? "Guardando…" : editId ? "Guardar cambios" : "Registrar factura"}
           </Button>
         </DialogFooter>
       </DialogContent>
