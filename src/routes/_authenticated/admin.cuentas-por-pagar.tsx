@@ -194,7 +194,7 @@ function CuentasPorPagarPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("gastos")
-        .select("id, concepto, monto, moneda, fecha, rnc_cedula_proveedor, expediente_id")
+        .select("id, concepto, monto, fecha, rnc_cedula_proveedor, expediente_id")
         .is("deleted_at" as any, null)
         .order("fecha", { ascending: false }).limit(200);
       return data ?? [];
@@ -737,7 +737,7 @@ function CuentasPorPagarPage() {
                   <SelectItem value="none">Sin vínculo</SelectItem>
                   {gastosExp.map((g: any) => (
                     <SelectItem key={g.id} value={g.id}>
-                      {fmtLocalDate(g.fecha)} · {g.concepto} · {fmtMoney(Number(g.monto), g.moneda)}
+                      {fmtLocalDate(g.fecha)} · {g.concepto} · {fmtMoney(Number(g.monto), "DOP")}
                     </SelectItem>
                   ))}
                 </SelectContent>
