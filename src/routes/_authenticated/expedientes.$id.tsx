@@ -372,8 +372,10 @@ function TabInfo({ exp }: { exp: any }) {
     acuerdo_comercial: exp.acuerdo_comercial ?? "",
     observaciones: exp.observaciones ?? "",
     pais_origen_codigo: exp.pais_origen_codigo ?? "",
+    pais_procedencia: exp.pais_procedencia ?? "",
     pais_procedencia_codigo: exp.pais_procedencia_codigo ?? "",
     puerto_arribo_codigo: exp.puerto_arribo_codigo ?? "",
+
     area_aduanera_codigo: exp.area_aduanera_codigo ?? "",
     liq_siga_numero: exp.liq_siga_numero ?? "",
     liq_siga_estado: exp.liq_siga_estado ?? "",
@@ -525,11 +527,16 @@ function TabInfo({ exp }: { exp: any }) {
           <Label>País de procedencia</Label>
           <DgaCombobox
             table="dga_paises"
+            value={form.pais_procedencia}
             codigo={form.pais_procedencia_codigo}
-            onChange={(_n, codigo) => setForm((f) => ({ ...f, pais_procedencia_codigo: codigo }))}
+            onChange={(nombre, codigo) => setForm((f) => ({ ...f, pais_procedencia: nombre, pais_procedencia_codigo: codigo }))}
             placeholder="Selecciona país (catálogo DGA)"
           />
+          {form.pais_procedencia && !form.pais_procedencia_codigo && (
+            <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el país del catálogo para el XML.</span>
+          )}
         </div>
+
         <AutoField label="Factura comercial" value={form.factura_comercial} onChange={(v) => set("factura_comercial", v)} suggestion={sug.factura_comercial ?? []} />
         <AutoField label="Incoterm" value={form.incoterm} onChange={(v) => set("incoterm", v)} suggestion={sug.incoterm ?? []} />
         <AutoField label="Puerto de salida" value={form.puerto_salida} onChange={(v) => set("puerto_salida", v)} suggestion={sug.puerto_salida ?? []} />
@@ -3027,10 +3034,11 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     ];
     const c2: [string, string][] = [
       ["Depósito/Puerto arribo", exp.puerto_arribo ?? "—"],
-      ["País de procedencia", exp.pais_procedencia_codigo ?? exp.pais_origen ?? "—"],
+      ["País de procedencia", exp.pais_procedencia ?? exp.pais_procedencia_codigo ?? exp.pais_origen ?? "—"],
       ["Manifiesto / DUA", exp.numero_dua ?? "—"],
       ["Fecha de llegada", exp.fecha_compromiso ? fmtLocalDate(exp.fecha_compromiso) : "—"],
     ];
+
     const c3: [string, string][] = [
       ["Importador", exp.clientes?.nombre ?? "—"],
       ["RNC/Documento", exp.clientes?.rnc ?? "—"],
