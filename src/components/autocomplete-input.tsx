@@ -65,7 +65,7 @@ export function AutocompleteInput({ value, onChange, suggestions, placeholder, c
     <ul
       ref={dropdownRef}
       style={{ top: pos.top, left: pos.left, width: pos.width, position: "fixed" }}
-      className="z-[100] mt-1 max-h-60 overflow-auto rounded-md border bg-popover shadow-lg text-sm"
+      className="pointer-events-auto z-[9999] mt-1 max-h-60 overflow-auto rounded-md border bg-popover shadow-lg text-sm"
     >
       {filtered.map((s, i) => (
         <li
@@ -102,7 +102,10 @@ export function AutocompleteInput({ value, onChange, suggestions, placeholder, c
         }}
         autoComplete="off"
       />
-      {dropdown && typeof document !== "undefined" && createPortal(dropdown, document.body)}
+      {dropdown && typeof document !== "undefined" && createPortal(
+        dropdown,
+        inputRef.current?.closest<HTMLElement>("[role='dialog']") ?? document.body,
+      )}
     </div>
   );
 }
