@@ -15,6 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { FileText, Plus, Trash2, Pencil, Receipt, ExternalLink } from "lucide-react";
@@ -309,9 +313,12 @@ function TarifarioTab() {
 function CotizacionesTab() {
   const qc = useQueryClient();
   const { editar } = Route.useSearch();
+  const { data: roles } = useMyRoles();
+  const canEdit = !!roles?.some((r) => r === "admin" || r === "finanzas");
   const [nueva, setNueva] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [borrarId, setBorrarId] = useState<string | null>(null);
   const navigate = useNavigate();
   const docRef = useRef<any>(null);
   const fileNameRef = useRef("Cotizacion.pdf");
@@ -422,6 +429,19 @@ function CotizacionesTab() {
     return acc;
   };
 
+  const borrar = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("cotizaciones_servicios").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Cotización eliminada");
+      setBorrarId(null);
+      qc.invalidateQueries({ queryKey: ["cotizaciones-servicios"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo eliminar"),
+  });
+
   const cerrarPreview = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
@@ -531,6 +551,43 @@ function CotizacionesTab() {
                     <Button variant="ghost" size="sm" onClick={() => generarPdf(c)}>
                       <FileText className="h-4 w-4 mr-1" /> PDF
                     </Button>
+                    {canEdit && (
+                      <AlertDialog open={borrarId === c.id} onOpenChange={(o) => setBorrarId(o ? c.id : null)}>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost" size="sm"
+                            disabled={!!c.factura_id}
+                            title={c.factura_id ? "No se puede borrar: ya fue convertida en factura" : "Eliminar cotización"}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Eliminar cotización {c.numero}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta acción no se puede deshacer.
+                              {c.expedientes?.id && (
+                                <>
+                                  <br /><br />
+                                  Esta cotización está vinculada al Expediente {c.expedientes.numero} — al borrarla, ese vínculo se perderá.
+                                </>
+                              )}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setBorrarId(null)}>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={() => borrar.mutate(c.id)}
+                              disabled={borrar.isPending}
+                            >
+                              Eliminar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
                     {c.factura_id ? (
                       <Button
                         variant="ghost" size="sm"
@@ -617,8 +674,8 @@ function CotizacionDialog({
         codigo: l.codigo ?? "",
         servicio: l.servicio,
         descripcion: l.descripcion ?? "",
-        cantidad: Number(l.cantidad),
-        tarifa_unitaria: Number(l.tarifa_unitaria),
+        cantidad: Number(l.cantidad) || 0,
+        tarifa_unitaria: Number(l.tarifa_unitaria) || 0,
         moneda: l.moneda,
         gravado: l.gravado ?? true,
       })),
@@ -803,8 +860,8 @@ function CotizacionDialog({
                     <TableCell><Input value={l.codigo} onChange={(e) => setLinea(i, { codigo: e.target.value })} /></TableCell>
                     <TableCell><Input value={l.servicio} onChange={(e) => setLinea(i, { servicio: e.target.value })} /></TableCell>
                     <TableCell><Input value={l.descripcion} onChange={(e) => setLinea(i, { descripcion: e.target.value })} /></TableCell>
-                    <TableCell><Input type="number" step="0.01" value={l.cantidad} onChange={(e) => setLinea(i, { cantidad: Number(e.target.value) })} /></TableCell>
-                    <TableCell><Input type="number" step="0.01" value={l.tarifa_unitaria} onChange={(e) => setLinea(i, { tarifa_unitaria: Number(e.target.value) })} /></TableCell>
+                    <TableCell><Input type="number" step="0.01" value={Number.isFinite(l.cantidad) ? l.cantidad : ""} onChange={(e) => { const v = e.target.value; setLinea(i, { cantidad: v === "" ? 0 : Number(v) }); }} /></TableCell>
+                    <TableCell><Input type="number" step="0.01" value={Number.isFinite(l.tarifa_unitaria) ? l.tarifa_unitaria : ""} onChange={(e) => { const v = e.target.value; setLinea(i, { tarifa_unitaria: v === "" ? 0 : Number(v) }); }} /></TableCell>
                     <TableCell>
                       <Select value={l.moneda} onValueChange={(v) => setLinea(i, { moneda: v })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
