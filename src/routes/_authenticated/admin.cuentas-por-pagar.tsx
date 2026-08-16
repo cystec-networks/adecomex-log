@@ -368,6 +368,7 @@ function CuentasPorPagarPage() {
       proveedor_rnc: r.proveedor_rnc ?? "",
       numero_factura: r.numero_factura ?? "",
       ncf_proveedor: r.ncf_proveedor ?? "",
+      categoria: (r.categoria ?? "otros") as CategoriaCxp,
       monto_total: r.monto_total != null ? String(r.monto_total) : "",
       moneda: (r.moneda ?? "DOP") as Moneda,
       fecha_factura: r.fecha_factura ?? "",
