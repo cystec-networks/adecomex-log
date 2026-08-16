@@ -54,6 +54,7 @@ const nf = (n: number) =>
 
 type Tarifa = {
   id: string;
+  codigo: string | null;
   servicio: string;
   categoria: string | null;
   tarifa: number;
@@ -66,12 +67,16 @@ type Tarifa = {
 type Linea = {
   id?: string;
   orden: number;
+  codigo: string;
   servicio: string;
   descripcion: string;
   cantidad: number;
   tarifa_unitaria: number;
   moneda: string;
+  gravado: boolean;
 };
+
+const ITBIS_PCT = 0.18;
 
 function CotizacionesServiciosPage() {
   return (
