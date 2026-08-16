@@ -754,7 +754,7 @@ function CotizacionDialog({
         const { data: user } = await supabase.auth.getUser();
         const { data, error } = await supabase
           .from("cotizaciones_servicios")
-          .insert({ ...cab, numero: "", estado: "borrador", creado_por: user.user?.id ?? null })
+          .insert({ ...cab, numero: cab.numero || "", estado: "borrador", creado_por: user.user?.id ?? null })
           .select("id").single();
         if (error) throw error;
         id = data.id;
