@@ -339,10 +339,21 @@ function ConciliacionBancariaPage() {
               {balanceBanco.trim() !== "" && isFinite(parseFloat(balanceBanco)) && (
                 <> · Diferencia: {fmtRD(parseFloat(balanceBanco) - resumen.neto)}</>
               )}
+              {balanceActual !== null && (
+                <>
+                  <br />Balance actual (calculado): <strong>{fmtRD(balanceActual)}</strong>
+                  {balanceBanco.trim() !== "" && isFinite(parseFloat(balanceBanco)) && (
+                    <> · Dif. vs banco: {fmtRD(parseFloat(balanceBanco) - balanceActual)}</>
+                  )}
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <BalanceInicialCard config={config ?? null} cargando={cargandoConfig} balanceActual={balanceActual} />
+
 
       {/* Filtros */}
       <Card>
