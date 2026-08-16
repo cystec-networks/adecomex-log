@@ -135,6 +135,7 @@ function TarifarioTab() {
   const guardar = useMutation({
     mutationFn: async (t: Partial<Tarifa>) => {
       const payload = {
+        codigo: t.codigo || null,
         servicio: (t.servicio ?? "").trim(),
         categoria: t.categoria || null,
         tarifa: Number(t.tarifa) || 0,
