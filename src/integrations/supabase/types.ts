@@ -1149,6 +1149,7 @@ export type Database = {
       }
       cuentas_por_pagar: {
         Row: {
+          categoria: Database["public"]["Enums"]["cxp_categoria"]
           created_at: string
           created_by: string | null
           estado: Database["public"]["Enums"]["cxp_estado"]
@@ -1170,6 +1171,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          categoria?: Database["public"]["Enums"]["cxp_categoria"]
           created_at?: string
           created_by?: string | null
           estado?: Database["public"]["Enums"]["cxp_estado"]
@@ -1191,6 +1193,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          categoria?: Database["public"]["Enums"]["cxp_categoria"]
           created_at?: string
           created_by?: string | null
           estado?: Database["public"]["Enums"]["cxp_estado"]
@@ -4717,6 +4720,12 @@ export type Database = {
         | "rechazada"
         | "expirada"
       cuota_estado: "pendiente" | "pagada" | "disputada"
+      cxp_categoria:
+        | "compras"
+        | "transportes"
+        | "servicios"
+        | "miscelaneos"
+        | "otros"
       cxp_estado: "pendiente" | "parcial" | "pagado" | "disputado"
       doc_estado:
         | "pendiente"
@@ -4969,6 +4978,13 @@ export const Constants = {
         "expirada",
       ],
       cuota_estado: ["pendiente", "pagada", "disputada"],
+      cxp_categoria: [
+        "compras",
+        "transportes",
+        "servicios",
+        "miscelaneos",
+        "otros",
+      ],
       cxp_estado: ["pendiente", "parcial", "pagado", "disputado"],
       doc_estado: ["pendiente", "recibido", "observado", "aprobado", "vencido"],
       documento_empleado_tipo: [
