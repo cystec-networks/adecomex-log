@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -19,7 +19,13 @@ import { EscanearFacturaVentaButton } from "@/components/escanear-factura-venta-
 import type { FacturaVentaExtraction } from "@/lib/ai-ocr-factura-venta.functions";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
-export type FacturaEcfFormPreload = {
+const TERMINOS_PAGO = [
+  { value: "0", label: "Contado" },
+  { value: "15", label: "15 días" },
+  { value: "30", label: "30 días" },
+  { value: "60", label: "60 días" },
+  { value: "90", label: "90 días" },
+];
   cliente_id?: string | null;
   encf?: string;
   monto_total?: number;

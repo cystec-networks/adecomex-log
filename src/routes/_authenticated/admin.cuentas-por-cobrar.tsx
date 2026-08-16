@@ -460,6 +460,17 @@ function CuentasPorCobrarPage() {
                 );
               })}
             </tbody>
+            <tfoot>
+              <tr className="border-t-2 bg-muted/60 font-semibold text-sm">
+                <td className="py-2 px-2" colSpan={5}>Totales filtrados</td>
+                <td className="py-2 px-2 text-right">{fmtRD(filtradas.reduce((s, f) => s + f.monto_total, 0))}</td>
+                <td className="py-2 px-2 text-right">{fmtRD(filtradas.reduce((s, f) => s + f.pagado, 0))}</td>
+                <td className="py-2 px-2 text-right">{fmtRD(filtradas.reduce((s, f) => s + f.saldo, 0))}</td>
+                <td className="py-2 px-2" />
+                <td className="py-2 px-2 text-right text-muted-foreground">—</td>
+                <td className="py-2 px-2" />
+              </tr>
+            </tfoot>
           </table>
         </CardContent>
       </Card>
