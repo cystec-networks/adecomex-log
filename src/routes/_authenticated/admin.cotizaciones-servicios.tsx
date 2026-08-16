@@ -331,6 +331,67 @@ function CotizacionesTab() {
     onError: (e: any) => toast.error(e.message ?? "No se pudo actualizar"),
   });
 
+  const convertir = useMutation({
+    mutationFn: async (c: any) => {
+      if (c.factura_id) throw new Error("Esta cotización ya fue convertida en factura");
+      const lineas = [...(c.cotizaciones_servicios_lineas ?? [])].sort((a: any, b: any) => a.orden - b.orden);
+      if (lineas.length === 0) throw new Error("La cotización no tiene líneas");
+      const cliente = (clientes ?? []).find((x: any) => x.id === c.cliente_id);
+
+      const gravado = lineas.reduce(
+        (s: number, l: any) => s + (l.gravado === false ? 0 : Number(l.subtotal || 0)), 0);
+      const exento = lineas.reduce(
+        (s: number, l: any) => s + (l.gravado === false ? Number(l.subtotal || 0) : 0), 0);
+      const itbis = +(gravado * ITBIS_PCT).toFixed(2);
+
+      const { data: u } = await supabase.auth.getUser();
+      const { data: fac, error } = await supabase.from("facturas_ecf").insert({
+        encf: "",
+        tipo_comprobante: "31",
+        fecha_emision: new Date().toISOString().slice(0, 10),
+        cliente_id: c.cliente_id,
+        cliente_razon_social: cliente?.nombre ?? null,
+        cliente_rnc: cliente?.rnc ?? null,
+        subtotal_gravado: +gravado.toFixed(2),
+        subtotal_exento: +exento.toFixed(2),
+        total_itbis: itbis,
+        monto_total: +(gravado + exento + itbis).toFixed(2),
+        notas: c.notas ?? null,
+        created_by: u.user?.id ?? null,
+      }).select("id").single();
+      if (error) throw error;
+
+      const rows = lineas.map((l: any, i: number) => {
+        const sub = Number(l.subtotal || 0);
+        const li = l.gravado === false ? 0 : +(sub * ITBIS_PCT).toFixed(2);
+        return {
+          factura_id: fac.id,
+          orden: i + 1,
+          codigo: l.codigo ?? null,
+          descripcion: l.descripcion ? `${l.servicio} — ${l.descripcion}` : l.servicio,
+          cantidad: Number(l.cantidad) || 0,
+          precio: Number(l.tarifa_unitaria) || 0,
+          gravado: l.gravado !== false,
+          itbis: li,
+          valor: +(sub + li).toFixed(2),
+        };
+      });
+      const { error: lErr } = await supabase.from("facturas_ecf_lineas").insert(rows);
+      if (lErr) throw lErr;
+
+      const { error: uErr } = await supabase
+        .from("cotizaciones_servicios").update({ factura_id: fac.id }).eq("id", c.id);
+      if (uErr) throw uErr;
+      return fac.id as string;
+    },
+    onSuccess: (facturaId) => {
+      toast.success("Factura creada — completa los datos fiscales");
+      qc.invalidateQueries({ queryKey: ["cotizaciones-servicios"] });
+      navigate({ to: "/admin/facturacion", search: { editar: facturaId } });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo convertir"),
+  });
+
   const totalPorMoneda = (lineas: any[]) => {
     const acc: Record<string, number> = {};
     for (const l of lineas ?? []) acc[l.moneda] = (acc[l.moneda] ?? 0) + Number(l.subtotal || 0);
