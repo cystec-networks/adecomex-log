@@ -239,16 +239,19 @@ function ConciliacionBancariaPage() {
       const texto = await file.text();
       const lineas = texto.split("\n");
       const filas: ParsedLinea[] = [];
-      const vistos = new Set<string>();
+      const contador = new Map<string, number>();
       let invalidas = 0;
       for (const l of lineas) {
         if (!l.trim()) continue;
         const p = parseLinea(l);
         if (!p) { invalidas++; continue; }
-        if (vistos.has(p.hash_linea)) continue;
-        vistos.add(p.hash_linea);
+        const base = p.hash_linea;
+        const n = (contador.get(base) ?? 0) + 1;
+        contador.set(base, n);
+        p.hash_linea = `${base}-${n}`;
         filas.push(p);
       }
+
       if (filas.length === 0) {
         toast.error("No se encontraron movimientos válidos en el archivo.");
         return;
