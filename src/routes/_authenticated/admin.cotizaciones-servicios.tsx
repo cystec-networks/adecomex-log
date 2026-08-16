@@ -848,8 +848,9 @@ function CotizacionDialog({
                   <TableHead className="w-28">Código</TableHead>
                   <TableHead className="min-w-48">Servicio</TableHead>
                   <TableHead className="min-w-48">Descripción</TableHead>
-                  <TableHead className="w-24">Cant.</TableHead>
-                  <TableHead className="w-32">Tarifa</TableHead>
+                  <TableHead className="w-28">Cant.</TableHead>
+                  <TableHead className="w-36">Tarifa</TableHead>
+
                   <TableHead className="w-24">Moneda</TableHead>
                   <TableHead className="w-20">ITBIS</TableHead>
                   <TableHead className="w-28 text-right">Subtotal</TableHead>
