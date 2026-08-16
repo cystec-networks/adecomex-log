@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -18,6 +18,14 @@ import {
 import { EscanearFacturaVentaButton } from "@/components/escanear-factura-venta-button";
 import type { FacturaVentaExtraction } from "@/lib/ai-ocr-factura-venta.functions";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
+
+const TERMINOS_PAGO = [
+  { value: "0", label: "Contado" },
+  { value: "15", label: "15 días" },
+  { value: "30", label: "30 días" },
+  { value: "60", label: "60 días" },
+  { value: "90", label: "90 días" },
+];
 
 export type FacturaEcfFormPreload = {
   cliente_id?: string | null;
@@ -54,6 +62,8 @@ export function FacturaEcfFormDialog({
   const [tipo, setTipo] = useState(preload?.tipo_comprobante ?? "31");
   const [fechaEmision, setFechaEmision] = useState<string>(new Date().toISOString().slice(0, 10));
   const [fechaVenc, setFechaVenc] = useState<string>("");
+  const [terminoPago, setTerminoPago] = useState<string>("30");
+  const [fechaVencPago, setFechaVencPago] = useState<string>("");
   const [codigoSeguridad, setCodigoSeguridad] = useState("");
   const [fechaFirma, setFechaFirma] = useState<string>("");
   const [clienteId, setClienteId] = useState<string>(preload?.cliente_id ?? "");
@@ -77,6 +87,15 @@ export function FacturaEcfFormDialog({
     return [{ cantidad: 1, descripcion: "", unidad: "UND", precio: 0, itbis: 0, descuento: 0, recargo: 0, gravado: true }];
   });
 
+  const [fechaVencPagoManual, setFechaVencPagoManual] = useState(false);
+
+  useEffect(() => {
+    if (fechaVencPagoManual || !fechaEmision) return;
+    const d = new Date(fechaEmision + "T00:00:00");
+    d.setDate(d.getDate() + Number(terminoPago));
+    setFechaVencPago(d.toISOString().slice(0, 10));
+  }, [fechaEmision, terminoPago]);
+
   const totales = useMemo(() => calcTotales(lineas), [lineas]);
 
   const cliente = (clientes ?? []).find((c) => c.id === clienteId);
@@ -92,6 +111,7 @@ export function FacturaEcfFormDialog({
         tipo_comprobante: tipo,
         fecha_emision: fechaEmision,
         fecha_vencimiento_ncf: fechaVenc || null,
+        fecha_vencimiento_pago: fechaVencPago || null,
         codigo_seguridad: codigoSeguridad || null,
         fecha_firma: fechaFirma ? new Date(fechaFirma).toISOString() : null,
         cliente_id: clienteId,
@@ -256,6 +276,25 @@ export function FacturaEcfFormDialog({
           <div className="space-y-1.5">
             <Label>Vencimiento del NCF</Label>
             <Input type="date" value={fechaVenc} onChange={(e) => setFechaVenc(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Término de Pago</Label>
+            <Select value={terminoPago} onValueChange={(v) => setTerminoPago(v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {TERMINOS_PAGO.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Vencimiento de Pago</Label>
+            <Input
+              type="date"
+              value={fechaVencPago}
+              onChange={(e) => { setFechaVencPagoManual(true); setFechaVencPago(e.target.value); }}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Código de Seguridad</Label>
