@@ -405,6 +405,7 @@ function ConciliacionBancariaPage() {
                 <th className="py-2 pr-3">Referencia</th>
                 <th className="py-2 pr-3">Tipo</th>
                 <th className="py-2 pr-3 text-right">Monto</th>
+                <th className="py-2 pr-3 text-right">Balance calculado</th>
                 <th className="py-2 pr-3">Estado</th>
                 <th className="py-2 pr-3 text-right">Acción</th>
               </tr>
