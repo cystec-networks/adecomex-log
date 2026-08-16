@@ -39,6 +39,7 @@ export const Route = createFileRoute("/_authenticated/admin/cuentas-por-pagar")(
 
 type Moneda = "DOP" | "USD" | "EUR";
 type Estado = "pendiente" | "parcial" | "pagado" | "disputado";
+type CategoriaCxp = "compras" | "transportes" | "servicios" | "miscelaneos" | "otros";
 
 type Row = {
   id: string;
@@ -53,10 +54,21 @@ type Row = {
   fecha_vencimiento: string | null;
   estado: Estado;
   notas: string | null;
+  categoria: CategoriaCxp;
   gasto_id: string | null;
   gasto_operativo_id: string | null;
   expediente_id: string | null;
 };
+
+const CATEGORIA_CXP_LABEL: Record<CategoriaCxp, string> = {
+  compras: "Compras",
+  transportes: "Transportes",
+  servicios: "Servicios",
+  miscelaneos: "Misceláneos",
+  otros: "Otros",
+};
+const CATEGORIA_CXP_ORDEN: CategoriaCxp[] = ["compras", "transportes", "servicios", "miscelaneos", "otros"];
+
 
 
 const fmtMoney = (n: number, m: string) =>
