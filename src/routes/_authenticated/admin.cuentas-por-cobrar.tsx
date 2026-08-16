@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { Fragment, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -372,7 +372,16 @@ function CuentasPorCobrarPage() {
                           {abierto ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                         </Button>
                       </td>
-                      <td className="py-2 px-2 font-mono text-xs">{f.encf}</td>
+                      <td className="py-2 px-2 font-mono text-xs">
+                        <Link
+                          to="/admin/facturacion"
+                          search={{ editar: f.id }}
+                          className="text-primary hover:underline"
+                        >
+                          {f.encf}
+                        </Link>
+                      </td>
+
                       <td className="py-2 px-2">
                         <div>{f.cliente_razon_social ?? "—"}</div>
                         <div className="text-xs text-muted-foreground">{f.cliente_rnc ?? ""}</div>

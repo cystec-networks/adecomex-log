@@ -44,19 +44,23 @@ export function FacturaEcfFormDialog({
   onOpenChange,
   onCreated,
   preload,
-  title = "Registrar Factura e-CF",
+  editId,
+  title,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCreated?: (id: string) => void;
   preload?: FacturaEcfFormPreload;
+  editId?: string;
   title?: string;
 }) {
   const qc = useQueryClient();
+  const dialogTitle = title ?? (editId ? "Editar Factura e-CF" : "Registrar Factura e-CF");
   const { data: clientes } = useQuery({
     queryKey: ["clientes-lite-ecf"],
     queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc").order("nombre")).data ?? [],
   });
+
 
   const [encf, setEncf] = useState(preload?.encf ?? "");
   const [tipo, setTipo] = useState(preload?.tipo_comprobante ?? "31");
@@ -96,6 +100,54 @@ export function FacturaEcfFormDialog({
     setFechaVencPago(d.toISOString().slice(0, 10));
   }, [fechaEmision, terminoPago]);
 
+  const [existingPdfUrl, setExistingPdfUrl] = useState<string | null>(null);
+
+  const { data: editData } = useQuery({
+    queryKey: ["factura-ecf-edit", editId],
+    enabled: !!editId && open,
+    queryFn: async () => {
+      const { data: f, error } = await supabase.from("facturas_ecf").select("*").eq("id", editId!).single();
+      if (error) throw error;
+      const { data: ls } = await supabase
+        .from("facturas_ecf_lineas").select("*").eq("factura_id", editId!).order("orden");
+      return { f, ls: ls ?? [] };
+    },
+  });
+
+  useEffect(() => {
+    if (!editData || !open) return;
+    const f: any = editData.f;
+    setFechaVencPagoManual(true);
+    setEncf(f.encf ?? "");
+    setTipo(f.tipo_comprobante ?? "31");
+    setFechaEmision(f.fecha_emision ?? "");
+    setFechaVenc(f.fecha_vencimiento_ncf ?? "");
+    setTerminoPago("30");
+    setFechaVencPago(f.fecha_vencimiento_pago ?? "");
+    setCodigoSeguridad(f.codigo_seguridad ?? "");
+    setFechaFirma(f.fecha_firma ? String(f.fecha_firma).slice(0, 16).replace(" ", "T") : "");
+    setClienteId(f.cliente_id ?? "");
+    setNotas(f.notas ?? "");
+    setItbisRetenidoTerceros(f.itbis_retenido_terceros ? String(f.itbis_retenido_terceros) : "");
+    setItbisPercibidoVenta(f.itbis_percibido_venta ? String(f.itbis_percibido_venta) : "");
+    setRetencionRentaTerceros(f.retencion_renta_terceros ? String(f.retencion_renta_terceros) : "");
+    setIsrPercibidoVenta(f.isr_percibido_venta ? String(f.isr_percibido_venta) : "");
+    setExistingPdfUrl(f.pdf_url ?? null);
+    if (editData.ls.length) {
+      setLineas(editData.ls.map((l: any) => ({
+        cantidad: Number(l.cantidad) || 0,
+        descripcion: l.descripcion ?? "",
+        unidad: l.unidad ?? "UND",
+        precio: Number(l.precio) || 0,
+        itbis: Number(l.itbis) || 0,
+        descuento: Number(l.descuento) || 0,
+        recargo: Number(l.recargo) || 0,
+        gravado: !!l.gravado,
+      })));
+    }
+  }, [editData, open]);
+
+
   const totales = useMemo(() => calcTotales(lineas), [lineas]);
 
   const cliente = (clientes ?? []).find((c) => c.id === clienteId);
@@ -105,8 +157,7 @@ export function FacturaEcfFormDialog({
       if (!encf.trim()) throw new Error("El e-NCF es obligatorio");
       if (!clienteId) throw new Error("Selecciona el cliente");
       const { data: u } = await supabase.auth.getUser();
-      let pdf_url: string | null = null;
-      const { data, error } = await supabase.from("facturas_ecf").insert({
+      const campos = {
         encf: encf.trim().toUpperCase(),
         tipo_comprobante: tipo,
         fecha_emision: fechaEmision,
@@ -122,14 +173,26 @@ export function FacturaEcfFormDialog({
         total_itbis: totales.total_itbis,
         monto_total: totales.monto_total,
         notas: notas || null,
-        pdf_url,
         itbis_retenido_terceros: Number(itbisRetenidoTerceros) || 0,
         itbis_percibido_venta: Number(itbisPercibidoVenta) || 0,
         retencion_renta_terceros: Number(retencionRentaTerceros) || 0,
         isr_percibido_venta: Number(isrPercibidoVenta) || 0,
-        created_by: u.user?.id ?? null,
-      }).select().single();
-      if (error) throw error;
+      };
+
+      let data: any;
+      if (editId) {
+        const { data: upd, error } = await supabase.from("facturas_ecf")
+          .update(campos).eq("id", editId).select().single();
+        if (error) throw error;
+        data = upd;
+        await supabase.from("facturas_ecf_lineas").delete().eq("factura_id", editId);
+      } else {
+        const { data: ins, error } = await supabase.from("facturas_ecf")
+          .insert({ ...campos, pdf_url: null, created_by: u.user?.id ?? null })
+          .select().single();
+        if (error) throw error;
+        data = ins;
+      }
 
       if (pdfFile) {
         const path = `facturas-ecf/${data.id}/${pdfFile.name}`;
@@ -156,15 +219,19 @@ export function FacturaEcfFormDialog({
       if (lErr) throw lErr;
 
       return data;
+
     },
     onSuccess: (row) => {
-      toast.success("Factura e-CF registrada");
+      toast.success(editId ? "Factura e-CF actualizada" : "Factura e-CF registrada");
       qc.invalidateQueries({ queryKey: ["facturas-ecf"] });
       qc.invalidateQueries({ queryKey: ["facturas-ecf-lite"] });
       qc.invalidateQueries({ queryKey: ["ecf-pendientes"] });
+      qc.invalidateQueries({ queryKey: ["cxc-facturas"] });
+      if (editId) qc.invalidateQueries({ queryKey: ["factura-ecf-edit", editId] });
       onOpenChange(false);
       onCreated?.(row.id);
     },
+
     onError: (e: any) => toast.error(e.message ?? "No se pudo registrar la factura"),
   });
 
@@ -235,7 +302,7 @@ export function FacturaEcfFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>
             Este registro es solo para control interno. El e-NCF, la firma digital y el código de seguridad deben provenir de un comprobante ya validado por la Oficina Virtual de la DGII.
           </DialogDescription>
@@ -321,9 +388,10 @@ export function FacturaEcfFormDialog({
             <Label>PDF (opcional)</Label>
             <div className="flex items-center gap-2">
               <Input type="file" accept="application/pdf" onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)} />
-              {preload?.pdf_url && (
-                <DocumentoPreviewButton path={preload.pdf_url} label="Ver actual" />
+              {(existingPdfUrl ?? preload?.pdf_url) && (
+                <DocumentoPreviewButton path={(existingPdfUrl ?? preload?.pdf_url) as string} label="Ver actual" />
               )}
+
             </div>
           </div>
         </div>
@@ -426,7 +494,7 @@ export function FacturaEcfFormDialog({
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={() => save.mutate()} disabled={save.isPending}>
-            {save.isPending ? "Guardando…" : "Registrar factura"}
+            {save.isPending ? "Guardando…" : editId ? "Guardar cambios" : "Registrar factura"}
           </Button>
         </DialogFooter>
       </DialogContent>

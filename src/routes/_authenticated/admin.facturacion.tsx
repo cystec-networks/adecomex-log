@@ -1,5 +1,7 @@
 import { createFileRoute, redirect, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { z } from "zod";
+import { useEffect, useMemo, useState } from "react";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +19,7 @@ import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/facturacion")({
   ssr: false,
+  validateSearch: z.object({ editar: z.string().optional() }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth" });
@@ -30,7 +33,15 @@ export const Route = createFileRoute("/_authenticated/admin/facturacion")({
 
 function FacturacionPage() {
   const qc = useQueryClient();
+  const { editar } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [openNew, setOpenNew] = useState(false);
+  const [editId, setEditId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (editar) setEditId(editar);
+  }, [editar]);
+
   const [clienteFiltro, setClienteFiltro] = useState<string>("__all__");
   const [tipoFiltro, setTipoFiltro] = useState<string>("__all__");
   const [desde, setDesde] = useState<string>("");
@@ -210,7 +221,16 @@ function FacturacionPage() {
                   const trs = f.transportes as { id: string; numero_viaje: string }[] | null;
                   return (
                     <tr key={f.id} className="border-b last:border-0 hover:bg-muted/20">
-                      <td className="px-3 py-2 font-mono font-medium">{f.encf}</td>
+                      <td className="px-3 py-2 font-mono font-medium">
+                        <button
+                          className="text-primary hover:underline"
+                          onClick={() => setEditId(f.id)}
+                          title="Editar factura"
+                        >
+                          {f.encf}
+                        </button>
+                      </td>
+
                       <td>
                         <Badge variant="outline" className={tipoBadgeClass(f.tipo_comprobante)}>
                           {f.tipo_comprobante}
@@ -277,6 +297,20 @@ function FacturacionPage() {
       </div>
 
       <FacturaEcfFormDialog open={openNew} onOpenChange={setOpenNew} />
+      {editId && (
+        <FacturaEcfFormDialog
+          key={editId}
+          open
+          editId={editId}
+          onOpenChange={(v) => {
+            if (!v) {
+              setEditId(undefined);
+              if (editar) navigate({ search: {} as any, replace: true });
+            }
+          }}
+        />
+      )}
+
     </div>
   );
 }
