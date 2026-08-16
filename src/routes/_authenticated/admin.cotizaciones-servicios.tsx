@@ -299,6 +299,7 @@ function CotizacionesTab() {
   const [nueva, setNueva] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const navigate = useNavigate();
   const docRef = useRef<any>(null);
   const fileNameRef = useRef("Cotizacion.pdf");
 
