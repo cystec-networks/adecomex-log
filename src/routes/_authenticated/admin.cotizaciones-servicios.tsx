@@ -674,6 +674,7 @@ function CotizacionDialog({
 }: { open: boolean; cotizacion: any | null; clientes: any[]; onClose: () => void }) {
   const qc = useQueryClient();
   const [clienteId, setClienteId] = useState<string>(cotizacion?.cliente_id ?? "");
+  const [numero, setNumero] = useState<string>(cotizacion?.numero ?? "");
   const [fecha, setFecha] = useState<string>(cotizacion?.fecha ?? new Date().toISOString().slice(0, 10));
   const [vigencia, setVigencia] = useState<string>(cotizacion?.fecha_vigencia ?? addDays(15));
   const [notas, setNotas] = useState<string>(cotizacion?.notas ?? "");
