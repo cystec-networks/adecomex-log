@@ -595,6 +595,7 @@ export type Database = {
         Row: {
           activo: boolean
           categoria: string | null
+          codigo: string | null
           created_at: string
           descripcion: string | null
           id: string
@@ -606,6 +607,7 @@ export type Database = {
         Insert: {
           activo?: boolean
           categoria?: string | null
+          codigo?: string | null
           created_at?: string
           descripcion?: string | null
           id?: string
@@ -617,6 +619,7 @@ export type Database = {
         Update: {
           activo?: boolean
           categoria?: string | null
+          codigo?: string | null
           created_at?: string
           descripcion?: string | null
           id?: string
@@ -1273,6 +1276,7 @@ export type Database = {
           creado_por: string | null
           created_at: string
           estado: string
+          factura_id: string | null
           fecha: string
           fecha_vigencia: string | null
           id: string
@@ -1285,6 +1289,7 @@ export type Database = {
           creado_por?: string | null
           created_at?: string
           estado?: string
+          factura_id?: string | null
           fecha?: string
           fecha_vigencia?: string | null
           id?: string
@@ -1297,6 +1302,7 @@ export type Database = {
           creado_por?: string | null
           created_at?: string
           estado?: string
+          factura_id?: string | null
           fecha?: string
           fecha_vigencia?: string | null
           id?: string
@@ -1312,13 +1318,29 @@ export type Database = {
             referencedRelation: "clientes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cotizaciones_servicios_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "facturas_ecf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizaciones_servicios_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["id"]
+          },
         ]
       }
       cotizaciones_servicios_lineas: {
         Row: {
           cantidad: number
+          codigo: string | null
           cotizacion_id: string
           descripcion: string | null
+          gravado: boolean
           id: string
           moneda: string
           orden: number
@@ -1328,8 +1350,10 @@ export type Database = {
         }
         Insert: {
           cantidad?: number
+          codigo?: string | null
           cotizacion_id: string
           descripcion?: string | null
+          gravado?: boolean
           id?: string
           moneda?: string
           orden?: number
@@ -1339,8 +1363,10 @@ export type Database = {
         }
         Update: {
           cantidad?: number
+          codigo?: string | null
           cotizacion_id?: string
           descripcion?: string | null
+          gravado?: boolean
           id?: string
           moneda?: string
           orden?: number
@@ -2737,6 +2763,7 @@ export type Database = {
       facturas_ecf_lineas: {
         Row: {
           cantidad: number
+          codigo: string | null
           created_at: string
           descripcion: string
           descuento: number
@@ -2752,6 +2779,7 @@ export type Database = {
         }
         Insert: {
           cantidad?: number
+          codigo?: string | null
           created_at?: string
           descripcion: string
           descuento?: number
@@ -2767,6 +2795,7 @@ export type Database = {
         }
         Update: {
           cantidad?: number
+          codigo?: string | null
           created_at?: string
           descripcion?: string
           descuento?: number
