@@ -375,7 +375,12 @@ function GastosOperativosPage() {
             )}
           </CardContent>
         </Card>
+          </>
+        ) : (
+          <VistaAnual onPickMonth={(y, m) => { setAnchor(new Date(y, m, 1)); setModo("mes"); }} />
+        )}
       </div>
+
 
       {editing && <EditDialog row={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); qc.invalidateQueries({ queryKey: ["gastos-op"] }); }} />}
       {copyOpen && <CopyDialog items={faltantes} onClose={() => setCopyOpen(false)} onConfirm={(ids) => copiarRecurrentes.mutate(ids)} pending={copiarRecurrentes.isPending} />}
