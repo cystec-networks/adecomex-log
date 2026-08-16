@@ -114,6 +114,8 @@ const NCF_RE = /^[A-Za-z0-9]{11}$|^[A-Za-z0-9]{13}$/;
 function GastosOperativosPage() {
   const qc = useQueryClient();
   const [anchor, setAnchor] = useState<Date>(() => new Date());
+  const [modo, setModo] = useState<"mes" | "anual">("mes");
+
   const [editing, setEditing] = useState<Row | null>(null);
   const [copyOpen, setCopyOpen] = useState(false);
   const [fCategoria, setFCategoria] = useState<Categoria | "todas">("todas");
