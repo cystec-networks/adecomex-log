@@ -573,6 +573,7 @@ function CuentasPorPagarPage() {
                   <th className="text-left px-3 py-2">RNC</th>
                   <th className="text-left px-3 py-2">No. Factura</th>
                   <th className="text-left px-3 py-2">NCF</th>
+                  <th className="text-left px-3 py-2">Categoría</th>
 
                   <th className="text-right px-3 py-2">Total</th>
                   <th className="text-right px-3 py-2">Pagado</th>
@@ -585,10 +586,10 @@ function CuentasPorPagarPage() {
               </thead>
               <tbody>
                 {isLoading && (
-                  <tr><td colSpan={11} className="text-center py-6 text-muted-foreground">Cargando…</td></tr>
+                  <tr><td colSpan={12} className="text-center py-6 text-muted-foreground">Cargando…</td></tr>
                 )}
                 {!isLoading && rows.length === 0 && (
-                  <tr><td colSpan={11} className="text-center py-6 text-muted-foreground">Sin cuentas por pagar.</td></tr>
+                  <tr><td colSpan={12} className="text-center py-6 text-muted-foreground">Sin cuentas por pagar.</td></tr>
                 )}
                 {!isLoading && agrupar === "ninguna" && rows.map((r) => renderRow(r))}
                 {!isLoading && agrupar !== "ninguna" && grupos.map((g) => {
@@ -596,7 +597,7 @@ function CuentasPorPagarPage() {
                   return (
                     <Fragment key={g.key}>
                       <tr className="border-t bg-muted/50">
-                        <td colSpan={11} className="px-3 py-2">
+                        <td colSpan={12} className="px-3 py-2">
                           <button
                             type="button"
                             className="flex w-full items-center justify-between gap-4 text-left"
