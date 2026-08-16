@@ -39,10 +39,19 @@ export const Route = createFileRoute("/_authenticated/admin/conciliacion-bancari
   component: ConciliacionBancariaPage,
 });
 
+const CUENTA_DEFAULT = "747315737";
+
+type BancoConfig = {
+  cuenta: string;
+  saldo_inicial: number;
+  fecha_saldo_inicial: string;
+};
+
 type Movimiento = {
   id: string;
   cuenta: string;
   fecha: string;
+  created_at?: string;
   referencia: string | null;
   monto: number;
   tipo: string;
