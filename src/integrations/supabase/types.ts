@@ -213,6 +213,66 @@ export type Database = {
         }
         Relationships: []
       }
+      banco_movimientos: {
+        Row: {
+          codigo_transaccion: string | null
+          conciliado: boolean
+          conciliado_en: string | null
+          conciliado_id: string | null
+          conciliado_por: string | null
+          conciliado_tipo: string | null
+          created_at: string
+          cuenta: string
+          descripcion: string | null
+          fecha: string
+          hash_linea: string
+          id: string
+          monto: number
+          notas: string | null
+          numero_cheque: string | null
+          referencia: string | null
+          tipo: string
+        }
+        Insert: {
+          codigo_transaccion?: string | null
+          conciliado?: boolean
+          conciliado_en?: string | null
+          conciliado_id?: string | null
+          conciliado_por?: string | null
+          conciliado_tipo?: string | null
+          created_at?: string
+          cuenta?: string
+          descripcion?: string | null
+          fecha: string
+          hash_linea: string
+          id?: string
+          monto: number
+          notas?: string | null
+          numero_cheque?: string | null
+          referencia?: string | null
+          tipo: string
+        }
+        Update: {
+          codigo_transaccion?: string | null
+          conciliado?: boolean
+          conciliado_en?: string | null
+          conciliado_id?: string | null
+          conciliado_por?: string | null
+          conciliado_tipo?: string | null
+          created_at?: string
+          cuenta?: string
+          descripcion?: string | null
+          fecha?: string
+          hash_linea?: string
+          id?: string
+          monto?: number
+          notas?: string | null
+          numero_cheque?: string | null
+          referencia?: string | null
+          tipo?: string
+        }
+        Relationships: []
+      }
       catalogo_acuerdos: {
         Row: {
           codigo: string
