@@ -677,6 +677,17 @@ function CuentasPorPagarPage() {
               <Label>NCF del proveedor</Label>
               <Input value={form.ncf_proveedor} onChange={(e) => setForm({ ...form, ncf_proveedor: e.target.value.toUpperCase() })} />
             </div>
+            <div>
+              <Label>Categoría</Label>
+              <Select value={form.categoria} onValueChange={(v) => setForm({ ...form, categoria: v as CategoriaCxp })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CATEGORIA_CXP_ORDEN.map((c) => (
+                    <SelectItem key={c} value={c}>{CATEGORIA_CXP_LABEL[c]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             <div>
               <Label>Moneda</Label>
