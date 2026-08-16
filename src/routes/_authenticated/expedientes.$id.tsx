@@ -197,7 +197,7 @@ function DetalleExpediente() {
         </div>
         <GenerarXmlSigaButton expedienteId={id} />
         <PreLiquidacionPdfButton exp={exp} />
-        <CotizacionServiciosExpedienteButton exp={exp} />
+
 
         <div className="flex items-center gap-2">
           <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>
@@ -292,7 +292,7 @@ function DetalleExpediente() {
         <TabsContent value="permisos"><TabPermisosExp expedienteId={id} /></TabsContent>
         <TabsContent value="transportes"><TabTransportesExp expedienteId={id} /></TabsContent>
         <TabsContent value="inc"><TabIncidencias expedienteId={id} /></TabsContent>
-        <TabsContent value="cost"><TabCostos expedienteId={id} /></TabsContent>
+        <TabsContent value="cost"><TabCostos expedienteId={id} exp={exp} /></TabsContent>
         <TabsContent value="costprod"><TabCostosProducto expedienteId={id} /></TabsContent>
         <TabsContent value="aud"><TabAuditoria expedienteId={id} /></TabsContent>
       </Tabs>
@@ -1284,7 +1284,7 @@ function RentabilidadCard({ expedienteId }: { expedienteId: string }) {
   );
 }
 
-function TabCostos({ expedienteId }: { expedienteId: string }) {
+function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
 
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -1345,6 +1345,21 @@ function TabCostos({ expedienteId }: { expedienteId: string }) {
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total real</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalReal)}</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Diferencia</div><div className={`text-2xl font-display font-bold mt-1 ${totalReal - totalEst > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(totalReal - totalEst)}</div></CardContent></Card>
       </div>
+
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="flex-row items-center justify-between pb-3">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2 text-primary">
+              <FileText className="h-4 w-4" />
+              Cotización / Pre-factura de servicios
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Genera una pre-factura desde este expediente y conviértela en la factura e-CF definitiva.
+            </p>
+          </div>
+          <CotizacionServiciosExpedienteButton exp={exp} />
+        </CardHeader>
+      </Card>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">
@@ -3020,7 +3035,7 @@ function CotizacionServiciosExpedienteButton({ exp }: { exp: any }) {
           cliente_id: exp.cliente_id ?? null,
           notas: `Expediente ${exp.numero}`,
           estado: "borrador",
-          created_by: u.user?.id ?? null,
+          creado_por: u.user?.id ?? null,
         } as any)
         .select("id")
         .single();
