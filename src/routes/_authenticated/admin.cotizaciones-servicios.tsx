@@ -65,6 +65,7 @@ type Tarifa = {
   unidad: string;
   descripcion: string | null;
   activo: boolean;
+  gravado: boolean;
 };
 
 type Linea = {
@@ -146,6 +147,7 @@ function TarifarioTab() {
         unidad: t.unidad || "Por gestión",
         descripcion: t.descripcion || null,
         activo: t.activo ?? true,
+        gravado: t.gravado ?? true,
       };
       if (!payload.servicio) throw new Error("El servicio es obligatorio");
       const { error } = t.id
@@ -188,7 +190,7 @@ function TarifarioTab() {
             <Label htmlFor="solo-activos" className="text-xs">Solo activos</Label>
           </div>
           {puedeEditar && (
-            <Button size="sm" onClick={() => setEdit({ moneda: "DOP", unidad: "Por gestión", activo: true, tarifa: 0 })}>
+            <Button size="sm" onClick={() => setEdit({ moneda: "DOP", unidad: "Por gestión", activo: true, tarifa: 0, gravado: true })}>
               <Plus className="h-4 w-4 mr-1" /> Nueva tarifa
             </Button>
           )}
@@ -635,7 +637,7 @@ function CotizacionDialog({
       cantidad: 1,
       tarifa_unitaria: Number(t.tarifa) || 0,
       moneda: t.moneda,
-      gravado: true,
+      gravado: t.gravado !== false,
     }]);
   };
 
