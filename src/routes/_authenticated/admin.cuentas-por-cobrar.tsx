@@ -50,6 +50,7 @@ type Factura = {
   fecha_emision: string;
   fecha_vencimiento_pago: string | null;
   monto_total: number;
+  total_itbis: number | null;
   estado: string;
 };
 
@@ -62,7 +63,10 @@ type Pago = {
   referencia: string | null;
   notas: string | null;
   creado_por: string | null;
+  es_retencion?: boolean | null;
+  lote_pago?: string | null;
 };
+
 
 type Bucket = "al_dia" | "1_30" | "31_60" | "61_90" | "90_mas";
 
