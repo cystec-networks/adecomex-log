@@ -65,6 +65,7 @@ import { Route as AuthenticatedAdminGastosOperativosRouteImport } from './routes
 import { Route as AuthenticatedAdminFacturacionRouteImport } from './routes/_authenticated/admin.facturacion'
 import { Route as AuthenticatedAdminDashboardFinancieroRouteImport } from './routes/_authenticated/admin.dashboard-financiero'
 import { Route as AuthenticatedAdminCuentasPorPagarRouteImport } from './routes/_authenticated/admin.cuentas-por-pagar'
+import { Route as AuthenticatedAdminCuentasPorCobrarRouteImport } from './routes/_authenticated/admin.cuentas-por-cobrar'
 import { Route as AuthenticatedAdminConfiguracionRouteImport } from './routes/_authenticated/admin.configuracion'
 import { Route as AuthenticatedAdminCatalogosRouteImport } from './routes/_authenticated/admin.catalogos'
 import { Route as AuthenticatedAdminCatalogoViajesTransporteRouteImport } from './routes/_authenticated/admin.catalogo-viajes-transporte'
@@ -401,6 +402,12 @@ const AuthenticatedAdminCuentasPorPagarRoute =
     path: '/admin/cuentas-por-pagar',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminCuentasPorCobrarRoute =
+  AuthenticatedAdminCuentasPorCobrarRouteImport.update({
+    id: '/admin/cuentas-por-cobrar',
+    path: '/admin/cuentas-por-cobrar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminConfiguracionRoute =
   AuthenticatedAdminConfiguracionRouteImport.update({
     id: '/admin/configuracion',
@@ -550,6 +557,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalogo-viajes-transporte': typeof AuthenticatedAdminCatalogoViajesTransporteRoute
   '/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
+  '/admin/cuentas-por-cobrar': typeof AuthenticatedAdminCuentasPorCobrarRoute
   '/admin/cuentas-por-pagar': typeof AuthenticatedAdminCuentasPorPagarRoute
   '/admin/dashboard-financiero': typeof AuthenticatedAdminDashboardFinancieroRoute
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRouteWithChildren
@@ -626,6 +634,7 @@ export interface FileRoutesByTo {
   '/admin/catalogo-viajes-transporte': typeof AuthenticatedAdminCatalogoViajesTransporteRoute
   '/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
+  '/admin/cuentas-por-cobrar': typeof AuthenticatedAdminCuentasPorCobrarRoute
   '/admin/cuentas-por-pagar': typeof AuthenticatedAdminCuentasPorPagarRoute
   '/admin/dashboard-financiero': typeof AuthenticatedAdminDashboardFinancieroRoute
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRouteWithChildren
@@ -706,6 +715,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/catalogo-viajes-transporte': typeof AuthenticatedAdminCatalogoViajesTransporteRoute
   '/_authenticated/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/_authenticated/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
+  '/_authenticated/admin/cuentas-por-cobrar': typeof AuthenticatedAdminCuentasPorCobrarRoute
   '/_authenticated/admin/cuentas-por-pagar': typeof AuthenticatedAdminCuentasPorPagarRoute
   '/_authenticated/admin/dashboard-financiero': typeof AuthenticatedAdminDashboardFinancieroRoute
   '/_authenticated/admin/facturacion': typeof AuthenticatedAdminFacturacionRouteWithChildren
@@ -784,6 +794,7 @@ export interface FileRouteTypes {
     | '/admin/catalogo-viajes-transporte'
     | '/admin/catalogos'
     | '/admin/configuracion'
+    | '/admin/cuentas-por-cobrar'
     | '/admin/cuentas-por-pagar'
     | '/admin/dashboard-financiero'
     | '/admin/facturacion'
@@ -860,6 +871,7 @@ export interface FileRouteTypes {
     | '/admin/catalogo-viajes-transporte'
     | '/admin/catalogos'
     | '/admin/configuracion'
+    | '/admin/cuentas-por-cobrar'
     | '/admin/cuentas-por-pagar'
     | '/admin/dashboard-financiero'
     | '/admin/facturacion'
@@ -939,6 +951,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/catalogo-viajes-transporte'
     | '/_authenticated/admin/catalogos'
     | '/_authenticated/admin/configuracion'
+    | '/_authenticated/admin/cuentas-por-cobrar'
     | '/_authenticated/admin/cuentas-por-pagar'
     | '/_authenticated/admin/dashboard-financiero'
     | '/_authenticated/admin/facturacion'
@@ -1406,6 +1419,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCuentasPorPagarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/cuentas-por-cobrar': {
+      id: '/_authenticated/admin/cuentas-por-cobrar'
+      path: '/admin/cuentas-por-cobrar'
+      fullPath: '/admin/cuentas-por-cobrar'
+      preLoaderRoute: typeof AuthenticatedAdminCuentasPorCobrarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/configuracion': {
       id: '/_authenticated/admin/configuracion'
       path: '/admin/configuracion'
@@ -1586,6 +1606,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminCatalogoViajesTransporteRoute: typeof AuthenticatedAdminCatalogoViajesTransporteRoute
   AuthenticatedAdminCatalogosRoute: typeof AuthenticatedAdminCatalogosRoute
   AuthenticatedAdminConfiguracionRoute: typeof AuthenticatedAdminConfiguracionRoute
+  AuthenticatedAdminCuentasPorCobrarRoute: typeof AuthenticatedAdminCuentasPorCobrarRoute
   AuthenticatedAdminCuentasPorPagarRoute: typeof AuthenticatedAdminCuentasPorPagarRoute
   AuthenticatedAdminDashboardFinancieroRoute: typeof AuthenticatedAdminDashboardFinancieroRoute
   AuthenticatedAdminFacturacionRoute: typeof AuthenticatedAdminFacturacionRouteWithChildren
@@ -1646,6 +1667,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAdminCatalogoViajesTransporteRoute,
   AuthenticatedAdminCatalogosRoute: AuthenticatedAdminCatalogosRoute,
   AuthenticatedAdminConfiguracionRoute: AuthenticatedAdminConfiguracionRoute,
+  AuthenticatedAdminCuentasPorCobrarRoute:
+    AuthenticatedAdminCuentasPorCobrarRoute,
   AuthenticatedAdminCuentasPorPagarRoute:
     AuthenticatedAdminCuentasPorPagarRoute,
   AuthenticatedAdminDashboardFinancieroRoute:
