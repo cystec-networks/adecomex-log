@@ -736,6 +736,7 @@ function CotizacionDialog({
       if (lineas.length === 0) throw new Error("Agrega al menos un servicio");
       const cab = {
         cliente_id: clienteId || null,
+        numero: numero.trim(),
         fecha,
         fecha_vigencia: vigencia || null,
         notas: notas || null,
