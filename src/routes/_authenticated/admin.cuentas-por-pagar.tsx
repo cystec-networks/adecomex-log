@@ -488,6 +488,24 @@ function CuentasPorPagarPage() {
         </Card>
       </div>
 
+      {resumenCategoriaCxp.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Resumen por categoría</CardTitle>
+            <CardDescription>Total y saldo pendiente por categoría de Cuentas por Pagar.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {resumenCategoriaCxp.map((g) => (
+              <div key={g.key} className="rounded-lg border bg-muted/30 p-3">
+                <div className="text-xs text-muted-foreground">{CATEGORIA_CXP_LABEL[g.key]}</div>
+                <div className="text-lg font-semibold">{fmtMoney(g.total, "DOP")}</div>
+                <div className="text-xs text-muted-foreground">{g.count} cuenta{g.count === 1 ? "" : "s"} · Saldo {fmtMoney(g.saldo, "DOP")}</div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-wrap gap-3 items-end">
