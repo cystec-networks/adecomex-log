@@ -112,8 +112,9 @@ export function AutocompleteInput({ value, onChange, suggestions, placeholder, c
       />
       {dropdown && typeof document !== "undefined" && createPortal(
         dropdown,
-        inputRef.current?.closest<HTMLElement>("[role='dialog']") ?? document.body,
+        getContainer() ?? document.body,
       )}
+
     </div>
   );
 }
