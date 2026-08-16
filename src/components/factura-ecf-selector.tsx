@@ -100,6 +100,54 @@ export function FacturaEcfFormDialog({
     setFechaVencPago(d.toISOString().slice(0, 10));
   }, [fechaEmision, terminoPago]);
 
+  const [existingPdfUrl, setExistingPdfUrl] = useState<string | null>(null);
+
+  const { data: editData } = useQuery({
+    queryKey: ["factura-ecf-edit", editId],
+    enabled: !!editId && open,
+    queryFn: async () => {
+      const { data: f, error } = await supabase.from("facturas_ecf").select("*").eq("id", editId!).single();
+      if (error) throw error;
+      const { data: ls } = await supabase
+        .from("facturas_ecf_lineas").select("*").eq("factura_id", editId!).order("orden");
+      return { f, ls: ls ?? [] };
+    },
+  });
+
+  useEffect(() => {
+    if (!editData || !open) return;
+    const f: any = editData.f;
+    setFechaVencPagoManual(true);
+    setEncf(f.encf ?? "");
+    setTipo(f.tipo_comprobante ?? "31");
+    setFechaEmision(f.fecha_emision ?? "");
+    setFechaVenc(f.fecha_vencimiento_ncf ?? "");
+    setTerminoPago("30");
+    setFechaVencPago(f.fecha_vencimiento_pago ?? "");
+    setCodigoSeguridad(f.codigo_seguridad ?? "");
+    setFechaFirma(f.fecha_firma ? String(f.fecha_firma).slice(0, 16).replace(" ", "T") : "");
+    setClienteId(f.cliente_id ?? "");
+    setNotas(f.notas ?? "");
+    setItbisRetenidoTerceros(f.itbis_retenido_terceros ? String(f.itbis_retenido_terceros) : "");
+    setItbisPercibidoVenta(f.itbis_percibido_venta ? String(f.itbis_percibido_venta) : "");
+    setRetencionRentaTerceros(f.retencion_renta_terceros ? String(f.retencion_renta_terceros) : "");
+    setIsrPercibidoVenta(f.isr_percibido_venta ? String(f.isr_percibido_venta) : "");
+    setExistingPdfUrl(f.pdf_url ?? null);
+    if (editData.ls.length) {
+      setLineas(editData.ls.map((l: any) => ({
+        cantidad: Number(l.cantidad) || 0,
+        descripcion: l.descripcion ?? "",
+        unidad: l.unidad ?? "UND",
+        precio: Number(l.precio) || 0,
+        itbis: Number(l.itbis) || 0,
+        descuento: Number(l.descuento) || 0,
+        recargo: Number(l.recargo) || 0,
+        gravado: !!l.gravado,
+      })));
+    }
+  }, [editData, open]);
+
+
   const totales = useMemo(() => calcTotales(lineas), [lineas]);
 
   const cliente = (clientes ?? []).find((c) => c.id === clienteId);
