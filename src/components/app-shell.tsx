@@ -157,6 +157,8 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/admin/dashboard-financiero") },
       { to: "/admin/reportes-fiscales", label: "Reportes Fiscales DGII", icon: FileBarChart2, roles: ["admin","finanzas"],
         match: (p) => p.startsWith("/admin/reportes-fiscales") },
+      { to: "/legal/documentos", label: "Documentos Legales", icon: Scale, adminOnly: true,
+        match: (p) => p.startsWith("/legal/documentos") },
       { to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
         match: (p) => p === "/expedientes/papelera" },
     ],
@@ -201,16 +203,6 @@ const GROUPS: Group[] = [
         match: (p) => p === "/almacen" || p.startsWith("/almacen/") },
       { to: "/almacenes", label: "Almacenes", icon: Warehouse,
         match: (p) => p === "/almacenes" || p.startsWith("/almacenes/") },
-    ],
-  },
-  {
-    id: "legal",
-    label: "LEGAL",
-    icon: Scale,
-    adminOnly: true,
-    items: [
-      { to: "/legal/documentos", label: "Documentos Legales", icon: FileText, adminOnly: true,
-        match: (p) => p.startsWith("/legal/documentos") },
     ],
   },
 ];
@@ -320,8 +312,6 @@ function AppSidebarInner() {
         {/* Gestión Humana group */}
         {renderGroup(visibleGroups.find((g) => g.id === "rrhh")!)}
 
-        {/* Legal group */}
-        {renderGroup(visibleGroups.find((g) => g.id === "legal")!)}
 
         {/* Simple items */}
         {visibleSimpleItems.map((it) => renderSimpleItem(it))}
