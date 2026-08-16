@@ -180,6 +180,18 @@ function ConciliacionBancariaPage() {
     });
   }, [movimientos, desde, hasta, fTipo, fEstado]);
 
+  // Parseo tolerante: acepta "6,905,883.27", "RD$ 6.905.883,27", etc.
+  const balanceBancoNum = useMemo(() => {
+    let s = balanceBanco.replace(/[^\d.,-]/g, "").trim();
+    if (!s) return null;
+    const lastComma = s.lastIndexOf(",");
+    const lastDot = s.lastIndexOf(".");
+    if (lastComma > lastDot) s = s.replace(/\./g, "").replace(",", ".");
+    else s = s.replace(/,/g, "");
+    const n = parseFloat(s);
+    return isFinite(n) ? n : null;
+  }, [balanceBanco]);
+
   const resumen = useMemo(() => {
     let creditos = 0, debitos = 0, conciliados = 0, pendientes = 0;
     for (const m of filtrados) {
