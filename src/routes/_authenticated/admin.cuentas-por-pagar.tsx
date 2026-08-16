@@ -235,19 +235,22 @@ function CuentasPorPagarPage() {
   }, [rows]);
 
   const resumenCategoriaCxp = useMemo(() => {
-    const map = new Map<CategoriaCxp, { key: CategoriaCxp; total: number; saldo: number; count: number }>();
+    const map = new Map<string, { categoria: CategoriaCxp; moneda: Moneda; total: number; saldo: number; count: number }>();
     for (const r of rows) {
       const cat = r.categoria ?? "otros";
-      const cur = map.get(cat) ?? { key: cat, total: 0, saldo: 0, count: 0 };
+      const key = `${cat}::${r.moneda}`;
+      const cur = map.get(key) ?? { categoria: cat, moneda: r.moneda, total: 0, saldo: 0, count: 0 };
       const total = Number(r.monto_total || 0);
       const saldo = total - Number(r.monto_pagado || 0);
       cur.total += total;
       cur.saldo += saldo;
       cur.count += 1;
-      map.set(cat, cur);
+      map.set(key, cur);
     }
     return [...map.values()].sort(
-      (a, b) => CATEGORIA_CXP_ORDEN.indexOf(a.key) - CATEGORIA_CXP_ORDEN.indexOf(b.key),
+      (a, b) =>
+        CATEGORIA_CXP_ORDEN.indexOf(a.categoria) - CATEGORIA_CXP_ORDEN.indexOf(b.categoria) ||
+        a.moneda.localeCompare(b.moneda),
     );
   }, [rows]);
 
