@@ -44,19 +44,23 @@ export function FacturaEcfFormDialog({
   onOpenChange,
   onCreated,
   preload,
-  title = "Registrar Factura e-CF",
+  editId,
+  title,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCreated?: (id: string) => void;
   preload?: FacturaEcfFormPreload;
+  editId?: string;
   title?: string;
 }) {
   const qc = useQueryClient();
+  const dialogTitle = title ?? (editId ? "Editar Factura e-CF" : "Registrar Factura e-CF");
   const { data: clientes } = useQuery({
     queryKey: ["clientes-lite-ecf"],
     queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc").order("nombre")).data ?? [],
   });
+
 
   const [encf, setEncf] = useState(preload?.encf ?? "");
   const [tipo, setTipo] = useState(preload?.tipo_comprobante ?? "31");
