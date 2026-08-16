@@ -297,6 +297,20 @@ function FacturacionPage() {
       </div>
 
       <FacturaEcfFormDialog open={openNew} onOpenChange={setOpenNew} />
+      {editId && (
+        <FacturaEcfFormDialog
+          key={editId}
+          open
+          editId={editId}
+          onOpenChange={(v) => {
+            if (!v) {
+              setEditId(undefined);
+              if (editar) navigate({ search: {} as any, replace: true });
+            }
+          }}
+        />
+      )}
+
     </div>
   );
 }
