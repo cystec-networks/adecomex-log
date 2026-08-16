@@ -1256,6 +1256,57 @@ export type Database = {
           },
         ]
       }
+      cxc_pagos: {
+        Row: {
+          creado_por: string | null
+          created_at: string
+          factura_id: string
+          fecha_pago: string
+          id: string
+          metodo_pago: string | null
+          monto: number
+          notas: string | null
+          referencia: string | null
+        }
+        Insert: {
+          creado_por?: string | null
+          created_at?: string
+          factura_id: string
+          fecha_pago?: string
+          id?: string
+          metodo_pago?: string | null
+          monto: number
+          notas?: string | null
+          referencia?: string | null
+        }
+        Update: {
+          creado_por?: string | null
+          created_at?: string
+          factura_id?: string
+          fecha_pago?: string
+          id?: string
+          metodo_pago?: string | null
+          monto?: number
+          notas?: string | null
+          referencia?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxc_pagos_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "facturas_ecf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxc_pagos_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dga_areas: {
         Row: {
           area: string
@@ -2352,6 +2403,7 @@ export type Database = {
           fecha_emision: string
           fecha_firma: string | null
           fecha_vencimiento_ncf: string | null
+          fecha_vencimiento_pago: string | null
           forma_pago_venta: string | null
           id: string
           isr_percibido_venta: number
@@ -2390,6 +2442,7 @@ export type Database = {
           fecha_emision: string
           fecha_firma?: string | null
           fecha_vencimiento_ncf?: string | null
+          fecha_vencimiento_pago?: string | null
           forma_pago_venta?: string | null
           id?: string
           isr_percibido_venta?: number
@@ -2428,6 +2481,7 @@ export type Database = {
           fecha_emision?: string
           fecha_firma?: string | null
           fecha_vencimiento_ncf?: string | null
+          fecha_vencimiento_pago?: string | null
           forma_pago_venta?: string | null
           id?: string
           isr_percibido_venta?: number
