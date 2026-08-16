@@ -1,5 +1,6 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
+import { z } from "zod";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
