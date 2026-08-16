@@ -612,8 +612,11 @@ function Panel606({ periodo }: { periodo: string }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {merged.length === 0 && !isLoading && (
+              {merged.length === 0 && !isLoading && !error && (
                 <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">Sin registros con RNC/cédula en este período.</TableCell></TableRow>
+              )}
+              {error && !isLoading && (
+                <TableRow><TableCell colSpan={9} className="text-center text-destructive py-6">No se pudo cargar el reporte. Revisa el mensaje de error arriba.</TableCell></TableRow>
               )}
               {merged.map(r => {
                 const hasErr = !!errors[r.key];
