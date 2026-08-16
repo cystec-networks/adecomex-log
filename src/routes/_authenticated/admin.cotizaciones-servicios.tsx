@@ -693,9 +693,23 @@ function CotizacionDialog({
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{cotizacion ? `Editar ${cotizacion.numero}` : "Nueva cotización de servicios"}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2 flex-wrap">
+            {cotizacion ? `Editar ${cotizacion.numero}` : "Nueva cotización de servicios"}
+            {cotizacion?.expedientes?.id && (
+              <Link
+                to="/expedientes/$id"
+                params={{ id: cotizacion.expedientes.id }}
+                className="no-underline"
+              >
+                <Badge variant="outline" className="cursor-pointer">
+                  ← Expediente {cotizacion.expedientes.numero}
+                </Badge>
+              </Link>
+            )}
+          </DialogTitle>
           <DialogDescription>Selecciona el cliente y agrega los servicios a cotizar.</DialogDescription>
         </DialogHeader>
+
 
         <div className="grid gap-4">
           <div className="grid md:grid-cols-3 gap-3">
