@@ -3058,7 +3058,7 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
       c1[i][0], c1[i][1], c2[i][0], c2[i][1], c3[i][0], c3[i][1],
     ]);
     autoTable(doc, {
-      startY: 94,
+      startY: 106,
       body: infoBody,
       theme: "grid",
       styles: { fontSize: 7.5, cellPadding: 3 },
@@ -3143,36 +3143,54 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     }
 
     const startResumen = (doc as any).lastAutoTable.finalY + 14;
+    const mostrarRd = tasaCambio > 0;
+    const resumenFontSize = startResumen + (mostrarRd ? 170 : 150) > pageH - 40 ? 7 : 8;
+
+    const filaResumen = (label: string, usd: number) =>
+      mostrarRd ? [label, rd(usd), nf(usd)] : [label, nf(usd)];
+
     autoTable(doc, {
       startY: startResumen,
-      head: [["Valores (US$)", ""]],
+      head: [mostrarRd ? ["Valores", "RD$", "US$"] : ["Valores", "US$"]],
       body: [
-        ["Total FOB", nf(Number(exp.total_fob) || totals.fob)],
-        ["Seguro", nf(seguro)],
-        ["Flete", nf(flete)],
-        ["Otros", nf(otros)],
-        ["Total CIF", nf(Number(exp.total_cif) || totals.cif)],
+        filaResumen("Total FOB", Number(exp.total_fob) || totals.fob),
+        filaResumen("Seguro", seguro),
+        filaResumen("Flete", flete),
+        filaResumen("Otros", otros),
+        filaResumen("Total CIF", Number(exp.total_cif) || totals.cif),
       ],
       theme: "grid",
-      headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
-      bodyStyles: { fontSize: 8 },
-      columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 110 }, 1: { halign: "right" } },
+      headStyles: { fillColor: [30, 58, 138], fontSize: resumenFontSize },
+      bodyStyles: { fontSize: resumenFontSize },
+      columnStyles: mostrarRd
+        ? {
+            0: { fontStyle: "bold", textColor: 90, cellWidth: 100 },
+            1: { halign: "right", cellWidth: 70 },
+            2: { halign: "right", cellWidth: 70 },
+          }
+        : { 0: { fontStyle: "bold", textColor: 90, cellWidth: 110 }, 1: { halign: "right" } },
       margin: { left: M },
       tableWidth: 240,
     });
     autoTable(doc, {
       startY: startResumen,
-      head: [["Impuestos estimados (US$)", ""]],
+      head: [mostrarRd ? ["Impuestos estimados", "RD$", "US$"] : ["Impuestos estimados", "US$"]],
       body: [
-        ["Gravamen", nf(totals.grav)],
-        ["Selectivo (ISC)", nf(totals.isc)],
-        ["ITBIS", nf(totals.itbis)],
-        ["Total Impuestos Estimados", nf(totals.grav + totals.isc + totals.itbis)],
+        filaResumen("Gravamen", totals.grav),
+        filaResumen("Selectivo (ISC)", totals.isc),
+        filaResumen("ITBIS", totals.itbis),
+        filaResumen("Total Impuestos Estimados", totals.grav + totals.isc + totals.itbis),
       ],
       theme: "grid",
-      headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
-      bodyStyles: { fontSize: 8 },
-      columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 140 }, 1: { halign: "right" } },
+      headStyles: { fillColor: [30, 58, 138], fontSize: resumenFontSize },
+      bodyStyles: { fontSize: resumenFontSize },
+      columnStyles: mostrarRd
+        ? {
+            0: { fontStyle: "bold", textColor: 90, cellWidth: 120 },
+            1: { halign: "right", cellWidth: 60 },
+            2: { halign: "right", cellWidth: 60 },
+          }
+        : { 0: { fontStyle: "bold", textColor: 90, cellWidth: 140 }, 1: { halign: "right" } },
       margin: { left: pageW - M - 240 },
       tableWidth: 240,
     });
