@@ -132,7 +132,7 @@ const GROUPS: Group[] = [
     id: "administracion",
     label: "ADMINISTRACIÓN",
     icon: Shield,
-    roles: ["admin", "contabilidad", "finanzas"],
+    roles: ["admin", "contabilidad", "finanzas", "rrhh"],
     items: [
       { to: "/admin/usuarios", label: "Usuarios y roles", icon: UserCog, adminOnly: true,
         match: (p) => p.startsWith("/admin/usuarios") },
@@ -142,21 +142,10 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/admin/catalogos") && !p.startsWith("/admin/catalogo-productos-dga") },
       { to: "/admin/catalogo-productos-dga", label: "Productos DGA (histórico)", icon: Library, adminOnly: true,
         match: (p) => p.startsWith("/admin/catalogo-productos-dga") },
-
       { to: "/admin/configuracion", label: "Configuración", icon: Settings, adminOnly: true,
         match: (p) => p.startsWith("/admin/configuracion") },
-      { to: "/admin/facturacion", label: "Facturación (e-CF)", icon: Receipt, roles: ["admin","contabilidad"],
-        match: (p) => p === "/admin/facturacion" || (p.startsWith("/admin/facturacion") && !p.includes("/pendientes")) },
-      { to: "/admin/facturacion/pendientes", label: "Pendientes de vincular", icon: ClipboardList, roles: ["admin","contabilidad"],
-        match: (p) => p.startsWith("/admin/facturacion/pendientes") },
-      { to: "/admin/gastos-operativos", label: "Gastos Operativos", icon: DollarSign, roles: ["admin","contabilidad"],
-        match: (p) => p.startsWith("/admin/gastos-operativos") },
-      { to: "/admin/cuentas-por-pagar", label: "Cuentas por Pagar", icon: Wallet, roles: ["admin","finanzas"],
-        match: (p) => p.startsWith("/admin/cuentas-por-pagar") },
-      { to: "/admin/dashboard-financiero", label: "Dashboard Financiero", icon: PiggyBank, roles: ["admin","contabilidad"],
-        match: (p) => p.startsWith("/admin/dashboard-financiero") },
-      { to: "/admin/reportes-fiscales", label: "Reportes Fiscales DGII", icon: FileBarChart2, roles: ["admin","finanzas"],
-        match: (p) => p.startsWith("/admin/reportes-fiscales") },
+      { to: "/rrhh/empleados", label: "Empleados", icon: IdCard, roles: ["admin","rrhh"],
+        match: (p) => p.startsWith("/rrhh/empleados") },
       { to: "/legal/documentos", label: "Documentos Legales", icon: Scale, adminOnly: true,
         match: (p) => p.startsWith("/legal/documentos") },
       { to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
@@ -180,18 +169,27 @@ const GROUPS: Group[] = [
     ],
   },
   {
-    id: "rrhh",
-    label: "GESTIÓN HUMANA",
-    icon: Briefcase,
-    roles: ["admin", "rrhh"],
+    id: "finanzas",
+    label: "FINANZAS",
+    icon: DollarSign,
+    roles: ["admin", "finanzas", "contabilidad"],
     items: [
-      { to: "/rrhh/empleados", label: "Empleados", icon: IdCard, roles: ["admin","rrhh"],
-        match: (p) => p.startsWith("/rrhh/empleados") },
-      { to: "/rrhh/prestamos", label: "Préstamos", icon: HandCoins, roles: ["admin","rrhh"],
+      { to: "/admin/dashboard-financiero", label: "Dashboard Financiero", icon: PiggyBank, roles: ["admin","contabilidad"],
+        match: (p) => p.startsWith("/admin/dashboard-financiero") },
+      { to: "/admin/facturacion", label: "Facturación (e-CF)", icon: Receipt, roles: ["admin","contabilidad"],
+        match: (p) => p === "/admin/facturacion" || (p.startsWith("/admin/facturacion") && !p.includes("/pendientes")) },
+      { to: "/admin/facturacion/pendientes", label: "Pendientes de vincular", icon: ClipboardList, roles: ["admin","contabilidad"],
+        match: (p) => p.startsWith("/admin/facturacion/pendientes") },
+      { to: "/admin/gastos-operativos", label: "Gastos Operativos", icon: DollarSign, roles: ["admin","contabilidad"],
+        match: (p) => p.startsWith("/admin/gastos-operativos") },
+      { to: "/admin/cuentas-por-pagar", label: "Cuentas por Pagar", icon: Wallet, roles: ["admin","finanzas"],
+        match: (p) => p.startsWith("/admin/cuentas-por-pagar") },
+      { to: "/admin/reportes-fiscales", label: "Reportes Fiscales DGII", icon: FileBarChart2, roles: ["admin","finanzas"],
+        match: (p) => p.startsWith("/admin/reportes-fiscales") },
+      { to: "/rrhh/prestamos", label: "Préstamos", icon: HandCoins, roles: ["admin","finanzas"],
         match: (p) => p === "/rrhh/prestamos" || p.startsWith("/rrhh/prestamos/") },
-      { to: "/rrhh/prestamos-terceros", label: "Préstamos a Terceros", icon: HandCoins, roles: ["admin","rrhh"],
+      { to: "/rrhh/prestamos-terceros", label: "Préstamos a Terceros", icon: HandCoins, roles: ["admin","finanzas"],
         match: (p) => p.startsWith("/rrhh/prestamos-terceros") },
-
     ],
   },
   {
@@ -303,15 +301,14 @@ function AppSidebarInner() {
         {/* Almacén group */}
         {renderGroup(visibleGroups.find((g) => g.id === "almacen")!)}
 
+        {/* Finanzas group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "finanzas")!)}
+
         {/* Academia group */}
         {renderGroup(visibleGroups.find((g) => g.id === "academia")!)}
 
         {/* Administración group */}
         {renderGroup(visibleGroups.find((g) => g.id === "administracion")!)}
-
-        {/* Gestión Humana group */}
-        {renderGroup(visibleGroups.find((g) => g.id === "rrhh")!)}
-
 
         {/* Simple items */}
         {visibleSimpleItems.map((it) => renderSimpleItem(it))}
