@@ -693,7 +693,7 @@ function TabInfo({ exp }: { exp: any }) {
             const fob = sumFob;
             const cif = fob + toN(form.seguro) + toN(form.flete) + toN(form.otros);
             const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const renderMoney = (label: string, k: "seguro" | "flete" | "otros") => {
+            const renderMoney = (label: string, k: "seguro" | "flete" | "otros", helper?: string) => {
               const raw = (form as any)[k];
               const rawStr = raw === "" || raw == null ? "" : String(raw);
               const isFocused = focusedMoney === k;
@@ -722,9 +722,11 @@ function TabInfo({ exp }: { exp: any }) {
                     placeholder="$0.00"
                     className="tabular-nums"
                   />
+                  {helper && <p className="text-[11px] text-muted-foreground leading-tight">{helper}</p>}
                 </div>
               );
             };
+
 
 
 
