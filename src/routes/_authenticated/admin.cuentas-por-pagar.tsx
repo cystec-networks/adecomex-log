@@ -143,6 +143,7 @@ const emptyForm = {
   proveedor_rnc: "",
   numero_factura: "",
   ncf_proveedor: "",
+  categoria: "otros" as CategoriaCxp,
 
   monto_total: "" as string,
   moneda: "DOP" as Moneda,
