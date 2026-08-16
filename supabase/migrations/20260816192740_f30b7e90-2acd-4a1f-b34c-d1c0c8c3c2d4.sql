@@ -1,0 +1,1 @@
+DELETE FROM public.expedientes WHERE numero LIKE 'EXP-TEST-%';
