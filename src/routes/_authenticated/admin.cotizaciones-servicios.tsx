@@ -284,6 +284,14 @@ function TarifarioTab() {
                 <Label className="text-xs">Descripción</Label>
                 <Textarea rows={2} value={edit.descripcion ?? ""} onChange={(e) => setEdit({ ...edit, descripcion: e.target.value })} />
               </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="tarifa-gravado"
+                  checked={edit.gravado ?? true}
+                  onCheckedChange={(v) => setEdit({ ...edit, gravado: v })}
+                />
+                <Label htmlFor="tarifa-gravado" className="text-sm font-normal">Gravado con ITBIS</Label>
+              </div>
             </div>
           )}
           <DialogFooter>
