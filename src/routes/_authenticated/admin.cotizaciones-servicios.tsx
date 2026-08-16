@@ -485,7 +485,17 @@ function CotizacionesTab() {
               const tot = totalPorMoneda(c.cotizaciones_servicios_lineas ?? []);
               return (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.numero}</TableCell>
+                  <TableCell className="font-medium">
+                    {c.numero}
+                    {c.expedientes?.id && (
+                      <Link to="/expedientes/$id" params={{ id: c.expedientes.id }} className="no-underline block">
+                        <Badge variant="outline" className="mt-1 cursor-pointer font-normal">
+                          ← Expediente {c.expedientes.numero}
+                        </Badge>
+                      </Link>
+                    )}
+                  </TableCell>
+
                   <TableCell>{(clientes ?? []).find((x: any) => x.id === c.cliente_id)?.nombre ?? "—"}</TableCell>
                   <TableCell>{fmtLocalDate(c.fecha)}</TableCell>
                   <TableCell>{c.fecha_vigencia ? fmtLocalDate(c.fecha_vigencia) : "—"}</TableCell>
