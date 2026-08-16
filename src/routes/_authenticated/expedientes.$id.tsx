@@ -755,7 +755,7 @@ function TabInfo({ exp }: { exp: any }) {
                       {fmt(fob)}
                     </div>
                   </div>
-                  {renderMoney("Seguro", "seguro")}
+                  {renderMoney("Seguro", "seguro", "Por defecto 2% del FOB (valor de referencia). Edítalo si tienes el monto real de la póliza.")}
                   {renderMoney("Flete", "flete")}
                   {renderMoney("Otros", "otros")}
 
