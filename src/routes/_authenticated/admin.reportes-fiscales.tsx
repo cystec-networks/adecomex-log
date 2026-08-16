@@ -221,13 +221,14 @@ function Panel606({ periodo }: { periodo: string }) {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["reporte-606", periodo],
     queryFn: async (): Promise<Row[]> => {
-      const cols = "id,fecha,proveedor,concepto,rnc_cedula_proveedor,tipo_id_proveedor,ncf_proveedor,tipo_ncf_proveedor,ncf_modificado,monto_facturado,itbis_facturado,itbis_retenido,isr_retenido,forma_pago,tipo_bienes_servicios,monto_facturado_servicios,monto_facturado_bienes,tipo_retencion_isr,itbis_proporcionalidad_349,itbis_llevado_costo,itbis_percibido_compras,isr_percibido_compras,impuesto_selectivo_consumo,otros_impuestos_tasas,monto_propina_legal";
+      const colsComun = "id,fecha,concepto,rnc_cedula_proveedor,tipo_id_proveedor,ncf_proveedor,tipo_ncf_proveedor,ncf_modificado,monto_facturado,itbis_facturado,itbis_retenido,isr_retenido,forma_pago,tipo_bienes_servicios,monto_facturado_servicios,monto_facturado_bienes,tipo_retencion_isr,itbis_proporcionalidad_349,itbis_llevado_costo,itbis_percibido_compras,isr_percibido_compras,impuesto_selectivo_consumo,otros_impuestos_tasas,monto_propina_legal";
+      const colsGastos = `proveedor,${colsComun}`;
       const [g, go] = await Promise.all([
-        supabase.from("gastos").select(cols)
+        supabase.from("gastos").select(colsGastos)
           .not("rnc_cedula_proveedor", "is", null)
           .gte("fecha", from).lt("fecha", to)
           .is("deleted_at", null),
-        supabase.from("gastos_operativos").select(cols)
+        supabase.from("gastos_operativos").select(colsComun)
           .not("rnc_cedula_proveedor", "is", null)
           .gte("fecha", from).lt("fecha", to)
           .is("eliminado_en", null),
@@ -235,14 +236,27 @@ function Panel606({ periodo }: { periodo: string }) {
       if (g.error) throw g.error;
       if (go.error) throw go.error;
       const num = (v: any) => Number(v) || 0;
-      const map = (arr: any[], origen: Origen): Row[] => arr.map(r => ({
-        key: `${origen}:${r.id}`, origen, ...r,
+      const mapGastos = (arr: any[]): Row[] => arr.map(r => ({
+        key: `gasto:${r.id}`,
+        origen: "gasto" as Origen,
+        id: r.id,
+        fecha: r.fecha,
+        proveedor: r.proveedor,
+        concepto: r.concepto,
+        rnc_cedula_proveedor: r.rnc_cedula_proveedor,
+        tipo_id_proveedor: r.tipo_id_proveedor,
+        ncf_proveedor: r.ncf_proveedor,
+        tipo_ncf_proveedor: r.tipo_ncf_proveedor,
+        ncf_modificado: r.ncf_modificado,
         monto_facturado: num(r.monto_facturado),
         itbis_facturado: num(r.itbis_facturado),
         itbis_retenido: num(r.itbis_retenido),
         isr_retenido: num(r.isr_retenido),
+        forma_pago: r.forma_pago,
+        tipo_bienes_servicios: r.tipo_bienes_servicios,
         monto_facturado_servicios: num(r.monto_facturado_servicios),
         monto_facturado_bienes: num(r.monto_facturado_bienes),
+        tipo_retencion_isr: r.tipo_retencion_isr,
         itbis_proporcionalidad_349: num(r.itbis_proporcionalidad_349),
         itbis_llevado_costo: num(r.itbis_llevado_costo),
         itbis_percibido_compras: num(r.itbis_percibido_compras),
@@ -251,7 +265,36 @@ function Panel606({ periodo }: { periodo: string }) {
         otros_impuestos_tasas: num(r.otros_impuestos_tasas),
         monto_propina_legal: num(r.monto_propina_legal),
       }));
-      return [...map(g.data ?? [], "gasto"), ...map(go.data ?? [], "gasto_operativo")]
+      const mapGastosOp = (arr: any[]): Row[] => arr.map(r => ({
+        key: `gasto_operativo:${r.id}`,
+        origen: "gasto_operativo" as Origen,
+        id: r.id,
+        fecha: r.fecha,
+        proveedor: null,
+        concepto: r.concepto,
+        rnc_cedula_proveedor: r.rnc_cedula_proveedor,
+        tipo_id_proveedor: r.tipo_id_proveedor,
+        ncf_proveedor: r.ncf_proveedor,
+        tipo_ncf_proveedor: r.tipo_ncf_proveedor,
+        ncf_modificado: r.ncf_modificado,
+        monto_facturado: num(r.monto_facturado),
+        itbis_facturado: num(r.itbis_facturado),
+        itbis_retenido: num(r.itbis_retenido),
+        isr_retenido: num(r.isr_retenido),
+        forma_pago: r.forma_pago,
+        tipo_bienes_servicios: r.tipo_bienes_servicios,
+        monto_facturado_servicios: num(r.monto_facturado_servicios),
+        monto_facturado_bienes: num(r.monto_facturado_bienes),
+        tipo_retencion_isr: r.tipo_retencion_isr,
+        itbis_proporcionalidad_349: num(r.itbis_proporcionalidad_349),
+        itbis_llevado_costo: num(r.itbis_llevado_costo),
+        itbis_percibido_compras: num(r.itbis_percibido_compras),
+        isr_percibido_compras: num(r.isr_percibido_compras),
+        impuesto_selectivo_consumo: num(r.impuesto_selectivo_consumo),
+        otros_impuestos_tasas: num(r.otros_impuestos_tasas),
+        monto_propina_legal: num(r.monto_propina_legal),
+      }));
+      return [...mapGastos(g.data ?? []), ...mapGastosOp(go.data ?? [])]
         .sort((a, b) => (a.fecha ?? "").localeCompare(b.fecha ?? ""));
     },
   });
