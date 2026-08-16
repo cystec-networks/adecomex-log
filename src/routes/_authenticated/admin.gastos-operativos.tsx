@@ -21,6 +21,11 @@ import { Pencil, Plus, Trash2, Copy, AlertTriangle, CreditCard } from "lucide-re
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
+} from "recharts";
+
 
 export const Route = createFileRoute("/_authenticated/admin/gastos-operativos")({
   ssr: false,
@@ -109,6 +114,8 @@ const NCF_RE = /^[A-Za-z0-9]{11}$|^[A-Za-z0-9]{13}$/;
 function GastosOperativosPage() {
   const qc = useQueryClient();
   const [anchor, setAnchor] = useState<Date>(() => new Date());
+  const [modo, setModo] = useState<"mes" | "anual">("mes");
+
   const [editing, setEditing] = useState<Row | null>(null);
   const [copyOpen, setCopyOpen] = useState(false);
   const [fCategoria, setFCategoria] = useState<Categoria | "todas">("todas");
@@ -222,29 +229,43 @@ function GastosOperativosPage() {
             <p className="text-sm text-muted-foreground">Gastos generales/fijos del negocio, independientes de expedientes y transportes.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1))}>◄</Button>
-            <div className="font-medium w-32 text-center capitalize">
-              {anchor.toLocaleDateString("es-DO", { month: "long", year: "numeric" })}
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1))}>►</Button>
-            <div className="min-w-[180px]">
-              <Select value={fCategoria} onValueChange={(v) => setFCategoria(v as Categoria | "todas")}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas las categorías</SelectItem>
-                  {CATEGORIA_ORDEN.map((c) => (
-                    <SelectItem key={c} value={c}>{CATEGORIA_LABEL[c]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Tabs value={modo} onValueChange={(v) => setModo(v as "mes" | "anual")}>
+              <TabsList>
+                <TabsTrigger value="mes">Detalle mensual</TabsTrigger>
+                <TabsTrigger value="anual">Vista Anual</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            {modo === "mes" && (
+              <>
+                <Button variant="outline" size="sm" onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1))}>◄</Button>
+                <div className="font-medium w-32 text-center capitalize">
+                  {anchor.toLocaleDateString("es-DO", { month: "long", year: "numeric" })}
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1))}>►</Button>
+                <div className="min-w-[180px]">
+                  <Select value={fCategoria} onValueChange={(v) => setFCategoria(v as Categoria | "todas")}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Categoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas las categorías</SelectItem>
+                      {CATEGORIA_ORDEN.map((c) => (
+                        <SelectItem key={c} value={c}>{CATEGORIA_LABEL[c]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
             <Button onClick={() => setEditing({ id: "", concepto: "", categoria: "otros", monto: 0, moneda: "DOP", fecha: new Date().toISOString().slice(0, 10), es_recurrente: false, comprobante_url: null, notas: null, rnc_cedula_proveedor: null, tipo_id_proveedor: null, ncf_proveedor: null, tipo_ncf_proveedor: null, ncf_modificado: null, monto_facturado: 0, itbis_facturado: 0, itbis_retenido: 0, isr_retenido: 0, forma_pago: null })}>
               <Plus className="h-4 w-4 mr-1" /> Nuevo gasto
             </Button>
           </div>
         </div>
+
+        {modo === "mes" ? (
+          <>
+
 
         {faltantes.length > 0 && (
           <Card className="border-amber-500/40 bg-amber-500/5">
@@ -361,7 +382,12 @@ function GastosOperativosPage() {
             )}
           </CardContent>
         </Card>
+          </>
+        ) : (
+          <VistaAnual onPickMonth={(y, m) => { setAnchor(new Date(y, m, 1)); setModo("mes"); }} />
+        )}
       </div>
+
 
       {editing && <EditDialog row={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); qc.invalidateQueries({ queryKey: ["gastos-op"] }); }} />}
       {copyOpen && <CopyDialog items={faltantes} onClose={() => setCopyOpen(false)} onConfirm={(ids) => copiarRecurrentes.mutate(ids)} pending={copiarRecurrentes.isPending} />}
@@ -722,5 +748,187 @@ function CopyDialog({ items, onClose, onConfirm, pending }: { items: Row[]; onCl
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+const MESES_CORTOS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+
+function VistaAnual({ onPickMonth }: { onPickMonth: (year: number, monthIdx: number) => void }) {
+  const currentYear = new Date().getFullYear();
+  const [year, setYear] = useState<number>(currentYear);
+
+  const { data: years } = useQuery({
+    queryKey: ["gastos-op-years"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gastos_operativos").select("fecha").is("eliminado_en", null);
+      if (error) throw error;
+      const set = new Set<number>((data ?? []).map((r: any) => Number(String(r.fecha).slice(0, 4))));
+      set.add(currentYear);
+      return [...set].filter(Boolean).sort((a, b) => b - a);
+    },
+  });
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["gastos-op-anual", year],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gastos_operativos")
+        .select("fecha, monto, moneda, es_recurrente")
+        .is("eliminado_en", null)
+        .gte("fecha", `${year - 1}-01-01`)
+        .lte("fecha", `${year}-12-31`);
+      if (error) throw error;
+      return (data ?? []) as { fecha: string; monto: number; moneda: Moneda; es_recurrente: boolean }[];
+    },
+  });
+
+  const view = useMemo(() => {
+    const rows = data ?? [];
+    const meses = MESES_CORTOS.map((m, i) => ({
+      idx: i, mes: m, dop: 0, usd: 0, cantidad: 0, recurrentes: 0,
+    }));
+    let prevDop = 0, prevUsd = 0, curCmpDop = 0, curCmpUsd = 0;
+    const lastMonth = year === currentYear ? new Date().getMonth() : 11;
+
+    for (const r of rows) {
+      const y = Number(r.fecha.slice(0, 4));
+      const m = Number(r.fecha.slice(5, 7)) - 1;
+      const monto = Number(r.monto || 0);
+      if (y === year) {
+        const b = meses[m];
+        if (!b) continue;
+        if (r.moneda === "USD") b.usd += monto; else b.dop += monto;
+        b.cantidad += 1;
+        if (r.es_recurrente) b.recurrentes += 1;
+        if (m <= lastMonth) { if (r.moneda === "USD") curCmpUsd += monto; else curCmpDop += monto; }
+      } else if (y === year - 1 && m <= lastMonth) {
+        if (r.moneda === "USD") prevUsd += monto; else prevDop += monto;
+      }
+    }
+    const totDop = meses.reduce((s, m) => s + m.dop, 0);
+    const totUsd = meses.reduce((s, m) => s + m.usd, 0);
+    const totCant = meses.reduce((s, m) => s + m.cantidad, 0);
+    const totRec = meses.reduce((s, m) => s + m.recurrentes, 0);
+    const varPct = prevDop > 0 ? ((curCmpDop - prevDop) / prevDop) * 100 : (curCmpDop > 0 ? 100 : 0);
+    return { meses, totDop, totUsd, totCant, totRec, prevDop, prevUsd, curCmpDop, curCmpUsd, varPct, lastMonth };
+  }, [data, year, currentYear]);
+
+  const parcial = year === currentYear;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 flex-wrap">
+        <Label className="text-sm">Año</Label>
+        <div className="w-32">
+          <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(years ?? [currentYear]).map((y) => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>
+              Total {year}{parcial ? ` (Ene–${MESES_CORTOS[view.lastMonth]})` : ""} · DOP
+            </CardDescription>
+            <CardTitle>{fmt(view.curCmpDop, "DOP")}</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 text-xs text-muted-foreground">
+            USD del mismo período: {fmt(view.curCmpUsd, "USD")}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>
+              Total {year - 1}{parcial ? ` (Ene–${MESES_CORTOS[view.lastMonth]})` : ""} · DOP
+            </CardDescription>
+            <CardTitle>{fmt(view.prevDop, "DOP")}</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 text-xs">
+            <span className={view.varPct <= 0 ? "text-emerald-600" : "text-red-600"}>
+              {view.varPct <= 0 ? "▼" : "▲"} {Math.abs(view.varPct).toFixed(1)}% vs {year - 1}
+            </span>
+            <span className="text-muted-foreground"> · USD {fmt(view.prevUsd, "USD")}</span>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Gastos por mes · {year}</CardTitle>
+          <CardDescription>Clic en una barra para ver el detalle del mes</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? <div className="text-sm text-muted-foreground">Cargando…</div> : (
+            <div className="h-72">
+              <ResponsiveContainer>
+                <BarChart data={view.meses} onClick={(e: any) => {
+                  const i = e?.activeTooltipIndex;
+                  if (typeof i === "number") onPickMonth(year, i);
+                }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="mes" />
+                  <YAxis tickFormatter={(v) => `${(Number(v) / 1000).toFixed(0)}k`} />
+                  <Tooltip formatter={(v: any, n: any) => fmt(Number(v), n === "USD" ? "USD" : "DOP")} />
+                  <Legend />
+                  <Bar dataKey="dop" name="DOP" fill="hsl(var(--primary))" className="cursor-pointer" />
+                  <Bar dataKey="usd" name="USD" fill="hsl(var(--destructive))" className="cursor-pointer" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Resumen mensual {year}</CardTitle></CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left border-b text-muted-foreground">
+                <tr>
+                  <th className="py-2 pr-3">Mes</th>
+                  <th className="py-2 pr-3 text-right">Total DOP</th>
+                  <th className="py-2 pr-3 text-right">Total USD</th>
+                  <th className="py-2 pr-3 text-right">Gastos</th>
+                  <th className="py-2 pr-3 text-right">Recurrentes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {view.meses.map((m) => (
+                  <tr
+                    key={m.idx}
+                    className="border-b hover:bg-muted/40 cursor-pointer"
+                    onClick={() => onPickMonth(year, m.idx)}
+                  >
+                    <td className="py-2 pr-3 font-medium">{m.mes}</td>
+                    <td className="py-2 pr-3 text-right">{fmt(m.dop, "DOP")}</td>
+                    <td className="py-2 pr-3 text-right">{fmt(m.usd, "USD")}</td>
+                    <td className="py-2 pr-3 text-right">{m.cantidad}</td>
+                    <td className="py-2 pr-3 text-right">{m.recurrentes}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="font-semibold">
+                  <td className="py-2 pr-3">TOTAL ANUAL</td>
+                  <td className="py-2 pr-3 text-right">{fmt(view.totDop, "DOP")}</td>
+                  <td className="py-2 pr-3 text-right">{fmt(view.totUsd, "USD")}</td>
+                  <td className="py-2 pr-3 text-right">{view.totCant}</td>
+                  <td className="py-2 pr-3 text-right">{view.totRec}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
