@@ -552,7 +552,7 @@ function CotizacionesTab() {
                       <FileText className="h-4 w-4 mr-1" /> PDF
                     </Button>
                     {canEdit && (
-                      c.factura_id ? (
+                      c.factura_id && !c.facturas_ecf?.eliminado_en ? (
                         <Button
                           variant="ghost" size="sm" disabled
                           title="No se puede borrar: ya fue convertida en factura"
@@ -571,6 +571,12 @@ function CotizacionesTab() {
                               <AlertDialogTitle>¿Eliminar cotización {c.numero}?</AlertDialogTitle>
                               <AlertDialogDescription>
                                 Esta acción no se puede deshacer.
+                                {c.facturas_ecf?.eliminado_en && (
+                                  <>
+                                    <br /><br />
+                                    La factura vinculada ({c.facturas_ecf.encf}) está en papelera, por eso se permite borrar esta cotización.
+                                  </>
+                                )}
                                 {c.expedientes?.id && (
                                   <>
                                     <br /><br />
@@ -579,6 +585,7 @@ function CotizacionesTab() {
                                 )}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
+
                             <AlertDialogFooter>
                               <AlertDialogCancel onClick={() => setBorrarId(null)}>Cancelar</AlertDialogCancel>
                               <AlertDialogAction
