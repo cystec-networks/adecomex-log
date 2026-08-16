@@ -183,9 +183,12 @@ const GROUPS: Group[] = [
       { to: "/admin/cotizaciones-servicios", label: "Cotizaciones de Servicios", icon: FileSpreadsheet, roles: ["admin","finanzas","contabilidad"],
         match: (p) => p.startsWith("/admin/cotizaciones-servicios") },
       { to: "/admin/facturacion", label: "Facturación (e-CF)", icon: Receipt, roles: ["admin","contabilidad"],
-        match: (p) => p === "/admin/facturacion" || (p.startsWith("/admin/facturacion") && !p.includes("/pendientes")) },
+        match: (p) => p === "/admin/facturacion" || (p.startsWith("/admin/facturacion") && !p.includes("/pendientes") && !p.includes("/papelera")) },
       { to: "/admin/facturacion/pendientes", label: "Pendientes de vincular", icon: ClipboardList, roles: ["admin","contabilidad"],
         match: (p) => p.startsWith("/admin/facturacion/pendientes") },
+      { to: "/admin/facturacion/papelera", label: "Papelera de Facturas", icon: Trash2, roles: ["admin","contabilidad"],
+        match: (p) => p.startsWith("/admin/facturacion/papelera") },
+
       { to: "/admin/gastos-operativos", label: "Gastos Operativos", icon: DollarSign, roles: ["admin","contabilidad"],
         match: (p) => p.startsWith("/admin/gastos-operativos") },
       { to: "/admin/cuentas-por-pagar", label: "Cuentas por Pagar", icon: Wallet, roles: ["admin","finanzas"],

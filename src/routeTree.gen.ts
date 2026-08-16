@@ -89,6 +89,7 @@ import { Route as PortalPortalExpedientesIdRouteImport } from './routes/_portal/
 import { Route as PortalEstudiantePortalEstudianteProgramasIdRouteImport } from './routes/_portal-estudiante/portal-estudiante.programas.$id'
 import { Route as AuthenticatedRrhhEmpleadosIdRouteImport } from './routes/_authenticated/rrhh.empleados.$id'
 import { Route as AuthenticatedAdminFacturacionPendientesRouteImport } from './routes/_authenticated/admin.facturacion_.pendientes'
+import { Route as AuthenticatedAdminFacturacionPapeleraRouteImport } from './routes/_authenticated/admin.facturacion_.papelera'
 
 const SolicitudPagoTransporteRoute = SolicitudPagoTransporteRouteImport.update({
   id: '/solicitud-pago-transporte',
@@ -546,6 +547,12 @@ const AuthenticatedAdminFacturacionPendientesRoute =
     path: '/admin/facturacion/pendientes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminFacturacionPapeleraRoute =
+  AuthenticatedAdminFacturacionPapeleraRouteImport.update({
+    id: '/admin/facturacion_/papelera',
+    path: '/admin/facturacion/papelera',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -615,6 +622,7 @@ export interface FileRoutesByFullPath {
   '/transportes/': typeof AuthenticatedTransportesIndexRoute
   '/portal-estudiante/': typeof PortalEstudiantePortalEstudianteIndexRoute
   '/portal/': typeof PortalPortalIndexRoute
+  '/admin/facturacion/papelera': typeof AuthenticatedAdminFacturacionPapeleraRoute
   '/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
   '/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
@@ -694,6 +702,7 @@ export interface FileRoutesByTo {
   '/transportes': typeof AuthenticatedTransportesIndexRoute
   '/portal-estudiante': typeof PortalEstudiantePortalEstudianteIndexRoute
   '/portal': typeof PortalPortalIndexRoute
+  '/admin/facturacion/papelera': typeof AuthenticatedAdminFacturacionPapeleraRoute
   '/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
   '/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
@@ -777,6 +786,7 @@ export interface FileRoutesById {
   '/_authenticated/transportes/': typeof AuthenticatedTransportesIndexRoute
   '/_portal-estudiante/portal-estudiante/': typeof PortalEstudiantePortalEstudianteIndexRoute
   '/_portal/portal/': typeof PortalPortalIndexRoute
+  '/_authenticated/admin/facturacion_/papelera': typeof AuthenticatedAdminFacturacionPapeleraRoute
   '/_authenticated/admin/facturacion_/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
   '/_authenticated/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/_portal-estudiante/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
@@ -858,6 +868,7 @@ export interface FileRouteTypes {
     | '/transportes/'
     | '/portal-estudiante/'
     | '/portal/'
+    | '/admin/facturacion/papelera'
     | '/admin/facturacion/pendientes'
     | '/rrhh/empleados/$id'
     | '/portal-estudiante/programas/$id'
@@ -937,6 +948,7 @@ export interface FileRouteTypes {
     | '/transportes'
     | '/portal-estudiante'
     | '/portal'
+    | '/admin/facturacion/papelera'
     | '/admin/facturacion/pendientes'
     | '/rrhh/empleados/$id'
     | '/portal-estudiante/programas/$id'
@@ -1019,6 +1031,7 @@ export interface FileRouteTypes {
     | '/_authenticated/transportes/'
     | '/_portal-estudiante/portal-estudiante/'
     | '/_portal/portal/'
+    | '/_authenticated/admin/facturacion_/papelera'
     | '/_authenticated/admin/facturacion_/pendientes'
     | '/_authenticated/rrhh/empleados/$id'
     | '/_portal-estudiante/portal-estudiante/programas/$id'
@@ -1613,6 +1626,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminFacturacionPendientesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/facturacion_/papelera': {
+      id: '/_authenticated/admin/facturacion_/papelera'
+      path: '/admin/facturacion/papelera'
+      fullPath: '/admin/facturacion/papelera'
+      preLoaderRoute: typeof AuthenticatedAdminFacturacionPapeleraRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -1667,6 +1687,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPermisosIndexRoute: typeof AuthenticatedPermisosIndexRoute
   AuthenticatedSolicitudesIndexRoute: typeof AuthenticatedSolicitudesIndexRoute
   AuthenticatedTransportesIndexRoute: typeof AuthenticatedTransportesIndexRoute
+  AuthenticatedAdminFacturacionPapeleraRoute: typeof AuthenticatedAdminFacturacionPapeleraRoute
   AuthenticatedAdminFacturacionPendientesRoute: typeof AuthenticatedAdminFacturacionPendientesRoute
   AuthenticatedRrhhEmpleadosIdRoute: typeof AuthenticatedRrhhEmpleadosIdRoute
   AuthenticatedLegalDocumentosIndexRoute: typeof AuthenticatedLegalDocumentosIndexRoute
@@ -1741,6 +1762,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPermisosIndexRoute: AuthenticatedPermisosIndexRoute,
   AuthenticatedSolicitudesIndexRoute: AuthenticatedSolicitudesIndexRoute,
   AuthenticatedTransportesIndexRoute: AuthenticatedTransportesIndexRoute,
+  AuthenticatedAdminFacturacionPapeleraRoute:
+    AuthenticatedAdminFacturacionPapeleraRoute,
   AuthenticatedAdminFacturacionPendientesRoute:
     AuthenticatedAdminFacturacionPendientesRoute,
   AuthenticatedRrhhEmpleadosIdRoute: AuthenticatedRrhhEmpleadosIdRoute,

@@ -333,7 +333,7 @@ function CotizacionesTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cotizaciones_servicios")
-        .select("*, cotizaciones_servicios_lineas(*), facturas_ecf(id,encf), expedientes(id,numero)")
+        .select("*, cotizaciones_servicios_lineas(*), facturas_ecf(id,encf,eliminado_en), expedientes(id,numero)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -552,7 +552,7 @@ function CotizacionesTab() {
                       <FileText className="h-4 w-4 mr-1" /> PDF
                     </Button>
                     {canEdit && (
-                      c.factura_id ? (
+                      c.factura_id && !c.facturas_ecf?.eliminado_en ? (
                         <Button
                           variant="ghost" size="sm" disabled
                           title="No se puede borrar: ya fue convertida en factura"
@@ -571,6 +571,12 @@ function CotizacionesTab() {
                               <AlertDialogTitle>¿Eliminar cotización {c.numero}?</AlertDialogTitle>
                               <AlertDialogDescription>
                                 Esta acción no se puede deshacer.
+                                {c.facturas_ecf?.eliminado_en && (
+                                  <>
+                                    <br /><br />
+                                    La factura vinculada ({c.facturas_ecf.encf}) está en papelera, por eso se permite borrar esta cotización.
+                                  </>
+                                )}
                                 {c.expedientes?.id && (
                                   <>
                                     <br /><br />
@@ -579,6 +585,7 @@ function CotizacionesTab() {
                                 )}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
+
                             <AlertDialogFooter>
                               <AlertDialogCancel onClick={() => setBorrarId(null)}>Cancelar</AlertDialogCancel>
                               <AlertDialogAction
@@ -848,8 +855,9 @@ function CotizacionDialog({
                   <TableHead className="w-28">Código</TableHead>
                   <TableHead className="min-w-48">Servicio</TableHead>
                   <TableHead className="min-w-48">Descripción</TableHead>
-                  <TableHead className="w-24">Cant.</TableHead>
-                  <TableHead className="w-32">Tarifa</TableHead>
+                  <TableHead className="w-28">Cant.</TableHead>
+                  <TableHead className="w-36">Tarifa</TableHead>
+
                   <TableHead className="w-24">Moneda</TableHead>
                   <TableHead className="w-20">ITBIS</TableHead>
                   <TableHead className="w-28 text-right">Subtotal</TableHead>
@@ -865,8 +873,9 @@ function CotizacionDialog({
                     <TableCell><Input value={l.codigo} onChange={(e) => setLinea(i, { codigo: e.target.value })} /></TableCell>
                     <TableCell><Input value={l.servicio} onChange={(e) => setLinea(i, { servicio: e.target.value })} /></TableCell>
                     <TableCell><Input value={l.descripcion} onChange={(e) => setLinea(i, { descripcion: e.target.value })} /></TableCell>
-                    <TableCell><Input type="number" step="0.01" value={Number.isFinite(l.cantidad) ? l.cantidad : ""} onChange={(e) => { const v = e.target.value; setLinea(i, { cantidad: v === "" ? 0 : Number(v) }); }} /></TableCell>
-                    <TableCell><Input type="number" step="0.01" value={Number.isFinite(l.tarifa_unitaria) ? l.tarifa_unitaria : ""} onChange={(e) => { const v = e.target.value; setLinea(i, { tarifa_unitaria: v === "" ? 0 : Number(v) }); }} /></TableCell>
+                    <TableCell><Input type="number" step="0.01" className="min-w-[90px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" value={Number.isFinite(l.cantidad) ? l.cantidad : ""} onChange={(e) => { const v = e.target.value; setLinea(i, { cantidad: v === "" ? 0 : Number(v) }); }} /></TableCell>
+                    <TableCell><Input type="number" step="0.01" className="min-w-[120px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" value={Number.isFinite(l.tarifa_unitaria) ? l.tarifa_unitaria : ""} onChange={(e) => { const v = e.target.value; setLinea(i, { tarifa_unitaria: v === "" ? 0 : Number(v) }); }} /></TableCell>
+
                     <TableCell>
                       <Select value={l.moneda} onValueChange={(v) => setLinea(i, { moneda: v })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
