@@ -180,6 +180,18 @@ function ConciliacionBancariaPage() {
     });
   }, [movimientos, desde, hasta, fTipo, fEstado]);
 
+  // Parseo tolerante: acepta "6,905,883.27", "RD$ 6.905.883,27", etc.
+  const balanceBancoNum = useMemo(() => {
+    let s = balanceBanco.replace(/[^\d.,-]/g, "").trim();
+    if (!s) return null;
+    const lastComma = s.lastIndexOf(",");
+    const lastDot = s.lastIndexOf(".");
+    if (lastComma > lastDot) s = s.replace(/\./g, "").replace(",", ".");
+    else s = s.replace(/,/g, "");
+    const n = parseFloat(s);
+    return isFinite(n) ? n : null;
+  }, [balanceBanco]);
+
   const resumen = useMemo(() => {
     let creditos = 0, debitos = 0, conciliados = 0, pendientes = 0;
     for (const m of filtrados) {
@@ -336,16 +348,16 @@ function ConciliacionBancariaPage() {
             />
             <div className="text-xs text-muted-foreground">
               Neto de movimientos filtrados: {fmtRD(resumen.neto)}
-              {balanceBanco.trim() !== "" && isFinite(parseFloat(balanceBanco)) && (
-                <> · Diferencia: {fmtRD(parseFloat(balanceBanco) - resumen.neto)}</>
-              )}
               {balanceActual !== null && (
                 <>
                   <br />Balance actual (calculado): <strong>{fmtRD(balanceActual)}</strong>
-                  {balanceBanco.trim() !== "" && isFinite(parseFloat(balanceBanco)) && (
-                    <> · Dif. vs banco: {fmtRD(parseFloat(balanceBanco) - balanceActual)}</>
+                  {balanceBancoNum !== null && (
+                    <> · Dif. vs banco: {fmtRD(balanceBancoNum - balanceActual)}</>
                   )}
                 </>
+              )}
+              {balanceActual === null && balanceBancoNum !== null && (
+                <> · Dif. vs neto: {fmtRD(balanceBancoNum - resumen.neto)}</>
               )}
             </div>
           </CardContent>
