@@ -221,7 +221,16 @@ function FacturacionPage() {
                   const trs = f.transportes as { id: string; numero_viaje: string }[] | null;
                   return (
                     <tr key={f.id} className="border-b last:border-0 hover:bg-muted/20">
-                      <td className="px-3 py-2 font-mono font-medium">{f.encf}</td>
+                      <td className="px-3 py-2 font-mono font-medium">
+                        <button
+                          className="text-primary hover:underline"
+                          onClick={() => setEditId(f.id)}
+                          title="Editar factura"
+                        >
+                          {f.encf}
+                        </button>
+                      </td>
+
                       <td>
                         <Badge variant="outline" className={tipoBadgeClass(f.tipo_comprobante)}>
                           {f.tipo_comprobante}
