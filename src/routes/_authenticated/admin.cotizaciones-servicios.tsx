@@ -298,6 +298,7 @@ function TarifarioTab() {
 
 function CotizacionesTab() {
   const qc = useQueryClient();
+  const { editar } = Route.useSearch();
   const [nueva, setNueva] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -315,12 +316,22 @@ function CotizacionesTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cotizaciones_servicios")
-        .select("*, cotizaciones_servicios_lineas(*), facturas_ecf(id,encf)")
+        .select("*, cotizaciones_servicios_lineas(*), facturas_ecf(id,encf), expedientes(id,numero)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
   });
+
+  useEffect(() => {
+    if (!editar) return;
+    const existe = (cotizaciones ?? []).some((c: any) => c.id === editar);
+    if (existe) {
+      setEditId(editar);
+      setNueva(true);
+    }
+  }, [editar, cotizaciones]);
+
 
   const cambiarEstado = useMutation({
     mutationFn: async ({ id, estado }: { id: string; estado: string }) => {
