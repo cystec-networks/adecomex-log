@@ -104,6 +104,19 @@ function PlantillasDocumentosPage() {
     onError: (e: any) => toast.error(e.message ?? "No se pudo actualizar"),
   });
 
+  const eliminar = useMutation({
+    mutationFn: async (p: Plantilla) => {
+      const { error } = await supabase.from("plantillas_documentos").delete().eq("id", p.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Plantilla eliminada");
+      qc.invalidateQueries({ queryKey: ["plantillas-documentos"] });
+      setAEliminar(null);
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo eliminar"),
+  });
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
