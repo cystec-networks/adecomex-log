@@ -191,7 +191,7 @@ ${bloqueFirmas(true)}
 {{__anexo_inicio__}}
 <div class="doc-page" style="page-break-before:always">
 ${encabezado("Page annex", "Hoja anexa", false)}
-${tablaMercancias("productoAnexo", 250)}
+${tablaMercancias("productoAnexo", 26)}
 ${bloqueCierre("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")}
 ${bloqueFirmas(false)}
 </div>
