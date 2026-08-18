@@ -74,9 +74,9 @@ export function PlantillaEditor({
     </Button>
   );
 
-
   return (
     <div className="border rounded-md overflow-hidden bg-background">
+
       <div className="flex flex-wrap items-center gap-1 border-b px-2 py-1 bg-muted/40">
         <Btn title="Negrita" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}><Bold className="h-4 w-4" /></Btn>
         <Btn title="Cursiva" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}><Italic className="h-4 w-4" /></Btn>
