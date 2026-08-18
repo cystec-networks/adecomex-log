@@ -83,27 +83,48 @@ export function GenerarDocumentoButton({ exp }: { exp: any }) {
     try {
       const html2canvas = (await import("html2canvas-pro")).default;
       const { default: jsPDF } = await import("jspdf");
-      const canvas = await html2canvas(previewRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-      });
-      const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({ unit: "mm", format: "letter", orientation: "portrait" });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 10;
-      const imgWidth = pageWidth - margin * 2;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = margin;
-      pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
-      heightLeft -= (pageHeight - margin * 2);
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight + margin;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
-        heightLeft -= (pageHeight - margin * 2);
+      const maxW = pageWidth - margin * 2;
+      const maxH = pageHeight - margin * 2;
+
+      const paginas = Array.from(
+        previewRef.current.querySelectorAll<HTMLElement>(".doc-page"),
+      );
+      const targets = paginas.length ? paginas : [previewRef.current];
+
+      for (let i = 0; i < targets.length; i++) {
+        const canvas = await html2canvas(targets[i], {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+        });
+        const imgData = canvas.toDataURL("image/png");
+        if (i > 0) pdf.addPage();
+
+        if (paginas.length) {
+          // Cada bloque marcado ocupa exactamente una página (escalado para caber)
+          const ratio = Math.min(maxW / canvas.width, maxH / canvas.height);
+          const w = canvas.width * ratio;
+          const h = canvas.height * ratio;
+          pdf.addImage(imgData, "PNG", margin + (maxW - w) / 2, margin, w, h);
+        } else {
+          // Plantilla sin marcas de página: se corta en varias páginas
+          const imgWidth = maxW;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          let heightLeft = imgHeight;
+          let position = margin;
+          pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+          heightLeft -= maxH;
+          while (heightLeft > 0) {
+            position = heightLeft - imgHeight + margin;
+            pdf.addPage();
+            pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+            heightLeft -= maxH;
+          }
+        }
       }
       pdf.save(`${plantilla.nombre}_${exp.numero ?? "documento"}.pdf`);
       const tipo = tipoChecklist(plantilla.nombre);
