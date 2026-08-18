@@ -127,7 +127,7 @@ function limpiarBordesSeccion(html: string): string {
 function envolverPagina(html: string): string {
   const contenido = limpiarBordesSeccion(html);
   if (/class=["'][^"']*\bdoc-page\b/i.test(contenido)) return contenido;
-  return `<div class="doc-page">${contenido}</div>`;
+  return `<div class="doc-page" style="width:100%;box-sizing:border-box;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;font-size:10px">${contenido}</div>`;
 }
 
 /**

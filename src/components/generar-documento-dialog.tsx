@@ -86,9 +86,7 @@ export function GenerarDocumentoButton({ exp }: { exp: any }) {
       const pdf = new jsPDF({ unit: "mm", format: "letter", orientation: "portrait" });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
-      const maxW = pageWidth - margin * 2;
-      const maxH = pageHeight - margin * 2;
+      const fallbackMargin = 10;
 
       const paginas = Array.from(
         previewRef.current.querySelectorAll<HTMLElement>(".doc-page"),
@@ -105,23 +103,30 @@ export function GenerarDocumentoButton({ exp }: { exp: any }) {
         if (i > 0) pdf.addPage();
 
         if (paginas.length) {
-          // Cada bloque marcado ocupa exactamente una página (escalado para caber)
+          // El formulario de referencia usa márgenes laterales más amplios que
+          // las plantillas genéricas. Cada bloque ocupa una hoja carta completa.
+          const marginX = 20;
+          const marginY = 14;
+          const maxW = pageWidth - marginX * 2;
+          const maxH = pageHeight - marginY * 2;
           const ratio = Math.min(maxW / canvas.width, maxH / canvas.height);
           const w = canvas.width * ratio;
           const h = canvas.height * ratio;
-          pdf.addImage(imgData, "PNG", margin + (maxW - w) / 2, margin, w, h);
+          pdf.addImage(imgData, "PNG", marginX + (maxW - w) / 2, marginY, w, h);
         } else {
           // Plantilla sin marcas de página: se corta en varias páginas
+          const maxW = pageWidth - fallbackMargin * 2;
+          const maxH = pageHeight - fallbackMargin * 2;
           const imgWidth = maxW;
           const imgHeight = (canvas.height * imgWidth) / canvas.width;
           let heightLeft = imgHeight;
-          let position = margin;
-          pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+          let position = fallbackMargin;
+          pdf.addImage(imgData, "PNG", fallbackMargin, position, imgWidth, imgHeight);
           heightLeft -= maxH;
           while (heightLeft > 0) {
-            position = heightLeft - imgHeight + margin;
+            position = heightLeft - imgHeight + fallbackMargin;
             pdf.addPage();
-            pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+            pdf.addImage(imgData, "PNG", fallbackMargin, position, imgWidth, imgHeight);
             heightLeft -= maxH;
           }
         }
