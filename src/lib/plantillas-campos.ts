@@ -152,25 +152,16 @@ export function resolverPlantilla(html: string, exp: any, items: any[]): string 
     const productos = items ?? [];
 
     // 1) Expande primero las filas de producto (antes de tocar
-    //    ningún {{...}} simple)
-    if (productos.length <= ANEXO_N) {
-      // No hace falta anexo: quitar bloque anexo y solo los marcadores de cierre1
-      out = out.replace(/\{\{__anexo_inicio__\}\}[\s\S]*?\{\{__anexo_fin__\}\}/, "");
-      out = out
-        .replace(/\{\{__cierre1_inicio__\}\}/g, "")
-        .replace(/\{\{__cierre1_fin__\}\}/g, "");
-      // Todos los productos van en la página 1
-      out = expandirFilasProducto(out, productos, "producto");
-    } else {
-      // Sí hace falta anexo: quitar bloque cierre1 y solo los marcadores de anexo
-      out = out.replace(/\{\{__cierre1_inicio__\}\}[\s\S]*?\{\{__cierre1_fin__\}\}/, "");
-      out = out
-        .replace(/\{\{__anexo_inicio__\}\}/g, "")
-        .replace(/\{\{__anexo_fin__\}\}/g, "");
-      // Primeros N productos en página 1, resto en anexo
-      out = expandirFilasProducto(out, productos.slice(0, ANEXO_N), "producto");
-      out = expandirFilasProducto(out, productos.slice(ANEXO_N), "productoAnexo");
-    }
+    //    ningún {{...}} simple). La hoja anexa siempre se incluye,
+    //    aunque no haya productos adicionales (queda informativa).
+    out = out.replace(/\{\{__cierre1_inicio__\}\}[\s\S]*?\{\{__cierre1_fin__\}\}/, "");
+    out = out
+      .replace(/\{\{__anexo_inicio__\}\}/g, "")
+      .replace(/\{\{__anexo_fin__\}\}/g, "");
+    // Primeros N productos en página 1, resto en anexo
+    out = expandirFilasProducto(out, productos.slice(0, ANEXO_N), "producto");
+    out = expandirFilasProducto(out, productos.slice(ANEXO_N), "productoAnexo");
+
 
     // 2) SOLO AHORA reemplaza los campos simples de cliente/expediente
     out = out.replace(/\{\{\s*([a-z]+\.[a-z_]+)\s*\}\}/gi, (_m, key: string) => {
