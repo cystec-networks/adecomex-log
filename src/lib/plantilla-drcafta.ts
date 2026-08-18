@@ -132,6 +132,7 @@ function encabezado(t1: string, t2: string, instrucciones: boolean): string {
 
 export const PLANTILLA_DRCAFTA_USA_HTML = `<div style="font-family:Arial,Helvetica,sans-serif;color:#000;font-size:10px">
 {{__cierre1_inicio__}}
+<div class="doc-page">
 ${encabezado("CERTIFICATE OF ORIGIN", "CERTIFICADO DE ORIGEN", true)}
 <table style="width:100%;border-collapse:collapse;table-layout:fixed">
   <tr>
