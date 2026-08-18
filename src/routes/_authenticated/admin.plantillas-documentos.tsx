@@ -20,6 +20,7 @@ import { FileText, Pencil, Plus, Trash2 } from "lucide-react";
 import { PlantillaEditor } from "@/components/plantilla-editor";
 import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
+import { PLANTILLA_DRCAFTA_USA_HTML } from "@/lib/plantilla-drcafta";
 
 export const Route = createFileRoute("/_authenticated/admin/plantillas-documentos")({
   component: PlantillasDocumentosPage,
