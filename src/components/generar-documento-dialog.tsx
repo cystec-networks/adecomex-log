@@ -81,16 +81,31 @@ export function GenerarDocumentoButton({ exp }: { exp: any }) {
   const descargar = async () => {
     if (!previewRef.current || !plantilla) return;
     try {
-      const html2pdf = (await import("html2pdf.js")).default;
-      await html2pdf()
-        .set({
-          margin: 10,
-          filename: `${plantilla.nombre}_${exp.numero ?? "documento"}.pdf`,
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit: "mm", format: "letter", orientation: "portrait" },
-        })
-        .from(previewRef.current)
-        .save();
+      const html2canvas = (await import("html2canvas-pro")).default;
+      const { default: jsPDF } = await import("jspdf");
+      const canvas = await html2canvas(previewRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({ unit: "mm", format: "letter", orientation: "portrait" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const imgWidth = pageWidth - margin * 2;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = margin;
+      pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+      heightLeft -= (pageHeight - margin * 2);
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + margin;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+        heightLeft -= (pageHeight - margin * 2);
+      }
+      pdf.save(`${plantilla.nombre}_${exp.numero ?? "documento"}.pdf`);
       const tipo = tipoChecklist(plantilla.nombre);
       if (tipo) setPreguntaTipo(tipo);
     } catch (e: any) {
