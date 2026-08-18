@@ -128,9 +128,24 @@ function PlantillasDocumentosPage() {
             Diseña documentos con campos de fusión que se completan con los datos del expediente.
           </p>
         </div>
-        <Button onClick={() => setEditando({ nombre: "", categoria: "Otro", contenido_html: "", activo: true })}>
-          <Plus className="h-4 w-4 mr-1" /> Nueva plantilla
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() =>
+              setEditando({
+                nombre: "Certificado de Origen DR-CAFTA (USA)",
+                categoria: "Certificados",
+                contenido_html: PLANTILLA_DRCAFTA_USA_HTML,
+                activo: true,
+              })
+            }
+          >
+            <FileText className="h-4 w-4 mr-1" /> Cargar formato DR-CAFTA
+          </Button>
+          <Button onClick={() => setEditando({ nombre: "", categoria: "Otro", contenido_html: "", activo: true })}>
+            <Plus className="h-4 w-4 mr-1" /> Nueva plantilla
+          </Button>
+        </div>
       </div>
 
       <Card>
