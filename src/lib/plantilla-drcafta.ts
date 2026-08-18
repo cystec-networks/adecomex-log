@@ -111,6 +111,8 @@ function bloqueFirmas(datos: boolean): string {
 
 function encabezado(t1: string, t2: string, instrucciones: boolean): string {
   return `<table style="width:100%;border-collapse:collapse;table-layout:fixed">
+  <tr><td style="border:${B};padding:0">
+  <table style="width:100%;border-collapse:collapse;table-layout:fixed">
   <tr>
     <td style="border:none;padding:2px 5px;width:50%;text-align:center;font-size:9.5px;font-weight:bold">Central America-Dominican Republic-United States Free Trade Agreement</td>
     <td style="border:none;padding:2px 5px;width:50%;text-align:center;font-size:9.5px;font-weight:bold">Tratado de Libre Comercio entre República Dominicana -Centroamérica- Estados Unidos de América</td>
