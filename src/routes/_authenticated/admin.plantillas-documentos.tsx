@@ -20,6 +20,7 @@ import { FileText, Pencil, Plus, Trash2 } from "lucide-react";
 import { PlantillaEditor } from "@/components/plantilla-editor";
 import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
+import { PLANTILLA_DRCAFTA_USA_HTML } from "@/lib/plantilla-drcafta";
 
 export const Route = createFileRoute("/_authenticated/admin/plantillas-documentos")({
   component: PlantillasDocumentosPage,
@@ -128,9 +129,24 @@ function PlantillasDocumentosPage() {
             Diseña documentos con campos de fusión que se completan con los datos del expediente.
           </p>
         </div>
-        <Button onClick={() => setEditando({ nombre: "", categoria: "Otro", contenido_html: "", activo: true })}>
-          <Plus className="h-4 w-4 mr-1" /> Nueva plantilla
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() =>
+              setEditando({
+                nombre: "Certificado de Origen DR-CAFTA (USA)",
+                categoria: "Certificados",
+                contenido_html: PLANTILLA_DRCAFTA_USA_HTML,
+                activo: true,
+              })
+            }
+          >
+            <FileText className="h-4 w-4 mr-1" /> Cargar formato DR-CAFTA
+          </Button>
+          <Button onClick={() => setEditando({ nombre: "", categoria: "Otro", contenido_html: "", activo: true })}>
+            <Plus className="h-4 w-4 mr-1" /> Nueva plantilla
+          </Button>
+        </div>
       </div>
 
       <Card>
