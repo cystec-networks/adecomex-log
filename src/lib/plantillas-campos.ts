@@ -93,14 +93,16 @@ function expandirFilasProducto(
   const rowRe = /<tr[\s\S]*?<\/tr>/gi;
   const fieldRe = new RegExp(`\\{\\{\\s*(${prefix}\\.[a-z_]+)\\s*\\}\\}`, "gi");
   return html.replace(rowRe, (row) => {
-    if (!fieldRe.test(row)) return row;
+    const hasField = fieldRe.test(row);
+    fieldRe.lastIndex = 0; // evita que el test() descarte la primera coincidencia en replace()
+    if (!hasField) return row;
     const lineas = items ?? [];
     if (lineas.length === 0) return "";
     return lineas
       .map((it) => {
         const pmap = buildProductoMap(it);
         return row.replace(fieldRe, (_m, key: string) => {
-          const k = key.toLowerCase().replace(`${prefix}.`, "");
+          const k = key.toLowerCase().replace(`${prefix.toLowerCase()}.`, "");
           return esc(val(pmap[k]));
         });
       })
