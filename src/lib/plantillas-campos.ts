@@ -147,15 +147,10 @@ export function resolverPlantilla(html: string, exp: any, items: any[]): string 
     out.includes("{{__anexo_inicio__}}") && out.includes("{{__cierre1_inicio__}}");
 
   if (tieneAnexo) {
-    // 1) Campos simples de cliente/expediente
-    out = out.replace(/\{\{\s*([a-z]+\.[a-z_]+)\s*\}\}/gi, (_m, key: string) => {
-      const k = key.toLowerCase();
-      if (k in simples) return esc(val(simples[k]));
-      return "";
-    });
-
-    // 2) Anexo condicional DR-CAFTA USA
     const productos = items ?? [];
+
+    // 1) Expande primero las filas de producto (antes de tocar
+    //    ningún {{...}} simple)
     if (productos.length <= ANEXO_N) {
       // No hace falta anexo: quitar bloque anexo y solo los marcadores de cierre1
       out = out.replace(/\{\{__anexo_inicio__\}\}[\s\S]*?\{\{__anexo_fin__\}\}/, "");
@@ -174,6 +169,13 @@ export function resolverPlantilla(html: string, exp: any, items: any[]): string 
       out = expandirFilasProducto(out, productos.slice(0, ANEXO_N), "producto");
       out = expandirFilasProducto(out, productos.slice(ANEXO_N), "productoAnexo");
     }
+
+    // 2) SOLO AHORA reemplaza los campos simples de cliente/expediente
+    out = out.replace(/\{\{\s*([a-z]+\.[a-z_]+)\s*\}\}/gi, (_m, key: string) => {
+      const k = key.toLowerCase();
+      if (k in simples) return esc(val(simples[k]));
+      return "";
+    });
 
     // 3) Cualquier marcador restante queda vacío
     out = out.replace(/\{\{[\s\S]*?\}\}/g, "");
