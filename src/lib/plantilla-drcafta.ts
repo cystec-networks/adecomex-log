@@ -78,7 +78,7 @@ function bloqueCierre(paginas: string): string {
 }
 
 function bloqueFirmas(datos: boolean): string {
-  const empresa = datos ? "{{expediente.suplidor}}" : "&nbsp;";
+  const empresa = "&nbsp;";
   return `<table style="width:100%;border-collapse:collapse;table-layout:fixed;margin-top:-1px">
     <tr>
       <td style="${CELL}width:50%;height:44px"><span style="${LBL}">Authorized Signature - </span><span style="${LBLB}">Firma autorizada</span></td>
@@ -143,7 +143,7 @@ ${encabezado("CERTIFICATE OF ORIGIN", "CERTIFICADO DE ORIGEN", true)}
     <td style="${CELL}width:50%;height:100px">
       <span style="${NUM}">1</span> <span style="${LBL}">Exporter´s name, address and tax identification number:</span><br>
       <span style="${LBLB}">Nombre, dirección y número de registro fiscal del exportador:</span>
-      <div style="${TXT}margin-top:8px">{{expediente.suplidor}}<br>RNC / Tax ID: {{expediente.suplidor_rnc}}</div>
+      <div style="${TXT}margin-top:8px">&nbsp;</div>
     </td>
     <td style="${CELL}width:50%">
       <span style="${NUM}">2</span> <span style="${LBL}">Blanket period:</span><br>
@@ -178,7 +178,7 @@ ${encabezado("CERTIFICATE OF ORIGIN", "CERTIFICADO DE ORIGEN", true)}
       <span style="${NUM}">3</span> <span style="${LBL}">Producer´s name, address and tax identification number:</span><br>
       <span style="${LBL}">(Si es conocido)</span><br>
       <span style="${LBLB}">Nombre, dirección y número de registro fiscal del productor:</span>
-      <div style="${TXT}margin-top:6px">{{expediente.suplidor}}</div>
+      <div style="${TXT}margin-top:6px">&nbsp;</div>
     </td>
     <td style="${CELL}">
       <span style="${NUM}">4</span> <span style="${LBL}">Importer´s name, address and tax identification number:</span><br>
