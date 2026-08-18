@@ -36,9 +36,9 @@ function tablaMercancias(
     <tr>
       <td style="${CELL}${TXT}height:${alto}px">{{${prefix}.descripcion}}</td>
       <td style="${CELL}${TXT}text-align:center">{{${prefix}.codigo_arancelario}}</td>
-      <td style="${CELL}${TXT}text-align:center">A</td>
+      <td style="${CELL}${TXT}text-align:center">{{${prefix}.criterio}}</td>
       <td style="${CELL}${TXT}text-align:center">&nbsp;</td>
-      <td style="${CELL}${TXT}text-align:center">SI</td>
+      <td style="${CELL}${TXT}text-align:center">{{${prefix}.productor}}</td>
     </tr>
   </table>`;
 }
@@ -111,6 +111,8 @@ function bloqueFirmas(datos: boolean): string {
 
 function encabezado(t1: string, t2: string, instrucciones: boolean): string {
   return `<table style="width:100%;border-collapse:collapse;table-layout:fixed">
+  <tr><td style="border:${B};padding:0">
+  <table style="width:100%;border-collapse:collapse;table-layout:fixed">
   <tr>
     <td style="border:none;padding:2px 5px;width:50%;text-align:center;font-size:9.5px;font-weight:bold">Central America-Dominican Republic-United States Free Trade Agreement</td>
     <td style="border:none;padding:2px 5px;width:50%;text-align:center;font-size:9.5px;font-weight:bold">Tratado de Libre Comercio entre República Dominicana -Centroamérica- Estados Unidos de América</td>
@@ -127,6 +129,8 @@ function encabezado(t1: string, t2: string, instrucciones: boolean): string {
   </tr>`
       : `<tr><td style="border:none;height:6px"></td><td style="border:none"></td></tr>`
   }
+</table>
+  </td></tr>
 </table>`;
 }
 
