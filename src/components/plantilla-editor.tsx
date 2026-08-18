@@ -22,8 +22,8 @@ import {
 } from "lucide-react";
 import { CAMPOS_PLANTILLA } from "@/lib/plantillas-campos";
 
-
 export function PlantillaEditor({
+
   value,
   onChange,
 }: {
