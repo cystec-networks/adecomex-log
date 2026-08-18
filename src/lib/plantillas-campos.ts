@@ -201,12 +201,15 @@ export function resolverPlantilla(html: string, exp: any, items: any[]): string 
       paginasMarcadas.pagina1,
       productos.slice(0, ANEXO_N),
       "producto",
+      FILAS_PAGINA1,
     );
     let anexo = expandirFilasProducto(
       paginasMarcadas.anexo,
       productos.slice(ANEXO_N),
       "productoAnexo",
+      FILAS_ANEXO,
     );
+
 
     // 2) SOLO AHORA reemplaza los campos simples de cliente/expediente
     const reemplazarSimples = (seccion: string) =>
