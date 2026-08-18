@@ -3842,6 +3842,39 @@ export type Database = {
           },
         ]
       }
+      plantillas_documentos: {
+        Row: {
+          activo: boolean
+          categoria: string
+          contenido_html: string
+          creado_por: string | null
+          created_at: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          categoria?: string
+          contenido_html?: string
+          creado_por?: string | null
+          created_at?: string
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          categoria?: string
+          contenido_html?: string
+          creado_por?: string | null
+          created_at?: string
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       prestamos_terceros: {
         Row: {
           created_at: string
