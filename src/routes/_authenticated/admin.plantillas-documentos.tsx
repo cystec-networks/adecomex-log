@@ -10,11 +10,16 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { FileText, Pencil, Plus } from "lucide-react";
+import { FileText, Pencil, Plus, Trash2 } from "lucide-react";
 import { PlantillaEditor } from "@/components/plantilla-editor";
 import { fmtLocalDate } from "@/lib/dates";
+import { useMyRoles } from "@/lib/auth-hooks";
 
 export const Route = createFileRoute("/_authenticated/admin/plantillas-documentos")({
   component: PlantillasDocumentosPage,
@@ -41,7 +46,10 @@ type Plantilla = {
 
 function PlantillasDocumentosPage() {
   const qc = useQueryClient();
+  const { data: roles } = useMyRoles();
+  const isAdmin = (roles ?? []).some((r) => r === "admin");
   const [editando, setEditando] = useState<Partial<Plantilla> | null>(null);
+  const [aEliminar, setAEliminar] = useState<Plantilla | null>(null);
 
   const { data: plantillas, isLoading } = useQuery({
     queryKey: ["plantillas-documentos"],
@@ -94,6 +102,19 @@ function PlantillasDocumentosPage() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["plantillas-documentos"] }),
     onError: (e: any) => toast.error(e.message ?? "No se pudo actualizar"),
+  });
+
+  const eliminar = useMutation({
+    mutationFn: async (p: Plantilla) => {
+      const { error } = await supabase.from("plantillas_documentos").delete().eq("id", p.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Plantilla eliminada");
+      qc.invalidateQueries({ queryKey: ["plantillas-documentos"] });
+      setAEliminar(null);
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo eliminar"),
   });
 
   return (
@@ -149,6 +170,11 @@ function PlantillasDocumentosPage() {
                         <Button variant="ghost" size="sm" onClick={() => toggleActivo.mutate(p)}>
                           {p.activo ? "Desactivar" : "Activar"}
                         </Button>
+                        {isAdmin && (
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setAEliminar(p)}>
+                            <Trash2 className="h-3.5 w-3.5 mr-1" /> Eliminar
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -211,6 +237,26 @@ function PlantillasDocumentosPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!aEliminar} onOpenChange={(o) => !o && setAEliminar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar la plantilla?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Eliminar la plantilla <strong>{aEliminar?.nombre}</strong>? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={eliminar.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => aEliminar && eliminar.mutate(aEliminar)}
+              disabled={eliminar.isPending}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
