@@ -132,7 +132,7 @@ const GROUPS: Group[] = [
     id: "administracion",
     label: "ADMINISTRACIÓN",
     icon: Shield,
-    roles: ["admin", "contabilidad", "finanzas", "rrhh"],
+    roles: ["admin", "contabilidad", "finanzas", "rrhh", "operaciones"],
     items: [
       { to: "/admin/usuarios", label: "Usuarios y roles", icon: UserCog, adminOnly: true,
         match: (p) => p.startsWith("/admin/usuarios") },
