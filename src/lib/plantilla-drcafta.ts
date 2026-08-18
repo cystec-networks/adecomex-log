@@ -36,9 +36,9 @@ function tablaMercancias(
     <tr>
       <td style="${CELL}${TXT}height:${alto}px">{{${prefix}.descripcion}}</td>
       <td style="${CELL}${TXT}text-align:center">{{${prefix}.codigo_arancelario}}</td>
-      <td style="${CELL}${TXT}text-align:center">{{${prefix}.criterio}}</td>
       <td style="${CELL}${TXT}text-align:center">&nbsp;</td>
-      <td style="${CELL}${TXT}text-align:center">{{${prefix}.productor}}</td>
+      <td style="${CELL}${TXT}text-align:center">&nbsp;</td>
+      <td style="${CELL}${TXT}text-align:center">&nbsp;</td>
     </tr>
   </table>`;
 }
