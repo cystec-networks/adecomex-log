@@ -10,11 +10,16 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { FileText, Pencil, Plus } from "lucide-react";
+import { FileText, Pencil, Plus, Trash2 } from "lucide-react";
 import { PlantillaEditor } from "@/components/plantilla-editor";
 import { fmtLocalDate } from "@/lib/dates";
+import { useMyRoles } from "@/lib/auth-hooks";
 
 export const Route = createFileRoute("/_authenticated/admin/plantillas-documentos")({
   component: PlantillasDocumentosPage,
