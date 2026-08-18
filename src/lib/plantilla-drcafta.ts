@@ -12,13 +12,13 @@
 
 const B = "1px solid #000";
 const CELL = `border:${B};padding:2px 4px;vertical-align:top;`;
-const LBL = "font-size:7px;line-height:1.15;";
-const TXT = "font-size:9px;line-height:1.25;";
-const NUM = "font-size:8px;font-weight:bold;";
+const LBL = "font-size:9px;line-height:1.2;";
+const TXT = "font-size:11px;line-height:1.3;";
+const NUM = "font-size:10px;font-weight:bold;";
 
 function tablaMercancias(prefix: "producto" | "productoAnexo", filasVacias: number): string {
   const vacia = `<tr>
-    <td style="${CELL}height:16px">&nbsp;</td>
+    <td style="${CELL}height:20px">&nbsp;</td>
     <td style="${CELL}">&nbsp;</td>
     <td style="${CELL}">&nbsp;</td>
     <td style="${CELL}">&nbsp;</td>
@@ -89,12 +89,12 @@ function bloqueCierre(): string {
 
 const ENCABEZADO = `<table style="width:100%;border-collapse:collapse;table-layout:fixed">
   <tr>
-    <td style="${CELL}width:50%;text-align:center;font-size:8px;font-weight:bold">Central America - Dominican Republic - United States Free Trade Agreement</td>
-    <td style="${CELL}width:50%;text-align:center;font-size:8px;font-weight:bold">Tratado de Libre Comercio entre República Dominicana - Centroamérica - Estados Unidos de América</td>
+    <td style="${CELL}width:50%;text-align:center;font-size:10px;font-weight:bold">Central America - Dominican Republic - United States Free Trade Agreement</td>
+    <td style="${CELL}width:50%;text-align:center;font-size:10px;font-weight:bold">Tratado de Libre Comercio entre República Dominicana - Centroamérica - Estados Unidos de América</td>
   </tr>
   <tr>
-    <td style="${CELL}text-align:center;font-size:11px;font-weight:bold">CERTIFICATE OF ORIGIN</td>
-    <td style="${CELL}text-align:center;font-size:11px;font-weight:bold">CERTIFICADO DE ORIGEN</td>
+    <td style="${CELL}text-align:center;font-size:14px;font-weight:bold">CERTIFICATE OF ORIGIN</td>
+    <td style="${CELL}text-align:center;font-size:14px;font-weight:bold">CERTIFICADO DE ORIGEN</td>
   </tr>
   <tr>
     <td style="${CELL}text-align:center;${LBL}">(Instructions on reverse)</td>
@@ -102,7 +102,7 @@ const ENCABEZADO = `<table style="width:100%;border-collapse:collapse;table-layo
   </tr>
 </table>`;
 
-export const PLANTILLA_DRCAFTA_USA_HTML = `<div style="font-family:Arial,Helvetica,sans-serif;color:#000;font-size:9px">
+export const PLANTILLA_DRCAFTA_USA_HTML = `<div style="font-family:Arial,Helvetica,sans-serif;color:#000;font-size:11px">
 ${ENCABEZADO}
 <table style="width:100%;border-collapse:collapse;table-layout:fixed;margin-top:-1px">
   <tr>
@@ -131,13 +131,13 @@ ${tablaMercancias("producto", 6)}
 ${bloqueCierre()}
 {{__cierre1_fin__}}
 {{__anexo_inicio__}}
-${tablaMercancias("producto", 0)}
+${tablaMercancias("producto", 4)}
 <div style="page-break-before:always;height:8px"></div>
 ${ENCABEZADO.replace(
   ">CERTIFICATE OF ORIGIN<",
   ">Page annex<",
 ).replace(">CERTIFICADO DE ORIGEN<", ">Hoja anexa<")}
-${tablaMercancias("productoAnexo", 2)}
+${tablaMercancias("productoAnexo", 4)}
 ${bloqueCierre()}
 {{__anexo_fin__}}
 </div>`;
