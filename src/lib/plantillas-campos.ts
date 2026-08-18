@@ -96,6 +96,7 @@ function expandirFilasProducto(
   html: string,
   items: any[],
   prefix: "producto" | "productoAnexo",
+  minFilas = 0,
 ): string {
   const rowRe = /<tr[\s\S]*?<\/tr>/gi;
   const fieldRe = new RegExp(`\\{\\{\\s*(${prefix}\\.[a-z_]+)\\s*\\}\\}`, "gi");
@@ -104,18 +105,20 @@ function expandirFilasProducto(
     fieldRe.lastIndex = 0; // evita que el test() descarte la primera coincidencia en replace()
     if (!hasField) return row;
     const lineas = items ?? [];
-    if (lineas.length === 0) return "";
-    return lineas
-      .map((it) => {
-        const pmap = buildProductoMap(it);
-        return row.replace(fieldRe, (_m, key: string) => {
-          const k = key.toLowerCase().replace(`${prefix.toLowerCase()}.`, "");
-          return esc(val(pmap[k]));
-        });
-      })
-      .join("");
+    const filas = lineas.map((it) => {
+      const pmap = buildProductoMap(it);
+      return row.replace(fieldRe, (_m, key: string) => {
+        const k = key.toLowerCase().replace(`${prefix.toLowerCase()}.`, "");
+        return esc(val(pmap[k]));
+      });
+    });
+    // Rellena con filas en blanco hasta completar la hoja tamaño carta
+    const vacia = row.replace(fieldRe, "&nbsp;");
+    while (filas.length < minFilas) filas.push(vacia);
+    return filas.join("");
   });
 }
+
 
 function limpiarBordesSeccion(html: string): string {
   return html
