@@ -186,12 +186,14 @@ ${encabezado("CERTIFICATE OF ORIGIN", "CERTIFICADO DE ORIGEN", true)}
 ${tablaMercancias("producto", 260)}
 ${bloqueCierre("2")}
 ${bloqueFirmas(true)}
+</div>
 {{__cierre1_fin__}}
 {{__anexo_inicio__}}
-<div style="page-break-before:always;height:10px"></div>
+<div class="doc-page" style="page-break-before:always">
 ${encabezado("Page annex", "Hoja anexa", false)}
 ${tablaMercancias("productoAnexo", 250)}
 ${bloqueCierre("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")}
 ${bloqueFirmas(false)}
+</div>
 {{__anexo_fin__}}
 </div>`;
