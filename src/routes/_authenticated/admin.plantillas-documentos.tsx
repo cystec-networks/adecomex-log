@@ -170,6 +170,11 @@ function PlantillasDocumentosPage() {
                         <Button variant="ghost" size="sm" onClick={() => toggleActivo.mutate(p)}>
                           {p.activo ? "Desactivar" : "Activar"}
                         </Button>
+                        {isAdmin && (
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setAEliminar(p)}>
+                            <Trash2 className="h-3.5 w-3.5 mr-1" /> Eliminar
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}
