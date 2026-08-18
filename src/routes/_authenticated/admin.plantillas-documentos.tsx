@@ -46,7 +46,10 @@ type Plantilla = {
 
 function PlantillasDocumentosPage() {
   const qc = useQueryClient();
+  const { data: roles } = useMyRoles();
+  const isAdmin = (roles ?? []).some((r) => r === "admin");
   const [editando, setEditando] = useState<Partial<Plantilla> | null>(null);
+  const [aEliminar, setAEliminar] = useState<Plantilla | null>(null);
 
   const { data: plantillas, isLoading } = useQuery({
     queryKey: ["plantillas-documentos"],
