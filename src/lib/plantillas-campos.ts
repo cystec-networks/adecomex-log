@@ -44,9 +44,22 @@ export const CAMPOS_PLANTILLA: CampoGrupo[] = [
       { campo: "{{producto.precio_unitario}}", label: "Precio unitario" },
     ],
   },
+  {
+    grupo: "PRODUCTOS ANEXO (DR-CAFTA)",
+    campos: [
+      { campo: "{{productoAnexo.codigo_arancelario}}", label: "Código arancelario" },
+      { campo: "{{productoAnexo.descripcion}}", label: "Descripción" },
+      { campo: "{{productoAnexo.cantidad}}", label: "Cantidad" },
+      { campo: "{{productoAnexo.unidad}}", label: "Unidad" },
+      { campo: "{{productoAnexo.peso}}", label: "Peso" },
+      { campo: "{{productoAnexo.fob}}", label: "FOB" },
+      { campo: "{{productoAnexo.precio_unitario}}", label: "Precio unitario" },
+    ],
+  },
 ];
 
 const DASH = "—";
+const ANEXO_N = 3;
 
 function val(v: any): string {
   if (v === null || v === undefined || v === "") return DASH;
@@ -55,6 +68,44 @@ function val(v: any): string {
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function buildProductoMap(it: any): Record<string, any> {
+  const cantidad = Number(it.cantidad ?? 0);
+  const fob = Number(it.valor_fob ?? 0);
+  const pu = cantidad ? Math.round((fob / cantidad) * 100) / 100 : 0;
+  return {
+    codigo_arancelario: it.codigo_arancelario ?? it.partida_arancelaria,
+    descripcion: it.detalle_producto ?? it.descripcion,
+    cantidad: it.cantidad,
+    unidad: it.unidad_medida,
+    peso: it.peso,
+    fob: it.valor_fob,
+    precio_unitario: pu,
+  };
+}
+
+function expandirFilasProducto(
+  html: string,
+  items: any[],
+  prefix: "producto" | "productoAnexo",
+): string {
+  const rowRe = /<tr[\s\S]*?<\/tr>/gi;
+  const fieldRe = new RegExp(`\\{\\{\\s*(${prefix}\\.[a-z_]+)\\s*\\}\\}`, "gi");
+  return html.replace(rowRe, (row) => {
+    if (!fieldRe.test(row)) return row;
+    const lineas = items ?? [];
+    if (lineas.length === 0) return "";
+    return lineas
+      .map((it) => {
+        const pmap = buildProductoMap(it);
+        return row.replace(fieldRe, (_m, key: string) => {
+          const k = key.toLowerCase().replace(`${prefix}.`, "");
+          return esc(val(pmap[k]));
+        });
+      })
+      .join("");
+  });
 }
 
 /**
@@ -92,42 +143,55 @@ export function resolverPlantilla(html: string, exp: any, items: any[]): string 
 
   let out = html;
 
-  // 1) Fila repetible de productos
-  const rowRe = /<tr[\s\S]*?<\/tr>/gi;
-  out = out.replace(rowRe, (row) => {
-    if (!/\{\{\s*producto\./.test(row)) return row;
-    const lineas = items ?? [];
-    if (lineas.length === 0) return "";
-    return lineas
-      .map((it) => {
-        const cantidad = Number(it.cantidad ?? 0);
-        const fob = Number(it.valor_fob ?? 0);
-        const pu = cantidad ? Math.round((fob / cantidad) * 100) / 100 : 0;
-        const pmap: Record<string, any> = {
-          "producto.codigo_arancelario": it.codigo_arancelario ?? it.partida_arancelaria,
-          "producto.descripcion": it.detalle_producto ?? it.descripcion,
-          "producto.cantidad": it.cantidad,
-          "producto.unidad": it.unidad_medida,
-          "producto.peso": it.peso,
-          "producto.fob": it.valor_fob,
-          "producto.precio_unitario": pu,
-        };
-        return row.replace(/\{\{\s*(producto\.[a-z_]+)\s*\}\}/gi, (_m, key: string) =>
-          esc(val(pmap[key.toLowerCase()])),
-        );
-      })
-      .join("");
-  });
+  const tieneAnexo =
+    out.includes("{{__anexo_inicio__}}") && out.includes("{{__cierre1_inicio__}}");
 
-  // 2) Campos simples
-  out = out.replace(/\{\{\s*([a-z]+\.[a-z_]+)\s*\}\}/gi, (_m, key: string) => {
-    const k = key.toLowerCase();
-    if (k in simples) return esc(val(simples[k]));
-    return "";
-  });
+  if (tieneAnexo) {
+    // 1) Campos simples de cliente/expediente
+    out = out.replace(/\{\{\s*([a-z]+\.[a-z_]+)\s*\}\}/gi, (_m, key: string) => {
+      const k = key.toLowerCase();
+      if (k in simples) return esc(val(simples[k]));
+      return "";
+    });
 
-  // 3) Cualquier marcador restante queda vacío
-  out = out.replace(/\{\{[\s\S]*?\}\}/g, "");
+    // 2) Anexo condicional DR-CAFTA USA
+    const productos = items ?? [];
+    if (productos.length <= ANEXO_N) {
+      // No hace falta anexo: quitar bloque anexo y solo los marcadores de cierre1
+      out = out.replace(/\{\{__anexo_inicio__\}\}[\s\S]*?\{\{__anexo_fin__\}\}/, "");
+      out = out
+        .replace(/\{\{__cierre1_inicio__\}\}/g, "")
+        .replace(/\{\{__cierre1_fin__\}\}/g, "");
+      // Todos los productos van en la página 1
+      out = expandirFilasProducto(out, productos, "producto");
+    } else {
+      // Sí hace falta anexo: quitar bloque cierre1 y solo los marcadores de anexo
+      out = out.replace(/\{\{__cierre1_inicio__\}\}[\s\S]*?\{\{__cierre1_fin__\}\}/, "");
+      out = out
+        .replace(/\{\{__anexo_inicio__\}\}/g, "")
+        .replace(/\{\{__anexo_fin__\}\}/g, "");
+      // Primeros N productos en página 1, resto en anexo
+      out = expandirFilasProducto(out, productos.slice(0, ANEXO_N), "producto");
+      out = expandirFilasProducto(out, productos.slice(ANEXO_N), "productoAnexo");
+    }
+
+    // 3) Cualquier marcador restante queda vacío
+    out = out.replace(/\{\{[\s\S]*?\}\}/g, "");
+  } else {
+    // Comportamiento original para plantillas sin marcadores de anexo
+    // 1) Filas repetibles de productos
+    out = expandirFilasProducto(out, items, "producto");
+
+    // 2) Campos simples
+    out = out.replace(/\{\{\s*([a-z]+\.[a-z_]+)\s*\}\}/gi, (_m, key: string) => {
+      const k = key.toLowerCase();
+      if (k in simples) return esc(val(simples[k]));
+      return "";
+    });
+
+    // 3) Cualquier marcador restante queda vacío
+    out = out.replace(/\{\{[\s\S]*?\}\}/g, "");
+  }
 
   return out;
 }
