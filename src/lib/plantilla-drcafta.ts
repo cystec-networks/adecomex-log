@@ -129,6 +129,8 @@ function encabezado(t1: string, t2: string, instrucciones: boolean): string {
   </tr>`
       : `<tr><td style="border:none;height:6px"></td><td style="border:none"></td></tr>`
   }
+</table>
+  </td></tr>
 </table>`;
 }
 
