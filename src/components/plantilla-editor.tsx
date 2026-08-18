@@ -96,6 +96,8 @@ export function PlantillaEditor({
         <div className="w-px h-5 bg-border mx-1" />
         <Btn title="Deshacer" onClick={() => editor.chain().focus().undo().run()}><Undo2 className="h-4 w-4" /></Btn>
         <Btn title="Rehacer" onClick={() => editor.chain().focus().redo().run()}><Redo2 className="h-4 w-4" /></Btn>
+        <div className="w-px h-5 bg-border mx-1" />
+        <Btn title="Importar HTML" onClick={() => { setHtmlImport(""); setImportDialogOpen(true); }}><FileCode className="h-4 w-4" /></Btn>
         <div className="flex-1" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -126,8 +128,42 @@ export function PlantillaEditor({
         </DropdownMenu>
       </div>
       <EditorContent editor={editor} />
+
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="max-w-2xl w-[95vw]">
+          <DialogHeader>
+            <DialogTitle>Importar HTML</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-destructive">
+              Esto reemplaza todo el contenido actual de la plantilla.
+            </p>
+            <Textarea
+              value={htmlImport}
+              onChange={(e) => setHtmlImport(e.target.value)}
+              placeholder="Pega aquí el código HTML crudo..."
+              className="min-h-[320px] font-mono text-xs"
+              rows={15}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                editor.commands.setContent(htmlImport, { emitUpdate: true });
+                setImportDialogOpen(false);
+              }}
+            >
+              Aplicar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+
 }
 
 export default PlantillaEditor;
