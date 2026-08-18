@@ -60,6 +60,10 @@ export const CAMPOS_PLANTILLA: CampoGrupo[] = [
 
 const DASH = "—";
 const ANEXO_N = 3;
+const FILAS_PAGINA_1 = 9;
+const FILAS_PAGINA1 = FILAS_PAGINA_1;
+const FILAS_ANEXO = 9;
+
 
 const MARCADORES_PAGINA = {
   cierreInicio: "{{__cierre1_inicio__}}",
