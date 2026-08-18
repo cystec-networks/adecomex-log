@@ -93,6 +93,8 @@ function buildProductoMap(it: any): Record<string, any> {
     peso: it.peso,
     fob: it.valor_fob,
     precio_unitario: pu,
+    criterio: "A",
+    productor: "SI",
   };
 }
 
