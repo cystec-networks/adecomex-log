@@ -61,6 +61,7 @@ import { Route as AuthenticatedCotizacionesIdRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as AuthenticatedAdminSolicitudesPagoTransporteRouteImport } from './routes/_authenticated/admin.solicitudes-pago-transporte'
 import { Route as AuthenticatedAdminReportesFiscalesRouteImport } from './routes/_authenticated/admin.reportes-fiscales'
+import { Route as AuthenticatedAdminPlantillasDocumentosRouteImport } from './routes/_authenticated/admin.plantillas-documentos'
 import { Route as AuthenticatedAdminGastosOperativosRouteImport } from './routes/_authenticated/admin.gastos-operativos'
 import { Route as AuthenticatedAdminFacturacionRouteImport } from './routes/_authenticated/admin.facturacion'
 import { Route as AuthenticatedAdminDashboardFinancieroRouteImport } from './routes/_authenticated/admin.dashboard-financiero'
@@ -381,6 +382,12 @@ const AuthenticatedAdminReportesFiscalesRoute =
     path: '/admin/reportes-fiscales',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminPlantillasDocumentosRoute =
+  AuthenticatedAdminPlantillasDocumentosRouteImport.update({
+    id: '/admin/plantillas-documentos',
+    path: '/admin/plantillas-documentos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminGastosOperativosRoute =
   AuthenticatedAdminGastosOperativosRouteImport.update({
     id: '/admin/gastos-operativos',
@@ -585,6 +592,7 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard-financiero': typeof AuthenticatedAdminDashboardFinancieroRoute
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
+  '/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
   '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
@@ -665,6 +673,7 @@ export interface FileRoutesByTo {
   '/admin/dashboard-financiero': typeof AuthenticatedAdminDashboardFinancieroRoute
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
+  '/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
   '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
@@ -749,6 +758,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/dashboard-financiero': typeof AuthenticatedAdminDashboardFinancieroRoute
   '/_authenticated/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/_authenticated/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
+  '/_authenticated/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
   '/_authenticated/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/_authenticated/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
@@ -831,6 +841,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard-financiero'
     | '/admin/facturacion'
     | '/admin/gastos-operativos'
+    | '/admin/plantillas-documentos'
     | '/admin/reportes-fiscales'
     | '/admin/solicitudes-pago-transporte'
     | '/admin/usuarios'
@@ -911,6 +922,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard-financiero'
     | '/admin/facturacion'
     | '/admin/gastos-operativos'
+    | '/admin/plantillas-documentos'
     | '/admin/reportes-fiscales'
     | '/admin/solicitudes-pago-transporte'
     | '/admin/usuarios'
@@ -994,6 +1006,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/dashboard-financiero'
     | '/_authenticated/admin/facturacion'
     | '/_authenticated/admin/gastos-operativos'
+    | '/_authenticated/admin/plantillas-documentos'
     | '/_authenticated/admin/reportes-fiscales'
     | '/_authenticated/admin/solicitudes-pago-transporte'
     | '/_authenticated/admin/usuarios'
@@ -1430,6 +1443,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminReportesFiscalesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/plantillas-documentos': {
+      id: '/_authenticated/admin/plantillas-documentos'
+      path: '/admin/plantillas-documentos'
+      fullPath: '/admin/plantillas-documentos'
+      preLoaderRoute: typeof AuthenticatedAdminPlantillasDocumentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/gastos-operativos': {
       id: '/_authenticated/admin/gastos-operativos'
       path: '/admin/gastos-operativos'
@@ -1658,6 +1678,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminDashboardFinancieroRoute: typeof AuthenticatedAdminDashboardFinancieroRoute
   AuthenticatedAdminFacturacionRoute: typeof AuthenticatedAdminFacturacionRoute
   AuthenticatedAdminGastosOperativosRoute: typeof AuthenticatedAdminGastosOperativosRoute
+  AuthenticatedAdminPlantillasDocumentosRoute: typeof AuthenticatedAdminPlantillasDocumentosRoute
   AuthenticatedAdminReportesFiscalesRoute: typeof AuthenticatedAdminReportesFiscalesRoute
   AuthenticatedAdminSolicitudesPagoTransporteRoute: typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
@@ -1729,6 +1750,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminFacturacionRoute: AuthenticatedAdminFacturacionRoute,
   AuthenticatedAdminGastosOperativosRoute:
     AuthenticatedAdminGastosOperativosRoute,
+  AuthenticatedAdminPlantillasDocumentosRoute:
+    AuthenticatedAdminPlantillasDocumentosRoute,
   AuthenticatedAdminReportesFiscalesRoute:
     AuthenticatedAdminReportesFiscalesRoute,
   AuthenticatedAdminSolicitudesPagoTransporteRoute:
