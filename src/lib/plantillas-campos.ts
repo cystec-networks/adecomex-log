@@ -61,6 +61,13 @@ export const CAMPOS_PLANTILLA: CampoGrupo[] = [
 const DASH = "—";
 const ANEXO_N = 3;
 
+const MARCADORES_PAGINA = {
+  cierreInicio: "{{__cierre1_inicio__}}",
+  cierreFin: "{{__cierre1_fin__}}",
+  anexoInicio: "{{__anexo_inicio__}}",
+  anexoFin: "{{__anexo_fin__}}",
+} as const;
+
 function val(v: any): string {
   if (v === null || v === undefined || v === "") return DASH;
   return String(v);
@@ -110,6 +117,38 @@ function expandirFilasProducto(
   });
 }
 
+function limpiarBordesSeccion(html: string): string {
+  return html
+    .replace(/^(?:\s|<p[^>]*>\s*<\/p>)+/gi, "")
+    .replace(/(?:\s|<p[^>]*>\s*<\/p>)+$/gi, "")
+    .trim();
+}
+
+function envolverPagina(html: string): string {
+  const contenido = limpiarBordesSeccion(html);
+  if (/class=["'][^"']*\bdoc-page\b/i.test(contenido)) return contenido;
+  return `<div class="doc-page" style="width:100%;box-sizing:border-box;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;font-size:10px">${contenido}</div>`;
+}
+
+/**
+ * TipTap conserva los marcadores de texto, pero puede eliminar los DIV
+ * `.doc-page` al volver a guardar la plantilla. Separamos por marcadores y
+ * reconstruimos esos contenedores para que cada hoja se renderice en un
+ * canvas y una página PDF independientes.
+ */
+function separarPaginasMarcadas(html: string): { pagina1: string; anexo: string } | null {
+  const inicio1 = html.indexOf(MARCADORES_PAGINA.cierreInicio);
+  const fin1 = html.indexOf(MARCADORES_PAGINA.cierreFin);
+  const inicio2 = html.indexOf(MARCADORES_PAGINA.anexoInicio);
+  const fin2 = html.indexOf(MARCADORES_PAGINA.anexoFin);
+
+  if (inicio1 < 0 || fin1 <= inicio1 || inicio2 <= fin1 || fin2 <= inicio2) return null;
+
+  const pagina1 = html.slice(inicio1 + MARCADORES_PAGINA.cierreInicio.length, fin1);
+  const anexo = html.slice(inicio2 + MARCADORES_PAGINA.anexoInicio.length, fin2);
+  return { pagina1, anexo };
+}
+
 /**
  * Resuelve el HTML de una plantilla con los datos reales del expediente.
  * - Duplica la fila (<tr>) que contenga campos {{producto.*}} una vez por línea de mercancía.
@@ -145,34 +184,41 @@ export function resolverPlantilla(html: string, exp: any, items: any[]): string 
 
   let out = html;
 
-  const tieneAnexo =
-    out.includes("{{__anexo_inicio__}}") && out.includes("{{__cierre1_inicio__}}");
+  const paginasMarcadas = separarPaginasMarcadas(out);
+  const tieneAnexo = paginasMarcadas !== null;
 
-  if (tieneAnexo) {
+  if (tieneAnexo && paginasMarcadas) {
     const productos = items ?? [];
 
     // 1) Expande primero las filas de producto (antes de tocar
     //    ningún {{...}} simple). La hoja anexa siempre se incluye,
     //    aunque no haya productos adicionales (queda informativa).
-    out = out
-      .replace(/\{\{__cierre1_inicio__\}\}/g, "")
-      .replace(/\{\{__cierre1_fin__\}\}/g, "")
-      .replace(/\{\{__anexo_inicio__\}\}/g, "")
-      .replace(/\{\{__anexo_fin__\}\}/g, "");
     // Primeros N productos en página 1, resto en anexo
-    out = expandirFilasProducto(out, productos.slice(0, ANEXO_N), "producto");
-    out = expandirFilasProducto(out, productos.slice(ANEXO_N), "productoAnexo");
-
+    let pagina1 = expandirFilasProducto(
+      paginasMarcadas.pagina1,
+      productos.slice(0, ANEXO_N),
+      "producto",
+    );
+    let anexo = expandirFilasProducto(
+      paginasMarcadas.anexo,
+      productos.slice(ANEXO_N),
+      "productoAnexo",
+    );
 
     // 2) SOLO AHORA reemplaza los campos simples de cliente/expediente
-    out = out.replace(/\{\{\s*([a-z]+\.[a-z_]+)\s*\}\}/gi, (_m, key: string) => {
-      const k = key.toLowerCase();
-      if (k in simples) return esc(val(simples[k]));
-      return "";
-    });
+    const reemplazarSimples = (seccion: string) =>
+      seccion.replace(/\{\{\s*([a-z]+\.[a-z_]+)\s*\}\}/gi, (_m, key: string) => {
+        const k = key.toLowerCase();
+        if (k in simples) return esc(val(simples[k]));
+        return "";
+      });
+    pagina1 = reemplazarSimples(pagina1);
+    anexo = reemplazarSimples(anexo);
 
     // 3) Cualquier marcador restante queda vacío
-    out = out.replace(/\{\{[\s\S]*?\}\}/g, "");
+    pagina1 = pagina1.replace(/\{\{[\s\S]*?\}\}/g, "");
+    anexo = anexo.replace(/\{\{[\s\S]*?\}\}/g, "");
+    out = `${envolverPagina(pagina1)}${envolverPagina(anexo)}`;
   } else {
     // Comportamiento original para plantillas sin marcadores de anexo
     // 1) Filas repetibles de productos
