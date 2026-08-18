@@ -154,8 +154,9 @@ export function resolverPlantilla(html: string, exp: any, items: any[]): string 
     // 1) Expande primero las filas de producto (antes de tocar
     //    ningún {{...}} simple). La hoja anexa siempre se incluye,
     //    aunque no haya productos adicionales (queda informativa).
-    out = out.replace(/\{\{__cierre1_inicio__\}\}[\s\S]*?\{\{__cierre1_fin__\}\}/, "");
     out = out
+      .replace(/\{\{__cierre1_inicio__\}\}/g, "")
+      .replace(/\{\{__cierre1_fin__\}\}/g, "")
       .replace(/\{\{__anexo_inicio__\}\}/g, "")
       .replace(/\{\{__anexo_fin__\}\}/g, "");
     // Primeros N productos en página 1, resto en anexo
