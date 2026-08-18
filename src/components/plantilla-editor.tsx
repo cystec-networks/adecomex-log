@@ -2,8 +2,12 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { TableKit } from "@tiptap/extension-table";
 import TextAlign from "@tiptap/extension-text-align";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,11 +18,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Bold, Italic, Underline as UnderlineIcon, List, ListOrdered,
-  AlignLeft, AlignCenter, AlignRight, Table as TableIcon, Undo2, Redo2, Braces,
+  AlignLeft, AlignCenter, AlignRight, Table as TableIcon, Undo2, Redo2, Braces, FileCode,
 } from "lucide-react";
 import { CAMPOS_PLANTILLA } from "@/lib/plantillas-campos";
 
 export function PlantillaEditor({
+
   value,
   onChange,
 }: {
@@ -49,6 +54,9 @@ export function PlantillaEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [htmlImport, setHtmlImport] = useState("");
+
   if (!editor) return <div className="text-sm text-muted-foreground p-4">Cargando editor…</div>;
 
   const Btn = ({
@@ -68,6 +76,7 @@ export function PlantillaEditor({
 
   return (
     <div className="border rounded-md overflow-hidden bg-background">
+
       <div className="flex flex-wrap items-center gap-1 border-b px-2 py-1 bg-muted/40">
         <Btn title="Negrita" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}><Bold className="h-4 w-4" /></Btn>
         <Btn title="Cursiva" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}><Italic className="h-4 w-4" /></Btn>
@@ -87,6 +96,8 @@ export function PlantillaEditor({
         <div className="w-px h-5 bg-border mx-1" />
         <Btn title="Deshacer" onClick={() => editor.chain().focus().undo().run()}><Undo2 className="h-4 w-4" /></Btn>
         <Btn title="Rehacer" onClick={() => editor.chain().focus().redo().run()}><Redo2 className="h-4 w-4" /></Btn>
+        <div className="w-px h-5 bg-border mx-1" />
+        <Btn title="Importar HTML" onClick={() => { setHtmlImport(""); setImportDialogOpen(true); }}><FileCode className="h-4 w-4" /></Btn>
         <div className="flex-1" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -117,8 +128,42 @@ export function PlantillaEditor({
         </DropdownMenu>
       </div>
       <EditorContent editor={editor} />
+
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="max-w-2xl w-[95vw]">
+          <DialogHeader>
+            <DialogTitle>Importar HTML</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-destructive">
+              Esto reemplaza todo el contenido actual de la plantilla.
+            </p>
+            <Textarea
+              value={htmlImport}
+              onChange={(e) => setHtmlImport(e.target.value)}
+              placeholder="Pega aquí el código HTML crudo..."
+              className="min-h-[320px] font-mono text-xs"
+              rows={15}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                editor.commands.setContent(htmlImport, { emitUpdate: true });
+                setImportDialogOpen(false);
+              }}
+            >
+              Aplicar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 export default PlantillaEditor;
+
