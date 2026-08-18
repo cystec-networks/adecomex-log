@@ -34,6 +34,7 @@ import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
+import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
