@@ -198,6 +198,7 @@ function DetalleExpediente() {
         </div>
         <GenerarXmlSigaButton expedienteId={id} />
         <PreLiquidacionPdfButton exp={exp} />
+        <GenerarDocumentoButton exp={exp} />
 
 
         <div className="flex items-center gap-2">
