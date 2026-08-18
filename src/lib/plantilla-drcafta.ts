@@ -183,7 +183,7 @@ ${encabezado("CERTIFICATE OF ORIGIN", "CERTIFICADO DE ORIGEN", true)}
     </td>
   </tr>
 </table>
-${tablaMercancias("producto", 260)}
+${tablaMercancias("producto", 26)}
 ${bloqueCierre("2")}
 ${bloqueFirmas(true)}
 </div>
