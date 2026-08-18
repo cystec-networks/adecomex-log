@@ -2,8 +2,12 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { TableKit } from "@tiptap/extension-table";
 import TextAlign from "@tiptap/extension-text-align";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,9 +18,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Bold, Italic, Underline as UnderlineIcon, List, ListOrdered,
-  AlignLeft, AlignCenter, AlignRight, Table as TableIcon, Undo2, Redo2, Braces,
+  AlignLeft, AlignCenter, AlignRight, Table as TableIcon, Undo2, Redo2, Braces, FileCode,
 } from "lucide-react";
 import { CAMPOS_PLANTILLA } from "@/lib/plantillas-campos";
+
 
 export function PlantillaEditor({
   value,
