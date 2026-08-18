@@ -140,7 +140,14 @@ function SolicitudPagoTransportePage() {
       const nc: string = json.numero_control;
       setSolicitudId(json.id ?? null);
       setNumeroControl(nc);
-      const msg = `Hola ADECOMEX, solicito el pago del servicio de transporte. Número de control: ${nc}. Transportista: ${form.transportista_nombre}. Cantidad de viajes: ${cantidadNum}. Monto total: ${monto} ${form.moneda}. Adjunto la factura.`;
+      const ruta = form.referencia_viaje.trim();
+      const contenedores = form.placa_contenedor.trim();
+      const msg =
+        `Hola ADECOMEX, solicito el pago del servicio de transporte. Número de control: ${nc}. ` +
+        `Transportista: ${form.transportista_nombre}. ` +
+        (ruta ? `Ruta/Referencia: ${ruta}. ` : "") +
+        (contenedores ? `Contenedor(es): ${contenedores}. ` : "") +
+        `Cantidad de viajes: ${cantidadNum}. Monto total: ${monto} ${form.moneda}. Adjunto la factura.`;
       window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
     } catch (err: any) {
       toast.error(err.message ?? "Error inesperado");
