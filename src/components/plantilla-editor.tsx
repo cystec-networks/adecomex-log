@@ -54,6 +54,9 @@ export function PlantillaEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [htmlImport, setHtmlImport] = useState("");
+
   if (!editor) return <div className="text-sm text-muted-foreground p-4">Cargando editor…</div>;
 
   const Btn = ({
@@ -70,6 +73,7 @@ export function PlantillaEditor({
       {children}
     </Button>
   );
+
 
   return (
     <div className="border rounded-md overflow-hidden bg-background">
