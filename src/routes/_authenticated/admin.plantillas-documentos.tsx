@@ -237,6 +237,26 @@ function PlantillasDocumentosPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!aEliminar} onOpenChange={(o) => !o && setAEliminar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar la plantilla?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Eliminar la plantilla <strong>{aEliminar?.nombre}</strong>? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={eliminar.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => aEliminar && eliminar.mutate(aEliminar)}
+              disabled={eliminar.isPending}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
