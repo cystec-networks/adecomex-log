@@ -2355,6 +2355,19 @@ function MercanciaItemsBlock({
   };
 
   const [f, setF] = useState(emptyForm);
+  const [valorUnitario, setValorUnitario] = useState("");
+  const valorUnitarioRef = useRef(valorUnitario);
+  useEffect(() => { valorUnitarioRef.current = valorUnitario; }, [valorUnitario]);
+  useEffect(() => {
+    if (!open) return;
+    if (f.valor_fob === "" && f.cantidad === "") return;
+    const vu = unitFob(f.valor_fob, f.cantidad);
+    const n = Number(vu);
+    if (!isFinite(n)) return;
+    const next = n.toFixed(4);
+    if (next !== valorUnitarioRef.current) setValorUnitario(next);
+  }, [open, f.valor_fob, f.cantidad]);
+
 
   const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
   const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
