@@ -2316,12 +2316,14 @@ function MercanciaItemsBlock({
   flete,
   otros,
   preferenciaComercial,
+  tasaCambioUsada,
 }: {
   expedienteId: string;
   seguro: number;
   flete: number;
   otros: number;
   preferenciaComercial: string;
+  tasaCambioUsada?: number | string | null;
 }) {
   const qc = useQueryClient();
   const { data: items } = useQuery({
