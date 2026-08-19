@@ -2436,6 +2436,21 @@ function MercanciaItemsBlock({
     onError: (e: any) => toast.error(e.message),
   });
 
+  const duplicar = useMutation({
+    mutationFn: async (it: any) => {
+      const nextNo = ((items ?? []).reduce((m: number, itm: any) => Math.max(m, itm.item_no || 0), 0)) + 1;
+      const { deleted_at, deleted_by, created_at, updated_at, id, item_no, expediente_id, ...resto } = it;
+      const { error } = await supabase.from("mercancia_items").insert({
+        ...resto,
+        expediente_id: expedienteId,
+        item_no: nextNo,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Línea duplicada"); invalidate(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const startNew = () => { setEditingId(null); setF(emptyForm); setOpen(true); };
   const startEdit = (it: any) => {
     setEditingId(it.id);
