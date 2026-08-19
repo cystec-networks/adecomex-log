@@ -21,7 +21,11 @@ export function AutocompleteInput({ value, onChange, suggestions, placeholder, c
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLUListElement>(null);
 
-  const filtered = suggestions.slice(0, 8);
+  const q = (value ?? "").toLowerCase();
+  const matches = q
+    ? suggestions.filter((s) => s.toLowerCase().includes(q) && s.toLowerCase() !== q)
+    : suggestions;
+  const filtered = matches.length > 0 ? matches.slice(0, 8) : suggestions.slice(0, 8);
 
   const getContainer = () =>
     inputRef.current?.closest<HTMLElement>("[role='dialog']") ?? null;
