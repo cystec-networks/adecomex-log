@@ -2563,8 +2563,9 @@ function MercanciaItemsBlock({
                   <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.itbis)}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-emerald-50/60 font-semibold">{fmt(c.total)}</td>
                   <td className="px-2 py-2 text-right whitespace-nowrap">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(it)}><Pencil className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => eliminar.mutate(it.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(it)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => duplicar.mutate(it)} title="Duplicar línea"><Copy className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => eliminar.mutate(it.id)} title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></Button>
                   </td>
                 </tr>
               );
