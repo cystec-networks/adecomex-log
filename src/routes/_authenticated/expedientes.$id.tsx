@@ -690,6 +690,7 @@ function TabInfo({ exp }: { exp: any }) {
               flete={Number(form.flete) || 0}
               otros={Number(form.otros) || 0}
               preferenciaComercial={form.preferencia_comercial || ""}
+              tasaCambioUsada={exp.tasa_cambio_usada}
             />
           </div>
           <HerramientasDgaVuce />
