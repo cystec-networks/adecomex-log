@@ -2465,7 +2465,7 @@ function MercanciaItemsBlock({
     onError: (e: any) => toast.error(e.message),
   });
 
-  const startNew = () => { setEditingId(null); setF(emptyForm); setOpen(true); };
+  const startNew = () => { setEditingId(null); setF(emptyForm); setValorUnitario(""); setOpen(true); };
   const startEdit = (it: any) => {
     setEditingId(it.id);
     setF({
@@ -2488,9 +2488,11 @@ function MercanciaItemsBlock({
       especificaciones: it.especificaciones ?? "",
       estado_producto_codigo: it.estado_producto_codigo ?? "",
     });
-
+    const vu = unitFob(it.valor_fob, it.cantidad);
+    setValorUnitario(isFinite(Number(vu)) ? Number(vu).toFixed(4) : "");
     setOpen(true);
   };
+
 
   // Cuando el usuario digita/pega un código en el diálogo y aún no tiene % gravamen, sugerir desde catálogo
   const onCodigoBlur = async (codigo: string) => {
