@@ -2670,6 +2670,9 @@ function MercanciaItemsBlock({
                 onChange={(e) => { const v = e.target.value.replace(/,/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) setF({ ...f, valor_fob: v }); }}
                 onBlur={(e) => { const v = e.target.value; if (v !== "" && !isNaN(Number(v))) setF({ ...f, valor_fob: Number(v).toFixed(2) }); }}
                 placeholder="0.00" />
+              <div className="text-[11px] text-muted-foreground">
+                Valor unitario: <span className="font-mono tabular-nums">{unitFob(f.valor_fob, f.cantidad)}</span>
+              </div>
             </div>
 
             <div className="md:col-span-2 border-t pt-3 mt-1">
