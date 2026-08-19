@@ -32,6 +32,7 @@ import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
+import { unitFob } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
@@ -2515,6 +2516,7 @@ function MercanciaItemsBlock({
               <th className="px-2 py-2 text-right">Cantidad</th>
               <th className="px-2 py-2 text-right">Peso</th>
               <th className="px-2 py-2 text-right">FOB (US$)</th>
+              <th className="px-2 py-2 text-right">Valor Unit.</th>
               <th className="px-2 py-2 text-right bg-amber-50">% Grav.</th>
               <th className="px-2 py-2 text-center bg-amber-50">ISC?</th>
               <th className="px-2 py-2 text-right bg-amber-50">% ISC</th>
@@ -2528,7 +2530,7 @@ function MercanciaItemsBlock({
           </thead>
           <tbody>
             {(items ?? []).length === 0 ? (
-              <tr><td colSpan={16} className="px-3 py-6 text-center text-xs text-muted-foreground">Sin ítems. Agrega el primero.</td></tr>
+              <tr><td colSpan={17} className="px-3 py-6 text-center text-xs text-muted-foreground">Sin ítems. Agrega el primero.</td></tr>
             ) : (items ?? []).map((it: any) => {
               const c = calcImpuestosLinea(
                 Number(it.valor_fob) || 0, totalFob, seguro, flete, otros,
@@ -2554,6 +2556,10 @@ function MercanciaItemsBlock({
                   <td className="px-2 py-2 text-right tabular-nums">{Number(it.cantidad || 0).toLocaleString("en-US")}</td>
                   <td className="px-2 py-2 text-right tabular-nums">{Number(it.peso || 0).toLocaleString("en-US")}</td>
                   <td className="px-2 py-2 text-right tabular-nums">{fmt(Number(it.valor_fob || 0))}</td>
+                  <td className="px-2 py-2 text-right tabular-nums text-xs">{(() => {
+                    const vu = Number(unitFob(it.valor_fob, it.cantidad));
+                    return isFinite(vu) ? vu.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 6 }) : "—";
+                  })()}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{it.pct_gravamen != null ? `${Number(it.pct_gravamen)}%` : <span className="text-amber-600 text-xs">—</span>}</td>
                   <td className="px-2 py-2 text-center bg-amber-50/40 text-xs">{it.aplica_isc ? "Sí" : "No"}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{it.aplica_isc && it.pct_isc != null ? `${Number(it.pct_isc)}%` : "—"}</td>
@@ -2576,7 +2582,7 @@ function MercanciaItemsBlock({
               <tr className="border-t bg-muted/30">
                 <td colSpan={6} className="px-2 py-2 text-right text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Totales</td>
                 <td className="px-2 py-2 text-right tabular-nums font-semibold">{fmt(totalFob)}</td>
-                <td colSpan={7}></td>
+                <td colSpan={8}></td>
                 <td className="px-2 py-2 text-right tabular-nums font-semibold bg-emerald-50/60">
                   {fmt((items ?? []).reduce((s: number, it: any) => s + calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis).total, 0))}
                 </td>
@@ -2664,6 +2670,9 @@ function MercanciaItemsBlock({
                 onChange={(e) => { const v = e.target.value.replace(/,/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) setF({ ...f, valor_fob: v }); }}
                 onBlur={(e) => { const v = e.target.value; if (v !== "" && !isNaN(Number(v))) setF({ ...f, valor_fob: Number(v).toFixed(2) }); }}
                 placeholder="0.00" />
+              <div className="text-[11px] text-muted-foreground">
+                Valor unitario: <span className="font-mono tabular-nums">{unitFob(f.valor_fob, f.cantidad)}</span>
+              </div>
             </div>
 
             <div className="md:col-span-2 border-t pt-3 mt-1">
