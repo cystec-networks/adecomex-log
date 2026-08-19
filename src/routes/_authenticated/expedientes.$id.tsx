@@ -2595,11 +2595,24 @@ function MercanciaItemsBlock({
           {(items ?? []).length > 0 && (
             <tfoot>
               <tr className="border-t bg-muted/30">
-                <td colSpan={6} className="px-2 py-2 text-right text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Totales</td>
+                <td colSpan={4} className="px-2 py-2 text-right text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Totales</td>
+                <td className="px-2 py-2 text-right tabular-nums font-semibold">
+                  {(items ?? []).reduce((s, it) => s + (Number(it.cantidad) || 0), 0).toLocaleString("en-US")}
+                </td>
+                <td className="px-2 py-2 text-right tabular-nums font-semibold">
+                  {(items ?? []).reduce((s, it) => s + (Number(it.peso) || 0), 0).toLocaleString("en-US")}
+                </td>
                 <td className="px-2 py-2 text-right tabular-nums font-semibold">{fmt(totalFob)}</td>
                 <td colSpan={8}></td>
                 <td className="px-2 py-2 text-right tabular-nums font-semibold bg-emerald-50/60">
-                  {fmt((items ?? []).reduce((s: number, it: any) => s + calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis).total, 0))}
+                  {(() => {
+                    const tasaCambio = Number(exp?.tasa_cambio_usada) || 0;
+                    const totalImpuestosUSD = (items ?? []).reduce((s: number, it: any) => s + calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis).total, 0);
+                    const totalImpuestosDOP = tasaCambio > 0 ? totalImpuestosUSD * tasaCambio : null;
+                    return totalImpuestosDOP != null
+                      ? `RD$ ${totalImpuestosDOP.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      : <span className="text-amber-600 text-xs">Sin tasa de cambio</span>;
+                  })()}
                 </td>
                 <td></td>
               </tr>
