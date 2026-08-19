@@ -2355,6 +2355,19 @@ function MercanciaItemsBlock({
   };
 
   const [f, setF] = useState(emptyForm);
+  const [valorUnitario, setValorUnitario] = useState("");
+  const valorUnitarioRef = useRef(valorUnitario);
+  useEffect(() => { valorUnitarioRef.current = valorUnitario; }, [valorUnitario]);
+  useEffect(() => {
+    if (!open) return;
+    if (f.valor_fob === "" && f.cantidad === "") return;
+    const vu = unitFob(f.valor_fob, f.cantidad);
+    const n = Number(vu);
+    if (!isFinite(n)) return;
+    const next = n.toFixed(4);
+    if (next !== valorUnitarioRef.current) setValorUnitario(next);
+  }, [open, f.valor_fob, f.cantidad]);
+
 
   const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
   const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2423,7 +2436,7 @@ function MercanciaItemsBlock({
       }
       await autoLearnTasa(codigo, payload.pct_gravamen, payload.aplica_isc, payload.pct_isc);
     },
-    onSuccess: () => { toast.success(editingId ? "Ítem actualizado" : "Ítem agregado"); setOpen(false); setEditingId(null); setF(emptyForm); invalidate(); },
+    onSuccess: () => { toast.success(editingId ? "Ítem actualizado" : "Ítem agregado"); setOpen(false); setEditingId(null); setF(emptyForm); setValorUnitario(""); invalidate(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -2452,7 +2465,7 @@ function MercanciaItemsBlock({
     onError: (e: any) => toast.error(e.message),
   });
 
-  const startNew = () => { setEditingId(null); setF(emptyForm); setOpen(true); };
+  const startNew = () => { setEditingId(null); setF(emptyForm); setValorUnitario(""); setOpen(true); };
   const startEdit = (it: any) => {
     setEditingId(it.id);
     setF({
@@ -2475,9 +2488,11 @@ function MercanciaItemsBlock({
       especificaciones: it.especificaciones ?? "",
       estado_producto_codigo: it.estado_producto_codigo ?? "",
     });
-
+    const vu = unitFob(it.valor_fob, it.cantidad);
+    setValorUnitario(isFinite(Number(vu)) ? Number(vu).toFixed(4) : "");
     setOpen(true);
   };
+
 
   // Cuando el usuario digita/pega un código en el diálogo y aún no tiene % gravamen, sugerir desde catálogo
   const onCodigoBlur = async (codigo: string) => {
@@ -2558,7 +2573,7 @@ function MercanciaItemsBlock({
                   <td className="px-2 py-2 text-right tabular-nums">{fmt(Number(it.valor_fob || 0))}</td>
                   <td className="px-2 py-2 text-right tabular-nums text-xs">{(() => {
                     const vu = Number(unitFob(it.valor_fob, it.cantidad));
-                    return isFinite(vu) ? vu.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 6 }) : "—";
+                    return isFinite(vu) ? vu.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : "—";
                   })()}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{it.pct_gravamen != null ? `${Number(it.pct_gravamen)}%` : <span className="text-amber-600 text-xs">—</span>}</td>
                   <td className="px-2 py-2 text-center bg-amber-50/40 text-xs">{it.aplica_isc ? "Sí" : "No"}</td>
@@ -2597,7 +2612,7 @@ function MercanciaItemsBlock({
         <span className="inline-flex items-center gap-1 ml-2"><AlertTriangle className="h-3 w-3 text-amber-500" /> = tasa aprendida, sin verificar por Admin.</span>
       </p>
 
-      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); setValorUnitario(""); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingId ? "Editar ítem" : "Nuevo ítem"}</DialogTitle></DialogHeader>
           <div className="rounded-md border bg-muted/30 p-3">
@@ -2670,10 +2685,25 @@ function MercanciaItemsBlock({
                 onChange={(e) => { const v = e.target.value.replace(/,/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) setF({ ...f, valor_fob: v }); }}
                 onBlur={(e) => { const v = e.target.value; if (v !== "" && !isNaN(Number(v))) setF({ ...f, valor_fob: Number(v).toFixed(2) }); }}
                 placeholder="0.00" />
-              <div className="text-[11px] text-muted-foreground">
-                Valor unitario: <span className="font-mono tabular-nums">{unitFob(f.valor_fob, f.cantidad)}</span>
-              </div>
             </div>
+            <div className="grid gap-1.5">
+              <Label>Valor Unitario (US$)</Label>
+              <Input type="text" inputMode="decimal" value={valorUnitario}
+                onChange={(e) => { const v = e.target.value.replace(/,/g, ""); if (v === "" || /^\d*\.?\d{0,4}$/.test(v)) setValorUnitario(v); }}
+                onBlur={(e) => {
+                  const v = e.target.value;
+                  if (v !== "" && !isNaN(Number(v)) && Number(f.cantidad) > 0) {
+                    const nuevoFobTotal = (Number(v) * Number(f.cantidad)).toFixed(2);
+                    setF({ ...f, valor_fob: nuevoFobTotal });
+                    setValorUnitario(Number(v).toFixed(4));
+                  }
+                }}
+                placeholder="0.0000" />
+              <p className="text-[11px] text-muted-foreground">
+                El FOB Total se ajusta automáticamente al editar el Valor Unitario (redondeado a centavos).
+              </p>
+            </div>
+
 
             <div className="md:col-span-2 border-t pt-3 mt-1">
               <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Impuestos de la línea</div>
