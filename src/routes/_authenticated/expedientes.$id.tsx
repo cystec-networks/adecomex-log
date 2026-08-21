@@ -356,6 +356,8 @@ function TabInfo({ exp }: { exp: any }) {
     factura_comercial: exp.factura_comercial ?? "",
     incoterm: exp.incoterm ?? "",
     puerto_salida: exp.puerto_salida ?? "",
+    puerto_salida_codigo: exp.puerto_salida_codigo ?? "",
+
     puerto_arribo: exp.puerto_arribo ?? "",
     numero_dua: exp.numero_dua ?? "",
     numero_vuce: exp.numero_vuce ?? "",
