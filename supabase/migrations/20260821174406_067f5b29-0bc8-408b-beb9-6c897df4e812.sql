@@ -1,0 +1,1 @@
+ALTER TABLE public.expedientes ADD COLUMN IF NOT EXISTS puerto_salida_codigo text;

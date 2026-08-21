@@ -2385,6 +2385,7 @@ export type Database = {
           puerto_arribo: string | null
           puerto_arribo_codigo: string | null
           puerto_salida: string | null
+          puerto_salida_codigo: string | null
           rectificacion_tecnica: boolean
           regimen_aduanero: string | null
           regimen_codigo: string | null
@@ -2459,6 +2460,7 @@ export type Database = {
           puerto_arribo?: string | null
           puerto_arribo_codigo?: string | null
           puerto_salida?: string | null
+          puerto_salida_codigo?: string | null
           rectificacion_tecnica?: boolean
           regimen_aduanero?: string | null
           regimen_codigo?: string | null
@@ -2533,6 +2535,7 @@ export type Database = {
           puerto_arribo?: string | null
           puerto_arribo_codigo?: string | null
           puerto_salida?: string | null
+          puerto_salida_codigo?: string | null
           rectificacion_tecnica?: boolean
           regimen_aduanero?: string | null
           regimen_codigo?: string | null
