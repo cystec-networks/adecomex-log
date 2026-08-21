@@ -557,7 +557,20 @@ function TabInfo({ exp }: { exp: any }) {
 
         <AutoField label="Factura comercial" value={form.factura_comercial} onChange={(v) => set("factura_comercial", v)} suggestion={sug.factura_comercial ?? []} />
         <AutoField label="Incoterm" value={form.incoterm} onChange={(v) => set("incoterm", v)} suggestion={sug.incoterm ?? []} />
-        <AutoField label="Puerto de salida" value={form.puerto_salida} onChange={(v) => set("puerto_salida", v)} suggestion={sug.puerto_salida ?? []} />
+        <div className="grid gap-1.5">
+          <Label>Puerto de salida</Label>
+          <DgaCombobox
+            table="dga_puertos"
+            value={form.puerto_salida}
+            codigo={form.puerto_salida_codigo}
+            onChange={(nombre, codigo) => setForm((f) => ({ ...f, puerto_salida: nombre, puerto_salida_codigo: codigo }))}
+            placeholder="Selecciona puerto (catálogo DGA)"
+          />
+          {form.puerto_salida && !form.puerto_salida_codigo && (
+            <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo.</span>
+          )}
+        </div>
+
       </Section>
 
       <Card>
