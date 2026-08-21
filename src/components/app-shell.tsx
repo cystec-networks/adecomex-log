@@ -145,11 +145,10 @@ const GROUPS: Group[] = [
       { to: "/legal/documentos", label: "Documentos Legales", icon: Scale, adminOnly: true,
         match: (p) => p.startsWith("/legal/documentos") },
       { to: "/admin/catalogos", label: "Catálogos DGA", icon: Library, adminOnly: true,
-        match: (p) => p.startsWith("/admin/catalogos") && !p.startsWith("/admin/catalogo-productos-dga") && !p.startsWith("/admin/catalogo-puertos-dga") },
+        match: (p) => p.startsWith("/admin/catalogos") && !p.startsWith("/admin/catalogo-productos-dga") },
       { to: "/admin/catalogo-productos-dga", label: "Productos DGA (histórico)", icon: Library, adminOnly: true,
         match: (p) => p.startsWith("/admin/catalogo-productos-dga") },
-      { to: "/admin/catalogo-puertos-dga", label: "Puertos DGA", icon: Library, adminOnly: true,
-        match: (p) => p.startsWith("/admin/catalogo-puertos-dga") },
+
       { to: "/admin/plantillas-documentos", label: "Plantillas de Documentos", icon: FileText,
         roles: ["admin", "operaciones"],
         match: (p) => p.startsWith("/admin/plantillas-documentos") },
