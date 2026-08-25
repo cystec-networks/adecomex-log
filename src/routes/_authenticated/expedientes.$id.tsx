@@ -385,6 +385,7 @@ function TabInfo({ exp }: { exp: any }) {
     pais_procedencia_codigo: exp.pais_procedencia_codigo ?? "",
     puerto_arribo_codigo: exp.puerto_arribo_codigo ?? "",
 
+    area_aduanera: exp.area_aduanera ?? "",
     area_aduanera_codigo: exp.area_aduanera_codigo ?? "",
     liq_siga_numero: exp.liq_siga_numero ?? "",
     liq_siga_estado: exp.liq_siga_estado ?? "",
@@ -601,8 +602,9 @@ function TabInfo({ exp }: { exp: any }) {
             <Label>Área / Administración aduanera</Label>
             <DgaCombobox
               table="dga_areas"
+              value={form.area_aduanera}
               codigo={form.area_aduanera_codigo}
-              onChange={(_n, codigo) => setForm((f) => ({ ...f, area_aduanera_codigo: codigo }))}
+              onChange={(nombre, codigo) => setForm((f) => ({ ...f, area_aduanera: nombre, area_aduanera_codigo: codigo }))}
               placeholder="Buscar área (catálogo DGA)"
             />
           </div>
