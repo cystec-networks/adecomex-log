@@ -169,6 +169,7 @@ function Papelera() {
   const trRows = transportes.data ?? [];
   const cotRows = cotizaciones.data ?? [];
   const ordRows = ordenes.data ?? [];
+  const facRows = facturas.data ?? [];
 
 
   return (
