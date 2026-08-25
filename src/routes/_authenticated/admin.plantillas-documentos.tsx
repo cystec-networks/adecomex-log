@@ -17,7 +17,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { FileText, Pencil, Plus, Trash2 } from "lucide-react";
-import { PlantillaEditor } from "@/components/plantilla-editor";
+import { lazy, Suspense } from "react";
+
+// Editor TipTap cargado bajo demanda (bundle pesado)
+const PlantillaEditor = lazy(() =>
+  import("@/components/plantilla-editor").then((m) => ({ default: m.PlantillaEditor })),
+);
 import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
 import { PLANTILLA_DRCAFTA_USA_HTML } from "@/lib/plantilla-drcafta";
@@ -234,10 +239,12 @@ function PlantillasDocumentosPage() {
                 <Label className="font-normal">Plantilla activa</Label>
               </div>
 
-              <PlantillaEditor
-                value={editando.contenido_html ?? ""}
-                onChange={(html) => setEditando((prev) => (prev ? { ...prev, contenido_html: html } : prev))}
-              />
+              <Suspense fallback={<div className="h-64 rounded-md border grid place-items-center text-sm text-muted-foreground">Cargando editor…</div>}>
+                <PlantillaEditor
+                  value={editando.contenido_html ?? ""}
+                  onChange={(html) => setEditando((prev) => (prev ? { ...prev, contenido_html: html } : prev))}
+                />
+              </Suspense>
 
               <p className="text-xs text-muted-foreground">
                 Para la tabla de productos, inserta una fila con campos <span className="font-mono">{"{{producto.*}}"}</span>:

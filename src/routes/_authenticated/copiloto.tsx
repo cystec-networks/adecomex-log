@@ -8,7 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, Send, Loader2, User, Bot } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
+import { lazy, Suspense } from "react";
+
+const ReactMarkdown = lazy(() => import("react-markdown"));
 
 export const Route = createFileRoute("/_authenticated/copiloto")({
   component: Copiloto,
@@ -85,7 +87,7 @@ function Copiloto() {
               </div>
               <div className={`rounded-lg px-4 py-2 max-w-[80%] text-sm ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                 {m.role === "assistant"
-                  ? <div className="prose prose-sm dark:prose-invert max-w-none"><ReactMarkdown>{m.content}</ReactMarkdown></div>
+                  ? <div className="prose prose-sm dark:prose-invert max-w-none"><Suspense fallback={<p className="whitespace-pre-wrap">{m.content}</p>}><ReactMarkdown>{m.content}</ReactMarkdown></Suspense></div>
                   : <p className="whitespace-pre-wrap">{m.content}</p>}
               </div>
             </div>

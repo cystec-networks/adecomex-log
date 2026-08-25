@@ -15,7 +15,14 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Save, Trash2, Pencil, X, Check, Download } from "lucide-react";
-import * as XLSX from "xlsx";
+import type * as XLSXNS from "xlsx";
+
+// Carga diferida de la librería de Excel (evita ~500KB en el bundle inicial)
+let XLSX!: typeof XLSXNS;
+async function loadXLSX() {
+  if (!XLSX) XLSX = await import("xlsx");
+  return XLSX;
+}
 import { useMyRoles } from "@/lib/auth-hooks";
 
 const RETENCION_TIPOS = [
@@ -147,7 +154,7 @@ export function PanelITBIS({ periodo }: { periodo: string }) {
   if (!data) return null;
 
   const handleDownloadExcel = () => {
-    downloadItbisExcel(data, periodo, empresaRnc ?? "", retencionesList ?? []);
+    void downloadItbisExcel(data, periodo, empresaRnc ?? "", retencionesList ?? []);
   };
 
   const handleDownload607 = async () => {
@@ -621,12 +628,13 @@ function PanelAjustes({
 }
 
 // ============ Excel export ============
-function downloadItbisExcel(
+async function downloadItbisExcel(
   data: CalcResult,
   periodo: string,
   rnc: string,
   retenciones: { tipo: string; monto: number }[],
 ) {
+  await loadXLSX();
   const N = (n: any) => Number(n) || 0;
   const header = (title: string) => [
     ["DIRECCIÓN GENERAL DE IMPUESTOS INTERNOS"],
@@ -738,7 +746,7 @@ function downloadItbisExcel(
   XLSX.writeFile(wb, `Revision_ITBIS_${periodo}.xlsx`);
 }
 
-function applyNumberFormat(ws: XLSX.WorkSheet) {
+function applyNumberFormat(ws: XLSXNS.WorkSheet) {
   const ref = ws["!ref"];
   if (!ref) return;
   const range = XLSX.utils.decode_range(ref);
@@ -767,6 +775,7 @@ function fechaAAAAMMDD(fecha: string | null | undefined): string {
 }
 
 async function download607Excel(periodo: string, empresaRnc: string) {
+  await loadXLSX();
   if (!/^\d{6}$/.test(periodo)) throw new Error("Período inválido (AAAAMM)");
   const anio = periodo.slice(0, 4);
   const mes = periodo.slice(4, 6);

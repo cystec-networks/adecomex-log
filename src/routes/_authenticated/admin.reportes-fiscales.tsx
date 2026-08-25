@@ -20,7 +20,13 @@ import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { fmtLocalDate } from "@/lib/dates";
 import { Navigate } from "@tanstack/react-router";
 import { FORMA_PAGO_CODE, EMPRESA_RNC_KEY, montoRequerido, montoOpcional, isPagoExterior } from "@/lib/fiscal-606";
-import * as XLSX from "xlsx";
+import type * as XLSXNS from "xlsx";
+
+let XLSX!: typeof XLSXNS;
+async function loadXLSX() {
+  if (!XLSX) XLSX = await import("xlsx");
+  return XLSX;
+}
 import { PanelITBIS } from "@/components/panel-itbis";
 
 const BS_LABEL_EXCEL: Record<number, string> = {
@@ -504,6 +510,7 @@ function Panel606({ periodo }: { periodo: string }) {
     aoa[10] = headers;
     for (const row of rows) aoa.push(row);
 
+    await loadXLSX();
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     // Formato numérico 2 decimales para columnas de montos (K..Y salvo T que es texto ISR)
     const numericCols = [10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24];
