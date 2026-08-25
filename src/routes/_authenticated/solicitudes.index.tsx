@@ -13,9 +13,11 @@ import {
 import { Plus, Trash2 } from "lucide-react";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { toast } from "sonner";
 import { parseLocalDate, fmtLocalDate } from "@/lib/dates";
+import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
+
 
 export const Route = createFileRoute("/_authenticated/solicitudes/")({
   component: Solicitudes,
