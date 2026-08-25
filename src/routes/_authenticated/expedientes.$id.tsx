@@ -11,7 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
@@ -198,10 +199,30 @@ function DetalleExpediente() {
             <span>· BL/AWB: {exp.bl_awb ?? "—"}</span>
           </p>
         </div>
-        <GenerarXmlSigaButton expedienteId={id} />
-        <GenerarXmlCertificadoOrigenButton expedienteId={id} />
-        <PreLiquidacionPdfButton exp={exp} />
-        <GenerarDocumentoButton exp={exp} />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
+              <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64 p-1">
+            <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:hover:bg-accent [&_button]:focus-visible:bg-accent">
+              <DropdownMenuItem className="p-0 focus:bg-transparent">
+                <GenerarXmlSigaButton expedienteId={id} />
+              </DropdownMenuItem>
+              <DropdownMenuItem className="p-0 focus:bg-transparent">
+                <GenerarXmlCertificadoOrigenButton expedienteId={id} />
+              </DropdownMenuItem>
+              <DropdownMenuItem className="p-0 focus:bg-transparent">
+                <PreLiquidacionPdfButton exp={exp} />
+              </DropdownMenuItem>
+              <DropdownMenuItem className="p-0 focus:bg-transparent">
+                <GenerarDocumentoButton exp={exp} />
+              </DropdownMenuItem>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
 
         <div className="flex items-center gap-2">
