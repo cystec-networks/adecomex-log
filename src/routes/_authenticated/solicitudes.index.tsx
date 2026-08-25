@@ -97,6 +97,20 @@ function Solicitudes() {
     return activeSort.dir === "asc" ? r : -r;
   });
 
+  const { esColapsado, toggleGrupo } = useGruposColapsados("solicitudes-grupos-colapsados");
+  const grupos: [string, any[]][] = (() => {
+    const map = new Map<string, any[]>();
+    for (const s of sorted) {
+      const k = s.estado ?? "sin_estado";
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(s);
+    }
+    return [...map.entries()].sort(
+      (a, b) => (ESTADOS.indexOf(a[0]) + 1 || 999) - (ESTADOS.indexOf(b[0]) + 1 || 999),
+    );
+  })();
+
+
   const isActive = (k: SortKey) => !!sort && sort.key === k;
   const isDefault = (k: SortKey) => !sort && k === "fecha_arribo_est";
   const Th = ({ k, children, className = "" }: { k: SortKey; children: React.ReactNode; className?: string }) => {
