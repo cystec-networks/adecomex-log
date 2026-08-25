@@ -38,6 +38,7 @@ import { unitFob } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
+import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
