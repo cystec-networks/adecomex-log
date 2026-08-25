@@ -112,7 +112,7 @@ export function personCode(id?: string | null, countryCode = "214", defaultPrefi
   if (!id) return "";
   let clean = String(id).trim().replace(/[-\s.]/g, "").toUpperCase();
   let prefix = defaultPrefix;
-  const m = /^(RNC|CED|PAS|TAX)(.*)$/.exec(clean);
+  const m = /^(RNC|CED|PAS|TID|TAX)(.*)$/.exec(clean);
   if (m) { prefix = m[1]; clean = m[2]; }
   const cc = String(countryCode || "").trim();
   if (cc && clean.startsWith(cc)) return `${prefix}${clean}`;
