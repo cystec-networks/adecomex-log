@@ -76,9 +76,6 @@ function Transportes() {
     k === "expediente" ? (t.expedientes?.numero ?? "") :
     (t[k] ?? "");
   const cmp = (a: any, b: any) => {
-    const closed = (s: string) => (s === "entregado" || s === "facturado" ? 1 : 0);
-    const closedA = closed(a.estado); const closedB = closed(b.estado);
-    if (closedA !== closedB) return closedA - closedB;
     const av = getVal(a, activeSort.key); const bv = getVal(b, activeSort.key);
     const aE = av === "" || av == null; const bE = bv === "" || bv == null;
     if (aE && bE) return 0; if (aE) return 1; if (bE) return -1;
@@ -88,6 +85,22 @@ function Transportes() {
     return activeSort.dir === "asc" ? r : -r;
   };
   const rows = [...filtered].sort(cmp);
+
+  const TRANSPORTES_CERRADOS = ["entregado", "facturado"];
+  const { esColapsado, toggleGrupo } = useGruposColapsados("transportes-grupos-colapsados", TRANSPORTES_CERRADOS);
+  const ordenGrupos = TRANSPORTE_ESTADOS.map((s) => s.v);
+  const grupos: [string, any[]][] = (() => {
+    const map = new Map<string, any[]>();
+    for (const t of rows) {
+      const k = t.estado ?? "sin_estado";
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(t);
+    }
+    return [...map.entries()].sort(
+      (a, b) => (ordenGrupos.indexOf(a[0]) + 1 || 999) - (ordenGrupos.indexOf(b[0]) + 1 || 999),
+    );
+  })();
+
 
   const isActive = (k: SortKey) => !!sort && sort.key === k;
   const isDefault = (k: SortKey) => !sort && k === "eta";
