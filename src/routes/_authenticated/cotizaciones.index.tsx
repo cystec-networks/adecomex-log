@@ -185,44 +185,60 @@ function Cotizaciones() {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((c: any) => (
-                <tr key={c.id} className="border-b last:border-0 hover:bg-muted/40">
-                  <td className="px-4 py-2 font-medium">
-                    <Link to="/cotizaciones/$id" params={{ id: c.id }} className="hover:underline text-primary">{c.numero}</Link>
-                  </td>
-                  <td>{c.clientes?.nombre ?? "—"}</td>
-                  <td className="text-muted-foreground">{nombreVendedor(c.vendedor_id)}</td>
-                  <td className="text-muted-foreground">{c.tipo_mercancia ?? "—"}</td>
-                  <td>{c.origen ?? "—"}</td>
-                  <td>{c.destino ?? "—"}</td>
-                  <td className="tabular-nums">
-                    {c.tarifa_propuesta != null
-                      ? `${c.moneda ?? "USD"} ${Number(c.tarifa_propuesta).toLocaleString("es-DO", { minimumFractionDigits: 2 })}`
-                      : "—"}
-                  </td>
-                  <td className="text-xs">{fmtLocalDate(c.fecha_emision)}</td>
-                  <td><BadgeVigencia fecha={c.fecha_vigencia} /></td>
-                  <td>
-                    <Badge className={COTIZACION_ESTADO_CLASS[c.estado] ?? "bg-muted text-muted-foreground border-transparent"}>
-                      {cotizacionEstadoLabel(c.estado)}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-2 text-right whitespace-nowrap">
-                    {canEdit && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => setToTrash({ id: c.id, numero: c.numero })}
-                        title="Mover a la papelera"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </td>
-                </tr>
+              {grupos.map(([est, rows]) => (
+                <Fragment key={est}>
+                  <EstadoDivider
+                    colSpan={11}
+                    count={rows.length}
+                    colapsado={esColapsado(est)}
+                    onToggle={() => toggleGrupo(est)}
+                    label={
+                      <Badge className={COTIZACION_ESTADO_CLASS[est] ?? "bg-muted text-muted-foreground border-transparent"}>
+                        {cotizacionEstadoLabel(est)}
+                      </Badge>
+                    }
+                  />
+                  {!esColapsado(est) && rows.map((c: any) => (
+                    <tr key={c.id} className="border-b last:border-0 hover:bg-muted/40">
+                      <td className="px-4 py-2 font-medium">
+                        <Link to="/cotizaciones/$id" params={{ id: c.id }} className="hover:underline text-primary">{c.numero}</Link>
+                      </td>
+                      <td>{c.clientes?.nombre ?? "—"}</td>
+                      <td className="text-muted-foreground">{nombreVendedor(c.vendedor_id)}</td>
+                      <td className="text-muted-foreground">{c.tipo_mercancia ?? "—"}</td>
+                      <td>{c.origen ?? "—"}</td>
+                      <td>{c.destino ?? "—"}</td>
+                      <td className="tabular-nums">
+                        {c.tarifa_propuesta != null
+                          ? `${c.moneda ?? "USD"} ${Number(c.tarifa_propuesta).toLocaleString("es-DO", { minimumFractionDigits: 2 })}`
+                          : "—"}
+                      </td>
+                      <td className="text-xs">{fmtLocalDate(c.fecha_emision)}</td>
+                      <td><BadgeVigencia fecha={c.fecha_vigencia} /></td>
+                      <td>
+                        <Badge className={COTIZACION_ESTADO_CLASS[c.estado] ?? "bg-muted text-muted-foreground border-transparent"}>
+                          {cotizacionEstadoLabel(c.estado)}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-2 text-right whitespace-nowrap">
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setToTrash({ id: c.id, numero: c.numero })}
+                            title="Mover a la papelera"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </Fragment>
               ))}
               {filtered.length === 0 && (
+
                 <tr><td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">Sin cotizaciones.</td></tr>
               )}
             </tbody>
