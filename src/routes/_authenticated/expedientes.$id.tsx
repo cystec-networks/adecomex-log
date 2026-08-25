@@ -207,19 +207,11 @@ function DetalleExpediente() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64 p-1">
-            <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:hover:bg-accent [&_button]:focus-visible:bg-accent">
-              <DropdownMenuItem className="p-0 focus:bg-transparent">
-                <GenerarXmlSigaButton expedienteId={id} />
-              </DropdownMenuItem>
-              <DropdownMenuItem className="p-0 focus:bg-transparent">
-                <GenerarXmlCertificadoOrigenButton expedienteId={id} />
-              </DropdownMenuItem>
-              <DropdownMenuItem className="p-0 focus:bg-transparent">
-                <PreLiquidacionPdfButton exp={exp} />
-              </DropdownMenuItem>
-              <DropdownMenuItem className="p-0 focus:bg-transparent">
-                <GenerarDocumentoButton exp={exp} />
-              </DropdownMenuItem>
+            <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:text-sm [&_button:hover]:bg-accent">
+              <GenerarXmlSigaButton expedienteId={id} />
+              <GenerarXmlCertificadoOrigenButton expedienteId={id} />
+              <PreLiquidacionPdfButton exp={exp} />
+              <GenerarDocumentoButton exp={exp} />
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
