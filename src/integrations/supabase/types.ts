@@ -369,6 +369,30 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_criterio_origen: {
+        Row: {
+          codigo: string
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
       catalogo_documentos_requeridos: {
         Row: {
           codigo: string
@@ -475,6 +499,30 @@ export type Database = {
         Update: {
           activo?: boolean
           created_at?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
+      catalogo_metodo_calificacion: {
+        Row: {
+          codigo: string
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          estado?: string
           id?: string
           nombre?: string
         }
@@ -740,6 +788,30 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_tipo_emisor: {
+        Row: {
+          codigo: string
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
       catalogo_tipos_carga: {
         Row: {
           activo: boolean
@@ -812,6 +884,30 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_tratamientos_certificado: {
+        Row: {
+          codigo: string
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
       catalogo_unidades: {
         Row: {
           activo: boolean
@@ -839,6 +935,30 @@ export type Database = {
           nombre_eng?: string | null
           tipo?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_uso_certificado: {
+        Row: {
+          codigo: string
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre?: string
         }
         Relationships: []
       }
@@ -2335,6 +2455,14 @@ export type Database = {
           area_aduanera_codigo: string | null
           bl_awb: string | null
           canal_riesgo: string | null
+          certificado_emisor_codigo: string | null
+          certificado_periodo_desde: string | null
+          certificado_periodo_hasta: string | null
+          certificado_productor_rnc: string | null
+          certificado_remark: string | null
+          certificado_transporte_desc: string | null
+          certificado_tratamiento_codigo: string | null
+          certificado_uso_codigo: string | null
           cliente_id: string | null
           contacto_solicitud: string | null
           created_at: string
@@ -2410,6 +2538,14 @@ export type Database = {
           area_aduanera_codigo?: string | null
           bl_awb?: string | null
           canal_riesgo?: string | null
+          certificado_emisor_codigo?: string | null
+          certificado_periodo_desde?: string | null
+          certificado_periodo_hasta?: string | null
+          certificado_productor_rnc?: string | null
+          certificado_remark?: string | null
+          certificado_transporte_desc?: string | null
+          certificado_tratamiento_codigo?: string | null
+          certificado_uso_codigo?: string | null
           cliente_id?: string | null
           contacto_solicitud?: string | null
           created_at?: string
@@ -2485,6 +2621,14 @@ export type Database = {
           area_aduanera_codigo?: string | null
           bl_awb?: string | null
           canal_riesgo?: string | null
+          certificado_emisor_codigo?: string | null
+          certificado_periodo_desde?: string | null
+          certificado_periodo_hasta?: string | null
+          certificado_productor_rnc?: string | null
+          certificado_remark?: string | null
+          certificado_transporte_desc?: string | null
+          certificado_tratamiento_codigo?: string | null
+          certificado_uso_codigo?: string | null
           cliente_id?: string | null
           contacto_solicitud?: string | null
           created_at?: string
@@ -3426,6 +3570,7 @@ export type Database = {
           codigo_arancelario: string | null
           costo_venta_unitario: number | null
           created_at: string
+          criterio_origen_codigo: string | null
           deleted_at: string | null
           deleted_by: string | null
           detalle_producto: string | null
@@ -3440,6 +3585,7 @@ export type Database = {
           liquidacion_final_en: string | null
           liquidacion_final_por: string | null
           marca: string | null
+          metodo_calificacion_codigo: string | null
           modelo: string | null
           pct_gravamen: number | null
           pct_isc: number | null
@@ -3459,6 +3605,7 @@ export type Database = {
           codigo_arancelario?: string | null
           costo_venta_unitario?: number | null
           created_at?: string
+          criterio_origen_codigo?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
           detalle_producto?: string | null
@@ -3473,6 +3620,7 @@ export type Database = {
           liquidacion_final_en?: string | null
           liquidacion_final_por?: string | null
           marca?: string | null
+          metodo_calificacion_codigo?: string | null
           modelo?: string | null
           pct_gravamen?: number | null
           pct_isc?: number | null
@@ -3492,6 +3640,7 @@ export type Database = {
           codigo_arancelario?: string | null
           costo_venta_unitario?: number | null
           created_at?: string
+          criterio_origen_codigo?: string | null
           deleted_at?: string | null
           deleted_by?: string | null
           detalle_producto?: string | null
@@ -3506,6 +3655,7 @@ export type Database = {
           liquidacion_final_en?: string | null
           liquidacion_final_por?: string | null
           marca?: string | null
+          metodo_calificacion_codigo?: string | null
           modelo?: string | null
           pct_gravamen?: number | null
           pct_isc?: number | null
