@@ -181,35 +181,47 @@ function Permisos() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {rows.map((p: any) => (
-                    <tr key={p.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <Link to="/permisos/$id" params={{ id: p.id }} className="font-semibold text-primary hover:underline">{p.numero}</Link>
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{p.numero_resolucion ?? "—"}</td>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        {p.expedientes?.numero ? (
-                          <Link to="/expedientes/$id" params={{ id: p.expediente_id }} className="text-primary hover:underline">{p.expedientes.numero} ↗</Link>
-                        ) : "—"}
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap">{p.clientes?.nombre ?? "—"}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{PERMISO_TIPOS.find((t: { v: string; l: string }) => t.v === p.tipo)?.l ?? "—"}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{p.institucion_emisora ?? "—"}</td>
-                      <td className="px-3 py-2 text-center whitespace-nowrap">{estadoBadgePermiso(p.estado)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">{fmt(p.fecha_solicitud)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">{fmt(p.fecha_emision)}</td>
-                      <td className={`px-3 py-2 text-right tabular-nums whitespace-nowrap ${venceProximo(p.fecha_vencimiento) ? "text-amber-600 font-medium dark:text-amber-400" : "text-muted-foreground"}`}>{fmt(p.fecha_vencimiento)}</td>
-                      <td className="px-2 py-2 text-right whitespace-nowrap">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="Editar">
-                          <Link to="/permisos/$id" params={{ id: p.id }}><Pencil className="h-4 w-4" /></Link>
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => setToTrash({ id: p.id, numero: p.numero })} title="Mover a papelera">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
+                  {grupos.map(([est, gRows]) => (
+                    <Fragment key={est}>
+                      <EstadoDivider
+                        colSpan={11}
+                        count={gRows.length}
+                        colapsado={esColapsado(est)}
+                        onToggle={() => toggleGrupo(est)}
+                        label={estadoBadgePermiso(est)}
+                      />
+                      {!esColapsado(est) && gRows.map((p: any) => (
+                        <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <Link to="/permisos/$id" params={{ id: p.id }} className="font-semibold text-primary hover:underline">{p.numero}</Link>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{p.numero_resolucion ?? "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {p.expedientes?.numero ? (
+                              <Link to="/expedientes/$id" params={{ id: p.expediente_id }} className="text-primary hover:underline">{p.expedientes.numero} ↗</Link>
+                            ) : "—"}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">{p.clientes?.nombre ?? "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{PERMISO_TIPOS.find((t: { v: string; l: string }) => t.v === p.tipo)?.l ?? "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{p.institucion_emisora ?? "—"}</td>
+                          <td className="px-3 py-2 text-center whitespace-nowrap">{estadoBadgePermiso(p.estado)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">{fmt(p.fecha_solicitud)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">{fmt(p.fecha_emision)}</td>
+                          <td className={`px-3 py-2 text-right tabular-nums whitespace-nowrap ${venceProximo(p.fecha_vencimiento) ? "text-amber-600 font-medium dark:text-amber-400" : "text-muted-foreground"}`}>{fmt(p.fecha_vencimiento)}</td>
+                          <td className="px-2 py-2 text-right whitespace-nowrap">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="Editar">
+                              <Link to="/permisos/$id" params={{ id: p.id }}><Pencil className="h-4 w-4" /></Link>
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => setToTrash({ id: p.id, numero: p.numero })} title="Mover a papelera">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </Fragment>
                   ))}
+
                 </tbody>
               </table>
             </div>
