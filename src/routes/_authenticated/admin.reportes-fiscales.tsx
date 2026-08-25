@@ -510,6 +510,7 @@ function Panel606({ periodo }: { periodo: string }) {
     aoa[10] = headers;
     for (const row of rows) aoa.push(row);
 
+    await loadXLSX();
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     // Formato numérico 2 decimales para columnas de montos (K..Y salvo T que es texto ISR)
     const numericCols = [10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24];
