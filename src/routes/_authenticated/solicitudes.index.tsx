@@ -156,45 +156,59 @@ function Solicitudes() {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((s: any) => (
-                <tr key={s.id} className="border-b last:border-0 hover:bg-muted/40">
-                  <td className="px-4 py-2 font-medium">
-                    <Link to="/solicitudes/$id" params={{ id: s.id }} className="hover:underline text-primary">{s.numero}</Link>
-                  </td>
-                  <td>{s.clientes?.nombre ?? "—"}</td>
-                  <td className="text-muted-foreground">{s.tipo_operacion ?? "—"}</td>
-                  <td>{s.origen ?? "—"}</td>
-                  <td>{fmtLocalDate(s.fecha_arribo_est)}</td>
-                  <td><Badge className="bg-muted text-muted-foreground border-transparent">{s.prioridad}</Badge></td>
-                  <td><Badge className="bg-primary/10 text-primary border-transparent">{s.estado?.replace("_", " ")}</Badge></td>
-                  <td className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString("es-DO")}</td>
-                  <td className="px-4 py-2 text-right whitespace-nowrap">
-                    <WhatsAppButton
-                      phone={s.clientes?.telefono}
-                      clientName={s.clientes?.nombre}
-                      recordType="Solicitud"
-                      recordNumber={s.numero}
-                      variant="icon"
-                    />
-                    <EmailButton
-                      email={(s.clientes as any)?.email}
-                      clientName={s.clientes?.nombre}
-                      recordType="Solicitud"
-                      recordNumber={s.numero}
-                      variant="icon"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => setToTrash({ id: s.id, numero: s.numero })}
-                      title="Mover a la papelera"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </td>
-                </tr>
+              {grupos.map(([est, rows]) => (
+                <Fragment key={est}>
+                  <EstadoDivider
+                    colSpan={9}
+                    count={rows.length}
+                    colapsado={esColapsado(est)}
+                    onToggle={() => toggleGrupo(est)}
+                    label={
+                      <Badge className="bg-primary/10 text-primary border-transparent">{est.replace("_", " ")}</Badge>
+                    }
+                  />
+                  {!esColapsado(est) && rows.map((s: any) => (
+                    <tr key={s.id} className="border-b last:border-0 hover:bg-muted/40">
+                      <td className="px-4 py-2 font-medium">
+                        <Link to="/solicitudes/$id" params={{ id: s.id }} className="hover:underline text-primary">{s.numero}</Link>
+                      </td>
+                      <td>{s.clientes?.nombre ?? "—"}</td>
+                      <td className="text-muted-foreground">{s.tipo_operacion ?? "—"}</td>
+                      <td>{s.origen ?? "—"}</td>
+                      <td>{fmtLocalDate(s.fecha_arribo_est)}</td>
+                      <td><Badge className="bg-muted text-muted-foreground border-transparent">{s.prioridad}</Badge></td>
+                      <td><Badge className="bg-primary/10 text-primary border-transparent">{s.estado?.replace("_", " ")}</Badge></td>
+                      <td className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString("es-DO")}</td>
+                      <td className="px-4 py-2 text-right whitespace-nowrap">
+                        <WhatsAppButton
+                          phone={s.clientes?.telefono}
+                          clientName={s.clientes?.nombre}
+                          recordType="Solicitud"
+                          recordNumber={s.numero}
+                          variant="icon"
+                        />
+                        <EmailButton
+                          email={(s.clientes as any)?.email}
+                          clientName={s.clientes?.nombre}
+                          recordType="Solicitud"
+                          recordNumber={s.numero}
+                          variant="icon"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setToTrash({ id: s.id, numero: s.numero })}
+                          title="Mover a la papelera"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </Fragment>
               ))}
+
               {filtered.length === 0 && (
                 <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">Sin solicitudes.</td></tr>
               )}
