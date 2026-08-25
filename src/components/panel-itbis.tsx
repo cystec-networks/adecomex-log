@@ -18,7 +18,7 @@ import { Save, Trash2, Pencil, X, Check, Download } from "lucide-react";
 import type * as XLSXNS from "xlsx";
 
 // Carga diferida de la librería de Excel (evita ~500KB en el bundle inicial)
-let XLSX: typeof XLSXNS;
+let XLSX!: typeof XLSXNS;
 async function loadXLSX() {
   if (!XLSX) XLSX = await import("xlsx");
   return XLSX;

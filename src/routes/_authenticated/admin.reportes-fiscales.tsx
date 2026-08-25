@@ -22,7 +22,7 @@ import { Navigate } from "@tanstack/react-router";
 import { FORMA_PAGO_CODE, EMPRESA_RNC_KEY, montoRequerido, montoOpcional, isPagoExterior } from "@/lib/fiscal-606";
 import type * as XLSXNS from "xlsx";
 
-let XLSX: typeof XLSXNS;
+let XLSX!: typeof XLSXNS;
 async function loadXLSX() {
   if (!XLSX) XLSX = await import("xlsx");
   return XLSX;
