@@ -10,9 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { BarChart3, ChevronRight, FileSpreadsheet, FileText, RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
-import * as XLSX from "xlsx";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
+import type * as XLSXNS from "xlsx";
 import { parseLocalDate, fmtLocalDate } from "@/lib/dates";
 import { ESTADO_LABEL } from "@/lib/estados-expediente";
 
