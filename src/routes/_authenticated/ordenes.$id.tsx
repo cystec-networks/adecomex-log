@@ -48,13 +48,18 @@ function DetalleOrden() {
 
   const [form, setForm] = useState<any>(null);
   useEffect(() => {
-    if (o && !form) setForm({ estado: o.estado ?? "abierta", notas: o.notas ?? "" });
+    if (o && !form) setForm({ numero: o.numero ?? "", estado: o.estado ?? "abierta", notas: o.notas ?? "" });
   }, [o]);
 
   const save = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("ordenes").update(form).eq("id", id);
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") {
+          throw new Error("Ese número de orden ya está en uso — elige otro.");
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       toast.success("Orden actualizada");
