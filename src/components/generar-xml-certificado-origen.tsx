@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ScrollText, AlertTriangle, Download, CheckCircle2, Info, Save } from "lucide-react";
+import { ScrollText, AlertTriangle, Download, CheckCircle2, Info, Save, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { DgaCombobox } from "@/components/dga-combobox";
 import { downloadXml } from "@/lib/siga-xml";
@@ -68,7 +69,7 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
   const [detalles, setDetalles] = useState<Record<string, { criterio: string; metodo: string }>>({});
 
   useEffect(() => {
-    if (!exp) return;
+    if (!exp || !open) return;
     setForm({
       certificado_periodo_desde: exp.certificado_periodo_desde ?? "",
       certificado_periodo_hasta: exp.certificado_periodo_hasta ?? "",
@@ -83,26 +84,22 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
       pais_origen: exp.pais_origen ?? "",
       pais_origen_codigo: exp.pais_origen_codigo ?? "",
     });
-  }, [exp]);
+  }, [exp, open]);
 
   const partidas = useMemo(() => partidasUnicas((items as any[]) ?? []), [items]);
 
   useEffect(() => {
-    if (partidas.length === 0) return;
-    setDetalles((prev) => {
-      const next = { ...prev };
-      partidas.forEach((it: any) => {
-        const hs = String(it.codigo_arancelario);
-        if (!next[hs]) {
-          next[hs] = {
-            criterio: it.criterio_origen_codigo ?? "",
-            metodo: it.metodo_calificacion_codigo ?? "",
-          };
-        }
-      });
-      return next;
+    if (!open) return;
+    const next: Record<string, { criterio: string; metodo: string }> = {};
+    partidas.forEach((it: any) => {
+      const hs = String(it.codigo_arancelario);
+      next[hs] = {
+        criterio: it.criterio_origen_codigo ?? "",
+        metodo: it.metodo_calificacion_codigo ?? "",
+      };
     });
-  }, [partidas]);
+    setDetalles(next);
+  }, [partidas, open]);
 
   const tratamientoMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -169,6 +166,56 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
     downloadXml(`CERTORIGEN_${exp.numero}.xml`, xml);
     if (pending.length > 0) toast.warning(`XML descargado con ${pending.length} campo(s) sin código confirmado`);
     else toast.success("XML descargado");
+  };
+
+  const [borrando, setBorrando] = useState(false);
+
+  const borrarCertificado = async () => {
+    setBorrando(true);
+    const { error } = await supabase
+      .from("expedientes")
+      .update({
+        certificado_periodo_desde: null,
+        certificado_periodo_hasta: null,
+        certificado_uso_codigo: null,
+        certificado_emisor_codigo: null,
+        certificado_tratamiento_codigo: null,
+        certificado_transporte_desc: null,
+        certificado_remark: null,
+        certificado_productor_rnc: null,
+      })
+      .eq("id", expedienteId);
+    if (error) { setBorrando(false); return toast.error(error.message); }
+
+    const { error: e2 } = await supabase
+      .from("mercancia_items")
+      .update({
+        criterio_origen_codigo: null,
+        metodo_calificacion_codigo: null,
+      })
+      .eq("expediente_id", expedienteId);
+    if (e2) { setBorrando(false); return toast.error(e2.message); }
+
+    setForm({
+      certificado_periodo_desde: "",
+      certificado_periodo_hasta: "",
+      certificado_uso_codigo: "",
+      certificado_emisor_codigo: "",
+      certificado_tratamiento_codigo: "",
+      certificado_transporte_desc: "",
+      certificado_remark: "",
+      certificado_productor_rnc: "",
+      area_aduanera: "",
+      area_aduanera_codigo: "",
+      pais_origen: "",
+      pais_origen_codigo: "",
+    });
+    setDetalles({});
+    setBorrando(false);
+    await qc.invalidateQueries({ queryKey: ["expediente-cert-xml", expedienteId, open] });
+    await qc.invalidateQueries({ queryKey: ["expediente-cert-items", expedienteId, open] });
+    await qc.invalidateQueries({ queryKey: ["expediente", expedienteId] });
+    toast.success("Certificado borrado");
   };
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -353,6 +400,27 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
             <Button variant="ghost" size="sm" onClick={guardar} disabled={saving || !exp}>
               <Save className="h-4 w-4 mr-1" /> Guardar datos
             </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" disabled={borrando || saving || !exp}>
+                  <Trash2 className="h-4 w-4 mr-1" /> Borrar certificado
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Borrar todos los datos del certificado de este Expediente?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción no se puede deshacer.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={borrarCertificado} disabled={borrando}>
+                    {borrando ? "Borrando…" : "Borrar"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <div className="flex-1" />
             <Button variant="outline" onClick={() => setOpen(false)}>Cerrar</Button>
             <Button onClick={handleDownload} disabled={!valid || saving}>
