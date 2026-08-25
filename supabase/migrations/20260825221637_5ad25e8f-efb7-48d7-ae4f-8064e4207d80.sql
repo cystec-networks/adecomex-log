@@ -1,0 +1,1 @@
+ALTER TABLE public.expedientes ADD COLUMN IF NOT EXISTS suplidor_rnc text;

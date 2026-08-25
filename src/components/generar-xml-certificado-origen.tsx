@@ -179,9 +179,10 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
     rows: CatRow[] | undefined,
     placeholder: string,
   ) => (
-    <Select value={value || undefined} onValueChange={onChange}>
+    <Select value={value || undefined} onValueChange={(v) => onChange(v === "__clear__" ? "" : v)}>
       <SelectTrigger><SelectValue placeholder={placeholder} /></SelectTrigger>
       <SelectContent>
+        <SelectItem value="__clear__">Sin seleccionar</SelectItem>
         {(rows ?? []).map((r) => (
           <SelectItem key={r.codigo} value={r.codigo}>
             {r.codigo} · {r.nombre}

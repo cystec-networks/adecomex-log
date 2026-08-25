@@ -367,6 +367,7 @@ function TabInfo({ exp }: { exp: any }) {
     medio_transporte: exp.medio_transporte ?? "",
     naviera: exp.naviera ?? "",
     suplidor: exp.suplidor ?? "",
+    suplidor_rnc: exp.suplidor_rnc ?? "",
     pais_origen: exp.pais_origen ?? "",
     factura_comercial: exp.factura_comercial ?? "",
     incoterm: exp.incoterm ?? "",
@@ -544,6 +545,10 @@ function TabInfo({ exp }: { exp: any }) {
 
       <Section title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
         <AutoField label="Suplidor" value={form.suplidor} onChange={(v) => set("suplidor", v)} suggestion={sug.suplidor ?? []} />
+        <div className="grid gap-1.5">
+          <Label>RNC del Suplidor</Label>
+          <Input value={form.suplidor_rnc ?? ""} onChange={(e) => set("suplidor_rnc", e.target.value)} placeholder="RNC / Tax ID del suplidor" />
+        </div>
         <div className="grid gap-1.5">
           <Label>País de origen</Label>
           <DgaCombobox
