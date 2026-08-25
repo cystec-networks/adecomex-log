@@ -10,11 +10,13 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
-import { ORDEN_ESTADO_CLASS, ordenEstadoLabel } from "@/lib/estados-orden";
+import { ORDEN_ESTADOS, ORDEN_ESTADO_CLASS, ordenEstadoLabel } from "@/lib/estados-orden";
+import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
+
 
 export const Route = createFileRoute("/_authenticated/ordenes/")({
   component: Ordenes,
@@ -58,6 +60,21 @@ function Ordenes() {
   const filtered = (data ?? []).filter((o: any) =>
     !q || JSON.stringify(o).toLowerCase().includes(q.toLowerCase()));
 
+  const { esColapsado, toggleGrupo } = useGruposColapsados("ordenes-grupos-colapsados");
+  const ordenGrupos = [...ORDEN_ESTADOS] as string[];
+  const grupos: [string, any[]][] = (() => {
+    const map = new Map<string, any[]>();
+    for (const o of filtered) {
+      const k = o.estado ?? "sin_estado";
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(o);
+    }
+    return [...map.entries()].sort(
+      (a, b) => (ordenGrupos.indexOf(a[0]) + 1 || 999) - (ordenGrupos.indexOf(b[0]) + 1 || 999),
+    );
+  })();
+
+
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       <div>
@@ -89,28 +106,40 @@ function Ordenes() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((o: any) => (
-                <tr key={o.id} className="border-b last:border-0 hover:bg-muted/40">
-                  <td className="px-4 py-2 font-medium">
-                    <Link to="/ordenes/$id" params={{ id: o.id }} className="hover:underline text-primary">{o.numero}</Link>
-                  </td>
-                  <td className="text-xs text-muted-foreground">{o.cot_numero ?? "—"}</td>
-                  <td>{o.clientes?.nombre ?? "—"}</td>
-                  <td className="text-muted-foreground">{o.cot_tipo_mercancia ?? "—"}</td>
-                  <td>{o.cot_origen ?? "—"}</td>
-                  <td>{o.cot_destino ?? "—"}</td>
-                  <td><Badge className={ORDEN_ESTADO_CLASS[o.estado] ?? ""}>{ordenEstadoLabel(o.estado)}</Badge></td>
-                  <td className="text-xs text-muted-foreground">{fmtLocalDate(o.created_at?.slice(0, 10))}</td>
-                  <td className="px-4 py-2 text-right whitespace-nowrap">
-                    {canEdit && (
-                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
-                        onClick={() => setToTrash({ id: o.id, numero: o.numero })} title="Mover a la papelera">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </td>
-                </tr>
+              {grupos.map(([est, rows]) => (
+                <Fragment key={est}>
+                  <EstadoDivider
+                    colSpan={9}
+                    count={rows.length}
+                    colapsado={esColapsado(est)}
+                    onToggle={() => toggleGrupo(est)}
+                    label={<Badge className={ORDEN_ESTADO_CLASS[est] ?? ""}>{ordenEstadoLabel(est)}</Badge>}
+                  />
+                  {!esColapsado(est) && rows.map((o: any) => (
+                    <tr key={o.id} className="border-b last:border-0 hover:bg-muted/40">
+                      <td className="px-4 py-2 font-medium">
+                        <Link to="/ordenes/$id" params={{ id: o.id }} className="hover:underline text-primary">{o.numero}</Link>
+                      </td>
+                      <td className="text-xs text-muted-foreground">{o.cot_numero ?? "—"}</td>
+                      <td>{o.clientes?.nombre ?? "—"}</td>
+                      <td className="text-muted-foreground">{o.cot_tipo_mercancia ?? "—"}</td>
+                      <td>{o.cot_origen ?? "—"}</td>
+                      <td>{o.cot_destino ?? "—"}</td>
+                      <td><Badge className={ORDEN_ESTADO_CLASS[o.estado] ?? ""}>{ordenEstadoLabel(o.estado)}</Badge></td>
+                      <td className="text-xs text-muted-foreground">{fmtLocalDate(o.created_at?.slice(0, 10))}</td>
+                      <td className="px-4 py-2 text-right whitespace-nowrap">
+                        {canEdit && (
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                            onClick={() => setToTrash({ id: o.id, numero: o.numero })} title="Mover a la papelera">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </Fragment>
               ))}
+
               {filtered.length === 0 && (
                 <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">Sin órdenes.</td></tr>
               )}

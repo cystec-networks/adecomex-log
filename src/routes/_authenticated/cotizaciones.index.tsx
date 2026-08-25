@@ -11,7 +11,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { parseLocalDate, fmtLocalDate } from "@/lib/dates";
 import { BadgeVigencia } from "@/components/badge-vigencia";
@@ -19,6 +19,8 @@ import { useMyRoles } from "@/lib/auth-hooks";
 import {
   COTIZACION_ESTADOS, COTIZACION_ESTADO_CLASS, cotizacionEstadoLabel,
 } from "@/lib/estados-cotizacion";
+import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
+
 
 export const Route = createFileRoute("/_authenticated/cotizaciones/")({
   component: Cotizaciones,
@@ -119,6 +121,21 @@ function Cotizaciones() {
     return activeSort.dir === "asc" ? r : -r;
   });
 
+  const { esColapsado, toggleGrupo } = useGruposColapsados("cotizaciones-grupos-colapsados");
+  const ordenGrupos = [...COTIZACION_ESTADOS] as string[];
+  const grupos: [string, any[]][] = (() => {
+    const map = new Map<string, any[]>();
+    for (const c of sorted) {
+      const k = c.estado ?? "sin_estado";
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(c);
+    }
+    return [...map.entries()].sort(
+      (a, b) => (ordenGrupos.indexOf(a[0]) + 1 || 999) - (ordenGrupos.indexOf(b[0]) + 1 || 999),
+    );
+  })();
+
+
   const isActive = (k: SortKey) => !!sort && sort.key === k;
   const isDefault = (k: SortKey) => !sort && k === "fecha_vigencia";
   const Th = ({ k, children, className = "" }: { k: SortKey; children: React.ReactNode; className?: string }) => {
@@ -183,44 +200,60 @@ function Cotizaciones() {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((c: any) => (
-                <tr key={c.id} className="border-b last:border-0 hover:bg-muted/40">
-                  <td className="px-4 py-2 font-medium">
-                    <Link to="/cotizaciones/$id" params={{ id: c.id }} className="hover:underline text-primary">{c.numero}</Link>
-                  </td>
-                  <td>{c.clientes?.nombre ?? "—"}</td>
-                  <td className="text-muted-foreground">{nombreVendedor(c.vendedor_id)}</td>
-                  <td className="text-muted-foreground">{c.tipo_mercancia ?? "—"}</td>
-                  <td>{c.origen ?? "—"}</td>
-                  <td>{c.destino ?? "—"}</td>
-                  <td className="tabular-nums">
-                    {c.tarifa_propuesta != null
-                      ? `${c.moneda ?? "USD"} ${Number(c.tarifa_propuesta).toLocaleString("es-DO", { minimumFractionDigits: 2 })}`
-                      : "—"}
-                  </td>
-                  <td className="text-xs">{fmtLocalDate(c.fecha_emision)}</td>
-                  <td><BadgeVigencia fecha={c.fecha_vigencia} /></td>
-                  <td>
-                    <Badge className={COTIZACION_ESTADO_CLASS[c.estado] ?? "bg-muted text-muted-foreground border-transparent"}>
-                      {cotizacionEstadoLabel(c.estado)}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-2 text-right whitespace-nowrap">
-                    {canEdit && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => setToTrash({ id: c.id, numero: c.numero })}
-                        title="Mover a la papelera"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </td>
-                </tr>
+              {grupos.map(([est, rows]) => (
+                <Fragment key={est}>
+                  <EstadoDivider
+                    colSpan={11}
+                    count={rows.length}
+                    colapsado={esColapsado(est)}
+                    onToggle={() => toggleGrupo(est)}
+                    label={
+                      <Badge className={COTIZACION_ESTADO_CLASS[est] ?? "bg-muted text-muted-foreground border-transparent"}>
+                        {cotizacionEstadoLabel(est)}
+                      </Badge>
+                    }
+                  />
+                  {!esColapsado(est) && rows.map((c: any) => (
+                    <tr key={c.id} className="border-b last:border-0 hover:bg-muted/40">
+                      <td className="px-4 py-2 font-medium">
+                        <Link to="/cotizaciones/$id" params={{ id: c.id }} className="hover:underline text-primary">{c.numero}</Link>
+                      </td>
+                      <td>{c.clientes?.nombre ?? "—"}</td>
+                      <td className="text-muted-foreground">{nombreVendedor(c.vendedor_id)}</td>
+                      <td className="text-muted-foreground">{c.tipo_mercancia ?? "—"}</td>
+                      <td>{c.origen ?? "—"}</td>
+                      <td>{c.destino ?? "—"}</td>
+                      <td className="tabular-nums">
+                        {c.tarifa_propuesta != null
+                          ? `${c.moneda ?? "USD"} ${Number(c.tarifa_propuesta).toLocaleString("es-DO", { minimumFractionDigits: 2 })}`
+                          : "—"}
+                      </td>
+                      <td className="text-xs">{fmtLocalDate(c.fecha_emision)}</td>
+                      <td><BadgeVigencia fecha={c.fecha_vigencia} /></td>
+                      <td>
+                        <Badge className={COTIZACION_ESTADO_CLASS[c.estado] ?? "bg-muted text-muted-foreground border-transparent"}>
+                          {cotizacionEstadoLabel(c.estado)}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-2 text-right whitespace-nowrap">
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setToTrash({ id: c.id, numero: c.numero })}
+                            title="Mover a la papelera"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </Fragment>
               ))}
               {filtered.length === 0 && (
+
                 <tr><td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">Sin cotizaciones.</td></tr>
               )}
             </tbody>

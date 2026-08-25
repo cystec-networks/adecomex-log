@@ -11,10 +11,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { TruncatedCell } from "@/components/truncated-cell";
 import { Trash2, Plus, Truck, Pencil } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { toast } from "sonner";
 import { TRANSPORTE_ESTADOS, TRANSPORTE_TIPOS, estadoBadgeTransporte } from "@/components/transporte-form";
 import { parseLocalDate, fmtLocalDateShort } from "@/lib/dates";
+import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
+
 
 export const Route = createFileRoute("/_authenticated/transportes/")({
   component: Transportes,
@@ -74,9 +76,6 @@ function Transportes() {
     k === "expediente" ? (t.expedientes?.numero ?? "") :
     (t[k] ?? "");
   const cmp = (a: any, b: any) => {
-    const closed = (s: string) => (s === "entregado" || s === "facturado" ? 1 : 0);
-    const closedA = closed(a.estado); const closedB = closed(b.estado);
-    if (closedA !== closedB) return closedA - closedB;
     const av = getVal(a, activeSort.key); const bv = getVal(b, activeSort.key);
     const aE = av === "" || av == null; const bE = bv === "" || bv == null;
     if (aE && bE) return 0; if (aE) return 1; if (bE) return -1;
@@ -86,6 +85,22 @@ function Transportes() {
     return activeSort.dir === "asc" ? r : -r;
   };
   const rows = [...filtered].sort(cmp);
+
+  const TRANSPORTES_CERRADOS = ["entregado", "facturado"];
+  const { esColapsado, toggleGrupo } = useGruposColapsados("transportes-grupos-colapsados", TRANSPORTES_CERRADOS);
+  const ordenGrupos = TRANSPORTE_ESTADOS.map((s) => s.v);
+  const grupos: [string, any[]][] = (() => {
+    const map = new Map<string, any[]>();
+    for (const t of rows) {
+      const k = t.estado ?? "sin_estado";
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(t);
+    }
+    return [...map.entries()].sort(
+      (a, b) => (ordenGrupos.indexOf(a[0]) + 1 || 999) - (ordenGrupos.indexOf(b[0]) + 1 || 999),
+    );
+  })();
+
 
   const isActive = (k: SortKey) => !!sort && sort.key === k;
   const isDefault = (k: SortKey) => !sort && k === "eta";
@@ -160,37 +175,49 @@ function Transportes() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {rows.map((t: any) => (
-                    <tr key={t.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <Link to="/transportes/$id" params={{ id: t.id }} className="font-semibold text-primary hover:underline">{t.numero_viaje}</Link>
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        {t.expedientes?.numero ? (
-                          <Link to="/expedientes/$id" params={{ id: t.expediente_id }} className="text-primary hover:underline">{t.expedientes.numero} ↗</Link>
-                        ) : "—"}
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap">{t.clientes?.nombre ?? "—"}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{TRANSPORTE_TIPOS.find((x) => x.v === t.tipo)?.l ?? "—"}</td>
-                      <td className="px-3 py-2 whitespace-nowrap">{t.transportista ?? "—"}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground text-xs tabular-nums"><TruncatedCell value={t.placa_contenedor} maxClass="max-w-[140px]" /></td>
-                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{t.origen ?? "—"}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{t.destino ?? "—"}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">{fmt(t.fecha_salida)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{fmt(t.eta)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{fmtFlete(t)}</td>
-                      <td className="px-3 py-2 text-center whitespace-nowrap">{estadoBadgeTransporte(t.estado)}</td>
-                      <td className="px-2 py-2 text-right whitespace-nowrap">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="Editar">
-                          <Link to="/transportes/$id" params={{ id: t.id }}><Pencil className="h-4 w-4" /></Link>
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => setToTrash({ id: t.id, numero: t.numero_viaje })} title="Mover a papelera">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
+                  {grupos.map(([est, gRows]) => (
+                    <Fragment key={est}>
+                      <EstadoDivider
+                        colSpan={13}
+                        count={gRows.length}
+                        colapsado={esColapsado(est)}
+                        onToggle={() => toggleGrupo(est)}
+                        label={estadoBadgeTransporte(est)}
+                      />
+                      {!esColapsado(est) && gRows.map((t: any) => (
+                        <tr key={t.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <Link to="/transportes/$id" params={{ id: t.id }} className="font-semibold text-primary hover:underline">{t.numero_viaje}</Link>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {t.expedientes?.numero ? (
+                              <Link to="/expedientes/$id" params={{ id: t.expediente_id }} className="text-primary hover:underline">{t.expedientes.numero} ↗</Link>
+                            ) : "—"}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">{t.clientes?.nombre ?? "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{TRANSPORTE_TIPOS.find((x) => x.v === t.tipo)?.l ?? "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap">{t.transportista ?? "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground text-xs tabular-nums"><TruncatedCell value={t.placa_contenedor} maxClass="max-w-[140px]" /></td>
+                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{t.origen ?? "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{t.destino ?? "—"}</td>
+                          <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">{fmt(t.fecha_salida)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{fmt(t.eta)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{fmtFlete(t)}</td>
+                          <td className="px-3 py-2 text-center whitespace-nowrap">{estadoBadgeTransporte(t.estado)}</td>
+                          <td className="px-2 py-2 text-right whitespace-nowrap">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="Editar">
+                              <Link to="/transportes/$id" params={{ id: t.id }}><Pencil className="h-4 w-4" /></Link>
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => setToTrash({ id: t.id, numero: t.numero_viaje })} title="Mover a papelera">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </Fragment>
                   ))}
+
                 </tbody>
               </table>
             </div>
