@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, ArrowLeft, Search } from "lucide-react";
 import { toast } from "sonner";
+import { TercerosExtranjerosCatalog } from "@/components/terceros-extranjeros";
 
 export const Route = createFileRoute("/_authenticated/admin/catalogos")({
   component: CatalogosAdmin,
