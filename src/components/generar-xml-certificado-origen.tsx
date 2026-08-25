@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollText, AlertTriangle, Download, CheckCircle2, Info, Save } from "lucide-react";
 import { toast } from "sonner";
+import { DgaCombobox } from "@/components/dga-combobox";
 import { downloadXml } from "@/lib/siga-xml";
 import {
   buildCertificateOriginXml,
@@ -77,6 +78,10 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
       certificado_transporte_desc: exp.certificado_transporte_desc ?? "",
       certificado_remark: exp.certificado_remark ?? "",
       certificado_productor_rnc: exp.certificado_productor_rnc ?? "",
+      area_aduanera: exp.area_aduanera ?? "",
+      area_aduanera_codigo: exp.area_aduanera_codigo ?? "",
+      pais_origen: exp.pais_origen ?? "",
+      pais_origen_codigo: exp.pais_origen_codigo ?? "",
     });
   }, [exp]);
 
@@ -229,6 +234,26 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
                   <div className="grid gap-1.5">
                     <Label>Tratamiento</Label>
                     {catSelect(form.certificado_tratamiento_codigo ?? "", (v) => set("certificado_tratamiento_codigo", v), tratamientos, "Selecciona el tratamiento")}
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>Área / Administración aduanera</Label>
+                    <DgaCombobox
+                      table="dga_areas"
+                      value={form.area_aduanera}
+                      codigo={form.area_aduanera_codigo}
+                      onChange={(nombre, codigo) => setForm((f) => ({ ...f, area_aduanera: nombre, area_aduanera_codigo: codigo }))}
+                      placeholder="Selecciona área (catálogo DGA)"
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>País de origen</Label>
+                    <DgaCombobox
+                      table="dga_paises"
+                      value={form.pais_origen}
+                      codigo={form.pais_origen_codigo}
+                      onChange={(nombre, codigo) => setForm((f) => ({ ...f, pais_origen: nombre, pais_origen_codigo: codigo }))}
+                      placeholder="Selecciona país (catálogo DGA)"
+                    />
                   </div>
                   <div className="grid gap-1.5">
                     <Label>RNC del productor (opcional)</Label>
