@@ -498,6 +498,55 @@ function Papelera() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="facturas_ecf">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Facturas eliminadas: {facRows.length}</CardTitle></CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              {facRows.length === 0 ? (
+                <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin facturas en papelera.</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-muted-foreground border-b bg-muted/20">
+                    <tr>
+                      <th className="text-left px-4 py-2">e-NCF</th>
+                      <th className="text-left">Cliente</th>
+                      <th className="text-left">Tipo</th>
+                      <th className="text-right">Monto Total</th>
+                      <th className="text-left">Fecha Emisión</th>
+                      <th className="text-left">Eliminado el</th>
+                      <th className="text-right px-4 py-2">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {facRows.map((f: any) => (
+                      <tr key={f.id} className="border-b last:border-0 hover:bg-muted/40">
+                        <td className="px-4 py-2 font-mono font-medium">{f.encf}</td>
+                        <td>
+                          <div className="font-medium">{f.cliente_razon_social ?? "—"}</div>
+                          {f.cliente_rnc && <div className="text-xs text-muted-foreground">RNC {f.cliente_rnc}</div>}
+                        </td>
+                        <td><Badge variant="outline">{f.tipo_comprobante}</Badge></td>
+                        <td className="text-right font-semibold">{fmtRD(f.monto_total)}</td>
+                        <td className="text-xs">{fmtLocalDate(f.fecha_emision)}</td>
+                        <td className="text-xs text-muted-foreground">{f.eliminado_en ? new Date(f.eliminado_en).toLocaleString("es-DO") : "—"}</td>
+                        <td className="px-4 py-2 text-right whitespace-nowrap">
+                          <Button variant="ghost" size="sm" onClick={() => setToRestore({ kind: "facturas_ecf", id: f.id, numero: f.encf })}>
+                            <RotateCcw className="h-4 w-4 mr-1" /> Restaurar
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                            onClick={() => { setToDelete({ kind: "facturas_ecf", id: f.id, numero: f.encf }); setConfirmText(""); }}>
+                            <Trash2 className="h-4 w-4 mr-1" /> Eliminar
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
 
