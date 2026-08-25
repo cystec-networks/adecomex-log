@@ -2452,6 +2452,7 @@ export type Database = {
         Row: {
           acuerdo_codigo: string | null
           acuerdo_comercial: string | null
+          area_aduanera: string | null
           area_aduanera_codigo: string | null
           bl_awb: string | null
           canal_riesgo: string | null
@@ -2535,6 +2536,7 @@ export type Database = {
         Insert: {
           acuerdo_codigo?: string | null
           acuerdo_comercial?: string | null
+          area_aduanera?: string | null
           area_aduanera_codigo?: string | null
           bl_awb?: string | null
           canal_riesgo?: string | null
@@ -2618,6 +2620,7 @@ export type Database = {
         Update: {
           acuerdo_codigo?: string | null
           acuerdo_comercial?: string | null
+          area_aduanera?: string | null
           area_aduanera_codigo?: string | null
           bl_awb?: string | null
           canal_riesgo?: string | null
