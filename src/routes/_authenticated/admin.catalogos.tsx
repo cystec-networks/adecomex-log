@@ -30,7 +30,12 @@ type TableKey =
   | "catalogo_acuerdos"
   | "catalogo_tipos_despacho"
   | "catalogo_estados_producto"
-  | "catalogo_documentos_requeridos";
+  | "catalogo_documentos_requeridos"
+  | "catalogo_uso_certificado"
+  | "catalogo_tipo_emisor"
+  | "catalogo_tratamientos_certificado"
+  | "catalogo_criterio_origen"
+  | "catalogo_metodo_calificacion";
 
 const TABLE_LABELS: Record<TableKey, string> = {
   catalogo_paises: "Países",
@@ -44,6 +49,11 @@ const TABLE_LABELS: Record<TableKey, string> = {
   catalogo_tipos_despacho: "Tipos de Despacho",
   catalogo_estados_producto: "Estados de Producto",
   catalogo_documentos_requeridos: "Documentos Requeridos",
+  catalogo_uso_certificado: "Uso del Certificado",
+  catalogo_tipo_emisor: "Tipo de Emisor",
+  catalogo_tratamientos_certificado: "Tratamientos Certificado",
+  catalogo_criterio_origen: "Criterio de Origen",
+  catalogo_metodo_calificacion: "Método de Calificación",
 };
 
 const PENDING_TABLES: TableKey[] = [
@@ -53,6 +63,11 @@ const PENDING_TABLES: TableKey[] = [
   "catalogo_tipos_despacho",
   "catalogo_estados_producto",
   "catalogo_documentos_requeridos",
+  "catalogo_uso_certificado",
+  "catalogo_tipo_emisor",
+  "catalogo_tratamientos_certificado",
+  "catalogo_criterio_origen",
+  "catalogo_metodo_calificacion",
 ];
 
 function CatalogosAdmin() {
@@ -62,6 +77,8 @@ function CatalogosAdmin() {
     "catalogo_paises","catalogo_puertos","catalogo_unidades","catalogo_areas",
     "catalogo_tipos_documento_id","catalogo_metodos_transporte","catalogo_regimenes",
     "catalogo_acuerdos","catalogo_tipos_despacho","catalogo_estados_producto","catalogo_documentos_requeridos",
+    "catalogo_uso_certificado","catalogo_tipo_emisor","catalogo_tratamientos_certificado",
+    "catalogo_criterio_origen","catalogo_metodo_calificacion",
   ];
 
   return (
@@ -143,6 +160,11 @@ const FIELDS: Record<TableKey, Array<{ k: string; label: string; required?: bool
   catalogo_tipos_despacho: BASIC_WITH_ESTADO,
   catalogo_estados_producto: BASIC_WITH_ESTADO,
   catalogo_documentos_requeridos: BASIC_WITH_ESTADO,
+  catalogo_uso_certificado: BASIC_WITH_ESTADO,
+  catalogo_tipo_emisor: BASIC_WITH_ESTADO,
+  catalogo_tratamientos_certificado: BASIC_WITH_ESTADO,
+  catalogo_criterio_origen: BASIC_WITH_ESTADO,
+  catalogo_metodo_calificacion: BASIC_WITH_ESTADO,
 };
 
 

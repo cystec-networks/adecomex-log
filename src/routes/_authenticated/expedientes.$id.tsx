@@ -22,6 +22,7 @@ import { DgaCombobox } from "@/components/dga-combobox";
 import { DgaProductoSearch } from "@/components/dga-producto-search";
 
 import { GenerarXmlSigaButton } from "@/components/generar-xml-siga";
+import { GenerarXmlCertificadoOrigenButton } from "@/components/generar-xml-certificado-origen";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
 import { SearchEmailButton } from "@/components/search-email-button";
@@ -198,6 +199,7 @@ function DetalleExpediente() {
           </p>
         </div>
         <GenerarXmlSigaButton expedienteId={id} />
+        <GenerarXmlCertificadoOrigenButton expedienteId={id} />
         <PreLiquidacionPdfButton exp={exp} />
         <GenerarDocumentoButton exp={exp} />
 
