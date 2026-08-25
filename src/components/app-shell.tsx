@@ -158,6 +158,8 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/admin/configuracion") },
       { to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
         match: (p) => p === "/expedientes/papelera" },
+      { to: "/admin/facturacion/papelera", label: "Papelera de Facturas", icon: Trash2, roles: ["admin","contabilidad"],
+        match: (p) => p.startsWith("/admin/facturacion/papelera") },
     ],
   },
   {
