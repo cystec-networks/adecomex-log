@@ -88,7 +88,12 @@ function DetalleCotizacion() {
         payload[k] = payload[k] === "" || payload[k] == null ? null : Number(payload[k]);
       }
       const { error } = await supabase.from("cotizaciones").update(payload).eq("id", id);
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") {
+          throw new Error("Ese número de cotización ya está en uso — elige otro.");
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       toast.success("Cotización actualizada");
