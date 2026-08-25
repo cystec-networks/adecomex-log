@@ -321,7 +321,7 @@ ${T("ForeignSupplierNationality", exp.suplidor_rnc ? origen : "", "   ")}
   const productos = (items ?? []).map((it) => {
     const desc = it.detalle_producto ?? "";
     return `  <ImpDeclarationProduct>
-${T("HSCode", it.codigo_arancelario, "   ")}
+${T("HSCode", String(it.codigo_arancelario ?? "").replace(/\D/g, ""), "   ")}
 ${T("ProductCode", it.product_code, "   ")}
 ${T("productname", desc, "   ")}
 ${T("BrandCode", it.cod_marca || "NA", "   ")}

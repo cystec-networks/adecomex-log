@@ -101,7 +101,9 @@ export function buildCertificateOriginXml(exp: any, items: any[], maps?: CertMap
     T("ImporterCode", ownerCode),
     T("ExporterCode", exp?.suplidor_rnc ? personCode(exp.suplidor_rnc, origen) : ""),
     T("ApplicantCode", APPLICANT_CODE),
-    T("ProductorCode", exp?.certificado_productor_rnc ? personCode(exp.certificado_productor_rnc, nat) : ""),
+    T("ProductorCode", exp?.certificado_productor_rnc
+      ? personCode(exp.certificado_productor_rnc, nat)
+      : (exp?.suplidor_rnc ? personCode(exp.suplidor_rnc, origen) : "")),
   ].join("\n");
 
   const detalles = partidasUnicas(items ?? []).map((it) => `  <CertificateOriginDetail>
