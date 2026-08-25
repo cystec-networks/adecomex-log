@@ -99,11 +99,11 @@ export function buildCertificateOriginXml(exp: any, items: any[], maps?: CertMap
     T("TransportDescription", exp?.certificado_transporte_desc),
     T("Remark", exp?.certificado_remark),
     T("ImporterCode", ownerCode),
-    T("ExporterCode", exp?.suplidor_rnc ? personCode(exp.suplidor_rnc, origen) : ""),
+    T("ExporterCode", exp?.suplidor_rnc ? personCode(exp.suplidor_rnc, origen, "TAX") : ""),
     T("ApplicantCode", APPLICANT_CODE),
     T("ProductorCode", exp?.certificado_productor_rnc
-      ? personCode(exp.certificado_productor_rnc, nat)
-      : (exp?.suplidor_rnc ? personCode(exp.suplidor_rnc, origen) : "")),
+      ? personCode(exp.certificado_productor_rnc, nat, "TAX")
+      : (exp?.suplidor_rnc ? personCode(exp.suplidor_rnc, origen, "TAX") : "")),
   ].join("\n");
 
   const detalles = partidasUnicas(items ?? []).map((it) => `  <CertificateOriginDetail>
