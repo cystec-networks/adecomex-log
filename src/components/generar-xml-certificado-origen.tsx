@@ -168,6 +168,56 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
     else toast.success("XML descargado");
   };
 
+  const [borrando, setBorrando] = useState(false);
+
+  const borrarCertificado = async () => {
+    setBorrando(true);
+    const { error } = await supabase
+      .from("expedientes")
+      .update({
+        certificado_periodo_desde: null,
+        certificado_periodo_hasta: null,
+        certificado_uso_codigo: null,
+        certificado_emisor_codigo: null,
+        certificado_tratamiento_codigo: null,
+        certificado_transporte_desc: null,
+        certificado_remark: null,
+        certificado_productor_rnc: null,
+      })
+      .eq("id", expedienteId);
+    if (error) { setBorrando(false); return toast.error(error.message); }
+
+    const { error: e2 } = await supabase
+      .from("mercancia_items")
+      .update({
+        criterio_origen_codigo: null,
+        metodo_calificacion_codigo: null,
+      })
+      .eq("expediente_id", expedienteId);
+    if (e2) { setBorrando(false); return toast.error(e2.message); }
+
+    setForm({
+      certificado_periodo_desde: "",
+      certificado_periodo_hasta: "",
+      certificado_uso_codigo: "",
+      certificado_emisor_codigo: "",
+      certificado_tratamiento_codigo: "",
+      certificado_transporte_desc: "",
+      certificado_remark: "",
+      certificado_productor_rnc: "",
+      area_aduanera: "",
+      area_aduanera_codigo: "",
+      pais_origen: "",
+      pais_origen_codigo: "",
+    });
+    setDetalles({});
+    setBorrando(false);
+    await qc.invalidateQueries({ queryKey: ["expediente-cert-xml", expedienteId, open] });
+    await qc.invalidateQueries({ queryKey: ["expediente-cert-items", expedienteId, open] });
+    await qc.invalidateQueries({ queryKey: ["expediente", expedienteId] });
+    toast.success("Certificado borrado");
+  };
+
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const catSelect = (
