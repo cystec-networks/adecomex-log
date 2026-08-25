@@ -89,21 +89,17 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
   const partidas = useMemo(() => partidasUnicas((items as any[]) ?? []), [items]);
 
   useEffect(() => {
-    if (partidas.length === 0) return;
-    setDetalles((prev) => {
-      const next = { ...prev };
-      partidas.forEach((it: any) => {
-        const hs = String(it.codigo_arancelario);
-        if (!next[hs]) {
-          next[hs] = {
-            criterio: it.criterio_origen_codigo ?? "",
-            metodo: it.metodo_calificacion_codigo ?? "",
-          };
-        }
-      });
-      return next;
+    if (!open) return;
+    const next: Record<string, { criterio: string; metodo: string }> = {};
+    partidas.forEach((it: any) => {
+      const hs = String(it.codigo_arancelario);
+      next[hs] = {
+        criterio: it.criterio_origen_codigo ?? "",
+        metodo: it.metodo_calificacion_codigo ?? "",
+      };
     });
-  }, [partidas]);
+    setDetalles(next);
+  }, [partidas, open]);
 
   const tratamientoMap = useMemo(() => {
     const m: Record<string, string> = {};
