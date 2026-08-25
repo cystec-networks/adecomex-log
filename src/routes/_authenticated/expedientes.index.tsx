@@ -56,7 +56,7 @@ function Expedientes() {
     queryKey: ["expedientes"],
     queryFn: async () => (await supabase
       .from("expedientes")
-      .select("*, clientes(nombre,telefono,email), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento), mercancia_items(item_no, detalle_producto, deleted_at)")
+      .select("id,numero,estado,bl_awb,factura_comercial,fecha_compromiso,created_at,updated_at,medio_transporte,naviera,suplidor,pais_origen,pais_procedencia,incoterm,puerto_salida,puerto_arribo,numero_dua,numero_vuce,numero_igra,descripcion_mercancia,numeros_contenedores,numero_certificado_origen,tipo_operacion,tipo_carga,regimen_aduanero,observaciones,total_fob,total_cif,liq_siga_numero, clientes(nombre,telefono,email), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento), mercancia_items(item_no, detalle_producto, deleted_at)")
       .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
   });
