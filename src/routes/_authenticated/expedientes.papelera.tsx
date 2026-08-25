@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
 
-type Kind = "expedientes" | "solicitudes" | "permisos" | "transportes" | "cotizaciones" | "ordenes";
+type Kind = "expedientes" | "solicitudes" | "permisos" | "transportes" | "cotizaciones" | "ordenes" | "facturas_ecf";
 
 export const Route = createFileRoute("/_authenticated/expedientes/papelera")({
   component: Papelera,
