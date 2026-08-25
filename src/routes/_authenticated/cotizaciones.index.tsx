@@ -121,6 +121,21 @@ function Cotizaciones() {
     return activeSort.dir === "asc" ? r : -r;
   });
 
+  const { esColapsado, toggleGrupo } = useGruposColapsados("cotizaciones-grupos-colapsados");
+  const ordenGrupos = [...COTIZACION_ESTADOS] as string[];
+  const grupos: [string, any[]][] = (() => {
+    const map = new Map<string, any[]>();
+    for (const c of sorted) {
+      const k = c.estado ?? "sin_estado";
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(c);
+    }
+    return [...map.entries()].sort(
+      (a, b) => (ordenGrupos.indexOf(a[0]) + 1 || 999) - (ordenGrupos.indexOf(b[0]) + 1 || 999),
+    );
+  })();
+
+
   const isActive = (k: SortKey) => !!sort && sort.key === k;
   const isDefault = (k: SortKey) => !sort && k === "fecha_vigencia";
   const Th = ({ k, children, className = "" }: { k: SortKey; children: React.ReactNode; className?: string }) => {
