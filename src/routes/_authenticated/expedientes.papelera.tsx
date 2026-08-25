@@ -108,6 +108,7 @@ function Papelera() {
         transportes: "Transporte restaurado",
         cotizaciones: "Cotización restaurada",
         ordenes: "Orden restaurada",
+        facturas_ecf: "Factura restaurada",
       };
 
       toast.success(label[vars.kind]);
