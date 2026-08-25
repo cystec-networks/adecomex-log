@@ -99,6 +99,7 @@ function CatalogosAdmin() {
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="catalogo_hitos" className="gap-1.5">Hitos de Despacho</TabsTrigger>
           <TabsTrigger value="tasas_cambio" className="gap-1.5">Tasa de Cambio</TabsTrigger>
+          <TabsTrigger value="terceros_extranjeros" className="gap-1.5">Terceros Extranjeros</TabsTrigger>
           {tabs.map((t) => (
             <TabsTrigger key={t} value={t} className="gap-1.5">
               {TABLE_LABELS[t]}
