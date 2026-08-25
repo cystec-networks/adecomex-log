@@ -400,6 +400,27 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
             <Button variant="ghost" size="sm" onClick={guardar} disabled={saving || !exp}>
               <Save className="h-4 w-4 mr-1" /> Guardar datos
             </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" disabled={borrando || saving || !exp}>
+                  <Trash2 className="h-4 w-4 mr-1" /> Borrar certificado
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Borrar todos los datos del certificado de este Expediente?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción no se puede deshacer.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={borrarCertificado} disabled={borrando}>
+                    {borrando ? "Borrando…" : "Borrar"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <div className="flex-1" />
             <Button variant="outline" onClick={() => setOpen(false)}>Cerrar</Button>
             <Button onClick={handleDownload} disabled={!valid || saving}>
