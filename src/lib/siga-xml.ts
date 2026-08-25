@@ -108,11 +108,11 @@ function num(v: unknown): string {
 
 // Formato de identificación SIGA: [RNC|CED|PAS] + código país DGA + número
 // Ej.: RNC + 214 + 130594181 => RNC214130594181
-export function personCode(id?: string | null, countryCode = "214"): string {
+export function personCode(id?: string | null, countryCode = "214", defaultPrefix = "RNC"): string {
   if (!id) return "";
   let clean = String(id).trim().replace(/[-\s.]/g, "").toUpperCase();
-  let prefix = "RNC";
-  const m = /^(RNC|CED|PAS)(.*)$/.exec(clean);
+  let prefix = defaultPrefix;
+  const m = /^(RNC|CED|PAS|TAX)(.*)$/.exec(clean);
   if (m) { prefix = m[1]; clean = m[2]; }
   const cc = String(countryCode || "").trim();
   if (cc && clean.startsWith(cc)) return `${prefix}${clean}`;
@@ -308,7 +308,7 @@ export function buildImportDUAXml(
   ].join("\n");
 
   // SIGA rechaza el suplidor sin código: usa el comodín oficial cuando no se conoce el RNC.
-  const supplierCode = exp.suplidor_rnc ? personCode(exp.suplidor_rnc, origen) : SUPPLIER_NO_ASIGNADO.code;
+  const supplierCode = exp.suplidor_rnc ? personCode(exp.suplidor_rnc, origen, "TAX") : SUPPLIER_NO_ASIGNADO.code;
   const supplierName = exp.suplidor_rnc ? exp.suplidor : (exp.suplidor || SUPPLIER_NO_ASIGNADO.name);
   const supplier = `  <ImpDeclarationSupplier>
 ${T("ForeignSupplierName", supplierName, "   ")}
