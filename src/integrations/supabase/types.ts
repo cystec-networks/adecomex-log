@@ -2524,6 +2524,7 @@ export type Database = {
           sla_dias: number | null
           solicitud_id: string | null
           suplidor: string | null
+          suplidor_rnc: string | null
           tasa_cambio_congelada: boolean
           tasa_cambio_usada: number | null
           tipo_carga: string | null
@@ -2608,6 +2609,7 @@ export type Database = {
           sla_dias?: number | null
           solicitud_id?: string | null
           suplidor?: string | null
+          suplidor_rnc?: string | null
           tasa_cambio_congelada?: boolean
           tasa_cambio_usada?: number | null
           tipo_carga?: string | null
@@ -2692,6 +2694,7 @@ export type Database = {
           sla_dias?: number | null
           solicitud_id?: string | null
           suplidor?: string | null
+          suplidor_rnc?: string | null
           tasa_cambio_congelada?: boolean
           tasa_cambio_usada?: number | null
           tipo_carga?: string | null
