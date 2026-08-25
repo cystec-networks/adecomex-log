@@ -13,6 +13,7 @@ import { ScrollText, AlertTriangle, Download, CheckCircle2, Info, Save, Trash2 }
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { DgaCombobox } from "@/components/dga-combobox";
+import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
 import { downloadXml } from "@/lib/siga-xml";
 import {
   buildCertificateOriginXml,
