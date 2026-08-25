@@ -115,6 +115,9 @@ function CatalogosAdmin() {
         <TabsContent value="tasas_cambio" className="mt-4">
           <TasasCambioCatalog isAdmin={!!isAdmin} />
         </TabsContent>
+        <TabsContent value="terceros_extranjeros" className="mt-4">
+          <TercerosExtranjerosCatalog isAdmin={!!isAdmin} />
+        </TabsContent>
         {tabs.map((t) => (
           <TabsContent key={t} value={t} className="mt-4">
             <CatalogTable table={t} isAdmin={!!isAdmin} />
