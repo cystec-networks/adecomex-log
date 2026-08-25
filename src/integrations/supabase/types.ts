@@ -788,6 +788,48 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_terceros_extranjeros: {
+        Row: {
+          activo: boolean
+          created_at: string
+          direccion: string | null
+          email: string | null
+          fax: string | null
+          id: string
+          nombre: string
+          pais_codigo: string | null
+          pais_nombre: string | null
+          telefono: string | null
+          tid: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          direccion?: string | null
+          email?: string | null
+          fax?: string | null
+          id?: string
+          nombre: string
+          pais_codigo?: string | null
+          pais_nombre?: string | null
+          telefono?: string | null
+          tid: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          direccion?: string | null
+          email?: string | null
+          fax?: string | null
+          id?: string
+          nombre?: string
+          pais_codigo?: string | null
+          pais_nombre?: string | null
+          telefono?: string | null
+          tid?: string
+        }
+        Relationships: []
+      }
       catalogo_tipo_emisor: {
         Row: {
           codigo: string

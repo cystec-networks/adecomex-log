@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, ArrowLeft, Search } from "lucide-react";
 import { toast } from "sonner";
+import { TercerosExtranjerosCatalog } from "@/components/terceros-extranjeros";
 
 export const Route = createFileRoute("/_authenticated/admin/catalogos")({
   component: CatalogosAdmin,
@@ -99,6 +100,7 @@ function CatalogosAdmin() {
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="catalogo_hitos" className="gap-1.5">Hitos de Despacho</TabsTrigger>
           <TabsTrigger value="tasas_cambio" className="gap-1.5">Tasa de Cambio</TabsTrigger>
+          <TabsTrigger value="terceros_extranjeros" className="gap-1.5">Terceros Extranjeros</TabsTrigger>
           {tabs.map((t) => (
             <TabsTrigger key={t} value={t} className="gap-1.5">
               {TABLE_LABELS[t]}
@@ -113,6 +115,9 @@ function CatalogosAdmin() {
         </TabsContent>
         <TabsContent value="tasas_cambio" className="mt-4">
           <TasasCambioCatalog isAdmin={!!isAdmin} />
+        </TabsContent>
+        <TabsContent value="terceros_extranjeros" className="mt-4">
+          <TercerosExtranjerosCatalog isAdmin={!!isAdmin} />
         </TabsContent>
         {tabs.map((t) => (
           <TabsContent key={t} value={t} className="mt-4">
