@@ -305,8 +305,11 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
                     />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label>RNC del productor (opcional)</Label>
-                    <Input value={form.certificado_productor_rnc ?? ""} onChange={(e) => set("certificado_productor_rnc", e.target.value)} placeholder="130481301" />
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>TID del Productor (opcional)</Label>
+                      <TerceroExtranjeroPicker onSelect={(t) => set("certificado_productor_rnc", t.tid)} />
+                    </div>
+                    <Input value={form.certificado_productor_rnc ?? ""} onChange={(e) => set("certificado_productor_rnc", e.target.value)} placeholder="TID del productor" />
                   </div>
                   <div className="grid gap-1.5 sm:col-span-2">
                     <Label>Descripción de transporte</Label>
