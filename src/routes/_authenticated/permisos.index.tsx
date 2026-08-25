@@ -11,11 +11,13 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Trash2, Plus, FileCheck2, Pencil } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { toast } from "sonner";
 import { parseLocalDate, fmtLocalDateShort, daysFromToday } from "@/lib/dates";
 import { PERMISO_ESTADOS, PERMISO_TIPOS } from "@/components/permiso-form";
 import { estadoBadgePermiso } from "@/components/transporte-form";
+import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
+
 
 export const Route = createFileRoute("/_authenticated/permisos/")({
   component: Permisos,
