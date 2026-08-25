@@ -78,9 +78,6 @@ function Permisos() {
     k === "expediente" ? (p.expedientes?.numero ?? "") :
     (p[k] ?? "");
   const cmp = (a: any, b: any) => {
-    const closedA = ["aprobado","rechazado","vencido"].includes(a.estado) ? 1 : 0;
-    const closedB = ["aprobado","rechazado","vencido"].includes(b.estado) ? 1 : 0;
-    if (closedA !== closedB) return closedA - closedB;
     const av = getVal(a, activeSort.key);
     const bv = getVal(b, activeSort.key);
     const aE = av === "" || av == null; const bE = bv === "" || bv == null;
@@ -91,6 +88,23 @@ function Permisos() {
     return activeSort.dir === "asc" ? r : -r;
   };
   const rows = [...filtered].sort(cmp);
+
+  const PERMISOS_CERRADOS = ["aprobado", "rechazado", "vencido"];
+  const { esColapsado, toggleGrupo } = useGruposColapsados("permisos-grupos-colapsados", PERMISOS_CERRADOS);
+  const ordenGrupos = PERMISO_ESTADOS.map((s: { v: string }) => s.v);
+  const grupos: [string, any[]][] = (() => {
+    const map = new Map<string, any[]>();
+    for (const p of rows) {
+      const k = p.estado ?? "sin_estado";
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(p);
+    }
+    return [...map.entries()].sort(
+      (a, b) => (ordenGrupos.indexOf(a[0]) + 1 || 999) - (ordenGrupos.indexOf(b[0]) + 1 || 999),
+    );
+  })();
+
+
 
   const isActive = (k: SortKey) => !!sort && sort.key === k;
   const isDefault = (k: SortKey) => !sort && k === "fecha_vencimiento";
