@@ -308,7 +308,7 @@ export function buildImportDUAXml(
   ].join("\n");
 
   // SIGA rechaza el suplidor sin código: usa el comodín oficial cuando no se conoce el RNC.
-  const supplierCode = exp.suplidor_rnc ? personCode(exp.suplidor_rnc, origen, "TAX") : SUPPLIER_NO_ASIGNADO.code;
+  const supplierCode = exp.suplidor_rnc ? personCode(exp.suplidor_rnc, origen, "TID") : SUPPLIER_NO_ASIGNADO.code;
   const supplierName = exp.suplidor_rnc ? exp.suplidor : (exp.suplidor || SUPPLIER_NO_ASIGNADO.name);
   const supplier = `  <ImpDeclarationSupplier>
 ${T("ForeignSupplierName", supplierName, "   ")}
