@@ -175,37 +175,49 @@ function Transportes() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {rows.map((t: any) => (
-                    <tr key={t.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <Link to="/transportes/$id" params={{ id: t.id }} className="font-semibold text-primary hover:underline">{t.numero_viaje}</Link>
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        {t.expedientes?.numero ? (
-                          <Link to="/expedientes/$id" params={{ id: t.expediente_id }} className="text-primary hover:underline">{t.expedientes.numero} ↗</Link>
-                        ) : "—"}
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap">{t.clientes?.nombre ?? "—"}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{TRANSPORTE_TIPOS.find((x) => x.v === t.tipo)?.l ?? "—"}</td>
-                      <td className="px-3 py-2 whitespace-nowrap">{t.transportista ?? "—"}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground text-xs tabular-nums"><TruncatedCell value={t.placa_contenedor} maxClass="max-w-[140px]" /></td>
-                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{t.origen ?? "—"}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{t.destino ?? "—"}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">{fmt(t.fecha_salida)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{fmt(t.eta)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{fmtFlete(t)}</td>
-                      <td className="px-3 py-2 text-center whitespace-nowrap">{estadoBadgeTransporte(t.estado)}</td>
-                      <td className="px-2 py-2 text-right whitespace-nowrap">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="Editar">
-                          <Link to="/transportes/$id" params={{ id: t.id }}><Pencil className="h-4 w-4" /></Link>
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => setToTrash({ id: t.id, numero: t.numero_viaje })} title="Mover a papelera">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
+                  {grupos.map(([est, gRows]) => (
+                    <Fragment key={est}>
+                      <EstadoDivider
+                        colSpan={13}
+                        count={gRows.length}
+                        colapsado={esColapsado(est)}
+                        onToggle={() => toggleGrupo(est)}
+                        label={estadoBadgeTransporte(est)}
+                      />
+                      {!esColapsado(est) && gRows.map((t: any) => (
+                        <tr key={t.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            <Link to="/transportes/$id" params={{ id: t.id }} className="font-semibold text-primary hover:underline">{t.numero_viaje}</Link>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {t.expedientes?.numero ? (
+                              <Link to="/expedientes/$id" params={{ id: t.expediente_id }} className="text-primary hover:underline">{t.expedientes.numero} ↗</Link>
+                            ) : "—"}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap">{t.clientes?.nombre ?? "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{TRANSPORTE_TIPOS.find((x) => x.v === t.tipo)?.l ?? "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap">{t.transportista ?? "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground text-xs tabular-nums"><TruncatedCell value={t.placa_contenedor} maxClass="max-w-[140px]" /></td>
+                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{t.origen ?? "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{t.destino ?? "—"}</td>
+                          <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">{fmt(t.fecha_salida)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{fmt(t.eta)}</td>
+                          <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{fmtFlete(t)}</td>
+                          <td className="px-3 py-2 text-center whitespace-nowrap">{estadoBadgeTransporte(t.estado)}</td>
+                          <td className="px-2 py-2 text-right whitespace-nowrap">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="Editar">
+                              <Link to="/transportes/$id" params={{ id: t.id }}><Pencil className="h-4 w-4" /></Link>
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => setToTrash({ id: t.id, numero: t.numero_viaje })} title="Mover a papelera">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </Fragment>
                   ))}
+
                 </tbody>
               </table>
             </div>
