@@ -60,6 +60,21 @@ function Ordenes() {
   const filtered = (data ?? []).filter((o: any) =>
     !q || JSON.stringify(o).toLowerCase().includes(q.toLowerCase()));
 
+  const { esColapsado, toggleGrupo } = useGruposColapsados("ordenes-grupos-colapsados");
+  const ordenGrupos = [...ORDEN_ESTADOS] as string[];
+  const grupos: [string, any[]][] = (() => {
+    const map = new Map<string, any[]>();
+    for (const o of filtered) {
+      const k = o.estado ?? "sin_estado";
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(o);
+    }
+    return [...map.entries()].sort(
+      (a, b) => (ordenGrupos.indexOf(a[0]) + 1 || 999) - (ordenGrupos.indexOf(b[0]) + 1 || 999),
+    );
+  })();
+
+
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       <div>
