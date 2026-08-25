@@ -105,7 +105,7 @@ export function buildCertificateOriginXml(exp: any, items: any[], maps?: CertMap
   ].join("\n");
 
   const detalles = partidasUnicas(items ?? []).map((it) => `  <CertificateOriginDetail>
-${T("HSCode", it.codigo_arancelario, "   ")}
+${T("HSCode", String(it.codigo_arancelario ?? "").replace(/\D/g, ""), "   ")}
 ${T("CriteriaCode", it.criterio_origen_codigo, "   ")}
 ${T("MethodCode", it.metodo_calificacion_codigo, "   ")}
 ${T("CountryCode", origen, "   ")}
