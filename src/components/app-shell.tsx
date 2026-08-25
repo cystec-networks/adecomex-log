@@ -158,6 +158,8 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/admin/configuracion") },
       { to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
         match: (p) => p === "/expedientes/papelera" },
+      { to: "/admin/facturacion/papelera", label: "Papelera de Facturas", icon: Trash2, roles: ["admin","contabilidad"],
+        match: (p) => p.startsWith("/admin/facturacion/papelera") },
     ],
   },
   {
@@ -190,8 +192,8 @@ const GROUPS: Group[] = [
         match: (p) => p === "/admin/facturacion" || (p.startsWith("/admin/facturacion") && !p.includes("/pendientes") && !p.includes("/papelera")) },
       { to: "/admin/facturacion/pendientes", label: "Pendientes de vincular", icon: ClipboardList, roles: ["admin","contabilidad"],
         match: (p) => p.startsWith("/admin/facturacion/pendientes") },
-      { to: "/admin/facturacion/papelera", label: "Papelera de Facturas", icon: Trash2, roles: ["admin","contabilidad"],
-        match: (p) => p.startsWith("/admin/facturacion/papelera") },
+
+
 
       { to: "/admin/gastos-operativos", label: "Gastos Operativos", icon: DollarSign, roles: ["admin","contabilidad"],
         match: (p) => p.startsWith("/admin/gastos-operativos") },
