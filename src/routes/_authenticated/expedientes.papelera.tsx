@@ -92,6 +92,16 @@ function Papelera() {
       .order("eliminado_en", { ascending: false })).data ?? [],
   });
 
+  const facturas = useQuery({
+    queryKey: ["papelera-facturas_ecf"],
+    enabled: !!isAdmin,
+    queryFn: async () => (await supabase
+      .from("facturas_ecf")
+      .select("*")
+      .not("eliminado_en", "is", null)
+      .order("eliminado_en", { ascending: false })).data ?? [],
+  });
+
   const restoreMut = useMutation({
     mutationFn: async ({ kind, id }: { kind: Kind; id: string }) => {
       const { error } = await supabase
