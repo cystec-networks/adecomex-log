@@ -65,38 +65,68 @@ function daysBetween(a: Date, b: Date) {
 // Parsea 'YYYY-MM-DD' como fecha local para evitar el desfase UTC de un día.
 import { parseLocalDate } from "@/lib/dates";
 
+function isoDay(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
 export function useReminders() {
   const query = useQuery({
     queryKey: ["reminders"],
     queryFn: async (): Promise<Reminder[]> => {
+      const cfg = REMINDER_CONFIG;
+      const now = new Date();
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+
+      const solLimite = new Date(today); solLimite.setDate(solLimite.getDate() - cfg.solicitudSinConvertirDias);
+      const expLimite = new Date(today); expLimite.setDate(expLimite.getDate() - cfg.expedienteInactivoDias);
+      const permLimite = new Date(today); permLimite.setDate(permLimite.getDate() + cfg.permisoPorVencerDias);
+      const etaLimite = new Date(today); etaLimite.setDate(etaLimite.getDate() + cfg.etaProximoDias);
+      const hitoLimite = new Date(today); hitoLimite.setDate(hitoLimite.getDate() + 3);
+      const traLimite = new Date(today); traLimite.setDate(traLimite.getDate() - cfg.transporteRetrasadoDias);
+
       const [sol, exp, per, tra, hit] = await Promise.all([
         supabase
           .from("solicitudes")
-          .select("id,numero,estado,created_at,cliente_id, cliente:clientes(nombre)")
-          .is("eliminado_en", null),
+          .select("id,numero,estado,created_at, cliente:clientes(nombre)")
+          .is("eliminado_en", null)
+          .in("estado", ["recibida", "en_revision", "aprobada"])
+          .lte("created_at", solLimite.toISOString())
+          .order("created_at", { ascending: true })
+          .limit(200),
         supabase
           .from("expedientes")
-          .select("id,numero,estado,updated_at,fecha_compromiso,cliente_id, cliente:clientes(nombre)")
-          .is("eliminado_en", null),
+          .select("id,numero,estado,updated_at,fecha_compromiso, cliente:clientes(nombre)")
+          .is("eliminado_en", null)
+          .neq("estado", "despachado")
+          .or(`fecha_compromiso.lte.${isoDay(etaLimite)},updated_at.lte.${expLimite.toISOString()}`)
+          .limit(300),
         supabase
           .from("permisos")
           .select("id,numero,estado,fecha_vencimiento")
-          .is("eliminado_en", null),
+          .is("eliminado_en", null)
+          .in("estado", ["solicitado", "en_tramite", "aprobado"])
+          .not("fecha_vencimiento", "is", null)
+          .lte("fecha_vencimiento", isoDay(permLimite))
+          .limit(200),
         supabase
           .from("transportes")
           .select("id,numero_viaje,estado,eta")
-          .is("eliminado_en", null),
+          .is("eliminado_en", null)
+          .neq("estado", "entregado")
+          .not("eta", "is", null)
+          .lte("eta", isoDay(traLimite))
+          .limit(200),
         supabase
           .from("expediente_hitos")
           .select("id,expediente_id,estado,fecha_programada,hito_codigo, catalogo_hitos(nombre), expedientes!inner(numero,eliminado_en)")
           .in("estado", ["pendiente", "en_curso"])
-          .not("fecha_programada", "is", null),
+          .not("fecha_programada", "is", null)
+          .lte("fecha_programada", isoDay(hitoLimite))
+          .limit(300),
       ]);
 
-      const now = new Date();
-      const today = new Date(); today.setHours(0, 0, 0, 0);
       const out: Reminder[] = [];
-      const cfg = REMINDER_CONFIG;
+
 
       // Solicitudes sin convertir
       for (const s of sol.data ?? []) {
