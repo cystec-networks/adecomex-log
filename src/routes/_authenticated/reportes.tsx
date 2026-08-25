@@ -153,7 +153,8 @@ function ReportesPage() {
   const agruparLabel = AGRUPAR_POR.find((a) => a.v === agrupar)?.l ?? agrupar;
   const timestamp = () => new Date().toISOString().slice(0, 10);
 
-  const exportExcel = () => {
+  const exportExcel = async () => {
+    const XLSX: typeof XLSXNS = await import("xlsx");
     const wb = XLSX.utils.book_new();
 
     // Hoja 1: Resumen por grupo
@@ -215,7 +216,9 @@ function ReportesPage() {
     XLSX.writeFile(wb, `Reporte_Expedientes_${timestamp()}.xlsx`);
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
+    const { jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
 
