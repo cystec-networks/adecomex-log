@@ -284,7 +284,12 @@ export function useReminders() {
       });
       return out;
     },
-    refetchInterval: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
+    refetchInterval: 5 * 60_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
+
   });
 
   const { dismissed, dismiss, clearAll } = useDismissedReminders();
