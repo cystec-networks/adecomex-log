@@ -69,7 +69,7 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
   const [detalles, setDetalles] = useState<Record<string, { criterio: string; metodo: string }>>({});
 
   useEffect(() => {
-    if (!exp) return;
+    if (!exp || !open) return;
     setForm({
       certificado_periodo_desde: exp.certificado_periodo_desde ?? "",
       certificado_periodo_hasta: exp.certificado_periodo_hasta ?? "",
@@ -84,7 +84,7 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
       pais_origen: exp.pais_origen ?? "",
       pais_origen_codigo: exp.pais_origen_codigo ?? "",
     });
-  }, [exp]);
+  }, [exp, open]);
 
   const partidas = useMemo(() => partidasUnicas((items as any[]) ?? []), [items]);
 
