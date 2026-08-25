@@ -80,7 +80,15 @@ function DetalleOrden() {
         <Button variant="ghost" size="sm" asChild><Link to="/ordenes"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link></Button>
         <div className="flex-1 min-w-0">
           <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
-            {o.numero}
+            {canEdit ? (
+              <Input
+                className="font-display text-2xl font-bold h-auto py-0 px-1 w-auto min-w-[8rem] max-w-[16rem] border-transparent hover:border-input focus-visible:border-input bg-transparent"
+                value={form.numero}
+                onChange={(e) => setForm({ ...form, numero: e.target.value })}
+              />
+            ) : (
+              o.numero
+            )}
             <Badge className={ORDEN_ESTADO_CLASS[form.estado] ?? ""}>{ordenEstadoLabel(form.estado)}</Badge>
           </h1>
           <p className="text-sm text-muted-foreground">
