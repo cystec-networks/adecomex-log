@@ -11,7 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from "@/components/ui/dropdown-menu";
+import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
@@ -198,10 +199,22 @@ function DetalleExpediente() {
             <span>· BL/AWB: {exp.bl_awb ?? "—"}</span>
           </p>
         </div>
-        <GenerarXmlSigaButton expedienteId={id} />
-        <GenerarXmlCertificadoOrigenButton expedienteId={id} />
-        <PreLiquidacionPdfButton exp={exp} />
-        <GenerarDocumentoButton exp={exp} />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
+              <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64 p-1">
+            <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:text-sm [&_button:hover]:bg-accent">
+              <GenerarXmlSigaButton expedienteId={id} />
+              <GenerarXmlCertificadoOrigenButton expedienteId={id} />
+              <PreLiquidacionPdfButton exp={exp} />
+              <GenerarDocumentoButton exp={exp} />
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
 
         <div className="flex items-center gap-2">
@@ -385,6 +398,7 @@ function TabInfo({ exp }: { exp: any }) {
     pais_procedencia_codigo: exp.pais_procedencia_codigo ?? "",
     puerto_arribo_codigo: exp.puerto_arribo_codigo ?? "",
 
+    area_aduanera: exp.area_aduanera ?? "",
     area_aduanera_codigo: exp.area_aduanera_codigo ?? "",
     liq_siga_numero: exp.liq_siga_numero ?? "",
     liq_siga_estado: exp.liq_siga_estado ?? "",
@@ -601,8 +615,9 @@ function TabInfo({ exp }: { exp: any }) {
             <Label>Área / Administración aduanera</Label>
             <DgaCombobox
               table="dga_areas"
+              value={form.area_aduanera}
               codigo={form.area_aduanera_codigo}
-              onChange={(_n, codigo) => setForm((f) => ({ ...f, area_aduanera_codigo: codigo }))}
+              onChange={(nombre, codigo) => setForm((f) => ({ ...f, area_aduanera: nombre, area_aduanera_codigo: codigo }))}
               placeholder="Buscar área (catálogo DGA)"
             />
           </div>
