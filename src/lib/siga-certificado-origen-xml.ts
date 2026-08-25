@@ -66,7 +66,7 @@ export function pendingCertificadoCodes(exp: any, items: any[], maps?: CertMaps)
   const check = (v: any, field: string, label: string) => { if (!v) pending.push({ field, label }); };
 
   check(maps?.tratamientos?.[String(exp?.certificado_tratamiento_codigo ?? "")], "tratamiento_nombre", "Nombre del tratamiento (TreatmentName)");
-  check(exp?.suplidor_rnc, "suplidor_rnc", "RNC del exportador / suplidor (ExporterCode)");
+  check(exp?.suplidor_rnc, "suplidor_rnc", "TID del exportador / suplidor (ExporterCode)");
   partidasUnicas(items ?? []).forEach((it) => {
     check(it.criterio_origen_codigo, `criterio_${it.codigo_arancelario}`, `Partida ${it.codigo_arancelario}: Criterio de origen`);
     check(it.metodo_calificacion_codigo, `metodo_${it.codigo_arancelario}`, `Partida ${it.codigo_arancelario}: Método de calificación`);
