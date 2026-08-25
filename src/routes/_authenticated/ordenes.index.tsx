@@ -10,11 +10,13 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
-import { ORDEN_ESTADO_CLASS, ordenEstadoLabel } from "@/lib/estados-orden";
+import { ORDEN_ESTADOS, ORDEN_ESTADO_CLASS, ordenEstadoLabel } from "@/lib/estados-orden";
+import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
+
 
 export const Route = createFileRoute("/_authenticated/ordenes/")({
   component: Ordenes,
