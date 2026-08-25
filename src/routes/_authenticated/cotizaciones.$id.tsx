@@ -56,6 +56,7 @@ function DetalleCotizacion() {
   useEffect(() => {
     if (c && !form) {
       setForm({
+        numero: c.numero ?? "",
         estado: c.estado,
         cliente_id: c.cliente_id ?? "",
         vendedor_id: c.vendedor_id ?? "",
