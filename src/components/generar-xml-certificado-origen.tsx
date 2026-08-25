@@ -41,6 +41,7 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
   const { data: exp } = useQuery({
     queryKey: ["expediente-cert-xml", expedienteId, open],
     enabled: open,
+    staleTime: 0,
     queryFn: async () =>
       (await supabase.from("expedientes").select("*, clientes(*)").eq("id", expedienteId).maybeSingle()).data as any,
   });
