@@ -19,6 +19,8 @@ import { useMyRoles } from "@/lib/auth-hooks";
 import {
   COTIZACION_ESTADOS, COTIZACION_ESTADO_CLASS, cotizacionEstadoLabel,
 } from "@/lib/estados-cotizacion";
+import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
+
 
 export const Route = createFileRoute("/_authenticated/cotizaciones/")({
   component: Cotizaciones,
