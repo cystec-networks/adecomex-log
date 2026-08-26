@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, CheckCircle2, Copy, Printer } from "lucide-react";
 import { toast } from "sonner";
 import logoAsset from "@/assets/logo-adecomex.jpg.asset.json";
+import { SolicitudPagoPdfDialog } from "@/components/solicitud-pago-pdf-dialog";
 
 const WHATSAPP = "18099313246";
 
@@ -65,6 +66,7 @@ function SolicitudPagoTransportePage() {
 
   const [viajes, setViajes] = useState<Viaje[]>([]);
   const [viajeSel, setViajeSel] = useState<string>("");
+  const [pdfOpen, setPdfOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -205,9 +207,7 @@ function SolicitudPagoTransportePage() {
                 <Button
                   type="button"
                   disabled={!solicitudId}
-                  onClick={() =>
-                    window.open(`/imprimir/solicitud-pago/${solicitudId}`, "_blank", "noopener,noreferrer")
-                  }
+                  onClick={() => setPdfOpen(true)}
                 >
                   <Printer className="mr-1 h-4 w-4" /> Descargar comprobante (PDF)
                 </Button>
