@@ -186,8 +186,34 @@ function separarPaginasMarcadas(html: string): { pagina1: string; anexo: string 
  * - Reemplaza campos simples de cliente/expediente.
  * - Cualquier {{...}} restante se elimina (queda en blanco para llenar a mano).
  */
-export function resolverPlantilla(html: string, exp: any, items: any[]): string {
+function bloqueTercero(t?: TerceroPlantilla | null): string {
+  if (!t) return "&nbsp;";
+  const partes: string[] = [];
+  if (t.nombre) partes.push(esc(String(t.nombre)));
+  if (t.direccion) partes.push(esc(String(t.direccion)));
+  const pais = t.pais ? esc(String(t.pais)) : "";
+  if (pais) partes.push(pais);
+  const contacto = [
+    t.telefono ? `Tel.: ${esc(String(t.telefono))}` : "",
+    t.email ? `Email: ${esc(String(t.email))}` : "",
+  ].filter(Boolean).join(", ");
+  if (contacto) partes.push(contacto);
+  if (t.tid) partes.push(`TID: ${esc(String(t.tid))}`);
+  return partes.length ? partes.join("<br>") : "&nbsp;";
+}
+
+export function resolverPlantilla(
+  html: string,
+  exp: any,
+  items: any[],
+  terceros?: TercerosPlantilla,
+): string {
   const cliente = exp?.clientes ?? {};
+  const bloques: Record<string, string> = {
+    "exportador.bloque": bloqueTercero(terceros?.exportador),
+    "productor.bloque": bloqueTercero(terceros?.productor),
+  };
+
 
   const simples: Record<string, any> = {
     "cliente.nombre": cliente.nombre ?? cliente.razon_social,
