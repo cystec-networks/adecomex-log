@@ -14,7 +14,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Download, FileSignature } from "lucide-react";
+import { Download, FileSignature, Save } from "lucide-react";
 import { resolverPlantilla } from "@/lib/plantillas-campos";
 
 const CHECKLIST_MAP: Record<string, string> = {
@@ -39,6 +39,7 @@ export function GenerarDocumentoButton({ exp }: { exp: any }) {
   const [open, setOpen] = useState(false);
   const [plantillaId, setPlantillaId] = useState<string>("");
   const [html, setHtml] = useState("");
+  const [guardando, setGuardando] = useState(false);
   const [preguntaTipo, setPreguntaTipo] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -67,16 +68,88 @@ export function GenerarDocumentoButton({ exp }: { exp: any }) {
         .order("item_no")).data ?? [],
   });
 
+  // Exportador y Productor desde el catálogo de terceros extranjeros (por TID)
+  const tidExportador = (exp?.suplidor_rnc ?? "").trim();
+  const tidProductor = ((exp?.certificado_productor_rnc || exp?.suplidor_rnc) ?? "").trim();
+
+  const { data: terceros } = useQuery({
+    queryKey: ["plantilla-terceros", tidExportador, tidProductor],
+    enabled: open && (!!tidExportador || !!tidProductor),
+    staleTime: 0,
+    queryFn: async () => {
+      const tids = [...new Set([tidExportador, tidProductor].filter(Boolean))];
+      if (!tids.length) return {};
+      const { data } = await supabase
+        .from("catalogo_terceros_extranjeros")
+        .select("nombre, tid, direccion, telefono, email, pais_nombre")
+        .in("tid", tids);
+      const byTid = new Map((data ?? []).map((t: any) => [String(t.tid).trim(), t]));
+      const mapear = (t: any) =>
+        t ? { nombre: t.nombre, tid: t.tid, direccion: t.direccion, telefono: t.telefono, email: t.email, pais: t.pais_nombre } : null;
+      return {
+        exportador: mapear(byTid.get(tidExportador)),
+        productor: mapear(byTid.get(tidProductor)),
+      };
+    },
+  });
+
+  // Documento previamente guardado para este expediente + plantilla
+  const { data: guardado, isFetching: cargandoGuardado } = useQuery({
+    queryKey: ["documento-generado", exp?.id, plantillaId],
+    enabled: open && !!exp?.id && !!plantillaId,
+    staleTime: 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("documentos_generados")
+        .select("id, html_resuelto")
+        .eq("expediente_id", exp.id)
+        .eq("plantilla_id", plantillaId)
+        .maybeSingle();
+      return data ?? null;
+    },
+  });
+
   const plantilla = plantillas?.find((p: any) => p.id === plantillaId);
 
   useEffect(() => {
     if (!plantilla) { setHtml(""); return; }
-    setHtml(resolverPlantilla(plantilla.contenido_html ?? "", exp, items ?? []));
-  }, [plantillaId, items, plantilla, exp]);
+    if (cargandoGuardado) return;
+    if (guardado?.html_resuelto) { setHtml(guardado.html_resuelto); return; }
+    setHtml(resolverPlantilla(plantilla.contenido_html ?? "", exp, items ?? [], terceros ?? {}));
+  }, [plantillaId, items, plantilla, exp, terceros, guardado, cargandoGuardado]);
 
   useEffect(() => {
     if (!open) { setPlantillaId(""); setHtml(""); }
   }, [open]);
+
+  const guardar = async () => {
+    if (!plantillaId) return;
+    const contenido = previewRef.current?.innerHTML ?? html;
+    setGuardando(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("documentos_generados")
+        .upsert(
+          {
+            expediente_id: exp.id,
+            plantilla_id: plantillaId,
+            html_resuelto: contenido,
+            creado_por: userData?.user?.id ?? null,
+          },
+          { onConflict: "expediente_id,plantilla_id" },
+        );
+      if (error) throw error;
+      toast.success("Documento guardado");
+      qc.invalidateQueries({ queryKey: ["documento-generado", exp.id, plantillaId] });
+    } catch (e: any) {
+      console.error("[GenerarDocumento] guardar", e);
+      toast.error(e?.message ?? "No se pudo guardar el documento");
+    } finally {
+      setGuardando(false);
+    }
+  };
+
 
   const descargar = async () => {
     if (!previewRef.current || !plantilla) return;
@@ -135,8 +208,11 @@ export function GenerarDocumentoButton({ exp }: { exp: any }) {
       const tipo = tipoChecklist(plantilla.nombre);
       if (tipo) setPreguntaTipo(tipo);
     } catch (e: any) {
-      toast.error(e?.message ?? "No se pudo generar el PDF");
+      console.error("[GenerarDocumento] descargar PDF", e);
+      const detalle = e?.message || e?.toString?.() || "error desconocido";
+      toast.error(`No se pudo generar el PDF: ${detalle}`);
     }
+
   };
 
   const marcarChecklist = async () => {
@@ -223,10 +299,16 @@ export function GenerarDocumentoButton({ exp }: { exp: any }) {
 
           <DialogFooter className="px-5 py-3 border-t gap-2 sm:justify-between">
             <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cerrar</Button>
-            <Button size="sm" onClick={descargar} disabled={!plantillaId}>
-              <Download className="h-4 w-4 mr-1" /> Descargar PDF
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" size="sm" onClick={guardar} disabled={!plantillaId || guardando}>
+                <Save className="h-4 w-4 mr-1" /> {guardando ? "Guardando…" : "Guardar"}
+              </Button>
+              <Button size="sm" onClick={descargar} disabled={!plantillaId}>
+                <Download className="h-4 w-4 mr-1" /> Descargar PDF
+              </Button>
+            </div>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 

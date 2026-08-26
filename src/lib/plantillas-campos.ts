@@ -45,6 +45,13 @@ export const CAMPOS_PLANTILLA: CampoGrupo[] = [
     ],
   },
   {
+    grupo: "EXPORTADOR / PRODUCTOR (catálogo de terceros extranjeros)",
+    campos: [
+      { campo: "{{exportador.bloque}}", label: "Bloque completo del exportador" },
+      { campo: "{{productor.bloque}}", label: "Bloque completo del productor" },
+    ],
+  },
+  {
     grupo: "PRODUCTOS ANEXO (DR-CAFTA)",
     campos: [
       { campo: "{{productoAnexo.codigo_arancelario}}", label: "Código arancelario" },
@@ -57,6 +64,21 @@ export const CAMPOS_PLANTILLA: CampoGrupo[] = [
     ],
   },
 ];
+
+export type TerceroPlantilla = {
+  nombre?: string | null;
+  tid?: string | null;
+  direccion?: string | null;
+  telefono?: string | null;
+  email?: string | null;
+  pais?: string | null;
+};
+
+export type TercerosPlantilla = {
+  exportador?: TerceroPlantilla | null;
+  productor?: TerceroPlantilla | null;
+};
+
 
 const DASH = "—";
 const ANEXO_N = 3;
@@ -164,8 +186,34 @@ function separarPaginasMarcadas(html: string): { pagina1: string; anexo: string 
  * - Reemplaza campos simples de cliente/expediente.
  * - Cualquier {{...}} restante se elimina (queda en blanco para llenar a mano).
  */
-export function resolverPlantilla(html: string, exp: any, items: any[]): string {
+function bloqueTercero(t?: TerceroPlantilla | null): string {
+  if (!t) return "&nbsp;";
+  const partes: string[] = [];
+  if (t.nombre) partes.push(esc(String(t.nombre)));
+  if (t.direccion) partes.push(esc(String(t.direccion)));
+  const pais = t.pais ? esc(String(t.pais)) : "";
+  if (pais) partes.push(pais);
+  const contacto = [
+    t.telefono ? `Tel.: ${esc(String(t.telefono))}` : "",
+    t.email ? `Email: ${esc(String(t.email))}` : "",
+  ].filter(Boolean).join(", ");
+  if (contacto) partes.push(contacto);
+  if (t.tid) partes.push(`TID: ${esc(String(t.tid))}`);
+  return partes.length ? partes.join("<br>") : "&nbsp;";
+}
+
+export function resolverPlantilla(
+  html: string,
+  exp: any,
+  items: any[],
+  terceros?: TercerosPlantilla,
+): string {
   const cliente = exp?.clientes ?? {};
+  const bloques: Record<string, string> = {
+    "exportador.bloque": bloqueTercero(terceros?.exportador),
+    "productor.bloque": bloqueTercero(terceros?.productor),
+  };
+
 
   const simples: Record<string, any> = {
     "cliente.nombre": cliente.nombre ?? cliente.razon_social,
@@ -221,7 +269,9 @@ export function resolverPlantilla(html: string, exp: any, items: any[]): string 
     const reemplazarSimples = (seccion: string) =>
       seccion.replace(/\{\{\s*([a-z]+\.[a-z_]+)\s*\}\}/gi, (_m, key: string) => {
         const k = key.toLowerCase();
+        if (k in bloques) return bloques[k];
         if (k in simples) return esc(val(simples[k]));
+
         return "";
       });
     pagina1 = reemplazarSimples(pagina1);
@@ -239,7 +289,9 @@ export function resolverPlantilla(html: string, exp: any, items: any[]): string 
     // 2) Campos simples
     out = out.replace(/\{\{\s*([a-z]+\.[a-z_]+)\s*\}\}/gi, (_m, key: string) => {
       const k = key.toLowerCase();
+      if (k in bloques) return bloques[k];
       if (k in simples) return esc(val(simples[k]));
+
       return "";
     });
 

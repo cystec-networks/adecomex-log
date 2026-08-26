@@ -1928,6 +1928,72 @@ export type Database = {
           },
         ]
       }
+      documentos_generados: {
+        Row: {
+          creado_por: string | null
+          created_at: string
+          expediente_id: string
+          html_resuelto: string
+          id: string
+          plantilla_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          creado_por?: string | null
+          created_at?: string
+          expediente_id: string
+          html_resuelto: string
+          id?: string
+          plantilla_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          creado_por?: string | null
+          created_at?: string
+          expediente_id?: string
+          html_resuelto?: string
+          id?: string
+          plantilla_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_generados_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_generados_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_generados_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "documentos_generados_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "documentos_generados_plantilla_id_fkey"
+            columns: ["plantilla_id"]
+            isOneToOne: false
+            referencedRelation: "plantillas_documentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documentos_legales_empresa: {
         Row: {
           created_at: string
