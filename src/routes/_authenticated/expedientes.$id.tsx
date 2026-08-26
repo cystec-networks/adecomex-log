@@ -436,7 +436,7 @@ function TabInfo({ exp }: { exp: any }) {
     return {
       medio_transporte: uniq("medio_transporte", SUG_MEDIO),
       naviera: uniq("naviera", SUG_NAVIERA),
-      suplidor: uniq("suplidor"),
+      
       pais_origen: uniq("pais_origen", SUG_PAIS),
       factura_comercial: uniq("factura_comercial"),
       incoterm: uniq("incoterm", SUG_INCOTERM),
@@ -545,15 +545,18 @@ function TabInfo({ exp }: { exp: any }) {
 
 
       <Section title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
-        <AutoField label="Suplidor" value={form.suplidor} onChange={(v) => set("suplidor", v)} suggestion={sug.suplidor ?? []} />
         <div className="grid gap-1.5">
           <div className="flex items-center justify-between gap-2">
-            <Label>TID del Suplidor</Label>
+            <Label>Exportador / Suplidor</Label>
             <TerceroExtranjeroPicker
               onSelect={(t) => setForm((f) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid }))}
             />
           </div>
-          <Input value={form.suplidor_rnc ?? ""} onChange={(e) => set("suplidor_rnc", e.target.value)} placeholder="TID del suplidor" />
+          <Input value={form.suplidor} onChange={(e) => set("suplidor", e.target.value)} placeholder="Nombre del exportador/suplidor" />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>TID del exportador/suplidor</Label>
+          <Input value={form.suplidor_rnc ?? ""} onChange={(e) => set("suplidor_rnc", e.target.value)} placeholder="TID del exportador/suplidor" />
         </div>
         <div className="grid gap-1.5">
           <Label>País de origen</Label>
