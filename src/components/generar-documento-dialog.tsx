@@ -299,10 +299,16 @@ export function GenerarDocumentoButton({ exp }: { exp: any }) {
 
           <DialogFooter className="px-5 py-3 border-t gap-2 sm:justify-between">
             <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cerrar</Button>
-            <Button size="sm" onClick={descargar} disabled={!plantillaId}>
-              <Download className="h-4 w-4 mr-1" /> Descargar PDF
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" size="sm" onClick={guardar} disabled={!plantillaId || guardando}>
+                <Save className="h-4 w-4 mr-1" /> {guardando ? "Guardando…" : "Guardar"}
+              </Button>
+              <Button size="sm" onClick={descargar} disabled={!plantillaId}>
+                <Download className="h-4 w-4 mr-1" /> Descargar PDF
+              </Button>
+            </div>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 
