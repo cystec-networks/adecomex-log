@@ -154,9 +154,12 @@ function expandirFilasProducto(
         return esc(val(pmap[k]));
       });
     });
-    // Rellena con filas en blanco hasta completar la hoja tamaño carta
+    // Rellena con filas en blanco hasta completar la hoja tamaño carta.
+    // Una plantilla puede fijar su propio mínimo con data-relleno="N" en el <tr>.
+    const attr = /data-relleno=["'](\d+)["']/i.exec(row);
+    const minimo = Math.max(minFilas, attr ? Number(attr[1]) : 0);
     const vacia = row.replace(fieldRe, "&nbsp;");
-    while (filas.length < minFilas) filas.push(vacia);
+    while (filas.length < minimo) filas.push(vacia);
     return filas.join("");
   });
 }
