@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/cotizaciones/nueva")({
 
 function NuevaCotizacion() {
   const nav = useNavigate();
-  const { data: roles } = useMyRoles();
+  const { data: roles, isLoading: rolesLoading } = useMyRoles();
   const canEdit = (roles ?? []).some((r) => r === "admin" || r === "vendedor");
 
   const [form, setForm] = useState<any>({
@@ -45,6 +45,7 @@ function NuevaCotizacion() {
 
   const create = useMutation({
     mutationFn: async () => {
+      if (!canEdit) throw new Error("No tienes permiso para crear cotizaciones.");
       const payload: any = { ...form };
       for (const k of ["cliente_id", "vendedor_id", "fecha_vigencia"]) {
         if (!payload[k]) payload[k] = null;
@@ -69,7 +70,11 @@ function NuevaCotizacion() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  if (roles && !canEdit) {
+  if (rolesLoading) {
+    return <div className="p-6 text-sm text-muted-foreground">Verificando permisos…</div>;
+  }
+
+  if (!canEdit) {
     return (
       <div className="p-6 max-w-xl mx-auto">
         <Card>
