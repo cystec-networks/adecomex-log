@@ -436,7 +436,7 @@ function TabInfo({ exp }: { exp: any }) {
     return {
       medio_transporte: uniq("medio_transporte", SUG_MEDIO),
       naviera: uniq("naviera", SUG_NAVIERA),
-      suplidor: uniq("suplidor"),
+      
       pais_origen: uniq("pais_origen", SUG_PAIS),
       factura_comercial: uniq("factura_comercial"),
       incoterm: uniq("incoterm", SUG_INCOTERM),
