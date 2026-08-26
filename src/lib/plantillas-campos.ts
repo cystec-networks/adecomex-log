@@ -45,6 +45,13 @@ export const CAMPOS_PLANTILLA: CampoGrupo[] = [
     ],
   },
   {
+    grupo: "EXPORTADOR / PRODUCTOR (catálogo de terceros extranjeros)",
+    campos: [
+      { campo: "{{exportador.bloque}}", label: "Bloque completo del exportador" },
+      { campo: "{{productor.bloque}}", label: "Bloque completo del productor" },
+    ],
+  },
+  {
     grupo: "PRODUCTOS ANEXO (DR-CAFTA)",
     campos: [
       { campo: "{{productoAnexo.codigo_arancelario}}", label: "Código arancelario" },
@@ -57,6 +64,21 @@ export const CAMPOS_PLANTILLA: CampoGrupo[] = [
     ],
   },
 ];
+
+export type TerceroPlantilla = {
+  nombre?: string | null;
+  tid?: string | null;
+  direccion?: string | null;
+  telefono?: string | null;
+  email?: string | null;
+  pais?: string | null;
+};
+
+export type TercerosPlantilla = {
+  exportador?: TerceroPlantilla | null;
+  productor?: TerceroPlantilla | null;
+};
+
 
 const DASH = "—";
 const ANEXO_N = 3;
