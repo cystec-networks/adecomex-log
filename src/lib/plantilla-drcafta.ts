@@ -143,7 +143,7 @@ ${encabezado("CERTIFICATE OF ORIGIN", "CERTIFICADO DE ORIGEN", true)}
     <td style="${CELL}width:50%;height:100px">
       <span style="${NUM}">1</span> <span style="${LBL}">Exporter´s name, address and tax identification number:</span><br>
       <span style="${LBLB}">Nombre, dirección y número de registro fiscal del exportador:</span>
-      <div style="${TXT}margin-top:8px">&nbsp;</div>
+      <div style="${TXT}margin-top:8px">{{exportador.bloque}}</div>
     </td>
     <td style="${CELL}width:50%">
       <span style="${NUM}">2</span> <span style="${LBL}">Blanket period:</span><br>
