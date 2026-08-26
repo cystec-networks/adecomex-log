@@ -30,6 +30,13 @@ export const CAMPOS_PLANTILLA: CampoGrupo[] = [
       { campo: "{{expediente.suplidor}}", label: "Suplidor" },
       { campo: "{{expediente.suplidor_rnc}}", label: "RNC del suplidor" },
       { campo: "{{expediente.incoterm}}", label: "Incoterm" },
+      { campo: "{{expediente.periodo_desde_d}}", label: "Período desde (día)" },
+      { campo: "{{expediente.periodo_desde_m}}", label: "Período desde (mes)" },
+      { campo: "{{expediente.periodo_desde_a}}", label: "Período desde (año)" },
+      { campo: "{{expediente.periodo_hasta_d}}", label: "Período hasta (día)" },
+      { campo: "{{expediente.periodo_hasta_m}}", label: "Período hasta (mes)" },
+      { campo: "{{expediente.periodo_hasta_a}}", label: "Período hasta (año)" },
+      { campo: "{{expediente.certificado_remark}}", label: "Observaciones del certificado" },
     ],
   },
   {
@@ -101,6 +108,13 @@ function val(v: any): string {
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Descompone una fecha (YYYY-MM-DD) en día/mes/año; vacío si no hay dato. */
+function partesFecha(fecha: any): { d: string; m: string; a: string } {
+  const s = fecha ? String(fecha) : "";
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? { d: m[3], m: m[2], a: m[1] } : { d: "", m: "", a: "" };
 }
 
 function buildProductoMap(it: any): Record<string, any> {
@@ -239,6 +253,19 @@ export function resolverPlantilla(
     "expediente.incoterm": exp?.incoterm,
   };
 
+  // Campos que quedan EN BLANCO (sin "—") cuando no hay dato, para llenar a mano
+  const pd = partesFecha(exp?.certificado_periodo_desde);
+  const ph = partesFecha(exp?.certificado_periodo_hasta);
+  const enBlanco: Record<string, string> = {
+    "expediente.periodo_desde_d": pd.d,
+    "expediente.periodo_desde_m": pd.m,
+    "expediente.periodo_desde_a": pd.a,
+    "expediente.periodo_hasta_d": ph.d,
+    "expediente.periodo_hasta_m": ph.m,
+    "expediente.periodo_hasta_a": ph.a,
+    "expediente.certificado_remark": exp?.certificado_remark ? String(exp.certificado_remark) : "",
+  };
+
   let out = html;
 
   const paginasMarcadas = separarPaginasMarcadas(out);
@@ -270,6 +297,7 @@ export function resolverPlantilla(
       seccion.replace(/\{\{\s*([a-z]+\.[a-z_]+)\s*\}\}/gi, (_m, key: string) => {
         const k = key.toLowerCase();
         if (k in bloques) return bloques[k];
+        if (k in enBlanco) return esc(enBlanco[k]);
         if (k in simples) return esc(val(simples[k]));
 
         return "";
@@ -290,6 +318,7 @@ export function resolverPlantilla(
     out = out.replace(/\{\{\s*([a-z]+\.[a-z_]+)\s*\}\}/gi, (_m, key: string) => {
       const k = key.toLowerCase();
       if (k in bloques) return bloques[k];
+      if (k in enBlanco) return esc(enBlanco[k]);
       if (k in simples) return esc(val(simples[k]));
 
       return "";

@@ -26,6 +26,7 @@ const PlantillaEditor = lazy(() =>
 import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
 import { PLANTILLA_DRCAFTA_USA_HTML } from "@/lib/plantilla-drcafta";
+import { PLANTILLA_DRCAFTA_DGA_HTML } from "@/lib/plantilla-drcafta-dga";
 
 export const Route = createFileRoute("/_authenticated/admin/plantillas-documentos")({
   component: PlantillasDocumentosPage,
@@ -147,6 +148,23 @@ function PlantillasDocumentosPage() {
             }
           >
             <FileText className="h-4 w-4 mr-1" /> Cargar formato DR-CAFTA
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              const existente = plantillas?.find(
+                (p) => p.nombre === "Certificado de Origen DR-CAFTA (DGA)",
+              );
+              setEditando({
+                id: existente?.id,
+                nombre: "Certificado de Origen DR-CAFTA (DGA)",
+                categoria: "Certificados",
+                contenido_html: PLANTILLA_DRCAFTA_DGA_HTML,
+                activo: existente?.activo ?? true,
+              });
+            }}
+          >
+            <FileText className="h-4 w-4 mr-1" /> Cargar formato DR-CAFTA (DGA)
           </Button>
           <Button onClick={() => setEditando({ nombre: "", categoria: "Otro", contenido_html: "", activo: true })}>
             <Plus className="h-4 w-4 mr-1" /> Nueva plantilla
