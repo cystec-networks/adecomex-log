@@ -208,8 +208,11 @@ export function GenerarDocumentoButton({ exp }: { exp: any }) {
       const tipo = tipoChecklist(plantilla.nombre);
       if (tipo) setPreguntaTipo(tipo);
     } catch (e: any) {
-      toast.error(e?.message ?? "No se pudo generar el PDF");
+      console.error("[GenerarDocumento] descargar PDF", e);
+      const detalle = e?.message || e?.toString?.() || "error desconocido";
+      toast.error(`No se pudo generar el PDF: ${detalle}`);
     }
+
   };
 
   const marcarChecklist = async () => {
