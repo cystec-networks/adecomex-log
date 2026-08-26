@@ -28,6 +28,8 @@ export const Route = createFileRoute("/imprimir/solicitud-pago/$id")({
 
 function ImprimirSolicitudPago() {
   const { id } = Route.useParams();
+  const embed =
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).has("embed");
   const [data, setData] = useState<SolicitudPagoPrintData | null>(null);
   const [loading, setLoading] = useState(true);
 
