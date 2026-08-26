@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { Copy, ExternalLink, Pencil, Printer, Trash2, Truck } from "lucide-react";
 import { fmtLocalDate } from "@/lib/dates";
 import { sanitizeSearchTerm } from "@/lib/search-filter";
+import { SolicitudPagoPdfDialog } from "@/components/solicitud-pago-pdf-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/solicitudes-pago-transporte")({
   ssr: false,
@@ -140,6 +141,7 @@ function SolicitudesPagoTransportePage() {
   });
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [eliminando, setEliminando] = useState<Row | null>(null);
+  const [pdfId, setPdfId] = useState<string | null>(null);
 
   const abrirEdicion = (r: Row) => {
     setEditing(r);
@@ -302,7 +304,7 @@ function SolicitudesPagoTransportePage() {
                   </td>
                   <td className="py-2 pr-3">
                     <div className="flex flex-wrap gap-1">
-                      <Button variant="outline" size="sm" onClick={() => window.open(`/imprimir/solicitud-pago/${r.id}`, "_blank", "noopener,noreferrer")} title="Descargar PDF">
+                      <Button variant="outline" size="sm" onClick={() => setPdfId(r.id)} title="Ver comprobante PDF">
                         <Printer className="h-3.5 w-3.5 mr-1" /> PDF
                       </Button>
                       {(transportesPorSolicitud[r.id]?.length ?? 0) > 0 && (
@@ -428,6 +430,8 @@ function SolicitudesPagoTransportePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SolicitudPagoPdfDialog id={pdfId} open={!!pdfId} onOpenChange={(o) => !o && setPdfId(null)} />
 
     </div>
 

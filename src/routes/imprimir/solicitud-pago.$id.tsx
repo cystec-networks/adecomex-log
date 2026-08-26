@@ -28,6 +28,8 @@ export const Route = createFileRoute("/imprimir/solicitud-pago/$id")({
 
 function ImprimirSolicitudPago() {
   const { id } = Route.useParams();
+  const embed =
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).has("embed");
   const [data, setData] = useState<SolicitudPagoPrintData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -57,11 +59,13 @@ function ImprimirSolicitudPago() {
     <div className="min-h-screen bg-background py-6">
       <style dangerouslySetInnerHTML={{ __html: "@media print { .spt-no-print { display: none !important; } }" }} />
       <SolicitudPagoPrintView solicitud={data} />
-      <div className="spt-no-print fixed bottom-6 right-6">
-        <Button onClick={() => window.print()}>
-          <Printer className="mr-1 h-4 w-4" /> Imprimir / Guardar PDF
-        </Button>
-      </div>
+      {!embed && (
+        <div className="spt-no-print fixed bottom-6 right-6">
+          <Button onClick={() => window.print()}>
+            <Printer className="mr-1 h-4 w-4" /> Imprimir / Guardar PDF
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
