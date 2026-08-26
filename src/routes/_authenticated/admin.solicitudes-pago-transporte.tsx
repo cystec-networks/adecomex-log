@@ -141,6 +141,7 @@ function SolicitudesPagoTransportePage() {
   });
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [eliminando, setEliminando] = useState<Row | null>(null);
+  const [pdfId, setPdfId] = useState<string | null>(null);
 
   const abrirEdicion = (r: Row) => {
     setEditing(r);
@@ -429,6 +430,8 @@ function SolicitudesPagoTransportePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SolicitudPagoPdfDialog id={pdfId} open={!!pdfId} onOpenChange={(o) => !o && setPdfId(null)} />
 
     </div>
 

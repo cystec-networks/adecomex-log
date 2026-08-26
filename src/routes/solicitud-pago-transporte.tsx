@@ -234,6 +234,8 @@ function SolicitudPagoTransportePage() {
                 </Button>
               </div>
 
+              <SolicitudPagoPdfDialog id={solicitudId} open={pdfOpen} onOpenChange={setPdfOpen} />
+
 
             </CardContent>
           </Card>
