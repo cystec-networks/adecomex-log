@@ -30,6 +30,13 @@ export const CAMPOS_PLANTILLA: CampoGrupo[] = [
       { campo: "{{expediente.suplidor}}", label: "Suplidor" },
       { campo: "{{expediente.suplidor_rnc}}", label: "RNC del suplidor" },
       { campo: "{{expediente.incoterm}}", label: "Incoterm" },
+      { campo: "{{expediente.periodo_desde_d}}", label: "Período desde (día)" },
+      { campo: "{{expediente.periodo_desde_m}}", label: "Período desde (mes)" },
+      { campo: "{{expediente.periodo_desde_a}}", label: "Período desde (año)" },
+      { campo: "{{expediente.periodo_hasta_d}}", label: "Período hasta (día)" },
+      { campo: "{{expediente.periodo_hasta_m}}", label: "Período hasta (mes)" },
+      { campo: "{{expediente.periodo_hasta_a}}", label: "Período hasta (año)" },
+      { campo: "{{expediente.certificado_remark}}", label: "Observaciones del certificado" },
     ],
   },
   {
