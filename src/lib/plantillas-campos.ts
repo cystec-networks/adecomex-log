@@ -289,7 +289,9 @@ export function resolverPlantilla(
     // 2) Campos simples
     out = out.replace(/\{\{\s*([a-z]+\.[a-z_]+)\s*\}\}/gi, (_m, key: string) => {
       const k = key.toLowerCase();
+      if (k in bloques) return bloques[k];
       if (k in simples) return esc(val(simples[k]));
+
       return "";
     });
 
