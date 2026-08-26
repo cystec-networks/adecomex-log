@@ -14,7 +14,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Download, FileSignature } from "lucide-react";
+import { Download, FileSignature, Save } from "lucide-react";
 import { resolverPlantilla } from "@/lib/plantillas-campos";
 
 const CHECKLIST_MAP: Record<string, string> = {
