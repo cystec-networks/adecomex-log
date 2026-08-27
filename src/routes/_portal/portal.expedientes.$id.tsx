@@ -96,6 +96,27 @@ function PortalExpedienteDetalle() {
     },
   });
 
+  const facturaIds = (facturas ?? []).map((f: any) => f.id);
+
+  const { data: pagos } = useQuery({
+    queryKey: ["portal-cxc-pagos", facturaIds],
+    enabled: facturaIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("cxc_pagos")
+        .select("factura_id, monto")
+        .in("factura_id", facturaIds);
+      return (data ?? []) as any[];
+    },
+  });
+
+  const totalFacturado = (facturas ?? []).reduce((s, f) => s + Number(f.monto_total || 0), 0);
+  const totalPagado = (pagos ?? []).reduce((s, p) => s + Number(p.monto || 0), 0);
+  const saldoPendiente = totalFacturado - totalPagado;
+
+  const dop = (n: number) =>
+    new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
+
 
 
   if (isLoading) return <div className="text-sm text-muted-foreground">Cargando…</div>;
@@ -125,18 +146,41 @@ function PortalExpedienteDetalle() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div>
+            <div className="space-y-2">
               <div className="text-xs uppercase tracking-wider text-muted-foreground">Expediente</div>
               <CardTitle className="font-mono">{expediente.numero ?? "—"}</CardTitle>
               {expediente.bl_awb && (
-                <div className="text-sm text-muted-foreground mt-1">BL/AWB: <span className="font-mono">{expediente.bl_awb}</span></div>
+                <div className="text-sm text-muted-foreground">BL/AWB: <span className="font-mono">{expediente.bl_awb}</span></div>
               )}
-              {(expediente as any).puerto_arribo && (
-                <div className="text-sm text-muted-foreground">Puerto de llegada: <span className="font-medium text-foreground">{(expediente as any).puerto_arribo}</span></div>
-              )}
-              {(expediente as any).numero_dua && (
-                <div className="text-sm text-muted-foreground">DUA: <span className="font-mono">{(expediente as any).numero_dua}</span></div>
-              )}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                {(expediente as any).puerto_arribo && (
+                  <div className="text-muted-foreground">Puerto de llegada: <span className="font-medium text-foreground">{(expediente as any).puerto_arribo}</span></div>
+                )}
+                {(expediente as any).numero_dua && (
+                  <div className="text-muted-foreground">DUA: <span className="font-mono">{(expediente as any).numero_dua}</span></div>
+                )}
+                {(expediente as any).fecha_compromiso && (
+                  <div className="text-muted-foreground">ETA: <span className="font-medium text-foreground">{fmtLocalDate((expediente as any).fecha_compromiso)}</span></div>
+                )}
+                {(expediente as any).suplidor && (
+                  <div className="text-muted-foreground">Suplidor: <span className="font-medium text-foreground">{(expediente as any).suplidor}</span></div>
+                )}
+                {(expediente as any).pais_origen && (
+                  <div className="text-muted-foreground">País de origen: <span className="font-medium text-foreground">{(expediente as any).pais_origen}</span></div>
+                )}
+                <div className="text-muted-foreground">
+                  N° de Permiso (VUCE):{" "}
+                  <span className="font-medium text-foreground">
+                    {(expediente as any).numero_vuce ?? "No aplica"}
+                  </span>
+                </div>
+                {(expediente as any).peso_neto != null && (
+                  <div className="text-muted-foreground">Peso neto: <span className="font-medium text-foreground">{(expediente as any).peso_neto} kg</span></div>
+                )}
+                {(expediente as any).numeros_contenedores && (
+                  <div className="text-muted-foreground">Contenedores: <span className="font-mono text-foreground">{(expediente as any).numeros_contenedores}</span></div>
+                )}
+              </div>
             </div>
             <Badge variant="outline" className="text-sm">
               {estadoLabel(expediente.estado)}
@@ -144,6 +188,25 @@ function PortalExpedienteDetalle() {
           </div>
         </CardHeader>
       </Card>
+
+      {(() => {
+        const siguiente = TIMELINE[currentIdx + 1];
+        if (siguiente) {
+          return (
+            <div className="rounded-lg bg-primary/10 border border-primary/20 px-4 py-3 text-sm">
+              <span className="font-medium">Próximo paso:</span> {siguiente.label}
+            </div>
+          );
+        }
+        if (currentIdx === TIMELINE.length - 1) {
+          return (
+            <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm">
+              Proceso completado.
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base">Progreso</CardTitle></CardHeader>
@@ -311,6 +374,20 @@ function PortalExpedienteDetalle() {
             <CardTitle className="text-base">Facturas</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
+            <div className="grid grid-cols-3 gap-3 px-6 py-4 border-b">
+              <div className="rounded-lg border bg-muted/30 px-4 py-3">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Total Facturado</div>
+                <div className="text-lg font-semibold mt-1">{dop(totalFacturado)}</div>
+              </div>
+              <div className="rounded-lg border bg-muted/30 px-4 py-3">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Total Pagado</div>
+                <div className="text-lg font-semibold mt-1">{dop(totalPagado)}</div>
+              </div>
+              <div className={`rounded-lg border px-4 py-3 ${saldoPendiente > 0 ? "bg-amber-50 border-amber-200" : "bg-emerald-50 border-emerald-200"}`}>
+                <div className={`text-xs uppercase tracking-wide ${saldoPendiente > 0 ? "text-amber-700" : "text-emerald-700"}`}>Saldo Pendiente</div>
+                <div className={`text-lg font-semibold mt-1 ${saldoPendiente > 0 ? "text-amber-700" : "text-emerald-700"}`}>{dop(saldoPendiente)}</div>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
