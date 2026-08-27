@@ -2663,7 +2663,7 @@ function MercanciaItemsBlock({
                 </td>
                 <td className="px-2 py-2 text-right tabular-nums font-semibold">{fmt(totalFob)}</td>
                 <td colSpan={8}></td>
-                <td></td>
+                <td colSpan={3}></td>
                 <td colSpan={2} className="px-2 py-2 text-right tabular-nums font-semibold bg-emerald-50/60">
                   {(() => {
                     const tasaCambio = Number(tasaCambioUsada) || 0;
@@ -2675,6 +2675,7 @@ function MercanciaItemsBlock({
                   })()}
                 </td>
                 <td></td>
+              </tr>
               </tr>
             </tfoot>
           )}
