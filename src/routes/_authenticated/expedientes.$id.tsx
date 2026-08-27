@@ -3783,7 +3783,7 @@ function LiquidacionFinalPdfButton({
     const nota =
       "El ITBIS no se incluye en el Costo Unitario Real por ser crédito fiscal recuperable. " +
       "Los montos en DOP se convierten a USD con la tasa de cambio registrada en el Expediente (exp.tasa_cambio_usada).";
-    let notaY = (doc as any).lastAutoTable.finalY + 18;
+    let notaY = (doc as any).lastAutoTable.finalY + 36;
     doc.setFontSize(7.5); doc.setTextColor(110);
     const lines = doc.splitTextToSize(nota, pageW - M * 2);
     if (notaY + lines.length * 10 > pageH - 40) { doc.addPage(); notaY = 50; }
