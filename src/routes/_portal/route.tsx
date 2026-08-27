@@ -8,7 +8,7 @@ import logoAsset from "@/assets/logo-adecomex.jpg.asset.json";
 
 export const Route = createFileRoute("/_portal")({
   ssr: false,
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
     const userId = data.user.id;
