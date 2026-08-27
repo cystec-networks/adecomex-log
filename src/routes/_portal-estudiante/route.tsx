@@ -1,6 +1,7 @@
-import { createFileRoute, Outlet, redirect, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { LogOut, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
@@ -8,9 +9,9 @@ import logoAsset from "@/assets/logo-adecomex.jpg.asset.json";
 
 export const Route = createFileRoute("/_portal-estudiante")({
   ssr: false,
-  beforeLoad: async ({ location }) => {
+  beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
+    if (error || !data.user) throw redirect({ to: "/auth", search: { next: "/portal-estudiante" } });
     const userId = data.user.id;
 
     // Staff → panel interno
@@ -37,20 +38,27 @@ export const Route = createFileRoute("/_portal-estudiante")({
       throw redirect({ to: "/auth" });
     }
 
-    if (link.debe_cambiar_password
-        && !location.pathname.endsWith("/portal-estudiante/cambiar-password")) {
-      throw redirect({ to: "/portal-estudiante/cambiar-password" });
-    }
-
-    return { user: data.user, estudianteId: link.estudiante_id as string };
+    return {
+      user: data.user,
+      estudianteId: link.estudiante_id as string,
+      debeCambiarPassword: !!link.debe_cambiar_password,
+    };
   },
   component: PortalEstudianteLayout,
 });
 
 function PortalEstudianteLayout() {
-  const { estudianteId } = Route.useRouteContext();
+  const { estudianteId, debeCambiarPassword } = Route.useRouteContext();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const enCambioPassword = pathname.endsWith("/portal-estudiante/cambiar-password");
+
+  useEffect(() => {
+    if (debeCambiarPassword && !enCambioPassword) {
+      navigate({ to: "/portal-estudiante/cambiar-password", replace: true });
+    }
+  }, [debeCambiarPassword, enCambioPassword, navigate]);
 
   const { data: estudiante } = useQuery({
     queryKey: ["portal-estudiante-info", estudianteId],
@@ -71,6 +79,8 @@ function PortalEstudianteLayout() {
     toast.success("Sesión cerrada");
     navigate({ to: "/auth", replace: true });
   };
+
+
 
 
   return (
@@ -99,7 +109,7 @@ function PortalEstudianteLayout() {
         </div>
       </header>
       <main className="max-w-6xl mx-auto px-4 py-6">
-        <Outlet />
+        {debeCambiarPassword && !enCambioPassword ? null : <Outlet />}
       </main>
       <footer className="max-w-6xl mx-auto px-4 py-6 text-xs text-muted-foreground flex items-center gap-1">
         <GraduationCap className="h-3 w-3" /> ADECOMEX SRL · Portal académico de solo lectura

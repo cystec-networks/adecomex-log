@@ -1,6 +1,7 @@
-import { createFileRoute, Outlet, redirect, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { LogOut, Ship } from "lucide-react";
 import { toast } from "sonner";
@@ -8,9 +9,9 @@ import logoAsset from "@/assets/logo-adecomex.jpg.asset.json";
 
 export const Route = createFileRoute("/_portal")({
   ssr: false,
-  beforeLoad: async ({ location }) => {
+  beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
+    if (error || !data.user) throw redirect({ to: "/auth", search: { next: "/portal" } });
     const userId = data.user.id;
 
     // Staff → redirigir al dashboard interno
@@ -38,20 +39,27 @@ export const Route = createFileRoute("/_portal")({
       throw redirect({ to: "/auth" });
     }
 
-    if (link.debe_cambiar_password
-        && !location.pathname.endsWith("/portal/cambiar-password")) {
-      throw redirect({ to: "/portal/cambiar-password" });
-    }
-
-    return { user: data.user, clienteId: link.cliente_id as string };
+    return {
+      user: data.user,
+      clienteId: link.cliente_id as string,
+      debeCambiarPassword: !!link.debe_cambiar_password,
+    };
   },
   component: PortalLayout,
 });
 
 function PortalLayout() {
-  const { clienteId } = Route.useRouteContext();
+  const { clienteId, debeCambiarPassword } = Route.useRouteContext();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const enCambioPassword = pathname.endsWith("/portal/cambiar-password");
+
+  useEffect(() => {
+    if (debeCambiarPassword && !enCambioPassword) {
+      navigate({ to: "/portal/cambiar-password", replace: true });
+    }
+  }, [debeCambiarPassword, enCambioPassword, navigate]);
 
   const { data: cliente } = useQuery({
     queryKey: ["portal-cliente", clienteId],
@@ -72,6 +80,7 @@ function PortalLayout() {
     toast.success("Sesión cerrada");
     navigate({ to: "/auth", replace: true });
   };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -99,8 +108,9 @@ function PortalLayout() {
         </div>
       </header>
       <main className="max-w-6xl mx-auto px-4 py-6">
-        <Outlet />
+        {debeCambiarPassword && !enCambioPassword ? null : <Outlet />}
       </main>
+
       <footer className="max-w-6xl mx-auto px-4 py-6 text-xs text-muted-foreground flex items-center gap-1">
         <Ship className="h-3 w-3" /> ADECOMEX SRL · Portal de solo lectura
       </footer>
