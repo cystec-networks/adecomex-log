@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePortal } from "@/integrations/supabase/portal-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,9 +29,11 @@ export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>): { next?: string } =>
     typeof s.next === "string" ? { next: s.next } : {},
   beforeLoad: async ({ search }) => {
-    const { data } = await supabase.auth.getUser();
+    const next = safeNext(search.next);
+    const isPortalCliente = next?.startsWith("/portal") && !next.startsWith("/portal-estudiante");
+    const authClient = isPortalCliente ? supabasePortal : supabase;
+    const { data } = await authClient.auth.getUser();
     if (data.user) {
-      const next = safeNext(search.next);
       throw next ? redirect({ href: next }) : redirect({ to: "/" });
     }
   },
@@ -42,6 +45,9 @@ function AuthPage() {
   const { next: nextRaw } = Route.useSearch();
   const next = safeNext(nextRaw);
   const variant = useMemo(() => detectVariant(next), [next]);
+  // Portal de Cliente usa un cliente con sesión NO persistente (sessionStorage);
+  // staff y estudiantes siguen con el cliente principal (localStorage).
+  const authClient = variant === "cliente" ? supabasePortal : supabase;
   const goNext = () => {
     if (next) window.location.href = next;
     else navigate({ to: "/" });
@@ -55,17 +61,17 @@ function AuthPage() {
   const [forgotLoading, setForgotLoading] = useState(false);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+    const { data: sub } = authClient.auth.onAuthStateChange((_e, session) => {
       if (session) goNext();
     });
     return () => sub.subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate, next]);
+  }, [navigate, next, authClient]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await authClient.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
       const msg = /invalid/i.test(error.message)
@@ -84,7 +90,7 @@ function AuthPage() {
     e.preventDefault();
     if (!forgotEmail) return;
     setForgotLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+    const { error } = await authClient.auth.resetPasswordForEmail(forgotEmail, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setForgotLoading(false);
