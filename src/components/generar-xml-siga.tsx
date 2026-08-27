@@ -244,6 +244,22 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
               />
             </div>
             <div className="grid gap-1.5">
+              <Label>Email de la agencia (BizDocIssuerEmail)</Label>
+              <Input
+                value={broker.brokerEmail}
+                onChange={(e) => setBroker({ ...broker, brokerEmail: e.target.value })}
+                placeholder="info@adecomex.com.do"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Teléfono de la agencia (BizDocIssuerTel)</Label>
+              <Input
+                value={broker.brokerTel}
+                onChange={(e) => setBroker({ ...broker, brokerTel: e.target.value })}
+                placeholder="809-000-0000"
+              />
+            </div>
+            <div className="grid gap-1.5">
               <Label>Licencia / código del despachante (BrokerEmployeeCode)</Label>
               <Input value={broker.brokerEmployeeCode} onChange={(e) => setBroker({ ...broker, brokerEmployeeCode: e.target.value })} placeholder="072-08" />
             </div>
