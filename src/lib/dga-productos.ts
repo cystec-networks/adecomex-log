@@ -25,4 +25,8 @@ export type DgaProducto = {
   especificaciones: string | null;
   regimen: string | null;
   estado: string | null;
+  pct_gravamen?: number | null;
+  aplica_isc?: boolean | null;
+  pct_isc?: number | null;
+  pct_itbis?: number | null;
 };
