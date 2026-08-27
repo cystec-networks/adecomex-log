@@ -2634,10 +2634,14 @@ function MercanciaItemsBlock({
                   <td className="px-2 py-2 text-center bg-amber-50/40 text-xs">{it.aplica_isc ? "Sí" : "No"}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{it.aplica_isc && it.pct_isc != null ? `${Number(it.pct_isc)}%` : "—"}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.cifLinea)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50 text-muted-foreground">{rd(c.cifLinea)}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.gravamen)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50 text-muted-foreground">{rd(c.gravamen)}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.selectivo)}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.itbis)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50 text-muted-foreground">{rd(c.itbis)}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-emerald-50/60 font-semibold">{fmt(c.total)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums bg-emerald-50/60 font-semibold text-muted-foreground">{rd(c.total)}</td>
                   <td className="px-2 py-2 text-right whitespace-nowrap">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(it)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => duplicar.mutate(it)} title="Duplicar línea"><Copy className="h-3.5 w-3.5" /></Button>
