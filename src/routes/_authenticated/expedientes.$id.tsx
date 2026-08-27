@@ -3225,30 +3225,36 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     docRef.current = null;
   };
 
-  const { data: items } = useQuery({
-
-    queryKey: ["mercancia-items", exp.id],
-    queryFn: async () =>
-      (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
-  });
-
   const generar = async () => {
     const { jsPDF } = await import("jspdf");
     const autoTable = (await import("jspdf-autotable")).default;
 
-    const list = items ?? [];
+    // Siempre leer datos frescos de la base para que el PDF refleje los últimos cambios
+    const [itemsRes, expRes] = await Promise.all([
+      supabase
+        .from("mercancia_items")
+        .select("*")
+        .eq("expediente_id", exp.id)
+        .is("deleted_at", null)
+        .order("item_no"),
+      supabase.from("expedientes").select("*, clientes(nombre, rnc)").eq("id", exp.id).maybeSingle(),
+    ]);
+
+    const list = itemsRes.data ?? [];
+    const expData: any = expRes.data ? { ...exp, ...expRes.data } : exp;
     if (list.length === 0) {
       toast.error("El expediente no tiene ítems de mercancía.");
       return;
     }
-    const seguro = Number(exp.seguro) || 0;
-    const flete = Number(exp.flete) || 0;
-    const otros = Number(exp.otros) || 0;
+    const seguro = Number(expData.seguro) || 0;
+    const flete = Number(expData.flete) || 0;
+    const otros = Number(expData.otros) || 0;
     const totalFob = list.reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
-    const tasaCambio = Number(exp.tasa_cambio_usada) || 0;
+    const tasaCambio = Number(expData.tasa_cambio_usada) || 0;
 
     const nf = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const rd = (n: number) => (tasaCambio > 0 ? nf(n * tasaCambio) : "—");
+
 
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
@@ -3276,23 +3282,23 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     doc.setTextColor(0);
 
     const c1: [string, string][] = [
-      ["N° Expediente", exp.numero ?? "—"],
-      ["BL/AWB", exp.bl_awb ?? "—"],
-      ["Régimen", exp.regimen_aduanero ?? "—"],
-      ["Estado", ESTADO_LABEL[exp.estado ?? ""] ?? (exp.estado ?? "—")],
+      ["N° Expediente", expData.numero ?? "—"],
+      ["BL/AWB", expData.bl_awb ?? "—"],
+      ["Régimen", expData.regimen_aduanero ?? "—"],
+      ["Estado", ESTADO_LABEL[expData.estado ?? ""] ?? (expData.estado ?? "—")],
     ];
     const c2: [string, string][] = [
-      ["Depósito/Puerto arribo", exp.puerto_arribo ?? "—"],
-      ["País de procedencia", exp.pais_procedencia ?? exp.pais_procedencia_codigo ?? exp.pais_origen ?? "—"],
-      ["Manifiesto / DUA", exp.numero_dua ?? "—"],
-      ["Fecha de llegada", exp.fecha_compromiso ? fmtLocalDate(exp.fecha_compromiso) : "—"],
+      ["Depósito/Puerto arribo", expData.puerto_arribo ?? "—"],
+      ["País de procedencia", expData.pais_procedencia ?? expData.pais_procedencia_codigo ?? expData.pais_origen ?? "—"],
+      ["Manifiesto / DUA", expData.numero_dua ?? "—"],
+      ["Fecha de llegada", expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"],
     ];
 
     const c3: [string, string][] = [
-      ["Importador", exp.clientes?.nombre ?? "—"],
-      ["RNC/Documento", exp.clientes?.rnc ?? "—"],
+      ["Importador", expData.clientes?.nombre ?? "—"],
+      ["RNC/Documento", expData.clientes?.rnc ?? "—"],
       ["Agente Aduanero", "Francisco Enerio Lopez Martinez (072-08)"],
-      ["Suplidor", exp.suplidor ?? "—"],
+      ["Suplidor", expData.suplidor ?? "—"],
     ];
     const infoBody = [0, 1, 2, 3].map((i) => [
       c1[i][0], c1[i][1], c2[i][0], c2[i][1], c3[i][0], c3[i][1],
@@ -3322,7 +3328,7 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
         it.codigo_arancelario ?? "—",
         it.detalle_producto ?? "—",
         it.unidad_medida ?? "—",
-        exp.pais_origen ?? "—",
+        expData.pais_origen ?? "—",
         nf(Number(it.cantidad) || 0),
         nf(fob),
         nf(c.cifLinea),
@@ -3357,8 +3363,8 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
       startY: (doc as any).lastAutoTable.finalY + 12,
       head: [["Peso de la mercancía", ""]],
       body: [
-        ["Peso Bruto", exp.peso_bruto != null ? `${nf(Number(exp.peso_bruto))} kg` : "—"],
-        ["Peso Neto", exp.peso_neto != null ? `${nf(Number(exp.peso_neto))} kg` : "—"],
+        ["Peso Bruto", expData.peso_bruto != null ? `${nf(Number(expData.peso_bruto))} kg` : "—"],
+        ["Peso Neto", expData.peso_neto != null ? `${nf(Number(expData.peso_neto))} kg` : "—"],
       ],
       theme: "grid",
       headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
@@ -3368,7 +3374,7 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
       tableWidth: 300,
     });
 
-    const contenedores = String(exp.numeros_contenedores ?? "").trim();
+    const contenedores = String(expData.numeros_contenedores ?? "").trim();
     if (contenedores) {
       autoTable(doc, {
         startY: (doc as any).lastAutoTable.finalY + 12,
@@ -3393,11 +3399,11 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
       startY: startResumen,
       head: [mostrarRd ? ["Valores", "RD$", "US$"] : ["Valores", "US$"]],
       body: [
-        filaResumen("Total FOB", Number(exp.total_fob) || totals.fob),
+        filaResumen("Total FOB", Number(expData.total_fob) || totals.fob),
         filaResumen("Seguro", seguro),
         filaResumen("Flete", flete),
         filaResumen("Otros", otros),
-        filaResumen("Total CIF", Number(exp.total_cif) || totals.cif),
+        filaResumen("Total CIF", Number(expData.total_cif) || totals.cif),
       ],
       theme: "grid",
       headStyles: { fillColor: [30, 58, 138], fontSize: resumenFontSize },
@@ -3454,7 +3460,7 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     }
 
     const fecha = new Date().toISOString().slice(0, 10);
-    fileNameRef.current = `PreLiquidacion_${exp.numero ?? "expediente"}_${fecha}.pdf`;
+    fileNameRef.current = `PreLiquidacion_${expData.numero ?? "expediente"}_${fecha}.pdf`;
     docRef.current = doc;
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(doc.output("bloburl").toString());
