@@ -408,6 +408,11 @@ function TabInfo({ exp }: { exp: any }) {
   });
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
+  // etapa_actual se actualiza desde otra mutación (avanzar etapas); resincronízalo.
+  useEffect(() => {
+    setForm((f) => ({ ...f, etapa_actual: exp.etapa_actual ?? 1 }));
+  }, [exp.etapa_actual]);
+
 
 
   // Pull existing values across expedientes to feed suggestions dynamically
