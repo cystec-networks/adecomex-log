@@ -3331,21 +3331,21 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
         expData.pais_origen ?? "—",
         nf(Number(it.cantidad) || 0),
         nf(fob),
-        nf(c.cifLinea),
-        nf(c.gravamen),
-        nf(c.selectivo),
-        nf(c.itbis),
-        nf(c.total),
+        rd(c.cifLinea),
+        rd(c.gravamen),
+        rd(c.selectivo),
+        rd(c.itbis),
+        rd(c.total),
       ];
     });
 
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 12,
-      head: [["Item", "Arancel", "Descripción", "Unidad", "Origen", "Cantidad", "FOB", "CIF", "Gravamen", "Selectivo", "ITBIS", "Total"]],
+      head: [["Item", "Arancel", "Descripción", "Unidad", "Origen", "Cantidad", "FOB (US$)", "CIF (RD$)", "Gravamen (RD$)", "ISC (RD$)", "ITBIS (RD$)", "Total imp. (RD$)"]],
       body,
       foot: [[
-        "", "", "TOTALES", "", "", nf(totals.cant), nf(totals.fob), nf(totals.cif),
-        nf(totals.grav), nf(totals.isc), nf(totals.itbis), nf(totals.total),
+        "", "", "TOTALES", "", "", nf(totals.cant), nf(totals.fob), rd(totals.cif),
+        rd(totals.grav), rd(totals.isc), rd(totals.itbis), rd(totals.total),
       ]],
       theme: "grid",
       headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
@@ -3445,7 +3445,7 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
       "Este documento es una pre-liquidación estimada generada por ADECOMEX SRL con fines de planificación interna. " +
       "Los montos aquí presentados son referenciales y están sujetos a la liquidación oficial que emita la Dirección General de Aduanas (DGA), " +
       "la cual puede variar según revisión de valor, clasificación arancelaria, origen, cantidad u otros elementos determinados por la autoridad aduanera.";
-    let notaY = (doc as any).lastAutoTable.finalY + 18;
+    let notaY = (doc as any).lastAutoTable.finalY + 36;
     doc.setFontSize(7.5); doc.setTextColor(110);
     const lines = doc.splitTextToSize(nota, pageW - M * 2);
     if (notaY + lines.length * 10 > pageH - 40) { doc.addPage(); notaY = 50; }
