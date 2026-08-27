@@ -374,6 +374,20 @@ function PortalExpedienteDetalle() {
             <CardTitle className="text-base">Facturas</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
+            <div className="grid grid-cols-3 gap-3 px-6 py-4 border-b">
+              <div className="rounded-lg border bg-muted/30 px-4 py-3">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Total Facturado</div>
+                <div className="text-lg font-semibold mt-1">{dop(totalFacturado)}</div>
+              </div>
+              <div className="rounded-lg border bg-muted/30 px-4 py-3">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Total Pagado</div>
+                <div className="text-lg font-semibold mt-1">{dop(totalPagado)}</div>
+              </div>
+              <div className={`rounded-lg border px-4 py-3 ${saldoPendiente > 0 ? "bg-amber-50 border-amber-200" : "bg-emerald-50 border-emerald-200"}`}>
+                <div className={`text-xs uppercase tracking-wide ${saldoPendiente > 0 ? "text-amber-700" : "text-emerald-700"}`}>Saldo Pendiente</div>
+                <div className={`text-lg font-semibold mt-1 ${saldoPendiente > 0 ? "text-amber-700" : "text-emerald-700"}`}>{dop(saldoPendiente)}</div>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
