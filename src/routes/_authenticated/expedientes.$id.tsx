@@ -3534,6 +3534,13 @@ function LiquidacionFinalPdfButton({
     const autoTable = (await import("jspdf-autotable")).default;
 
     const nf = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // Convierte un valor en USD a RD$ usando la tasa de cambio del expediente.
+    // Devuelve "—" si no hay tasa cargada (0/null) para evitar RD$0.00 engañosos.
+    const rd = (usd: number | null | undefined) => {
+      if (usd == null) return "—";
+      if (!tasaCambio || tasaCambio <= 0) return "—";
+      return nf(usd * tasaCambio);
+    };
 
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
