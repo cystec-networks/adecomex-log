@@ -3604,13 +3604,13 @@ function LiquidacionFinalPdfButton({
     autoTable(doc, {
       startY: 106,
       head: [[
-        "Descripción", "Cantidad", "Gravamen Est.", "Gravamen Real", "ISC Est.", "ISC Real",
-        "ITBIS Est.", "ITBIS Real", "Costo Unit. Real", "Costo de Venta", "Margen Unit.", "% Margen",
+        "Descripción", "Cantidad", "Gravamen Est. (RD$)", "Gravamen Real (RD$)", "ISC Est. (RD$)", "ISC Real (RD$)",
+        "ITBIS Est. (RD$)", "ITBIS Real (RD$)", "Costo Unit. Real", "Costo de Venta", "Margen Unit.", "% Margen",
       ]],
       body,
       foot: [[
-        "TOTALES", nf(t.cant), nf(t.gEst), nf(t.gReal), nf(t.iEst), nf(t.iReal),
-        nf(t.tEst), nf(t.tReal), "", "", nf(margenTotal), `${margenPct.toFixed(1)}%`,
+        "TOTALES", nf(t.cant), rd(t.gEst), rd(t.gReal), rd(t.iEst), rd(t.iReal),
+        rd(t.tEst), rd(t.tReal), "", "", nf(margenTotal), `${margenPct.toFixed(1)}%`,
       ]],
       theme: "grid",
       headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
