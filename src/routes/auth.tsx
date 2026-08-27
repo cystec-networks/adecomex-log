@@ -208,7 +208,7 @@ function AuthPage() {
             <DialogHeader>
               <DialogTitle>Restablecer contraseña</DialogTitle>
               <DialogDescription>
-                Ingresa tu correo corporativo. Si existe una cuenta, recibirás un enlace para definir una nueva contraseña.
+                {forgotHint} Si existe una cuenta, recibirás un enlace para definir una nueva contraseña.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleForgot} className="space-y-3">
