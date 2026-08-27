@@ -3651,7 +3651,10 @@ function LiquidacionFinalPdfButton({
         it.detalle_producto ?? "—",
         nf(cant),
         nf(u(fob)), nf(u(segL)), nf(u(fleL)), nf(u(otrL)),
-        nf(u(c.est.cifLinea)), nf(u(c.gr ?? 0)), nf(u(c.ir ?? 0)), nf(u(gpL)),
+        rd(u(c.est.cifLinea)),
+        c.gr == null ? "—" : rd(u(c.gr)),
+        c.ir == null ? "—" : rd(u(c.ir)),
+        nf(u(gpL)),
         nf(c.costoUnit),
       ];
     });
