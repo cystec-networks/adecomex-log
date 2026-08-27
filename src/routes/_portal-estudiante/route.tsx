@@ -37,8 +37,8 @@ export const Route = createFileRoute("/_portal-estudiante")({
       throw redirect({ to: "/auth" });
     }
 
-    if (link.debe_cambiar_password && typeof window !== "undefined"
-        && !window.location.pathname.endsWith("/portal-estudiante/cambiar-password")) {
+    if (link.debe_cambiar_password
+        && !location.pathname.endsWith("/portal-estudiante/cambiar-password")) {
       throw redirect({ to: "/portal-estudiante/cambiar-password" });
     }
 
