@@ -1,13 +1,22 @@
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Ship, Loader2 } from "lucide-react";
+import { Ship, GraduationCap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+
+type PortalVariant = "cliente" | "estudiante" | null;
+
+function detectVariant(next: string | null): PortalVariant {
+  if (!next) return null;
+  if (next.startsWith("/portal-estudiante")) return "estudiante";
+  if (next.startsWith("/portal")) return "cliente";
+  return null;
+}
 
 function safeNext(next: unknown): string | null {
   if (typeof next !== "string") return null;
@@ -32,6 +41,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const { next: nextRaw } = Route.useSearch();
   const next = safeNext(nextRaw);
+  const variant = useMemo(() => detectVariant(next), [next]);
   const goNext = () => {
     if (next) window.location.href = next;
     else navigate({ to: "/" });
@@ -85,24 +95,73 @@ function AuthPage() {
   };
 
 
+  const portalTitle =
+    variant === "cliente"
+      ? "Portal de Clientes"
+      : variant === "estudiante"
+        ? "Portal de Estudiantes"
+        : null;
+
+  const heroTitle =
+    variant === "cliente"
+      ? "Consulta el estado de tus expedientes y gestiones aduanales en tiempo real."
+      : variant === "estudiante"
+        ? "Accede a tus programas, materiales y progreso académico."
+        : "Gestión integral de importaciones y trámites aduanales.";
+
+  const heroSubtitle =
+    variant === "cliente"
+      ? "Accede con tu cuenta de cliente para dar seguimiento a tus importaciones."
+      : variant === "estudiante"
+        ? "Accede con tu cuenta de estudiante para ver tus programas y materiales."
+        : "Acceso restringido al personal interno autorizado por ADECOMEX SRL.";
+
+  const cardTitle = portalTitle ?? "Acceso al sistema";
+  const cardSubtitle =
+    variant === "cliente"
+      ? "Ingresa con tu cuenta de cliente"
+      : variant === "estudiante"
+        ? "Ingresa con tu cuenta de estudiante"
+        : "Ingresa con tu cuenta corporativa";
+
+  const forgotHint =
+    variant === "cliente"
+      ? "Ingresa tu correo de cliente."
+      : variant === "estudiante"
+        ? "Ingresa tu correo de estudiante."
+        : "Ingresa tu correo corporativo.";
+
+  const helpText =
+    variant === "cliente"
+      ? "¿No tienes acceso? Contacta a tu ejecutivo de cuenta en ADECOMEX SRL."
+      : variant === "estudiante"
+        ? "¿No tienes acceso? Contacta a la coordinación académica de ADECOMEX SRL."
+        : "¿No tienes acceso? Solicítalo al administrador del sistema.";
+
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       <div className="hidden lg:flex flex-col justify-between p-12 bg-[var(--primary-deep)] text-primary-foreground">
         <div className="flex items-center gap-3">
           <div className="h-11 w-11 grid place-items-center rounded-lg bg-accent text-accent-foreground">
-            <Ship className="h-6 w-6" />
+            {variant === "estudiante" ? <GraduationCap className="h-6 w-6" /> : <Ship className="h-6 w-6" />}
           </div>
           <div>
             <div className="font-display font-bold text-xl leading-tight">ADECOMEX SRL</div>
-            <div className="text-xs opacity-70">GESTION Y LOGISTICA</div>
+            <div className="text-xs opacity-70">
+              {variant === "cliente"
+                ? "PORTAL DE CLIENTES"
+                : variant === "estudiante"
+                  ? "PORTAL DE ESTUDIANTES"
+                  : "GESTION Y LOGISTICA"}
+            </div>
           </div>
         </div>
         <div>
           <h1 className="font-display text-4xl font-bold leading-tight">
-            Gestión integral de importaciones y trámites aduanales.
+            {heroTitle}
           </h1>
           <p className="mt-4 text-primary-foreground/70 max-w-md">
-            Acceso restringido al personal interno autorizado por ADECOMEX SRL.
+            {heroSubtitle}
           </p>
         </div>
         <div className="text-xs opacity-60">© {new Date().getFullYear()} ADECOMEX SRL</div>
@@ -111,8 +170,8 @@ function AuthPage() {
       <div className="flex items-center justify-center p-6 sm:p-12">
         <Card className="w-full max-w-md border-border/60">
           <CardHeader>
-            <CardTitle className="font-display text-2xl">Acceso al sistema</CardTitle>
-            <CardDescription>Ingresa con tu cuenta corporativa</CardDescription>
+            <CardTitle className="font-display text-2xl">{cardTitle}</CardTitle>
+            <CardDescription>{cardSubtitle}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
@@ -138,7 +197,7 @@ function AuthPage() {
                 Entrar
               </Button>
               <p className="text-xs text-muted-foreground text-center pt-2">
-                ¿No tienes acceso? Solicítalo al administrador del sistema.
+                {helpText}
               </p>
             </form>
           </CardContent>
@@ -149,7 +208,7 @@ function AuthPage() {
             <DialogHeader>
               <DialogTitle>Restablecer contraseña</DialogTitle>
               <DialogDescription>
-                Ingresa tu correo corporativo. Si existe una cuenta, recibirás un enlace para definir una nueva contraseña.
+                {forgotHint} Si existe una cuenta, recibirás un enlace para definir una nueva contraseña.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleForgot} className="space-y-3">
