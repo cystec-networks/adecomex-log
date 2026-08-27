@@ -2600,7 +2600,7 @@ function MercanciaItemsBlock({
           </thead>
           <tbody>
             {(items ?? []).length === 0 ? (
-              <tr><td colSpan={17} className="px-3 py-6 text-center text-xs text-muted-foreground">Sin ítems. Agrega el primero.</td></tr>
+              <tr><td colSpan={21} className="px-3 py-6 text-center text-xs text-muted-foreground">Sin ítems. Agrega el primero.</td></tr>
             ) : (items ?? []).map((it: any) => {
               const c = calcImpuestosLinea(
                 Number(it.valor_fob) || 0, totalFob, seguro, flete, otros,
