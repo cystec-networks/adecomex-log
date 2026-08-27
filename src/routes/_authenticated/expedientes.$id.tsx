@@ -2687,6 +2687,8 @@ function MercanciaItemsBlock({
           <div className="rounded-md border bg-muted/30 p-3">
             <DgaProductoSearch
               onSelect={(p, reusarCodigo) => {
+                const tieneTasaFija =
+                  p.pct_gravamen != null || p.pct_isc != null || p.pct_itbis != null;
                 setF((prev) => ({
                   ...prev,
                   product_code: reusarCodigo ? (p.codigo_producto ?? "") : "",
@@ -2698,10 +2700,20 @@ function MercanciaItemsBlock({
                   modelo: p.modelo ?? "",
                   especificaciones: p.especificaciones ?? "",
                   unidad_medida: prev.unidad_medida || (p.unidad ?? ""),
+                  ...(tieneTasaFija
+                    ? {
+                        pct_gravamen: p.pct_gravamen != null ? String(p.pct_gravamen) : prev.pct_gravamen,
+                        aplica_isc: !!p.aplica_isc,
+                        pct_isc: p.aplica_isc && p.pct_isc != null ? String(p.pct_isc) : "",
+                        pct_itbis: p.pct_itbis != null ? String(p.pct_itbis) : prev.pct_itbis,
+                      }
+                    : {}),
                 }));
+                setTasaBloqueada(tieneTasaFija);
                 toast.success(reusarCodigo ? "Producto copiado con su ProductCode" : "Datos copiados — SIGA asignará un ProductCode nuevo");
               }}
             />
+
           </div>
           <div className="grid gap-3 md:grid-cols-2">
 
