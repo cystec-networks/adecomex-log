@@ -2420,6 +2420,8 @@ function MercanciaItemsBlock({
 
   const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
   const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const tasaCambioNum = Number(tasaCambioUsada) || 0;
+  const rd = (n: number) => tasaCambioNum > 0 ? fmt(n * tasaCambioNum) : "—";
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["mercancia-items", expedienteId] });
