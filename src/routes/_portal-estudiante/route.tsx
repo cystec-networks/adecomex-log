@@ -109,7 +109,7 @@ function PortalEstudianteLayout() {
         </div>
       </header>
       <main className="max-w-6xl mx-auto px-4 py-6">
-        <Outlet />
+        {debeCambiarPassword && !enCambioPassword ? null : <Outlet />}
       </main>
       <footer className="max-w-6xl mx-auto px-4 py-6 text-xs text-muted-foreground flex items-center gap-1">
         <GraduationCap className="h-3 w-3" /> ADECOMEX SRL · Portal académico de solo lectura
