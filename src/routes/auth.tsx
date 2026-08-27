@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePortal } from "@/integrations/supabase/portal-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,9 +29,11 @@ export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>): { next?: string } =>
     typeof s.next === "string" ? { next: s.next } : {},
   beforeLoad: async ({ search }) => {
-    const { data } = await supabase.auth.getUser();
+    const next = safeNext(search.next);
+    const isPortalCliente = next?.startsWith("/portal") && !next.startsWith("/portal-estudiante");
+    const authClient = isPortalCliente ? supabasePortal : supabase;
+    const { data } = await authClient.auth.getUser();
     if (data.user) {
-      const next = safeNext(search.next);
       throw next ? redirect({ href: next }) : redirect({ to: "/" });
     }
   },
