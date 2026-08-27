@@ -2676,7 +2676,6 @@ function MercanciaItemsBlock({
                 </td>
                 <td></td>
               </tr>
-              </tr>
             </tfoot>
           )}
         </table>
