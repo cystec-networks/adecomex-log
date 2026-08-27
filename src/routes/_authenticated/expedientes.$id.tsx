@@ -3534,6 +3534,13 @@ function LiquidacionFinalPdfButton({
     const autoTable = (await import("jspdf-autotable")).default;
 
     const nf = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // Convierte un valor en USD a RD$ usando la tasa de cambio del expediente.
+    // Devuelve "—" si no hay tasa cargada (0/null) para evitar RD$0.00 engañosos.
+    const rd = (usd: number | null | undefined) => {
+      if (usd == null) return "—";
+      if (!tasaCambio || tasaCambio <= 0) return "—";
+      return nf(usd * tasaCambio);
+    };
 
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
@@ -3581,9 +3588,9 @@ function LiquidacionFinalPdfButton({
       return [
         it.detalle_producto ?? "—",
         nf(c.cant),
-        nf(c.est.gravamen), c.gr == null ? "—" : nf(c.gr),
-        nf(c.est.selectivo), c.ir == null ? "—" : nf(c.ir),
-        nf(c.est.itbis), c.tr == null ? "—" : nf(c.tr),
+        rd(c.est.gravamen), rd(c.gr),
+        rd(c.est.selectivo), rd(c.ir),
+        rd(c.est.itbis), rd(c.tr),
         nf(c.costoUnit),
         c.cv == null ? "—" : nf(c.cv),
         c.cv == null ? "—" : nf(margenUnit),
@@ -3597,13 +3604,13 @@ function LiquidacionFinalPdfButton({
     autoTable(doc, {
       startY: 106,
       head: [[
-        "Descripción", "Cantidad", "Gravamen Est.", "Gravamen Real", "ISC Est.", "ISC Real",
-        "ITBIS Est.", "ITBIS Real", "Costo Unit. Real", "Costo de Venta", "Margen Unit.", "% Margen",
+        "Descripción", "Cantidad", "Gravamen Est. (RD$)", "Gravamen Real (RD$)", "ISC Est. (RD$)", "ISC Real (RD$)",
+        "ITBIS Est. (RD$)", "ITBIS Real (RD$)", "Costo Unit. Real", "Costo de Venta", "Margen Unit.", "% Margen",
       ]],
       body,
       foot: [[
-        "TOTALES", nf(t.cant), nf(t.gEst), nf(t.gReal), nf(t.iEst), nf(t.iReal),
-        nf(t.tEst), nf(t.tReal), "", "", nf(margenTotal), `${margenPct.toFixed(1)}%`,
+        "TOTALES", nf(t.cant), rd(t.gEst), rd(t.gReal), rd(t.iEst), rd(t.iReal),
+        rd(t.tEst), rd(t.tReal), "", "", nf(margenTotal), `${margenPct.toFixed(1)}%`,
       ]],
       theme: "grid",
       headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
@@ -3644,7 +3651,10 @@ function LiquidacionFinalPdfButton({
         it.detalle_producto ?? "—",
         nf(cant),
         nf(u(fob)), nf(u(segL)), nf(u(fleL)), nf(u(otrL)),
-        nf(u(c.est.cifLinea)), nf(u(c.gr ?? 0)), nf(u(c.ir ?? 0)), nf(u(gpL)),
+        rd(u(c.est.cifLinea)),
+        c.gr == null ? "—" : rd(u(c.gr)),
+        c.ir == null ? "—" : rd(u(c.ir)),
+        nf(u(gpL)),
         nf(c.costoUnit),
       ];
     });
@@ -3653,13 +3663,13 @@ function LiquidacionFinalPdfButton({
       startY: (doc as any).lastAutoTable.finalY + 12,
       head: [[
         "Desglose del Costo Unitario Real por Producto", "Cantidad", "FOB Unit.", "Seguro Unit.",
-        "Flete Unit.", "Otros Unit.", "CIF Unit.", "Gravamen Real Unit.", "ISC Real Unit.",
+        "Flete Unit.", "Otros Unit.", "CIF Unit. (RD$)", "Gravamen Real Unit. (RD$)", "ISC Real Unit. (RD$)",
         "Gastos Prod. Unit.", "Costo Unit. Real",
       ]],
       body: bodyDesglose,
       foot: [[
         "TOTALES", nf(td.cant), nf(td.fob), nf(td.seg), nf(td.fle), nf(td.otr),
-        nf(td.cif), nf(td.gr), nf(td.ir), nf(td.gp), nf(td.cu),
+        rd(td.cif), rd(td.gr), rd(td.ir), nf(td.gp), nf(td.cu),
       ]],
       theme: "grid",
       headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
@@ -3773,7 +3783,7 @@ function LiquidacionFinalPdfButton({
     const nota =
       "El ITBIS no se incluye en el Costo Unitario Real por ser crédito fiscal recuperable. " +
       "Los montos en DOP se convierten a USD con la tasa de cambio registrada en el Expediente (exp.tasa_cambio_usada).";
-    let notaY = (doc as any).lastAutoTable.finalY + 18;
+    let notaY = (doc as any).lastAutoTable.finalY + 36;
     doc.setFontSize(7.5); doc.setTextColor(110);
     const lines = doc.splitTextToSize(nota, pageW - M * 2);
     if (notaY + lines.length * 10 > pageH - 40) { doc.addPage(); notaY = 50; }
