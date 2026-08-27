@@ -41,6 +41,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const { next: nextRaw } = Route.useSearch();
   const next = safeNext(nextRaw);
+  const variant = useMemo(() => detectVariant(next), [next]);
   const goNext = () => {
     if (next) window.location.href = next;
     else navigate({ to: "/" });
