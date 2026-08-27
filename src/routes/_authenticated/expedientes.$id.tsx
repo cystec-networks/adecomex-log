@@ -2586,11 +2586,15 @@ function MercanciaItemsBlock({
               <th className="px-2 py-2 text-right bg-amber-50">% Grav.</th>
               <th className="px-2 py-2 text-center bg-amber-50">ISC?</th>
               <th className="px-2 py-2 text-right bg-amber-50">% ISC</th>
-              <th className="px-2 py-2 text-right bg-slate-50">CIF línea</th>
-              <th className="px-2 py-2 text-right bg-slate-50">Gravamen</th>
+              <th className="px-2 py-2 text-right bg-slate-50">CIF línea (US$)</th>
+              <th className="px-2 py-2 text-right bg-slate-50">CIF línea (RD$)</th>
+              <th className="px-2 py-2 text-right bg-slate-50">Gravamen (US$)</th>
+              <th className="px-2 py-2 text-right bg-slate-50">Gravamen (RD$)</th>
               <th className="px-2 py-2 text-right bg-slate-50">Selectivo</th>
-              <th className="px-2 py-2 text-right bg-slate-50">ITBIS</th>
-              <th className="px-2 py-2 text-right bg-emerald-50">Total imp.</th>
+              <th className="px-2 py-2 text-right bg-slate-50">ITBIS (US$)</th>
+              <th className="px-2 py-2 text-right bg-slate-50">ITBIS (RD$)</th>
+              <th className="px-2 py-2 text-right bg-emerald-50">Total imp. (US$)</th>
+              <th className="px-2 py-2 text-right bg-emerald-50">Total imp. (RD$)</th>
               <th className="px-2 py-2 text-right w-20"></th>
             </tr>
           </thead>
