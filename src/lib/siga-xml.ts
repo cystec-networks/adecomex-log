@@ -21,6 +21,10 @@ export type BrokerConfig = {
   transportNationality: string;
   /** Código numérico DGA del país (214 = República Dominicana) */
   defaultNationality: string;
+  /** Email de ADECOMEX (emisor de los documentos ante SIGA) */
+  brokerEmail: string;
+  /** Teléfono de ADECOMEX (emisor de los documentos ante SIGA) */
+  brokerTel: string;
 };
 
 const BROKER_KEY = "adecomex.siga.broker";
@@ -38,6 +42,8 @@ export const DEFAULT_BROKER: BrokerConfig = {
   transportCompanyCode: "",
   transportNationality: "214",
   defaultNationality: "214",
+  brokerEmail: "info@adecomex.com.do",
+  brokerTel: "809-000-0000",
 };
 
 // Migra valores ISO alfa-2 antiguos ("DO") al código numérico DGA (214)
@@ -356,8 +362,8 @@ ${T("Remark", desc, "   ")}
   // Emisor de los documentos: se toma de los datos capturados en el expediente,
   // con el cliente y el agente (ADECOMEX) como respaldo cuando falten.
   const cli = exp.clientes ?? {};
-  const tel = String(cli.telefono || "").trim() || "809-000-0000";
-  const mail = String(cli.email || "").trim() || "info@adecomex.com.do";
+  const tel = broker.brokerTel || "809-000-0000";
+  const mail = broker.brokerEmail || "info@adecomex.com.do";
   const nombreSuplidor = (exp.suplidor || "").trim();
   const nombreNaviera = (exp.naviera || "").trim();
 
