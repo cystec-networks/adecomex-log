@@ -3663,13 +3663,13 @@ function LiquidacionFinalPdfButton({
       startY: (doc as any).lastAutoTable.finalY + 12,
       head: [[
         "Desglose del Costo Unitario Real por Producto", "Cantidad", "FOB Unit.", "Seguro Unit.",
-        "Flete Unit.", "Otros Unit.", "CIF Unit.", "Gravamen Real Unit.", "ISC Real Unit.",
+        "Flete Unit.", "Otros Unit.", "CIF Unit. (RD$)", "Gravamen Real Unit. (RD$)", "ISC Real Unit. (RD$)",
         "Gastos Prod. Unit.", "Costo Unit. Real",
       ]],
       body: bodyDesglose,
       foot: [[
         "TOTALES", nf(td.cant), nf(td.fob), nf(td.seg), nf(td.fle), nf(td.otr),
-        nf(td.cif), nf(td.gr), nf(td.ir), nf(td.gp), nf(td.cu),
+        rd(td.cif), rd(td.gr), rd(td.ir), nf(td.gp), nf(td.cu),
       ]],
       theme: "grid",
       headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
