@@ -4948,7 +4948,12 @@ export type Database = {
           id: string | null
           numero: string | null
           numero_dua: string | null
+          numero_vuce: string | null
+          numeros_contenedores: string | null
+          pais_origen: string | null
+          peso_neto: number | null
           puerto_arribo: string | null
+          suplidor: string | null
         }
         Insert: {
           bl_awb?: string | null
@@ -4966,7 +4971,12 @@ export type Database = {
           id?: string | null
           numero?: string | null
           numero_dua?: string | null
+          numero_vuce?: string | null
+          numeros_contenedores?: string | null
+          pais_origen?: string | null
+          peso_neto?: number | null
           puerto_arribo?: string | null
+          suplidor?: string | null
         }
         Update: {
           bl_awb?: string | null
@@ -4984,7 +4994,12 @@ export type Database = {
           id?: string | null
           numero?: string | null
           numero_dua?: string | null
+          numero_vuce?: string | null
+          numeros_contenedores?: string | null
+          pais_origen?: string | null
+          peso_neto?: number | null
           puerto_arribo?: string | null
+          suplidor?: string | null
         }
         Relationships: [
           {
