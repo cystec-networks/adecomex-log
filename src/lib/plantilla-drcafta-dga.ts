@@ -87,7 +87,7 @@ function tablaMercancias(): string {
     <td style="${CELL}width:12%"><span style="${NUM}">9</span> <span style="${LBLB}">Productor</span></td>
     <td style="${CELL}width:15%"><span style="${NUM}">10</span> <span style="${LBLB}">País de origen</span></td>
   </tr>
-  <tr data-relleno="12">
+  <tr data-relleno="8">
     <td style="${CELL}${TXT}height:20px">{{producto.descripcion}}</td>
     <td style="${CELL}${TXT}text-align:center">{{producto.codigo_arancelario}}</td>
     <td style="${CELL}${TXT}text-align:center">&nbsp;</td>
