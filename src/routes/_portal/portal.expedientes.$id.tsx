@@ -168,6 +168,25 @@ function PortalExpedienteDetalle() {
         </CardHeader>
       </Card>
 
+      {(() => {
+        const siguiente = TIMELINE[currentIdx + 1];
+        if (siguiente) {
+          return (
+            <div className="rounded-lg bg-primary/10 border border-primary/20 px-4 py-3 text-sm">
+              <span className="font-medium">Próximo paso:</span> {siguiente.label}
+            </div>
+          );
+        }
+        if (currentIdx === TIMELINE.length - 1) {
+          return (
+            <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm">
+              Proceso completado.
+            </div>
+          );
+        }
+        return null;
+      })()}
+
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base">Progreso</CardTitle></CardHeader>
         <CardContent>
