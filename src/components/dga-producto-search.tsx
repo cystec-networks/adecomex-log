@@ -37,7 +37,7 @@ export function DgaProductoSearch({ onSelect }: Props) {
       setLoading(true);
       const { data } = await supabase
         .from("dga_productos_historico")
-        .select("codigo_producto,partida_arancelaria,nombre_producto,cod_marca,marca,cod_modelo,modelo,unidad,pais,especificaciones,regimen,estado")
+        .select("codigo_producto,partida_arancelaria,nombre_producto,cod_marca,marca,cod_modelo,modelo,unidad,pais,especificaciones,regimen,estado,pct_gravamen,aplica_isc,pct_isc,pct_itbis")
         .ilike("busqueda", `%${term.replace(/[%_]/g, " ")}%`)
         .order("nombre_producto")
         .limit(15);

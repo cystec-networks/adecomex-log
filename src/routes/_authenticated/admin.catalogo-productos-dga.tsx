@@ -8,7 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Upload, Search, Loader2, Trash2, PackageSearch } from "lucide-react";
+import { Upload, Search, Loader2, Trash2, PackageSearch, Pencil } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -88,6 +94,7 @@ function CatalogoProductosDgaPage() {
   const [q, setQ] = useState("");
   const [subiendo, setSubiendo] = useState(false);
   const [borrar, setBorrar] = useState<string | null>(null);
+  const [editar, setEditar] = useState<any | null>(null);
 
   const { data: total } = useQuery({
     queryKey: ["dga-productos-count"],
@@ -118,6 +125,35 @@ function CatalogoProductosDgaPage() {
       toast.success("Producto eliminado del histórico");
       qc.invalidateQueries({ queryKey: ["dga-productos-list"] });
       qc.invalidateQueries({ queryKey: ["dga-productos-count"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const guardar = useMutation({
+    mutationFn: async (r: any) => {
+      const num = (v: any) => (v === "" || v == null ? null : Number(v));
+      const { error } = await supabase
+        .from("dga_productos_historico")
+        .update({
+          nombre_producto: r.nombre_producto || null,
+          partida_arancelaria: r.partida_arancelaria || null,
+          marca: r.marca || null,
+          modelo: r.modelo || null,
+          unidad: r.unidad || null,
+          pais: r.pais || null,
+          especificaciones: r.especificaciones || null,
+          pct_gravamen: num(r.pct_gravamen),
+          aplica_isc: !!r.aplica_isc,
+          pct_isc: r.aplica_isc ? num(r.pct_isc) : null,
+          pct_itbis: num(r.pct_itbis),
+        })
+        .eq("codigo_producto", r.codigo_producto);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Producto actualizado");
+      setEditar(null);
+      qc.invalidateQueries({ queryKey: ["dga-productos-list"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -218,12 +254,15 @@ function CatalogoProductosDgaPage() {
                 <th className="px-2 py-2 text-left">País</th>
                 <th className="px-2 py-2 text-left">Régimen</th>
                 <th className="px-2 py-2 text-left">Estado</th>
-                <th className="px-2 py-2 w-12"></th>
+                <th className="px-2 py-2 text-right bg-amber-50">Grav. %</th>
+                <th className="px-2 py-2 text-right bg-amber-50">ISC %</th>
+                <th className="px-2 py-2 text-right bg-amber-50">ITBIS %</th>
+                <th className="px-2 py-2 w-20"></th>
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 ? (
-                <tr><td colSpan={10} className="px-3 py-8 text-center text-xs text-muted-foreground">
+                <tr><td colSpan={13} className="px-3 py-8 text-center text-xs text-muted-foreground">
                   {q ? "Sin resultados." : "Aún no has cargado productos. Sube tu primer archivo .xlsx."}
                 </td></tr>
               ) : rows.map((r: any) => (
@@ -237,7 +276,19 @@ function CatalogoProductosDgaPage() {
                   <td className="px-2 py-2 text-xs">{r.pais || "—"}</td>
                   <td className="px-2 py-2 text-xs">{r.regimen || "—"}</td>
                   <td className="px-2 py-2 text-xs">{r.estado || "—"}</td>
-                  <td className="px-2 py-2 text-right">
+                  <td className="px-2 py-2 text-xs text-right tabular-nums bg-amber-50/40">{r.pct_gravamen != null ? `${Number(r.pct_gravamen)}%` : "—"}</td>
+                  <td className="px-2 py-2 text-xs text-right tabular-nums bg-amber-50/40">{r.aplica_isc && r.pct_isc != null ? `${Number(r.pct_isc)}%` : "—"}</td>
+                  <td className="px-2 py-2 text-xs text-right tabular-nums bg-amber-50/40">{r.pct_itbis != null ? `${Number(r.pct_itbis)}%` : "—"}</td>
+                  <td className="px-2 py-2 text-right whitespace-nowrap">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditar({
+                      ...r,
+                      pct_gravamen: r.pct_gravamen != null ? String(r.pct_gravamen) : "",
+                      pct_isc: r.pct_isc != null ? String(r.pct_isc) : "",
+                      pct_itbis: r.pct_itbis != null ? String(r.pct_itbis) : "18",
+                      aplica_isc: !!r.aplica_isc,
+                    })}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setBorrar(r.codigo_producto)}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
@@ -248,6 +299,86 @@ function CatalogoProductosDgaPage() {
           </table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!editar} onOpenChange={(v) => !v && setEditar(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar producto del catálogo DGA</DialogTitle>
+            <DialogDescription className="font-mono text-xs">{editar?.codigo_producto}</DialogDescription>
+          </DialogHeader>
+          {editar && (
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-1.5 md:col-span-2">
+                <Label>Nombre del producto</Label>
+                <Input value={editar.nombre_producto ?? ""} onChange={(e) => setEditar({ ...editar, nombre_producto: e.target.value })} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Partida arancelaria</Label>
+                <Input value={editar.partida_arancelaria ?? ""} onChange={(e) => setEditar({ ...editar, partida_arancelaria: e.target.value })} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Unidad</Label>
+                <Input value={editar.unidad ?? ""} onChange={(e) => setEditar({ ...editar, unidad: e.target.value })} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Marca</Label>
+                <Input value={editar.marca ?? ""} onChange={(e) => setEditar({ ...editar, marca: e.target.value })} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Modelo</Label>
+                <Input value={editar.modelo ?? ""} onChange={(e) => setEditar({ ...editar, modelo: e.target.value })} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>País</Label>
+                <Input value={editar.pais ?? ""} onChange={(e) => setEditar({ ...editar, pais: e.target.value })} />
+              </div>
+              <div className="grid gap-1.5 md:col-span-2">
+                <Label>Especificaciones</Label>
+                <Textarea rows={2} value={editar.especificaciones ?? ""} onChange={(e) => setEditar({ ...editar, especificaciones: e.target.value })} />
+              </div>
+
+              <div className="md:col-span-2 border-t pt-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Tasas fijas de este producto</div>
+                <p className="text-[11px] text-muted-foreground mb-3">
+                  Si defines estas tasas, tendrán <b>prioridad</b> sobre el auto-aprendizaje por código arancelario y quedarán bloqueadas al elegir el producto en un expediente.
+                </p>
+                <div className="grid gap-3 md:grid-cols-4">
+                  <div className="grid gap-1.5">
+                    <Label>Gravamen (%)</Label>
+                    <Input type="text" inputMode="decimal" placeholder="0" value={editar.pct_gravamen}
+                      onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setEditar({ ...editar, pct_gravamen: v }); }} />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>¿Aplica ISC?</Label>
+                    <div className="h-9 flex items-center gap-2">
+                      <Switch checked={!!editar.aplica_isc} onCheckedChange={(v) => setEditar({ ...editar, aplica_isc: v, pct_isc: v ? editar.pct_isc : "" })} />
+                      <span className="text-sm text-muted-foreground">{editar.aplica_isc ? "Sí" : "No"}</span>
+                    </div>
+                  </div>
+                  {editar.aplica_isc && (
+                    <div className="grid gap-1.5">
+                      <Label>ISC (%)</Label>
+                      <Input type="text" inputMode="decimal" placeholder="0" value={editar.pct_isc}
+                        onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setEditar({ ...editar, pct_isc: v }); }} />
+                    </div>
+                  )}
+                  <div className="grid gap-1.5">
+                    <Label>ITBIS (%)</Label>
+                    <Input type="text" inputMode="decimal" placeholder="18" value={editar.pct_itbis}
+                      onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setEditar({ ...editar, pct_itbis: v }); }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditar(null)}>Cancelar</Button>
+            <Button onClick={() => guardar.mutate(editar)} disabled={guardar.isPending}>
+              {guardar.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Guardar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!borrar} onOpenChange={(v) => !v && setBorrar(null)}>
         <AlertDialogContent>

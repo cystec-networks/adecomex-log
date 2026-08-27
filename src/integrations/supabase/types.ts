@@ -1784,6 +1784,7 @@ export type Database = {
       }
       dga_productos_historico: {
         Row: {
+          aplica_isc: boolean
           busqueda: string | null
           cod_marca: string | null
           cod_modelo: string | null
@@ -1796,11 +1797,15 @@ export type Database = {
           nombre_producto: string | null
           pais: string | null
           partida_arancelaria: string | null
+          pct_gravamen: number | null
+          pct_isc: number | null
+          pct_itbis: number | null
           regimen: string | null
           unidad: string | null
           updated_at: string
         }
         Insert: {
+          aplica_isc?: boolean
           busqueda?: string | null
           cod_marca?: string | null
           cod_modelo?: string | null
@@ -1813,11 +1818,15 @@ export type Database = {
           nombre_producto?: string | null
           pais?: string | null
           partida_arancelaria?: string | null
+          pct_gravamen?: number | null
+          pct_isc?: number | null
+          pct_itbis?: number | null
           regimen?: string | null
           unidad?: string | null
           updated_at?: string
         }
         Update: {
+          aplica_isc?: boolean
           busqueda?: string | null
           cod_marca?: string | null
           cod_modelo?: string | null
@@ -1830,6 +1839,9 @@ export type Database = {
           nombre_producto?: string | null
           pais?: string | null
           partida_arancelaria?: string | null
+          pct_gravamen?: number | null
+          pct_isc?: number | null
+          pct_itbis?: number | null
           regimen?: string | null
           unidad?: string | null
           updated_at?: string
