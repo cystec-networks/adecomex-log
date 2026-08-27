@@ -1,13 +1,22 @@
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Ship, Loader2 } from "lucide-react";
+import { Ship, GraduationCap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+
+type PortalVariant = "cliente" | "estudiante" | null;
+
+function detectVariant(next: string | null): PortalVariant {
+  if (!next) return null;
+  if (next.startsWith("/portal-estudiante")) return "estudiante";
+  if (next.startsWith("/portal")) return "cliente";
+  return null;
+}
 
 function safeNext(next: unknown): string | null {
   if (typeof next !== "string") return null;
