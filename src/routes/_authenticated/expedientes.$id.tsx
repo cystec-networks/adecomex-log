@@ -3588,9 +3588,9 @@ function LiquidacionFinalPdfButton({
       return [
         it.detalle_producto ?? "—",
         nf(c.cant),
-        nf(c.est.gravamen), c.gr == null ? "—" : nf(c.gr),
-        nf(c.est.selectivo), c.ir == null ? "—" : nf(c.ir),
-        nf(c.est.itbis), c.tr == null ? "—" : nf(c.tr),
+        rd(c.est.gravamen), rd(c.gr),
+        rd(c.est.selectivo), rd(c.ir),
+        rd(c.est.itbis), rd(c.tr),
         nf(c.costoUnit),
         c.cv == null ? "—" : nf(c.cv),
         c.cv == null ? "—" : nf(margenUnit),
