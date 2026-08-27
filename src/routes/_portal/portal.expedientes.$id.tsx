@@ -96,6 +96,27 @@ function PortalExpedienteDetalle() {
     },
   });
 
+  const facturaIds = (facturas ?? []).map((f: any) => f.id);
+
+  const { data: pagos } = useQuery({
+    queryKey: ["portal-cxc-pagos", facturaIds],
+    enabled: facturaIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("cxc_pagos")
+        .select("factura_id, monto")
+        .in("factura_id", facturaIds);
+      return (data ?? []) as any[];
+    },
+  });
+
+  const totalFacturado = (facturas ?? []).reduce((s, f) => s + Number(f.monto_total || 0), 0);
+  const totalPagado = (pagos ?? []).reduce((s, p) => s + Number(p.monto || 0), 0);
+  const saldoPendiente = totalFacturado - totalPagado;
+
+  const dop = (n: number) =>
+    new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
+
 
 
   if (isLoading) return <div className="text-sm text-muted-foreground">Cargando…</div>;
