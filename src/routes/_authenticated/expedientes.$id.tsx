@@ -2409,6 +2409,8 @@ function MercanciaItemsBlock({
   };
 
   const [f, setF] = useState(emptyForm);
+  const [tasaBloqueada, setTasaBloqueada] = useState(false);
+  const [confirmarDesbloqueo, setConfirmarDesbloqueo] = useState(false);
   const [valorUnitario, setValorUnitario] = useState("");
   const valorUnitarioRef = useRef(valorUnitario);
   useEffect(() => { valorUnitarioRef.current = valorUnitario; }, [valorUnitario]);
@@ -2521,7 +2523,7 @@ function MercanciaItemsBlock({
     onError: (e: any) => toast.error(e.message),
   });
 
-  const startNew = () => { setEditingId(null); setF(emptyForm); setValorUnitario(""); setOpen(true); };
+  const startNew = () => { setEditingId(null); setF(emptyForm); setTasaBloqueada(false); setValorUnitario(""); setOpen(true); };
   const startEdit = (it: any) => {
     setEditingId(it.id);
     setF({
@@ -2546,6 +2548,7 @@ function MercanciaItemsBlock({
     });
     const vu = unitFob(it.valor_fob, it.cantidad);
     setValorUnitario(isFinite(Number(vu)) ? Number(vu).toFixed(4) : "");
+    setTasaBloqueada(false);
     setOpen(true);
   };
 
@@ -2553,7 +2556,7 @@ function MercanciaItemsBlock({
   // Cuando el usuario digita/pega un código en el diálogo y aún no tiene % gravamen, sugerir desde catálogo
   const onCodigoBlur = async (codigo: string) => {
     const c = (codigo || "").trim();
-    if (!c) return;
+    if (!c || tasaBloqueada) return;
     // buscar en tasas ya cargadas
     let tasa = tasaByCodigo.get(c);
     if (!tasa) {
@@ -2681,7 +2684,7 @@ function MercanciaItemsBlock({
         <span className="inline-flex items-center gap-1 ml-2"><AlertTriangle className="h-3 w-3 text-amber-500" /> = tasa aprendida, sin verificar por Admin.</span>
       </p>
 
-      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); setValorUnitario(""); } }}>
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); setTasaBloqueada(false); setValorUnitario(""); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingId ? "Editar ítem" : "Nuevo ítem"}</DialogTitle></DialogHeader>
           <div className="rounded-md border bg-muted/30 p-3">
@@ -2791,33 +2794,56 @@ function MercanciaItemsBlock({
               <div className="grid gap-3 md:grid-cols-4">
                 <div className="grid gap-1.5">
                   <Label>% Gravamen</Label>
-                  <Input type="text" inputMode="decimal" value={f.pct_gravamen}
+                  <Input type="text" inputMode="decimal" value={f.pct_gravamen} disabled={tasaBloqueada}
                     onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, pct_gravamen: v }); }}
                     placeholder="0" />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>¿Aplica ISC?</Label>
                   <div className="h-9 flex items-center gap-2">
-                    <Switch checked={f.aplica_isc} onCheckedChange={(v) => setF({ ...f, aplica_isc: v, pct_isc: v ? f.pct_isc : "" })} />
+                    <Switch checked={f.aplica_isc} disabled={tasaBloqueada} onCheckedChange={(v) => setF({ ...f, aplica_isc: v, pct_isc: v ? f.pct_isc : "" })} />
                     <span className="text-sm text-muted-foreground">{f.aplica_isc ? "Sí" : "No"}</span>
                   </div>
                 </div>
                 {f.aplica_isc && (
                   <div className="grid gap-1.5">
                     <Label>% Selectivo (ISC)</Label>
-                    <Input type="text" inputMode="decimal" value={f.pct_isc}
+                    <Input type="text" inputMode="decimal" value={f.pct_isc} disabled={tasaBloqueada}
                       onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, pct_isc: v }); }}
                       placeholder="0" />
                   </div>
                 )}
                 <div className="grid gap-1.5">
                   <Label>% ITBIS</Label>
-                  <Input type="text" inputMode="decimal" value={f.pct_itbis}
+                  <Input type="text" inputMode="decimal" value={f.pct_itbis} disabled={tasaBloqueada}
                     onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, pct_itbis: v }); }}
                     placeholder="18" />
                 </div>
               </div>
-              <p className="text-[11px] text-muted-foreground mt-2">Por defecto 18%. Solo editar si aplica una excepción.</p>
+              {tasaBloqueada ? (
+                <p className="text-[11px] text-amber-700 mt-2 flex items-center gap-1 flex-wrap">
+                  <ShieldCheck className="h-3 w-3" /> Tasa fija del catálogo DGA —
+                  <button type="button" className="underline font-medium" onClick={() => setConfirmarDesbloqueo(true)}>
+                    Editar manualmente
+                  </button>
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground mt-2">Por defecto 18%. Solo editar si aplica una excepción.</p>
+              )}
+              <AlertDialog open={confirmarDesbloqueo} onOpenChange={setConfirmarDesbloqueo}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Cambiar la tasa fija?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      ¿Seguro que quieres cambiar la tasa fija de este producto? Esto no modifica el catálogo, solo esta línea.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => { setTasaBloqueada(false); setConfirmarDesbloqueo(false); }}>Sí, editar</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
 
             <div className="md:col-span-2 border-t pt-3 mt-1">
