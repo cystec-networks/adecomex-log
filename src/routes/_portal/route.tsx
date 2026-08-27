@@ -38,8 +38,8 @@ export const Route = createFileRoute("/_portal")({
       throw redirect({ to: "/auth" });
     }
 
-    if (link.debe_cambiar_password && typeof window !== "undefined"
-        && !window.location.pathname.endsWith("/portal/cambiar-password")) {
+    if (link.debe_cambiar_password
+        && !location.pathname.endsWith("/portal/cambiar-password")) {
       throw redirect({ to: "/portal/cambiar-password" });
     }
 
