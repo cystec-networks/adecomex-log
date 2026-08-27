@@ -2420,6 +2420,8 @@ function MercanciaItemsBlock({
 
   const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
   const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const tasaCambioNum = Number(tasaCambioUsada) || 0;
+  const rd = (n: number) => tasaCambioNum > 0 ? fmt(n * tasaCambioNum) : "—";
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["mercancia-items", expedienteId] });
@@ -2584,17 +2586,21 @@ function MercanciaItemsBlock({
               <th className="px-2 py-2 text-right bg-amber-50">% Grav.</th>
               <th className="px-2 py-2 text-center bg-amber-50">ISC?</th>
               <th className="px-2 py-2 text-right bg-amber-50">% ISC</th>
-              <th className="px-2 py-2 text-right bg-slate-50">CIF línea</th>
-              <th className="px-2 py-2 text-right bg-slate-50">Gravamen</th>
+              <th className="px-2 py-2 text-right bg-slate-50">CIF línea (US$)</th>
+              <th className="px-2 py-2 text-right bg-slate-50">CIF línea (RD$)</th>
+              <th className="px-2 py-2 text-right bg-slate-50">Gravamen (US$)</th>
+              <th className="px-2 py-2 text-right bg-slate-50">Gravamen (RD$)</th>
               <th className="px-2 py-2 text-right bg-slate-50">Selectivo</th>
-              <th className="px-2 py-2 text-right bg-slate-50">ITBIS</th>
-              <th className="px-2 py-2 text-right bg-emerald-50">Total imp.</th>
+              <th className="px-2 py-2 text-right bg-slate-50">ITBIS (US$)</th>
+              <th className="px-2 py-2 text-right bg-slate-50">ITBIS (RD$)</th>
+              <th className="px-2 py-2 text-right bg-emerald-50">Total imp. (US$)</th>
+              <th className="px-2 py-2 text-right bg-emerald-50">Total imp. (RD$)</th>
               <th className="px-2 py-2 text-right w-20"></th>
             </tr>
           </thead>
           <tbody>
             {(items ?? []).length === 0 ? (
-              <tr><td colSpan={17} className="px-3 py-6 text-center text-xs text-muted-foreground">Sin ítems. Agrega el primero.</td></tr>
+              <tr><td colSpan={21} className="px-3 py-6 text-center text-xs text-muted-foreground">Sin ítems. Agrega el primero.</td></tr>
             ) : (items ?? []).map((it: any) => {
               const c = calcImpuestosLinea(
                 Number(it.valor_fob) || 0, totalFob, seguro, flete, otros,
@@ -2628,10 +2634,14 @@ function MercanciaItemsBlock({
                   <td className="px-2 py-2 text-center bg-amber-50/40 text-xs">{it.aplica_isc ? "Sí" : "No"}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{it.aplica_isc && it.pct_isc != null ? `${Number(it.pct_isc)}%` : "—"}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.cifLinea)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50 text-muted-foreground">{rd(c.cifLinea)}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.gravamen)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50 text-muted-foreground">{rd(c.gravamen)}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.selectivo)}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.itbis)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50 text-muted-foreground">{rd(c.itbis)}</td>
                   <td className="px-2 py-2 text-right tabular-nums bg-emerald-50/60 font-semibold">{fmt(c.total)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums bg-emerald-50/60 font-semibold text-muted-foreground">{rd(c.total)}</td>
                   <td className="px-2 py-2 text-right whitespace-nowrap">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(it)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => duplicar.mutate(it)} title="Duplicar línea"><Copy className="h-3.5 w-3.5" /></Button>
@@ -2653,7 +2663,8 @@ function MercanciaItemsBlock({
                 </td>
                 <td className="px-2 py-2 text-right tabular-nums font-semibold">{fmt(totalFob)}</td>
                 <td colSpan={8}></td>
-                <td className="px-2 py-2 text-right tabular-nums font-semibold bg-emerald-50/60">
+                <td colSpan={3}></td>
+                <td colSpan={2} className="px-2 py-2 text-right tabular-nums font-semibold bg-emerald-50/60">
                   {(() => {
                     const tasaCambio = Number(tasaCambioUsada) || 0;
                     const totalImpuestosUSD = (items ?? []).reduce((s: number, it: any) => s + calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis).total, 0);
