@@ -3225,30 +3225,36 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     docRef.current = null;
   };
 
-  const { data: items } = useQuery({
-
-    queryKey: ["mercancia-items", exp.id],
-    queryFn: async () =>
-      (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
-  });
-
   const generar = async () => {
     const { jsPDF } = await import("jspdf");
     const autoTable = (await import("jspdf-autotable")).default;
 
-    const list = items ?? [];
+    // Siempre leer datos frescos de la base para que el PDF refleje los últimos cambios
+    const [itemsRes, expRes] = await Promise.all([
+      supabase
+        .from("mercancia_items")
+        .select("*")
+        .eq("expediente_id", exp.id)
+        .is("deleted_at", null)
+        .order("item_no"),
+      supabase.from("expedientes").select("*, clientes(nombre, rnc)").eq("id", exp.id).maybeSingle(),
+    ]);
+
+    const list = itemsRes.data ?? [];
+    const expData: any = expRes.data ? { ...exp, ...expRes.data } : exp;
     if (list.length === 0) {
       toast.error("El expediente no tiene ítems de mercancía.");
       return;
     }
-    const seguro = Number(exp.seguro) || 0;
-    const flete = Number(exp.flete) || 0;
-    const otros = Number(exp.otros) || 0;
+    const seguro = Number(expData.seguro) || 0;
+    const flete = Number(expData.flete) || 0;
+    const otros = Number(expData.otros) || 0;
     const totalFob = list.reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
-    const tasaCambio = Number(exp.tasa_cambio_usada) || 0;
+    const tasaCambio = Number(expData.tasa_cambio_usada) || 0;
 
     const nf = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const rd = (n: number) => (tasaCambio > 0 ? nf(n * tasaCambio) : "—");
+
 
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
