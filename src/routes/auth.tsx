@@ -60,18 +60,10 @@ function AuthPage() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
 
-  useEffect(() => {
-    const { data: sub } = authClient.auth.onAuthStateChange((_e, session) => {
-      if (session) goNext();
-    });
-    return () => sub.subscription.unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate, next, authClient]);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await authClient.auth.signInWithPassword({ email, password });
+    const { data: loginData, error } = await authClient.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
       const msg = /invalid/i.test(error.message)
@@ -83,7 +75,79 @@ function AuthPage() {
       localStorage.setItem("adecomex.loginAt", String(Date.now()));
     } catch {}
     toast.success("Sesión iniciada");
-    goNext();
+
+    // Tras autenticar, verifica la identidad REAL del usuario (igual que
+    // src/routes/index.tsx) y decide el destino + cliente correcto en base a
+    // eso, sin confiar ciegamente en el parámetro `next`. Las consultas se
+    // hacen con `authClient` porque es el cliente que tiene la sesión recién
+    // creada (los roles/vínculos viven en la misma base de datos).
+    const session = loginData.session;
+    if (!session) {
+      goNext();
+      return;
+    }
+    const userId = session.user.id;
+
+    const { data: roles } = await authClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .limit(1);
+    const esStaff = !!(roles && roles.length > 0);
+
+    // Determina cliente correcto y destino raíz según la identidad real.
+    let correctClient: typeof supabase | typeof supabasePortal;
+    let rootDestino: string;
+    if (esStaff) {
+      correctClient = supabase;
+      rootDestino = "/dashboard";
+    } else {
+      const { data: link } = await authClient
+        .from("cliente_usuarios")
+        .select("cliente_id")
+        .eq("user_id", userId)
+        .eq("activo", true)
+        .limit(1)
+        .maybeSingle();
+      if (link) {
+        correctClient = supabasePortal;
+        rootDestino = "/portal";
+      } else {
+        const { data: estLink } = await (authClient as any)
+          .from("estudiante_usuarios")
+          .select("estudiante_id")
+          .eq("user_id", userId)
+          .eq("activo", true)
+          .limit(1)
+          .maybeSingle();
+        if (estLink) {
+          correctClient = supabase;
+          rootDestino = "/portal-estudiante";
+        } else {
+          // Sesión huérfana: cierra y vuelve al login.
+          await authClient.auth.signOut({ scope: "local" });
+          window.location.href = "/auth";
+          return;
+        }
+      }
+    }
+
+    // Si el cliente usado coincide con el tipo de usuario, respeta `next`
+    // (o "/" como fallback) — flujo normal.
+    if (authClient === correctClient) {
+      goNext();
+      return;
+    }
+
+    // Mismatch: transfiere la sesión al cliente correcto y fuerza el destino.
+    // scope: "local" para no revocar la sesión en el servidor (la acabamos de
+    // transferir al otro cliente).
+    await correctClient.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
+    await authClient.auth.signOut({ scope: "local" });
+    window.location.href = rootDestino;
   };
 
   const handleForgot = async (e: React.FormEvent) => {
