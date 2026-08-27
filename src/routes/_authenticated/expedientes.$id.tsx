@@ -292,7 +292,12 @@ function DetalleExpediente() {
                   setTabOrder((prev) => {
                     const next = prev.filter((k) => k !== from);
                     next.splice(next.indexOf(key), 0, from);
-                    try { localStorage.setItem(TAB_ORDER_KEY, JSON.stringify(next)); } catch { /* noop */ }
+                    try {
+                      localStorage.setItem(TAB_ORDER_KEY, JSON.stringify(next));
+                    } catch (e) {
+                      console.error("No se pudo guardar el orden de pestañas:", e);
+                      toast.error("No se pudo guardar el orden de las pestañas en este navegador");
+                    }
                     return next;
                   });
                 }}
