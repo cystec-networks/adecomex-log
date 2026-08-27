@@ -2663,7 +2663,8 @@ function MercanciaItemsBlock({
                 </td>
                 <td className="px-2 py-2 text-right tabular-nums font-semibold">{fmt(totalFob)}</td>
                 <td colSpan={8}></td>
-                <td className="px-2 py-2 text-right tabular-nums font-semibold bg-emerald-50/60">
+                <td></td>
+                <td colSpan={2} className="px-2 py-2 text-right tabular-nums font-semibold bg-emerald-50/60">
                   {(() => {
                     const tasaCambio = Number(tasaCambioUsada) || 0;
                     const totalImpuestosUSD = (items ?? []).reduce((s: number, it: any) => s + calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis).total, 0);
