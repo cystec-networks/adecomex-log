@@ -125,18 +125,41 @@ function PortalExpedienteDetalle() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div>
+            <div className="space-y-2">
               <div className="text-xs uppercase tracking-wider text-muted-foreground">Expediente</div>
               <CardTitle className="font-mono">{expediente.numero ?? "—"}</CardTitle>
               {expediente.bl_awb && (
-                <div className="text-sm text-muted-foreground mt-1">BL/AWB: <span className="font-mono">{expediente.bl_awb}</span></div>
+                <div className="text-sm text-muted-foreground">BL/AWB: <span className="font-mono">{expediente.bl_awb}</span></div>
               )}
-              {(expediente as any).puerto_arribo && (
-                <div className="text-sm text-muted-foreground">Puerto de llegada: <span className="font-medium text-foreground">{(expediente as any).puerto_arribo}</span></div>
-              )}
-              {(expediente as any).numero_dua && (
-                <div className="text-sm text-muted-foreground">DUA: <span className="font-mono">{(expediente as any).numero_dua}</span></div>
-              )}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                {(expediente as any).puerto_arribo && (
+                  <div className="text-muted-foreground">Puerto de llegada: <span className="font-medium text-foreground">{(expediente as any).puerto_arribo}</span></div>
+                )}
+                {(expediente as any).numero_dua && (
+                  <div className="text-muted-foreground">DUA: <span className="font-mono">{(expediente as any).numero_dua}</span></div>
+                )}
+                {(expediente as any).fecha_compromiso && (
+                  <div className="text-muted-foreground">ETA: <span className="font-medium text-foreground">{fmtLocalDate((expediente as any).fecha_compromiso)}</span></div>
+                )}
+                {(expediente as any).suplidor && (
+                  <div className="text-muted-foreground">Suplidor: <span className="font-medium text-foreground">{(expediente as any).suplidor}</span></div>
+                )}
+                {(expediente as any).pais_origen && (
+                  <div className="text-muted-foreground">País de origen: <span className="font-medium text-foreground">{(expediente as any).pais_origen}</span></div>
+                )}
+                <div className="text-muted-foreground">
+                  N° de Permiso (VUCE):{" "}
+                  <span className="font-medium text-foreground">
+                    {(expediente as any).numero_vuce ?? "No aplica"}
+                  </span>
+                </div>
+                {(expediente as any).peso_neto != null && (
+                  <div className="text-muted-foreground">Peso neto: <span className="font-medium text-foreground">{(expediente as any).peso_neto} kg</span></div>
+                )}
+                {(expediente as any).numeros_contenedores && (
+                  <div className="text-muted-foreground">Contenedores: <span className="font-mono text-foreground">{(expediente as any).numeros_contenedores}</span></div>
+                )}
+              </div>
             </div>
             <Badge variant="outline" className="text-sm">
               {estadoLabel(expediente.estado)}
