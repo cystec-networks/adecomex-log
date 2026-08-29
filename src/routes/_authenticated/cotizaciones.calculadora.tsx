@@ -475,7 +475,10 @@ async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[], im
 function CalculadoraRapida() {
   const [escA, setEscA] = useState<Escenario>(VACIO);
   const [escB, setEscB] = useState<Escenario | null>(null);
+  const [importador, setImportador] = useState("");
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const qc = useQueryClient();
 
   const { data: tarifas = [] } = useQuery({
     queryKey: ["catalogo-tasa-servicio-aduanero"],
@@ -490,11 +493,24 @@ function CalculadoraRapida() {
     },
   });
 
+  const { data: guardados = [] } = useQuery({
+    queryKey: ["calculos-pre-liquidacion"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("calculos_pre_liquidacion")
+        .select("id, nombre_importador, tasa_cambio, datos_entrada, resultado, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const descargarPdf = async () => {
     setPdfLoading(true);
     try {
       const lista = escB ? [escA, escB] : [escA];
-      const doc = await generarPdf(lista, tarifas);
+      const doc = await generarPdf(lista, tarifas, importador);
       doc.save(`Calculadora_Rapida_${new Date().toISOString().slice(0, 10)}.pdf`);
       toast.success("PDF descargado");
     } catch (e: any) {
@@ -504,14 +520,56 @@ function CalculadoraRapida() {
     }
   };
 
+  const guardar = async () => {
+    setGuardando(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const resultado = {
+        escenarioA: calcular(escA, tarifas.find((t) => t.id === escA.servicioId)),
+        escenarioB: escB ? calcular(escB, tarifas.find((t) => t.id === escB.servicioId)) : null,
+      };
+      const { error } = await supabase.from("calculos_pre_liquidacion").insert({
+        nombre_importador: importador.trim() || null,
+        tasa_cambio: num(escA.tasa) || null,
+        datos_entrada: { importador, escenarioA: escA, escenarioB: escB } as any,
+        resultado: resultado as any,
+        creado_por: userData.user?.id ?? null,
+      });
+      if (error) throw error;
+      toast.success("Cálculo guardado");
+      qc.invalidateQueries({ queryKey: ["calculos-pre-liquidacion"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo guardar el cálculo");
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const abrir = (row: any) => {
+    const d = row.datos_entrada ?? {};
+    if (!d.escenarioA) { toast.error("El cálculo guardado no tiene datos válidos"); return; }
+    setImportador(d.importador ?? row.nombre_importador ?? "");
+    setEscA(d.escenarioA);
+    setEscB(d.escenarioB ?? null);
+    toast.success("Cálculo cargado");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const eliminar = async (id: string) => {
+    const { error } = await supabase.from("calculos_pre_liquidacion").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Cálculo eliminado");
+    qc.invalidateQueries({ queryKey: ["calculos-pre-liquidacion"] });
+  };
+
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center gap-3 flex-wrap">
         <Calculator className="h-6 w-6 text-muted-foreground" />
-        <div className="flex-1">
+        <div className="flex-1 min-w-[240px]">
           <h1 className="font-display text-2xl font-bold">Calculadora Rápida de Pre-Liquidación</h1>
           <p className="text-sm text-muted-foreground">
-            Cálculo referencial por porcentajes — no se guarda nada en la base de datos.
+            Cálculo referencial por porcentajes — puedes guardarlo y reabrirlo cuando lo necesites.
           </p>
         </div>
         {!escB && (
@@ -519,12 +577,20 @@ function CalculadoraRapida() {
             <Copy className="h-4 w-4 mr-1" />Duplicar escenario
           </Button>
         )}
+        <Button variant="outline" onClick={guardar} disabled={guardando}>
+          <Save className="h-4 w-4 mr-1" />{guardando ? "Guardando…" : "Guardar cálculo"}
+        </Button>
         <Button onClick={descargarPdf} disabled={pdfLoading}>
           <FileDown className="h-4 w-4 mr-1" />{pdfLoading ? "Generando…" : "Descargar PDF"}
         </Button>
       </div>
 
-      <div className={`grid gap-4 ${escB ? "lg:grid-cols-2" : "max-w-2xl"}`}>
+      <div className="grid gap-1 max-w-md">
+        <Label className="text-xs">Nombre del Importador</Label>
+        <Input value={importador} placeholder="Opcional" onChange={(e) => setImportador(e.target.value)} />
+      </div>
+
+      <div className={`grid gap-4 ${escB ? "xl:grid-cols-2" : ""}`}>
         <ColumnaEscenario
           titulo={escB ? "Escenario A" : "Escenario"}
           esc={escA}
@@ -541,6 +607,49 @@ function CalculadoraRapida() {
           />
         )}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Cálculos guardados</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {guardados.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aún no hay cálculos guardados.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="text-left p-2">Fecha</th>
+                    <th className="text-left p-2">Importador</th>
+                    <th className="text-right p-2">Costo Total (US$)</th>
+                    <th className="p-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {guardados.map((row: any) => {
+                    const costo =
+                      (row.resultado?.escenarioA?.costoTotal ?? 0) + (row.resultado?.escenarioB?.costoTotal ?? 0);
+                    return (
+                      <tr key={row.id} className="border-t">
+                        <td className="p-2">{new Date(row.created_at).toLocaleString("es-DO")}</td>
+                        <td className="p-2">{row.nombre_importador || "—"}</td>
+                        <td className="p-2 text-right tabular-nums">{nf(costo)}</td>
+                        <td className="p-2 text-right whitespace-nowrap">
+                          <Button variant="outline" size="sm" onClick={() => abrir(row)}>Abrir</Button>
+                          <Button variant="ghost" size="icon" className="ml-1" title="Eliminar" onClick={() => eliminar(row.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <p className="text-xs text-muted-foreground">{DISCLAIMER}</p>
     </div>
