@@ -17,6 +17,7 @@ import { useMyRoles } from "@/lib/auth-hooks";
 import { ProductosCard } from "@/components/productos-card";
 import { copiarProductos } from "@/lib/copiar-productos";
 import { fmtLocalDate } from "@/lib/dates";
+import { CalcularEstimadoButton, PreLiquidacionPdfButtonCotizacion } from "@/components/preliquidacion-cotizacion";
 import {
   COTIZACION_ESTADOS, COTIZACION_ESTADO_CLASS, cotizacionEstadoLabel, TIPOS_MERCANCIA,
 } from "@/lib/estados-cotizacion";
@@ -247,6 +248,17 @@ function DetalleCotizacion() {
       </Card>
 
       <ProductosCard tabla="cotizacion_productos" parentId={id} readOnly={readOnly} />
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Pre-Liquidación estimada de impuestos</CardTitle></CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-2">
+          <CalcularEstimadoButton cotizacionId={id} readOnly={readOnly} />
+          <PreLiquidacionPdfButtonCotizacion cotizacionId={id} />
+          <p className="text-xs text-muted-foreground w-full">
+            Estimación referencial — sujeta a la liquidación oficial de la Dirección General de Aduanas (DGA).
+          </p>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader><CardTitle className="text-base">Notas / observaciones</CardTitle></CardHeader>
