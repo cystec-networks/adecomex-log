@@ -57,6 +57,7 @@ import { Route as AuthenticatedExpedientesDashboardRouteImport } from './routes/
 import { Route as AuthenticatedExpedientesIdRouteImport } from './routes/_authenticated/expedientes.$id'
 import { Route as AuthenticatedCotizacionesOcrRouteImport } from './routes/_authenticated/cotizaciones.ocr'
 import { Route as AuthenticatedCotizacionesNuevaRouteImport } from './routes/_authenticated/cotizaciones.nueva'
+import { Route as AuthenticatedCotizacionesCalculadoraRouteImport } from './routes/_authenticated/cotizaciones.calculadora'
 import { Route as AuthenticatedCotizacionesIdRouteImport } from './routes/_authenticated/cotizaciones.$id'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as AuthenticatedAdminSolicitudesPagoTransporteRouteImport } from './routes/_authenticated/admin.solicitudes-pago-transporte'
@@ -357,6 +358,12 @@ const AuthenticatedCotizacionesNuevaRoute =
     path: '/cotizaciones/nueva',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCotizacionesCalculadoraRoute =
+  AuthenticatedCotizacionesCalculadoraRouteImport.update({
+    id: '/cotizaciones/calculadora',
+    path: '/cotizaciones/calculadora',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCotizacionesIdRoute =
   AuthenticatedCotizacionesIdRouteImport.update({
     id: '/cotizaciones/$id',
@@ -590,6 +597,7 @@ export interface FileRoutesByFullPath {
   '/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/cotizaciones/$id': typeof AuthenticatedCotizacionesIdRoute
+  '/cotizaciones/calculadora': typeof AuthenticatedCotizacionesCalculadoraRoute
   '/cotizaciones/nueva': typeof AuthenticatedCotizacionesNuevaRoute
   '/cotizaciones/ocr': typeof AuthenticatedCotizacionesOcrRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
@@ -670,6 +678,7 @@ export interface FileRoutesByTo {
   '/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/cotizaciones/$id': typeof AuthenticatedCotizacionesIdRoute
+  '/cotizaciones/calculadora': typeof AuthenticatedCotizacionesCalculadoraRoute
   '/cotizaciones/nueva': typeof AuthenticatedCotizacionesNuevaRoute
   '/cotizaciones/ocr': typeof AuthenticatedCotizacionesOcrRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
@@ -754,6 +763,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/cotizaciones/$id': typeof AuthenticatedCotizacionesIdRoute
+  '/_authenticated/cotizaciones/calculadora': typeof AuthenticatedCotizacionesCalculadoraRoute
   '/_authenticated/cotizaciones/nueva': typeof AuthenticatedCotizacionesNuevaRoute
   '/_authenticated/cotizaciones/ocr': typeof AuthenticatedCotizacionesOcrRoute
   '/_authenticated/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
@@ -836,6 +846,7 @@ export interface FileRouteTypes {
     | '/admin/solicitudes-pago-transporte'
     | '/admin/usuarios'
     | '/cotizaciones/$id'
+    | '/cotizaciones/calculadora'
     | '/cotizaciones/nueva'
     | '/cotizaciones/ocr'
     | '/expedientes/$id'
@@ -916,6 +927,7 @@ export interface FileRouteTypes {
     | '/admin/solicitudes-pago-transporte'
     | '/admin/usuarios'
     | '/cotizaciones/$id'
+    | '/cotizaciones/calculadora'
     | '/cotizaciones/nueva'
     | '/cotizaciones/ocr'
     | '/expedientes/$id'
@@ -999,6 +1011,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/solicitudes-pago-transporte'
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/cotizaciones/$id'
+    | '/_authenticated/cotizaciones/calculadora'
     | '/_authenticated/cotizaciones/nueva'
     | '/_authenticated/cotizaciones/ocr'
     | '/_authenticated/expedientes/$id'
@@ -1402,6 +1415,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCotizacionesNuevaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cotizaciones/calculadora': {
+      id: '/_authenticated/cotizaciones/calculadora'
+      path: '/cotizaciones/calculadora'
+      fullPath: '/cotizaciones/calculadora'
+      preLoaderRoute: typeof AuthenticatedCotizacionesCalculadoraRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cotizaciones/$id': {
       id: '/_authenticated/cotizaciones/$id'
       path: '/cotizaciones/$id'
@@ -1663,6 +1683,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminSolicitudesPagoTransporteRoute: typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedCotizacionesIdRoute: typeof AuthenticatedCotizacionesIdRoute
+  AuthenticatedCotizacionesCalculadoraRoute: typeof AuthenticatedCotizacionesCalculadoraRoute
   AuthenticatedCotizacionesNuevaRoute: typeof AuthenticatedCotizacionesNuevaRoute
   AuthenticatedCotizacionesOcrRoute: typeof AuthenticatedCotizacionesOcrRoute
   AuthenticatedExpedientesIdRoute: typeof AuthenticatedExpedientesIdRoute
@@ -1737,6 +1758,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAdminSolicitudesPagoTransporteRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedCotizacionesIdRoute: AuthenticatedCotizacionesIdRoute,
+  AuthenticatedCotizacionesCalculadoraRoute:
+    AuthenticatedCotizacionesCalculadoraRoute,
   AuthenticatedCotizacionesNuevaRoute: AuthenticatedCotizacionesNuevaRoute,
   AuthenticatedCotizacionesOcrRoute: AuthenticatedCotizacionesOcrRoute,
   AuthenticatedExpedientesIdRoute: AuthenticatedExpedientesIdRoute,

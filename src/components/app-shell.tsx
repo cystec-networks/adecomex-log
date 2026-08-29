@@ -6,7 +6,7 @@ import {
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
   GraduationCap, BookOpen, UserPlus, ClipboardCheck,
   Briefcase, IdCard, HandCoins,
-  Scale, FileSpreadsheet, Warehouse, Boxes, Landmark,
+  Scale, FileSpreadsheet, Warehouse, Boxes, Landmark, Calculator,
 
 
 } from "lucide-react";
@@ -73,9 +73,10 @@ const GROUPS: Group[] = [
     icon: FileSpreadsheet,
     items: [
       { to: "/cotizaciones", label: "Cotizaciones", icon: FileSpreadsheet,
-        match: (p) => p === "/cotizaciones" || (p.startsWith("/cotizaciones/") && p !== "/cotizaciones/ocr") },
+        match: (p) => p === "/cotizaciones" || (p.startsWith("/cotizaciones/") && p !== "/cotizaciones/ocr" && p !== "/cotizaciones/calculadora") },
       { to: "/ordenes", label: "Órdenes", icon: ClipboardList,
         match: (p) => p === "/ordenes" || (p.startsWith("/ordenes/") && p !== "/ordenes/ocr") },
+      { to: "/cotizaciones/calculadora", label: "Calculadora Rápida", icon: Calculator },
       { to: "/cotizaciones/ocr", label: "OCR Cotización", icon: ScanText },
       { to: "/ordenes/ocr", label: "OCR Orden", icon: ScanText },
     ],
