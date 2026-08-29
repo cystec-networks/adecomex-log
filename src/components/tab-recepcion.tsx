@@ -52,11 +52,18 @@ export function TabRecepcion({ expedienteId }: { expedienteId: string }) {
     queryKey: ["recepciones", expedienteId],
     queryFn: async () => {
       const { data, error } = await (supabase.from("recepciones" as any) as any)
-        .select("*, recepcion_lineas(*), profiles:recibido_por(nombre)")
+        .select("*, recepcion_lineas(*)")
         .eq("expediente_id", expedienteId)
         .order("fecha_recepcion", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as any[];
+      const recs = (data ?? []) as any[];
+      const ids = [...new Set(recs.map((r) => r.recibido_por).filter(Boolean))];
+      const nombres: Record<string, string> = {};
+      if (ids.length > 0) {
+        const { data: profs } = await supabase.from("profiles").select("id, nombre").in("id", ids as string[]);
+        for (const p of profs ?? []) nombres[p.id] = p.nombre;
+      }
+      return recs.map((r) => ({ ...r, nombre_recibido: r.recibido_por ? (nombres[r.recibido_por] ?? "—") : "—" }));
     },
   });
 
@@ -270,7 +277,7 @@ export function TabRecepcion({ expedienteId }: { expedienteId: string }) {
               return (
                 <tr key={r.id} className="border-b last:border-0">
                   <td className="px-4 py-2 text-xs">{fmtLocalDate(r.fecha_recepcion)}</td>
-                  <td className="text-xs">{r.profiles?.nombre ?? "—"}</td>
+                  <td className="text-xs">{r.nombre_recibido}</td>
                   <td className="text-xs text-muted-foreground max-w-[380px]">
                     <div>{lineasR.length} ítem(s){r.observaciones ? ` — ${r.observaciones}` : ""}</div>
                     {conDif && (
