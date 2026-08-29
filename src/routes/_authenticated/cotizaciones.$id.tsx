@@ -249,6 +249,17 @@ function DetalleCotizacion() {
       <ProductosCard tabla="cotizacion_productos" parentId={id} readOnly={readOnly} />
 
       <Card>
+        <CardHeader><CardTitle className="text-base">Pre-Liquidación estimada de impuestos</CardTitle></CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-2">
+          <CalcularEstimadoButton cotizacionId={id} readOnly={readOnly} />
+          <PreLiquidacionPdfButtonCotizacion cotizacionId={id} />
+          <p className="text-xs text-muted-foreground w-full">
+            Estimación referencial — sujeta a la liquidación oficial de la Dirección General de Aduanas (DGA).
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader><CardTitle className="text-base">Notas / observaciones</CardTitle></CardHeader>
         <CardContent><Textarea rows={4} value={form.notas} readOnly={readOnly} onChange={(e) => set("notas", e.target.value)} /></CardContent>
       </Card>
