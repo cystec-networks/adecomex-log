@@ -3250,9 +3250,6 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
   };
 
   const generar = async () => {
-    const { jsPDF } = await import("jspdf");
-    const autoTable = (await import("jspdf-autotable")).default;
-
     // Siempre leer datos frescos de la base para que el PDF refleje los últimos cambios
     const [itemsRes, expRes] = await Promise.all([
       supabase
@@ -3270,218 +3267,40 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
       toast.error("El expediente no tiene ítems de mercancía.");
       return;
     }
-    const seguro = Number(expData.seguro) || 0;
-    const flete = Number(expData.flete) || 0;
-    const otros = Number(expData.otros) || 0;
-    const totalFob = list.reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
-    const tasaCambio = Number(expData.tasa_cambio_usada) || 0;
 
-    const nf = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const rd = (n: number) => (tasaCambio > 0 ? nf(n * tasaCambio) : "—");
-
-
-    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
-    const pageW = doc.internal.pageSize.getWidth();
-    const pageH = doc.internal.pageSize.getHeight();
-    const M = 32;
-
-    doc.setFontSize(13); doc.setFont("helvetica", "bold");
-    doc.text("ADECOMEX SRL — Gestión y Logística", M, 40);
-    doc.setFontSize(11);
-    doc.text("PRE-LIQUIDACIÓN DE IMPUESTOS", M, 58);
-    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
-    doc.text("(Estimado interno — sujeto a la liquidación oficial de la DGA)", M, 70);
-    if (tasaCambio > 0) {
-      doc.text(`Tasa de cambio: RD$ ${nf(tasaCambio)} por US$1.00`, M, 82);
-    } else {
-      doc.setTextColor(180, 140, 30);
-      doc.text("Sin tasa de cambio registrada — los montos en RD$ no se pueden calcular", M, 82);
-      doc.setTextColor(100);
-    }
-    doc.text(
-      `Generado: ${new Date().toLocaleString("es-DO")}   |   Usuario: ${user?.email ?? "—"}`,
-      M,
-      94,
-    );
-    doc.setTextColor(0);
-
-    const c1: [string, string][] = [
-      ["N° Expediente", expData.numero ?? "—"],
-      ["BL/AWB", expData.bl_awb ?? "—"],
-      ["Régimen", expData.regimen_aduanero ?? "—"],
-      ["Estado", ESTADO_LABEL[expData.estado ?? ""] ?? (expData.estado ?? "—")],
-    ];
-    const c2: [string, string][] = [
-      ["Depósito/Puerto arribo", expData.puerto_arribo ?? "—"],
-      ["País de procedencia", expData.pais_procedencia ?? expData.pais_procedencia_codigo ?? expData.pais_origen ?? "—"],
-      ["Manifiesto / DUA", expData.numero_dua ?? "—"],
-      ["Fecha de llegada", expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"],
-    ];
-
-    const c3: [string, string][] = [
-      ["Importador", expData.clientes?.nombre ?? "—"],
-      ["RNC/Documento", expData.clientes?.rnc ?? "—"],
-      ["Agente Aduanero", "Francisco Enerio Lopez Martinez (072-08)"],
-      ["Suplidor", expData.suplidor ?? "—"],
-    ];
-    const infoBody = [0, 1, 2, 3].map((i) => [
-      c1[i][0], c1[i][1], c2[i][0], c2[i][1], c3[i][0], c3[i][1],
-    ]);
-    autoTable(doc, {
-      startY: 106,
-      body: infoBody,
-      theme: "grid",
-      styles: { fontSize: 7.5, cellPadding: 3 },
-      columnStyles: {
-        0: { fontStyle: "bold", textColor: 90, cellWidth: 72 },
-        2: { fontStyle: "bold", textColor: 90, cellWidth: 78 },
-        4: { fontStyle: "bold", textColor: 90, cellWidth: 72 },
-      },
-      margin: { left: M, right: M },
-    });
-
-    const totals = { fob: 0, cif: 0, grav: 0, isc: 0, itbis: 0, total: 0, cant: 0 };
-    const body = list.map((it: any) => {
-      const fob = Number(it.valor_fob) || 0;
-      const c = calcImpuestosLinea(fob, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
-      totals.fob += fob; totals.cif += c.cifLinea; totals.grav += c.gravamen;
-      totals.isc += c.selectivo; totals.itbis += c.itbis; totals.total += c.total;
-      totals.cant += Number(it.cantidad) || 0;
-      return [
-        it.item_no ?? "",
-        it.codigo_arancelario ?? "—",
-        it.detalle_producto ?? "—",
-        it.unidad_medida ?? "—",
-        expData.pais_origen ?? "—",
-        nf(Number(it.cantidad) || 0),
-        nf(fob),
-        rd(c.cifLinea),
-        rd(c.gravamen),
-        rd(c.selectivo),
-        rd(c.itbis),
-        rd(c.total),
-      ];
-    });
-
-    autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 12,
-      head: [["Item", "Arancel", "Descripción", "Unidad", "Origen", "Cantidad", "FOB (US$)", "CIF (RD$)", "Gravamen (RD$)", "ISC (RD$)", "ITBIS (RD$)", "Total imp. (RD$)"]],
-      body,
-      foot: [[
-        "", "", "TOTALES", "", "", nf(totals.cant), nf(totals.fob), rd(totals.cif),
-        rd(totals.grav), rd(totals.isc), rd(totals.itbis), rd(totals.total),
-      ]],
-      theme: "grid",
-      headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
-      bodyStyles: { fontSize: 6.8 },
-      footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 7 },
-      columnStyles: {
-        0: { cellWidth: 20 }, 1: { cellWidth: 50 }, 3: { cellWidth: 34 }, 4: { cellWidth: 44 },
-        5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" },
-        8: { halign: "right" }, 9: { halign: "right" }, 10: { halign: "right" }, 11: { halign: "right" },
-      },
-      margin: { left: M, right: M },
-    });
-
-    autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 12,
-      head: [["Peso de la mercancía", ""]],
-      body: [
-        ["Peso Bruto", expData.peso_bruto != null ? `${nf(Number(expData.peso_bruto))} kg` : "—"],
-        ["Peso Neto", expData.peso_neto != null ? `${nf(Number(expData.peso_neto))} kg` : "—"],
+    const { doc } = await buildPreLiquidacionPdf({
+      infoCols: [
+        [
+          ["N° Expediente", expData.numero ?? "—"],
+          ["BL/AWB", expData.bl_awb ?? "—"],
+          ["Régimen", expData.regimen_aduanero ?? "—"],
+          ["Estado", ESTADO_LABEL[expData.estado ?? ""] ?? (expData.estado ?? "—")],
+        ],
+        [
+          ["Depósito/Puerto arribo", expData.puerto_arribo ?? "—"],
+          ["País de procedencia", expData.pais_procedencia ?? expData.pais_procedencia_codigo ?? expData.pais_origen ?? "—"],
+          ["Manifiesto / DUA", expData.numero_dua ?? "—"],
+          ["Fecha de llegada", expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"],
+        ],
+        [
+          ["Importador", expData.clientes?.nombre ?? "—"],
+          ["RNC/Documento", expData.clientes?.rnc ?? "—"],
+          ["Agente Aduanero", "Francisco Enerio Lopez Martinez (072-08)"],
+          ["Suplidor", expData.suplidor ?? "—"],
+        ],
       ],
-      theme: "grid",
-      headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
-      bodyStyles: { fontSize: 8 },
-      columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 120 } },
-      margin: { left: M, right: M },
-      tableWidth: 300,
+      items: (list as any[]).map((it) => ({ ...it, origen: expData.pais_origen ?? "—" })),
+      seguro: Number(expData.seguro) || 0,
+      flete: Number(expData.flete) || 0,
+      otros: Number(expData.otros) || 0,
+      tasaCambio: Number(expData.tasa_cambio_usada) || 0,
+      usuarioEmail: user?.email ?? null,
+      totalFobOverride: Number(expData.total_fob) || null,
+      totalCifOverride: Number(expData.total_cif) || null,
+      pesoBruto: expData.peso_bruto ?? null,
+      pesoNeto: expData.peso_neto ?? null,
+      contenedores: expData.numeros_contenedores ?? null,
     });
-
-    const contenedores = String(expData.numeros_contenedores ?? "").trim();
-    if (contenedores) {
-      autoTable(doc, {
-        startY: (doc as any).lastAutoTable.finalY + 12,
-        head: [["Contenedores"]],
-        body: contenedores.split(/[,;\n/]+/).map((c) => [c.trim()]).filter((r) => r[0]),
-        theme: "grid",
-        headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
-        bodyStyles: { fontSize: 8 },
-        margin: { left: M, right: M },
-        tableWidth: 300,
-      });
-    }
-
-    const startResumen = (doc as any).lastAutoTable.finalY + 14;
-    const mostrarRd = tasaCambio > 0;
-    const resumenFontSize = startResumen + (mostrarRd ? 170 : 150) > pageH - 40 ? 7 : 8;
-
-    const filaResumen = (label: string, usd: number) =>
-      mostrarRd ? [label, rd(usd), nf(usd)] : [label, nf(usd)];
-
-    autoTable(doc, {
-      startY: startResumen,
-      head: [mostrarRd ? ["Valores", "RD$", "US$"] : ["Valores", "US$"]],
-      body: [
-        filaResumen("Total FOB", Number(expData.total_fob) || totals.fob),
-        filaResumen("Seguro", seguro),
-        filaResumen("Flete", flete),
-        filaResumen("Otros", otros),
-        filaResumen("Total CIF", Number(expData.total_cif) || totals.cif),
-      ],
-      theme: "grid",
-      headStyles: { fillColor: [30, 58, 138], fontSize: resumenFontSize },
-      bodyStyles: { fontSize: resumenFontSize },
-      columnStyles: mostrarRd
-        ? {
-            0: { fontStyle: "bold", textColor: 90, cellWidth: 100 },
-            1: { halign: "right", cellWidth: 70 },
-            2: { halign: "right", cellWidth: 70 },
-          }
-        : { 0: { fontStyle: "bold", textColor: 90, cellWidth: 110 }, 1: { halign: "right" } },
-      margin: { left: M },
-      tableWidth: 240,
-    });
-    autoTable(doc, {
-      startY: startResumen,
-      head: [mostrarRd ? ["Impuestos estimados", "RD$", "US$"] : ["Impuestos estimados", "US$"]],
-      body: [
-        filaResumen("Gravamen", totals.grav),
-        filaResumen("Selectivo (ISC)", totals.isc),
-        filaResumen("ITBIS", totals.itbis),
-        filaResumen("Total Impuestos Estimados", totals.grav + totals.isc + totals.itbis),
-      ],
-      theme: "grid",
-      headStyles: { fillColor: [30, 58, 138], fontSize: resumenFontSize },
-      bodyStyles: { fontSize: resumenFontSize },
-      columnStyles: mostrarRd
-        ? {
-            0: { fontStyle: "bold", textColor: 90, cellWidth: 120 },
-            1: { halign: "right", cellWidth: 60 },
-            2: { halign: "right", cellWidth: 60 },
-          }
-        : { 0: { fontStyle: "bold", textColor: 90, cellWidth: 140 }, 1: { halign: "right" } },
-      margin: { left: pageW - M - 240 },
-      tableWidth: 240,
-    });
-
-    const nota =
-      "Este documento es una pre-liquidación estimada generada por ADECOMEX SRL con fines de planificación interna. " +
-      "Los montos aquí presentados son referenciales y están sujetos a la liquidación oficial que emita la Dirección General de Aduanas (DGA), " +
-      "la cual puede variar según revisión de valor, clasificación arancelaria, origen, cantidad u otros elementos determinados por la autoridad aduanera.";
-    let notaY = (doc as any).lastAutoTable.finalY + 36;
-    doc.setFontSize(7.5); doc.setTextColor(110);
-    const lines = doc.splitTextToSize(nota, pageW - M * 2);
-    if (notaY + lines.length * 10 > pageH - 40) { doc.addPage(); notaY = 50; }
-    doc.text(lines, M, notaY);
-    doc.setTextColor(0);
-
-    const pages = doc.getNumberOfPages();
-    for (let i = 1; i <= pages; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8); doc.setTextColor(120);
-      doc.text(`Página ${i} de ${pages}`, pageW - M, pageH - 20, { align: "right" });
-    }
 
     const fecha = new Date().toISOString().slice(0, 10);
     fileNameRef.current = `PreLiquidacion_${expData.numero ?? "expediente"}_${fecha}.pdf`;
@@ -3489,6 +3308,7 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(doc.output("bloburl").toString());
   };
+
 
   return (
     <>
