@@ -16,7 +16,7 @@ import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
-import { calcImpuestosLinea, type TaxCalc } from "@/lib/impuestos";
+import { calcImpuestosLinea } from "@/lib/impuestos";
 import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
 import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
 import { AutocompleteInput } from "@/components/autocomplete-input";
