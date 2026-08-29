@@ -73,7 +73,7 @@ const GROUPS: Group[] = [
     icon: FileSpreadsheet,
     items: [
       { to: "/cotizaciones", label: "Cotizaciones", icon: FileSpreadsheet,
-        match: (p) => p === "/cotizaciones" || (p.startsWith("/cotizaciones/") && p !== "/cotizaciones/ocr") },
+        match: (p) => p === "/cotizaciones" || (p.startsWith("/cotizaciones/") && p !== "/cotizaciones/ocr" && p !== "/cotizaciones/calculadora") },
       { to: "/ordenes", label: "Órdenes", icon: ClipboardList,
         match: (p) => p === "/ordenes" || (p.startsWith("/ordenes/") && p !== "/ordenes/ocr") },
       { to: "/cotizaciones/calculadora", label: "Calculadora Rápida", icon: Calculator },
