@@ -4319,6 +4319,123 @@ export type Database = {
         }
         Relationships: []
       }
+      recepcion_lineas: {
+        Row: {
+          calidad: string
+          cantidad_esperada: number
+          cantidad_recibida: number
+          created_at: string
+          id: string
+          mercancia_item_id: string
+          observaciones: string | null
+          peso_esperado: number | null
+          peso_recibido: number | null
+          recepcion_id: string
+        }
+        Insert: {
+          calidad?: string
+          cantidad_esperada: number
+          cantidad_recibida: number
+          created_at?: string
+          id?: string
+          mercancia_item_id: string
+          observaciones?: string | null
+          peso_esperado?: number | null
+          peso_recibido?: number | null
+          recepcion_id: string
+        }
+        Update: {
+          calidad?: string
+          cantidad_esperada?: number
+          cantidad_recibida?: number
+          created_at?: string
+          id?: string
+          mercancia_item_id?: string
+          observaciones?: string | null
+          peso_esperado?: number | null
+          peso_recibido?: number | null
+          recepcion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recepcion_lineas_mercancia_item_id_fkey"
+            columns: ["mercancia_item_id"]
+            isOneToOne: false
+            referencedRelation: "mercancia_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recepcion_lineas_mercancia_item_id_fkey"
+            columns: ["mercancia_item_id"]
+            isOneToOne: false
+            referencedRelation: "v_mercancia_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recepcion_lineas_recepcion_id_fkey"
+            columns: ["recepcion_id"]
+            isOneToOne: false
+            referencedRelation: "recepciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recepciones: {
+        Row: {
+          created_at: string
+          expediente_id: string
+          fecha_recepcion: string
+          id: string
+          observaciones: string | null
+          recibido_por: string | null
+        }
+        Insert: {
+          created_at?: string
+          expediente_id: string
+          fecha_recepcion?: string
+          id?: string
+          observaciones?: string | null
+          recibido_por?: string | null
+        }
+        Update: {
+          created_at?: string
+          expediente_id?: string
+          fecha_recepcion?: string
+          id?: string
+          observaciones?: string | null
+          recibido_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recepciones_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recepciones_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recepciones_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "recepciones_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+        ]
+      }
       recibos_pago: {
         Row: {
           afp_monto: number
