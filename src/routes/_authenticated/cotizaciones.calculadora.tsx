@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { calcImpuestosLinea } from "@/lib/impuestos";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calculator, Copy, X, FileDown, Plus, Trash2 } from "lucide-react";
+import { Calculator, Copy, X, FileDown, Plus, Trash2, Save } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/cotizaciones/calculadora")({
@@ -83,6 +83,7 @@ type LineaResultado = {
   cif: number;
   gravamen: number;
   itbis: number;
+  servicio: number;
   gastos: number;
   total: number;
 };
@@ -111,16 +112,19 @@ function calcular(e: Escenario, tarifa?: TarifaServicio): Resultado {
 
   const lineas: LineaResultado[] = e.lineas.map((l) => {
     const fob = num(l.fob);
+    const share = totalFob > 0 ? fob / totalFob : 1 / Math.max(e.lineas.length, 1);
     const r = calcImpuestosLinea(fob, totalFob, seguro, flete, 0, num(e.pctGravamen), false, null, num(e.pctItbis));
     const gastos = r.cifLinea * (num(e.pctGastos) / 100);
+    const servicioLinea = servicio * share;
     return {
       producto: l.producto,
       fob,
       cif: r.cifLinea,
       gravamen: r.gravamen,
       itbis: r.itbis,
+      servicio: servicioLinea,
       gastos,
-      total: r.gravamen + r.itbis + gastos,
+      total: r.cifLinea + r.gravamen + r.itbis + servicioLinea + gastos,
     };
   });
 
@@ -134,6 +138,76 @@ function calcular(e: Escenario, tarifa?: TarifaServicio): Resultado {
 }
 
 const nf = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// Estructura compartida de la tabla de resultados (pantalla + PDF)
+export const COLUMNAS_RESULTADO = [
+  "Producto",
+  "CIF (US$)",
+  "Gravamen (US$)",
+  "ITBIS (US$)",
+  "Servicio Aduanero (US$)",
+  "Gastos (US$)",
+  "Costo Total (RD$)",
+  "Costo Total (US$)",
+];
+
+function filasResultado(r: Resultado, tasa: number): { body: string[][]; foot: string[] } {
+  const rd = (n: number) => (tasa > 0 ? nf(n * tasa) : "—");
+  const body = r.lineas.map((l, i) => [
+    l.producto || `Línea ${i + 1}`,
+    nf(l.cif),
+    nf(l.gravamen),
+    nf(l.itbis),
+    nf(l.servicio),
+    nf(l.gastos),
+    rd(l.total),
+    nf(l.total),
+  ]);
+  const foot = [
+    "TOTALES",
+    nf(r.cif),
+    nf(r.gravamen),
+    nf(r.itbis),
+    nf(r.servicio),
+    nf(r.gastos),
+    rd(r.costoTotal),
+    nf(r.costoTotal),
+  ];
+  return { body, foot };
+}
+
+function TablaResultado({ r, tasa }: { r: Resultado; tasa: number }) {
+  const { body, foot } = filasResultado(r, tasa);
+  return (
+    <div className="rounded-md border overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead className="bg-muted/50">
+          <tr>
+            {COLUMNAS_RESULTADO.map((c, i) => (
+              <th key={c} className={`p-2 ${i === 0 ? "text-left" : "text-right"}`}>{c}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {body.map((fila, i) => (
+            <tr key={i} className="border-t tabular-nums">
+              {fila.map((v, j) => (
+                <td key={j} className={`p-2 ${j === 0 ? "" : "text-right"}`}>{v}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="border-t bg-muted/50 font-semibold tabular-nums">
+            {foot.map((v, j) => (
+              <td key={j} className={`p-2 ${j === 0 ? "" : "text-right"}`}>{v}</td>
+            ))}
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+}
 
 function ColumnaEscenario({
   titulo, esc, tarifas, onChange, onQuitar,
@@ -279,55 +353,20 @@ function ColumnaEscenario({
           {fila("Total FOB", r.totalFob)}
           {fila(esc.fleteReal ? "Flete (real)" : `Flete (${esc.flete || 0}%)`, r.flete)}
           {fila(esc.seguroReal ? "Seguro (real)" : `Seguro (${esc.seguro || 0}%)`, r.seguro)}
-          {fila("CIF", r.cif, true)}
-          {fila("Gravamen", r.gravamen)}
-          {fila("ITBIS", r.itbis)}
-          {fila("Gastos", r.gastos)}
-          {fila("Servicio Aduanero", r.servicio)}
           {fila("Total Impuestos", r.totalImpuestos, true)}
-          {fila("Costo Total", r.costoTotal, true)}
         </div>
 
-        {r.lineas.length > 1 && (
-          <div className="rounded-md border overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="text-left p-2">Producto</th>
-                  <th className="text-right p-2">FOB</th>
-                  <th className="text-right p-2">CIF</th>
-                  <th className="text-right p-2">Gravamen</th>
-                  <th className="text-right p-2">ITBIS</th>
-                  <th className="text-right p-2">Gastos</th>
-                  <th className="text-right p-2">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {r.lineas.map((l, i) => (
-                  <tr key={i} className="border-t tabular-nums">
-                    <td className="p-2">{l.producto || `Línea ${i + 1}`}</td>
-                    <td className="p-2 text-right">{nf(l.fob)}</td>
-                    <td className="p-2 text-right">{nf(l.cif)}</td>
-                    <td className="p-2 text-right">{nf(l.gravamen)}</td>
-                    <td className="p-2 text-right">{nf(l.itbis)}</td>
-                    <td className="p-2 text-right">{nf(l.gastos)}</td>
-                    <td className="p-2 text-right font-medium">{nf(l.total)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <TablaResultado r={r} tasa={tasa} />
       </CardContent>
     </Card>
   );
 }
 
-async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[]) {
+async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[], importador: string) {
   const { jsPDF } = await import("jspdf");
   const autoTable = (await import("jspdf-autotable")).default;
 
-  const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+  const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const M = 32;
@@ -336,13 +375,15 @@ async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[]) {
   doc.text("ADECOMEX SRL — Gestión y Logística", M, 40);
   doc.setFontSize(11);
   doc.text("CALCULADORA RÁPIDA — PRE-LIQUIDACIÓN ESTIMADA", M, 58);
+  doc.setFontSize(9);
+  doc.text(`Importador: ${importador.trim() || "—"}`, M, 74);
   doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(180, 60, 30);
-  doc.text(doc.splitTextToSize(DISCLAIMER, pageW - M * 2), M, 70);
+  doc.text(doc.splitTextToSize(DISCLAIMER, pageW - M * 2), M, 88);
   doc.setTextColor(100);
-  doc.text(`Generado: ${new Date().toLocaleString("es-DO")}  |  Cálculo referencial sin vinculación a cliente/cotización`, M, 92);
+  doc.text(`Generado: ${new Date().toLocaleString("es-DO")}  |  Cálculo referencial sin vinculación a cliente/cotización`, M, 108);
   doc.setTextColor(0);
 
-  let y = 106;
+  let y = 122;
   escenarios.forEach((e, i) => {
     const tarifa = tarifas.find((t) => t.id === e.servicioId);
     const r = calcular(e, tarifa);
@@ -352,21 +393,28 @@ async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[]) {
 
     if (y > pageH - 240) { doc.addPage(); y = 50; }
 
-    // Detalle de productos
+    // Detalle por renglón (misma estructura que la tabla en pantalla)
+    const { body, foot } = filasResultado(r, tasa);
+    if (escenarios.length > 1) {
+      doc.setFontSize(9); doc.setFont("helvetica", "bold");
+      doc.text(`Escenario ${i + 1}`, M, y);
+      doc.setFont("helvetica", "normal");
+      y += 10;
+    }
     autoTable(doc, {
       startY: y,
-      head: [[escenarios.length > 1 ? `Escenario ${i + 1} — Productos` : "Productos", "FOB US$", "Peso kg", "CIF US$", "Impuestos US$"]],
-      body: r.lineas.map((l, idx) => [
-        l.producto || `Línea ${idx + 1}`,
-        nf(l.fob),
-        nf(num(e.lineas[idx]?.peso ?? "")),
-        nf(l.cif),
-        nf(l.total),
-      ]),
+      head: [COLUMNAS_RESULTADO],
+      body,
+      foot: [foot],
       theme: "grid",
       headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
       bodyStyles: { fontSize: 8 },
-      columnStyles: { 0: { cellWidth: 180 }, 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
+      footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 160 },
+        1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" },
+        4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" },
+      },
       margin: { left: M, right: M },
     });
     y = (doc as any).lastAutoTable.finalY + 8;
@@ -427,7 +475,10 @@ async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[]) {
 function CalculadoraRapida() {
   const [escA, setEscA] = useState<Escenario>(VACIO);
   const [escB, setEscB] = useState<Escenario | null>(null);
+  const [importador, setImportador] = useState("");
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const qc = useQueryClient();
 
   const { data: tarifas = [] } = useQuery({
     queryKey: ["catalogo-tasa-servicio-aduanero"],
@@ -442,11 +493,24 @@ function CalculadoraRapida() {
     },
   });
 
+  const { data: guardados = [] } = useQuery({
+    queryKey: ["calculos-pre-liquidacion"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("calculos_pre_liquidacion")
+        .select("id, nombre_importador, tasa_cambio, datos_entrada, resultado, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const descargarPdf = async () => {
     setPdfLoading(true);
     try {
       const lista = escB ? [escA, escB] : [escA];
-      const doc = await generarPdf(lista, tarifas);
+      const doc = await generarPdf(lista, tarifas, importador);
       doc.save(`Calculadora_Rapida_${new Date().toISOString().slice(0, 10)}.pdf`);
       toast.success("PDF descargado");
     } catch (e: any) {
@@ -456,14 +520,56 @@ function CalculadoraRapida() {
     }
   };
 
+  const guardar = async () => {
+    setGuardando(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const resultado = {
+        escenarioA: calcular(escA, tarifas.find((t) => t.id === escA.servicioId)),
+        escenarioB: escB ? calcular(escB, tarifas.find((t) => t.id === escB.servicioId)) : null,
+      };
+      const { error } = await supabase.from("calculos_pre_liquidacion").insert({
+        nombre_importador: importador.trim() || null,
+        tasa_cambio: num(escA.tasa) || null,
+        datos_entrada: { importador, escenarioA: escA, escenarioB: escB } as any,
+        resultado: resultado as any,
+        creado_por: userData.user?.id ?? null,
+      });
+      if (error) throw error;
+      toast.success("Cálculo guardado");
+      qc.invalidateQueries({ queryKey: ["calculos-pre-liquidacion"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo guardar el cálculo");
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const abrir = (row: any) => {
+    const d = row.datos_entrada ?? {};
+    if (!d.escenarioA) { toast.error("El cálculo guardado no tiene datos válidos"); return; }
+    setImportador(d.importador ?? row.nombre_importador ?? "");
+    setEscA(d.escenarioA);
+    setEscB(d.escenarioB ?? null);
+    toast.success("Cálculo cargado");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const eliminar = async (id: string) => {
+    const { error } = await supabase.from("calculos_pre_liquidacion").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Cálculo eliminado");
+    qc.invalidateQueries({ queryKey: ["calculos-pre-liquidacion"] });
+  };
+
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center gap-3 flex-wrap">
         <Calculator className="h-6 w-6 text-muted-foreground" />
-        <div className="flex-1">
+        <div className="flex-1 min-w-[240px]">
           <h1 className="font-display text-2xl font-bold">Calculadora Rápida de Pre-Liquidación</h1>
           <p className="text-sm text-muted-foreground">
-            Cálculo referencial por porcentajes — no se guarda nada en la base de datos.
+            Cálculo referencial por porcentajes — puedes guardarlo y reabrirlo cuando lo necesites.
           </p>
         </div>
         {!escB && (
@@ -471,12 +577,20 @@ function CalculadoraRapida() {
             <Copy className="h-4 w-4 mr-1" />Duplicar escenario
           </Button>
         )}
+        <Button variant="outline" onClick={guardar} disabled={guardando}>
+          <Save className="h-4 w-4 mr-1" />{guardando ? "Guardando…" : "Guardar cálculo"}
+        </Button>
         <Button onClick={descargarPdf} disabled={pdfLoading}>
           <FileDown className="h-4 w-4 mr-1" />{pdfLoading ? "Generando…" : "Descargar PDF"}
         </Button>
       </div>
 
-      <div className={`grid gap-4 ${escB ? "lg:grid-cols-2" : "max-w-2xl"}`}>
+      <div className="grid gap-1 max-w-md">
+        <Label className="text-xs">Nombre del Importador</Label>
+        <Input value={importador} placeholder="Opcional" onChange={(e) => setImportador(e.target.value)} />
+      </div>
+
+      <div className={`grid gap-4 ${escB ? "xl:grid-cols-2" : ""}`}>
         <ColumnaEscenario
           titulo={escB ? "Escenario A" : "Escenario"}
           esc={escA}
@@ -493,6 +607,49 @@ function CalculadoraRapida() {
           />
         )}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Cálculos guardados</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {guardados.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aún no hay cálculos guardados.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="text-left p-2">Fecha</th>
+                    <th className="text-left p-2">Importador</th>
+                    <th className="text-right p-2">Costo Total (US$)</th>
+                    <th className="p-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {guardados.map((row: any) => {
+                    const costo =
+                      (row.resultado?.escenarioA?.costoTotal ?? 0) + (row.resultado?.escenarioB?.costoTotal ?? 0);
+                    return (
+                      <tr key={row.id} className="border-t">
+                        <td className="p-2">{new Date(row.created_at).toLocaleString("es-DO")}</td>
+                        <td className="p-2">{row.nombre_importador || "—"}</td>
+                        <td className="p-2 text-right tabular-nums">{nf(costo)}</td>
+                        <td className="p-2 text-right whitespace-nowrap">
+                          <Button variant="outline" size="sm" onClick={() => abrir(row)}>Abrir</Button>
+                          <Button variant="ghost" size="icon" className="ml-1" title="Eliminar" onClick={() => eliminar(row.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <p className="text-xs text-muted-foreground">{DISCLAIMER}</p>
     </div>

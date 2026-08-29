@@ -297,6 +297,36 @@ export type Database = {
         }
         Relationships: []
       }
+      calculos_pre_liquidacion: {
+        Row: {
+          creado_por: string | null
+          created_at: string
+          datos_entrada: Json
+          id: string
+          nombre_importador: string | null
+          resultado: Json
+          tasa_cambio: number | null
+        }
+        Insert: {
+          creado_por?: string | null
+          created_at?: string
+          datos_entrada: Json
+          id?: string
+          nombre_importador?: string | null
+          resultado: Json
+          tasa_cambio?: number | null
+        }
+        Update: {
+          creado_por?: string | null
+          created_at?: string
+          datos_entrada?: Json
+          id?: string
+          nombre_importador?: string | null
+          resultado?: Json
+          tasa_cambio?: number | null
+        }
+        Relationships: []
+      }
       catalogo_acuerdos: {
         Row: {
           codigo: string
