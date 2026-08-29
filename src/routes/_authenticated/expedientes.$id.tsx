@@ -43,6 +43,7 @@ import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
+import { TabRecepcion } from "@/components/tab-recepcion";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
@@ -116,6 +117,7 @@ const TAB_LABELS: Record<string, string> = {
   docs: "Documentos",
   permisos: "Permisos",
   transportes: "Transportes",
+  recepcion: "Recepción",
   inc: "Incidencias",
   cost: "Finanzas",
   costprod: "Costos del Producto",
@@ -319,6 +321,7 @@ function DetalleExpediente() {
 
         <TabsContent value="permisos"><TabPermisosExp expedienteId={id} /></TabsContent>
         <TabsContent value="transportes"><TabTransportesExp expedienteId={id} /></TabsContent>
+        <TabsContent value="recepcion"><TabRecepcion expedienteId={id} /></TabsContent>
         <TabsContent value="inc"><TabIncidencias expedienteId={id} /></TabsContent>
         <TabsContent value="cost"><TabCostos expedienteId={id} exp={exp} /></TabsContent>
         <TabsContent value="costprod"><TabCostosProducto expedienteId={id} /></TabsContent>
