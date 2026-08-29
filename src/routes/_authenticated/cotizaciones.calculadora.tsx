@@ -83,6 +83,7 @@ type LineaResultado = {
   cif: number;
   gravamen: number;
   itbis: number;
+  servicio: number;
   gastos: number;
   total: number;
 };
@@ -111,16 +112,19 @@ function calcular(e: Escenario, tarifa?: TarifaServicio): Resultado {
 
   const lineas: LineaResultado[] = e.lineas.map((l) => {
     const fob = num(l.fob);
+    const share = totalFob > 0 ? fob / totalFob : 1 / Math.max(e.lineas.length, 1);
     const r = calcImpuestosLinea(fob, totalFob, seguro, flete, 0, num(e.pctGravamen), false, null, num(e.pctItbis));
     const gastos = r.cifLinea * (num(e.pctGastos) / 100);
+    const servicioLinea = servicio * share;
     return {
       producto: l.producto,
       fob,
       cif: r.cifLinea,
       gravamen: r.gravamen,
       itbis: r.itbis,
+      servicio: servicioLinea,
       gastos,
-      total: r.gravamen + r.itbis + gastos,
+      total: r.cifLinea + r.gravamen + r.itbis + servicioLinea + gastos,
     };
   });
 
@@ -134,6 +138,76 @@ function calcular(e: Escenario, tarifa?: TarifaServicio): Resultado {
 }
 
 const nf = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// Estructura compartida de la tabla de resultados (pantalla + PDF)
+export const COLUMNAS_RESULTADO = [
+  "Producto",
+  "CIF (US$)",
+  "Gravamen (US$)",
+  "ITBIS (US$)",
+  "Servicio Aduanero (US$)",
+  "Gastos (US$)",
+  "Costo Total (RD$)",
+  "Costo Total (US$)",
+];
+
+function filasResultado(r: Resultado, tasa: number): { body: string[][]; foot: string[] } {
+  const rd = (n: number) => (tasa > 0 ? nf(n * tasa) : "—");
+  const body = r.lineas.map((l, i) => [
+    l.producto || `Línea ${i + 1}`,
+    nf(l.cif),
+    nf(l.gravamen),
+    nf(l.itbis),
+    nf(l.servicio),
+    nf(l.gastos),
+    rd(l.total),
+    nf(l.total),
+  ]);
+  const foot = [
+    "TOTALES",
+    nf(r.cif),
+    nf(r.gravamen),
+    nf(r.itbis),
+    nf(r.servicio),
+    nf(r.gastos),
+    rd(r.costoTotal),
+    nf(r.costoTotal),
+  ];
+  return { body, foot };
+}
+
+function TablaResultado({ r, tasa }: { r: Resultado; tasa: number }) {
+  const { body, foot } = filasResultado(r, tasa);
+  return (
+    <div className="rounded-md border overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead className="bg-muted/50">
+          <tr>
+            {COLUMNAS_RESULTADO.map((c, i) => (
+              <th key={c} className={`p-2 ${i === 0 ? "text-left" : "text-right"}`}>{c}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {body.map((fila, i) => (
+            <tr key={i} className="border-t tabular-nums">
+              {fila.map((v, j) => (
+                <td key={j} className={`p-2 ${j === 0 ? "" : "text-right"}`}>{v}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="border-t bg-muted/50 font-semibold tabular-nums">
+            {foot.map((v, j) => (
+              <td key={j} className={`p-2 ${j === 0 ? "" : "text-right"}`}>{v}</td>
+            ))}
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+}
 
 function ColumnaEscenario({
   titulo, esc, tarifas, onChange, onQuitar,
