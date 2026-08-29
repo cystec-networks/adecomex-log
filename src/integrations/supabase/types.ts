@@ -1356,6 +1356,7 @@ export type Database = {
           estado: Database["public"]["Enums"]["cotizacion_estado"]
           fecha_emision: string
           fecha_vigencia: string | null
+          flete: number | null
           id: string
           incoterm: string | null
           moneda: Database["public"]["Enums"]["moneda"]
@@ -1363,8 +1364,11 @@ export type Database = {
           numero: string | null
           orden_id: string | null
           origen: string | null
+          otros: number | null
           peso_kg: number | null
+          seguro: number | null
           tarifa_propuesta: number | null
+          tasa_cambio_usada: number | null
           tipo_mercancia: string | null
           updated_at: string
           vendedor_id: string | null
@@ -1380,6 +1384,7 @@ export type Database = {
           estado?: Database["public"]["Enums"]["cotizacion_estado"]
           fecha_emision?: string
           fecha_vigencia?: string | null
+          flete?: number | null
           id?: string
           incoterm?: string | null
           moneda?: Database["public"]["Enums"]["moneda"]
@@ -1387,8 +1392,11 @@ export type Database = {
           numero?: string | null
           orden_id?: string | null
           origen?: string | null
+          otros?: number | null
           peso_kg?: number | null
+          seguro?: number | null
           tarifa_propuesta?: number | null
+          tasa_cambio_usada?: number | null
           tipo_mercancia?: string | null
           updated_at?: string
           vendedor_id?: string | null
@@ -1404,6 +1412,7 @@ export type Database = {
           estado?: Database["public"]["Enums"]["cotizacion_estado"]
           fecha_emision?: string
           fecha_vigencia?: string | null
+          flete?: number | null
           id?: string
           incoterm?: string | null
           moneda?: Database["public"]["Enums"]["moneda"]
@@ -1411,8 +1420,11 @@ export type Database = {
           numero?: string | null
           orden_id?: string | null
           origen?: string | null
+          otros?: number | null
           peso_kg?: number | null
+          seguro?: number | null
           tarifa_propuesta?: number | null
+          tasa_cambio_usada?: number | null
           tipo_mercancia?: string | null
           updated_at?: string
           vendedor_id?: string | null
