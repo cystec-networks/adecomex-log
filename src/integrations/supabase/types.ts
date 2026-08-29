@@ -681,6 +681,30 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_tasa_servicio_aduanero: {
+        Row: {
+          activo: boolean
+          id: string
+          tarifa_usd: number
+          tipo_despacho: string
+          unidad: string
+        }
+        Insert: {
+          activo?: boolean
+          id?: string
+          tarifa_usd: number
+          tipo_despacho: string
+          unidad: string
+        }
+        Update: {
+          activo?: boolean
+          id?: string
+          tarifa_usd?: number
+          tipo_despacho?: string
+          unidad?: string
+        }
+        Relationships: []
+      }
       catalogo_tasas_arancelarias: {
         Row: {
           acuerdo_preferencial: string | null
