@@ -43,8 +43,16 @@ function DetalleCotizacion() {
     queryFn: async () => (await supabase.from("clientes").select("id,nombre").order("nombre")).data ?? [],
   });
   const { data: perfiles } = useQuery({
-    queryKey: ["profiles-lite"],
-    queryFn: async () => (await supabase.from("profiles").select("id,nombre").order("nombre")).data ?? [],
+    queryKey: ["vendedores-lite"],
+    queryFn: async () => {
+      const { data: userRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ["admin", "vendedor"]);
+      const ids = [...new Set((userRoles ?? []).map((r) => r.user_id))];
+      if (ids.length === 0) return [];
+      return (await supabase.from("profiles").select("id,nombre").in("id", ids).order("nombre")).data ?? [];
+    },
   });
 
   const { data: ordenVinculada } = useQuery({
@@ -243,7 +251,7 @@ function DetalleCotizacion() {
             </Select>
           </div>
           <div className="grid gap-1.5"><Label>Fecha de emisión</Label><Input type="date" value={form.fecha_emision ?? ""} readOnly={readOnly} onChange={(e) => set("fecha_emision", e.target.value)} /></div>
-          <div className="grid gap-1.5"><Label>Fecha de vigencia</Label><Input type="date" value={form.fecha_vigencia ?? ""} readOnly={readOnly} onChange={(e) => set("fecha_vigencia", e.target.value)} /></div>
+          <div className="grid gap-1.5"><Label>Fecha de vencimiento</Label><Input type="date" value={form.fecha_vigencia ?? ""} readOnly={readOnly} onChange={(e) => set("fecha_vigencia", e.target.value)} /></div>
         </CardContent>
       </Card>
 
