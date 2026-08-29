@@ -353,45 +353,10 @@ function ColumnaEscenario({
           {fila("Total FOB", r.totalFob)}
           {fila(esc.fleteReal ? "Flete (real)" : `Flete (${esc.flete || 0}%)`, r.flete)}
           {fila(esc.seguroReal ? "Seguro (real)" : `Seguro (${esc.seguro || 0}%)`, r.seguro)}
-          {fila("CIF", r.cif, true)}
-          {fila("Gravamen", r.gravamen)}
-          {fila("ITBIS", r.itbis)}
-          {fila("Gastos", r.gastos)}
-          {fila("Servicio Aduanero", r.servicio)}
           {fila("Total Impuestos", r.totalImpuestos, true)}
-          {fila("Costo Total", r.costoTotal, true)}
         </div>
 
-        {r.lineas.length > 1 && (
-          <div className="rounded-md border overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="text-left p-2">Producto</th>
-                  <th className="text-right p-2">FOB</th>
-                  <th className="text-right p-2">CIF</th>
-                  <th className="text-right p-2">Gravamen</th>
-                  <th className="text-right p-2">ITBIS</th>
-                  <th className="text-right p-2">Gastos</th>
-                  <th className="text-right p-2">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {r.lineas.map((l, i) => (
-                  <tr key={i} className="border-t tabular-nums">
-                    <td className="p-2">{l.producto || `Línea ${i + 1}`}</td>
-                    <td className="p-2 text-right">{nf(l.fob)}</td>
-                    <td className="p-2 text-right">{nf(l.cif)}</td>
-                    <td className="p-2 text-right">{nf(l.gravamen)}</td>
-                    <td className="p-2 text-right">{nf(l.itbis)}</td>
-                    <td className="p-2 text-right">{nf(l.gastos)}</td>
-                    <td className="p-2 text-right font-medium">{nf(l.total)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <TablaResultado r={r} tasa={tasa} />
       </CardContent>
     </Card>
   );
