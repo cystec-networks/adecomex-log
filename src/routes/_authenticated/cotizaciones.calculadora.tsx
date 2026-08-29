@@ -362,11 +362,11 @@ function ColumnaEscenario({
   );
 }
 
-async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[]) {
+async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[], importador: string) {
   const { jsPDF } = await import("jspdf");
   const autoTable = (await import("jspdf-autotable")).default;
 
-  const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+  const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const M = 32;
@@ -375,13 +375,15 @@ async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[]) {
   doc.text("ADECOMEX SRL — Gestión y Logística", M, 40);
   doc.setFontSize(11);
   doc.text("CALCULADORA RÁPIDA — PRE-LIQUIDACIÓN ESTIMADA", M, 58);
+  doc.setFontSize(9);
+  doc.text(`Importador: ${importador.trim() || "—"}`, M, 74);
   doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(180, 60, 30);
-  doc.text(doc.splitTextToSize(DISCLAIMER, pageW - M * 2), M, 70);
+  doc.text(doc.splitTextToSize(DISCLAIMER, pageW - M * 2), M, 88);
   doc.setTextColor(100);
-  doc.text(`Generado: ${new Date().toLocaleString("es-DO")}  |  Cálculo referencial sin vinculación a cliente/cotización`, M, 92);
+  doc.text(`Generado: ${new Date().toLocaleString("es-DO")}  |  Cálculo referencial sin vinculación a cliente/cotización`, M, 108);
   doc.setTextColor(0);
 
-  let y = 106;
+  let y = 122;
   escenarios.forEach((e, i) => {
     const tarifa = tarifas.find((t) => t.id === e.servicioId);
     const r = calcular(e, tarifa);
@@ -391,21 +393,28 @@ async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[]) {
 
     if (y > pageH - 240) { doc.addPage(); y = 50; }
 
-    // Detalle de productos
+    // Detalle por renglón (misma estructura que la tabla en pantalla)
+    const { body, foot } = filasResultado(r, tasa);
+    if (escenarios.length > 1) {
+      doc.setFontSize(9); doc.setFont("helvetica", "bold");
+      doc.text(`Escenario ${i + 1}`, M, y);
+      doc.setFont("helvetica", "normal");
+      y += 10;
+    }
     autoTable(doc, {
       startY: y,
-      head: [[escenarios.length > 1 ? `Escenario ${i + 1} — Productos` : "Productos", "FOB US$", "Peso kg", "CIF US$", "Impuestos US$"]],
-      body: r.lineas.map((l, idx) => [
-        l.producto || `Línea ${idx + 1}`,
-        nf(l.fob),
-        nf(num(e.lineas[idx]?.peso ?? "")),
-        nf(l.cif),
-        nf(l.total),
-      ]),
+      head: [COLUMNAS_RESULTADO],
+      body,
+      foot: [foot],
       theme: "grid",
       headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
       bodyStyles: { fontSize: 8 },
-      columnStyles: { 0: { cellWidth: 180 }, 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
+      footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 160 },
+        1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" },
+        4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" },
+      },
       margin: { left: M, right: M },
     });
     y = (doc as any).lastAutoTable.finalY + 8;
