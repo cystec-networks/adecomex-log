@@ -251,7 +251,7 @@ function DetalleCotizacion() {
             </Select>
           </div>
           <div className="grid gap-1.5"><Label>Fecha de emisión</Label><Input type="date" value={form.fecha_emision ?? ""} readOnly={readOnly} onChange={(e) => set("fecha_emision", e.target.value)} /></div>
-          <div className="grid gap-1.5"><Label>Fecha de vigencia</Label><Input type="date" value={form.fecha_vigencia ?? ""} readOnly={readOnly} onChange={(e) => set("fecha_vigencia", e.target.value)} /></div>
+          <div className="grid gap-1.5"><Label>Fecha de vencimiento</Label><Input type="date" value={form.fecha_vigencia ?? ""} readOnly={readOnly} onChange={(e) => set("fecha_vigencia", e.target.value)} /></div>
         </CardContent>
       </Card>
 
