@@ -45,13 +45,10 @@ function DetalleCotizacion() {
   const { data: perfiles } = useQuery({
     queryKey: ["vendedores-lite"],
     queryFn: async () => {
-      const { data: userRoles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .in("role", ["admin", "vendedor"]);
-      const ids = [...new Set((userRoles ?? []).map((r) => r.user_id))];
-      if (ids.length === 0) return [];
-      return (await supabase.from("profiles").select("id,nombre").in("id", ids).order("nombre")).data ?? [];
+      // user_roles solo es legible por admins; la lista completa de vendedores
+      // viene de la función listar_vendedores() (limitada a staff).
+      const { data } = await supabase.rpc("listar_vendedores");
+      return (data ?? []).map((r: any) => ({ id: r.user_id, nombre: r.nombre }));
     },
   });
 
