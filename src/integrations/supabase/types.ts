@@ -5635,6 +5635,13 @@ export type Database = {
       }
       expirar_cotizaciones_vencidas: { Args: never; Returns: number }
       immutable_unaccent: { Args: { "": string }; Returns: string }
+      listar_vendedores: {
+        Args: never
+        Returns: {
+          nombre: string
+          user_id: string
+        }[]
+      }
       marcar_password_cambiada_cliente: { Args: never; Returns: undefined }
       marcar_password_cambiada_estudiante: { Args: never; Returns: undefined }
       show_limit: { Args: never; Returns: number }
