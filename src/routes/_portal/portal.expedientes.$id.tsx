@@ -103,7 +103,7 @@ function PortalExpedienteDetalle() {
     enabled: facturaIds.length > 0,
     queryFn: async () => {
       const { data } = await supabase
-        .from("cxc_pagos")
+        .from("v_pagos_cliente" as any)
         .select("factura_id, monto")
         .in("factura_id", facturaIds);
       return (data ?? []) as any[];
