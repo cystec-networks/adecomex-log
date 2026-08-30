@@ -213,7 +213,7 @@ function DetalleCotizacion() {
               <SelectContent>{(clientes ?? []).map((cl: any) => <SelectItem key={cl.id} value={cl.id}>{cl.nombre}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div className="grid gap-1.5"><Label>Vendedor asignado</Label>
+          <div className="grid gap-1.5"><Label>Gestor de Compra asignado</Label>
             <Select value={form.vendedor_id || undefined} onValueChange={(v) => set("vendedor_id", v)} disabled={readOnly}>
               <SelectTrigger><SelectValue placeholder="Selecciona vendedor" /></SelectTrigger>
               <SelectContent>{(perfiles ?? []).map((p: any) => <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>)}</SelectContent>

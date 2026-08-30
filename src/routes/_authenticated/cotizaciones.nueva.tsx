@@ -80,7 +80,7 @@ function NuevaCotizacion() {
         <Card>
           <CardHeader><CardTitle className="text-base text-destructive">Acceso restringido</CardTitle></CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>Solo los roles Vendedor y Administrador pueden crear cotizaciones.</p>
+            <p>Solo los roles Gestor de Compra y Administrador pueden crear cotizaciones.</p>
             <Button asChild variant="outline"><Link to="/cotizaciones">Volver</Link></Button>
           </CardContent>
         </Card>
@@ -108,7 +108,7 @@ function NuevaCotizacion() {
                 <SelectContent>{(clientes ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="grid gap-1.5"><Label>Vendedor asignado</Label>
+            <div className="grid gap-1.5"><Label>Gestor de Compra asignado</Label>
               <Select value={form.vendedor_id || undefined} onValueChange={(v) => set("vendedor_id", v)}>
                 <SelectTrigger><SelectValue placeholder="Selecciona vendedor" /></SelectTrigger>
                 <SelectContent>{(perfiles ?? []).map((p: any) => <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>)}</SelectContent>
