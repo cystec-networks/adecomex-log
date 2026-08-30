@@ -40,7 +40,7 @@ function AdminUsuarios() {
   const { data: rows } = useQuery({
     queryKey: ["admin-users"],
     queryFn: async () => {
-      const { data: profiles } = await supabase.from("profiles").select("*").order("nombre");
+      const { data: profiles } = await supabase.from("profiles").select("*").eq("is_portal_account", false).order("nombre");
       const { data: roles } = await supabase.from("user_roles").select("user_id, role");
       return (profiles ?? []).map((p) => ({
         ...p,
