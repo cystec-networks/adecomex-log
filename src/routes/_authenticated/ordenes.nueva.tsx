@@ -38,8 +38,8 @@ function NuevaOrden() {
     queryFn: async () => (await supabase.from("clientes").select("id,nombre").order("nombre")).data ?? [],
   });
   const { data: perfiles } = useQuery({
-    queryKey: ["profiles-lite"],
-    queryFn: async () => (await supabase.from("profiles").select("id,nombre").order("nombre")).data ?? [],
+    queryKey: ["vendedores-lite"],
+    queryFn: async () => (await supabase.rpc("listar_vendedores")).data ?? [],
   });
 
   const num = (v: any) => (v === "" || v == null ? null : Number(v));
