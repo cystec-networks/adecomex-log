@@ -2676,8 +2676,11 @@ function MercanciaItemsBlock({
           <div className="rounded-md border bg-muted/30 p-3">
             <DgaProductoSearch
               onSelect={(p, reusarCodigo) => {
+                // Solo se bloquean las tasas cuando el producto del catálogo trae
+                // gravamen o ISC propios. El ITBIS por sí solo (18% por defecto en
+                // todo el catálogo) no constituye una tasa fija verificada.
                 const tieneTasaFija =
-                  p.pct_gravamen != null || p.pct_isc != null || p.pct_itbis != null;
+                  p.pct_gravamen != null || (p.aplica_isc === true && p.pct_isc != null);
                 setF((prev) => ({
                   ...prev,
                   product_code: reusarCodigo ? (p.codigo_producto ?? "") : "",

@@ -140,6 +140,13 @@ export type Database = {
             foreignKeyName: "almacen_stock_expediente_id_fkey"
             columns: ["expediente_id"]
             isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "almacen_stock_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
             referencedRelation: "v_rentabilidad_expediente"
             referencedColumns: ["expediente_id"]
           },
@@ -807,6 +814,13 @@ export type Database = {
             foreignKeyName: "catalogo_tasas_arancelarias_origen_expediente_id_fkey"
             columns: ["origen_expediente_id"]
             isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "catalogo_tasas_arancelarias_origen_expediente_id_fkey"
+            columns: ["origen_expediente_id"]
+            isOneToOne: false
             referencedRelation: "v_rentabilidad_expediente"
             referencedColumns: ["expediente_id"]
           },
@@ -1240,6 +1254,13 @@ export type Database = {
             foreignKeyName: "costos_expediente_id_fkey"
             columns: ["expediente_id"]
             isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "costos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
             referencedRelation: "v_rentabilidad_expediente"
             referencedColumns: ["expediente_id"]
           },
@@ -1296,6 +1317,13 @@ export type Database = {
             columns: ["expediente_id"]
             isOneToOne: false
             referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "costos_producto_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
             referencedColumns: ["expediente_id"]
           },
           {
@@ -1577,6 +1605,13 @@ export type Database = {
             foreignKeyName: "cotizaciones_servicios_expediente_id_fkey"
             columns: ["expediente_id"]
             isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "cotizaciones_servicios_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
             referencedRelation: "v_rentabilidad_expediente"
             referencedColumns: ["expediente_id"]
           },
@@ -1733,6 +1768,13 @@ export type Database = {
             columns: ["expediente_id"]
             isOneToOne: false
             referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "cuentas_por_pagar_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
             referencedColumns: ["expediente_id"]
           },
           {
@@ -2001,6 +2043,13 @@ export type Database = {
             foreignKeyName: "documentos_expediente_id_fkey"
             columns: ["expediente_id"]
             isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "documentos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
             referencedRelation: "v_rentabilidad_expediente"
             referencedColumns: ["expediente_id"]
           },
@@ -2054,6 +2103,13 @@ export type Database = {
             columns: ["expediente_id"]
             isOneToOne: false
             referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "documentos_generados_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
             referencedColumns: ["expediente_id"]
           },
           {
@@ -2551,6 +2607,13 @@ export type Database = {
             foreignKeyName: "etapas_expediente_id_fkey"
             columns: ["expediente_id"]
             isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "etapas_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
             referencedRelation: "v_rentabilidad_expediente"
             referencedColumns: ["expediente_id"]
           },
@@ -2616,6 +2679,13 @@ export type Database = {
             columns: ["expediente_id"]
             isOneToOne: false
             referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "expediente_hitos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
             referencedColumns: ["expediente_id"]
           },
           {
@@ -3000,6 +3070,13 @@ export type Database = {
             foreignKeyName: "facturas_expediente_id_fkey"
             columns: ["expediente_id"]
             isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "facturas_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
             referencedRelation: "v_rentabilidad_expediente"
             referencedColumns: ["expediente_id"]
           },
@@ -3334,6 +3411,13 @@ export type Database = {
             foreignKeyName: "gastos_expediente_id_fkey"
             columns: ["expediente_id"]
             isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "gastos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
             referencedRelation: "v_rentabilidad_expediente"
             referencedColumns: ["expediente_id"]
           },
@@ -3513,6 +3597,13 @@ export type Database = {
             columns: ["expediente_id"]
             isOneToOne: false
             referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "incidencias_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
             referencedColumns: ["expediente_id"]
           },
           {
@@ -3885,6 +3976,13 @@ export type Database = {
             foreignKeyName: "mercancia_items_expediente_id_fkey"
             columns: ["expediente_id"]
             isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "mercancia_items_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
             referencedRelation: "v_rentabilidad_expediente"
             referencedColumns: ["expediente_id"]
           },
@@ -4176,6 +4274,13 @@ export type Database = {
             columns: ["expediente_id"]
             isOneToOne: false
             referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "permisos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
             referencedColumns: ["expediente_id"]
           },
           {
@@ -4491,6 +4596,13 @@ export type Database = {
             columns: ["expediente_id"]
             isOneToOne: false
             referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "recepciones_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
             referencedColumns: ["expediente_id"]
           },
           {
@@ -5014,6 +5126,13 @@ export type Database = {
             foreignKeyName: "transportes_expediente_id_fkey"
             columns: ["expediente_id"]
             isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "transportes_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
             referencedRelation: "v_rentabilidad_expediente"
             referencedColumns: ["expediente_id"]
           },
@@ -5314,8 +5433,40 @@ export type Database = {
             foreignKeyName: "mercancia_items_expediente_id_fkey"
             columns: ["expediente_id"]
             isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "mercancia_items_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
             referencedRelation: "v_rentabilidad_expediente"
             referencedColumns: ["expediente_id"]
+          },
+        ]
+      }
+      v_pagos_cliente: {
+        Row: {
+          expediente_id: string | null
+          factura_id: string | null
+          fecha_pago: string | null
+          id: string | null
+          monto: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxc_pagos_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "facturas_ecf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxc_pagos_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -5370,6 +5521,13 @@ export type Database = {
             columns: ["expediente_id"]
             isOneToOne: false
             referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "permisos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
             referencedColumns: ["expediente_id"]
           },
           {

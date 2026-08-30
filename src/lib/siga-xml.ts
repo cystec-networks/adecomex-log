@@ -362,8 +362,8 @@ ${T("Remark", desc, "   ")}
   // Emisor de los documentos: se toma de los datos capturados en el expediente,
   // con el cliente y el agente (ADECOMEX) como respaldo cuando falten.
   const cli = exp.clientes ?? {};
-  const tel = "";
-  const mail = "";
+  const tel = (broker.brokerTel ?? "").trim();
+  const mail = (broker.brokerEmail ?? "").trim();
   const nombreSuplidor = (exp.suplidor || "").trim();
   const nombreNaviera = (exp.naviera || "").trim();
 
@@ -391,14 +391,20 @@ ${T("Remark", desc, "   ")}
   }
 
   // Los documentos sin código RDOC hacen fallar la carga en SIGA: se omiten.
-  const documentos = docs.filter((d) => d.code).map((d) => `  <ImpDeclarationDocument>
+  const documentos = docs.filter((d) => d.code).map((d) => {
+    const issuer = d.issuer || broker.brokerName;
+    // Los datos de contacto configurados son los de la agencia: solo se emiten
+    // cuando el emisor del documento es la propia agencia.
+    const esAgencia = normNombre(issuer) === normNombre(broker.brokerName);
+    return `  <ImpDeclarationDocument>
 ${T("RequiredDocumentCode", d.code, "   ")}
 ${T("OtherDocTypeDesc", "", "   ")}
 ${T("RequiredDocumentNo", d.num, "   ")}
-${T("BizDocIssuerName", d.issuer || broker.brokerName, "   ")}
-${T("BizDocIssuerEmail", mail, "   ")}
-${T("BizDocIssuerTel", tel, "   ")}
-  </ImpDeclarationDocument>`).join("\n");
+${T("BizDocIssuerName", issuer, "   ")}
+${T("BizDocIssuerEmail", esAgencia ? mail : "", "   ")}
+${T("BizDocIssuerTel", esAgencia ? tel : "", "   ")}
+  </ImpDeclarationDocument>`;
+  }).join("\n");
 
   return `<ImportDUA xmlns="http://aduanas.gob.do/XSD/ImportClearance/ImportDUA.xsd">
  <ImpDeclaration xmlns="">
