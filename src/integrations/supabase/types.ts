@@ -4388,6 +4388,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          is_portal_account: boolean
           nombre: string
           telefono: string | null
         }
@@ -4396,6 +4397,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id: string
+          is_portal_account?: boolean
           nombre?: string
           telefono?: string | null
         }
@@ -4404,6 +4406,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          is_portal_account?: boolean
           nombre?: string
           telefono?: string | null
         }
