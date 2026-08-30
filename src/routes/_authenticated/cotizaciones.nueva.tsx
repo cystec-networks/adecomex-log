@@ -40,7 +40,10 @@ function NuevaCotizacion() {
   });
   const { data: perfiles } = useQuery({
     queryKey: ["vendedores-lite"],
-    queryFn: async () => (await supabase.rpc("listar_vendedores")).data ?? [],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("listar_vendedores");
+      return (data ?? []).map((r: any) => ({ id: r.user_id, nombre: r.nombre }));
+    },
   });
 
   const create = useMutation({
