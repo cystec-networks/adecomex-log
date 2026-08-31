@@ -85,7 +85,8 @@ export function TerceroExtranjeroPicker({
   });
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button type="button" variant="outline" size={size}>
           <BookUser className="h-4 w-4 mr-1" /> {label}
