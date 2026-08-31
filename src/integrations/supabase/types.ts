@@ -4325,6 +4325,33 @@ export type Database = {
         }
         Relationships: []
       }
+      preferencias_usuario: {
+        Row: {
+          clave: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          valor: Json
+        }
+        Insert: {
+          clave: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          valor: Json
+        }
+        Update: {
+          clave?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          valor?: Json
+        }
+        Relationships: []
+      }
       prestamos_terceros: {
         Row: {
           created_at: string
