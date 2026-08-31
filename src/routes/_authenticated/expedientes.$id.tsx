@@ -329,14 +329,10 @@ function DetalleExpediente() {
                   setTabOrder((prev) => {
                     const next = prev.filter((k) => k !== from);
                     next.splice(next.indexOf(key), 0, from);
-                    try {
-                      localStorage.setItem(TAB_ORDER_KEY, JSON.stringify(next));
-                    } catch (e) {
-                      console.error("No se pudo guardar el orden de pestañas:", e);
-                      toast.error("No se pudo guardar el orden de las pestañas en este navegador");
-                    }
+                    void persistTabOrder(next);
                     return next;
                   });
+
                 }}
                 className="cursor-grab active:cursor-grabbing"
                 title="Arrastra para reordenar"
