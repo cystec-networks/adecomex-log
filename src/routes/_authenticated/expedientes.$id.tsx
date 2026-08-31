@@ -133,16 +133,49 @@ function DetalleExpediente() {
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const dragTab = useRef<string | null>(null);
 
+  const normalizeOrder = (saved: string[]) => {
+    const valid = saved.filter((k) => DEFAULT_TAB_ORDER.includes(k));
+    return [...valid, ...DEFAULT_TAB_ORDER.filter((k) => !valid.includes(k))];
+  };
+
+  // Carga el orden guardado: primero el del navegador (instantáneo), luego el del usuario en la nube
   useEffect(() => {
     try {
       const raw = localStorage.getItem(TAB_ORDER_KEY);
-      if (!raw) return;
-      const saved = JSON.parse(raw) as string[];
-      const valid = saved.filter((k) => DEFAULT_TAB_ORDER.includes(k));
-      const merged = [...valid, ...DEFAULT_TAB_ORDER.filter((k) => !valid.includes(k))];
-      setTabOrder(merged);
+      if (raw) setTabOrder(normalizeOrder(JSON.parse(raw) as string[]));
     } catch { /* noop */ }
+
+    let cancelled = false;
+    (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) return;
+      const { data } = await supabase
+        .from("preferencias_usuario")
+        .select("valor")
+        .eq("user_id", uid)
+        .eq("clave", TAB_ORDER_KEY)
+        .maybeSingle();
+      const valor = data?.valor;
+      if (!cancelled && Array.isArray(valor)) setTabOrder(normalizeOrder(valor as string[]));
+    })();
+    return () => { cancelled = true; };
   }, []);
+
+  const persistTabOrder = async (next: string[]) => {
+    try { localStorage.setItem(TAB_ORDER_KEY, JSON.stringify(next)); } catch { /* noop */ }
+    const { data: auth } = await supabase.auth.getUser();
+    const uid = auth.user?.id;
+    if (!uid) return;
+    const { error } = await supabase
+      .from("preferencias_usuario")
+      .upsert({ user_id: uid, clave: TAB_ORDER_KEY, valor: next }, { onConflict: "user_id,clave" });
+    if (error) {
+      console.error("No se pudo guardar el orden de pestañas:", error);
+      toast.error("No se pudo guardar el orden de las pestañas");
+    }
+  };
+
 
 
   const { data: exp } = useQuery({
