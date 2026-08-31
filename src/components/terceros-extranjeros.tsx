@@ -38,10 +38,33 @@ export function TerceroExtranjeroPicker({
   label?: string;
   size?: "sm" | "default";
 }) {
+  const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [nuevoOpen, setNuevoOpen] = useState(false);
+  const [form, setForm] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   const debounce = useRef<number | undefined>(undefined);
+
+  const crear = useMutation({
+    mutationFn: async () => {
+      const payload: any = {};
+      FIELDS.forEach((f) => { payload[f.k] = (form[f.k as string] ?? "").trim() || null; });
+      if (!payload.nombre || !payload.tid) throw new Error("Nombre y TID son obligatorios");
+      const { data, error } = await supabase.from(TABLE as any).insert(payload).select().single();
+      if (error) throw error;
+      return data as unknown as TerceroExtranjero;
+    },
+    onSuccess: (t) => {
+      qc.invalidateQueries({ queryKey: ["terceros-extranjeros"] });
+      qc.invalidateQueries({ queryKey: ["terceros-extranjeros-picker"] });
+      toast.success("Tercero extranjero creado");
+      setNuevoOpen(false);
+      setForm({});
+      onSelect(t);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   useEffect(() => {
     window.clearTimeout(debounce.current);
@@ -62,7 +85,8 @@ export function TerceroExtranjeroPicker({
   });
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button type="button" variant="outline" size={size}>
           <BookUser className="h-4 w-4 mr-1" /> {label}
@@ -104,8 +128,45 @@ export function TerceroExtranjeroPicker({
             ))
           )}
         </div>
+        <div className="p-2 border-t">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="w-full"
+            onClick={() => { setOpen(false); setForm({}); setNuevoOpen(true); }}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Agregar nuevo tercero extranjero (Catálogo DGA)
+          </Button>
+        </div>
       </PopoverContent>
-    </Popover>
+      </Popover>
+
+      <Dialog open={nuevoOpen} onOpenChange={setNuevoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nuevo tercero extranjero (Catálogo DGA)</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {FIELDS.map((f) => (
+              <div key={f.k as string} className="grid gap-1.5">
+                <Label>{f.label}{f.required ? " *" : ""}</Label>
+                <Input
+                  value={form[f.k as string] ?? ""}
+                  onChange={(e) => setForm((p) => ({ ...p, [f.k as string]: e.target.value }))}
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setNuevoOpen(false)}>Cancelar</Button>
+            <Button type="button" onClick={() => crear.mutate()} disabled={crear.isPending}>
+              {crear.isPending ? "Guardando…" : "Guardar y usar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
