@@ -38,10 +38,33 @@ export function TerceroExtranjeroPicker({
   label?: string;
   size?: "sm" | "default";
 }) {
+  const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [nuevoOpen, setNuevoOpen] = useState(false);
+  const [form, setForm] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   const debounce = useRef<number | undefined>(undefined);
+
+  const crear = useMutation({
+    mutationFn: async () => {
+      const payload: any = {};
+      FIELDS.forEach((f) => { payload[f.k] = (form[f.k as string] ?? "").trim() || null; });
+      if (!payload.nombre || !payload.tid) throw new Error("Nombre y TID son obligatorios");
+      const { data, error } = await supabase.from(TABLE as any).insert(payload).select().single();
+      if (error) throw error;
+      return data as unknown as TerceroExtranjero;
+    },
+    onSuccess: (t) => {
+      qc.invalidateQueries({ queryKey: ["terceros-extranjeros"] });
+      qc.invalidateQueries({ queryKey: ["terceros-extranjeros-picker"] });
+      toast.success("Tercero extranjero creado");
+      setNuevoOpen(false);
+      setForm({});
+      onSelect(t);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   useEffect(() => {
     window.clearTimeout(debounce.current);
