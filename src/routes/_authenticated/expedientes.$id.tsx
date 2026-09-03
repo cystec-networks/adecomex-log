@@ -23,6 +23,7 @@ import { AutocompleteInput } from "@/components/autocomplete-input";
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { DgaCombobox } from "@/components/dga-combobox";
 import { DgaProductoSearch } from "@/components/dga-producto-search";
+import { normalizarNombre, patronSinTildes } from "@/lib/search-filter";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -785,6 +786,8 @@ function TabInfo({ exp }: { exp: any }) {
               otros={Number(form.otros) || 0}
               preferenciaComercial={form.preferencia_comercial || ""}
               tasaCambioUsada={exp.tasa_cambio_usada}
+              paisOrigen={form.pais_origen || ""}
+              paisOrigenCodigo={form.pais_origen_codigo || ""}
             />
           </div>
           <HerramientasDgaVuce />
@@ -2384,6 +2387,8 @@ function MercanciaItemsBlock({
   otros,
   preferenciaComercial,
   tasaCambioUsada,
+  paisOrigen,
+  paisOrigenCodigo,
 }: {
   expedienteId: string;
   seguro: number;
@@ -2391,6 +2396,8 @@ function MercanciaItemsBlock({
   otros: number;
   preferenciaComercial: string;
   tasaCambioUsada?: number | string | null;
+  paisOrigen?: string;
+  paisOrigenCodigo?: string;
 }) {
   const qc = useQueryClient();
   const { data: items } = useQuery({
@@ -2421,6 +2428,7 @@ function MercanciaItemsBlock({
     pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "18",
     product_code: "", cod_marca: "", marca: "", cod_modelo: "", modelo: "", especificaciones: "",
     estado_producto_codigo: "",
+    pais_origen: "", pais_origen_codigo: "",
   };
 
   const [f, setF] = useState(emptyForm);
@@ -2497,6 +2505,8 @@ function MercanciaItemsBlock({
         modelo: f.modelo?.trim() || null,
         especificaciones: f.especificaciones?.trim() || null,
         estado_producto_codigo: f.estado_producto_codigo?.trim() || null,
+        pais_origen: f.pais_origen?.trim() || null,
+        pais_origen_codigo: f.pais_origen_codigo?.trim() || null,
       };
 
       if (editingId) {
@@ -2538,7 +2548,12 @@ function MercanciaItemsBlock({
     onError: (e: any) => toast.error(e.message),
   });
 
-  const startNew = () => { setEditingId(null); setF(emptyForm); setTasaBloqueada(false); setValorUnitario(""); setOpen(true); };
+  const startNew = () => {
+    setEditingId(null);
+    // Precarga el país de origen del Expediente como valor por defecto (editable por línea).
+    setF({ ...emptyForm, pais_origen: paisOrigen ?? "", pais_origen_codigo: paisOrigenCodigo ?? "" });
+    setTasaBloqueada(false); setValorUnitario(""); setOpen(true);
+  };
   const startEdit = (it: any) => {
     setEditingId(it.id);
     setF({
@@ -2560,6 +2575,8 @@ function MercanciaItemsBlock({
       modelo: it.modelo ?? "",
       especificaciones: it.especificaciones ?? "",
       estado_producto_codigo: it.estado_producto_codigo ?? "",
+      pais_origen: it.pais_origen ?? "",
+      pais_origen_codigo: it.pais_origen_codigo ?? "",
     });
     const vu = unitFob(it.valor_fob, it.cantidad);
     setValorUnitario(isFinite(Number(vu)) ? Number(vu).toFixed(4) : "");
@@ -2731,6 +2748,18 @@ function MercanciaItemsBlock({
                     : {}),
                 }));
                 setTasaBloqueada(tieneTasaFija);
+                // Si el histórico trae país, intenta mapearlo al catálogo DGA de países.
+                // Sin coincidencia exacta se conserva el valor actual (por defecto, el del Expediente).
+                const paisCatalogo = (p.pais ?? "").trim();
+                if (paisCatalogo) {
+                  void (async () => {
+                    const patron = patronSinTildes(paisCatalogo);
+                    if (!patron) return;
+                    const { data } = await supabase.from("dga_paises").select("codigo, pais").ilike("pais", patron).limit(20);
+                    const match = (data ?? []).find((r: any) => normalizarNombre(r.pais) === normalizarNombre(paisCatalogo));
+                    if (match) setF((prev) => ({ ...prev, pais_origen: match.pais ?? "", pais_origen_codigo: match.codigo ?? "" }));
+                  })();
+                }
                 toast.success(reusarCodigo ? "Producto copiado con su ProductCode" : "Datos copiados — SIGA asignará un ProductCode nuevo");
               }}
             />
@@ -2895,6 +2924,17 @@ function MercanciaItemsBlock({
                     onChange={(_n, codigo) => setF({ ...f, estado_producto_codigo: codigo })}
                     placeholder="Selecciona estado (catálogo DGA)"
                   />
+                </div>
+                <div className="grid gap-1.5 md:col-span-2">
+                  <Label>País de Origen (producto)</Label>
+                  <DgaCombobox
+                    table="dga_paises"
+                    value={f.pais_origen}
+                    codigo={f.pais_origen_codigo}
+                    onChange={(nombre, codigo) => setF({ ...f, pais_origen: nombre, pais_origen_codigo: codigo })}
+                    placeholder="País de origen del producto"
+                  />
+                  <p className="text-[11px] text-muted-foreground">Por defecto el país del Expediente; cámbialo si este producto viene de otro país.</p>
                 </div>
                 <div className="grid gap-1.5 md:col-span-2">
                   <Label>Especificaciones</Label>
