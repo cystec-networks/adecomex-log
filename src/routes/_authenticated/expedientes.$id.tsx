@@ -3361,7 +3361,7 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
           ["Suplidor", expData.suplidor ?? "—"],
         ],
       ],
-      items: (list as any[]).map((it) => ({ ...it, origen: expData.pais_origen ?? "—" })),
+      items: (list as any[]).map((it) => ({ ...it, origen: it.pais_origen || expData.pais_origen || "—" })),
       seguro: Number(expData.seguro) || 0,
       flete: Number(expData.flete) || 0,
       otros: Number(expData.otros) || 0,
@@ -3509,6 +3509,7 @@ function LiquidacionFinalPdfButton({
       t.venta += cv * c.cant;
       return [
         it.detalle_producto ?? "—",
+        (it as any).pais_origen || exp.pais_origen || "—",
         nf(c.cant),
         rd(c.est.gravamen), rd(c.gr),
         rd(c.est.selectivo), rd(c.ir),
@@ -3526,12 +3527,12 @@ function LiquidacionFinalPdfButton({
     autoTable(doc, {
       startY: 106,
       head: [[
-        "Descripción", "Cantidad", "Gravamen Est. (RD$)", "Gravamen Real (RD$)", "ISC Est. (RD$)", "ISC Real (RD$)",
+        "Descripción", "País de Origen", "Cantidad", "Gravamen Est. (RD$)", "Gravamen Real (RD$)", "ISC Est. (RD$)", "ISC Real (RD$)",
         "ITBIS Est. (RD$)", "ITBIS Real (RD$)", "Costo Unit. Real", "Costo de Venta", "Margen Unit.", "% Margen",
       ]],
       body,
       foot: [[
-        "TOTALES", nf(t.cant), rd(t.gEst), rd(t.gReal), rd(t.iEst), rd(t.iReal),
+        "TOTALES", "", nf(t.cant), rd(t.gEst), rd(t.gReal), rd(t.iEst), rd(t.iReal),
         rd(t.tEst), rd(t.tReal), "", "", nf(margenTotal), `${margenPct.toFixed(1)}%`,
       ]],
       theme: "grid",
@@ -3539,11 +3540,11 @@ function LiquidacionFinalPdfButton({
       bodyStyles: { fontSize: 6.8 },
       footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 7 },
       columnStyles: {
-        0: { cellWidth: 150 },
-        1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" },
-        4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" },
-        7: { halign: "right" }, 8: { halign: "right" }, 9: { halign: "right" },
-        10: { halign: "right" }, 11: { halign: "right" },
+        0: { cellWidth: 130 }, 1: { cellWidth: 50 },
+        2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" },
+        5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" },
+        8: { halign: "right" }, 9: { halign: "right" }, 10: { halign: "right" },
+        11: { halign: "right" }, 12: { halign: "right" },
       },
       margin: { left: M, right: M },
     });
@@ -3878,6 +3879,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             producto: it.detalle_producto ?? "Producto",
             codigo_arancelario: it.codigo_arancelario ?? null,
             unidad: it.unidad_medida ?? null,
+            pais_origen: (it as any).pais_origen ?? null,
             cantidad: c.cant,
             cantidad_disponible: c.cant,
             almacen_id: almacenId || null,
