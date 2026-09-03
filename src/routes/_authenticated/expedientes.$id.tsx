@@ -2427,6 +2427,7 @@ function MercanciaItemsBlock({
     pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "18",
     product_code: "", cod_marca: "", marca: "", cod_modelo: "", modelo: "", especificaciones: "",
     estado_producto_codigo: "",
+    pais_origen: "", pais_origen_codigo: "",
   };
 
   const [f, setF] = useState(emptyForm);
@@ -2503,6 +2504,8 @@ function MercanciaItemsBlock({
         modelo: f.modelo?.trim() || null,
         especificaciones: f.especificaciones?.trim() || null,
         estado_producto_codigo: f.estado_producto_codigo?.trim() || null,
+        pais_origen: f.pais_origen?.trim() || null,
+        pais_origen_codigo: f.pais_origen_codigo?.trim() || null,
       };
 
       if (editingId) {
@@ -2544,7 +2547,12 @@ function MercanciaItemsBlock({
     onError: (e: any) => toast.error(e.message),
   });
 
-  const startNew = () => { setEditingId(null); setF(emptyForm); setTasaBloqueada(false); setValorUnitario(""); setOpen(true); };
+  const startNew = () => {
+    setEditingId(null);
+    // Precarga el país de origen del Expediente como valor por defecto (editable por línea).
+    setF({ ...emptyForm, pais_origen: paisOrigen ?? "", pais_origen_codigo: paisOrigenCodigo ?? "" });
+    setTasaBloqueada(false); setValorUnitario(""); setOpen(true);
+  };
   const startEdit = (it: any) => {
     setEditingId(it.id);
     setF({
@@ -2566,6 +2574,8 @@ function MercanciaItemsBlock({
       modelo: it.modelo ?? "",
       especificaciones: it.especificaciones ?? "",
       estado_producto_codigo: it.estado_producto_codigo ?? "",
+      pais_origen: it.pais_origen ?? "",
+      pais_origen_codigo: it.pais_origen_codigo ?? "",
     });
     const vu = unitFob(it.valor_fob, it.cantidad);
     setValorUnitario(isFinite(Number(vu)) ? Number(vu).toFixed(4) : "");
