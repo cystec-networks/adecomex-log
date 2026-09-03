@@ -2395,6 +2395,8 @@ function MercanciaItemsBlock({
   otros: number;
   preferenciaComercial: string;
   tasaCambioUsada?: number | string | null;
+  paisOrigen?: string;
+  paisOrigenCodigo?: string;
 }) {
   const qc = useQueryClient();
   const { data: items } = useQuery({
