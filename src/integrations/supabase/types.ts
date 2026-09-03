@@ -72,6 +72,7 @@ export type Database = {
           fecha_entrada: string
           id: string
           mercancia_item_id: string
+          pais_origen: string | null
           producto: string
           unidad: string | null
         }
@@ -88,6 +89,7 @@ export type Database = {
           fecha_entrada?: string
           id?: string
           mercancia_item_id: string
+          pais_origen?: string | null
           producto: string
           unidad?: string | null
         }
@@ -104,6 +106,7 @@ export type Database = {
           fecha_entrada?: string
           id?: string
           mercancia_item_id?: string
+          pais_origen?: string | null
           producto?: string
           unidad?: string | null
         }
@@ -1353,6 +1356,8 @@ export type Database = {
           item_no: number | null
           marca: string | null
           modelo: string | null
+          pais_origen: string | null
+          pais_origen_codigo: string | null
           pct_gravamen: number | null
           pct_isc: number | null
           pct_itbis: number | null
@@ -1380,6 +1385,8 @@ export type Database = {
           item_no?: number | null
           marca?: string | null
           modelo?: string | null
+          pais_origen?: string | null
+          pais_origen_codigo?: string | null
           pct_gravamen?: number | null
           pct_isc?: number | null
           pct_itbis?: number | null
@@ -1407,6 +1414,8 @@ export type Database = {
           item_no?: number | null
           marca?: string | null
           modelo?: string | null
+          pais_origen?: string | null
+          pais_origen_codigo?: string | null
           pct_gravamen?: number | null
           pct_isc?: number | null
           pct_itbis?: number | null
@@ -4012,6 +4021,8 @@ export type Database = {
           marca: string | null
           modelo: string | null
           orden_id: string
+          pais_origen: string | null
+          pais_origen_codigo: string | null
           pct_gravamen: number | null
           pct_isc: number | null
           pct_itbis: number | null
@@ -4039,6 +4050,8 @@ export type Database = {
           marca?: string | null
           modelo?: string | null
           orden_id: string
+          pais_origen?: string | null
+          pais_origen_codigo?: string | null
           pct_gravamen?: number | null
           pct_isc?: number | null
           pct_itbis?: number | null
@@ -4066,6 +4079,8 @@ export type Database = {
           marca?: string | null
           modelo?: string | null
           orden_id?: string
+          pais_origen?: string | null
+          pais_origen_codigo?: string | null
           pct_gravamen?: number | null
           pct_isc?: number | null
           pct_itbis?: number | null
@@ -4745,6 +4760,8 @@ export type Database = {
           item_no: number | null
           marca: string | null
           modelo: string | null
+          pais_origen: string | null
+          pais_origen_codigo: string | null
           pct_gravamen: number | null
           pct_isc: number | null
           pct_itbis: number | null
@@ -4772,6 +4789,8 @@ export type Database = {
           item_no?: number | null
           marca?: string | null
           modelo?: string | null
+          pais_origen?: string | null
+          pais_origen_codigo?: string | null
           pct_gravamen?: number | null
           pct_isc?: number | null
           pct_itbis?: number | null
@@ -4799,6 +4818,8 @@ export type Database = {
           item_no?: number | null
           marca?: string | null
           modelo?: string | null
+          pais_origen?: string | null
+          pais_origen_codigo?: string | null
           pct_gravamen?: number | null
           pct_isc?: number | null
           pct_itbis?: number | null
