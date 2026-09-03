@@ -169,6 +169,7 @@ function filasResultado(r: Resultado, tasa: number): { body: string[][]; foot: s
   ]);
   const foot = [
     "TOTALES",
+    "",
     nf(r.cif),
     nf(r.gravamen),
     nf(r.itbis),
