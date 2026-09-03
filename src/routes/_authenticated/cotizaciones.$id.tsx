@@ -252,7 +252,7 @@ function DetalleCotizacion() {
         </CardContent>
       </Card>
 
-      <ProductosCard tabla="cotizacion_productos" parentId={id} readOnly={readOnly} />
+      <ProductosCard tabla="cotizacion_productos" parentId={id} readOnly={readOnly} paisOrigen={form.origen} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Pre-Liquidación estimada de impuestos</CardTitle></CardHeader>

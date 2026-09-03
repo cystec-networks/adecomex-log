@@ -261,7 +261,7 @@ function NuevaSolicitud() {
           </CardContent>
         </Card>
 
-        <ProductosCard tabla="solicitud_productos" items={productos} onItemsChange={setProductos} />
+        <ProductosCard tabla="solicitud_productos" items={productos} onItemsChange={setProductos} paisOrigen={form.origen} paisOrigenCodigo={form.origen_codigo} />
 
 
 

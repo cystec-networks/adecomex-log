@@ -173,7 +173,7 @@ function DetalleOrden() {
         </Card>
       )}
 
-      <ProductosCard tabla="orden_productos" parentId={id} readOnly={!canEdit} />
+      <ProductosCard tabla="orden_productos" parentId={id} readOnly={!canEdit} paisOrigen={(o as any)?.cot_origen ?? ""} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Orden</CardTitle></CardHeader>

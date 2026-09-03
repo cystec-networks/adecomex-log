@@ -333,7 +333,7 @@ function DetalleSolicitud() {
         </Card>
       </div>
 
-      <ProductosCard tabla="solicitud_productos" parentId={id} />
+      <ProductosCard tabla="solicitud_productos" parentId={id} paisOrigen={form.origen} paisOrigenCodigo={form.origen_codigo} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Observaciones</CardTitle></CardHeader>
