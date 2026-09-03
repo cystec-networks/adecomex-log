@@ -344,7 +344,7 @@ ${T("ProductSpecification", it.especificaciones, "   ")}
 ${T("TempProductYN", "false", "   ")}
 ${T("CertificateOrignYN", certOrigen, "   ")}
 ${T("CertificateOriginNo", exp.numero_certificado_origen, "   ")}
-${T("OriginCountry", origen, "   ")}
+${T("OriginCountry", it.pais_origen_codigo || origen, "   ")}
 ${T("OrganicYN", "false", "   ")}
 ${T("GradeAlcohol", "0", "   ")}
 ${T("CustomerSalesPrice", "0", "   ")}

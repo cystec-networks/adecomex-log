@@ -2747,6 +2747,18 @@ function MercanciaItemsBlock({
                     : {}),
                 }));
                 setTasaBloqueada(tieneTasaFija);
+                // Si el histórico trae país, intenta mapearlo al catálogo DGA de países.
+                // Sin coincidencia exacta se conserva el valor actual (por defecto, el del Expediente).
+                const paisCatalogo = (p.pais ?? "").trim();
+                if (paisCatalogo) {
+                  void (async () => {
+                    const patron = patronSinTildes(paisCatalogo);
+                    if (!patron) return;
+                    const { data } = await supabase.from("dga_paises").select("codigo, pais").ilike("pais", patron).limit(20);
+                    const match = (data ?? []).find((r: any) => normalizarNombre(r.pais) === normalizarNombre(paisCatalogo));
+                    if (match) setF((prev) => ({ ...prev, pais_origen: match.pais ?? "", pais_origen_codigo: match.codigo ?? "" }));
+                  })();
+                }
                 toast.success(reusarCodigo ? "Producto copiado con su ProductCode" : "Datos copiados — SIGA asignará un ProductCode nuevo");
               }}
             />
@@ -2911,6 +2923,17 @@ function MercanciaItemsBlock({
                     onChange={(_n, codigo) => setF({ ...f, estado_producto_codigo: codigo })}
                     placeholder="Selecciona estado (catálogo DGA)"
                   />
+                </div>
+                <div className="grid gap-1.5 md:col-span-2">
+                  <Label>País de Origen (producto)</Label>
+                  <DgaCombobox
+                    table="dga_paises"
+                    value={f.pais_origen}
+                    codigo={f.pais_origen_codigo}
+                    onChange={(nombre, codigo) => setF({ ...f, pais_origen: nombre, pais_origen_codigo: codigo })}
+                    placeholder="País de origen del producto"
+                  />
+                  <p className="text-[11px] text-muted-foreground">Por defecto el país del Expediente; cámbialo si este producto viene de otro país.</p>
                 </div>
                 <div className="grid gap-1.5 md:col-span-2">
                   <Label>Especificaciones</Label>
