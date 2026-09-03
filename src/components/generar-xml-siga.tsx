@@ -74,7 +74,7 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
   const { data: docsRequeridos } = useQuery({
     queryKey: ["catalogo-documentos-requeridos-xml", open],
     enabled: open,
-    queryFn: async () => (await supabase.from("catalogo_documentos_requeridos").select("codigo, nombre")).data ?? [],
+    queryFn: async () => (await supabase.from("catalogo_documentos_requeridos").select("codigo, nombre, estado")).data ?? [],
   });
 
   const toMap = (rows: any[] | undefined) => {
@@ -90,7 +90,8 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
   const vuceDocCode = useMemo(() => {
     const row = (docsRequeridos as any[] | undefined)?.find((r) => {
       const n = normNombre(r?.nombre);
-      return n.includes("vuce") || (n.includes("permiso") && !n.includes("sin permiso"));
+      return (n.includes("vuce") || (n.includes("permiso") && !n.includes("sin permiso")))
+        && r?.estado === "confirmado";
     });
     return row?.codigo ? String(row.codigo) : "";
   }, [docsRequeridos]);
