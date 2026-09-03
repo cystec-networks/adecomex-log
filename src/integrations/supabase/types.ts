@@ -3870,6 +3870,8 @@ export type Database = {
           marca: string | null
           metodo_calificacion_codigo: string | null
           modelo: string | null
+          pais_origen: string | null
+          pais_origen_codigo: string | null
           pct_gravamen: number | null
           pct_isc: number | null
           pct_itbis: number | null
@@ -3905,6 +3907,8 @@ export type Database = {
           marca?: string | null
           metodo_calificacion_codigo?: string | null
           modelo?: string | null
+          pais_origen?: string | null
+          pais_origen_codigo?: string | null
           pct_gravamen?: number | null
           pct_isc?: number | null
           pct_itbis?: number | null
@@ -3940,6 +3944,8 @@ export type Database = {
           marca?: string | null
           metodo_calificacion_codigo?: string | null
           modelo?: string | null
+          pais_origen?: string | null
+          pais_origen_codigo?: string | null
           pct_gravamen?: number | null
           pct_isc?: number | null
           pct_itbis?: number | null
