@@ -785,6 +785,8 @@ function TabInfo({ exp }: { exp: any }) {
               otros={Number(form.otros) || 0}
               preferenciaComercial={form.preferencia_comercial || ""}
               tasaCambioUsada={exp.tasa_cambio_usada}
+              paisOrigen={form.pais_origen || ""}
+              paisOrigenCodigo={form.pais_origen_codigo || ""}
             />
           </div>
           <HerramientasDgaVuce />
@@ -2384,6 +2386,8 @@ function MercanciaItemsBlock({
   otros,
   preferenciaComercial,
   tasaCambioUsada,
+  paisOrigen,
+  paisOrigenCodigo,
 }: {
   expedienteId: string;
   seguro: number;
