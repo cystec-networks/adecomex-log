@@ -321,16 +321,16 @@ function CatalogoProductosDgaPage() {
                 <Input value={editar.unidad ?? ""} onChange={(e) => setEditar({ ...editar, unidad: e.target.value })} />
               </div>
               <div className="grid gap-1.5">
+                <Label>País</Label>
+                <Input value={editar.pais ?? ""} onChange={(e) => setEditar({ ...editar, pais: e.target.value })} />
+              </div>
+              <div className="grid gap-1.5">
                 <Label>Marca</Label>
                 <Input value={editar.marca ?? ""} onChange={(e) => setEditar({ ...editar, marca: e.target.value })} />
               </div>
               <div className="grid gap-1.5">
                 <Label>Modelo</Label>
                 <Input value={editar.modelo ?? ""} onChange={(e) => setEditar({ ...editar, modelo: e.target.value })} />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>País</Label>
-                <Input value={editar.pais ?? ""} onChange={(e) => setEditar({ ...editar, pais: e.target.value })} />
               </div>
               <div className="grid gap-1.5 md:col-span-2">
                 <Label>Especificaciones</Label>
