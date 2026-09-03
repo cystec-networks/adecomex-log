@@ -2613,89 +2613,91 @@ function MercanciaItemsBlock({
       </div>
       <div className="rounded-md border overflow-x-auto">
         <table className="w-full text-sm min-w-[1400px]">
-          <thead className="bg-muted/50 text-[10.5px] uppercase tracking-wide text-muted-foreground">
-            <tr>
-              <th className="px-2 py-2 text-left w-10">#</th>
-              <th className="px-2 py-2 text-left">Cód. Arancel</th>
-              <th className="px-2 py-2 text-left">Detalle</th>
-              <th className="px-2 py-2 text-left">Unidad</th>
-              <th className="px-2 py-2 text-right">Cantidad</th>
-              <th className="px-2 py-2 text-right">Peso</th>
-              <th className="px-2 py-2 text-right">FOB (US$)</th>
-              <th className="px-2 py-2 text-right">Valor Unit.</th>
-              <th className="px-2 py-2 text-right bg-amber-50">% Grav.</th>
-              <th className="px-2 py-2 text-center bg-amber-50">ISC?</th>
-              <th className="px-2 py-2 text-right bg-amber-50">% ISC</th>
-                <th className="px-2 py-2 text-right bg-slate-50">CIF línea (RD$)</th>
-                <th className="px-2 py-2 text-right bg-slate-50">Gravamen (RD$)</th>
-                <th className="px-2 py-2 text-right bg-slate-50">Selectivo</th>
-                <th className="px-2 py-2 text-right bg-slate-50">ITBIS (RD$)</th>
-                <th className="px-2 py-2 text-right bg-emerald-50">Total imp. (RD$)</th>
-                <th className="px-2 py-2 text-right w-20"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {(items ?? []).length === 0 ? (
-                <tr><td colSpan={17} className="px-3 py-6 text-center text-xs text-muted-foreground">Sin ítems. Agrega el primero.</td></tr>
-              ) : (items ?? []).map((it: any) => {
-                const c = calcImpuestosLinea(
-                  Number(it.valor_fob) || 0, totalFob, seguro, flete, otros,
-                  it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis,
-                );
-                const tasa = tasaByCodigo.get((it.codigo_arancelario || "").trim());
-                const unverifiedHint = tasa && !tasa.verificado && it.pct_gravamen != null;
-                return (
-                  <tr key={it.id} className="border-t">
-                    <td className="px-2 py-2 tabular-nums text-muted-foreground">{it.item_no}</td>
-                    <td className="px-2 py-2 tabular-nums font-mono text-xs">
-                      <div className="flex items-center gap-1">
-                        <span>{it.codigo_arancelario || "—"}</span>
-                        {unverifiedHint && (
-                          <span title="Tasa sugerida por historial; aún no verificada por Administrador." className="inline-flex">
-                            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-2 py-2 max-w-[220px] truncate" title={it.detalle_producto || ""}>{it.detalle_producto || "—"}</td>
-                    <td className="px-2 py-2 text-xs">{it.unidad_medida || "—"}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{Number(it.cantidad || 0).toLocaleString("en-US")}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{Number(it.peso || 0).toLocaleString("en-US")}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{fmt(Number(it.valor_fob || 0))}</td>
-                    <td className="px-2 py-2 text-right tabular-nums text-xs">{(() => {
-                      const vu = Number(unitFob(it.valor_fob, it.cantidad));
-                      return isFinite(vu) ? vu.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : "—";
-                    })()}</td>
-                    <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{it.pct_gravamen != null ? `${Number(it.pct_gravamen)}%` : <span className="text-amber-600 text-xs">—</span>}</td>
-                    <td className="px-2 py-2 text-center bg-amber-50/40 text-xs">{it.aplica_isc ? "Sí" : "No"}</td>
-                    <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{it.aplica_isc && it.pct_isc != null ? `${Number(it.pct_isc)}%` : "—"}</td>
-                    <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{rd(c.cifLinea)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{rd(c.gravamen)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.selectivo)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{rd(c.itbis)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums bg-emerald-50/60 font-semibold">{rd(c.total)}</td>
-                  <td className="px-2 py-2 text-right whitespace-nowrap">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(it)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => duplicar.mutate(it)} title="Duplicar línea"><Copy className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => eliminar.mutate(it.id)} title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></Button>
-                  </td>
+            <thead className="bg-muted/50 text-[10.5px] uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-2 py-2 text-left w-10">#</th>
+                <th className="px-2 py-2 text-left">Cód. Arancel</th>
+                <th className="px-2 py-2 text-left">Detalle</th>
+                <th className="px-2 py-2 text-left">Unidad</th>
+                <th className="px-2 py-2 text-left">País de Origen</th>
+                <th className="px-2 py-2 text-right">Cantidad</th>
+                <th className="px-2 py-2 text-right">Peso</th>
+                <th className="px-2 py-2 text-right">FOB (US$)</th>
+                <th className="px-2 py-2 text-right">Valor Unit.</th>
+                <th className="px-2 py-2 text-right bg-amber-50">% Grav.</th>
+                <th className="px-2 py-2 text-center bg-amber-50">ISC?</th>
+                <th className="px-2 py-2 text-right bg-amber-50">% ISC</th>
+                  <th className="px-2 py-2 text-right bg-slate-50">CIF línea (RD$)</th>
+                  <th className="px-2 py-2 text-right bg-slate-50">Gravamen (RD$)</th>
+                  <th className="px-2 py-2 text-right bg-slate-50">Selectivo</th>
+                  <th className="px-2 py-2 text-right bg-slate-50">ITBIS (RD$)</th>
+                  <th className="px-2 py-2 text-right bg-emerald-50">Total imp. (RD$)</th>
+                  <th className="px-2 py-2 text-right w-20"></th>
                 </tr>
-              );
-            })}
-          </tbody>
-          {(items ?? []).length > 0 && (
-            <tfoot>
-              <tr className="border-t bg-muted/30">
-                <td colSpan={4} className="px-2 py-2 text-right text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Totales</td>
-                <td className="px-2 py-2 text-right tabular-nums font-semibold">
-                  {(items ?? []).reduce((s, it) => s + (Number(it.cantidad) || 0), 0).toLocaleString("en-US")}
-                </td>
-                <td className="px-2 py-2 text-right tabular-nums font-semibold">
-                  {(items ?? []).reduce((s, it) => s + (Number(it.peso) || 0), 0).toLocaleString("en-US")}
-                </td>
-                <td className="px-2 py-2 text-right tabular-nums font-semibold">{fmt(totalFob)}</td>
-                <td colSpan={8}></td>
-                <td className="px-2 py-2 text-right tabular-nums font-semibold bg-emerald-50/60">
+              </thead>
+              <tbody>
+                {(items ?? []).length === 0 ? (
+                  <tr><td colSpan={18} className="px-3 py-6 text-center text-xs text-muted-foreground">Sin ítems. Agrega el primero.</td></tr>
+                ) : (items ?? []).map((it: any) => {
+                  const c = calcImpuestosLinea(
+                    Number(it.valor_fob) || 0, totalFob, seguro, flete, otros,
+                    it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis,
+                  );
+                  const tasa = tasaByCodigo.get((it.codigo_arancelario || "").trim());
+                  const unverifiedHint = tasa && !tasa.verificado && it.pct_gravamen != null;
+                  return (
+                    <tr key={it.id} className="border-t">
+                      <td className="px-2 py-2 tabular-nums text-muted-foreground">{it.item_no}</td>
+                      <td className="px-2 py-2 tabular-nums font-mono text-xs">
+                        <div className="flex items-center gap-1">
+                          <span>{it.codigo_arancelario || "—"}</span>
+                          {unverifiedHint && (
+                            <span title="Tasa sugerida por historial; aún no verificada por Administrador." className="inline-flex">
+                              <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-2 py-2 max-w-[220px] truncate" title={it.detalle_producto || ""}>{it.detalle_producto || "—"}</td>
+                      <td className="px-2 py-2 text-xs">{it.unidad_medida || "—"}</td>
+                      <td className="px-2 py-2 text-xs">{it.pais_origen || "—"}</td>
+                      <td className="px-2 py-2 text-right tabular-nums">{Number(it.cantidad || 0).toLocaleString("en-US")}</td>
+                      <td className="px-2 py-2 text-right tabular-nums">{Number(it.peso || 0).toLocaleString("en-US")}</td>
+                      <td className="px-2 py-2 text-right tabular-nums">{fmt(Number(it.valor_fob || 0))}</td>
+                      <td className="px-2 py-2 text-right tabular-nums text-xs">{(() => {
+                        const vu = Number(unitFob(it.valor_fob, it.cantidad));
+                        return isFinite(vu) ? vu.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : "—";
+                      })()}</td>
+                      <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{it.pct_gravamen != null ? `${Number(it.pct_gravamen)}%` : <span className="text-amber-600 text-xs">—</span>}</td>
+                      <td className="px-2 py-2 text-center bg-amber-50/40 text-xs">{it.aplica_isc ? "Sí" : "No"}</td>
+                      <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{it.aplica_isc && it.pct_isc != null ? `${Number(it.pct_isc)}%` : "—"}</td>
+                      <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{rd(c.cifLinea)}</td>
+                      <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{rd(c.gravamen)}</td>
+                      <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.selectivo)}</td>
+                      <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{rd(c.itbis)}</td>
+                      <td className="px-2 py-2 text-right tabular-nums bg-emerald-50/60 font-semibold">{rd(c.total)}</td>
+                    <td className="px-2 py-2 text-right whitespace-nowrap">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(it)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => duplicar.mutate(it)} title="Duplicar línea"><Copy className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => eliminar.mutate(it.id)} title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            {(items ?? []).length > 0 && (
+              <tfoot>
+                <tr className="border-t bg-muted/30">
+                  <td colSpan={5} className="px-2 py-2 text-right text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Totales</td>
+                  <td className="px-2 py-2 text-right tabular-nums font-semibold">
+                    {(items ?? []).reduce((s, it) => s + (Number(it.cantidad) || 0), 0).toLocaleString("en-US")}
+                  </td>
+                  <td className="px-2 py-2 text-right tabular-nums font-semibold">
+                    {(items ?? []).reduce((s, it) => s + (Number(it.peso) || 0), 0).toLocaleString("en-US")}
+                  </td>
+                  <td className="px-2 py-2 text-right tabular-nums font-semibold">{fmt(totalFob)}</td>
+                  <td colSpan={9}></td>
+                  <td className="px-2 py-2 text-right tabular-nums font-semibold bg-emerald-50/60">
                   {(() => {
                     const tasaCambio = Number(tasaCambioUsada) || 0;
                     const totalImpuestosUSD = (items ?? []).reduce((s: number, it: any) => s + calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis).total, 0);
