@@ -40,7 +40,7 @@ const ETIQUETA_CANTIDAD: Record<string, string> = {
   tm: "Toneladas métricas",
 };
 
-type Linea = { producto: string; fob: string; peso: string };
+type Linea = { producto: string; fob: string; peso: string; pais?: string };
 
 type Escenario = {
   lineas: Linea[];
@@ -56,7 +56,7 @@ type Escenario = {
   pctGastos: string;
 };
 
-const LINEA_VACIA: Linea = { producto: "", fob: "", peso: "" };
+const LINEA_VACIA: Linea = { producto: "", fob: "", peso: "", pais: "" };
 
 const VACIO: Escenario = {
   lineas: [{ ...LINEA_VACIA }],
@@ -79,6 +79,7 @@ const num = (s: string) => {
 
 type LineaResultado = {
   producto: string;
+  pais: string;
   fob: number;
   cif: number;
   gravamen: number;
@@ -118,6 +119,7 @@ function calcular(e: Escenario, tarifa?: TarifaServicio): Resultado {
     const servicioLinea = servicio * share;
     return {
       producto: l.producto,
+      pais: l.pais ?? "",
       fob,
       cif: r.cifLinea,
       gravamen: r.gravamen,
@@ -142,6 +144,7 @@ const nf = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, 
 // Estructura compartida de la tabla de resultados (pantalla + PDF)
 export const COLUMNAS_RESULTADO = [
   "Producto",
+  "País de Origen",
   "CIF (US$)",
   "Gravamen (US$)",
   "ITBIS (US$)",
@@ -155,6 +158,7 @@ function filasResultado(r: Resultado, tasa: number): { body: string[][]; foot: s
   const rd = (n: number) => (tasa > 0 ? nf(n * tasa) : "—");
   const body = r.lineas.map((l, i) => [
     l.producto || `Línea ${i + 1}`,
+    l.pais || "—",
     nf(l.cif),
     nf(l.gravamen),
     nf(l.itbis),
@@ -165,6 +169,7 @@ function filasResultado(r: Resultado, tasa: number): { body: string[][]; foot: s
   ]);
   const foot = [
     "TOTALES",
+    "",
     nf(r.cif),
     nf(r.gravamen),
     nf(r.itbis),
@@ -259,8 +264,9 @@ function ColumnaEscenario({
           </div>
           <div className="space-y-2">
             {esc.lineas.map((l, i) => (
-              <div key={i} className="grid grid-cols-[1fr_90px_80px_auto] gap-2 items-center">
+              <div key={i} className="grid grid-cols-[1fr_110px_90px_80px_auto] gap-2 items-center">
                 <Input value={l.producto} placeholder="Producto" onChange={(ev) => setLinea(i, "producto", ev.target.value)} />
+                <Input value={l.pais ?? ""} placeholder="País origen" onChange={(ev) => setLinea(i, "pais", ev.target.value)} />
                 <Input type="number" step="0.01" min="0" value={l.fob} placeholder="FOB US$" onChange={(ev) => setLinea(i, "fob", ev.target.value)} />
                 <Input type="number" step="0.01" min="0" value={l.peso} placeholder="Peso kg" onChange={(ev) => setLinea(i, "peso", ev.target.value)} />
                 <Button
@@ -411,9 +417,9 @@ async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[], im
       bodyStyles: { fontSize: 8 },
       footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 8 },
       columnStyles: {
-        0: { cellWidth: 160 },
-        1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" },
-        4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" },
+        0: { cellWidth: 140 }, 1: { cellWidth: 60 },
+        2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" },
+        5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" }, 8: { halign: "right" },
       },
       margin: { left: M, right: M },
     });

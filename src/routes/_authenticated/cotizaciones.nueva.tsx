@@ -148,7 +148,7 @@ function NuevaCotizacion() {
           </CardContent>
         </Card>
 
-        <ProductosCard tabla="cotizacion_productos" items={productos} onItemsChange={setProductos} />
+        <ProductosCard tabla="cotizacion_productos" items={productos} onItemsChange={setProductos} paisOrigen={form.origen} />
 
 
 

@@ -160,6 +160,7 @@ function AlmacenPage() {
                     <th className="py-2 px-2">Producto</th>
                     <th className="py-2 px-2">Expediente</th>
                     <th className="py-2 px-2">Cliente</th>
+                    <th className="py-2 px-2">País de Origen</th>
                     <th className="py-2 px-2 text-right">Cantidad</th>
                     <th className="py-2 px-2 text-right">Disponible</th>
                     <th className="py-2 px-2 text-right">Costo Unit.</th>
@@ -191,6 +192,7 @@ function AlmacenPage() {
                           ) : "—"}
                         </td>
                         <td className="py-2 px-2">{r.expedientes?.clientes?.nombre ?? "—"}</td>
+                        <td className="py-2 px-2">{r.pais_origen ?? "—"}</td>
                         <td className="py-2 px-2 text-right">{nf(Number(r.cantidad) || 0)} {r.unidad ?? ""}</td>
                         <td className="py-2 px-2 text-right font-medium">{nf(disp)}</td>
                         <td className="py-2 px-2 text-right">{nf(cu)}</td>

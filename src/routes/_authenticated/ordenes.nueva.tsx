@@ -153,7 +153,7 @@ function NuevaOrden() {
           </CardContent>
         </Card>
 
-        <ProductosCard tabla="orden_productos" items={productos} onItemsChange={setProductos} />
+        <ProductosCard tabla="orden_productos" items={productos} onItemsChange={setProductos} paisOrigen={form.origen} />
 
 
         <Card>

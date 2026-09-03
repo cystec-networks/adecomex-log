@@ -270,7 +270,7 @@ export function PreLiquidacionPdfButtonCotizacion({ cotizacionId }: { cotizacion
 
     const { doc } = await buildPreLiquidacionPdf({
       infoCols: infoColsCotizacion(cot),
-      items: list.map((p) => ({ ...p, origen: cot?.origen ?? "—" })),
+      items: list.map((p) => ({ ...p, origen: p.pais_origen || cot?.origen || "—" })),
       seguro: Number(cot?.seguro) || 0,
       flete: Number(cot?.flete) || 0,
       otros: Number(cot?.otros) || 0,

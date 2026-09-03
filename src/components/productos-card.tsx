@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { DgaProductoSearch } from "@/components/dga-producto-search";
+import { DgaCombobox } from "@/components/dga-combobox";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,6 +26,7 @@ const emptyForm = {
   cantidad: "", peso: "", valor_fob: "",
   product_code: "", cod_marca: "", marca: "", cod_modelo: "", modelo: "", especificaciones: "",
   estado_producto_codigo: "",
+  pais_origen: "", pais_origen_codigo: "",
 };
 
 export function ProductosCard({
@@ -33,6 +35,8 @@ export function ProductosCard({
   readOnly = false,
   items: itemsProp,
   onItemsChange,
+  paisOrigen,
+  paisOrigenCodigo,
 }: {
   tabla: ProductosTabla;
   parentId?: string;
@@ -40,6 +44,9 @@ export function ProductosCard({
   /** Modo borrador: líneas en memoria (aún sin registro padre en la base). */
   items?: any[];
   onItemsChange?: (items: any[]) => void;
+  /** País de origen por defecto (cabecera) para las líneas nuevas. */
+  paisOrigen?: string;
+  paisOrigenCodigo?: string;
 }) {
   const local = !!onItemsChange;
   const qc = useQueryClient();
@@ -78,6 +85,8 @@ export function ProductosCard({
     modelo: f.modelo?.trim() || null,
     especificaciones: f.especificaciones?.trim() || null,
     estado_producto_codigo: f.estado_producto_codigo?.trim() || null,
+    pais_origen: f.pais_origen?.trim() || null,
+    pais_origen_codigo: f.pais_origen_codigo?.trim() || null,
   });
 
   const renumerar = (arr: any[]) => arr.map((it, i) => ({ ...it, item_no: i + 1 }));
@@ -127,7 +136,11 @@ export function ProductosCard({
   });
 
 
-  const startNew = () => { setEditingId(null); setF(emptyForm); setOpen(true); };
+  const startNew = () => {
+    setEditingId(null);
+    setF({ ...emptyForm, pais_origen: paisOrigen ?? "", pais_origen_codigo: paisOrigenCodigo ?? "" });
+    setOpen(true);
+  };
   const startEdit = (it: any) => {
     setEditingId(it.id);
     setF({
@@ -145,6 +158,8 @@ export function ProductosCard({
       modelo: it.modelo ?? "",
       especificaciones: it.especificaciones ?? "",
       estado_producto_codigo: it.estado_producto_codigo ?? "",
+      pais_origen: it.pais_origen ?? "",
+      pais_origen_codigo: it.pais_origen_codigo ?? "",
     });
     setOpen(true);
   };
@@ -171,12 +186,13 @@ export function ProductosCard({
                 <th className="px-2 py-2 text-right">Valor FOB</th>
                 <th className="px-2 py-2 text-left">Marca</th>
                 <th className="px-2 py-2 text-left">Modelo</th>
+                <th className="px-2 py-2 text-left">País de Origen</th>
                 {!readOnly && <th className="px-2 py-2 w-20"></th>}
               </tr>
             </thead>
             <tbody>
               {((items ?? []) as any[]).length === 0 ? (
-                <tr><td colSpan={readOnly ? 9 : 10} className="px-3 py-6 text-center text-xs text-muted-foreground">Sin productos.</td></tr>
+                <tr><td colSpan={readOnly ? 10 : 11} className="px-3 py-6 text-center text-xs text-muted-foreground">Sin productos.</td></tr>
               ) : ((items ?? []) as any[]).map((it) => (
                 <tr key={it.id} className="border-t">
                   <td className="px-2 py-2 tabular-nums text-muted-foreground">{it.item_no}</td>
@@ -188,6 +204,7 @@ export function ProductosCard({
                   <td className="px-2 py-2 text-right tabular-nums">{fmt(Number(it.valor_fob || 0))}</td>
                   <td className="px-2 py-2 text-xs">{it.marca || "—"}</td>
                   <td className="px-2 py-2 text-xs">{it.modelo || "—"}</td>
+                  <td className="px-2 py-2 text-xs">{it.pais_origen || "—"}</td>
                   {!readOnly && (
                     <td className="px-2 py-2 text-right whitespace-nowrap">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(it)}><Pencil className="h-3.5 w-3.5" /></Button>
@@ -202,7 +219,7 @@ export function ProductosCard({
                 <tr className="border-t bg-muted/30">
                   <td colSpan={6} className="px-2 py-2 text-right text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Total FOB</td>
                   <td className="px-2 py-2 text-right tabular-nums font-semibold">{fmt(totalFob)}</td>
-                  <td colSpan={readOnly ? 2 : 3}></td>
+                  <td colSpan={readOnly ? 3 : 4}></td>
                 </tr>
               </tfoot>
             )}
@@ -282,6 +299,17 @@ export function ProductosCard({
                     onChange={(_n, codigo) => setF({ ...f, estado_producto_codigo: codigo })}
                     placeholder="Selecciona estado (catálogo DGA)"
                   />
+                </div>
+                <div className="grid gap-1.5 md:col-span-2">
+                  <Label>País de Origen (producto)</Label>
+                  <DgaCombobox
+                    table="dga_paises"
+                    value={f.pais_origen}
+                    codigo={f.pais_origen_codigo}
+                    onChange={(nombre, codigo) => setF({ ...f, pais_origen: nombre, pais_origen_codigo: codigo })}
+                    placeholder="País de origen del producto"
+                  />
+                  <p className="text-[11px] text-muted-foreground">Por defecto el país de la cabecera; cámbialo si este producto viene de otro país.</p>
                 </div>
                 <div className="grid gap-1.5 md:col-span-2"><Label>Especificaciones</Label><Textarea rows={2} value={f.especificaciones} onChange={(e) => setF({ ...f, especificaciones: e.target.value })} /></div>
               </div>
