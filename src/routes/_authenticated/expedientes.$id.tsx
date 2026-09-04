@@ -539,12 +539,31 @@ function TabInfo({ exp }: { exp: any }) {
         payload.tasa_cambio_congelada = true;
         if (exp.tasa_cambio_usada != null) payload.tasa_cambio_usada = Number(exp.tasa_cambio_usada);
       }
+      // Validar que el número VUCE no esté ya usado en otro expediente.
+      const vuceChanged = form.numero_vuce && form.numero_vuce !== (exp.numero_vuce ?? "");
+      if (vuceChanged) {
+        const { data: conflicto } = await supabase
+          .from("expedientes")
+          .select("id, numero")
+          .eq("numero_vuce", form.numero_vuce)
+          .neq("id", exp.id)
+          .maybeSingle();
+        if (conflicto) {
+          throw new Error(`El número de permiso "${form.numero_vuce}" ya fue utilizado en el Expediente ${conflicto.numero}.`);
+        }
+      }
       const { error } = await supabase.from("expedientes").update(payload).eq("id", exp.id);
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
     },
     onSuccess: () => { toast.success("Guardado"); qc.invalidateQueries({ queryKey: ["expediente", exp.id] }); qc.invalidateQueries({ queryKey: ["expedientes"] }); qc.invalidateQueries({ queryKey: ["expedientes-hist"] }); },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      if (e?.code === "23505") {
+        toast.error("Ese número de permiso ya está en uso en otro Expediente — actualiza la página e intenta de nuevo.");
+      } else {
+        toast.error(e.message);
+      }
+    },
   });
 
 
