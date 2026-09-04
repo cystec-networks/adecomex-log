@@ -128,11 +128,51 @@ const TAB_LABELS: Record<string, string> = {
 };
 const DEFAULT_TAB_ORDER = Object.keys(TAB_LABELS);
 
+// Timestamp del último guardado propio por expediente, para no auto-avisar por Realtime.
+const ultimoGuardadoPropio = new Map<string, number>();
+
+function refrescarExpediente(qc: ReturnType<typeof useQueryClient>, id: string) {
+  qc.invalidateQueries({ queryKey: ["expediente", id] });
+  qc.invalidateQueries({ queryKey: ["expedientes"] });
+  qc.invalidateQueries({ queryKey: ["expedientes-hist"] });
+  qc.invalidateQueries({ queryKey: ["etapas", id] });
+  qc.invalidateQueries({ queryKey: ["mercancia-items", id] });
+  qc.invalidateQueries({ queryKey: ["documentos", id] });
+  qc.invalidateQueries({ queryKey: ["incidencias", id] });
+  qc.invalidateQueries({ queryKey: ["costos", id] });
+  qc.invalidateQueries({ queryKey: ["costos_producto", id] });
+  qc.invalidateQueries({ queryKey: ["costos-producto-liq", id] });
+  qc.invalidateQueries({ queryKey: ["facturas", id] });
+  qc.invalidateQueries({ queryKey: ["gastos", id] });
+  qc.invalidateQueries({ queryKey: ["rentabilidad", id] });
+  toast.success("Actualizado");
+}
+
 function DetalleExpediente() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const dragTab = useRef<string | null>(null);
+
+  // Aviso en tiempo real cuando otro usuario actualiza este expediente.
+  useEffect(() => {
+    const channel = supabase
+      .channel(`expediente-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "expedientes", filter: `id=eq.${id}` },
+        () => {
+          const t = ultimoGuardadoPropio.get(id);
+          if (t && Date.now() - t < 2000) return; // cambio propio recién guardado
+          toast.info("Este expediente fue actualizado por otro usuario.", {
+            action: { label: "Recargar", onClick: () => refrescarExpediente(qc, id) },
+            duration: 15000,
+          });
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id, qc]);
 
   const normalizeOrder = (saved: string[]) => {
     const valid = saved.filter((k) => DEFAULT_TAB_ORDER.includes(k));
