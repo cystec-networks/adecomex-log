@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
@@ -128,11 +128,51 @@ const TAB_LABELS: Record<string, string> = {
 };
 const DEFAULT_TAB_ORDER = Object.keys(TAB_LABELS);
 
+// Timestamp del último guardado propio por expediente, para no auto-avisar por Realtime.
+const ultimoGuardadoPropio = new Map<string, number>();
+
+function refrescarExpediente(qc: ReturnType<typeof useQueryClient>, id: string) {
+  qc.invalidateQueries({ queryKey: ["expediente", id] });
+  qc.invalidateQueries({ queryKey: ["expedientes"] });
+  qc.invalidateQueries({ queryKey: ["expedientes-hist"] });
+  qc.invalidateQueries({ queryKey: ["etapas", id] });
+  qc.invalidateQueries({ queryKey: ["mercancia-items", id] });
+  qc.invalidateQueries({ queryKey: ["documentos", id] });
+  qc.invalidateQueries({ queryKey: ["incidencias", id] });
+  qc.invalidateQueries({ queryKey: ["costos", id] });
+  qc.invalidateQueries({ queryKey: ["costos_producto", id] });
+  qc.invalidateQueries({ queryKey: ["costos-producto-liq", id] });
+  qc.invalidateQueries({ queryKey: ["facturas", id] });
+  qc.invalidateQueries({ queryKey: ["gastos", id] });
+  qc.invalidateQueries({ queryKey: ["rentabilidad", id] });
+  toast.success("Actualizado");
+}
+
 function DetalleExpediente() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const dragTab = useRef<string | null>(null);
+
+  // Aviso en tiempo real cuando otro usuario actualiza este expediente.
+  useEffect(() => {
+    const channel = supabase
+      .channel(`expediente-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "expedientes", filter: `id=eq.${id}` },
+        () => {
+          const t = ultimoGuardadoPropio.get(id);
+          if (t && Date.now() - t < 2000) return; // cambio propio recién guardado
+          toast.info("Este expediente fue actualizado por otro usuario.", {
+            action: { label: "Recargar", onClick: () => refrescarExpediente(qc, id) },
+            duration: 15000,
+          });
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id, qc]);
 
   const normalizeOrder = (saved: string[]) => {
     const valid = saved.filter((k) => DEFAULT_TAB_ORDER.includes(k));
@@ -556,7 +596,7 @@ function TabInfo({ exp }: { exp: any }) {
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
     },
-    onSuccess: () => { toast.success("Guardado"); qc.invalidateQueries({ queryKey: ["expediente", exp.id] }); qc.invalidateQueries({ queryKey: ["expedientes"] }); qc.invalidateQueries({ queryKey: ["expedientes-hist"] }); },
+    onSuccess: () => { ultimoGuardadoPropio.set(exp.id, Date.now()); toast.success("Guardado"); qc.invalidateQueries({ queryKey: ["expediente", exp.id] }); qc.invalidateQueries({ queryKey: ["expedientes"] }); qc.invalidateQueries({ queryKey: ["expedientes-hist"] }); },
     onError: (e: any) => {
       if (e?.code === "23505") {
         toast.error("Ese número de permiso ya está en uso en otro Expediente — actualiza la página e intenta de nuevo.");
@@ -572,7 +612,10 @@ function TabInfo({ exp }: { exp: any }) {
 
   return (
     <div className="space-y-5">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Button size="lg" variant="outline" onClick={() => refrescarExpediente(qc, exp.id)}>
+          <RefreshCw className="h-4 w-4 mr-1" /> Refrescar
+        </Button>
         <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending}>
           {save.isPending ? "Guardando…" : "Guardar cambios"}
         </Button>
@@ -939,7 +982,10 @@ function TabInfo({ exp }: { exp: any }) {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end sticky bottom-4">
+      <div className="flex justify-end gap-2 sticky bottom-4">
+        <Button size="lg" variant="outline" onClick={() => refrescarExpediente(qc, exp.id)} className="shadow-lg">
+          <RefreshCw className="h-4 w-4 mr-1" /> Refrescar
+        </Button>
         <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
           {save.isPending ? "Guardando…" : "Guardar cambios"}
         </Button>
