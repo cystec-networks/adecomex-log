@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS idx_expedientes_numero_vuce_unico ON public.expedientes(numero_vuce) WHERE numero_vuce IS NOT NULL AND numero_vuce <> '';
