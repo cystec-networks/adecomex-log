@@ -120,20 +120,12 @@ function CatalogoProductosDgaPage() {
   const onFile = async (file: File) => {
     setSubiendo(true);
     try {
-      const XLSX = await import("xlsx");
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: "" });
-      const mapped = json.map(mapRow).filter((r) => r.codigo_producto);
-      if (mapped.length === 0) {
+      const unique = await parseDgaXlsx(file);
+      if (unique.length === 0) {
         toast.error("No se encontraron filas con 'Código de Producto' en el archivo.");
         return;
       }
-      // Deduplicar por codigo_producto dentro del mismo archivo
-      const byCode = new Map<string, any>();
-      mapped.forEach((r) => byCode.set(r.codigo_producto as string, r));
-      const unique = Array.from(byCode.values());
+
 
       let ok = 0;
       for (let i = 0; i < unique.length; i += 500) {
