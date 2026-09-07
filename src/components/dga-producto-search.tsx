@@ -44,6 +44,9 @@ export function DgaProductoSearch({ onSelect }: Props) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [elegido, setElegido] = useState<DgaProducto | null>(null);
+  const [nuevoOpen, setNuevoOpen] = useState(false);
+  const [nuevo, setNuevo] = useState<Record<string, string>>({ ...emptyNuevo });
+  const [guardando, setGuardando] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<number | undefined>(undefined);
 
