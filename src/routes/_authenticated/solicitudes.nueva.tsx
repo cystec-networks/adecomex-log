@@ -98,6 +98,9 @@ function NuevaSolicitud() {
         aplica_isc: p.aplica_isc,
         pct_isc: p.pct_isc,
         pct_itbis: p.pct_itbis,
+        estado_producto_codigo: p.estado_producto_codigo,
+        pais_origen: p.pais_origen,
+        pais_origen_codigo: p.pais_origen_codigo,
       }));
       setProductos(precargados);
       setLoaded(true);
