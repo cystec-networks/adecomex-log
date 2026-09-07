@@ -4,10 +4,34 @@ import { normalizeBusqueda, type DgaProducto } from "@/lib/dga-productos";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Loader2, History } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Search, Loader2, History, Plus } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+
+const NUEVO_FIELDS: Array<{ k: keyof typeof emptyNuevo; label: string; required?: boolean }> = [
+  { k: "codigo_producto", label: "Código de Producto", required: true },
+  { k: "partida_arancelaria", label: "Partida Arancelaria" },
+  { k: "nombre_producto", label: "Nombre de Producto", required: true },
+  { k: "marca", label: "Marca" },
+  { k: "modelo", label: "Modelo" },
+  { k: "unidad", label: "Unidad" },
+  { k: "pais", label: "País" },
+];
+
+const emptyNuevo = {
+  codigo_producto: "",
+  partida_arancelaria: "",
+  nombre_producto: "",
+  marca: "",
+  modelo: "",
+  unidad: "",
+  pais: "",
+  especificaciones: "",
+};
 
 type Props = {
   /** Se llama con los datos del producto elegido. `reusarCodigo` indica si debe copiarse el ProductCode. */
@@ -20,6 +44,9 @@ export function DgaProductoSearch({ onSelect }: Props) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [elegido, setElegido] = useState<DgaProducto | null>(null);
+  const [nuevoOpen, setNuevoOpen] = useState(false);
+  const [nuevo, setNuevo] = useState<Record<string, string>>({ ...emptyNuevo });
+  const [guardando, setGuardando] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<number | undefined>(undefined);
 
@@ -58,6 +85,50 @@ export function DgaProductoSearch({ onSelect }: Props) {
     setRows([]);
   };
 
+  const abrirNuevo = () => {
+    setNuevo({ ...emptyNuevo });
+    setOpen(false);
+    setNuevoOpen(true);
+  };
+
+  const guardarNuevo = async () => {
+    const codigo = nuevo.codigo_producto.trim();
+    const nombre = nuevo.nombre_producto.trim();
+    if (!codigo || !nombre) {
+      toast.error("Código de Producto y Nombre de Producto son obligatorios");
+      return;
+    }
+    setGuardando(true);
+    try {
+      const payload = {
+        codigo_producto: codigo,
+        partida_arancelaria: nuevo.partida_arancelaria.trim() || null,
+        nombre_producto: nombre,
+        marca: nuevo.marca.trim() || null,
+        modelo: nuevo.modelo.trim() || null,
+        unidad: nuevo.unidad.trim() || null,
+        pais: nuevo.pais.trim() || null,
+        especificaciones: nuevo.especificaciones.trim() || null,
+        estado: "Activo",
+      };
+      const { error } = await supabase.from("dga_productos_historico").insert(payload as any);
+      if (error) {
+        if ((error as any).code === "23505") throw new Error(`El código "${codigo}" ya existe en el catálogo DGA.`);
+        throw error;
+      }
+      toast.success("Producto agregado al catálogo DGA");
+      onSelect(payload as unknown as DgaProducto, true);
+      setNuevoOpen(false);
+      setNuevo({ ...emptyNuevo });
+      setQ("");
+      setRows([]);
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo guardar el producto");
+    } finally {
+      setGuardando(false);
+    }
+  };
+
   return (
     <div ref={wrapRef} className="relative">
       <div className="relative">
@@ -92,11 +163,27 @@ export function DgaProductoSearch({ onSelect }: Props) {
               </button>
             </li>
           ))}
+          <li className="border-t">
+            <button
+              type="button"
+              onClick={abrirNuevo}
+              className="w-full text-left px-3 py-2 hover:bg-accent text-sm text-primary flex items-center gap-1.5"
+            >
+              <Plus className="h-4 w-4" /> Agregar producto nuevo al catálogo DGA
+            </button>
+          </li>
         </ul>
       )}
       {open && !loading && normalizeBusqueda(q).length >= 2 && rows.length === 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg px-3 py-3 text-xs text-muted-foreground">
-          Sin coincidencias en el histórico. Puedes declarar el producto como nuevo.
+        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg px-3 py-2 text-xs text-muted-foreground">
+          <p className="py-1">Sin coincidencias en el histórico. Puedes declarar el producto como nuevo.</p>
+          <button
+            type="button"
+            onClick={abrirNuevo}
+            className="w-full text-left border-t px-0 py-2 hover:bg-accent text-sm text-primary flex items-center gap-1.5"
+          >
+            <Plus className="h-4 w-4" /> Agregar producto nuevo al catálogo DGA
+          </button>
         </div>
       )}
 
@@ -128,6 +215,43 @@ export function DgaProductoSearch({ onSelect }: Props) {
               Copiar datos sin ProductCode
             </Button>
             <Button onClick={() => aplicar(true)}>Reutilizar ProductCode existente</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={nuevoOpen} onOpenChange={setNuevoOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Agregar producto nuevo al catálogo DGA</DialogTitle>
+            <DialogDescription>
+              Se guarda en el histórico con estado Activo y se usa de inmediato en la línea que estabas llenando.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {NUEVO_FIELDS.map((f) => (
+              <div key={f.k as string} className="grid gap-1.5">
+                <Label>{f.label}{f.required ? " *" : ""}</Label>
+                <Input
+                  value={nuevo[f.k as string] ?? ""}
+                  onChange={(e) => setNuevo((p) => ({ ...p, [f.k as string]: e.target.value }))}
+                />
+              </div>
+            ))}
+            <div className="grid gap-1.5 sm:col-span-2">
+              <Label>Especificaciones</Label>
+              <Textarea
+                value={nuevo.especificaciones}
+                onChange={(e) => setNuevo((p) => ({ ...p, especificaciones: e.target.value }))}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setNuevoOpen(false)}>Cancelar</Button>
+            <Button type="button" onClick={guardarNuevo} disabled={guardando}>
+              {guardando && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Guardar y usar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
