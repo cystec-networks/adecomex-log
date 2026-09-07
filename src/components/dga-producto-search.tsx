@@ -85,6 +85,50 @@ export function DgaProductoSearch({ onSelect }: Props) {
     setRows([]);
   };
 
+  const abrirNuevo = () => {
+    setNuevo({ ...emptyNuevo });
+    setOpen(false);
+    setNuevoOpen(true);
+  };
+
+  const guardarNuevo = async () => {
+    const codigo = nuevo.codigo_producto.trim();
+    const nombre = nuevo.nombre_producto.trim();
+    if (!codigo || !nombre) {
+      toast.error("Código de Producto y Nombre de Producto son obligatorios");
+      return;
+    }
+    setGuardando(true);
+    try {
+      const payload = {
+        codigo_producto: codigo,
+        partida_arancelaria: nuevo.partida_arancelaria.trim() || null,
+        nombre_producto: nombre,
+        marca: nuevo.marca.trim() || null,
+        modelo: nuevo.modelo.trim() || null,
+        unidad: nuevo.unidad.trim() || null,
+        pais: nuevo.pais.trim() || null,
+        especificaciones: nuevo.especificaciones.trim() || null,
+        estado: "Activo",
+      };
+      const { error } = await supabase.from("dga_productos_historico").insert(payload as any);
+      if (error) {
+        if ((error as any).code === "23505") throw new Error(`El código "${codigo}" ya existe en el catálogo DGA.`);
+        throw error;
+      }
+      toast.success("Producto agregado al catálogo DGA");
+      onSelect(payload as unknown as DgaProducto, true);
+      setNuevoOpen(false);
+      setNuevo({ ...emptyNuevo });
+      setQ("");
+      setRows([]);
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo guardar el producto");
+    } finally {
+      setGuardando(false);
+    }
+  };
+
   return (
     <div ref={wrapRef} className="relative">
       <div className="relative">
