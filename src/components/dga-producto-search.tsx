@@ -160,7 +160,8 @@ export function DgaProductoSearch({ onSelect }: Props) {
         unidad: nuevo.unidad.trim() || null,
         pais: nuevo.pais.trim() || null,
         especificaciones: nuevo.especificaciones.trim() || null,
-        estado: "Activo",
+        regimen: nuevo.regimen.trim() || null,
+        estado: nuevo.estado.trim() || "Activo",
       };
       const { error } = await supabase.from("dga_productos_historico").insert(payload as any);
       if (error) {
