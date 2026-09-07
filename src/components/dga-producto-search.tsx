@@ -115,6 +115,8 @@ export function DgaProductoSearch({ onSelect }: Props) {
           modelo: r.modelo ?? "",
           unidad: r.unidad ?? "",
           pais: r.pais ?? "",
+          regimen: r.regimen ?? "",
+          estado: r.estado ?? "",
           especificaciones: r.especificaciones ?? "",
         });
         toast.success("Datos cargados desde el archivo. Revísalos y guarda.");
