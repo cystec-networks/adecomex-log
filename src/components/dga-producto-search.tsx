@@ -163,11 +163,27 @@ export function DgaProductoSearch({ onSelect }: Props) {
               </button>
             </li>
           ))}
+          <li className="border-t">
+            <button
+              type="button"
+              onClick={abrirNuevo}
+              className="w-full text-left px-3 py-2 hover:bg-accent text-sm text-primary flex items-center gap-1.5"
+            >
+              <Plus className="h-4 w-4" /> Agregar producto nuevo al catálogo DGA
+            </button>
+          </li>
         </ul>
       )}
       {open && !loading && normalizeBusqueda(q).length >= 2 && rows.length === 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg px-3 py-3 text-xs text-muted-foreground">
-          Sin coincidencias en el histórico. Puedes declarar el producto como nuevo.
+        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg px-3 py-2 text-xs text-muted-foreground">
+          <p className="py-1">Sin coincidencias en el histórico. Puedes declarar el producto como nuevo.</p>
+          <button
+            type="button"
+            onClick={abrirNuevo}
+            className="w-full text-left border-t px-0 py-2 hover:bg-accent text-sm text-primary flex items-center gap-1.5"
+          >
+            <Plus className="h-4 w-4" /> Agregar producto nuevo al catálogo DGA
+          </button>
         </div>
       )}
 
