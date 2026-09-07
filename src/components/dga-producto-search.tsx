@@ -20,6 +20,8 @@ const NUEVO_FIELDS: Array<{ k: keyof typeof emptyNuevo; label: string; required?
   { k: "modelo", label: "Modelo" },
   { k: "unidad", label: "Unidad" },
   { k: "pais", label: "País" },
+  { k: "regimen", label: "Régimen" },
+  { k: "estado", label: "Estado" },
 ];
 
 const emptyNuevo = {
@@ -30,6 +32,8 @@ const emptyNuevo = {
   modelo: "",
   unidad: "",
   pais: "",
+  regimen: "",
+  estado: "",
   especificaciones: "",
 };
 
@@ -111,6 +115,8 @@ export function DgaProductoSearch({ onSelect }: Props) {
           modelo: r.modelo ?? "",
           unidad: r.unidad ?? "",
           pais: r.pais ?? "",
+          regimen: r.regimen ?? "",
+          estado: r.estado ?? "",
           especificaciones: r.especificaciones ?? "",
         });
         toast.success("Datos cargados desde el archivo. Revísalos y guarda.");
@@ -154,7 +160,8 @@ export function DgaProductoSearch({ onSelect }: Props) {
         unidad: nuevo.unidad.trim() || null,
         pais: nuevo.pais.trim() || null,
         especificaciones: nuevo.especificaciones.trim() || null,
-        estado: "Activo",
+        regimen: nuevo.regimen.trim() || null,
+        estado: nuevo.estado.trim() || "Activo",
       };
       const { error } = await supabase.from("dga_productos_historico").insert(payload as any);
       if (error) {
