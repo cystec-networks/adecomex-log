@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeBusqueda, type DgaProducto } from "@/lib/dga-productos";
+import { normalizeBusqueda, parseDgaXlsx, type DgaProducto } from "@/lib/dga-productos";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Loader2, History, Plus } from "lucide-react";
+import { Search, Loader2, History, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -47,7 +47,9 @@ export function DgaProductoSearch({ onSelect }: Props) {
   const [nuevoOpen, setNuevoOpen] = useState(false);
   const [nuevo, setNuevo] = useState<Record<string, string>>({ ...emptyNuevo });
   const [guardando, setGuardando] = useState(false);
+  const [subiendo, setSubiendo] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -89,6 +91,49 @@ export function DgaProductoSearch({ onSelect }: Props) {
     setNuevo({ ...emptyNuevo });
     setOpen(false);
     setNuevoOpen(true);
+  };
+
+  const onFile = async (file: File) => {
+    setSubiendo(true);
+    try {
+      const unique = await parseDgaXlsx(file);
+      if (unique.length === 0) {
+        toast.error("No se encontraron filas con 'Código de Producto' en el archivo.");
+        return;
+      }
+      if (unique.length === 1) {
+        const r = unique[0];
+        setNuevo({
+          codigo_producto: r.codigo_producto ?? "",
+          partida_arancelaria: r.partida_arancelaria ?? "",
+          nombre_producto: r.nombre_producto ?? "",
+          marca: r.marca ?? "",
+          modelo: r.modelo ?? "",
+          unidad: r.unidad ?? "",
+          pais: r.pais ?? "",
+          especificaciones: r.especificaciones ?? "",
+        });
+        toast.success("Datos cargados desde el archivo. Revísalos y guarda.");
+        return;
+      }
+      let ok = 0;
+      for (let i = 0; i < unique.length; i += 500) {
+        const chunk = unique.slice(i, i + 500);
+        const { error } = await supabase
+          .from("dga_productos_historico")
+          .upsert(chunk as any, { onConflict: "codigo_producto" });
+        if (error) throw error;
+        ok += chunk.length;
+      }
+      toast.success(`${ok} productos cargados al catálogo`);
+      setNuevoOpen(false);
+      setNuevo({ ...emptyNuevo });
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo leer el archivo");
+    } finally {
+      setSubiendo(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   };
 
   const guardarNuevo = async () => {
@@ -227,6 +272,22 @@ export function DgaProductoSearch({ onSelect }: Props) {
               Se guarda en el histórico con estado Activo y se usa de inmediato en la línea que estabas llenando.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 p-3">
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }}
+            />
+            <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={subiendo}>
+              {subiendo ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+              {subiendo ? "Procesando…" : "Cargar desde Excel"}
+            </Button>
+            <span className="text-[11px] text-muted-foreground">
+              Archivo .xlsx de la DGA. Una sola fila precarga el formulario; varias filas se cargan al catálogo.
+            </span>
+          </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {NUEVO_FIELDS.map((f) => (
               <div key={f.k as string} className="grid gap-1.5">
