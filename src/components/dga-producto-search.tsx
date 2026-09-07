@@ -4,10 +4,34 @@ import { normalizeBusqueda, type DgaProducto } from "@/lib/dga-productos";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Loader2, History } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Search, Loader2, History, Plus } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+
+const NUEVO_FIELDS: Array<{ k: keyof typeof emptyNuevo; label: string; required?: boolean }> = [
+  { k: "codigo_producto", label: "Código de Producto", required: true },
+  { k: "partida_arancelaria", label: "Partida Arancelaria" },
+  { k: "nombre_producto", label: "Nombre de Producto", required: true },
+  { k: "marca", label: "Marca" },
+  { k: "modelo", label: "Modelo" },
+  { k: "unidad", label: "Unidad" },
+  { k: "pais", label: "País" },
+];
+
+const emptyNuevo = {
+  codigo_producto: "",
+  partida_arancelaria: "",
+  nombre_producto: "",
+  marca: "",
+  modelo: "",
+  unidad: "",
+  pais: "",
+  especificaciones: "",
+};
 
 type Props = {
   /** Se llama con los datos del producto elegido. `reusarCodigo` indica si debe copiarse el ProductCode. */
