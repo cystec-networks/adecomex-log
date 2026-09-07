@@ -20,6 +20,8 @@ const NUEVO_FIELDS: Array<{ k: keyof typeof emptyNuevo; label: string; required?
   { k: "modelo", label: "Modelo" },
   { k: "unidad", label: "Unidad" },
   { k: "pais", label: "País" },
+  { k: "regimen", label: "Régimen" },
+  { k: "estado", label: "Estado" },
 ];
 
 const emptyNuevo = {
