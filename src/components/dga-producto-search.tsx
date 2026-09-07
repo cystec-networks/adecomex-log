@@ -218,6 +218,43 @@ export function DgaProductoSearch({ onSelect }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={nuevoOpen} onOpenChange={setNuevoOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Agregar producto nuevo al catálogo DGA</DialogTitle>
+            <DialogDescription>
+              Se guarda en el histórico con estado Activo y se usa de inmediato en la línea que estabas llenando.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {NUEVO_FIELDS.map((f) => (
+              <div key={f.k as string} className="grid gap-1.5">
+                <Label>{f.label}{f.required ? " *" : ""}</Label>
+                <Input
+                  value={nuevo[f.k as string] ?? ""}
+                  onChange={(e) => setNuevo((p) => ({ ...p, [f.k as string]: e.target.value }))}
+                />
+              </div>
+            ))}
+            <div className="grid gap-1.5 sm:col-span-2">
+              <Label>Especificaciones</Label>
+              <Textarea
+                value={nuevo.especificaciones}
+                onChange={(e) => setNuevo((p) => ({ ...p, especificaciones: e.target.value }))}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setNuevoOpen(false)}>Cancelar</Button>
+            <Button type="button" onClick={guardarNuevo} disabled={guardando}>
+              {guardando && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Guardar y usar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
