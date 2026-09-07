@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeBusqueda, type DgaProducto } from "@/lib/dga-productos";
+import { normalizeBusqueda, parseDgaXlsx, type DgaProducto } from "@/lib/dga-productos";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
