@@ -32,6 +32,8 @@ const emptyNuevo = {
   modelo: "",
   unidad: "",
   pais: "",
+  regimen: "",
+  estado: "",
   especificaciones: "",
 };
 
