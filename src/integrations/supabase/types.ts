@@ -2721,6 +2721,7 @@ export type Database = {
           area_aduanera_codigo: string | null
           bl_awb: string | null
           canal_riesgo: string | null
+          cantidad_despacho: number | null
           certificado_emisor_codigo: string | null
           certificado_periodo_desde: string | null
           certificado_periodo_hasta: string | null
@@ -2793,6 +2794,7 @@ export type Database = {
           tasa_cambio_congelada: boolean
           tasa_cambio_usada: number | null
           tipo_carga: string | null
+          tipo_despacho_aduanero: string | null
           tipo_despacho_codigo: string | null
           tipo_operacion: string | null
           total_cif: number | null
@@ -2806,6 +2808,7 @@ export type Database = {
           area_aduanera_codigo?: string | null
           bl_awb?: string | null
           canal_riesgo?: string | null
+          cantidad_despacho?: number | null
           certificado_emisor_codigo?: string | null
           certificado_periodo_desde?: string | null
           certificado_periodo_hasta?: string | null
@@ -2878,6 +2881,7 @@ export type Database = {
           tasa_cambio_congelada?: boolean
           tasa_cambio_usada?: number | null
           tipo_carga?: string | null
+          tipo_despacho_aduanero?: string | null
           tipo_despacho_codigo?: string | null
           tipo_operacion?: string | null
           total_cif?: number | null
@@ -2891,6 +2895,7 @@ export type Database = {
           area_aduanera_codigo?: string | null
           bl_awb?: string | null
           canal_riesgo?: string | null
+          cantidad_despacho?: number | null
           certificado_emisor_codigo?: string | null
           certificado_periodo_desde?: string | null
           certificado_periodo_hasta?: string | null
@@ -2963,6 +2968,7 @@ export type Database = {
           tasa_cambio_congelada?: boolean
           tasa_cambio_usada?: number | null
           tipo_carga?: string | null
+          tipo_despacho_aduanero?: string | null
           tipo_despacho_codigo?: string | null
           tipo_operacion?: string | null
           total_cif?: number | null
