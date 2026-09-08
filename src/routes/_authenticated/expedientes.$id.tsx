@@ -3493,9 +3493,10 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
 
     const fecha = new Date().toISOString().slice(0, 10);
     fileNameRef.current = `PRE-LIQUIDACION DE EXP. ${expData.numero ?? "expediente"}_${fecha}.pdf`;
+    doc.setProperties({ title: fileNameRef.current.replace(/\.pdf$/, "") });
     docRef.current = doc;
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(doc.output("bloburl").toString());
+    setPreviewUrl(`${doc.output("bloburl").toString()}#toolbar=0`);
   };
 
 
@@ -3841,10 +3842,11 @@ function LiquidacionFinalPdfButton({
     }
 
     const fecha = new Date().toISOString().slice(0, 10);
-    fileNameRef.current = `LiquidacionFinal_${exp.numero ?? "expediente"}_${fecha}.pdf`;
+    fileNameRef.current = `LIQUIDACION FINAL DE EXP. ${exp.numero ?? "expediente"}_${fecha}.pdf`;
+    doc.setProperties({ title: fileNameRef.current.replace(/\.pdf$/, "") });
     docRef.current = doc;
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(doc.output("bloburl").toString());
+    setPreviewUrl(`${doc.output("bloburl").toString()}#toolbar=0`);
   };
 
   return (
