@@ -128,3 +128,17 @@ export function ServicioAduaneroFields({
     </>
   );
 }
+
+/** Versión sin hooks (para generación de PDFs): calcula el Servicio Aduanero de un Expediente. */
+export async function servicioAduaneroDeExpediente(exp: any): Promise<number> {
+  const tipo = exp?.tipo_despacho_aduanero;
+  const cant = Number(exp?.cantidad_despacho);
+  if (!tipo || !Number.isFinite(cant) || cant <= 0) return 0;
+  const { data } = await supabase
+    .from("catalogo_tasa_servicio_aduanero")
+    .select("tarifa_usd")
+    .eq("tipo_despacho", tipo)
+    .maybeSingle();
+  if (!data) return 0;
+  return (Number(data.tarifa_usd) || 0) * cant;
+}
