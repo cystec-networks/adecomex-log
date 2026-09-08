@@ -148,8 +148,11 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
     margin: { left: M, right: M },
   });
 
+  const detalleCargaStartY = (doc as any).lastAutoTable.finalY + 12;
+  const detalleCargaTableWidth = 240;
+
   autoTable(doc, {
-    startY: (doc as any).lastAutoTable.finalY + 12,
+    startY: detalleCargaStartY,
     head: [["Peso de la mercancía", ""]],
     body: [
       ["Peso Bruto", input.pesoBruto != null ? `${nf(Number(input.pesoBruto))} kg` : "—"],
@@ -159,21 +162,21 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
     headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
     bodyStyles: { fontSize: 8 },
     columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 120 } },
-    margin: { left: M, right: M },
-    tableWidth: 300,
+    margin: { left: M },
+    tableWidth: detalleCargaTableWidth,
   });
 
   const contenedores = String(input.contenedores ?? "").trim();
   if (contenedores) {
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 12,
+      startY: detalleCargaStartY,
       head: [["Contenedores"]],
       body: contenedores.split(/[,;\n/]+/).map((c) => [c.trim()]).filter((r) => r[0]),
       theme: "grid",
       headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
       bodyStyles: { fontSize: 8 },
-      margin: { left: M, right: M },
-      tableWidth: 300,
+      margin: { left: pageW - M - detalleCargaTableWidth },
+      tableWidth: detalleCargaTableWidth,
     });
   }
 
