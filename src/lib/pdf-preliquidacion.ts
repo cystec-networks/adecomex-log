@@ -5,6 +5,7 @@
  * y, para Cotizaciones, un aviso de estimación referencial.
  */
 import { calcImpuestosLinea } from "@/lib/impuestos";
+import { FORMULARIO_DUA_RD } from "@/lib/servicio-aduanero";
 
 export type PreLiqItem = {
   item_no?: number | string | null;
@@ -36,6 +37,8 @@ export type PreLiqInput = {
   contenedores?: string | null;
   /** Aviso extra visible (Cotizaciones) */
   avisoReferencial?: string | null;
+  /** Tasa de Servicio Aduanero calculada (US$) */
+  servicioAduaneroUsd?: number | null;
 };
 
 export async function buildPreLiquidacionPdf(input: PreLiqInput) {
@@ -178,6 +181,9 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
   const mostrarRd = tasaCambio > 0;
   const resumenFontSize = startResumen + (mostrarRd ? 170 : 150) > pageH - 40 ? 7 : 8;
 
+  const servicioAduaneroUsd = Number(input.servicioAduaneroUsd) || 0;
+  const formularioDuaUsd = mostrarRd ? FORMULARIO_DUA_RD / tasaCambio : 0;
+
   const filaResumen = (label: string, usd: number) =>
     mostrarRd ? [label, rd(usd), nf(usd)] : [label, nf(usd)];
 
@@ -211,7 +217,14 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
       filaResumen("Gravamen", totals.grav),
       filaResumen("Selectivo (ISC)", totals.isc),
       filaResumen("ITBIS", totals.itbis),
-      filaResumen("Total Impuestos Estimados", totals.grav + totals.isc + totals.itbis),
+      filaResumen("Servicio Aduanero", servicioAduaneroUsd),
+      mostrarRd
+        ? ["Formulario DUA (RD$258.26 fijo)", nf(FORMULARIO_DUA_RD), nf(formularioDuaUsd)]
+        : ["Formulario DUA (RD$258.26 fijo)", "—"],
+      filaResumen(
+        "Total Impuestos Estimados",
+        totals.grav + totals.isc + totals.itbis + servicioAduaneroUsd + formularioDuaUsd,
+      ),
     ],
     theme: "grid",
     headStyles: { fillColor: [30, 58, 138], fontSize: resumenFontSize },

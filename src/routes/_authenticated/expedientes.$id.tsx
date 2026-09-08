@@ -47,6 +47,11 @@ import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
 import { TabRecepcion } from "@/components/tab-recepcion";
+import {
+  FORMULARIO_DUA_RD,
+  ServicioAduaneroFields,
+  useServicioAduaneroExpediente,
+} from "@/lib/servicio-aduanero";
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
@@ -489,8 +494,15 @@ function TabInfo({ exp }: { exp: any }) {
     liq_siga_numero: exp.liq_siga_numero ?? "",
     liq_siga_estado: exp.liq_siga_estado ?? "",
     liq_oficial_total: exp.liq_oficial_total ?? "",
+    tipo_despacho_aduanero: exp.tipo_despacho_aduanero ?? "",
+    cantidad_despacho: exp.cantidad_despacho ?? "",
   });
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
+  const servicioAd = useServicioAduaneroExpediente(
+    form.tipo_despacho_aduanero,
+    form.cantidad_despacho,
+    exp.tasa_cambio_usada,
+  );
 
   // etapa_actual se actualiza desde otra mutación (avanzar etapas); resincronízalo.
   useEffect(() => {
@@ -570,6 +582,8 @@ function TabInfo({ exp }: { exp: any }) {
       payload.otros = toNum(payload.otros);
       payload.total_cif = (payload.total_fob ?? 0) + (payload.seguro ?? 0) + (payload.flete ?? 0) + (payload.otros ?? 0);
       payload.liq_oficial_total = toNum(payload.liq_oficial_total);
+      payload.cantidad_despacho = toNum(payload.cantidad_despacho);
+      if (!payload.tipo_despacho_aduanero) payload.tipo_despacho_aduanero = null;
       if (!payload.liq_siga_numero) payload.liq_siga_numero = null;
       if (!payload.liq_siga_estado) payload.liq_siga_estado = null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
@@ -843,6 +857,7 @@ function TabInfo({ exp }: { exp: any }) {
           <div className="md:col-span-2 lg:col-span-3">
             <MercanciaItemsBlock
               expedienteId={exp.id}
+              servicioAduaneroUsd={servicioAd.servicioUsd}
               seguro={Number(form.seguro) || 0}
               flete={Number(form.flete) || 0}
               otros={Number(form.otros) || 0}
@@ -953,6 +968,25 @@ function TabInfo({ exp }: { exp: any }) {
                       placeholder="N/A / Ninguno"
                     />
                   </div>
+                  <ServicioAduaneroFields
+                    tipoDespacho={form.tipo_despacho_aduanero || ""}
+                    cantidad={form.cantidad_despacho}
+                    onChange={(tipo, cant) =>
+                      setForm((f) => ({ ...f, tipo_despacho_aduanero: tipo, cantidad_despacho: cant }))
+                    }
+                  />
+                  <div className="grid gap-1.5">
+                    <Label className="flex items-center gap-1.5">
+                      Servicio Aduanero (US$)
+                      <span className="text-xs text-muted-foreground font-normal">🔒 calculado</span>
+                    </Label>
+                    <div className="h-9 px-3 rounded-md border bg-muted/50 flex items-center text-sm font-semibold tabular-nums">
+                      {fmt(servicioAd.servicioUsd)}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      Más Formulario DUA: RD$ {FORMULARIO_DUA_RD.toFixed(2)} (cargo fijo).
+                    </p>
+                  </div>
                 </div>
               </div>
             );
@@ -964,6 +998,7 @@ function TabInfo({ exp }: { exp: any }) {
               seguro={Number(form.seguro) || 0}
               flete={Number(form.flete) || 0}
               otros={Number(form.otros) || 0}
+              servicioAduaneroUsd={servicioAd.servicioUsd}
             />
           </div>
 
@@ -972,6 +1007,7 @@ function TabInfo({ exp }: { exp: any }) {
               exp={exp}
               form={form}
               set={set}
+              servicioAduaneroUsd={servicioAd.servicioUsd}
             />
           </div>
 
@@ -2454,6 +2490,7 @@ function MercanciaItemsBlock({
   tasaCambioUsada,
   paisOrigen,
   paisOrigenCodigo,
+  servicioAduaneroUsd = 0,
 }: {
   expedienteId: string;
   seguro: number;
@@ -2463,6 +2500,7 @@ function MercanciaItemsBlock({
   tasaCambioUsada?: number | string | null;
   paisOrigen?: string;
   paisOrigenCodigo?: string;
+  servicioAduaneroUsd?: number;
 }) {
   const qc = useQueryClient();
   const { data: items } = useQuery({
@@ -2765,8 +2803,10 @@ function MercanciaItemsBlock({
                   <td className="px-2 py-2 text-right tabular-nums font-semibold bg-emerald-50/60">
                   {(() => {
                     const tasaCambio = Number(tasaCambioUsada) || 0;
-                    const totalImpuestosUSD = (items ?? []).reduce((s: number, it: any) => s + calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis).total, 0);
-                    const totalImpuestosDOP = tasaCambio > 0 ? totalImpuestosUSD * tasaCambio : null;
+                    const totalImpuestosUSD =
+                      (items ?? []).reduce((s: number, it: any) => s + calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis).total, 0)
+                      + (Number(servicioAduaneroUsd) || 0);
+                    const totalImpuestosDOP = tasaCambio > 0 ? totalImpuestosUSD * tasaCambio + FORMULARIO_DUA_RD : null;
                     return totalImpuestosDOP != null
                       ? `RD$ ${totalImpuestosDOP.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                       : <span className="text-amber-600 text-xs">Sin tasa de cambio</span>;
@@ -3022,8 +3062,8 @@ function MercanciaItemsBlock({
 }
 
 function LiquidacionEstimadaBlock({
-  exp, seguro, flete, otros,
-}: { exp: any; seguro: number; flete: number; otros: number }) {
+  exp, seguro, flete, otros, servicioAduaneroUsd = 0,
+}: { exp: any; seguro: number; flete: number; otros: number; servicioAduaneroUsd?: number }) {
   const { data: items } = useQuery({
     queryKey: ["mercancia-items", exp.id],
     queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
@@ -3044,6 +3084,8 @@ function LiquidacionEstimadaBlock({
   const qcTasa = useQueryClient();
   const tasa = tc.tasa;
   const rd = (n: number) => tasa != null ? fmt(n * tasa) : "—";
+  const servicioUsd = Number(servicioAduaneroUsd) || 0;
+  const duaUsd = tasa != null && tasa > 0 ? FORMULARIO_DUA_RD / tasa : 0;
 
   const mostrarCaptura = !tc.congelado && (tc.needsCapture || editandoTasa);
 
@@ -3165,10 +3207,12 @@ function LiquidacionEstimadaBlock({
             <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Total Gravamen</td><td className="text-right">{fmt(totals.gravamen)}</td><td className="text-right">{rd(totals.gravamen)}</td></tr>
             <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Total Selectivo (ISC)</td><td className="text-right">{fmt(totals.selectivo)}</td><td className="text-right">{rd(totals.selectivo)}</td></tr>
             <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Total ITBIS</td><td className="text-right">{fmt(totals.itbis)}</td><td className="text-right">{rd(totals.itbis)}</td></tr>
+            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Servicio Aduanero</td><td className="text-right">{fmt(servicioUsd)}</td><td className="text-right">{rd(servicioUsd)}</td></tr>
+            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Formulario DUA (RD$258.26 fijo)</td><td className="text-right">{tasa != null ? fmt(duaUsd) : "—"}</td><td className="text-right">{fmt(FORMULARIO_DUA_RD)}</td></tr>
             <tr className="border-t-2 border-primary bg-primary text-primary-foreground font-bold">
               <td className="px-4 py-2.5 text-sm">TOTAL A PAGAR</td>
-              <td className="text-right text-base">{fmt(totals.total)}</td>
-              <td className="text-right text-base">{rd(totals.total)}</td>
+              <td className="text-right text-base">{fmt(totals.total + servicioUsd + duaUsd)}</td>
+              <td className="text-right text-base">{tasa != null ? fmt((totals.total + servicioUsd) * tasa + FORMULARIO_DUA_RD) : "—"}</td>
             </tr>
           </tbody>
         </table>
@@ -3182,7 +3226,7 @@ function LiquidacionEstimadaBlock({
   );
 }
 
-function ResultadoOficialBlock({ exp, form, set }: { exp: any; form: any; set: (k: string, v: any) => void }) {
+function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0 }: { exp: any; form: any; set: (k: string, v: any) => void; servicioAduaneroUsd?: number }) {
   const tc = useTasaCambioForExpediente(exp);
   // Estimado total en US$: recalculado a partir de items — para simplicidad, tomamos del form (mercancía se recalcula por línea).
   const { data: items } = useQuery({
@@ -3197,7 +3241,8 @@ function ResultadoOficialBlock({ exp, form, set }: { exp: any; form: any; set: (
     const c = calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
     return acc + c.total;
   }, 0);
-  const estimadoRd = tc.tasa != null ? estimadoUsd * tc.tasa : null;
+  const servicioUsd = Number(servicioAduaneroUsd) || 0;
+  const estimadoRd = tc.tasa != null ? (estimadoUsd + servicioUsd) * tc.tasa + FORMULARIO_DUA_RD : null;
   const oficialRd = form.liq_oficial_total === "" || form.liq_oficial_total == null ? null : Number(form.liq_oficial_total);
   const dif = oficialRd != null && estimadoRd != null ? oficialRd - estimadoRd : null;
   const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
