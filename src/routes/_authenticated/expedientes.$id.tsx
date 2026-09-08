@@ -3277,7 +3277,10 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0 }: { ex
       </div>
       <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
         {estimadoRd != null && (
-          <div>Estimado (RD$): <span className="font-mono tabular-nums text-foreground">{fmt(estimadoRd)}</span></div>
+          <>
+            <div>Estimado (RD$): <span className="font-mono tabular-nums text-foreground">{fmt(estimadoRd)}</span></div>
+            <div>Incluye Servicio Aduanero: <span className="font-mono tabular-nums text-foreground">RD$ {fmt(servicioUsd * (tc.tasa ?? 0))}</span> y Formulario DUA (RD$258.26 fijo).</div>
+          </>
         )}
         {dif != null && (
           <div>
