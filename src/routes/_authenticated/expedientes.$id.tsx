@@ -3487,6 +3487,7 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
       pesoBruto: expData.peso_bruto ?? null,
       pesoNeto: expData.peso_neto ?? null,
       contenedores: expData.numeros_contenedores ?? null,
+      servicioAduaneroUsd: await servicioAduaneroDeExpediente(expData),
     });
 
     const fecha = new Date().toISOString().slice(0, 10);
@@ -3759,6 +3760,8 @@ function LiquidacionFinalPdfButton({
         ["Flete Total", nf(fleteExp)],
         ["Otros Total", nf(otrosExp)],
         ["Gravamen Real Total", nf(t.gReal)],
+        ["Servicio Aduanero", nf(servicioAduaneroUsdPdf)],
+        ["Formulario DUA (RD$258.26 fijo)", tasaCambio > 0 ? nf(FORMULARIO_DUA_RD / tasaCambio) : "s/t"],
         ["ISC Real Total", nf(t.iReal)],
         ["Gastos del Producto (USD)", nf(gastosAdicionalesUSD)],
         ["INVERSIÓN TOTAL", nf(t.inv)],
