@@ -3432,7 +3432,7 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
   const fileNameRef = useRef<string>("PreLiquidacion.pdf");
 
   const cerrarPreview = () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (previewUrl) URL.revokeObjectURL(previewUrl.split("#")[0]);
     setPreviewUrl(null);
     docRef.current = null;
   };
@@ -3495,7 +3495,7 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     fileNameRef.current = `PRE-LIQUIDACION DE EXP. ${expData.numero ?? "expediente"}_${fecha}.pdf`;
     doc.setProperties({ title: fileNameRef.current.replace(/\.pdf$/, "") });
     docRef.current = doc;
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (previewUrl) URL.revokeObjectURL(previewUrl.split("#")[0]);
     setPreviewUrl(`${doc.output("bloburl").toString()}#toolbar=0`);
   };
 
@@ -3560,7 +3560,7 @@ function LiquidacionFinalPdfButton({
   });
 
   const cerrarPreview = () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (previewUrl) URL.revokeObjectURL(previewUrl.split("#")[0]);
     setPreviewUrl(null);
     docRef.current = null;
   };
@@ -3845,7 +3845,7 @@ function LiquidacionFinalPdfButton({
     fileNameRef.current = `LIQUIDACION FINAL DE EXP. ${exp.numero ?? "expediente"}_${fecha}.pdf`;
     doc.setProperties({ title: fileNameRef.current.replace(/\.pdf$/, "") });
     docRef.current = doc;
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (previewUrl) URL.revokeObjectURL(previewUrl.split("#")[0]);
     setPreviewUrl(`${doc.output("bloburl").toString()}#toolbar=0`);
   };
 
