@@ -50,6 +50,7 @@ import { TabRecepcion } from "@/components/tab-recepcion";
 import {
   FORMULARIO_DUA_RD,
   ServicioAduaneroFields,
+  servicioAduaneroDeExpediente,
   useServicioAduaneroExpediente,
 } from "@/lib/servicio-aduanero";
 
@@ -3671,6 +3672,7 @@ function LiquidacionFinalPdfButton({
     const otrosExp = Number(exp.otros) || 0;
     const totalFobExp = list.reduce((s, it) => s + (Number(it.valor_fob) || 0), 0);
     const gastosAdicionalesUSD = tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0;
+    const servicioAduaneroUsdPdf = await servicioAduaneroDeExpediente(exp);
 
     const td = { cant: 0, fob: 0, seg: 0, fle: 0, otr: 0, cif: 0, gr: 0, ir: 0, gp: 0, cu: 0 };
     const bodyDesglose = list.map((it) => {
