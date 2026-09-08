@@ -3492,7 +3492,7 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     });
 
     const fecha = new Date().toISOString().slice(0, 10);
-    fileNameRef.current = `PreLiquidacion_${expData.numero ?? "expediente"}_${fecha}.pdf`;
+    fileNameRef.current = `PRE-LIQUIDACION DE EXP. ${expData.numero ?? "expediente"}_${fecha}.pdf`;
     docRef.current = doc;
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(doc.output("bloburl").toString());
