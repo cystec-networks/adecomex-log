@@ -106,6 +106,9 @@ function CotizacionesOCR() {
           <p className="text-sm text-muted-foreground">
             Sube un BL, factura o AWB en PDF/imagen. La IA extraerá los campos clave y creará un borrador de cotización.
           </p>
+          <OcrContextualHelp>
+            Usa esto cuando estás empezando un trato nuevo desde cero (aún no hay Cotización ni Orden para este cliente).
+          </OcrContextualHelp>
         </div>
       </div>
 

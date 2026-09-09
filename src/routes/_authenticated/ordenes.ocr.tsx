@@ -105,6 +105,9 @@ function OrdenesOCR() {
           <p className="text-sm text-muted-foreground">
             Sube un BL, factura o AWB en PDF/imagen. La IA extraerá los campos clave y creará un borrador de orden directa.
           </p>
+          <OcrContextualHelp>
+            Usa esto solo si vas a crear una Orden directa, sin pasar por una Cotización previa. Si ya existe una Cotización para este cliente, ábrela y conviértela a Orden desde ahí en vez de usar esta pantalla.
+          </OcrContextualHelp>
         </div>
       </div>
 
