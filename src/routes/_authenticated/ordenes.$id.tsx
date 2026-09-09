@@ -137,26 +137,32 @@ function DetalleOrden() {
             {(o as any).clientes?.nombre ?? "Sin cliente"} · creada el {fmtLocalDate(o.created_at?.slice(0, 10))}
           </p>
         </div>
-        {solicitudVinculada ? (
+        {solicitudVinculada && (
           <Button variant="outline" asChild>
             <Link to="/solicitudes/$id" params={{ id: solicitudVinculada.id }}>
               <FolderPlus className="h-4 w-4 mr-1" />Ver Solicitud {solicitudVinculada.numero} ↗
             </Link>
           </Button>
+        )}
+        {expedienteVinculado ? (
+          <Button variant="outline" asChild>
+            <Link to="/expedientes/$id" params={{ id: expedienteVinculado.id }}>
+              <FolderPlus className="h-4 w-4 mr-1" />Ver Expediente {expedienteVinculado.numero} ↗
+            </Link>
+          </Button>
         ) : canEdit ? (
           o.estado === "en_transito" ? (
-            <Button variant="outline" asChild>
-              <Link to="/solicitudes/nueva" search={{ orden: id }}>
-                <FolderPlus className="h-4 w-4 mr-1" />Convertir en Solicitud
-              </Link>
-            </Button>
-          ) : (
             <Button
               variant="outline"
-              disabled
-              title="Cambia el estado a 'En Tránsito' para poder convertir en Solicitud"
+              onClick={() => convertirExpediente.mutate()}
+              disabled={convertirExpediente.isPending}
             >
-              <FolderPlus className="h-4 w-4 mr-1" />Convertir en Solicitud
+              <FolderPlus className="h-4 w-4 mr-1" />
+              {convertirExpediente.isPending ? "Convirtiendo…" : "Convertir a Expediente"}
+            </Button>
+          ) : (
+            <Button variant="outline" disabled title="Cambia el estado a 'En Tránsito' para poder convertir a Expediente">
+              <FolderPlus className="h-4 w-4 mr-1" />Convertir a Expediente
             </Button>
           )
         ) : null}
