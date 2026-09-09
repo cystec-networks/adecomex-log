@@ -14,6 +14,7 @@ import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { TIPOS_MERCANCIA } from "@/lib/estados-cotizacion";
 import { useMyRoles } from "@/lib/auth-hooks";
 import { ProductosCard } from "@/components/productos-card";
+import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
 
 
 export const Route = createFileRoute("/_authenticated/cotizaciones/nueva")({
@@ -29,6 +30,7 @@ function NuevaCotizacion() {
     cliente_id: "", vendedor_id: "", tipo_mercancia: "", origen: "", destino: "",
     incoterm: "", peso_kg: "", volumen_m3: "", tarifa_propuesta: "", moneda: "USD",
     fecha_emision: new Date().toISOString().slice(0, 10), fecha_vigencia: "", notas: "",
+    suplidor: "", suplidor_rnc: "", tipo_operacion: "Importación", tipo_carga: "", contacto: "",
   });
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
   const [productos, setProductos] = useState<any[]>([]);
