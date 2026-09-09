@@ -79,22 +79,13 @@ const GROUPS: Group[] = [
       { to: "/cotizaciones/calculadora", label: "Calculadora Rápida", icon: Calculator },
       { to: "/cotizaciones/ocr", label: "OCR Cotización", icon: ScanText },
       { to: "/ordenes/ocr", label: "OCR Orden", icon: ScanText },
-    ],
-  },
-  {
-    id: "solicitudes",
-    label: "SOLICITUDES",
-    icon: Inbox,
-    items: [
-      { to: "/solicitudes", label: "Solicitudes", icon: FileText,
-        match: (p) => p === "/solicitudes" || (p.startsWith("/solicitudes/") && p !== "/solicitudes/ocr") },
       { to: "/permisos", label: "Permisos", icon: FileCheck2,
         match: (p) => p === "/permisos" || p.startsWith("/permisos/") },
-      { to: "/solicitudes/ocr", label: "OCR", icon: ScanText },
       { to: "/copiloto", label: "Copiloto IA", icon: Bot,
         match: (p) => p.startsWith("/copiloto") },
     ],
   },
+
 
   {
     id: "expedientes",
