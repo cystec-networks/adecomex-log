@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
 import { ProductosCard } from "@/components/productos-card";
+import { copiarProductos } from "@/lib/copiar-productos";
 
 export const Route = createFileRoute("/_authenticated/ordenes/$id")({
   component: DetalleOrden,
