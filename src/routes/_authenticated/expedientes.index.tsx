@@ -414,6 +414,12 @@ function Expedientes() {
           <Link to="/expedientes" search={{ tipo: "importacion" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
           <Link to="/expedientes" search={{ tipo: "exportacion" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
         </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/expedientes/ocr"><ScanText className="h-4 w-4 mr-1" />Nuevo por OCR</Link>
+        </Button>
+        <Button size="sm" asChild>
+          <Link to="/expedientes/nuevo"><Plus className="h-4 w-4 mr-1" />Nuevo Expediente</Link>
+        </Button>
       </div>
 
       <Card className="overflow-hidden">
