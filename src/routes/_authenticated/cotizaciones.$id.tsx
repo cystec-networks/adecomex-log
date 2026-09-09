@@ -258,6 +258,40 @@ function DetalleCotizacion() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader><CardTitle className="text-base">Exportador / Suplidor y operación</CardTitle></CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <Label>Exportador / Suplidor</Label>
+              {!readOnly && (
+                <TerceroExtranjeroPicker
+                  onSelect={(t) => setForm({ ...form, suplidor: t.nombre, suplidor_rnc: t.tid })}
+                />
+              )}
+            </div>
+            <Input value={form.suplidor ?? ""} readOnly={readOnly} onChange={(e) => set("suplidor", e.target.value)} placeholder="Nombre del exportador/suplidor" />
+          </div>
+          <div className="grid gap-1.5"><Label>TID del exportador/suplidor</Label>
+            <Input value={form.suplidor_rnc ?? ""} readOnly={readOnly} onChange={(e) => set("suplidor_rnc", e.target.value)} placeholder="TID del exportador/suplidor" />
+          </div>
+          <div className="grid gap-1.5"><Label>Tipo de operación</Label>
+            <Select value={form.tipo_operacion || undefined} onValueChange={(v) => set("tipo_operacion", v)} disabled={readOnly}>
+              <SelectTrigger><SelectValue placeholder="Selecciona…" /></SelectTrigger>
+              <SelectContent>{["Importación", "Exportación"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5"><Label>Tipo de carga</Label>
+            {readOnly
+              ? <Input value={form.tipo_carga ?? ""} readOnly />
+              : <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />}
+          </div>
+          <div className="grid gap-1.5"><Label>Contacto</Label>
+            <Input value={form.contacto ?? ""} readOnly={readOnly} onChange={(e) => set("contacto", e.target.value)} />
+          </div>
+        </CardContent>
+      </Card>
+
       <ProductosCard tabla="cotizacion_productos" parentId={id} readOnly={readOnly} paisOrigen={form.origen} />
 
       <Card>
