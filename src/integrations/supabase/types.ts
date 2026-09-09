@@ -1439,6 +1439,7 @@ export type Database = {
       cotizaciones: {
         Row: {
           cliente_id: string | null
+          contacto: string | null
           created_at: string
           created_by: string | null
           destino: string | null
@@ -1458,15 +1459,20 @@ export type Database = {
           otros: number | null
           peso_kg: number | null
           seguro: number | null
+          suplidor: string | null
+          suplidor_rnc: string | null
           tarifa_propuesta: number | null
           tasa_cambio_usada: number | null
+          tipo_carga: string | null
           tipo_mercancia: string | null
+          tipo_operacion: string | null
           updated_at: string
           vendedor_id: string | null
           volumen_m3: number | null
         }
         Insert: {
           cliente_id?: string | null
+          contacto?: string | null
           created_at?: string
           created_by?: string | null
           destino?: string | null
@@ -1486,15 +1492,20 @@ export type Database = {
           otros?: number | null
           peso_kg?: number | null
           seguro?: number | null
+          suplidor?: string | null
+          suplidor_rnc?: string | null
           tarifa_propuesta?: number | null
           tasa_cambio_usada?: number | null
+          tipo_carga?: string | null
           tipo_mercancia?: string | null
+          tipo_operacion?: string | null
           updated_at?: string
           vendedor_id?: string | null
           volumen_m3?: number | null
         }
         Update: {
           cliente_id?: string | null
+          contacto?: string | null
           created_at?: string
           created_by?: string | null
           destino?: string | null
@@ -1514,9 +1525,13 @@ export type Database = {
           otros?: number | null
           peso_kg?: number | null
           seguro?: number | null
+          suplidor?: string | null
+          suplidor_rnc?: string | null
           tarifa_propuesta?: number | null
           tasa_cambio_usada?: number | null
+          tipo_carga?: string | null
           tipo_mercancia?: string | null
+          tipo_operacion?: string | null
           updated_at?: string
           vendedor_id?: string | null
           volumen_m3?: number | null
