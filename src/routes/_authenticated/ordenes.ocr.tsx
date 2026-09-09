@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, FileUp, Sparkles, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { OcrContextualHelp } from "@/components/ocr-contextual-help";
 
 export const Route = createFileRoute("/_authenticated/ordenes/ocr")({
   component: OrdenesOCR,
