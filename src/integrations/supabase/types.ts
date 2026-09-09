@@ -4125,6 +4125,7 @@ export type Database = {
       ordenes: {
         Row: {
           cliente_id: string | null
+          cot_contacto: string | null
           cot_destino: string | null
           cot_fecha_emision: string | null
           cot_fecha_vigencia: string | null
@@ -4134,8 +4135,12 @@ export type Database = {
           cot_numero: string | null
           cot_origen: string | null
           cot_peso_kg: number | null
+          cot_suplidor: string | null
+          cot_suplidor_rnc: string | null
           cot_tarifa_propuesta: number | null
+          cot_tipo_carga: string | null
           cot_tipo_mercancia: string | null
+          cot_tipo_operacion: string | null
           cot_volumen_m3: number | null
           cotizacion_id: string | null
           created_at: string
@@ -4152,6 +4157,7 @@ export type Database = {
         }
         Insert: {
           cliente_id?: string | null
+          cot_contacto?: string | null
           cot_destino?: string | null
           cot_fecha_emision?: string | null
           cot_fecha_vigencia?: string | null
@@ -4161,8 +4167,12 @@ export type Database = {
           cot_numero?: string | null
           cot_origen?: string | null
           cot_peso_kg?: number | null
+          cot_suplidor?: string | null
+          cot_suplidor_rnc?: string | null
           cot_tarifa_propuesta?: number | null
+          cot_tipo_carga?: string | null
           cot_tipo_mercancia?: string | null
+          cot_tipo_operacion?: string | null
           cot_volumen_m3?: number | null
           cotizacion_id?: string | null
           created_at?: string
@@ -4179,6 +4189,7 @@ export type Database = {
         }
         Update: {
           cliente_id?: string | null
+          cot_contacto?: string | null
           cot_destino?: string | null
           cot_fecha_emision?: string | null
           cot_fecha_vigencia?: string | null
@@ -4188,8 +4199,12 @@ export type Database = {
           cot_numero?: string | null
           cot_origen?: string | null
           cot_peso_kg?: number | null
+          cot_suplidor?: string | null
+          cot_suplidor_rnc?: string | null
           cot_tarifa_propuesta?: number | null
+          cot_tipo_carga?: string | null
           cot_tipo_mercancia?: string | null
+          cot_tipo_operacion?: string | null
           cot_volumen_m3?: number | null
           cotizacion_id?: string | null
           created_at?: string
