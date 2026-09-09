@@ -231,9 +231,9 @@ function DetalleOrden() {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>{ORDEN_ESTADOS.map((e) => <SelectItem key={e} value={e}>{ordenEstadoLabel(e)}</SelectItem>)}</SelectContent>
             </Select>
-            {!solicitudVinculada && o.estado !== "en_transito" && (
+            {!expedienteVinculado && o.estado !== "en_transito" && (
               <span className="text-[11px] text-amber-700">
-                Cambia el estado a "En Tránsito" para poder abrir la Solicitud.
+                Cambia el estado a "En Tránsito" para poder convertir a Expediente.
               </span>
             )}
           </div>
