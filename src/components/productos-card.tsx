@@ -324,6 +324,48 @@ export function ProductosCard({
                 placeholder="0.00" />
             </div>
             <div className="md:col-span-2 border-t pt-3 mt-1">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Impuestos</div>
+              <div className="grid gap-3 md:grid-cols-4">
+                <div className="grid gap-1.5">
+                  <Label>% Gravamen</Label>
+                  <Input type="text" inputMode="decimal" placeholder="0" value={f.pct_gravamen}
+                    onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, pct_gravamen: v }); }}
+                    onBlur={async () => {
+                      if (f.pct_gravamen !== "" || !f.codigo_arancelario.trim()) return;
+                      const t = await buscarTasa(f.codigo_arancelario);
+                      if (t) setF((prev) => ({
+                        ...prev,
+                        pct_gravamen: t.pct_gravamen != null ? String(t.pct_gravamen) : prev.pct_gravamen,
+                        aplica_isc: prev.aplica_isc || !!t.aplica_isc,
+                        pct_isc: t.pct_isc != null ? String(t.pct_isc) : prev.pct_isc,
+                        pct_itbis: t.pct_itbis != null ? String(t.pct_itbis) : prev.pct_itbis,
+                      }));
+                    }} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Aplica ISC</Label>
+                  <label className="flex items-center gap-2 h-9 text-sm">
+                    <input type="checkbox" className="h-4 w-4" checked={f.aplica_isc}
+                      onChange={(e) => setF({ ...f, aplica_isc: e.target.checked })} />
+                    Sí
+                  </label>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>% ISC</Label>
+                  <Input type="text" inputMode="decimal" placeholder="0" value={f.pct_isc} disabled={!f.aplica_isc}
+                    onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, pct_isc: v }); }} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>% ITBIS</Label>
+                  <Input type="text" inputMode="decimal" placeholder="18" value={f.pct_itbis}
+                    onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, pct_itbis: v }); }} />
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1.5">
+                Se copian al convertir a Orden y Expediente; puedes ajustarlos ahí si cambian.
+              </p>
+            </div>
+            <div className="md:col-span-2 border-t pt-3 mt-1">
               <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Datos del producto (SIGA)</div>
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="grid gap-1.5"><Label>ProductCode</Label><Input value={f.product_code} onChange={(e) => setF({ ...f, product_code: e.target.value })} placeholder="Vacío = SIGA asigna uno nuevo" /></div>
