@@ -33,6 +33,7 @@ function ReadOnlyField({ label, value }: { label: string; value: any }) {
 function DetalleOrden() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
+  const nav = useNavigate();
   const { data: roles } = useMyRoles();
   const canEdit = (roles ?? []).some((r) => r === "admin" || r === "vendedor");
 
