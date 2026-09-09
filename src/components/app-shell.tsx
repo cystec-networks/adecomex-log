@@ -72,6 +72,7 @@ const GROUPS: Group[] = [
     label: "COMERCIAL",
     icon: FileSpreadsheet,
     items: [
+      { to: "/cotizaciones/ocr", label: "OCR Cotización", icon: ScanText },
       { to: "/cotizaciones", label: "Cotizaciones", icon: FileSpreadsheet,
         match: (p) => p === "/cotizaciones" || (p.startsWith("/cotizaciones/") && p !== "/cotizaciones/ocr" && p !== "/cotizaciones/calculadora") },
       { to: "/ordenes", label: "Órdenes", icon: ClipboardList,
@@ -79,7 +80,6 @@ const GROUPS: Group[] = [
       { to: "/permisos", label: "Permisos", icon: FileCheck2,
         match: (p) => p === "/permisos" || p.startsWith("/permisos/") },
       { to: "/cotizaciones/calculadora", label: "Calculadora Rápida", icon: Calculator },
-      { to: "/cotizaciones/ocr", label: "OCR Cotización", icon: ScanText },
       { to: "/copiloto", label: "Copiloto IA", icon: Bot,
         match: (p) => p.startsWith("/copiloto") },
     ],
@@ -93,10 +93,10 @@ const GROUPS: Group[] = [
     items: [
       { to: "/expedientes", label: "Expedientes", icon: FolderKanban,
         match: (p, s) => (p === "/expedientes" || p.startsWith("/expedientes/")) && !s?.tipo && p !== "/expedientes/papelera" && p !== "/expedientes/dashboard" && p !== "/expedientes/ocr" && p !== "/expedientes/nuevo" },
-      { to: "/expedientes/nuevo", label: "Nuevo Expediente", icon: FileText,
-        match: (p) => p === "/expedientes/nuevo" },
       { to: "/expedientes/ocr", label: "Nuevo por OCR", icon: ScanText,
         match: (p) => p === "/expedientes/ocr" },
+      { to: "/expedientes/nuevo", label: "Nuevo Expediente", icon: FileText,
+        match: (p) => p === "/expedientes/nuevo" },
       { to: "/expedientes", search: { tipo: "importacion" }, label: "Importaciones", icon: PackageOpen,
         match: (p, s) => p.startsWith("/expedientes") && s?.tipo === "importacion" },
       { to: "/expedientes", search: { tipo: "exportacion" }, label: "Exportaciones", icon: PackageCheck,
@@ -104,7 +104,7 @@ const GROUPS: Group[] = [
       { to: "/expedientes/dashboard", label: "Dashboard", icon: LayoutDashboard,
         match: (p) => p === "/expedientes/dashboard" },
     ],
-  },
+  }
   {
     id: "transporte",
     label: "TRANSPORTES",
