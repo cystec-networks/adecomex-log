@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  Inbox, FolderKanban, Users, UserCog, LogOut,
+  FolderKanban, Users, UserCog, LogOut,
   PackageOpen, PackageCheck, ScanText, Sparkles, Trash2, FileCheck2, Truck,
   ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3, Library, Settings,
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
@@ -296,8 +296,6 @@ function AppSidebarInner() {
         {/* Comercial group (Cotizaciones → Órdenes) */}
         {renderGroup(visibleGroups.find((g) => g.id === "comercial")!)}
 
-        {/* Solicitudes group */}
-        {renderGroup(visibleGroups.find((g) => g.id === "solicitudes")!)}
 
         {/* Expedientes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "expedientes")!)}
