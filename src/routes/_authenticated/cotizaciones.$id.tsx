@@ -133,6 +133,11 @@ function DetalleCotizacion() {
         cot_fecha_emision: (c as any).fecha_emision,
         cot_fecha_vigencia: (c as any).fecha_vigencia,
         cot_notas: (c as any).notas,
+        cot_suplidor: (c as any).suplidor,
+        cot_suplidor_rnc: (c as any).suplidor_rnc,
+        cot_tipo_operacion: (c as any).tipo_operacion,
+        cot_tipo_carga: (c as any).tipo_carga,
+        cot_contacto: (c as any).contacto,
       }).select().single();
       if (error) throw error;
       const { error: e2 } = await supabase.from("cotizaciones")
