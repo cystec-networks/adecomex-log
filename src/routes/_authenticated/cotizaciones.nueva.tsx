@@ -14,6 +14,7 @@ import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { TIPOS_MERCANCIA } from "@/lib/estados-cotizacion";
 import { useMyRoles } from "@/lib/auth-hooks";
 import { ProductosCard } from "@/components/productos-card";
+import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
 
 
 export const Route = createFileRoute("/_authenticated/cotizaciones/nueva")({
@@ -29,6 +30,7 @@ function NuevaCotizacion() {
     cliente_id: "", vendedor_id: "", tipo_mercancia: "", origen: "", destino: "",
     incoterm: "", peso_kg: "", volumen_m3: "", tarifa_propuesta: "", moneda: "USD",
     fecha_emision: new Date().toISOString().slice(0, 10), fecha_vigencia: "", notas: "",
+    suplidor: "", suplidor_rnc: "", tipo_operacion: "Importación", tipo_carga: "", contacto: "",
   });
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
   const [productos, setProductos] = useState<any[]>([]);
@@ -145,6 +147,36 @@ function NuevaCotizacion() {
             </div>
             <div className="grid gap-1.5"><Label>Fecha de emisión</Label><Input type="date" value={form.fecha_emision} onChange={(e) => set("fecha_emision", e.target.value)} /></div>
             <div className="grid gap-1.5"><Label>Fecha de vigencia</Label><Input type="date" value={form.fecha_vigencia} onChange={(e) => set("fecha_vigencia", e.target.value)} /></div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="text-base">Exportador / Suplidor y operación</CardTitle></CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <Label>Exportador / Suplidor</Label>
+                <TerceroExtranjeroPicker
+                  onSelect={(t) => setForm((f: any) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid }))}
+                />
+              </div>
+              <Input value={form.suplidor} onChange={(e) => set("suplidor", e.target.value)} placeholder="Nombre del exportador/suplidor" />
+            </div>
+            <div className="grid gap-1.5"><Label>TID del exportador/suplidor</Label>
+              <Input value={form.suplidor_rnc} onChange={(e) => set("suplidor_rnc", e.target.value)} placeholder="TID del exportador/suplidor" />
+            </div>
+            <div className="grid gap-1.5"><Label>Tipo de operación</Label>
+              <Select value={form.tipo_operacion || undefined} onValueChange={(v) => set("tipo_operacion", v)}>
+                <SelectTrigger><SelectValue placeholder="Selecciona…" /></SelectTrigger>
+                <SelectContent>{["Importación", "Exportación"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5"><Label>Tipo de carga</Label>
+              <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />
+            </div>
+            <div className="grid gap-1.5"><Label>Contacto</Label>
+              <Input value={form.contacto} onChange={(e) => set("contacto", e.target.value)} />
+            </div>
           </CardContent>
         </Card>
 
