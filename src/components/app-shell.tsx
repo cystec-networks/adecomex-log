@@ -104,7 +104,7 @@ const GROUPS: Group[] = [
       { to: "/expedientes/dashboard", label: "Dashboard", icon: LayoutDashboard,
         match: (p) => p === "/expedientes/dashboard" },
     ],
-  }
+  },
   {
     id: "transporte",
     label: "TRANSPORTES",
