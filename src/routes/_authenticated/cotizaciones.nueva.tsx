@@ -150,6 +150,36 @@ function NuevaCotizacion() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader><CardTitle className="text-base">Exportador / Suplidor y operación</CardTitle></CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <Label>Exportador / Suplidor</Label>
+                <TerceroExtranjeroPicker
+                  onSelect={(t) => setForm((f: any) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid }))}
+                />
+              </div>
+              <Input value={form.suplidor} onChange={(e) => set("suplidor", e.target.value)} placeholder="Nombre del exportador/suplidor" />
+            </div>
+            <div className="grid gap-1.5"><Label>TID del exportador/suplidor</Label>
+              <Input value={form.suplidor_rnc} onChange={(e) => set("suplidor_rnc", e.target.value)} placeholder="TID del exportador/suplidor" />
+            </div>
+            <div className="grid gap-1.5"><Label>Tipo de operación</Label>
+              <Select value={form.tipo_operacion || undefined} onValueChange={(v) => set("tipo_operacion", v)}>
+                <SelectTrigger><SelectValue placeholder="Selecciona…" /></SelectTrigger>
+                <SelectContent>{["Importación", "Exportación"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5"><Label>Tipo de carga</Label>
+              <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />
+            </div>
+            <div className="grid gap-1.5"><Label>Contacto</Label>
+              <Input value={form.contacto} onChange={(e) => set("contacto", e.target.value)} />
+            </div>
+          </CardContent>
+        </Card>
+
         <ProductosCard tabla="cotizacion_productos" items={productos} onItemsChange={setProductos} paisOrigen={form.origen} />
 
 
