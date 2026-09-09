@@ -27,7 +27,6 @@ import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]
 import { Route as PortalPortalIndexRouteImport } from './routes/_portal/portal.index'
 import { Route as PortalEstudiantePortalEstudianteIndexRouteImport } from './routes/_portal-estudiante/portal-estudiante.index'
 import { Route as AuthenticatedTransportesIndexRouteImport } from './routes/_authenticated/transportes.index'
-import { Route as AuthenticatedSolicitudesIndexRouteImport } from './routes/_authenticated/solicitudes.index'
 import { Route as AuthenticatedPermisosIndexRouteImport } from './routes/_authenticated/permisos.index'
 import { Route as AuthenticatedOrdenesIndexRouteImport } from './routes/_authenticated/ordenes.index'
 import { Route as AuthenticatedExpedientesIndexRouteImport } from './routes/_authenticated/expedientes.index'
@@ -43,8 +42,6 @@ import { Route as PortalEstudiantePortalEstudianteCambiarPasswordRouteImport } f
 import { Route as AuthenticatedTransportesNuevoRouteImport } from './routes/_authenticated/transportes.nuevo'
 import { Route as AuthenticatedTransportesDashboardRouteImport } from './routes/_authenticated/transportes.dashboard'
 import { Route as AuthenticatedTransportesIdRouteImport } from './routes/_authenticated/transportes.$id'
-import { Route as AuthenticatedSolicitudesOcrRouteImport } from './routes/_authenticated/solicitudes.ocr'
-import { Route as AuthenticatedSolicitudesNuevaRouteImport } from './routes/_authenticated/solicitudes.nueva'
 import { Route as AuthenticatedSolicitudesIdRouteImport } from './routes/_authenticated/solicitudes.$id'
 import { Route as AuthenticatedPermisosNuevoRouteImport } from './routes/_authenticated/permisos.nuevo'
 import { Route as AuthenticatedPermisosIdRouteImport } from './routes/_authenticated/permisos.$id'
@@ -184,12 +181,6 @@ const AuthenticatedTransportesIndexRoute =
     path: '/transportes/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedSolicitudesIndexRoute =
-  AuthenticatedSolicitudesIndexRouteImport.update({
-    id: '/solicitudes/',
-    path: '/solicitudes/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedPermisosIndexRoute =
   AuthenticatedPermisosIndexRouteImport.update({
     id: '/permisos/',
@@ -276,18 +267,6 @@ const AuthenticatedTransportesIdRoute =
   AuthenticatedTransportesIdRouteImport.update({
     id: '/transportes/$id',
     path: '/transportes/$id',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSolicitudesOcrRoute =
-  AuthenticatedSolicitudesOcrRouteImport.update({
-    id: '/solicitudes/ocr',
-    path: '/solicitudes/ocr',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSolicitudesNuevaRoute =
-  AuthenticatedSolicitudesNuevaRouteImport.update({
-    id: '/solicitudes/nueva',
-    path: '/solicitudes/nueva',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSolicitudesIdRoute =
@@ -618,8 +597,6 @@ export interface FileRoutesByFullPath {
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
-  '/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
-  '/solicitudes/ocr': typeof AuthenticatedSolicitudesOcrRoute
   '/transportes/$id': typeof AuthenticatedTransportesIdRoute
   '/transportes/dashboard': typeof AuthenticatedTransportesDashboardRoute
   '/transportes/nuevo': typeof AuthenticatedTransportesNuevoRoute
@@ -635,7 +612,6 @@ export interface FileRoutesByFullPath {
   '/expedientes/': typeof AuthenticatedExpedientesIndexRoute
   '/ordenes/': typeof AuthenticatedOrdenesIndexRoute
   '/permisos/': typeof AuthenticatedPermisosIndexRoute
-  '/solicitudes/': typeof AuthenticatedSolicitudesIndexRoute
   '/transportes/': typeof AuthenticatedTransportesIndexRoute
   '/portal-estudiante/': typeof PortalEstudiantePortalEstudianteIndexRoute
   '/portal/': typeof PortalPortalIndexRoute
@@ -700,8 +676,6 @@ export interface FileRoutesByTo {
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
   '/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
-  '/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
-  '/solicitudes/ocr': typeof AuthenticatedSolicitudesOcrRoute
   '/transportes/$id': typeof AuthenticatedTransportesIdRoute
   '/transportes/dashboard': typeof AuthenticatedTransportesDashboardRoute
   '/transportes/nuevo': typeof AuthenticatedTransportesNuevoRoute
@@ -717,7 +691,6 @@ export interface FileRoutesByTo {
   '/expedientes': typeof AuthenticatedExpedientesIndexRoute
   '/ordenes': typeof AuthenticatedOrdenesIndexRoute
   '/permisos': typeof AuthenticatedPermisosIndexRoute
-  '/solicitudes': typeof AuthenticatedSolicitudesIndexRoute
   '/transportes': typeof AuthenticatedTransportesIndexRoute
   '/portal-estudiante': typeof PortalEstudiantePortalEstudianteIndexRoute
   '/portal': typeof PortalPortalIndexRoute
@@ -786,8 +759,6 @@ export interface FileRoutesById {
   '/_authenticated/permisos/$id': typeof AuthenticatedPermisosIdRoute
   '/_authenticated/permisos/nuevo': typeof AuthenticatedPermisosNuevoRoute
   '/_authenticated/solicitudes/$id': typeof AuthenticatedSolicitudesIdRoute
-  '/_authenticated/solicitudes/nueva': typeof AuthenticatedSolicitudesNuevaRoute
-  '/_authenticated/solicitudes/ocr': typeof AuthenticatedSolicitudesOcrRoute
   '/_authenticated/transportes/$id': typeof AuthenticatedTransportesIdRoute
   '/_authenticated/transportes/dashboard': typeof AuthenticatedTransportesDashboardRoute
   '/_authenticated/transportes/nuevo': typeof AuthenticatedTransportesNuevoRoute
@@ -803,7 +774,6 @@ export interface FileRoutesById {
   '/_authenticated/expedientes/': typeof AuthenticatedExpedientesIndexRoute
   '/_authenticated/ordenes/': typeof AuthenticatedOrdenesIndexRoute
   '/_authenticated/permisos/': typeof AuthenticatedPermisosIndexRoute
-  '/_authenticated/solicitudes/': typeof AuthenticatedSolicitudesIndexRoute
   '/_authenticated/transportes/': typeof AuthenticatedTransportesIndexRoute
   '/_portal-estudiante/portal-estudiante/': typeof PortalEstudiantePortalEstudianteIndexRoute
   '/_portal/portal/': typeof PortalPortalIndexRoute
@@ -870,8 +840,6 @@ export interface FileRouteTypes {
     | '/permisos/$id'
     | '/permisos/nuevo'
     | '/solicitudes/$id'
-    | '/solicitudes/nueva'
-    | '/solicitudes/ocr'
     | '/transportes/$id'
     | '/transportes/dashboard'
     | '/transportes/nuevo'
@@ -887,7 +855,6 @@ export interface FileRouteTypes {
     | '/expedientes/'
     | '/ordenes/'
     | '/permisos/'
-    | '/solicitudes/'
     | '/transportes/'
     | '/portal-estudiante/'
     | '/portal/'
@@ -952,8 +919,6 @@ export interface FileRouteTypes {
     | '/permisos/$id'
     | '/permisos/nuevo'
     | '/solicitudes/$id'
-    | '/solicitudes/nueva'
-    | '/solicitudes/ocr'
     | '/transportes/$id'
     | '/transportes/dashboard'
     | '/transportes/nuevo'
@@ -969,7 +934,6 @@ export interface FileRouteTypes {
     | '/expedientes'
     | '/ordenes'
     | '/permisos'
-    | '/solicitudes'
     | '/transportes'
     | '/portal-estudiante'
     | '/portal'
@@ -1037,8 +1001,6 @@ export interface FileRouteTypes {
     | '/_authenticated/permisos/$id'
     | '/_authenticated/permisos/nuevo'
     | '/_authenticated/solicitudes/$id'
-    | '/_authenticated/solicitudes/nueva'
-    | '/_authenticated/solicitudes/ocr'
     | '/_authenticated/transportes/$id'
     | '/_authenticated/transportes/dashboard'
     | '/_authenticated/transportes/nuevo'
@@ -1054,7 +1016,6 @@ export interface FileRouteTypes {
     | '/_authenticated/expedientes/'
     | '/_authenticated/ordenes/'
     | '/_authenticated/permisos/'
-    | '/_authenticated/solicitudes/'
     | '/_authenticated/transportes/'
     | '/_portal-estudiante/portal-estudiante/'
     | '/_portal/portal/'
@@ -1218,13 +1179,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTransportesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/solicitudes/': {
-      id: '/_authenticated/solicitudes/'
-      path: '/solicitudes'
-      fullPath: '/solicitudes/'
-      preLoaderRoute: typeof AuthenticatedSolicitudesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/permisos/': {
       id: '/_authenticated/permisos/'
       path: '/permisos'
@@ -1328,20 +1282,6 @@ declare module '@tanstack/react-router' {
       path: '/transportes/$id'
       fullPath: '/transportes/$id'
       preLoaderRoute: typeof AuthenticatedTransportesIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/solicitudes/ocr': {
-      id: '/_authenticated/solicitudes/ocr'
-      path: '/solicitudes/ocr'
-      fullPath: '/solicitudes/ocr'
-      preLoaderRoute: typeof AuthenticatedSolicitudesOcrRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/solicitudes/nueva': {
-      id: '/_authenticated/solicitudes/nueva'
-      path: '/solicitudes/nueva'
-      fullPath: '/solicitudes/nueva'
-      preLoaderRoute: typeof AuthenticatedSolicitudesNuevaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/solicitudes/$id': {
@@ -1717,8 +1657,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPermisosIdRoute: typeof AuthenticatedPermisosIdRoute
   AuthenticatedPermisosNuevoRoute: typeof AuthenticatedPermisosNuevoRoute
   AuthenticatedSolicitudesIdRoute: typeof AuthenticatedSolicitudesIdRoute
-  AuthenticatedSolicitudesNuevaRoute: typeof AuthenticatedSolicitudesNuevaRoute
-  AuthenticatedSolicitudesOcrRoute: typeof AuthenticatedSolicitudesOcrRoute
   AuthenticatedTransportesIdRoute: typeof AuthenticatedTransportesIdRoute
   AuthenticatedTransportesDashboardRoute: typeof AuthenticatedTransportesDashboardRoute
   AuthenticatedTransportesNuevoRoute: typeof AuthenticatedTransportesNuevoRoute
@@ -1728,7 +1666,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedExpedientesIndexRoute: typeof AuthenticatedExpedientesIndexRoute
   AuthenticatedOrdenesIndexRoute: typeof AuthenticatedOrdenesIndexRoute
   AuthenticatedPermisosIndexRoute: typeof AuthenticatedPermisosIndexRoute
-  AuthenticatedSolicitudesIndexRoute: typeof AuthenticatedSolicitudesIndexRoute
   AuthenticatedTransportesIndexRoute: typeof AuthenticatedTransportesIndexRoute
   AuthenticatedAdminFacturacionPendientesRoute: typeof AuthenticatedAdminFacturacionPendientesRoute
   AuthenticatedRrhhEmpleadosIdRoute: typeof AuthenticatedRrhhEmpleadosIdRoute
@@ -1795,8 +1732,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPermisosIdRoute: AuthenticatedPermisosIdRoute,
   AuthenticatedPermisosNuevoRoute: AuthenticatedPermisosNuevoRoute,
   AuthenticatedSolicitudesIdRoute: AuthenticatedSolicitudesIdRoute,
-  AuthenticatedSolicitudesNuevaRoute: AuthenticatedSolicitudesNuevaRoute,
-  AuthenticatedSolicitudesOcrRoute: AuthenticatedSolicitudesOcrRoute,
   AuthenticatedTransportesIdRoute: AuthenticatedTransportesIdRoute,
   AuthenticatedTransportesDashboardRoute:
     AuthenticatedTransportesDashboardRoute,
@@ -1807,7 +1742,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedExpedientesIndexRoute: AuthenticatedExpedientesIndexRoute,
   AuthenticatedOrdenesIndexRoute: AuthenticatedOrdenesIndexRoute,
   AuthenticatedPermisosIndexRoute: AuthenticatedPermisosIndexRoute,
-  AuthenticatedSolicitudesIndexRoute: AuthenticatedSolicitudesIndexRoute,
   AuthenticatedTransportesIndexRoute: AuthenticatedTransportesIndexRoute,
   AuthenticatedAdminFacturacionPendientesRoute:
     AuthenticatedAdminFacturacionPendientesRoute,

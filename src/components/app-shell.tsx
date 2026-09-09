@@ -93,7 +93,9 @@ const GROUPS: Group[] = [
     icon: FolderKanban,
     items: [
       { to: "/expedientes", label: "Expedientes", icon: FolderKanban,
-        match: (p, s) => (p === "/expedientes" || p.startsWith("/expedientes/")) && !s?.tipo && p !== "/expedientes/papelera" && p !== "/expedientes/dashboard" },
+        match: (p, s) => (p === "/expedientes" || p.startsWith("/expedientes/")) && !s?.tipo && p !== "/expedientes/papelera" && p !== "/expedientes/dashboard" && p !== "/expedientes/ocr" },
+      { to: "/expedientes/ocr", label: "Nuevo por OCR", icon: ScanText,
+        match: (p) => p === "/expedientes/ocr" },
       { to: "/expedientes", search: { tipo: "importacion" }, label: "Importaciones", icon: PackageOpen,
         match: (p, s) => p.startsWith("/expedientes") && s?.tipo === "importacion" },
       { to: "/expedientes", search: { tipo: "exportacion" }, label: "Exportaciones", icon: PackageCheck,
