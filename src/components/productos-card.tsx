@@ -27,7 +27,20 @@ const emptyForm = {
   product_code: "", cod_marca: "", marca: "", cod_modelo: "", modelo: "", especificaciones: "",
   estado_producto_codigo: "",
   pais_origen: "", pais_origen_codigo: "",
+  pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "18",
 };
+
+/** Busca la tasa oficial del código arancelario para prellenar impuestos. */
+async function buscarTasa(codigo: string) {
+  const c = (codigo || "").trim();
+  if (!c) return null;
+  const { data } = await supabase
+    .from("catalogo_tasas_arancelarias")
+    .select("codigo_arancelario,pct_gravamen,aplica_isc,pct_isc,pct_itbis")
+    .eq("codigo_arancelario", c)
+    .maybeSingle();
+  return data as any;
+}
 
 export function ProductosCard({
   tabla,
@@ -87,6 +100,10 @@ export function ProductosCard({
     estado_producto_codigo: f.estado_producto_codigo?.trim() || null,
     pais_origen: f.pais_origen?.trim() || null,
     pais_origen_codigo: f.pais_origen_codigo?.trim() || null,
+    pct_gravamen: f.pct_gravamen === "" ? null : Number(f.pct_gravamen),
+    aplica_isc: !!f.aplica_isc,
+    pct_isc: f.aplica_isc && f.pct_isc !== "" ? Number(f.pct_isc) : null,
+    pct_itbis: f.pct_itbis === "" ? null : Number(f.pct_itbis),
   });
 
   const renumerar = (arr: any[]) => arr.map((it, i) => ({ ...it, item_no: i + 1 }));
@@ -160,6 +177,10 @@ export function ProductosCard({
       estado_producto_codigo: it.estado_producto_codigo ?? "",
       pais_origen: it.pais_origen ?? "",
       pais_origen_codigo: it.pais_origen_codigo ?? "",
+      pct_gravamen: it.pct_gravamen != null ? String(it.pct_gravamen) : "",
+      aplica_isc: !!it.aplica_isc,
+      pct_isc: it.pct_isc != null ? String(it.pct_isc) : "",
+      pct_itbis: it.pct_itbis != null ? String(it.pct_itbis) : "18",
     });
     setOpen(true);
   };
@@ -232,11 +253,12 @@ export function ProductosCard({
           <DialogHeader><DialogTitle>{editingId ? "Editar producto" : "Nuevo producto"}</DialogTitle></DialogHeader>
           <div className="rounded-md border bg-muted/30 p-3">
             <DgaProductoSearch
-              onSelect={(p, reusarCodigo) => {
+              onSelect={async (p, reusarCodigo) => {
+                const partida = (p.partida_arancelaria ?? "").trim();
                 setF((prev) => ({
                   ...prev,
                   product_code: reusarCodigo ? (p.codigo_producto ?? "") : "",
-                  codigo_arancelario: prev.codigo_arancelario || (p.partida_arancelaria ?? ""),
+                  codigo_arancelario: prev.codigo_arancelario || partida,
                   detalle_producto: prev.detalle_producto || (p.nombre_producto ?? ""),
                   cod_marca: p.cod_marca ?? "",
                   marca: p.marca ?? "",
@@ -244,8 +266,26 @@ export function ProductosCard({
                   modelo: p.modelo ?? "",
                   especificaciones: p.especificaciones ?? "",
                   unidad_medida: prev.unidad_medida || (p.unidad ?? ""),
+                  pct_gravamen: p.pct_gravamen != null ? String(p.pct_gravamen) : prev.pct_gravamen,
+                  aplica_isc: p.aplica_isc != null ? !!p.aplica_isc : prev.aplica_isc,
+                  pct_isc: p.pct_isc != null ? String(p.pct_isc) : prev.pct_isc,
+                  pct_itbis: p.pct_itbis != null ? String(p.pct_itbis) : prev.pct_itbis,
                 }));
                 toast.success(reusarCodigo ? "Producto copiado con su ProductCode" : "Datos copiados del histórico");
+                // Si el histórico no trae tasas, se buscan en el catálogo arancelario oficial.
+                if (p.pct_gravamen == null && partida) {
+                  const t = await buscarTasa(partida);
+                  if (t) {
+                    setF((prev) => ({
+                      ...prev,
+                      pct_gravamen: prev.pct_gravamen === "" && t.pct_gravamen != null ? String(t.pct_gravamen) : prev.pct_gravamen,
+                      aplica_isc: prev.aplica_isc || !!t.aplica_isc,
+                      pct_isc: prev.pct_isc === "" && t.pct_isc != null ? String(t.pct_isc) : prev.pct_isc,
+                      pct_itbis: t.pct_itbis != null ? String(t.pct_itbis) : prev.pct_itbis,
+                    }));
+                    toast.info("Impuestos cargados del catálogo arancelario");
+                  }
+                }
               }}
             />
           </div>
@@ -282,6 +322,48 @@ export function ProductosCard({
                 onChange={(e) => { const v = e.target.value.replace(/,/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) setF({ ...f, valor_fob: v }); }}
                 onBlur={(e) => { const v = e.target.value; if (v !== "" && !isNaN(Number(v))) setF({ ...f, valor_fob: Number(v).toFixed(2) }); }}
                 placeholder="0.00" />
+            </div>
+            <div className="md:col-span-2 border-t pt-3 mt-1">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Impuestos</div>
+              <div className="grid gap-3 md:grid-cols-4">
+                <div className="grid gap-1.5">
+                  <Label>% Gravamen</Label>
+                  <Input type="text" inputMode="decimal" placeholder="0" value={f.pct_gravamen}
+                    onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, pct_gravamen: v }); }}
+                    onBlur={async () => {
+                      if (f.pct_gravamen !== "" || !f.codigo_arancelario.trim()) return;
+                      const t = await buscarTasa(f.codigo_arancelario);
+                      if (t) setF((prev) => ({
+                        ...prev,
+                        pct_gravamen: t.pct_gravamen != null ? String(t.pct_gravamen) : prev.pct_gravamen,
+                        aplica_isc: prev.aplica_isc || !!t.aplica_isc,
+                        pct_isc: t.pct_isc != null ? String(t.pct_isc) : prev.pct_isc,
+                        pct_itbis: t.pct_itbis != null ? String(t.pct_itbis) : prev.pct_itbis,
+                      }));
+                    }} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Aplica ISC</Label>
+                  <label className="flex items-center gap-2 h-9 text-sm">
+                    <input type="checkbox" className="h-4 w-4" checked={f.aplica_isc}
+                      onChange={(e) => setF({ ...f, aplica_isc: e.target.checked })} />
+                    Sí
+                  </label>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>% ISC</Label>
+                  <Input type="text" inputMode="decimal" placeholder="0" value={f.pct_isc} disabled={!f.aplica_isc}
+                    onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, pct_isc: v }); }} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>% ITBIS</Label>
+                  <Input type="text" inputMode="decimal" placeholder="18" value={f.pct_itbis}
+                    onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, pct_itbis: v }); }} />
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1.5">
+                Se copian al convertir a Orden y Expediente; puedes ajustarlos ahí si cambian.
+              </p>
             </div>
             <div className="md:col-span-2 border-t pt-3 mt-1">
               <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Datos del producto (SIGA)</div>
