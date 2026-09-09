@@ -177,6 +177,10 @@ export function ProductosCard({
       estado_producto_codigo: it.estado_producto_codigo ?? "",
       pais_origen: it.pais_origen ?? "",
       pais_origen_codigo: it.pais_origen_codigo ?? "",
+      pct_gravamen: it.pct_gravamen != null ? String(it.pct_gravamen) : "",
+      aplica_isc: !!it.aplica_isc,
+      pct_isc: it.pct_isc != null ? String(it.pct_isc) : "",
+      pct_itbis: it.pct_itbis != null ? String(it.pct_itbis) : "18",
     });
     setOpen(true);
   };
