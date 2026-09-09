@@ -253,11 +253,12 @@ export function ProductosCard({
           <DialogHeader><DialogTitle>{editingId ? "Editar producto" : "Nuevo producto"}</DialogTitle></DialogHeader>
           <div className="rounded-md border bg-muted/30 p-3">
             <DgaProductoSearch
-              onSelect={(p, reusarCodigo) => {
+              onSelect={async (p, reusarCodigo) => {
+                const partida = (p.partida_arancelaria ?? "").trim();
                 setF((prev) => ({
                   ...prev,
                   product_code: reusarCodigo ? (p.codigo_producto ?? "") : "",
-                  codigo_arancelario: prev.codigo_arancelario || (p.partida_arancelaria ?? ""),
+                  codigo_arancelario: prev.codigo_arancelario || partida,
                   detalle_producto: prev.detalle_producto || (p.nombre_producto ?? ""),
                   cod_marca: p.cod_marca ?? "",
                   marca: p.marca ?? "",
@@ -265,8 +266,26 @@ export function ProductosCard({
                   modelo: p.modelo ?? "",
                   especificaciones: p.especificaciones ?? "",
                   unidad_medida: prev.unidad_medida || (p.unidad ?? ""),
+                  pct_gravamen: p.pct_gravamen != null ? String(p.pct_gravamen) : prev.pct_gravamen,
+                  aplica_isc: p.aplica_isc != null ? !!p.aplica_isc : prev.aplica_isc,
+                  pct_isc: p.pct_isc != null ? String(p.pct_isc) : prev.pct_isc,
+                  pct_itbis: p.pct_itbis != null ? String(p.pct_itbis) : prev.pct_itbis,
                 }));
                 toast.success(reusarCodigo ? "Producto copiado con su ProductCode" : "Datos copiados del histórico");
+                // Si el histórico no trae tasas, se buscan en el catálogo arancelario oficial.
+                if (p.pct_gravamen == null && partida) {
+                  const t = await buscarTasa(partida);
+                  if (t) {
+                    setF((prev) => ({
+                      ...prev,
+                      pct_gravamen: prev.pct_gravamen === "" && t.pct_gravamen != null ? String(t.pct_gravamen) : prev.pct_gravamen,
+                      aplica_isc: prev.aplica_isc || !!t.aplica_isc,
+                      pct_isc: prev.pct_isc === "" && t.pct_isc != null ? String(t.pct_isc) : prev.pct_isc,
+                      pct_itbis: t.pct_itbis != null ? String(t.pct_itbis) : prev.pct_itbis,
+                    }));
+                    toast.info("Impuestos cargados del catálogo arancelario");
+                  }
+                }
               }}
             />
           </div>
