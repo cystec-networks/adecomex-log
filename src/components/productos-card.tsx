@@ -27,7 +27,20 @@ const emptyForm = {
   product_code: "", cod_marca: "", marca: "", cod_modelo: "", modelo: "", especificaciones: "",
   estado_producto_codigo: "",
   pais_origen: "", pais_origen_codigo: "",
+  pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "18",
 };
+
+/** Busca la tasa oficial del código arancelario para prellenar impuestos. */
+async function buscarTasa(codigo: string) {
+  const c = (codigo || "").trim();
+  if (!c) return null;
+  const { data } = await supabase
+    .from("catalogo_tasas_arancelarias")
+    .select("codigo_arancelario,pct_gravamen,aplica_isc,pct_isc,pct_itbis")
+    .eq("codigo_arancelario", c)
+    .maybeSingle();
+  return data as any;
+}
 
 export function ProductosCard({
   tabla,
