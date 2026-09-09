@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, FileUp, Sparkles, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { OcrContextualHelp } from "@/components/ocr-contextual-help";
 
 export const Route = createFileRoute("/_authenticated/expedientes/ocr")({
   component: ExpedientesOCR,
@@ -120,6 +121,9 @@ function ExpedientesOCR() {
           <p className="text-sm text-muted-foreground">
             Sube un BL, factura o AWB en PDF/imagen. La IA extraerá los campos clave y creará el expediente directamente.
           </p>
+          <OcrContextualHelp>
+            Usa esto solo para arrancar un Expediente directo, sin Cotización ni Orden previas (por ejemplo, si el trato comercial ya se manejó fuera del sistema). Si ya existe una Cotización u Orden para este embarque, conviértela a Expediente desde ahí en vez de crear uno nuevo aquí — evita duplicar el registro.
+          </OcrContextualHelp>
         </div>
       </div>
 
