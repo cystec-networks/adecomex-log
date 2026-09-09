@@ -12,6 +12,7 @@ import { ArrowLeft, Save, PackagePlus } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
+import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
 import { BadgeVigencia } from "@/components/badge-vigencia";
 import { useMyRoles } from "@/lib/auth-hooks";
 import { ProductosCard } from "@/components/productos-card";
@@ -77,6 +78,11 @@ function DetalleCotizacion() {
         fecha_emision: c.fecha_emision ?? "",
         fecha_vigencia: c.fecha_vigencia ?? "",
         notas: c.notas ?? "",
+        suplidor: (c as any).suplidor ?? "",
+        suplidor_rnc: (c as any).suplidor_rnc ?? "",
+        tipo_operacion: (c as any).tipo_operacion ?? "Importación",
+        tipo_carga: (c as any).tipo_carga ?? "",
+        contacto: (c as any).contacto ?? "",
       });
     }
   }, [c]);
