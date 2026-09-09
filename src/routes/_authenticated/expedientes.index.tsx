@@ -446,7 +446,7 @@ function Expedientes() {
         </CardHeader>
         <CardContent className="p-0">
           {filtered.length === 0 && (
-            <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin expedientes. Crea uno desde una solicitud aprobada.</div>
+            <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin expedientes. Crea uno con "Nuevo Expediente" o súbelo por OCR.</div>
           )}
           <div className="overflow-x-auto">
             {gruposVisibles.map((g) => {
