@@ -80,7 +80,6 @@ const GROUPS: Group[] = [
         match: (p) => p === "/permisos" || p.startsWith("/permisos/") },
       { to: "/cotizaciones/calculadora", label: "Calculadora Rápida", icon: Calculator },
       { to: "/cotizaciones/ocr", label: "OCR Cotización", icon: ScanText },
-      { to: "/ordenes/ocr", label: "OCR Orden", icon: ScanText },
       { to: "/copiloto", label: "Copiloto IA", icon: Bot,
         match: (p) => p.startsWith("/copiloto") },
     ],
