@@ -247,88 +247,92 @@ function DetalleExpediente() {
 
   return (
     <div className="p-6 max-w-[1600px] mx-auto space-y-6">
-      <div className="flex items-center gap-3 flex-wrap">
-        <Button variant="ghost" size="sm" asChild><Link to="/expedientes"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link></Button>
-        <div className="flex-1 min-w-0">
-          <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
-            {exp.numero}
-            <Badge className="bg-primary/10 text-primary border-transparent">{ESTADO_LABEL[exp.estado ?? ""] ?? exp.estado?.replace("_"," ")}</Badge>
-            {exp.solicitudes?.numero && <Badge variant="outline">← {exp.solicitudes.numero}</Badge>}
-          </h1>
-          <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
-            <span>{exp.clientes?.nombre ?? "Sin cliente"}</span>
-            {exp.clientes && (
-              <>
-                <WhatsAppButton
-                  phone={exp.clientes.telefono}
-                  clientName={exp.clientes.nombre}
-                  recordType="Expediente"
-                  recordNumber={exp.numero}
-                  variant="icon"
-                />
-                <EmailButton
-                  email={(exp.clientes as any).email}
-                  clientName={exp.clientes.nombre}
-                  recordType="Expediente"
-                  recordNumber={exp.numero}
-                  variant="icon"
-                />
-                <SearchEmailButton
-                  recordType="Expediente"
-                  recordNumber={exp.numero}
-                  variant="icon"
-                />
-              </>
-            )}
-            <RastrearEmbarqueButton
-              containerNumber={exp.numeros_contenedores}
-              blNumber={exp.bl_awb}
-              expedienteNumber={exp.numero}
-            />
-            <span>· BL/AWB: {exp.bl_awb ?? "—"}</span>
-          </p>
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <Button variant="ghost" size="sm" asChild><Link to="/expedientes"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link></Button>
+          <div className="flex-1 min-w-0">
+            <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
+              {exp.numero}
+              <Badge className="bg-primary/10 text-primary border-transparent">{ESTADO_LABEL[exp.estado ?? ""] ?? exp.estado?.replace("_"," ")}</Badge>
+              {exp.solicitudes?.numero && <Badge variant="outline">← {exp.solicitudes.numero}</Badge>}
+            </h1>
+            <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+              <span>{exp.clientes?.nombre ?? "Sin cliente"}</span>
+              {exp.clientes && (
+                <>
+                  <WhatsAppButton
+                    phone={exp.clientes.telefono}
+                    clientName={exp.clientes.nombre}
+                    recordType="Expediente"
+                    recordNumber={exp.numero}
+                    variant="icon"
+                  />
+                  <EmailButton
+                    email={(exp.clientes as any).email}
+                    clientName={exp.clientes.nombre}
+                    recordType="Expediente"
+                    recordNumber={exp.numero}
+                    variant="icon"
+                  />
+                  <SearchEmailButton
+                    recordType="Expediente"
+                    recordNumber={exp.numero}
+                    variant="icon"
+                  />
+                </>
+              )}
+              <RastrearEmbarqueButton
+                containerNumber={exp.numeros_contenedores}
+                blNumber={exp.bl_awb}
+                expedienteNumber={exp.numero}
+              />
+              <span>· BL/AWB: {exp.bl_awb ?? "—"}</span>
+            </p>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
+                <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 p-1">
+              <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:text-sm [&_button:hover]:bg-accent">
+                <GenerarXmlSigaButton expedienteId={id} />
+                <GenerarXmlCertificadoOrigenButton expedienteId={id} />
+                <PreLiquidacionPdfButton exp={exp} />
+                <GenerarDocumentoButton exp={exp} />
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
-              <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64 p-1">
-            <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:text-sm [&_button:hover]:bg-accent">
-              <GenerarXmlSigaButton expedienteId={id} />
-              <GenerarXmlCertificadoOrigenButton expedienteId={id} />
-              <PreLiquidacionPdfButton exp={exp} />
-              <GenerarDocumentoButton exp={exp} />
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
 
-
-        <div className="flex items-center gap-2">
-          <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>
-            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {ESTADO_ORDEN.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          {exp.estado && (
-            <span className="text-sm text-muted-foreground whitespace-nowrap">
-              {(() => {
-                const fecha = {
-                  digitar: exp.fecha_recibido,
-                  en_transito: exp.fecha_en_transito,
-                  presentar: exp.fecha_presentado,
-                  verificar: exp.fecha_verificado,
-                  despachado: exp.fecha_despachado,
-                  entregado: exp.fecha_entregado,
-                  facturar: exp.fecha_facturado,
-                }[exp.estado];
-                return fecha ? `· ${fmtLocalDate(fecha)}` : null;
-              })()}
-            </span>
-          )}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">Estado:</Label>
+            <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>
+              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {ESTADO_ORDEN.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {exp.estado && (
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                {(() => {
+                  const fecha = {
+                    digitar: exp.fecha_recibido,
+                    en_transito: exp.fecha_en_transito,
+                    presentar: exp.fecha_presentado,
+                    verificar: exp.fecha_verificado,
+                    despachado: exp.fecha_despachado,
+                    entregado: exp.fecha_entregado,
+                    facturar: exp.fecha_facturado,
+                  }[exp.estado];
+                  return fecha ? `· ${fmtLocalDate(fecha)}` : null;
+                })()}
+              </span>
+            )}
+          </div>
           {(() => {
             const a = alertaDeclaracionTardia(exp);
             if (!a) return null;
