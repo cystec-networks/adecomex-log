@@ -75,7 +75,7 @@ const GROUPS: Group[] = [
       { to: "/cotizaciones", label: "Cotizaciones", icon: FileSpreadsheet,
         match: (p) => p === "/cotizaciones" || (p.startsWith("/cotizaciones/") && p !== "/cotizaciones/ocr" && p !== "/cotizaciones/calculadora") },
       { to: "/ordenes", label: "Órdenes", icon: ClipboardList,
-        match: (p) => p === "/ordenes" || (p.startsWith("/ordenes/") && p !== "/ordenes/ocr") },
+        match: (p) => p === "/ordenes" || p.startsWith("/ordenes/") },
       { to: "/permisos", label: "Permisos", icon: FileCheck2,
         match: (p) => p === "/permisos" || p.startsWith("/permisos/") },
       { to: "/cotizaciones/calculadora", label: "Calculadora Rápida", icon: Calculator },
