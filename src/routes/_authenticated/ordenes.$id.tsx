@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
 import { ProductosCard } from "@/components/productos-card";
+import { copiarProductos } from "@/lib/copiar-productos";
 
 export const Route = createFileRoute("/_authenticated/ordenes/$id")({
   component: DetalleOrden,
@@ -32,6 +33,7 @@ function ReadOnlyField({ label, value }: { label: string; value: any }) {
 function DetalleOrden() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
+  const nav = useNavigate();
   const { data: roles } = useMyRoles();
   const canEdit = (roles ?? []).some((r) => r === "admin" || r === "vendedor");
 
@@ -44,7 +46,47 @@ function DetalleOrden() {
 
   const solicitudVinculada = (o as any)?.solicitudes ?? null;
 
+  const { data: expedienteVinculado } = useQuery({
+    queryKey: ["expediente-de-orden", id],
+    enabled: !!o,
+    queryFn: async () =>
+      (await supabase.from("expedientes").select("id,numero").eq("orden_id", id).maybeSingle()).data,
+  });
 
+  const convertirExpediente = useMutation({
+    mutationFn: async () => {
+      const { data: exp, error } = await supabase
+        .from("expedientes")
+        .insert({
+          orden_id: id,
+          cliente_id: o!.cliente_id,
+          suplidor: (o as any).cot_suplidor ?? null,
+          suplidor_rnc: (o as any).cot_suplidor_rnc ?? null,
+          tipo_operacion: (o as any).cot_tipo_operacion ?? null,
+          tipo_carga: (o as any).cot_tipo_carga ?? null,
+          contacto_solicitud: (o as any).cot_contacto ?? null,
+          incoterm: (o as any).cot_incoterm ?? null,
+          pais_origen: (o as any).cot_origen ?? null,
+          observaciones: (o as any).notas ?? null,
+        } as any)
+        .select()
+        .single();
+      if (error) throw error;
+      await copiarProductos({
+        origenTabla: "orden_productos", origenCol: "orden_id", origenId: id,
+        destinoTabla: "mercancia_items", destinoCol: "expediente_id", destinoId: exp.id,
+      });
+      await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "creado" });
+      return exp;
+    },
+    onSuccess: (exp: any) => {
+      toast.success(`Expediente ${exp.numero} creado`);
+      qc.invalidateQueries({ queryKey: ["expediente-de-orden", id] });
+      qc.invalidateQueries({ queryKey: ["expedientes"] });
+      nav({ to: "/expedientes/$id", params: { id: exp.id } });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo convertir"),
+  });
 
   const [form, setForm] = useState<any>(null);
   useEffect(() => {
@@ -95,26 +137,32 @@ function DetalleOrden() {
             {(o as any).clientes?.nombre ?? "Sin cliente"} · creada el {fmtLocalDate(o.created_at?.slice(0, 10))}
           </p>
         </div>
-        {solicitudVinculada ? (
+        {solicitudVinculada && (
           <Button variant="outline" asChild>
             <Link to="/solicitudes/$id" params={{ id: solicitudVinculada.id }}>
               <FolderPlus className="h-4 w-4 mr-1" />Ver Solicitud {solicitudVinculada.numero} ↗
             </Link>
           </Button>
+        )}
+        {expedienteVinculado ? (
+          <Button variant="outline" asChild>
+            <Link to="/expedientes/$id" params={{ id: expedienteVinculado.id }}>
+              <FolderPlus className="h-4 w-4 mr-1" />Ver Expediente {expedienteVinculado.numero} ↗
+            </Link>
+          </Button>
         ) : canEdit ? (
           o.estado === "en_transito" ? (
-            <Button variant="outline" asChild>
-              <Link to="/solicitudes/nueva" search={{ orden: id }}>
-                <FolderPlus className="h-4 w-4 mr-1" />Convertir en Solicitud
-              </Link>
-            </Button>
-          ) : (
             <Button
               variant="outline"
-              disabled
-              title="Cambia el estado a 'En Tránsito' para poder convertir en Solicitud"
+              onClick={() => convertirExpediente.mutate()}
+              disabled={convertirExpediente.isPending}
             >
-              <FolderPlus className="h-4 w-4 mr-1" />Convertir en Solicitud
+              <FolderPlus className="h-4 w-4 mr-1" />
+              {convertirExpediente.isPending ? "Convirtiendo…" : "Convertir a Expediente"}
+            </Button>
+          ) : (
+            <Button variant="outline" disabled title="Cambia el estado a 'En Tránsito' para poder convertir a Expediente">
+              <FolderPlus className="h-4 w-4 mr-1" />Convertir a Expediente
             </Button>
           )
         ) : null}
@@ -183,9 +231,9 @@ function DetalleOrden() {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>{ORDEN_ESTADOS.map((e) => <SelectItem key={e} value={e}>{ordenEstadoLabel(e)}</SelectItem>)}</SelectContent>
             </Select>
-            {!solicitudVinculada && o.estado !== "en_transito" && (
+            {!expedienteVinculado && o.estado !== "en_transito" && (
               <span className="text-[11px] text-amber-700">
-                Cambia el estado a "En Tránsito" para poder abrir la Solicitud.
+                Cambia el estado a "En Tránsito" para poder convertir a Expediente.
               </span>
             )}
           </div>
