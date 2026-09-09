@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  Inbox, FolderKanban, Users, UserCog, LogOut,
+  FolderKanban, Users, UserCog, LogOut,
   PackageOpen, PackageCheck, ScanText, Sparkles, Trash2, FileCheck2, Truck,
   ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3, Library, Settings,
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
@@ -79,22 +79,13 @@ const GROUPS: Group[] = [
       { to: "/cotizaciones/calculadora", label: "Calculadora Rápida", icon: Calculator },
       { to: "/cotizaciones/ocr", label: "OCR Cotización", icon: ScanText },
       { to: "/ordenes/ocr", label: "OCR Orden", icon: ScanText },
-    ],
-  },
-  {
-    id: "solicitudes",
-    label: "SOLICITUDES",
-    icon: Inbox,
-    items: [
-      { to: "/solicitudes", label: "Solicitudes", icon: FileText,
-        match: (p) => p === "/solicitudes" || (p.startsWith("/solicitudes/") && p !== "/solicitudes/ocr") },
       { to: "/permisos", label: "Permisos", icon: FileCheck2,
         match: (p) => p === "/permisos" || p.startsWith("/permisos/") },
-      { to: "/solicitudes/ocr", label: "OCR", icon: ScanText },
       { to: "/copiloto", label: "Copiloto IA", icon: Bot,
         match: (p) => p.startsWith("/copiloto") },
     ],
   },
+
 
   {
     id: "expedientes",
@@ -102,7 +93,9 @@ const GROUPS: Group[] = [
     icon: FolderKanban,
     items: [
       { to: "/expedientes", label: "Expedientes", icon: FolderKanban,
-        match: (p, s) => (p === "/expedientes" || p.startsWith("/expedientes/")) && !s?.tipo && p !== "/expedientes/papelera" && p !== "/expedientes/dashboard" },
+        match: (p, s) => (p === "/expedientes" || p.startsWith("/expedientes/")) && !s?.tipo && p !== "/expedientes/papelera" && p !== "/expedientes/dashboard" && p !== "/expedientes/ocr" },
+      { to: "/expedientes/ocr", label: "Nuevo por OCR", icon: ScanText,
+        match: (p) => p === "/expedientes/ocr" },
       { to: "/expedientes", search: { tipo: "importacion" }, label: "Importaciones", icon: PackageOpen,
         match: (p, s) => p.startsWith("/expedientes") && s?.tipo === "importacion" },
       { to: "/expedientes", search: { tipo: "exportacion" }, label: "Exportaciones", icon: PackageCheck,
@@ -303,8 +296,6 @@ function AppSidebarInner() {
         {/* Comercial group (Cotizaciones → Órdenes) */}
         {renderGroup(visibleGroups.find((g) => g.id === "comercial")!)}
 
-        {/* Solicitudes group */}
-        {renderGroup(visibleGroups.find((g) => g.id === "solicitudes")!)}
 
         {/* Expedientes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "expedientes")!)}

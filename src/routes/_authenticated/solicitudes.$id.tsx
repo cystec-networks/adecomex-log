@@ -32,7 +32,9 @@ function DetalleSolicitud() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const { data: roles } = useMyRoles();
-  const canEdit = (roles ?? []).some((r) => r === "admin" || r === "vendedor" || r === "operaciones");
+  // Módulo descontinuado: el detalle de Solicitudes es histórico y siempre de solo lectura.
+  void roles;
+  const canEdit = false as boolean;
   
   
 
@@ -157,7 +159,7 @@ function DetalleSolicitud() {
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center gap-3 flex-wrap">
-        <Button variant="ghost" size="sm" asChild><Link to="/solicitudes"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link></Button>
+        <Button variant="ghost" size="sm" asChild><Link to="/expedientes"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link></Button>
         <div className="flex-1 min-w-0">
           <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
             {form.numero || s.numero}

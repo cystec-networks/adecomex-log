@@ -10,14 +10,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, FileUp, Sparkles, Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/solicitudes/ocr")({
-  component: SolicitudesOCR,
+export const Route = createFileRoute("/_authenticated/expedientes/ocr")({
+  component: ExpedientesOCR,
 });
 
-function SolicitudesOCR() {
+function ExpedientesOCR() {
   const nav = useNavigate();
   const extractFn = useServerFn(extractSolicitudFromDocument);
   const [file, setFile] = useState<File | null>(null);
@@ -25,9 +25,16 @@ function SolicitudesOCR() {
   const [clienteId, setClienteId] = useState<string>("");
 
   const { data: clientes } = useQuery({
-    queryKey: ["clientes-select"],
+    queryKey: ["clientes-lite"],
     queryFn: async () => (await supabase.from("clientes").select("id,nombre").order("nombre")).data ?? [],
   });
+
+  const [bl, setBl] = useState("");
+  const [factura, setFactura] = useState("");
+  const [suplidor, setSuplidor] = useState("");
+  const [puerto, setPuerto] = useState("");
+  const [eta, setEta] = useState("");
+  const [obs, setObs] = useState("");
 
   const extract = useMutation({
     mutationFn: async () => {
@@ -44,10 +51,9 @@ function SolicitudesOCR() {
     },
     onSuccess: (res) => {
       setData(res);
-      // Auto-match cliente by name
       if (res.cliente && clientes) {
-        const match = clientes.find(
-          (c: any) => c.nombre.toLowerCase().includes(res.cliente!.toLowerCase()) ||
+        const match = (clientes as any[]).find(
+          (c) => c.nombre.toLowerCase().includes(res.cliente!.toLowerCase()) ||
             res.cliente!.toLowerCase().includes(c.nombre.toLowerCase()),
         );
         if (match) setClienteId(match.id);
@@ -57,50 +63,46 @@ function SolicitudesOCR() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const observaciones = useMemo(() => {
+  const observacionesAuto = useMemo(() => {
     if (!data) return "";
-    const parts = [
-      data.bl && `BL/AWB: ${data.bl}`,
+    return [
       data.suplidor && `Suplidor: ${data.suplidor}`,
       data.numero_documento && `Nº Documento: ${data.numero_documento}`,
       data.productos && `Productos: ${data.productos}`,
-    ].filter(Boolean);
-    return parts.join("\n");
+    ].filter(Boolean).join("\n");
   }, [data]);
 
-  const [obs, setObs] = useState("");
-  const [puerto, setPuerto] = useState("");
-  const [eta, setEta] = useState("");
-
-  // Sync when extraction arrives
-  useMemo(() => {
-    if (data) {
-      setObs(observaciones);
-      setPuerto(data.puerto_arribo ?? "");
-      setEta(data.eta ?? "");
-    }
-  }, [data, observaciones]);
+  useEffect(() => {
+    if (!data) return;
+    setBl(data.bl ?? "");
+    setFactura(data.numero_documento ?? "");
+    setSuplidor(data.suplidor ?? "");
+    setPuerto(data.puerto_arribo ?? "");
+    setEta(data.eta ?? "");
+    setObs(observacionesAuto);
+  }, [data, observacionesAuto]);
 
   const create = useMutation({
     mutationFn: async () => {
       const payload: any = {
         tipo_operacion: "Importación",
-        medio_transporte: "Marítimo",
-        prioridad: "media",
-        observaciones: obs,
-        puerto_llegada: puerto || null,
-        bl_awb: data?.bl || null,
-        factura_comercial: data?.numero_documento || null,
+        bl_awb: bl || null,
+        factura_comercial: factura || null,
+        suplidor: suplidor || null,
+        puerto_arribo: puerto || null,
+        observaciones: obs || null,
+        sla_dias: 5,
       };
       if (clienteId) payload.cliente_id = clienteId;
-      if (eta) payload.fecha_arribo_est = eta;
-      const { data: s, error } = await supabase.from("solicitudes").insert(payload).select().single();
+      if (eta) payload.fecha_compromiso = eta;
+      const { data: exp, error } = await supabase.from("expedientes").insert(payload).select().single();
       if (error) throw error;
-      return s;
+      await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "creado:ocr" });
+      return exp;
     },
-    onSuccess: (s) => {
-      toast.success(`Borrador ${s.numero} creado`);
-      nav({ to: "/solicitudes/$id", params: { id: s.id } });
+    onSuccess: (exp) => {
+      toast.success(`Expediente ${exp.numero} creado`);
+      nav({ to: "/expedientes/$id", params: { id: exp.id } });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -109,14 +111,14 @@ function SolicitudesOCR() {
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" asChild>
-          <Link to="/solicitudes"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link>
+          <Link to="/expedientes"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link>
         </Button>
         <div>
           <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-accent" /> OCR de documentos
+            <Sparkles className="h-5 w-5 text-accent" /> Nuevo Expediente por OCR
           </h1>
           <p className="text-sm text-muted-foreground">
-            Sube un BL, factura o AWB en PDF/imagen. La IA extraerá los campos clave y creará un borrador de solicitud.
+            Sube un BL, factura o AWB en PDF/imagen. La IA extraerá los campos clave y creará el expediente directamente.
           </p>
         </div>
       </div>
@@ -142,7 +144,7 @@ function SolicitudesOCR() {
 
       {data && (
         <Card>
-          <CardHeader><CardTitle className="text-base">2. Revisar y crear borrador</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">2. Revisar y crear expediente</CardTitle></CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-1.5 md:col-span-2">
               <Label>Cliente {data.cliente && <span className="text-xs text-muted-foreground">(detectado: {data.cliente})</span>}</Label>
@@ -153,20 +155,20 @@ function SolicitudesOCR() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid gap-1.5"><Label>BL / Conocimiento</Label><Input value={data.bl ?? ""} readOnly /></div>
-            <div className="grid gap-1.5"><Label>Suplidor</Label><Input value={data.suplidor ?? ""} readOnly /></div>
-            <div className="grid gap-1.5"><Label>Nº Documento</Label><Input value={data.numero_documento ?? ""} readOnly /></div>
+            <div className="grid gap-1.5"><Label>BL / AWB / Guía</Label><Input value={bl} onChange={(e) => setBl(e.target.value)} /></div>
+            <div className="grid gap-1.5"><Label>Factura comercial</Label><Input value={factura} onChange={(e) => setFactura(e.target.value)} /></div>
+            <div className="grid gap-1.5"><Label>Exportador / Suplidor</Label><Input value={suplidor} onChange={(e) => setSuplidor(e.target.value)} /></div>
             <div className="grid gap-1.5"><Label>Puerto de arribo</Label><Input value={puerto} onChange={(e) => setPuerto(e.target.value)} /></div>
             <div className="grid gap-1.5"><Label>ETA (fecha de llegada)</Label><Input type="date" value={eta} onChange={(e) => setEta(e.target.value)} /></div>
-            <div className="grid gap-1.5 md:col-span-2"><Label>Productos</Label><Textarea rows={2} value={data.productos ?? ""} readOnly /></div>
+            <div className="grid gap-1.5 md:col-span-2"><Label>Productos detectados</Label><Textarea rows={2} value={data.productos ?? ""} readOnly /></div>
             <div className="grid gap-1.5 md:col-span-2">
-              <Label>Observaciones (se guardará en la solicitud)</Label>
+              <Label>Observaciones</Label>
               <Textarea rows={5} value={obs} onChange={(e) => setObs(e.target.value)} />
             </div>
             <div className="md:col-span-2 flex justify-end gap-2">
               <Button variant="outline" onClick={() => { setData(null); setFile(null); }}>Descartar</Button>
               <Button onClick={() => create.mutate()} disabled={create.isPending}>
-                {create.isPending ? "Creando…" : "Crear borrador de solicitud"}
+                {create.isPending ? "Creando…" : "Crear expediente"}
               </Button>
             </div>
           </CardContent>
