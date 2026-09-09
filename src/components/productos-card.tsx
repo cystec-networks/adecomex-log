@@ -100,6 +100,10 @@ export function ProductosCard({
     estado_producto_codigo: f.estado_producto_codigo?.trim() || null,
     pais_origen: f.pais_origen?.trim() || null,
     pais_origen_codigo: f.pais_origen_codigo?.trim() || null,
+    pct_gravamen: f.pct_gravamen === "" ? null : Number(f.pct_gravamen),
+    aplica_isc: !!f.aplica_isc,
+    pct_isc: f.aplica_isc && f.pct_isc !== "" ? Number(f.pct_isc) : null,
+    pct_itbis: f.pct_itbis === "" ? null : Number(f.pct_itbis),
   });
 
   const renumerar = (arr: any[]) => arr.map((it, i) => ({ ...it, item_no: i + 1 }));
