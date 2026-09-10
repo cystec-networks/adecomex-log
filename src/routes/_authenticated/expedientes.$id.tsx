@@ -3122,7 +3122,8 @@ function LiquidacionEstimadaBlock({
                 inputMode="decimal"
                 placeholder="59.4100"
                 value={rateInput}
-                onChange={(e) => { const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,4}$/.test(v)) setRateInput(v); }}
+                disabled={disabled}
+                onChange={(e) => { if (disabled) return; const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,4}$/.test(v)) setRateInput(v); }}
               />
             </div>
             <a href="https://www.aduanas.gob.do/tasa-de-cambio/" target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 underline flex items-center gap-1 pb-2.5">
@@ -3130,13 +3131,13 @@ function LiquidacionEstimadaBlock({
             </a>
             <div className="ml-auto flex items-center gap-2">
               {editandoTasa && (
-                <Button variant="ghost" size="sm" onClick={() => { setEditandoTasa(false); setRateInput(""); }}>
+                <Button variant="ghost" size="sm" onClick={() => { setEditandoTasa(false); setRateInput(""); }} disabled={disabled}>
                   Cancelar
                 </Button>
               )}
               <Button
                 size="sm"
-                disabled={tc.guardar.isPending || !rateInput || Number(rateInput) <= 0}
+                disabled={disabled || tc.guardar.isPending || !rateInput || Number(rateInput) <= 0}
                 onClick={() => tc.guardar.mutate(Number(rateInput), {
                   onSuccess: () => { toast.success(`Tasa RD$ ${rateInput} guardada para ${tc.fechaLabel}`); setRateInput(""); setEditandoTasa(false); },
                   onError: (e: any) => toast.error(e.message),
