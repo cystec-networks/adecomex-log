@@ -478,8 +478,9 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
 }
 
 
-function TabInfo({ exp }: { exp: any }) {
+function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean }) {
   const qc = useQueryClient();
+  const editable = canEdit && modoEdicion;
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState({
 
