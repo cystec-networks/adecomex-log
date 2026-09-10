@@ -3235,11 +3235,11 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
       <div className="grid gap-3 md:grid-cols-3">
         <div className="grid gap-1.5">
           <Label>N.º Liquidación SIGA</Label>
-          <Input value={form.liq_siga_numero || ""} onChange={(e) => set("liq_siga_numero", e.target.value)} placeholder="LIQ-2026-000123" />
+          <Input value={form.liq_siga_numero || ""} onChange={(e) => set("liq_siga_numero", e.target.value)} placeholder="LIQ-2026-000123" disabled={disabled} />
         </div>
         <div className="grid gap-1.5">
           <Label>Estado</Label>
-          <Select value={form.liq_siga_estado || undefined} onValueChange={(v) => set("liq_siga_estado", v)}>
+          <Select value={form.liq_siga_estado || undefined} onValueChange={(v) => set("liq_siga_estado", v)} disabled={disabled}>
             <SelectTrigger><SelectValue placeholder="Selecciona estado" /></SelectTrigger>
             <SelectContent>
               {["Inspeccionada", "Liberada", "Con observación", "Rectificada"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -3249,8 +3249,8 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
         <div className="grid gap-1.5">
           <Label>Total oficial (RD$)</Label>
           <Input type="text" inputMode="decimal" value={form.liq_oficial_total ?? ""}
-            onChange={(e) => { const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("liq_oficial_total", v); }}
-            placeholder="0.00" className="tabular-nums" />
+            onChange={(e) => { if (disabled) return; const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("liq_oficial_total", v); }}
+            placeholder="0.00" className="tabular-nums" disabled={disabled} />
         </div>
       </div>
       <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
