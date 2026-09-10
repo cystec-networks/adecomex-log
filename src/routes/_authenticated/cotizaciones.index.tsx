@@ -68,7 +68,7 @@ function Cotizaciones() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Cotización movida a la papelera");
+      toast.success("Cotización de compras movida a la papelera");
       qc.invalidateQueries({ queryKey: ["cotizaciones"] });
       qc.invalidateQueries({ queryKey: ["papelera-cotizaciones"] });
       setToTrash(null);
@@ -160,11 +160,11 @@ function Cotizaciones() {
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold">Cotizaciones</h1>
-          <p className="text-sm text-muted-foreground">Primera etapa del flujo comercial, previa a Solicitudes.</p>
+          <h1 className="font-display text-2xl font-bold">Cotizaciones de Compras</h1>
+          <p className="text-sm text-muted-foreground">Primera etapa del flujo comercial.</p>
         </div>
         {canEdit && (
-          <Button asChild><Link to="/cotizaciones/nueva"><Plus className="h-4 w-4 mr-1" />Nueva cotización</Link></Button>
+          <Button asChild><Link to="/cotizaciones/nueva"><Plus className="h-4 w-4 mr-1" />Nueva cotización de compras</Link></Button>
         )}
       </div>
 

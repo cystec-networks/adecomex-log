@@ -73,9 +73,9 @@ const GROUPS: Group[] = [
     icon: FileSpreadsheet,
     items: [
       { to: "/cotizaciones/ocr", label: "OCR Cotización", icon: ScanText },
-      { to: "/cotizaciones", label: "Cotizaciones", icon: FileSpreadsheet,
+      { to: "/cotizaciones", label: "Cotizaciones de Compras", icon: FileSpreadsheet,
         match: (p) => p === "/cotizaciones" || (p.startsWith("/cotizaciones/") && p !== "/cotizaciones/ocr" && p !== "/cotizaciones/calculadora") },
-      { to: "/ordenes", label: "Órdenes", icon: ClipboardList,
+      { to: "/ordenes", label: "Órdenes de Compras", icon: ClipboardList,
         match: (p) => p === "/ordenes" || p.startsWith("/ordenes/") },
       { to: "/permisos", label: "Permisos", icon: FileCheck2,
         match: (p) => p === "/permisos" || p.startsWith("/permisos/") },

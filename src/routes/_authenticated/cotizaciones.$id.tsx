@@ -108,7 +108,7 @@ function DetalleCotizacion() {
       }
     },
     onSuccess: () => {
-      toast.success("Cotización actualizada");
+      toast.success("Cotización de compras actualizada");
       qc.invalidateQueries({ queryKey: ["cotizacion", id] });
       qc.invalidateQueries({ queryKey: ["cotizaciones"] });
     },
@@ -191,12 +191,12 @@ function DetalleCotizacion() {
         {ordenVinculada ? (
           <Button variant="outline" asChild>
             <Link to="/ordenes/$id" params={{ id: ordenVinculada.id }}>
-              <PackagePlus className="h-4 w-4 mr-1" />Ver orden {ordenVinculada.numero} ↗
+              <PackagePlus className="h-4 w-4 mr-1" />Ver orden de compras {ordenVinculada.numero} ↗
             </Link>
           </Button>
         ) : canEdit && form.estado === "aprobada" ? (
           <Button variant="outline" onClick={() => convertir.mutate()} disabled={convertir.isPending}>
-            <PackagePlus className="h-4 w-4 mr-1" />{convertir.isPending ? "Convirtiendo…" : "Convertir a Orden"}
+            <PackagePlus className="h-4 w-4 mr-1" />{convertir.isPending ? "Convirtiendo…" : "Convertir a Orden de Compras"}
           </Button>
         ) : null}
       </div>
@@ -204,7 +204,7 @@ function DetalleCotizacion() {
       {convertida && (
         <Card className="border-dashed bg-muted/30">
           <CardContent className="py-4 text-sm text-muted-foreground">
-            Esta cotización fue convertida a una Orden y quedó en estado final de <strong>solo lectura</strong>.
+            Esta cotización de compras fue convertida a una Orden de Compras y quedó en estado final de <strong>solo lectura</strong>.
           </CardContent>
         </Card>
       )}

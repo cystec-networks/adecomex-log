@@ -90,7 +90,7 @@ function NuevaOrden() {
         <Card>
           <CardHeader><CardTitle className="text-base text-destructive">Acceso restringido</CardTitle></CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>Solo los roles Gestor de Compra y Administrador pueden crear órdenes.</p>
+            <p>Solo los roles Gestor de Compra y Administrador pueden crear órdenes de compras.</p>
             <Button asChild variant="outline"><Link to="/ordenes">Volver</Link></Button>
           </CardContent>
         </Card>
@@ -103,8 +103,8 @@ function NuevaOrden() {
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" asChild><Link to="/ordenes"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link></Button>
         <div>
-          <h1 className="font-display text-2xl font-bold">Nueva orden</h1>
-          <p className="text-sm text-muted-foreground">Orden directa, sin cotización previa.</p>
+          <h1 className="font-display text-2xl font-bold">Nueva orden de compras</h1>
+          <p className="text-sm text-muted-foreground">Orden de compras directa, sin cotización de compras previa.</p>
         </div>
       </div>
 
@@ -128,7 +128,7 @@ function NuevaOrden() {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="text-base">Datos de la orden</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Datos de la orden de compras</CardTitle></CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-1.5"><Label>Tipo de mercancía</Label>
               <Select value={form.tipo_mercancia || undefined} onValueChange={(v) => set("tipo_mercancia", v)}>
@@ -162,7 +162,7 @@ function NuevaOrden() {
         </Card>
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={create.isPending}>{create.isPending ? "Creando…" : "Crear orden"}</Button>
+          <Button type="submit" disabled={create.isPending}>{create.isPending ? "Creando…" : "Crear orden de compras"}</Button>
         </div>
       </form>
     </div>

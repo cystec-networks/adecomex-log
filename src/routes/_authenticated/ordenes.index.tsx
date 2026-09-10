@@ -49,7 +49,7 @@ function Ordenes() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Orden movida a la papelera");
+      toast.success("Orden de compras movida a la papelera");
       qc.invalidateQueries({ queryKey: ["ordenes"] });
       qc.invalidateQueries({ queryKey: ["papelera-ordenes"] });
       setToTrash(null);
@@ -78,8 +78,8 @@ function Ordenes() {
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       <div>
-        <h1 className="font-display text-2xl font-bold">Órdenes</h1>
-        <p className="text-sm text-muted-foreground">Órdenes generadas a partir de cotizaciones aprobadas.</p>
+        <h1 className="font-display text-2xl font-bold">Órdenes de Compras</h1>
+        <p className="text-sm text-muted-foreground">Órdenes de compras generadas a partir de cotizaciones de compras aprobadas.</p>
       </div>
 
       <Card>
@@ -87,7 +87,7 @@ function Ordenes() {
           <CardTitle className="text-base flex-1">{filtered.length} órdenes</CardTitle>
           <Input placeholder="Buscar…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
           {canEdit && (
-            <Button asChild><Link to="/ordenes/nueva"><Plus className="h-4 w-4 mr-1" />Nueva orden</Link></Button>
+            <Button asChild><Link to="/ordenes/nueva"><Plus className="h-4 w-4 mr-1" />Nueva orden de compras</Link></Button>
           )}
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
@@ -95,7 +95,7 @@ function Ordenes() {
             <thead className="text-xs text-muted-foreground border-b bg-muted/30 uppercase">
               <tr>
                 <th className="text-left px-4 py-2">Número</th>
-                <th className="text-left">Cotización</th>
+                <th className="text-left">Cotización de Compras</th>
                 <th className="text-left">Cliente</th>
                 <th className="text-left">Mercancía</th>
                 <th className="text-left">Origen</th>
