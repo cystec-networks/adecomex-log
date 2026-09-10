@@ -3036,8 +3036,8 @@ function MercanciaItemsBlock({
 }
 
 function LiquidacionEstimadaBlock({
-  exp, seguro, flete, otros, servicioAduaneroUsd = 0,
-}: { exp: any; seguro: number; flete: number; otros: number; servicioAduaneroUsd?: number }) {
+  exp, seguro, flete, otros, servicioAduaneroUsd = 0, disabled = false,
+}: { exp: any; seguro: number; flete: number; otros: number; servicioAduaneroUsd?: number; disabled?: boolean }) {
   const { data: items } = useQuery({
     queryKey: ["mercancia-items", exp.id],
     queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
