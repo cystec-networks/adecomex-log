@@ -102,6 +102,39 @@ export function FacturaEcfFormDialog({
 
   const [existingPdfUrl, setExistingPdfUrl] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!open || editId) return;
+    setEncf(preload?.encf ?? "");
+    setTipo(preload?.tipo_comprobante ?? "31");
+    setFechaEmision(new Date().toISOString().slice(0, 10));
+    setFechaVenc("");
+    setTerminoPago("30");
+    setFechaVencPago("");
+    setCodigoSeguridad("");
+    setFechaFirma("");
+    setClienteId(preload?.cliente_id ?? "");
+    setNotas("");
+    setPdfFile(null);
+    setExistingPdfUrl(null);
+    setItbisRetenidoTerceros("");
+    setItbisPercibidoVenta("");
+    setRetencionRentaTerceros("");
+    setIsrPercibidoVenta("");
+    setFechaVencPagoManual(false);
+    setLineas(() => {
+      if (preload?.monto_total && preload.monto_total > 0) {
+        const bruto = preload.monto_total / 1.18;
+        const itbis = preload.monto_total - bruto;
+        return [{
+          cantidad: 1, descripcion: "Servicios de gestión aduanal",
+          unidad: "UND", precio: +bruto.toFixed(2), itbis: +itbis.toFixed(2),
+          descuento: 0, recargo: 0, gravado: true,
+        }];
+      }
+      return [{ cantidad: 1, descripcion: "", unidad: "UND", precio: 0, itbis: 0, descuento: 0, recargo: 0, gravado: true }];
+    });
+  }, [open, editId]);
+
   const { data: editData } = useQuery({
     queryKey: ["factura-ecf-edit", editId],
     enabled: !!editId && open,
