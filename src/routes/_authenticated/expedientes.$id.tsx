@@ -909,6 +909,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
               tasaCambioUsada={exp.tasa_cambio_usada}
               paisOrigen={form.pais_origen || ""}
               paisOrigenCodigo={form.pais_origen_codigo || ""}
+              disabled={!editable}
             />
           </div>
           <HerramientasDgaVuce />
