@@ -1065,7 +1065,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
 
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
             <Label>Observaciones</Label>
-            <Textarea rows={3} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} />
+            <Textarea rows={3} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} disabled={!editable} />
           </div>
         </CardContent>
       </Card>
