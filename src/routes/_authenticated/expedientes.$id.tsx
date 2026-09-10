@@ -1023,6 +1023,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
                     onChange={(tipo, cant) =>
                       setForm((f) => ({ ...f, tipo_despacho_aduanero: tipo, cantidad_despacho: cant }))
                     }
+                    disabled={!editable}
                   />
                   <div className="grid gap-1.5">
                     <Label className="flex items-center gap-1.5">
