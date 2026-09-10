@@ -247,6 +247,7 @@ function DetalleExpediente() {
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
+      <Tabs defaultValue="info">
       <div className="sticky top-0 z-20 bg-background border-b pb-3 pt-2 px-6">
         <div className="space-y-3">
         <div className="flex items-center gap-3 flex-wrap">
