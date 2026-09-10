@@ -80,7 +80,7 @@ function Dashboard() {
     return (Date.now() - new Date(ref).getTime()) / 86400000 > 15;
   }).length;
 
-  const expedientesEnProceso = stats?.expedientes.filter((e) => e.estado === "digitar" || e.estado === "en_transito" || e.estado === "presentar" || e.estado === "verificar" || e.estado === "entregado").length ?? 0;
+  const expedientesEnTransito = stats?.expedientes.filter((e) => e.estado === "en_transito").length ?? 0;
   const expedientesPorLlegar = stats?.expedientes.filter((e) => {
     if (!e.fecha_compromiso) return false;
     if (["facturar", "entregado"].includes(e.estado)) return false;
@@ -107,7 +107,7 @@ function Dashboard() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Link to="/cotizaciones" search={{ sinConvertir: true }} aria-label="Ver cotizaciones sin convertir" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Inbox} label="COTIZACIONES SIN CONVERTIR" value={cotizacionesSinConvertir} tone="primary" sub={cotizacionesSinMovimiento > 0 ? `${cotizacionesSinMovimiento} sin movimiento +15 días` : undefined} /></Link>
-        <Link to="/expedientes" search={{ estado: "digitar,en_transito,presentar,verificar,entregado" }} aria-label="Ver expedientes en proceso" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FolderKanban} label="EXPEDIENTES EN PROCESOS" value={expedientesEnProceso} tone="info" /></Link>
+        <Link to="/expedientes" search={{ estado: "en_transito" }} aria-label="Ver expedientes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FolderKanban} label="EXPEDIENTES EN TRANSITO" value={expedientesEnTransito} tone="info" /></Link>
         <Link to="/expedientes" search={{ eta: 7 }} aria-label="Ver expedientes por llegar" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Clock} label="EXPEDIENTES POR LLEGAR" value={expedientesPorLlegar} tone="warning" sub="Próximos 7 días" /></Link>
         <Link to="/permisos" search={{ vencimiento: 15 }} aria-label="Ver permisos VUCE por vencer" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FileWarning} label="Permisos VUCE por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" /></Link>
         <Link to="/transportes" search={{ estado: "en_transito,programado" }} aria-label="Ver transportes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" /></Link>
