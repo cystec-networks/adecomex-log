@@ -20,12 +20,12 @@ import { toast } from "sonner";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
 
-type TipoFilter = "importacion" | "exportacion" | "todos";
+type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 
 export const Route = createFileRoute("/_authenticated/expedientes/")({
   validateSearch: (s: Record<string, unknown>): { tipo?: TipoFilter } => {
     const t = s.tipo;
-    return t === "importacion" || t === "exportacion" || t === "todos" ? { tipo: t } : {};
+    return t === "importacion" || t === "exportacion" || t === "facturados" || t === "todos" ? { tipo: t } : {};
   },
   component: Expedientes,
 });
@@ -104,7 +104,8 @@ function Expedientes() {
     return { text: `${diff}`, full: `${Math.abs(diff)} días de atraso`, tone: "danger" as const };
   };
 
-  const detectTipo = (e: any): "importacion" | "exportacion" | "otros" => {
+  const detectTipo = (e: any): "importacion" | "exportacion" | "facturados" | "otros" => {
+    if (e.estado === "facturar") return "facturados";
     const t = norm(e.tipo_operacion ?? "");
     if (t.includes("import")) return "importacion";
     if (t.includes("export")) return "exportacion";
@@ -129,7 +130,7 @@ function Expedientes() {
     return true;
   });
 
-  const tipoLabel = tipo === "importacion" ? "Importaciones" : tipo === "exportacion" ? "Exportaciones" : "Todos los expedientes";
+  const tipoLabel = tipo === "importacion" ? "Importaciones" : tipo === "exportacion" ? "Exportaciones" : tipo === "facturados" ? "Facturados" : "Todos los expedientes";
 
   type SortKey = "numero" | "cliente" | "numero_dua" | "bl_awb" | "fecha_compromiso" | "puerto_arribo" | "numero_vuce" | "estado";
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
@@ -159,7 +160,7 @@ function Expedientes() {
     return activeSort.dir === "asc" ? r : -r;
   };
 
-  const grupos: Record<string, any[]> = { importacion: [], exportacion: [], otros: [] };
+  const grupos: Record<string, any[]> = { importacion: [], exportacion: [], facturados: [], otros: [] };
   filtered.forEach((e: any) => grupos[detectTipo(e)].push(e));
   // no se ordena aquí; cada subgrupo por estado se ordena dentro del render
 
@@ -188,18 +189,21 @@ function Expedientes() {
   const gruposVisibles = (
     tipo === "importacion" ? ["importacion"] :
     tipo === "exportacion" ? ["exportacion"] :
-    ["importacion", "exportacion", "otros"]
+    tipo === "facturados" ? ["facturados"] :
+    ["importacion", "exportacion", "facturados", "otros"]
   ) as Array<keyof typeof grupos>;
 
   const grupoLabel: Record<string, string> = {
     importacion: "Importaciones",
     exportacion: "Exportaciones",
+    facturados: "Facturados",
     otros: "Otros",
   };
 
   const countAll = (data ?? []).length;
   const countImp = (data ?? []).filter((e: any) => detectTipo(e) === "importacion").length;
   const countExp = (data ?? []).filter((e: any) => detectTipo(e) === "exportacion").length;
+  const countFact = (data ?? []).filter((e: any) => detectTipo(e) === "facturados").length;
 
   const estadoBadge = (estadoRaw: string | null) => {
     const label = ESTADO_LABEL[estadoRaw ?? ""] ?? (estadoRaw ?? "");
@@ -413,6 +417,7 @@ function Expedientes() {
           <Link to="/expedientes" search={{ tipo: "todos" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos <Badge variant="secondary" className="text-[10px] h-4 px-1">{countAll}</Badge></Link>
           <Link to="/expedientes" search={{ tipo: "importacion" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
           <Link to="/expedientes" search={{ tipo: "exportacion" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
+          <Link to="/expedientes" search={{ tipo: "facturados" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
         </div>
         <Button variant="outline" size="sm" asChild>
           <Link to="/expedientes/ocr"><ScanText className="h-4 w-4 mr-1" />Nuevo por OCR</Link>
