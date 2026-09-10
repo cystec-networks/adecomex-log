@@ -345,9 +345,10 @@ function DetalleExpediente() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">Etapa:</Label>
-            <span className="text-sm font-medium">{exp.etapa_actual ?? 1} de 14</span>
+            <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">Despacho:</Label>
+            <span className="text-sm font-medium">{hitosDone} de {hitosTotal}</span>
           </div>
+
           {(() => {
             const a = alertaDeclaracionTardia(exp);
             if (!a) return null;
