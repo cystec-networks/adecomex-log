@@ -361,10 +361,7 @@ function DetalleExpediente() {
           })()}
         </div>
       </div>
-      </div>
-      <div className="px-6">
-        <Tabs defaultValue="info">
-        <TabsList className="flex flex-wrap h-auto">
+        <TabsList className="flex flex-wrap h-auto mt-3">
           {tabOrder.map((key) => {
             const label = TAB_LABELS[key];
             if (!label) return null;
