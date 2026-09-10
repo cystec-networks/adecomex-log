@@ -261,7 +261,7 @@ function DetalleExpediente() {
   if (!exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-6">
+    <div className={cn("max-w-[1600px] mx-auto space-y-6", modoEdicion && "bg-amber-50/40")}>
       <Tabs defaultValue="info">
       <div className="sticky top-0 z-20 bg-background border-b pb-3 pt-2 px-6">
         <div className="space-y-3">
