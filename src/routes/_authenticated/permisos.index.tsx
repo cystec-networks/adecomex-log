@@ -169,7 +169,6 @@ function Permisos() {
                 <thead className="bg-muted/30 border-b">
                   <tr>
                     <Th k="numero" className="whitespace-nowrap">N° Permiso VUCE</Th>
-                    <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">N° Resolución</th>
                     <Th k="expediente" className="whitespace-nowrap">Expediente</Th>
                     <Th k="cliente" className="whitespace-nowrap">Cliente</Th>
                     <Th k="tipo" className="whitespace-nowrap">Tipo</Th>
@@ -185,7 +184,7 @@ function Permisos() {
                   {grupos.map(([est, gRows]) => (
                     <Fragment key={est}>
                       <EstadoDivider
-                        colSpan={11}
+                        colSpan={COL_SPAN}
                         count={gRows.length}
                         colapsado={esColapsado(est)}
                         onToggle={() => toggleGrupo(est)}
@@ -196,7 +195,6 @@ function Permisos() {
                           <td className="px-3 py-2 whitespace-nowrap">
                             <Link to="/permisos/$id" params={{ id: p.id }} className="font-semibold text-primary hover:underline">{p.numero}</Link>
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{p.numero_resolucion ?? "—"}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             {p.expedientes?.numero ? (
                               <Link to="/expedientes/$id" params={{ id: p.expediente_id }} className="text-primary hover:underline">{p.expedientes.numero} ↗</Link>
