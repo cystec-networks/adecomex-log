@@ -2626,7 +2626,7 @@ function MercanciaItemsBlock({
         const { error } = await supabase.from("mercancia_items").insert({ ...payload, expediente_id: expedienteId, item_no: nextNo });
         if (error) throw error;
       }
-      await autoLearnTasa(codigo, payload.pct_gravamen, payload.aplica_isc, payload.pct_isc);
+      await autoLearnTasa(codigo, payload.pct_gravamen, payload.aplica_isc, payload.pct_isc, payload.pct_itbis ?? null);
     },
     onSuccess: () => { toast.success(editingId ? "Ítem actualizado" : "Ítem agregado"); setOpen(false); setEditingId(null); setF(emptyForm); setValorUnitario(""); invalidate(); },
     onError: (e: any) => toast.error(e.message),
