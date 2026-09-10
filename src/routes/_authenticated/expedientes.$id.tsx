@@ -2679,7 +2679,7 @@ function MercanciaItemsBlock({
     <div className="grid gap-3 pt-2 border-t">
       <div className="flex items-center justify-between pt-2">
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Detalle de mercancía</div>
-        <Button size="sm" variant="outline" onClick={startNew}><Plus className="h-4 w-4 mr-1" />Agregar ítem</Button>
+        <Button size="sm" variant="outline" onClick={startNew} disabled={disabled}><Plus className="h-4 w-4 mr-1" />Agregar ítem</Button>
       </div>
       <div className="rounded-md border overflow-auto max-h-[70vh]">
         <table className="w-full text-sm min-w-[1400px]">
@@ -2747,9 +2747,9 @@ function MercanciaItemsBlock({
                       <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{rd(c.itbis)}</td>
                       <td className="px-2 py-2 text-right tabular-nums bg-emerald-50/60 font-semibold">{rd(c.total)}</td>
                     <td className="px-2 py-2 text-right whitespace-nowrap">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(it)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => duplicar.mutate(it)} title="Duplicar línea"><Copy className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => eliminar.mutate(it.id)} title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(it)} disabled={disabled} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => duplicar.mutate(it)} disabled={disabled} title="Duplicar línea"><Copy className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => eliminar.mutate(it.id)} disabled={disabled} title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></Button>
                     </td>
                   </tr>
                 );
