@@ -401,9 +401,9 @@ export function FacturaEcfFormDialog({
             <h3 className="font-semibold text-sm">Líneas de Factura</h3>
             <Button size="sm" variant="outline" onClick={addLinea}><Plus className="h-3.5 w-3.5" /> Agregar</Button>
           </div>
-          <div className="overflow-x-auto border rounded-md">
+          <div className="overflow-auto max-h-[70vh] border rounded-md">
             <table className="w-full text-xs">
-              <thead className="bg-muted/50 text-muted-foreground">
+              <thead className="sticky-table-header bg-muted/50 text-muted-foreground">
                 <tr>
                   <th className="text-left px-2 py-1.5">Cant.</th>
                   <th className="text-left px-2">Descripción</th>

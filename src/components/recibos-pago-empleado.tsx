@@ -163,9 +163,9 @@ export function RecibosPagoEmpleado({
             <Plus className="h-4 w-4 mr-1" />Nuevo recibo
           </Button>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-xs uppercase">
+            <thead className="sticky-table-header bg-muted/50 text-xs uppercase">
               <tr>
                 <th className="text-left p-2">Período</th>
                 <th className="text-right p-2">Neto pagado</th>

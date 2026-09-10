@@ -366,9 +366,9 @@ function RentabilidadExpedientesPanel() {
             <CardDescription>Se está vendiendo por debajo del costo real (costos + gastos superan lo facturado).</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            <div className="overflow-auto max-h-[70vh]">
               <table className="w-full text-sm">
-                <thead className="text-xs text-muted-foreground border-b">
+                <thead className="sticky-table-header text-xs text-muted-foreground border-b">
                   <tr>
                     <th className="text-left py-2">Expediente</th>
                     <th className="text-left">Estado</th>
@@ -409,9 +409,9 @@ function RentabilidadExpedientesPanel() {
           ) : top10.length === 0 ? (
             <div className="text-sm text-muted-foreground py-6 text-center">Sin expedientes facturados aún.</div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-auto max-h-[70vh]">
               <table className="w-full text-sm">
-                <thead className="text-xs text-muted-foreground border-b">
+                <thead className="sticky-table-header text-xs text-muted-foreground border-b">
                   <tr>
                     <th className="text-left py-2">#</th>
                     <th className="text-left">Expediente</th>

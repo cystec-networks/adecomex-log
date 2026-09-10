@@ -99,9 +99,9 @@ function AccesosEstudiantesPage() {
         <CardHeader>
           <CardTitle className="text-base">{data?.length ?? 0} estudiantes</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground border-b bg-muted/30">
+            <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
               <tr>
                 <th className="text-left px-4 py-2">Nombre</th>
                 <th className="text-left">Cédula / Pasaporte</th>

@@ -335,9 +335,9 @@ function CuentasPorCobrarPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead>
+            <thead className="sticky-table-header">
               <tr className="border-b text-left text-xs uppercase text-muted-foreground">
                 <th className="py-2 w-8" />
                 <th className="py-2 px-2">eNCF</th>

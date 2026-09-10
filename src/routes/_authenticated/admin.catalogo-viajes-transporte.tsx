@@ -175,9 +175,9 @@ function CatalogoViajesPage() {
           <CardTitle className="text-lg">Rutas registradas</CardTitle>
           <CardDescription>{rows.length} viaje(s) en el catálogo</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead>
+            <thead className="sticky-table-header">
               <tr className="border-b text-xs uppercase text-muted-foreground">
                 <th className="px-2 py-2 text-left">Origen</th>
                 <th className="px-2 py-2 text-left">Destino</th>

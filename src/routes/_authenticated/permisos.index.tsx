@@ -164,9 +164,9 @@ function Permisos() {
           {rows.length === 0 ? (
             <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin permisos VUCE.</div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-auto max-h-[70vh]">
               <table className="w-full text-[13px] border-collapse">
-                <thead className="bg-muted/30 border-b">
+                <thead className="sticky-table-header bg-muted/30 border-b">
                   <tr>
                     <Th k="numero" className="whitespace-nowrap">N° Permiso VUCE</Th>
                     <Th k="expediente" className="whitespace-nowrap">Expediente</Th>

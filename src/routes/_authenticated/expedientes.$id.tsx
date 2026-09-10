@@ -1413,9 +1413,9 @@ function TabIncidencias({ expedienteId }: { expedienteId: string }) {
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 overflow-auto max-h-[70vh]">
         <table className="w-full text-sm">
-          <thead className="text-xs text-muted-foreground border-b bg-muted/30">
+          <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
             <tr><th className="text-left px-4 py-2">Tipo</th><th className="text-left">Severidad</th><th className="text-left">Estado</th><th className="text-left">Apertura</th><th /></tr>
           </thead>
           <tbody>
@@ -1589,9 +1589,9 @@ function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
             </DialogContent>
           </Dialog>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground border-b bg-muted/30">
+            <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
               <tr><th className="text-left px-4 py-2">Concepto</th><th className="text-right">Estimado</th><th className="text-right">Real</th><th className="text-right">Δ</th><th className="text-right pr-4 w-24">Acciones</th></tr>
             </thead>
             <tbody>
@@ -1717,9 +1717,9 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
             </DialogContent>
           </Dialog>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground border-b bg-muted/30">
+            <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
               <tr><th className="text-left px-4 py-2">Concepto</th><th className="text-left">Observaciones</th><th className="text-right">Estimado</th><th className="text-right">Real</th><th className="text-right">Δ</th><th className="text-right pr-4 w-24">Acciones</th></tr>
             </thead>
             <tbody>
@@ -1921,9 +1921,9 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 overflow-auto max-h-[70vh]">
         <table className="w-full text-sm">
-          <thead className="text-xs text-muted-foreground border-b bg-muted/30">
+          <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
             <tr>
               <th className="text-left px-4 py-2">Concepto</th>
               <th className="text-left">Referencia</th>
@@ -2280,9 +2280,9 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 overflow-auto max-h-[70vh]">
         <table className="w-full text-sm">
-          <thead className="text-xs text-muted-foreground border-b bg-muted/30">
+          <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
             <tr>
               <th className="text-left px-4 py-2">Concepto</th>
               <th className="text-left">Proveedor</th>
@@ -2337,9 +2337,9 @@ function TabAuditoria({ expedienteId }: { expedienteId: string }) {
   return (
     <Card>
       <CardHeader><CardTitle className="text-base">Bitácora</CardTitle></CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 overflow-auto max-h-[70vh]">
         <table className="w-full text-sm">
-          <thead className="text-xs text-muted-foreground border-b bg-muted/30">
+          <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
             <tr><th className="text-left px-4 py-2">Fecha</th><th className="text-left">Entidad</th><th className="text-left">Acción</th></tr>
           </thead>
           <tbody>
@@ -2718,9 +2718,9 @@ function MercanciaItemsBlock({
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Detalle de mercancía</div>
         <Button size="sm" variant="outline" onClick={startNew}><Plus className="h-4 w-4 mr-1" />Agregar ítem</Button>
       </div>
-      <div className="rounded-md border overflow-x-auto">
+      <div className="rounded-md border overflow-auto max-h-[70vh]">
         <table className="w-full text-sm min-w-[1400px]">
-            <thead className="bg-muted/50 text-[10.5px] uppercase tracking-wide text-muted-foreground">
+            <thead className="sticky-table-header bg-muted/50 text-[10.5px] uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-2 py-2 text-left w-10">#</th>
                 <th className="px-2 py-2 text-left">Cód. Arancel</th>

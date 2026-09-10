@@ -257,9 +257,9 @@ function PortalEstudianteProgramaDetalle() {
               Este programa no tiene cuotas registradas (pago único).
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-auto max-h-[70vh]">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="sticky-table-header">
                   <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b">
                     <th className="py-2 pr-2">#</th>
                     <th className="py-2 pr-2">Descripción</th>

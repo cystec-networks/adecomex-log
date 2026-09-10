@@ -249,9 +249,9 @@ function DocumentosLegales() {
       </div>
 
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-xs uppercase">
+            <thead className="sticky-table-header bg-muted/50 text-xs uppercase">
               <tr>
                 <th className="text-left p-3">Tipo</th>
                 <th className="text-left p-3">N° referencia</th>
@@ -373,7 +373,7 @@ function DocumentosLegales() {
           <DialogHeader><DialogTitle>Papelera de documentos legales</DialogTitle></DialogHeader>
           <div className="max-h-[60vh] overflow-auto">
             <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-xs uppercase">
+              <thead className="sticky-table-header bg-muted/50 text-xs uppercase">
                 <tr>
                   <th className="text-left p-2">Tipo</th>
                   <th className="text-left p-2">N° referencia</th>

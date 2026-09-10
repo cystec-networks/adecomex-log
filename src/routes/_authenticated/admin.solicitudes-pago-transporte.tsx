@@ -261,9 +261,9 @@ function SolicitudesPagoTransportePage() {
           </div>
           <div className="text-sm text-muted-foreground">{filtradas.length} solicitud(es)</div>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead>
+            <thead className="sticky-table-header">
               <tr className="border-b text-left text-xs uppercase text-muted-foreground">
                 <th className="py-2 pr-3">Número de control</th>
                 <th className="py-2 pr-3">Transportista</th>

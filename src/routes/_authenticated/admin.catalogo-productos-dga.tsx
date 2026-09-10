@@ -192,9 +192,9 @@ function CatalogoProductosDgaPage() {
             {isFetching && <Loader2 className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground" />}
           </div>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="overflow-auto max-h-[70vh]">
           <table className="w-full text-sm min-w-[1100px]">
-            <thead className="bg-muted/50 text-[10.5px] uppercase tracking-wide text-muted-foreground">
+            <thead className="sticky-table-header bg-muted/50 text-[10.5px] uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-2 py-2 text-left">Código Producto</th>
                 <th className="px-2 py-2 text-left">Partida</th>

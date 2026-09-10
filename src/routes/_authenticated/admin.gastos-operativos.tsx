@@ -346,9 +346,9 @@ function GastosOperativosPage() {
           <CardContent>
             {isLoading ? <div className="text-sm text-muted-foreground">Cargando…</div> :
              rows.length === 0 ? <div className="text-sm text-muted-foreground py-8 text-center">Sin gastos registrados este mes.</div> : (
-              <div className="overflow-x-auto">
+              <div className="overflow-auto max-h-[70vh]">
                 <table className="w-full text-sm">
-                  <thead className="text-left border-b text-muted-foreground">
+                  <thead className="sticky-table-header text-left border-b text-muted-foreground">
                     <tr>
                       <th className="py-2 pr-3">Fecha</th>
                       <th className="py-2 pr-3">Categoría</th>
@@ -890,9 +890,9 @@ function VistaAnual({ onPickMonth }: { onPickMonth: (year: number, monthIdx: num
       <Card>
         <CardHeader><CardTitle className="text-base">Resumen mensual {year}</CardTitle></CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-[70vh]">
             <table className="w-full text-sm">
-              <thead className="text-left border-b text-muted-foreground">
+              <thead className="sticky-table-header text-left border-b text-muted-foreground">
                 <tr>
                   <th className="py-2 pr-3">Mes</th>
                   <th className="py-2 pr-3 text-right">Total DOP</th>

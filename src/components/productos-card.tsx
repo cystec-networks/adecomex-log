@@ -194,9 +194,9 @@ export function ProductosCard({
         )}
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border overflow-x-auto">
+        <div className="rounded-md border overflow-auto max-h-[70vh]">
           <table className="w-full text-sm min-w-[900px]">
-            <thead className="bg-muted/50 text-[10.5px] uppercase tracking-wide text-muted-foreground">
+            <thead className="sticky-table-header bg-muted/50 text-[10.5px] uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-2 py-2 text-left w-10">No.</th>
                 <th className="px-2 py-2 text-left">Cód. Arancelario</th>

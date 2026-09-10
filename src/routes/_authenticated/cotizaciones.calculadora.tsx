@@ -184,9 +184,9 @@ function filasResultado(r: Resultado, tasa: number): { body: string[][]; foot: s
 function TablaResultado({ r, tasa }: { r: Resultado; tasa: number }) {
   const { body, foot } = filasResultado(r, tasa);
   return (
-    <div className="rounded-md border overflow-x-auto">
+    <div className="rounded-md border overflow-auto max-h-[70vh]">
       <table className="w-full text-xs">
-        <thead className="bg-muted/50">
+        <thead className="sticky-table-header bg-muted/50">
           <tr>
             {COLUMNAS_RESULTADO.map((c, i) => (
               <th key={c} className={`p-2 ${i === 0 ? "text-left" : "text-right"}`}>{c}</th>
@@ -622,9 +622,9 @@ function CalculadoraRapida() {
           {guardados.length === 0 ? (
             <p className="text-sm text-muted-foreground">Aún no hay cálculos guardados.</p>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-auto max-h-[70vh]">
               <table className="w-full text-sm">
-                <thead className="bg-muted/50">
+                <thead className="sticky-table-header bg-muted/50">
                   <tr>
                     <th className="text-left p-2">Fecha</th>
                     <th className="text-left p-2">Importador</th>
