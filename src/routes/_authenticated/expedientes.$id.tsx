@@ -1000,7 +1000,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
                   </div>
                   <div className="grid gap-1.5 md:col-span-2">
                     <Label>Régimen Aduanero</Label>
-                    <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => set("regimen_aduanero", v)}>
+                    <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => set("regimen_aduanero", v)} disabled={!editable}>
                       <SelectTrigger><SelectValue placeholder="Selecciona régimen" /></SelectTrigger>
                       <SelectContent>
                         {REGIMENES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
@@ -1014,6 +1014,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
                       value={form.acuerdo_comercial}
                       onChange={(nombre) => set("acuerdo_comercial", nombre)}
                       placeholder="N/A / Ninguno"
+                      disabled={!editable}
                     />
                   </div>
                   <ServicioAduaneroFields
