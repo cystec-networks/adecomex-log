@@ -454,7 +454,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebarInner />
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
           <header className="h-14 border-b bg-card/50 backdrop-blur flex items-center gap-3 px-4">
             <SidebarTrigger />
             <GlobalSearch />
