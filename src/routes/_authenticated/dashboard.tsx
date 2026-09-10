@@ -3,12 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Inbox, FolderKanban, CheckCircle2, Clock, FileWarning, TrendingUp, Bell, Truck } from "lucide-react";
+import { AlertTriangle, Inbox, FolderKanban, CheckCircle2, Clock, FileWarning, TrendingUp, Bell, Truck, Wallet, Scale } from "lucide-react";
 import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { daysFromToday } from "@/lib/dates";
 import { ESTADO_LABEL } from "@/lib/estados-expediente";
+import { cotizacionEstadoLabel, COTIZACION_ESTADO_CLASS } from "@/lib/estados-cotizacion";
+import { calcImpuestosLinea } from "@/lib/impuestos";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
