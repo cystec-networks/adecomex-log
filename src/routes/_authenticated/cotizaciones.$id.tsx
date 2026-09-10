@@ -196,7 +196,7 @@ function DetalleCotizacion() {
           </Button>
         ) : canEdit && form.estado === "aprobada" ? (
           <Button variant="outline" onClick={() => convertir.mutate()} disabled={convertir.isPending}>
-            <PackagePlus className="h-4 w-4 mr-1" />{convertir.isPending ? "Convirtiendo…" : "Convertir a Orden"}
+            <PackagePlus className="h-4 w-4 mr-1" />{convertir.isPending ? "Convirtiendo…" : "Convertir a Orden de Compras"}
           </Button>
         ) : null}
       </div>
@@ -204,7 +204,7 @@ function DetalleCotizacion() {
       {convertida && (
         <Card className="border-dashed bg-muted/30">
           <CardContent className="py-4 text-sm text-muted-foreground">
-            Esta cotización fue convertida a una Orden y quedó en estado final de <strong>solo lectura</strong>.
+            Esta cotización de compras fue convertida a una Orden de Compras y quedó en estado final de <strong>solo lectura</strong>.
           </CardContent>
         </Card>
       )}

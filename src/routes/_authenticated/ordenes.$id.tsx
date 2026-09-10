@@ -176,7 +176,7 @@ function DetalleOrden() {
         <Card className="bg-muted/30 border-dashed">
           <CardHeader className="pb-3 border-b">
             <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center justify-between">
-              <span>Datos de la Cotización Original</span>
+              <span>Datos de la Cotización de Compras Original</span>
               {o.cotizacion_id && (
                 <Link to="/cotizaciones/$id" params={{ id: o.cotizacion_id }} className="text-xs font-normal text-primary underline">
                   {o.cot_numero} ↗
@@ -186,7 +186,7 @@ function DetalleOrden() {
             <p className="text-xs text-muted-foreground">Referencia conservada al momento de la conversión (solo lectura).</p>
           </CardHeader>
           <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <ReadOnlyField label="N° Cotización" value={o.cot_numero} />
+            <ReadOnlyField label="N° Cotización de Compras" value={o.cot_numero} />
             <ReadOnlyField label="Cliente" value={(o as any).clientes?.nombre} />
             <ReadOnlyField label="Tipo de mercancía" value={o.cot_tipo_mercancia} />
             <ReadOnlyField label="Origen" value={o.cot_origen} />
@@ -197,14 +197,14 @@ function DetalleOrden() {
             <ReadOnlyField label="Tarifa propuesta" value={money(o.cot_tarifa_propuesta, o.cot_moneda)} />
             <ReadOnlyField label="Fecha de emisión" value={fmtLocalDate(o.cot_fecha_emision)} />
             <ReadOnlyField label="Fecha de vigencia" value={fmtLocalDate(o.cot_fecha_vigencia)} />
-            <ReadOnlyField label="Notas de la cotización" value={o.cot_notas} />
+            <ReadOnlyField label="Notas de la cotización de compras" value={o.cot_notas} />
           </CardContent>
         </Card>
       ) : (
         <Card className="bg-muted/30 border-dashed">
           <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Datos de la Orden</CardTitle>
-            <p className="text-xs text-muted-foreground">Orden directa: no proviene de una cotización.</p>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Datos de la Orden de Compras</CardTitle>
+            <p className="text-xs text-muted-foreground">Orden de compras directa: no proviene de una cotización de compras.</p>
           </CardHeader>
           <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <ReadOnlyField label="Cliente" value={(o as any).clientes?.nombre} />
@@ -224,7 +224,7 @@ function DetalleOrden() {
       <ProductosCard tabla="orden_productos" parentId={id} readOnly={!canEdit} paisOrigen={(o as any)?.cot_origen ?? ""} />
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Orden</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Orden de Compras</CardTitle></CardHeader>
         <CardContent className="grid gap-4">
           <div className="grid gap-1.5 md:max-w-xs"><Label>Estado</Label>
             <Select value={form.estado} onValueChange={(v) => setForm({ ...form, estado: v })} disabled={!canEdit}>

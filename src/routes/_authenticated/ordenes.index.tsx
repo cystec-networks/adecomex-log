@@ -78,8 +78,8 @@ function Ordenes() {
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       <div>
-        <h1 className="font-display text-2xl font-bold">Órdenes</h1>
-        <p className="text-sm text-muted-foreground">Órdenes generadas a partir de cotizaciones aprobadas.</p>
+        <h1 className="font-display text-2xl font-bold">Órdenes de Compras</h1>
+        <p className="text-sm text-muted-foreground">Órdenes de compras generadas a partir de cotizaciones de compras aprobadas.</p>
       </div>
 
       <Card>
