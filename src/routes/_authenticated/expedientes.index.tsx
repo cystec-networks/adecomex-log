@@ -105,7 +105,7 @@ function Expedientes() {
   };
 
   const detectTipo = (e: any): "importacion" | "exportacion" | "otros" => {
-    const t = norm(e.solicitudes?.tipo_operacion ?? "");
+    const t = norm(e.tipo_operacion ?? "");
     if (t.includes("import")) return "importacion";
     if (t.includes("export")) return "exportacion";
     return "otros";
