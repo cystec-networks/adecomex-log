@@ -704,15 +704,17 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
         <div className="grid gap-1.5">
           <div className="flex items-center justify-between gap-2">
             <Label>Exportador / Suplidor</Label>
-            <TerceroExtranjeroPicker
-              onSelect={(t) => setForm((f) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid }))}
-            />
+            {editable && (
+              <TerceroExtranjeroPicker
+                onSelect={(t) => setForm((f) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid }))}
+              />
+            )}
           </div>
-          <Input value={form.suplidor} onChange={(e) => set("suplidor", e.target.value)} placeholder="Nombre del exportador/suplidor" />
+          <Input value={form.suplidor} onChange={(e) => set("suplidor", e.target.value)} placeholder="Nombre del exportador/suplidor" disabled={!editable} />
         </div>
         <div className="grid gap-1.5">
           <Label>TID del exportador/suplidor</Label>
-          <Input value={form.suplidor_rnc ?? ""} onChange={(e) => set("suplidor_rnc", e.target.value)} placeholder="TID del exportador/suplidor" />
+          <Input value={form.suplidor_rnc ?? ""} onChange={(e) => set("suplidor_rnc", e.target.value)} placeholder="TID del exportador/suplidor" disabled={!editable} />
         </div>
         <div className="grid gap-1.5">
           <Label>País de origen</Label>
@@ -722,6 +724,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
             codigo={form.pais_origen_codigo}
             onChange={(nombre, codigo) => setForm((f) => ({ ...f, pais_origen: nombre, pais_origen_codigo: codigo }))}
             placeholder="Selecciona país (catálogo DGA)"
+            disabled={!editable}
           />
           {form.pais_origen && !form.pais_origen_codigo && (
             <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el país del catálogo para el XML.</span>
@@ -735,14 +738,15 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
             codigo={form.pais_procedencia_codigo}
             onChange={(nombre, codigo) => setForm((f) => ({ ...f, pais_procedencia: nombre, pais_procedencia_codigo: codigo }))}
             placeholder="Selecciona país (catálogo DGA)"
+            disabled={!editable}
           />
           {form.pais_procedencia && !form.pais_procedencia_codigo && (
             <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el país del catálogo para el XML.</span>
           )}
         </div>
 
-        <AutoField label="Factura comercial" value={form.factura_comercial} onChange={(v) => set("factura_comercial", v)} suggestion={sug.factura_comercial ?? []} />
-        <AutoField label="Incoterm" value={form.incoterm} onChange={(v) => set("incoterm", v)} suggestion={sug.incoterm ?? []} />
+        <AutoField label="Factura comercial" value={form.factura_comercial} onChange={(v) => set("factura_comercial", v)} suggestion={sug.factura_comercial ?? []} disabled={!editable} />
+        <AutoField label="Incoterm" value={form.incoterm} onChange={(v) => set("incoterm", v)} suggestion={sug.incoterm ?? []} disabled={!editable} />
         <div className="grid gap-1.5">
           <Label>Puerto de salida</Label>
           <DgaCombobox
@@ -751,6 +755,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
             codigo={form.puerto_salida_codigo}
             onChange={(nombre, codigo) => setForm((f) => ({ ...f, puerto_salida: nombre, puerto_salida_codigo: codigo }))}
             placeholder="Selecciona puerto (catálogo DGA)"
+            disabled={!editable}
           />
           {form.puerto_salida && !form.puerto_salida_codigo && (
             <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo.</span>
