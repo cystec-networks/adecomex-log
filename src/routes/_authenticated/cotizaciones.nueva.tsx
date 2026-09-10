@@ -85,7 +85,7 @@ function NuevaCotizacion() {
         <Card>
           <CardHeader><CardTitle className="text-base text-destructive">Acceso restringido</CardTitle></CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>Solo los roles Gestor de Compra y Administrador pueden crear cotizaciones.</p>
+            <p>Solo los roles Gestor de Compra y Administrador pueden crear cotizaciones de compras.</p>
             <Button asChild variant="outline"><Link to="/cotizaciones">Volver</Link></Button>
           </CardContent>
         </Card>
@@ -98,7 +98,7 @@ function NuevaCotizacion() {
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" asChild><Link to="/cotizaciones"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link></Button>
         <div>
-          <h1 className="font-display text-2xl font-bold">Nueva cotización</h1>
+          <h1 className="font-display text-2xl font-bold">Nueva cotización de compras</h1>
           <p className="text-sm text-muted-foreground">Captura inicial del flujo comercial.</p>
         </div>
       </div>
@@ -123,7 +123,7 @@ function NuevaCotizacion() {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="text-base">Datos de la cotización</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Datos de la cotización de compras</CardTitle></CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-1.5"><Label>Tipo de mercancía</Label>
               <Select value={form.tipo_mercancia || undefined} onValueChange={(v) => set("tipo_mercancia", v)}>
@@ -190,7 +190,7 @@ function NuevaCotizacion() {
         </Card>
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={create.isPending}>{create.isPending ? "Creando…" : "Crear cotización"}</Button>
+          <Button type="submit" disabled={create.isPending}>{create.isPending ? "Creando…" : "Crear cotización de compras"}</Button>
         </div>
       </form>
     </div>

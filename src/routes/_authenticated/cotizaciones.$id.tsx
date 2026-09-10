@@ -191,7 +191,7 @@ function DetalleCotizacion() {
         {ordenVinculada ? (
           <Button variant="outline" asChild>
             <Link to="/ordenes/$id" params={{ id: ordenVinculada.id }}>
-              <PackagePlus className="h-4 w-4 mr-1" />Ver orden {ordenVinculada.numero} ↗
+              <PackagePlus className="h-4 w-4 mr-1" />Ver orden de compras {ordenVinculada.numero} ↗
             </Link>
           </Button>
         ) : canEdit && form.estado === "aprobada" ? (
