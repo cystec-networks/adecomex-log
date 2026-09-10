@@ -203,6 +203,7 @@ function Expedientes() {
   const countAll = (data ?? []).length;
   const countImp = (data ?? []).filter((e: any) => detectTipo(e) === "importacion").length;
   const countExp = (data ?? []).filter((e: any) => detectTipo(e) === "exportacion").length;
+  const countFact = (data ?? []).filter((e: any) => detectTipo(e) === "facturados").length;
 
   const estadoBadge = (estadoRaw: string | null) => {
     const label = ESTADO_LABEL[estadoRaw ?? ""] ?? (estadoRaw ?? "");
