@@ -15,7 +15,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
 import { TruncatedCell } from "@/components/truncated-cell";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
@@ -23,17 +23,22 @@ import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
 type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 
 export const Route = createFileRoute("/_authenticated/expedientes/")({
-  validateSearch: (s: Record<string, unknown>): { tipo?: TipoFilter } => {
+  validateSearch: (s: Record<string, unknown>): { tipo?: TipoFilter; estado?: string } => {
     const t = s.tipo;
-    return t === "importacion" || t === "exportacion" || t === "facturados" || t === "todos" ? { tipo: t } : {};
+    const tipo = t === "importacion" || t === "exportacion" || t === "facturados" || t === "todos" ? t : undefined;
+    const estadosValidos = new Set<string>(ESTADO_ORDEN);
+    const estado = typeof s.estado === "string"
+      ? s.estado.split(",").filter((value) => estadosValidos.has(value)).join(",") || undefined
+      : undefined;
+    return { ...(tipo ? { tipo } : {}), ...(estado ? { estado } : {}) };
   },
   component: Expedientes,
 });
 
 function Expedientes() {
-  const { tipo = "todos" } = Route.useSearch();
+  const { tipo = "todos", estado: estadoParam } = Route.useSearch();
   const [q, setQ] = useState("");
-  const [estado, setEstado] = useState("todos");
+  const [estado, setEstado] = useState(estadoParam ?? "todos");
   const [toTrash, setToTrash] = useState<{ id: string; numero: string } | null>(null);
   const [soloUrgentes, setSoloUrgentes] = useState(false);
   const [colapsados, setColapsados] = useState<Record<string, boolean>>(() => {
@@ -43,6 +48,8 @@ function Expedientes() {
     } catch { return {}; }
   });
   const qc = useQueryClient();
+
+  useEffect(() => setEstado(estadoParam ?? "todos"), [estadoParam]);
 
   const toggleGrupo = (key: string) => {
     setColapsados((prev) => {
@@ -123,7 +130,8 @@ function Expedientes() {
   };
 
   const filtered = (data ?? []).filter((e: any) => {
-    if (estado !== "todos" && e.estado !== estado) return false;
+    const estados = estado === "todos" ? [] : estado.split(",");
+    if (estados.length > 0 && !estados.includes(e.estado)) return false;
     if (tipo !== "todos" && detectTipo(e) !== tipo) return false;
     if (soloUrgentes && !esUrgente(e)) return false;
     if (q && !norm(JSON.stringify(e)).includes(norm(q))) return false;
@@ -414,10 +422,10 @@ function Expedientes() {
           <p className="text-sm text-muted-foreground">Expedientes aduanales agrupados por tipo de solicitud.</p>
         </div>
         <div className="flex gap-1 rounded-md border p-1 bg-card">
-          <Link to="/expedientes" search={{ tipo: "todos" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos <Badge variant="secondary" className="text-[10px] h-4 px-1">{countAll}</Badge></Link>
-          <Link to="/expedientes" search={{ tipo: "importacion" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
-          <Link to="/expedientes" search={{ tipo: "exportacion" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
-          <Link to="/expedientes" search={{ tipo: "facturados" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
+          <Link to="/expedientes" search={{ tipo: "todos", estado: estadoParam }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos <Badge variant="secondary" className="text-[10px] h-4 px-1">{countAll}</Badge></Link>
+          <Link to="/expedientes" search={{ tipo: "importacion", estado: estadoParam }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
+          <Link to="/expedientes" search={{ tipo: "exportacion", estado: estadoParam }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
+          <Link to="/expedientes" search={{ tipo: "facturados", estado: estadoParam }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
         </div>
         <Button variant="outline" size="sm" asChild>
           <Link to="/expedientes/ocr"><ScanText className="h-4 w-4 mr-1" />Nuevo por OCR</Link>
@@ -434,6 +442,7 @@ function Expedientes() {
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos los estados</SelectItem>
+              {estado.includes(",") && <SelectItem value={estado}>Estados del Dashboard</SelectItem>}
               {ESTADO_ORDEN.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
             </SelectContent>
           </Select>

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { TruncatedCell } from "@/components/truncated-cell";
 import { Trash2, Plus, Truck, Pencil } from "lucide-react";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { TRANSPORTE_ESTADOS, TRANSPORTE_TIPOS, estadoBadgeTransporte } from "@/components/transporte-form";
 import { parseLocalDate, fmtLocalDateShort } from "@/lib/dates";
@@ -19,15 +19,25 @@ import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
 
 
 export const Route = createFileRoute("/_authenticated/transportes/")({
+  validateSearch: (s: Record<string, unknown>): { estado?: string } => {
+    const estadosValidos = new Set(TRANSPORTE_ESTADOS.map((item) => item.v));
+    const estado = typeof s.estado === "string"
+      ? s.estado.split(",").filter((value) => estadosValidos.has(value)).join(",") || undefined
+      : undefined;
+    return estado ? { estado } : {};
+  },
   component: Transportes,
 });
 
 function Transportes() {
+  const { estado: estadoParam } = Route.useSearch();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
-  const [estado, setEstado] = useState("todos");
+  const [estado, setEstado] = useState(estadoParam ?? "todos");
   const [cliente, setCliente] = useState("todos");
   const [toTrash, setToTrash] = useState<{ id: string; numero: string } | null>(null);
+
+  useEffect(() => setEstado(estadoParam ?? "todos"), [estadoParam]);
 
   const { data } = useQuery({
     queryKey: ["transportes"],
@@ -61,7 +71,8 @@ function Transportes() {
 
   const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const filtered = (data ?? []).filter((t: any) => {
-    if (estado !== "todos" && t.estado !== estado) return false;
+    const estados = estado === "todos" ? [] : estado.split(",");
+    if (estados.length > 0 && !estados.includes(t.estado)) return false;
     if (cliente !== "todos" && t.cliente_id !== cliente) return false;
     if (q && !norm(JSON.stringify(t)).includes(norm(q))) return false;
     return true;
@@ -139,6 +150,7 @@ function Transportes() {
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos los estados</SelectItem>
+              {estado.includes(",") && <SelectItem value={estado}>Estados del Dashboard</SelectItem>}
               {TRANSPORTE_ESTADOS.map((s) => <SelectItem key={s.v} value={s.v}>{s.l}</SelectItem>)}
             </SelectContent>
           </Select>
