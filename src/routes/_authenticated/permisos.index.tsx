@@ -90,6 +90,7 @@ function Permisos() {
   const rows = [...filtered].sort(cmp);
 
   const PERMISOS_CERRADOS = ["aprobado", "rechazado", "vencido"];
+  const COL_SPAN = 10;
   const { esColapsado, toggleGrupo } = useGruposColapsados("permisos-grupos-colapsados", PERMISOS_CERRADOS);
   const ordenGrupos = PERMISO_ESTADOS.map((s: { v: string }) => s.v);
   const grupos: [string, any[]][] = (() => {
