@@ -630,11 +630,11 @@ function TabInfo({ exp }: { exp: any }) {
 
   return (
     <div className="space-y-5">
-      <div className="flex justify-end gap-2">
-        <Button size="lg" variant="outline" onClick={() => refrescarExpediente(qc, exp.id)}>
+      <div className="flex justify-end gap-2 sticky bottom-4">
+        <Button size="lg" variant="outline" onClick={() => refrescarExpediente(qc, exp.id)} className="shadow-lg">
           <RefreshCw className="h-4 w-4 mr-1" /> Refrescar
         </Button>
-        <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending}>
+        <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
           {save.isPending ? "Guardando…" : "Guardar cambios"}
         </Button>
       </div>
