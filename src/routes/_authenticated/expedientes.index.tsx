@@ -196,6 +196,7 @@ function Expedientes() {
   const grupoLabel: Record<string, string> = {
     importacion: "Importaciones",
     exportacion: "Exportaciones",
+    facturados: "Facturados",
     otros: "Otros",
   };
 
