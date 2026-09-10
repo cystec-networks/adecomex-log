@@ -193,9 +193,9 @@ export function TabRecepcion({ expedienteId }: { expedienteId: string }) {
             <p className="text-xs text-muted-foreground">
               Compara lo recibido físicamente contra lo esperado. Cantidad y peso son medidas independientes: puede haber diferencia en una sin que la haya en la otra.
             </p>
-            <div className="overflow-x-auto">
+            <div className="overflow-auto max-h-[70vh]">
               <table className="w-full text-sm">
-                <thead className="text-xs text-muted-foreground border-b">
+                <thead className="sticky-table-header text-xs text-muted-foreground border-b">
                   <tr>
                     <th className="text-left py-2 pr-2">Descripción</th>
                     <th className="text-left py-2 pr-2">Cant. esperada</th>
@@ -255,9 +255,9 @@ export function TabRecepcion({ expedienteId }: { expedienteId: string }) {
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 overflow-auto max-h-[70vh]">
         <table className="w-full text-sm">
-          <thead className="text-xs text-muted-foreground border-b bg-muted/30">
+          <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
             <tr>
               <th className="text-left px-4 py-2">Fecha</th>
               <th className="text-left">Recibido por</th>

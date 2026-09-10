@@ -419,9 +419,9 @@ function ConciliacionBancariaPage() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Movimientos ({filtrados.length})</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead>
+            <thead className="sticky-table-header">
               <tr className="border-b text-left text-muted-foreground">
                 <th className="py-2 pr-3">Fecha</th>
                 <th className="py-2 pr-3">Descripción</th>

@@ -180,9 +180,9 @@ function PlantillasDocumentosPage() {
           ) : !plantillas?.length ? (
             <div className="px-6 py-8 text-center text-sm text-muted-foreground">Aún no hay plantillas.</div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-auto max-h-[70vh]">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="sticky-table-header">
                   <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground border-b">
                     <th className="px-4 py-2">Nombre</th>
                     <th className="px-4 py-2">Categoría</th>

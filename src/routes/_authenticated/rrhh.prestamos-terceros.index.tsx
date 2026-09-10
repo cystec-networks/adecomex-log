@@ -236,9 +236,9 @@ function PrestamosTerceros() {
             </Select>
           </div>
         </CardHeader>
-        <CardContent className="p-0 overflow-x-auto">
+        <CardContent className="p-0 overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-xs uppercase">
+            <thead className="sticky-table-header bg-muted/50 text-xs uppercase">
               <tr>
                 <th className="text-left p-2">Nombre</th>
                 <th className="text-left p-2">Relación</th>

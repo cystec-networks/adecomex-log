@@ -288,9 +288,9 @@ function ExpedientesDashboard() {
                 {view.cxc.length === 0 ? (
                   <div className="text-sm text-muted-foreground">Sin facturas pendientes.</div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-auto max-h-[70vh]">
                     <table className="w-full text-sm">
-                      <thead>
+                      <thead className="sticky-table-header">
                         <tr className="text-left text-muted-foreground border-b">
                           <th className="py-2">Cliente</th>
                           <th className="py-2">Expedientes</th>
@@ -356,9 +356,9 @@ function RentTable({ title, rows, positive }: {
         {rows.length === 0 ? (
           <div className="text-sm text-muted-foreground">Sin datos en el mes.</div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-[70vh]">
             <table className="w-full text-sm">
-              <thead>
+              <thead className="sticky-table-header">
                 <tr className="text-left text-muted-foreground border-b">
                   <th className="py-2">Expediente</th>
                   <th className="py-2">Cliente</th>

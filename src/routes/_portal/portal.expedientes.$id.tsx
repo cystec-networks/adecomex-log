@@ -255,9 +255,9 @@ function PortalExpedienteDetalle() {
           {(!documentos || documentos.length === 0) ? (
             <div className="px-6 py-8 text-center text-sm text-muted-foreground">Aún no hay documentos disponibles.</div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-auto max-h-[70vh]">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="sticky-table-header">
                   <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground border-b">
                     <th className="px-4 py-2">Tipo</th>
                     <th className="px-4 py-2">Estado</th>
@@ -306,9 +306,9 @@ function PortalExpedienteDetalle() {
           {(!mercancia || mercancia.length === 0) ? (
             <div className="px-6 py-8 text-center text-sm text-muted-foreground">Sin información de mercancía disponible.</div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-auto max-h-[70vh]">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="sticky-table-header">
                   <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground border-b">
                     <th className="px-4 py-2">#</th>
                     <th className="px-4 py-2">Descripción</th>
@@ -340,9 +340,9 @@ function PortalExpedienteDetalle() {
             <CardTitle className="text-base">Permisos VUCE</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
+            <div className="overflow-auto max-h-[70vh]">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="sticky-table-header">
                   <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground border-b">
                     <th className="px-4 py-2">Tipo</th>
                     <th className="px-4 py-2">Estado</th>
@@ -388,9 +388,9 @@ function PortalExpedienteDetalle() {
                 <div className={`text-lg font-semibold mt-1 ${saldoPendiente > 0 ? "text-amber-700" : "text-emerald-700"}`}>{dop(saldoPendiente)}</div>
               </div>
             </div>
-            <div className="overflow-x-auto">
+            <div className="overflow-auto max-h-[70vh]">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="sticky-table-header">
                   <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground border-b">
                     <th className="px-4 py-2">e-NCF</th>
                     <th className="px-4 py-2">Fecha</th>

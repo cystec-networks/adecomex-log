@@ -473,9 +473,9 @@ function GroupCard({ group, agrupar }: { group: any; agrupar: string }) {
           </div>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="overflow-x-auto border-t">
+          <div className="overflow-auto max-h-[70vh] border-t">
             <table className="w-full text-[13px]">
-              <thead className="bg-muted/30">
+              <thead className="sticky-table-header bg-muted/30">
                 <tr className="text-left">
                   <Th>Expediente</Th>
                   {agrupar !== "cliente" && <Th>Cliente</Th>}

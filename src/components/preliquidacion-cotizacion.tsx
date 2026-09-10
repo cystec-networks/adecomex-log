@@ -159,9 +159,9 @@ export function CalcularEstimadoButton({ cotizacionId, readOnly }: { cotizacionI
             </div>
           </div>
 
-          <div className="overflow-x-auto border rounded-md">
+          <div className="overflow-auto max-h-[70vh] border rounded-md">
             <table className="w-full text-xs">
-              <thead className="bg-muted/60">
+              <thead className="sticky-table-header bg-muted/60">
                 <tr className="[&>th]:px-2 [&>th]:py-1.5 [&>th]:text-left">
                   <th>Item</th><th>Arancel</th><th>Descripción</th>
                   <th className="text-right">FOB US$</th>

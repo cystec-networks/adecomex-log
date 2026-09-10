@@ -265,9 +265,9 @@ function CatalogTable({ table, isAdmin }: { table: TableKey; isAdmin: boolean })
         )}
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="rounded-md border overflow-x-auto">
+        <div className="rounded-md border overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+            <thead className="sticky-table-header bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 {fields.map((f) => <th key={f.k} className="px-3 py-2 text-left">{f.label}</th>)}
                 {isAdmin && <th className="w-24"></th>}
@@ -435,9 +435,9 @@ function HitosCatalog({ isAdmin }: { isAdmin: boolean }) {
         <p className="text-xs text-muted-foreground pt-3 pb-2">
           Los hitos activos se crean automáticamente al registrar un nuevo Expediente. Los expedientes existentes conservan sus hitos actuales.
         </p>
-        <div className="rounded-md border overflow-x-auto">
+        <div className="rounded-md border overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+            <thead className="sticky-table-header bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 text-left w-16">Orden</th>
                 <th className="px-3 py-2 text-left">Nombre</th>
@@ -597,9 +597,9 @@ function TasasCambioCatalog({ isAdmin }: { isAdmin: boolean }) {
           Solo administradores pueden editar o eliminar. Cualquier operador puede capturar la tasa la primera vez del día
           desde el expediente. Los expedientes despachados o con Resultado Oficial DGA conservan la tasa original congelada.
         </p>
-        <div className="rounded-md border overflow-x-auto">
+        <div className="rounded-md border overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+            <thead className="sticky-table-header bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 text-left w-40">Fecha</th>
                 <th className="px-3 py-2 text-right w-40">RD$ / US$1</th>

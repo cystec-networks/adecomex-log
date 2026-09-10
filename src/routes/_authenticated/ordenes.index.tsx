@@ -90,9 +90,9 @@ function Ordenes() {
             <Button asChild><Link to="/ordenes/nueva"><Plus className="h-4 w-4 mr-1" />Nueva orden de compras</Link></Button>
           )}
         </CardHeader>
-        <CardContent className="p-0 overflow-x-auto">
+        <CardContent className="p-0 overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground border-b bg-muted/30 uppercase">
+            <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30 uppercase">
               <tr>
                 <th className="text-left px-4 py-2">Número</th>
                 <th className="text-left">Cotización de Compras</th>

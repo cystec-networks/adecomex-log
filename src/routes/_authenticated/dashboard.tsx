@@ -109,9 +109,9 @@ function Dashboard() {
           <CardHeader>
             <CardTitle className="text-base font-display">Últimas solicitudes</CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-auto max-h-[70vh]">
             <table className="w-full text-sm">
-              <thead className="text-xs text-muted-foreground border-b">
+              <thead className="sticky-table-header text-xs text-muted-foreground border-b">
                 <tr><th className="text-left px-4 py-2">Solicitud</th><th className="text-left">Estado</th><th className="text-left">Prioridad</th><th /></tr>
               </thead>
               <tbody>
@@ -135,9 +135,9 @@ function Dashboard() {
           <CardHeader>
             <CardTitle className="text-base font-display flex items-center gap-2"><TrendingUp className="h-4 w-4" />Últimos expedientes</CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-auto max-h-[70vh]">
             <table className="w-full text-sm">
-              <thead className="text-xs text-muted-foreground border-b">
+              <thead className="sticky-table-header text-xs text-muted-foreground border-b">
                 <tr><th className="text-left px-4 py-2">Expediente</th><th className="text-left">Estado</th><th className="text-left">Etapa</th><th /></tr>
               </thead>
               <tbody>

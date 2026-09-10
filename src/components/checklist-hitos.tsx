@@ -177,9 +177,9 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
         ) : (hitos?.length ?? 0) === 0 ? (
           <p className="text-sm text-muted-foreground">Sin hitos configurados.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-[70vh]">
             <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+              <thead className="sticky-table-header bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-2 py-2 text-left w-8">#</th>
                   <th className="px-2 py-2 text-left">Hito</th>
