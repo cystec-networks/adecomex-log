@@ -1,0 +1,1 @@
+ALTER TABLE public.catalogo_tasas_arancelarias ADD COLUMN IF NOT EXISTS pct_itbis numeric;
