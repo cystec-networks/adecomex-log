@@ -83,7 +83,8 @@ function Dashboard() {
   const expedientesEnProceso = stats?.expedientes.filter((e) => e.estado === "digitar" || e.estado === "en_transito" || e.estado === "presentar" || e.estado === "verificar" || e.estado === "entregado").length ?? 0;
   const expedientesCerrados = stats?.expedientes.filter((e) => e.estado === "facturar").length ?? 0;
   const permisosPorVencer = stats?.permisos.filter((p) => {
-    if (!p.fecha_vencimiento || p.estado === "rechazado" || p.estado === "vencido") return false;
+    if (!p.fecha_vencimiento) return false;
+    if (p.estado !== "solicitado" && p.estado !== "en_tramite") return false;
     const d = daysFromToday(p.fecha_vencimiento);
     return d >= 0 && d <= 15;
   }).length ?? 0;
