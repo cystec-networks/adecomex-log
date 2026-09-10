@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, CheckCircle2, Circle, Clock, XCircle, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
@@ -230,6 +230,15 @@ function DetalleExpediente() {
     queryFn: async () => (await supabase.from("expedientes").select("*, clientes(*), solicitudes(numero)").eq("id", id).maybeSingle()).data,
   });
 
+  const { data: hitosHeader } = useQuery({
+    queryKey: ["expediente-hitos-header", id],
+    queryFn: async () => (await supabase.from("expediente_hitos").select("estado").eq("expediente_id", id)).data ?? [],
+  });
+
+  const hitosDone = (hitosHeader ?? []).filter((h) => h.estado === "completado" || h.estado === "no_aplica").length;
+  const hitosTotal = hitosHeader?.length ?? 0;
+
+
   const updateEstado = useMutation({
     mutationFn: async (estado: string) => {
       if (estado === "despachado" && !(exp as any)?.factura_ecf_id) {
@@ -336,9 +345,10 @@ function DetalleExpediente() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">Etapa:</Label>
-            <span className="text-sm font-medium">{exp.etapa_actual ?? 1} de 14</span>
+            <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">Despacho:</Label>
+            <span className="text-sm font-medium">{hitosDone} de {hitosTotal}</span>
           </div>
+
           {(() => {
             const a = alertaDeclaracionTardia(exp);
             if (!a) return null;
@@ -400,11 +410,9 @@ function DetalleExpediente() {
       <div className="px-6">
         <TabsContent value="info"><TabInfo exp={exp} /></TabsContent>
         <TabsContent value="checklist">
-          <div className="space-y-5">
-            <TabTimeline expedienteId={id} />
-            <ChecklistHitos expedienteId={id} />
-          </div>
+          <ChecklistHitos expedienteId={id} />
         </TabsContent>
+
         
         <TabsContent value="liqfinal"><LiquidacionFinalSection exp={exp} /></TabsContent>
         <TabsContent value="docs"><TabDocumentos expedienteId={id} /></TabsContent>
@@ -1038,89 +1046,6 @@ function TabInfo({ exp }: { exp: any }) {
   );
 }
 
-function TabTimeline({ expedienteId }: { expedienteId: string }) {
-  const qc = useQueryClient();
-  const { data: etapas } = useQuery({
-    queryKey: ["etapas", expedienteId],
-    queryFn: async () => (await supabase.from("etapas").select("*").eq("expediente_id", expedienteId).order("orden")).data ?? [],
-  });
-
-  const avanzar = useMutation({
-    mutationFn: async ({ etapaId, orden, comentario }: any) => {
-      const now = new Date().toISOString();
-      const { error } = await supabase.from("etapas").update({
-        estado: "completada", fecha_cierre: now, comentario,
-      }).eq("id", etapaId);
-      if (error) throw error;
-      // siguiente etapa
-      const { data: sig } = await supabase.from("etapas").select("id").eq("expediente_id", expedienteId).eq("orden", orden + 1).maybeSingle();
-      if (sig) {
-        await supabase.from("etapas").update({ estado: "en_curso", fecha_inicio: now }).eq("id", sig.id);
-      }
-      await supabase.from("expedientes").update({ etapa_actual: orden + 1 }).eq("id", expedienteId);
-      await supabase.from("auditoria").insert({ entidad: "etapas", entidad_id: etapaId, accion: `completada:${orden}` });
-    },
-    onSuccess: () => {
-      toast.success("Etapa completada");
-      qc.invalidateQueries({ queryKey: ["etapas", expedienteId] });
-      qc.invalidateQueries({ queryKey: ["expediente", expedienteId] });
-    },
-  });
-
-  const iconFor = (estado: string) => {
-    if (estado === "completada") return <CheckCircle2 className="h-5 w-5 text-[var(--success)]" />;
-    if (estado === "en_curso") return <Clock className="h-5 w-5 text-[var(--warning-foreground)]" />;
-    if (estado === "bloqueada") return <XCircle className="h-5 w-5 text-destructive" />;
-    return <Circle className="h-5 w-5 text-muted-foreground" />;
-  };
-
-  return (
-    <Card>
-      <CardHeader><CardTitle className="text-base">Flujo operativo (14 etapas)</CardTitle></CardHeader>
-      <CardContent>
-        <ol className="relative border-l-2 border-border ml-3 space-y-4">
-          {(etapas ?? []).map((et: any) => (
-            <li key={et.id} className="pl-6 relative">
-              <span className="absolute -left-[13px] top-0 bg-background">{iconFor(et.estado)}</span>
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div>
-                  <div className="font-medium flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">#{et.orden}</span>{et.nombre}
-                    <Badge variant="outline" className="text-[10px]">{et.estado.replace("_"," ")}</Badge>
-                  </div>
-                  {et.fecha_inicio && <div className="text-xs text-muted-foreground">Inicio: {new Date(et.fecha_inicio).toLocaleString("es-DO")}</div>}
-                  {et.fecha_cierre && <div className="text-xs text-muted-foreground">Cierre: {new Date(et.fecha_cierre).toLocaleString("es-DO")}</div>}
-                  {et.comentario && <div className="text-sm mt-1 italic">"{et.comentario}"</div>}
-                </div>
-                {et.estado === "en_curso" && (
-                  <CompletarEtapaDialog etapa={et} onConfirm={(comentario) => avanzar.mutate({ etapaId: et.id, orden: et.orden, comentario })} />
-                )}
-              </div>
-            </li>
-          ))}
-        </ol>
-      </CardContent>
-    </Card>
-  );
-}
-
-function CompletarEtapaDialog({ etapa, onConfirm }: { etapa: any; onConfirm: (c: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const [comentario, setComentario] = useState("");
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button size="sm" variant="default">Completar etapa</Button></DialogTrigger>
-      <DialogContent>
-        <DialogHeader><DialogTitle>Completar: {etapa.nombre}</DialogTitle></DialogHeader>
-        <div className="grid gap-2"><Label>Comentario / evidencia</Label><Textarea rows={3} value={comentario} onChange={(e) => setComentario(e.target.value)} /></div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => { onConfirm(comentario); setOpen(false); }}>Confirmar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const qc = useQueryClient();
