@@ -11,9 +11,10 @@ type Props = {
   className?: string;
   id?: string;
   type?: string;
+  disabled?: boolean;
 };
 
-export function AutocompleteInput({ value, onChange, suggestions, placeholder, className, id, type = "text" }: Props) {
+export function AutocompleteInput({ value, onChange, suggestions, placeholder, className, id, type = "text", disabled }: Props) {
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
@@ -108,9 +109,11 @@ export function AutocompleteInput({ value, onChange, suggestions, placeholder, c
         type={type}
         value={value ?? ""}
         placeholder={placeholder}
-        onFocus={() => { setOpen(true); updatePos(); }}
-        onChange={(e) => { onChange(e.target.value); setOpen(true); setHighlight(0); updatePos(); }}
+        disabled={disabled}
+        onFocus={() => { if (disabled) return; setOpen(true); updatePos(); }}
+        onChange={(e) => { if (disabled) return; onChange(e.target.value); setOpen(true); setHighlight(0); updatePos(); }}
         onKeyDown={(e) => {
+          if (disabled) return;
           if (!open || filtered.length === 0) return;
           if (e.key === "ArrowDown") { e.preventDefault(); setHighlight((h) => (h + 1) % filtered.length); }
           else if (e.key === "ArrowUp") { e.preventDefault(); setHighlight((h) => (h - 1 + filtered.length) % filtered.length); }

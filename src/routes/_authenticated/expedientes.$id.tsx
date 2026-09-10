@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -159,6 +160,11 @@ function DetalleExpediente() {
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const dragTab = useRef<string | null>(null);
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const { data: roles } = useMyRoles();
+  const canEditExpediente = (roles ?? []).some((r) =>
+    ["admin", "finanzas", "operaciones", "agente_aduanal", "contabilidad"].includes(r),
+  );
 
   // Aviso en tiempo real cuando otro usuario actualiza este expediente.
   useEffect(() => {
@@ -255,7 +261,7 @@ function DetalleExpediente() {
   if (!exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-6">
+    <div className={cn("max-w-[1600px] mx-auto space-y-6", modoEdicion && "bg-amber-50/40")}>
       <Tabs defaultValue="info">
       <div className="sticky top-0 z-20 bg-background border-b pb-3 pt-2 px-6">
         <div className="space-y-3">
@@ -321,7 +327,7 @@ function DetalleExpediente() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">Estado:</Label>
-            <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)}>
+            <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
               <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {ESTADO_ORDEN.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
@@ -408,7 +414,7 @@ function DetalleExpediente() {
         </TabsList>
       </div>
       <div className="px-6">
-        <TabsContent value="info"><TabInfo exp={exp} /></TabsContent>
+        <TabsContent value="info"><TabInfo exp={exp} modoEdicion={modoEdicion} setModoEdicion={setModoEdicion} canEdit={canEditExpediente} /></TabsContent>
         <TabsContent value="checklist">
           <ChecklistHitos expedienteId={id} />
         </TabsContent>
@@ -426,20 +432,25 @@ function DetalleExpediente() {
         <TabsContent value="aud"><TabAuditoria expedienteId={id} /></TabsContent>
       </div>
       </Tabs>
+      {canEditExpediente && !modoEdicion && (
+        <Button onClick={() => setModoEdicion(true)} className="fixed bottom-6 right-24 z-30 shadow-lg" size="lg">
+          <Pencil className="h-4 w-4 mr-1" /> Editar
+        </Button>
+      )}
     </div>
   );
 }
 
-function Field({ label, value, onChange, type = "text", className = "" }: { label: string; value: any; onChange: (v: string) => void; type?: string; className?: string }) {
+function Field({ label, value, onChange, type = "text", className = "", disabled = false }: { label: string; value: any; onChange: (v: string) => void; type?: string; className?: string; disabled?: boolean }) {
   return (
     <div className={`grid gap-1.5 ${className}`}>
       <Label>{label}</Label>
-      <Input type={type} value={value ?? ""} onChange={(e) => onChange(e.target.value)} />
+      <Input type={type} value={value ?? ""} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
     </div>
   );
 }
 
-function AutoField({ label, value, onChange, suggestion, className = "" }: { label: string; value: any; onChange: (v: string) => void; suggestion: string[]; className?: string }) {
+function AutoField({ label, value, onChange, suggestion, className = "", disabled = false }: { label: string; value: any; onChange: (v: string) => void; suggestion: string[]; className?: string; disabled?: boolean }) {
   return (
     <div className={`grid gap-1.5 ${className}`}>
       <Label>{label}</Label>
@@ -448,6 +459,7 @@ function AutoField({ label, value, onChange, suggestion, className = "" }: { lab
         onChange={onChange}
         suggestions={suggestion ?? []}
         placeholder={`Escribe para buscar ${label.toLowerCase()}…`}
+        disabled={disabled}
       />
     </div>
   );
@@ -466,8 +478,9 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
 }
 
 
-function TabInfo({ exp }: { exp: any }) {
+function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean }) {
   const qc = useQueryClient();
+  const editable = canEdit && modoEdicion;
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState({
 
@@ -627,7 +640,7 @@ function TabInfo({ exp }: { exp: any }) {
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
     },
-    onSuccess: () => { ultimoGuardadoPropio.set(exp.id, Date.now()); toast.success("Guardado"); qc.invalidateQueries({ queryKey: ["expediente", exp.id] }); qc.invalidateQueries({ queryKey: ["expedientes"] }); qc.invalidateQueries({ queryKey: ["expedientes-hist"] }); },
+    onSuccess: () => { ultimoGuardadoPropio.set(exp.id, Date.now()); toast.success("Guardado"); setModoEdicion(false); qc.invalidateQueries({ queryKey: ["expediente", exp.id] }); qc.invalidateQueries({ queryKey: ["expedientes"] }); qc.invalidateQueries({ queryKey: ["expedientes-hist"] }); },
     onError: (e: any) => {
       if (e?.code === "23505") {
         toast.error("Ese número de permiso ya está en uso en otro Expediente — actualiza la página e intenta de nuevo.");
@@ -647,9 +660,11 @@ function TabInfo({ exp }: { exp: any }) {
         <Button size="lg" variant="outline" onClick={() => refrescarExpediente(qc, exp.id)} className="shadow-lg">
           <RefreshCw className="h-4 w-4 mr-1" /> Refrescar
         </Button>
-        <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
-          {save.isPending ? "Guardando…" : "Guardar cambios"}
-        </Button>
+        {editable && (
+          <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
+            {save.isPending ? "Guardando…" : "Guardar cambios"}
+          </Button>
+        )}
       </div>
       {hasSolicitud && (
         <Card className="bg-muted/30 border-dashed">
@@ -676,12 +691,12 @@ function TabInfo({ exp }: { exp: any }) {
       )}
 
       <Section title="1. Información general" subtitle="Identificación y logística base del expediente">
-        <Field label="Número / ID" value={form.numero} onChange={(v) => set("numero", v)} />
-        <Field label="BL / AWB / Guía" value={form.bl_awb} onChange={(v) => set("bl_awb", v)} />
-        <AutoField label="Medio de transporte" value={form.medio_transporte} onChange={(v) => set("medio_transporte", v)} suggestion={sug.medio_transporte ?? []} />
-        <AutoField label="Naviera" value={form.naviera} onChange={(v) => set("naviera", v)} suggestion={sug.naviera ?? []} />
-        <Field label="SLA (días)" value={form.sla_dias} onChange={(v) => set("sla_dias", v)} type="number" />
-        <Field label="Fecha Estimada de Llegada (ETA)" value={form.fecha_compromiso} onChange={(v) => set("fecha_compromiso", v)} type="date" />
+        <Field label="Número / ID" value={form.numero} onChange={(v) => set("numero", v)} disabled={!editable} />
+        <Field label="BL / AWB / Guía" value={form.bl_awb} onChange={(v) => set("bl_awb", v)} disabled={!editable} />
+        <AutoField label="Medio de transporte" value={form.medio_transporte} onChange={(v) => set("medio_transporte", v)} suggestion={sug.medio_transporte ?? []} disabled={!editable} />
+        <AutoField label="Naviera" value={form.naviera} onChange={(v) => set("naviera", v)} suggestion={sug.naviera ?? []} disabled={!editable} />
+        <Field label="SLA (días)" value={form.sla_dias} onChange={(v) => set("sla_dias", v)} type="number" disabled={!editable} />
+        <Field label="Fecha Estimada de Llegada (ETA)" value={form.fecha_compromiso} onChange={(v) => set("fecha_compromiso", v)} type="date" disabled={!editable} />
       </Section>
 
 
@@ -689,15 +704,17 @@ function TabInfo({ exp }: { exp: any }) {
         <div className="grid gap-1.5">
           <div className="flex items-center justify-between gap-2">
             <Label>Exportador / Suplidor</Label>
-            <TerceroExtranjeroPicker
-              onSelect={(t) => setForm((f) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid }))}
-            />
+            {editable && (
+              <TerceroExtranjeroPicker
+                onSelect={(t) => setForm((f) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid }))}
+              />
+            )}
           </div>
-          <Input value={form.suplidor} onChange={(e) => set("suplidor", e.target.value)} placeholder="Nombre del exportador/suplidor" />
+          <Input value={form.suplidor} onChange={(e) => set("suplidor", e.target.value)} placeholder="Nombre del exportador/suplidor" disabled={!editable} />
         </div>
         <div className="grid gap-1.5">
           <Label>TID del exportador/suplidor</Label>
-          <Input value={form.suplidor_rnc ?? ""} onChange={(e) => set("suplidor_rnc", e.target.value)} placeholder="TID del exportador/suplidor" />
+          <Input value={form.suplidor_rnc ?? ""} onChange={(e) => set("suplidor_rnc", e.target.value)} placeholder="TID del exportador/suplidor" disabled={!editable} />
         </div>
         <div className="grid gap-1.5">
           <Label>País de origen</Label>
@@ -707,6 +724,7 @@ function TabInfo({ exp }: { exp: any }) {
             codigo={form.pais_origen_codigo}
             onChange={(nombre, codigo) => setForm((f) => ({ ...f, pais_origen: nombre, pais_origen_codigo: codigo }))}
             placeholder="Selecciona país (catálogo DGA)"
+            disabled={!editable}
           />
           {form.pais_origen && !form.pais_origen_codigo && (
             <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el país del catálogo para el XML.</span>
@@ -720,14 +738,15 @@ function TabInfo({ exp }: { exp: any }) {
             codigo={form.pais_procedencia_codigo}
             onChange={(nombre, codigo) => setForm((f) => ({ ...f, pais_procedencia: nombre, pais_procedencia_codigo: codigo }))}
             placeholder="Selecciona país (catálogo DGA)"
+            disabled={!editable}
           />
           {form.pais_procedencia && !form.pais_procedencia_codigo && (
             <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el país del catálogo para el XML.</span>
           )}
         </div>
 
-        <AutoField label="Factura comercial" value={form.factura_comercial} onChange={(v) => set("factura_comercial", v)} suggestion={sug.factura_comercial ?? []} />
-        <AutoField label="Incoterm" value={form.incoterm} onChange={(v) => set("incoterm", v)} suggestion={sug.incoterm ?? []} />
+        <AutoField label="Factura comercial" value={form.factura_comercial} onChange={(v) => set("factura_comercial", v)} suggestion={sug.factura_comercial ?? []} disabled={!editable} />
+        <AutoField label="Incoterm" value={form.incoterm} onChange={(v) => set("incoterm", v)} suggestion={sug.incoterm ?? []} disabled={!editable} />
         <div className="grid gap-1.5">
           <Label>Puerto de salida</Label>
           <DgaCombobox
@@ -736,6 +755,7 @@ function TabInfo({ exp }: { exp: any }) {
             codigo={form.puerto_salida_codigo}
             onChange={(nombre, codigo) => setForm((f) => ({ ...f, puerto_salida: nombre, puerto_salida_codigo: codigo }))}
             placeholder="Selecciona puerto (catálogo DGA)"
+            disabled={!editable}
           />
           {form.puerto_salida && !form.puerto_salida_codigo && (
             <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo.</span>
@@ -750,9 +770,9 @@ function TabInfo({ exp }: { exp: any }) {
           <p className="text-xs text-muted-foreground">Documentos oficiales ante DGA y VUCE</p>
         </CardHeader>
         <CardContent className="pt-5 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} />
-          <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} />
-          <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} />
+          <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} />
+          <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} />
+          <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} disabled={!editable} />
           <div className="grid gap-1.5">
             <Label>Puerto de arribo</Label>
             <DgaCombobox
@@ -761,6 +781,7 @@ function TabInfo({ exp }: { exp: any }) {
               codigo={form.puerto_arribo_codigo}
               onChange={(nombre, codigo) => setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo }))}
               placeholder="Buscar puerto (catálogo DGA)"
+              disabled={!editable}
             />
             {form.puerto_arribo && !form.puerto_arribo_codigo && (
               <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo para el XML.</span>
@@ -774,6 +795,7 @@ function TabInfo({ exp }: { exp: any }) {
               codigo={form.area_aduanera_codigo}
               onChange={(nombre, codigo) => setForm((f) => ({ ...f, area_aduanera: nombre, area_aduanera_codigo: codigo }))}
               placeholder="Buscar área (catálogo DGA)"
+              disabled={!editable}
             />
           </div>
         </CardContent>
@@ -787,7 +809,7 @@ function TabInfo({ exp }: { exp: any }) {
         <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
             <Label>Descripción</Label>
-            <Textarea rows={3} value={form.descripcion_mercancia} onChange={(e) => set("descripcion_mercancia", e.target.value)} />
+            <Textarea rows={3} value={form.descripcion_mercancia} onChange={(e) => set("descripcion_mercancia", e.target.value)} disabled={!editable} />
           </div>
           <div className="grid gap-1.5">
             <Label>Peso neto (kg)</Label>
@@ -800,6 +822,7 @@ function TabInfo({ exp }: { exp: any }) {
                 if (v === "" || /^\d*\.?\d*$/.test(v)) set("peso_neto", v);
               }}
               placeholder="0.00"
+              disabled={!editable}
             />
           </div>
           <div className="grid gap-1.5">
@@ -813,9 +836,10 @@ function TabInfo({ exp }: { exp: any }) {
                 if (v === "" || /^\d*\.?\d*$/.test(v)) set("peso_bruto", v);
               }}
               placeholder="0.00"
+              disabled={!editable}
             />
           </div>
-          <AutoField label="Preferencia comercial" value={form.preferencia_comercial} onChange={(v) => set("preferencia_comercial", v)} suggestion={sug.preferencia_comercial ?? []} />
+          <AutoField label="Preferencia comercial" value={form.preferencia_comercial} onChange={(v) => set("preferencia_comercial", v)} suggestion={sug.preferencia_comercial ?? []} disabled={!editable} />
           {(() => {
             const p = (form.preferencia_comercial || "").trim().toLowerCase();
             const showCert = p !== "" && p !== "ninguna" && p !== "no aplica" && p !== "n/a";
@@ -826,6 +850,7 @@ function TabInfo({ exp }: { exp: any }) {
                   value={form.numero_certificado_origen}
                   onChange={(e) => set("numero_certificado_origen", e.target.value)}
                   placeholder="CO-2026-00123"
+                  disabled={!editable}
                 />
               </div>
             ) : null;
@@ -837,6 +862,7 @@ function TabInfo({ exp }: { exp: any }) {
               onChange={(v) => set("numeros_contenedores", v)}
               suggestions={sug.numeros_contenedores}
               placeholder="MSKU1234567, TCLU7654321…"
+              disabled={!editable}
             />
           </div>
           <div className="grid gap-1.5">
@@ -845,6 +871,7 @@ function TabInfo({ exp }: { exp: any }) {
               <Switch
                 checked={form.rectificacion_tecnica}
                 onCheckedChange={(v) => set("rectificacion_tecnica", v)}
+                disabled={!editable}
               />
               <span className="text-sm text-muted-foreground">
                 {form.rectificacion_tecnica ? "Sí" : "No"}
@@ -858,12 +885,13 @@ function TabInfo({ exp }: { exp: any }) {
                 value={form.numero_tramite_rectificacion}
                 onChange={(e) => set("numero_tramite_rectificacion", e.target.value)}
                 placeholder="RT-2026-0456"
+                disabled={!editable}
               />
             </div>
           )}
           <div className="grid gap-1.5">
             <Label>Canal de riesgo</Label>
-            <Select value={form.canal_riesgo || undefined} onValueChange={(v) => set("canal_riesgo", v)}>
+            <Select value={form.canal_riesgo || undefined} onValueChange={(v) => set("canal_riesgo", v)} disabled={!editable}>
               <SelectTrigger><SelectValue placeholder="Selecciona canal" /></SelectTrigger>
               <SelectContent>
                 {["Verde","Amarillo","Rojo"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
@@ -881,6 +909,7 @@ function TabInfo({ exp }: { exp: any }) {
               tasaCambioUsada={exp.tasa_cambio_usada}
               paisOrigen={form.pais_origen || ""}
               paisOrigenCodigo={form.pais_origen_codigo || ""}
+              disabled={!editable}
             />
           </div>
           <HerramientasDgaVuce />
@@ -905,18 +934,21 @@ function TabInfo({ exp }: { exp: any }) {
                     type="text"
                     inputMode="decimal"
                     value={display}
-                    onFocus={() => setFocusedMoney(k)}
+                    onFocus={() => { if (!editable) return; setFocusedMoney(k); }}
                     onChange={(e) => {
+                      if (!editable) return;
                       const v = e.target.value.replace(/[$,\s]/g, "");
                       if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set(k, v);
                     }}
                     onBlur={(e) => {
+                      if (!editable) return;
                       const v = e.target.value.replace(/[$,\s]/g, "");
                       if (v !== "" && !isNaN(Number(v))) set(k, Number(v).toFixed(2));
                       setFocusedMoney(null);
                     }}
                     placeholder="$0.00"
                     className="tabular-nums"
+                    disabled={!editable}
                   />
                   {helper && <p className="text-[11px] text-muted-foreground leading-tight">{helper}</p>}
                 </div>
@@ -968,7 +1000,7 @@ function TabInfo({ exp }: { exp: any }) {
                   </div>
                   <div className="grid gap-1.5 md:col-span-2">
                     <Label>Régimen Aduanero</Label>
-                    <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => set("regimen_aduanero", v)}>
+                    <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => set("regimen_aduanero", v)} disabled={!editable}>
                       <SelectTrigger><SelectValue placeholder="Selecciona régimen" /></SelectTrigger>
                       <SelectContent>
                         {REGIMENES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
@@ -982,6 +1014,7 @@ function TabInfo({ exp }: { exp: any }) {
                       value={form.acuerdo_comercial}
                       onChange={(nombre) => set("acuerdo_comercial", nombre)}
                       placeholder="N/A / Ninguno"
+                      disabled={!editable}
                     />
                   </div>
                   <ServicioAduaneroFields
@@ -990,6 +1023,7 @@ function TabInfo({ exp }: { exp: any }) {
                     onChange={(tipo, cant) =>
                       setForm((f) => ({ ...f, tipo_despacho_aduanero: tipo, cantidad_despacho: cant }))
                     }
+                    disabled={!editable}
                   />
                   <div className="grid gap-1.5">
                     <Label className="flex items-center gap-1.5">
@@ -1015,6 +1049,7 @@ function TabInfo({ exp }: { exp: any }) {
               flete={Number(form.flete) || 0}
               otros={Number(form.otros) || 0}
               servicioAduaneroUsd={servicioAd.servicioUsd}
+              disabled={!editable}
             />
           </div>
 
@@ -1024,12 +1059,13 @@ function TabInfo({ exp }: { exp: any }) {
               form={form}
               set={set}
               servicioAduaneroUsd={servicioAd.servicioUsd}
+              disabled={!editable}
             />
           </div>
 
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
             <Label>Observaciones</Label>
-            <Textarea rows={3} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} />
+            <Textarea rows={3} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} disabled={!editable} />
           </div>
         </CardContent>
       </Card>
@@ -1038,9 +1074,11 @@ function TabInfo({ exp }: { exp: any }) {
         <Button size="lg" variant="outline" onClick={() => refrescarExpediente(qc, exp.id)} className="shadow-lg">
           <RefreshCw className="h-4 w-4 mr-1" /> Refrescar
         </Button>
-        <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
-          {save.isPending ? "Guardando…" : "Guardar cambios"}
-        </Button>
+        {editable && (
+          <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
+            {save.isPending ? "Guardando…" : "Guardar cambios"}
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -2424,6 +2462,7 @@ function MercanciaItemsBlock({
   paisOrigen,
   paisOrigenCodigo,
   servicioAduaneroUsd = 0,
+  disabled = false,
 }: {
   expedienteId: string;
   seguro: number;
@@ -2434,6 +2473,7 @@ function MercanciaItemsBlock({
   paisOrigen?: string;
   paisOrigenCodigo?: string;
   servicioAduaneroUsd?: number;
+  disabled?: boolean;
 }) {
   const qc = useQueryClient();
   const { data: items } = useQuery({
@@ -2646,7 +2686,7 @@ function MercanciaItemsBlock({
     <div className="grid gap-3 pt-2 border-t">
       <div className="flex items-center justify-between pt-2">
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Detalle de mercancía</div>
-        <Button size="sm" variant="outline" onClick={startNew}><Plus className="h-4 w-4 mr-1" />Agregar ítem</Button>
+        <Button size="sm" variant="outline" onClick={startNew} disabled={disabled}><Plus className="h-4 w-4 mr-1" />Agregar ítem</Button>
       </div>
       <div className="rounded-md border overflow-auto max-h-[70vh]">
         <table className="w-full text-sm min-w-[1400px]">
@@ -2714,9 +2754,9 @@ function MercanciaItemsBlock({
                       <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{rd(c.itbis)}</td>
                       <td className="px-2 py-2 text-right tabular-nums bg-emerald-50/60 font-semibold">{rd(c.total)}</td>
                     <td className="px-2 py-2 text-right whitespace-nowrap">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(it)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => duplicar.mutate(it)} title="Duplicar línea"><Copy className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => eliminar.mutate(it.id)} title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(it)} disabled={disabled} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => duplicar.mutate(it)} disabled={disabled} title="Duplicar línea"><Copy className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => eliminar.mutate(it.id)} disabled={disabled} title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></Button>
                     </td>
                   </tr>
                 );
@@ -2996,8 +3036,8 @@ function MercanciaItemsBlock({
 }
 
 function LiquidacionEstimadaBlock({
-  exp, seguro, flete, otros, servicioAduaneroUsd = 0,
-}: { exp: any; seguro: number; flete: number; otros: number; servicioAduaneroUsd?: number }) {
+  exp, seguro, flete, otros, servicioAduaneroUsd = 0, disabled = false,
+}: { exp: any; seguro: number; flete: number; otros: number; servicioAduaneroUsd?: number; disabled?: boolean }) {
   const { data: items } = useQuery({
     queryKey: ["mercancia-items", exp.id],
     queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
@@ -3033,7 +3073,9 @@ function LiquidacionEstimadaBlock({
               type="date"
               className="w-44"
               value={tc.fecha}
+              disabled={disabled}
               onChange={async (e) => {
+                if (disabled) return;
                 const v = e.target.value;
                 if (!v) return;
                 const { error } = await supabase.from("expedientes").update({ fecha_tasa_manual: v } as any).eq("id", exp.id);
@@ -3047,7 +3089,8 @@ function LiquidacionEstimadaBlock({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { setRateInput(tasa != null ? tasa.toFixed(4) : ""); setEditandoTasa(true); }}
+              disabled={disabled}
+              onClick={() => { if (disabled) return; setRateInput(tasa != null ? tasa.toFixed(4) : ""); setEditandoTasa(true); }}
             >
               Editar tasa
             </Button>
@@ -3079,7 +3122,8 @@ function LiquidacionEstimadaBlock({
                 inputMode="decimal"
                 placeholder="59.4100"
                 value={rateInput}
-                onChange={(e) => { const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,4}$/.test(v)) setRateInput(v); }}
+                disabled={disabled}
+                onChange={(e) => { if (disabled) return; const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,4}$/.test(v)) setRateInput(v); }}
               />
             </div>
             <a href="https://www.aduanas.gob.do/tasa-de-cambio/" target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 underline flex items-center gap-1 pb-2.5">
@@ -3087,13 +3131,13 @@ function LiquidacionEstimadaBlock({
             </a>
             <div className="ml-auto flex items-center gap-2">
               {editandoTasa && (
-                <Button variant="ghost" size="sm" onClick={() => { setEditandoTasa(false); setRateInput(""); }}>
+                <Button variant="ghost" size="sm" onClick={() => { setEditandoTasa(false); setRateInput(""); }} disabled={disabled}>
                   Cancelar
                 </Button>
               )}
               <Button
                 size="sm"
-                disabled={tc.guardar.isPending || !rateInput || Number(rateInput) <= 0}
+                disabled={disabled || tc.guardar.isPending || !rateInput || Number(rateInput) <= 0}
                 onClick={() => tc.guardar.mutate(Number(rateInput), {
                   onSuccess: () => { toast.success(`Tasa RD$ ${rateInput} guardada para ${tc.fechaLabel}`); setRateInput(""); setEditandoTasa(false); },
                   onError: (e: any) => toast.error(e.message),
@@ -3160,7 +3204,7 @@ function LiquidacionEstimadaBlock({
   );
 }
 
-function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0 }: { exp: any; form: any; set: (k: string, v: any) => void; servicioAduaneroUsd?: number }) {
+function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabled = false }: { exp: any; form: any; set: (k: string, v: any) => void; servicioAduaneroUsd?: number; disabled?: boolean }) {
   const tc = useTasaCambioForExpediente(exp);
   // Estimado total en US$: recalculado a partir de items — para simplicidad, tomamos del form (mercancía se recalcula por línea).
   const { data: items } = useQuery({
@@ -3191,11 +3235,11 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0 }: { ex
       <div className="grid gap-3 md:grid-cols-3">
         <div className="grid gap-1.5">
           <Label>N.º Liquidación SIGA</Label>
-          <Input value={form.liq_siga_numero || ""} onChange={(e) => set("liq_siga_numero", e.target.value)} placeholder="LIQ-2026-000123" />
+          <Input value={form.liq_siga_numero || ""} onChange={(e) => set("liq_siga_numero", e.target.value)} placeholder="LIQ-2026-000123" disabled={disabled} />
         </div>
         <div className="grid gap-1.5">
           <Label>Estado</Label>
-          <Select value={form.liq_siga_estado || undefined} onValueChange={(v) => set("liq_siga_estado", v)}>
+          <Select value={form.liq_siga_estado || undefined} onValueChange={(v) => set("liq_siga_estado", v)} disabled={disabled}>
             <SelectTrigger><SelectValue placeholder="Selecciona estado" /></SelectTrigger>
             <SelectContent>
               {["Inspeccionada", "Liberada", "Con observación", "Rectificada"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -3205,8 +3249,8 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0 }: { ex
         <div className="grid gap-1.5">
           <Label>Total oficial (RD$)</Label>
           <Input type="text" inputMode="decimal" value={form.liq_oficial_total ?? ""}
-            onChange={(e) => { const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("liq_oficial_total", v); }}
-            placeholder="0.00" className="tabular-nums" />
+            onChange={(e) => { if (disabled) return; const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("liq_oficial_total", v); }}
+            placeholder="0.00" className="tabular-nums" disabled={disabled} />
         </div>
       </div>
       <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
