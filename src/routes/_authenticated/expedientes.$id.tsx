@@ -1049,6 +1049,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
               flete={Number(form.flete) || 0}
               otros={Number(form.otros) || 0}
               servicioAduaneroUsd={servicioAd.servicioUsd}
+              disabled={!editable}
             />
           </div>
 
@@ -1058,6 +1059,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
               form={form}
               set={set}
               servicioAduaneroUsd={servicioAd.servicioUsd}
+              disabled={!editable}
             />
           </div>
 
