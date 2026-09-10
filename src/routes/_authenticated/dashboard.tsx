@@ -96,7 +96,7 @@ function Dashboard() {
         <KPI icon={Inbox} label="SOLICITUDES RECIBIDAS" value={solicitudesActivas} tone="primary" />
         <KPI icon={FolderKanban} label="EXPEDIENTES EN PROCESOS" value={expedientesEnProceso} tone="info" />
         <KPI icon={CheckCircle2} label="FACTURADOS" value={expedientesCerrados} tone="success" />
-        <KPI icon={FileWarning} label="Permisos por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" />
+        <KPI icon={FileWarning} label="Permisos VUCE por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" />
         <KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" />
         <KPI icon={AlertTriangle} label="Alertas activas" value={reminders.length} tone="danger" />
       </div>
@@ -195,7 +195,7 @@ type GroupDef = { key: string; label: string; emoji: string; kinds: ReminderKind
 const REMINDER_GROUPS: GroupDef[] = [
   { key: "hitos", label: "Hitos atrasados / críticos", emoji: "🔴", kinds: ["hito_atrasado", "hito_proximo"] },
   { key: "eta", label: "ETA / Expedientes", emoji: "🟡", kinds: ["eta_proximo", "expediente_inactivo"] },
-  { key: "permisos", label: "Permisos por vencer", emoji: "🟠", kinds: ["permiso_vencido", "permiso_por_vencer"] },
+  { key: "permisos", label: "Permisos VUCE por vencer", emoji: "🟠", kinds: ["permiso_vencido", "permiso_por_vencer"] },
   { key: "transportes", label: "Transportes retrasados", emoji: "🚚", kinds: ["transporte_retrasado"] },
   { key: "solicitudes", label: "Solicitudes sin convertir", emoji: "📥", kinds: ["solicitud_sin_convertir"] },
 ];

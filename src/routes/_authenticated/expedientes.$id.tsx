@@ -69,7 +69,7 @@ export const Route = createFileRoute("/_authenticated/expedientes/$id")({
 const TIPOS_DOC = [
   "Factura proforma","Factura comercial","Bill of Lading","Guía aérea","Lista de empaque",
   "Certificado de origen","Certificado sanitario","Certificado fitosanitario","Certificado de análisis",
-  "Permiso previo","Orden de compra",
+  "Permiso VUCE previo","Orden de compra",
   "Carta de instrucción","Póliza de seguro","DUA","Evidencia de entrega","Otro",
 ];
 
@@ -124,7 +124,7 @@ const TAB_LABELS: Record<string, string> = {
   checklist: "Seguimiento Operativo",
   liqfinal: "Liquidación Final",
   docs: "Documentos",
-  permisos: "Permisos",
+  permisos: "Permisos VUCE",
   transportes: "Transportes",
   recepcion: "Recepción",
   inc: "Incidencias",
@@ -2370,17 +2370,17 @@ function TabPermisosExp({ expedienteId }: { expedienteId: string }) {
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="text-base">Permisos vinculados ({data?.length ?? 0})</CardTitle>
-        <Button asChild size="sm"><Link to="/permisos/nuevo" search={{ expediente: expedienteId }}><Plus className="h-4 w-4 mr-1" /> Agregar Permiso</Link></Button>
+        <CardTitle className="text-base">Permisos VUCE vinculados ({data?.length ?? 0})</CardTitle>
+        <Button asChild size="sm"><Link to="/permisos/nuevo" search={{ expediente: expedienteId }}><Plus className="h-4 w-4 mr-1" /> Agregar Permiso VUCE</Link></Button>
       </CardHeader>
       <CardContent className="p-0">
         {(!data || data.length === 0) ? (
-          <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin permisos vinculados.</div>
+          <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin permisos VUCE vinculados.</div>
         ) : (
           <table className="w-full text-sm">
             <thead className="text-xs text-muted-foreground border-b bg-muted/20">
               <tr>
-                <th className="text-left px-4 py-2">N° Permiso</th>
+                <th className="text-left px-4 py-2">N° Permiso VUCE</th>
                 <th className="text-left">Tipo</th>
                 <th className="text-left">Institución</th>
                 <th className="text-left">Estado</th>

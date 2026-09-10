@@ -17,7 +17,7 @@ type Result = {
 const KIND_META = {
   expediente: { label: "Expedientes", icon: FolderKanban },
   solicitud: { label: "Solicitudes", icon: Inbox },
-  permiso: { label: "Permisos", icon: FileCheck2 },
+  permiso: { label: "Permisos VUCE", icon: FileCheck2 },
   transporte: { label: "Transportes", icon: Truck },
   cliente: { label: "Clientes", icon: Users },
 } as const;

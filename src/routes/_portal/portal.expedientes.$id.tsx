@@ -169,7 +169,7 @@ function PortalExpedienteDetalle() {
                   <div className="text-muted-foreground">País de origen: <span className="font-medium text-foreground">{(expediente as any).pais_origen}</span></div>
                 )}
                 <div className="text-muted-foreground">
-                  N° de Permiso (VUCE):{" "}
+                  N° Permiso VUCE:{" "}
                   <span className="font-medium text-foreground">
                     {(expediente as any).numero_vuce ?? "No aplica"}
                   </span>
@@ -337,7 +337,7 @@ function PortalExpedienteDetalle() {
       {permisos && permisos.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Permisos</CardTitle>
+            <CardTitle className="text-base">Permisos VUCE</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">

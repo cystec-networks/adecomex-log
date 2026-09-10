@@ -52,7 +52,7 @@ function Permisos() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Permiso movido a la papelera");
+      toast.success("Permiso VUCE movido a la papelera");
       qc.invalidateQueries({ queryKey: ["permisos"] });
       qc.invalidateQueries({ queryKey: ["papelera-permisos"] });
       setToTrash(null);
@@ -134,15 +134,15 @@ function Permisos() {
     <div className="p-4 md:p-6 space-y-6 max-w-[1600px] mx-auto">
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex-1 min-w-[240px]">
-          <h1 className="font-display text-2xl font-bold flex items-center gap-2"><FileCheck2 className="h-6 w-6" /> Permisos</h1>
-          <p className="text-sm text-muted-foreground">Permisos gubernamentales vinculados a expedientes.</p>
+          <h1 className="font-display text-2xl font-bold flex items-center gap-2"><FileCheck2 className="h-6 w-6" /> Permisos VUCE</h1>
+          <p className="text-sm text-muted-foreground">Permisos VUCE gubernamentales vinculados a expedientes.</p>
         </div>
-        <Button asChild><Link to="/permisos/nuevo"><Plus className="h-4 w-4 mr-1" /> Nuevo permiso</Link></Button>
+        <Button asChild><Link to="/permisos/nuevo"><Plus className="h-4 w-4 mr-1" /> Nuevo permiso VUCE</Link></Button>
       </div>
 
       <Card className="overflow-hidden">
         <CardHeader className="flex-row items-center gap-3 flex-wrap">
-          <CardTitle className="text-base flex-1 min-w-[160px]">{rows.length} permisos</CardTitle>
+          <CardTitle className="text-base flex-1 min-w-[160px]">{rows.length} permisos VUCE</CardTitle>
           <Select value={estado} onValueChange={setEstado}>
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -161,13 +161,13 @@ function Permisos() {
         </CardHeader>
         <CardContent className="p-0">
           {rows.length === 0 ? (
-            <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin permisos.</div>
+            <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin permisos VUCE.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-[13px] border-collapse">
                 <thead className="bg-muted/30 border-b">
                   <tr>
-                    <Th k="numero" className="whitespace-nowrap">N° Permiso</Th>
+                    <Th k="numero" className="whitespace-nowrap">N° Permiso VUCE</Th>
                     <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">N° Resolución</th>
                     <Th k="expediente" className="whitespace-nowrap">Expediente</Th>
                     <Th k="cliente" className="whitespace-nowrap">Cliente</Th>

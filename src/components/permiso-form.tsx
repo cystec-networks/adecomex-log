@@ -144,7 +144,7 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
       qc.invalidateQueries({ queryKey: ["permisos"] });
       qc.invalidateQueries({ queryKey: ["permiso", id] });
       qc.invalidateQueries({ queryKey: ["permisos-por-expediente"] });
-      toast.success(mode === "new" ? `Permiso ${row.numero} creado` : "Permiso actualizado");
+      toast.success(mode === "new" ? `Permiso VUCE ${row.numero} creado` : "Permiso VUCE actualizado");
       if (mode === "new") {
         if (expedienteId) nav({ to: "/expedientes/$id", params: { id: expedienteId } });
         else nav({ to: "/permisos" });
@@ -164,17 +164,17 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
         </Button>
         <div className="flex-1 min-w-0">
           <h1 className="font-display text-2xl font-bold">
-            {mode === "new" ? "Nuevo Permiso" : `Permiso ${form.numero}`}
+            {mode === "new" ? "Nuevo Permiso VUCE" : `Permiso VUCE ${form.numero}`}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {mode === "new" ? "Registra un permiso gubernamental vinculado a un expediente." : "Edita los datos del permiso."}
+            {mode === "new" ? "Registra un permiso VUCE gubernamental vinculado a un expediente." : "Edita los datos del permiso VUCE."}
           </p>
         </div>
         <Button variant="outline" onClick={() => nav({ to: "/permisos" })}>
           <X className="h-4 w-4 mr-1" />Cancelar
         </Button>
         <Button onClick={() => save.mutate()} disabled={save.isPending}>
-          <Check className="h-4 w-4 mr-1" />{save.isPending ? "Guardando…" : mode === "new" ? "Crear permiso" : "Guardar cambios"}
+          <Check className="h-4 w-4 mr-1" />{save.isPending ? "Guardando…" : mode === "new" ? "Crear permiso VUCE" : "Guardar cambios"}
         </Button>
       </div>
 
@@ -208,11 +208,11 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
 
       <Card>
         <CardHeader className="pb-3 border-b">
-          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Datos del Permiso</CardTitle>
+          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Datos del Permiso VUCE</CardTitle>
         </CardHeader>
         <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div className="grid gap-1.5">
-            <Label>N° Permiso</Label>
+            <Label>N° Permiso VUCE</Label>
             <Input
               value={form.numero}
               onChange={(e) => set("numero", e.target.value)}
@@ -221,7 +221,7 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
           </div>
           <div className="grid gap-1.5"><Label>N° Resolución</Label><Input value={form.numero_resolucion} onChange={(e) => set("numero_resolucion", e.target.value)} /></div>
           <div className="grid gap-1.5">
-            <Label>Tipo de Permiso</Label>
+            <Label>Tipo de Permiso VUCE</Label>
             <Select value={form.tipo || undefined} onValueChange={(v) => set("tipo", v)}>
               <SelectTrigger><SelectValue placeholder="Selecciona tipo" /></SelectTrigger>
               <SelectContent>{PERMISO_TIPOS.map((t) => <SelectItem key={t.v} value={t.v}>{t.l}</SelectItem>)}</SelectContent>
