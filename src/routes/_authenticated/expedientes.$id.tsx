@@ -160,6 +160,11 @@ function DetalleExpediente() {
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const dragTab = useRef<string | null>(null);
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const { data: roles } = useMyRoles();
+  const canEditExpediente = (roles ?? []).some((r) =>
+    ["admin", "finanzas", "operaciones", "agente_aduanal", "contabilidad"].includes(r),
+  );
 
   // Aviso en tiempo real cuando otro usuario actualiza este expediente.
   useEffect(() => {
