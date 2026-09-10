@@ -80,7 +80,7 @@ function Dashboard() {
     return (Date.now() - new Date(ref).getTime()) / 86400000 > 15;
   }).length;
 
-  const expedientesEnProceso = stats?.expedientes.filter((e) => e.estado === "digitar" || e.estado === "en_transito" || e.estado === "presentar" || e.estado === "verificar" || e.estado === "entregado").length ?? 0;
+  const expedientesEnTransito = stats?.expedientes.filter((e) => e.estado === "en_transito").length ?? 0;
   const expedientesPorLlegar = stats?.expedientes.filter((e) => {
     if (!e.fecha_compromiso) return false;
     if (["facturar", "entregado"].includes(e.estado)) return false;
