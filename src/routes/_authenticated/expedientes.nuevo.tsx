@@ -120,7 +120,8 @@ function NuevoExpediente() {
 
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-5">
+    <div className="bg-emerald-50/40 min-h-screen">
+      <div className="p-6 max-w-5xl mx-auto space-y-5">
       <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" size="sm" asChild>
           <Link to={sol ? "/solicitudes/$id" : "/expedientes"} params={sol ? { id: sol.id } : undefined as any}>
@@ -229,6 +230,7 @@ function NuevoExpediente() {
           <Check className="h-4 w-4 mr-1" />{confirmar.isPending ? "Creando…" : "Confirmar conversión"}
         </Button>
       </div>
+    </div>
     </div>
   );
 }
