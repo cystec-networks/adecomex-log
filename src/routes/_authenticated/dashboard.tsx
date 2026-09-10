@@ -7,6 +7,7 @@ import { AlertTriangle, Inbox, FolderKanban, CheckCircle2, FileWarning, Trending
 import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { daysFromToday } from "@/lib/dates";
 import { ESTADO_LABEL } from "@/lib/estados-expediente";
 import { cotizacionEstadoLabel, COTIZACION_ESTADO_CLASS } from "@/lib/estados-cotizacion";
 
@@ -45,11 +46,10 @@ function Dashboard() {
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
-      const [cot, ord, exp, inc, per, tra] = await Promise.all([
+      const [cot, ord, exp, per, tra] = await Promise.all([
         supabase.from("cotizaciones").select("id,numero,estado,created_at,updated_at,clientes(nombre)").is("eliminado_en", null),
         supabase.from("ordenes").select("id,cotizacion_id").is("eliminado_en", null),
-        supabase.from("expedientes").select("id,numero,estado,etapa_actual,seguro,flete,otros,fecha_compromiso,created_at,updated_at").is("eliminado_en", null),
-        supabase.from("incidencias").select("id,estado,severidad"),
+        supabase.from("expedientes").select("id,numero,estado,etapa_actual,created_at").is("eliminado_en", null),
         supabase.from("permisos").select("id,estado,fecha_vencimiento").is("eliminado_en", null),
         supabase.from("transportes").select("id,estado,eta").is("eliminado_en", null),
       ]);
@@ -57,7 +57,6 @@ function Dashboard() {
         cotizaciones: cot.data ?? [],
         ordenes: ord.data ?? [],
         expedientes: exp.data ?? [],
-        incidencias: inc.data ?? [],
         permisos: per.data ?? [],
         transportes: tra.data ?? [],
       };
@@ -101,12 +100,12 @@ function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <Link to="/cotizaciones" aria-label="Ver cotizaciones sin convertir"><KPI icon={Inbox} label="COTIZACIONES SIN CONVERTIR" value={cotizacionesSinConvertir} tone="primary" sub={cotizacionesSinMovimiento > 0 ? `${cotizacionesSinMovimiento} sin movimiento +15 días` : undefined} /></Link>
-        <Link to="/expedientes" search={{ estado: "digitar,en_transito,presentar,verificar,entregado" }} aria-label="Ver expedientes en proceso"><KPI icon={FolderKanban} label="EXPEDIENTES EN PROCESOS" value={expedientesEnProceso} tone="info" /></Link>
-        <Link to="/expedientes" search={{ estado: "facturar" }} aria-label="Ver expedientes facturados"><KPI icon={CheckCircle2} label="FACTURADOS" value={expedientesCerrados} tone="success" /></Link>
-        <Link to="/permisos" search={{ vencimiento: 15 }} aria-label="Ver permisos VUCE por vencer"><KPI icon={FileWarning} label="Permisos VUCE por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" /></Link>
-        <Link to="/transportes" search={{ estado: "en_transito,programado" }} aria-label="Ver transportes en tránsito"><KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" /></Link>
-        <Link to="/dashboard" hash="atencion-requerida" aria-label="Ver alertas activas"><KPI icon={AlertTriangle} label="Alertas activas" value={reminders.length} tone="danger" /></Link>
+        <Link to="/cotizaciones" search={{ sinConvertir: true }} aria-label="Ver cotizaciones sin convertir" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Inbox} label="COTIZACIONES SIN CONVERTIR" value={cotizacionesSinConvertir} tone="primary" sub={cotizacionesSinMovimiento > 0 ? `${cotizacionesSinMovimiento} sin movimiento +15 días` : undefined} /></Link>
+        <Link to="/expedientes" search={{ estado: "digitar,en_transito,presentar,verificar,entregado" }} aria-label="Ver expedientes en proceso" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FolderKanban} label="EXPEDIENTES EN PROCESOS" value={expedientesEnProceso} tone="info" /></Link>
+        <Link to="/expedientes" search={{ estado: "facturar" }} aria-label="Ver expedientes facturados" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={CheckCircle2} label="FACTURADOS" value={expedientesCerrados} tone="success" /></Link>
+        <Link to="/permisos" search={{ vencimiento: 15 }} aria-label="Ver permisos VUCE por vencer" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FileWarning} label="Permisos VUCE por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" /></Link>
+        <Link to="/transportes" search={{ estado: "en_transito,programado" }} aria-label="Ver transportes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" /></Link>
+        <Link to="/dashboard" hash="atencion-requerida" aria-label="Ver alertas activas" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={AlertTriangle} label="Alertas activas" value={reminders.length} tone="danger" /></Link>
       </div>
 
       <div id="atencion-requerida" className="scroll-mt-4"><RemindersPanel /></div>
