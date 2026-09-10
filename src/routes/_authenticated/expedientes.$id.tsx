@@ -809,7 +809,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
         <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
             <Label>Descripción</Label>
-            <Textarea rows={3} value={form.descripcion_mercancia} onChange={(e) => set("descripcion_mercancia", e.target.value)} />
+            <Textarea rows={3} value={form.descripcion_mercancia} onChange={(e) => set("descripcion_mercancia", e.target.value)} disabled={!editable} />
           </div>
           <div className="grid gap-1.5">
             <Label>Peso neto (kg)</Label>
@@ -822,6 +822,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
                 if (v === "" || /^\d*\.?\d*$/.test(v)) set("peso_neto", v);
               }}
               placeholder="0.00"
+              disabled={!editable}
             />
           </div>
           <div className="grid gap-1.5">
@@ -835,9 +836,10 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
                 if (v === "" || /^\d*\.?\d*$/.test(v)) set("peso_bruto", v);
               }}
               placeholder="0.00"
+              disabled={!editable}
             />
           </div>
-          <AutoField label="Preferencia comercial" value={form.preferencia_comercial} onChange={(v) => set("preferencia_comercial", v)} suggestion={sug.preferencia_comercial ?? []} />
+          <AutoField label="Preferencia comercial" value={form.preferencia_comercial} onChange={(v) => set("preferencia_comercial", v)} suggestion={sug.preferencia_comercial ?? []} disabled={!editable} />
           {(() => {
             const p = (form.preferencia_comercial || "").trim().toLowerCase();
             const showCert = p !== "" && p !== "ninguna" && p !== "no aplica" && p !== "n/a";
@@ -848,6 +850,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
                   value={form.numero_certificado_origen}
                   onChange={(e) => set("numero_certificado_origen", e.target.value)}
                   placeholder="CO-2026-00123"
+                  disabled={!editable}
                 />
               </div>
             ) : null;
@@ -859,6 +862,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
               onChange={(v) => set("numeros_contenedores", v)}
               suggestions={sug.numeros_contenedores}
               placeholder="MSKU1234567, TCLU7654321…"
+              disabled={!editable}
             />
           </div>
           <div className="grid gap-1.5">
@@ -867,6 +871,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
               <Switch
                 checked={form.rectificacion_tecnica}
                 onCheckedChange={(v) => set("rectificacion_tecnica", v)}
+                disabled={!editable}
               />
               <span className="text-sm text-muted-foreground">
                 {form.rectificacion_tecnica ? "Sí" : "No"}
@@ -880,12 +885,13 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
                 value={form.numero_tramite_rectificacion}
                 onChange={(e) => set("numero_tramite_rectificacion", e.target.value)}
                 placeholder="RT-2026-0456"
+                disabled={!editable}
               />
             </div>
           )}
           <div className="grid gap-1.5">
             <Label>Canal de riesgo</Label>
-            <Select value={form.canal_riesgo || undefined} onValueChange={(v) => set("canal_riesgo", v)}>
+            <Select value={form.canal_riesgo || undefined} onValueChange={(v) => set("canal_riesgo", v)} disabled={!editable}>
               <SelectTrigger><SelectValue placeholder="Selecciona canal" /></SelectTrigger>
               <SelectContent>
                 {["Verde","Amarillo","Rojo"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
