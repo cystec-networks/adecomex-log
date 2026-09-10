@@ -453,18 +453,18 @@ function Expedientes() {
           {filtered.length === 0 && (
             <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin expedientes. Crea uno con "Nuevo Expediente" o súbelo por OCR.</div>
           )}
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-[70vh]">
             {gruposVisibles.map((g) => {
               const rows = grupos[g];
               if (rows.length === 0) return null;
               return (
                 <div key={g}>
-                  <div className="px-3 py-2 bg-muted/60 border-y flex items-center gap-2 sticky top-0 z-10">
+                  <div className="px-3 py-2 bg-muted/60 border-y flex items-center gap-2 sticky top-0 z-10 h-[33px]">
                     <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">{grupoLabel[g]}</span>
                     <Badge variant="secondary" className="text-[10px]">{rows.length}</Badge>
                   </div>
                   <table className="w-full text-[13px] border-separate border-spacing-0">
-                    <thead className="bg-muted/30 border-b">
+                    <thead className="sticky-table-header bg-muted/30 border-b [&_th]:top-[33px]">
                       <tr>
                         <Th k="numero" className="px-2 whitespace-nowrap">Expediente</Th>
                         <Th k="cliente" className="px-2 whitespace-nowrap">Cliente</Th>
