@@ -432,6 +432,11 @@ function DetalleExpediente() {
         <TabsContent value="aud"><TabAuditoria expedienteId={id} /></TabsContent>
       </div>
       </Tabs>
+      {canEditExpediente && !modoEdicion && (
+        <Button onClick={() => setModoEdicion(true)} className="fixed bottom-6 right-24 z-30 shadow-lg" size="lg">
+          <Pencil className="h-4 w-4 mr-1" /> Editar
+        </Button>
+      )}
     </div>
   );
 }
