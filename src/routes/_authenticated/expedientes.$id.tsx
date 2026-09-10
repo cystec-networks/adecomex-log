@@ -396,8 +396,8 @@ function DetalleExpediente() {
             );
           })}
         </TabsList>
-
-
+      </div>
+      <div className="px-6">
         <TabsContent value="info"><TabInfo exp={exp} /></TabsContent>
         <TabsContent value="checklist"><ChecklistHitos expedienteId={id} /></TabsContent>
         
@@ -411,8 +411,8 @@ function DetalleExpediente() {
         <TabsContent value="cost"><TabCostos expedienteId={id} exp={exp} /></TabsContent>
         <TabsContent value="costprod"><TabCostosProducto expedienteId={id} /></TabsContent>
         <TabsContent value="aud"><TabAuditoria expedienteId={id} /></TabsContent>
+      </div>
       </Tabs>
-    </div>
     </div>
   );
 }
