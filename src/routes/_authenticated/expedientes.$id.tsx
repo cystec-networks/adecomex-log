@@ -770,9 +770,9 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
           <p className="text-xs text-muted-foreground">Documentos oficiales ante DGA y VUCE</p>
         </CardHeader>
         <CardContent className="pt-5 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} />
-          <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} />
-          <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} />
+          <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} />
+          <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} />
+          <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} disabled={!editable} />
           <div className="grid gap-1.5">
             <Label>Puerto de arribo</Label>
             <DgaCombobox
@@ -781,6 +781,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
               codigo={form.puerto_arribo_codigo}
               onChange={(nombre, codigo) => setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo }))}
               placeholder="Buscar puerto (catálogo DGA)"
+              disabled={!editable}
             />
             {form.puerto_arribo && !form.puerto_arribo_codigo && (
               <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo para el XML.</span>
@@ -794,6 +795,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
               codigo={form.area_aduanera_codigo}
               onChange={(nombre, codigo) => setForm((f) => ({ ...f, area_aduanera: nombre, area_aduanera_codigo: codigo }))}
               placeholder="Buscar área (catálogo DGA)"
+              disabled={!editable}
             />
           </div>
         </CardContent>
