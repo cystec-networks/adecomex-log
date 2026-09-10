@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
 
-type TipoFilter = "importacion" | "exportacion" | "todos";
+type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 
 export const Route = createFileRoute("/_authenticated/expedientes/")({
   validateSearch: (s: Record<string, unknown>): { tipo?: TipoFilter } => {
