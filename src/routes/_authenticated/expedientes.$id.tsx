@@ -3073,7 +3073,9 @@ function LiquidacionEstimadaBlock({
               type="date"
               className="w-44"
               value={tc.fecha}
+              disabled={disabled}
               onChange={async (e) => {
+                if (disabled) return;
                 const v = e.target.value;
                 if (!v) return;
                 const { error } = await supabase.from("expedientes").update({ fecha_tasa_manual: v } as any).eq("id", exp.id);
