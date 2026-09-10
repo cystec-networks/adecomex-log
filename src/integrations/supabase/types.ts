@@ -756,6 +756,7 @@ export type Database = {
           pct_gravamen: number | null
           pct_gravamen_preferencial: number | null
           pct_isc: number | null
+          pct_itbis: number | null
           updated_at: string
           verificado: boolean
           verificado_at: string | null
@@ -771,6 +772,7 @@ export type Database = {
           pct_gravamen?: number | null
           pct_gravamen_preferencial?: number | null
           pct_isc?: number | null
+          pct_itbis?: number | null
           updated_at?: string
           verificado?: boolean
           verificado_at?: string | null
@@ -786,6 +788,7 @@ export type Database = {
           pct_gravamen?: number | null
           pct_gravamen_preferencial?: number | null
           pct_isc?: number | null
+          pct_itbis?: number | null
           updated_at?: string
           verificado?: boolean
           verificado_at?: string | null

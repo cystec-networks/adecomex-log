@@ -2567,7 +2567,7 @@ function MercanciaItemsBlock({
   };
 
   // Auto-alimenta el catálogo con lo que digitó el usuario (solo si no existe o no está verificado; RLS bloquea las verificadas)
-  const autoLearnTasa = async (codigo: string, pctGravamen: number | null, aplicaIsc: boolean, pctIsc: number | null) => {
+  const autoLearnTasa = async (codigo: string, pctGravamen: number | null, aplicaIsc: boolean, pctIsc: number | null, pctItbis: number | null = null) => {
     if (!codigo) return;
     const existing = tasaByCodigo.get(codigo);
     if (existing?.verificado) return; // no tocar verificadas
@@ -2577,6 +2577,7 @@ function MercanciaItemsBlock({
       codigo_arancelario: codigo,
       aplica_isc: !!aplicaIsc,
       pct_isc: aplicaIsc ? pctIsc : null,
+      pct_itbis: pctItbis,
       origen_expediente_id: expedienteId,
     };
     if (pctGravamen != null) {
@@ -2625,7 +2626,7 @@ function MercanciaItemsBlock({
         const { error } = await supabase.from("mercancia_items").insert({ ...payload, expediente_id: expedienteId, item_no: nextNo });
         if (error) throw error;
       }
-      await autoLearnTasa(codigo, payload.pct_gravamen, payload.aplica_isc, payload.pct_isc);
+      await autoLearnTasa(codigo, payload.pct_gravamen, payload.aplica_isc, payload.pct_isc, payload.pct_itbis ?? null);
     },
     onSuccess: () => { toast.success(editingId ? "Ítem actualizado" : "Ítem agregado"); setOpen(false); setEditingId(null); setF(emptyForm); setValorUnitario(""); invalidate(); },
     onError: (e: any) => toast.error(e.message),
