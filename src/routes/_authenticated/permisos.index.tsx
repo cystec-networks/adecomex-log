@@ -161,7 +161,7 @@ function Permisos() {
         </CardHeader>
         <CardContent className="p-0">
           {rows.length === 0 ? (
-            <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin permisos.</div>
+            <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin permisos VUCE.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-[13px] border-collapse">
