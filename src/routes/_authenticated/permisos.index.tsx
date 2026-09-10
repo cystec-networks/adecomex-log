@@ -69,7 +69,8 @@ function Permisos() {
 
   const filtered = (data ?? []).filter((p: any) => {
     if (vencimiento) {
-      if (!p.fecha_vencimiento || p.estado === "rechazado" || p.estado === "vencido") return false;
+      if (!p.fecha_vencimiento) return false;
+      if (p.estado !== "solicitado" && p.estado !== "en_tramite") return false;
       const days = daysFromToday(p.fecha_vencimiento);
       if (days < 0 || days > vencimiento) return false;
     }
