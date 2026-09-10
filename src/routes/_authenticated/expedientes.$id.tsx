@@ -934,18 +934,21 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
                     type="text"
                     inputMode="decimal"
                     value={display}
-                    onFocus={() => setFocusedMoney(k)}
+                    onFocus={() => { if (!editable) return; setFocusedMoney(k); }}
                     onChange={(e) => {
+                      if (!editable) return;
                       const v = e.target.value.replace(/[$,\s]/g, "");
                       if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set(k, v);
                     }}
                     onBlur={(e) => {
+                      if (!editable) return;
                       const v = e.target.value.replace(/[$,\s]/g, "");
                       if (v !== "" && !isNaN(Number(v))) set(k, Number(v).toFixed(2));
                       setFocusedMoney(null);
                     }}
                     placeholder="$0.00"
                     className="tabular-nums"
+                    disabled={!editable}
                   />
                   {helper && <p className="text-[11px] text-muted-foreground leading-tight">{helper}</p>}
                 </div>
