@@ -583,9 +583,9 @@ function CuentasPorPagarPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-[70vh]">
             <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+              <thead className="sticky-table-header bg-muted/40 text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="text-left px-3 py-2">Proveedor</th>
                   <th className="text-left px-3 py-2">RNC</th>
