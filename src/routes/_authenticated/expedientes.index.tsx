@@ -139,6 +139,11 @@ function Expedientes() {
     if (estados.length > 0 && !estados.includes(e.estado)) return false;
     if (tipo !== "todos" && detectTipo(e) !== tipo) return false;
     if (soloUrgentes && !esUrgente(e)) return false;
+    if (etaParam === 7) {
+      if (!e.fecha_compromiso || ["facturar", "entregado"].includes(e.estado)) return false;
+      const d = daysFromToday(e.fecha_compromiso);
+      if (isNaN(d) || d < 0 || d > 7) return false;
+    }
     if (q && !norm(JSON.stringify(e)).includes(norm(q))) return false;
     return true;
   });
