@@ -189,7 +189,8 @@ function Expedientes() {
   const gruposVisibles = (
     tipo === "importacion" ? ["importacion"] :
     tipo === "exportacion" ? ["exportacion"] :
-    ["importacion", "exportacion", "otros"]
+    tipo === "facturados" ? ["facturados"] :
+    ["importacion", "exportacion", "facturados", "otros"]
   ) as Array<keyof typeof grupos>;
 
   const grupoLabel: Record<string, string> = {
