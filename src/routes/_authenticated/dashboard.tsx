@@ -3,14 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Inbox, FolderKanban, CheckCircle2, Clock, FileWarning, TrendingUp, Bell, Truck, Wallet, Scale } from "lucide-react";
+import { AlertTriangle, Inbox, FolderKanban, CheckCircle2, FileWarning, TrendingUp, Bell, Truck } from "lucide-react";
 import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { daysFromToday } from "@/lib/dates";
 import { ESTADO_LABEL } from "@/lib/estados-expediente";
 import { cotizacionEstadoLabel, COTIZACION_ESTADO_CLASS } from "@/lib/estados-cotizacion";
-import { calcImpuestosLinea } from "@/lib/impuestos";
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -26,7 +25,7 @@ function KPI({ icon: Icon, label, value, tone = "primary", sub }: any) {
     info: "bg-[var(--info)]/10 text-[var(--info)]",
   };
   return (
-    <Card>
+    <Card className="h-full cursor-pointer transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
           <div>
@@ -47,32 +46,19 @@ function Dashboard() {
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
-      const [cot, ord, exp, inc, docs, per, tra, fac, pag, mi] = await Promise.all([
+      const [cot, ord, exp, per, tra] = await Promise.all([
         supabase.from("cotizaciones").select("id,numero,estado,created_at,updated_at,clientes(nombre)").is("eliminado_en", null),
         supabase.from("ordenes").select("id,cotizacion_id").is("eliminado_en", null),
-        supabase.from("expedientes").select("id,numero,estado,etapa_actual,seguro,flete,otros,fecha_compromiso,created_at,updated_at").is("eliminado_en", null),
-        supabase.from("incidencias").select("id,estado,severidad"),
-        supabase.from("documentos").select("id,estado,fecha_vencimiento"),
+        supabase.from("expedientes").select("id,numero,estado,etapa_actual,created_at").is("eliminado_en", null),
         supabase.from("permisos").select("id,estado,fecha_vencimiento").is("eliminado_en", null),
         supabase.from("transportes").select("id,estado,eta").is("eliminado_en", null),
-        (supabase.from as any)("facturas_ecf").select("id,monto_total,estado").is("eliminado_en", null).neq("estado", "anulada"),
-        (supabase.from as any)("cxc_pagos").select("id,monto"),
-        supabase
-          .from("mercancia_items")
-          .select("expediente_id,valor_fob,cantidad,pct_gravamen,aplica_isc,pct_isc,pct_itbis,gravamen_real,isc_real,itbis_real")
-          .is("deleted_at", null),
       ]);
       return {
         cotizaciones: cot.data ?? [],
         ordenes: ord.data ?? [],
         expedientes: exp.data ?? [],
-        incidencias: inc.data ?? [],
-        documentos: docs.data ?? [],
         permisos: per.data ?? [],
         transportes: tra.data ?? [],
-        facturas: (fac as any).data ?? [],
-        pagos: (pag as any).data ?? [],
-        mercancia: mi.data ?? [],
       };
     },
   });
@@ -96,63 +82,12 @@ function Dashboard() {
 
   const expedientesEnProceso = stats?.expedientes.filter((e) => e.estado === "digitar" || e.estado === "en_transito" || e.estado === "presentar" || e.estado === "verificar" || e.estado === "entregado").length ?? 0;
   const expedientesCerrados = stats?.expedientes.filter((e) => e.estado === "facturar").length ?? 0;
-  const docsVencidos = stats?.documentos.filter((d) => {
-    if (!d.fecha_vencimiento) return false;
-    const days = daysFromToday(d.fecha_vencimiento);
-    return !isNaN(days) && days < 0;
-  }).length ?? 0;
   const permisosPorVencer = stats?.permisos.filter((p) => {
     if (!p.fecha_vencimiento || p.estado === "rechazado" || p.estado === "vencido") return false;
     const d = daysFromToday(p.fecha_vencimiento);
     return d >= 0 && d <= 15;
   }).length ?? 0;
   const transportesEnTransito = stats?.transportes.filter((t) => t.estado === "en_transito" || t.estado === "programado").length ?? 0;
-
-  const totalFacturado = (stats?.facturas ?? []).reduce((s: number, f: any) => s + Number(f.monto_total || 0), 0);
-  const totalPagado = (stats?.pagos ?? []).reduce((s: number, p: any) => s + Number(p.monto || 0), 0);
-  const saldoPorCobrar = totalFacturado - totalPagado;
-
-  // Expedientes con desviación de costo: impuestos reales vs estimados > 15%
-  const expedientesDesviados = (() => {
-    const porExp = new Map<string, any[]>();
-    for (const it of (stats?.mercancia ?? []) as any[]) {
-      if (!it.expediente_id) continue;
-      const arr = porExp.get(it.expediente_id) ?? [];
-      arr.push(it);
-      porExp.set(it.expediente_id, arr);
-    }
-    let n = 0;
-    for (const e of (stats?.expedientes ?? []) as any[]) {
-      const list = porExp.get(e.id) ?? [];
-      if (list.length === 0) continue;
-      const conReal = list.filter((it) => it.gravamen_real != null || it.isc_real != null || it.itbis_real != null);
-      if (conReal.length === 0) continue;
-      const totalFob = list.reduce((s, it) => s + (Number(it.valor_fob) || 0), 0);
-      let est = 0;
-      let real = 0;
-      for (const it of conReal) {
-        const c = calcImpuestosLinea(
-          Number(it.valor_fob) || 0,
-          totalFob,
-          Number(e.seguro) || 0,
-          Number(e.flete) || 0,
-          Number(e.otros) || 0,
-          it.pct_gravamen,
-          it.aplica_isc,
-          it.pct_isc,
-          it.pct_itbis,
-        );
-        est += c.total;
-        real += (Number(it.gravamen_real) || 0) + (Number(it.isc_real) || 0) + (Number(it.itbis_real) || 0);
-      }
-      if (est <= 0) continue;
-      if (Math.abs(real - est) / est > 0.15) n++;
-    }
-    return n;
-  })();
-
-  const fmtRd = (n: number) =>
-    "RD$ " + n.toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const ultimasCot = [...(stats?.cotizaciones ?? [])].sort((a: any, b: any) => (b.created_at ?? "").localeCompare(a.created_at ?? "")).slice(0, 5);
   const ultimosExp = [...(stats?.expedientes ?? [])].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? "")).slice(0, 5);
@@ -165,19 +100,15 @@ function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <KPI icon={Inbox} label="COTIZACIONES SIN CONVERTIR" value={cotizacionesSinConvertir} tone="primary" sub={cotizacionesSinMovimiento > 0 ? `${cotizacionesSinMovimiento} sin movimiento +15 días` : undefined} />
-        <KPI icon={FolderKanban} label="EXPEDIENTES EN PROCESOS" value={expedientesEnProceso} tone="info" />
-        <KPI icon={CheckCircle2} label="FACTURADOS" value={expedientesCerrados} tone="success" />
-        <KPI icon={FileWarning} label="Permisos VUCE por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" />
-        <KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" />
-        <KPI icon={AlertTriangle} label="Alertas activas" value={reminders.length} tone="danger" />
-        <KPI icon={Wallet} label="Saldo pendiente de cobro" value={fmtRd(saldoPorCobrar)} tone="warning" sub="Facturado menos pagado" />
-        <KPI icon={Clock} label="Documentos vencidos" value={docsVencidos} tone="danger" />
-        <KPI icon={Scale} label="Expedientes con desviación de costo" value={expedientesDesviados} tone="warning" sub="Impuestos reales vs estimados +15%" />
-        <KPI icon={Bell} label="Cotizaciones sin movimiento" value={cotizacionesSinMovimiento} tone="warning" sub="Más de 15 días" />
+        <Link to="/cotizaciones" search={{ sinConvertir: true }} aria-label="Ver cotizaciones sin convertir" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Inbox} label="COTIZACIONES SIN CONVERTIR" value={cotizacionesSinConvertir} tone="primary" sub={cotizacionesSinMovimiento > 0 ? `${cotizacionesSinMovimiento} sin movimiento +15 días` : undefined} /></Link>
+        <Link to="/expedientes" search={{ estado: "digitar,en_transito,presentar,verificar,entregado" }} aria-label="Ver expedientes en proceso" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FolderKanban} label="EXPEDIENTES EN PROCESOS" value={expedientesEnProceso} tone="info" /></Link>
+        <Link to="/expedientes" search={{ estado: "facturar" }} aria-label="Ver expedientes facturados" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={CheckCircle2} label="FACTURADOS" value={expedientesCerrados} tone="success" /></Link>
+        <Link to="/permisos" search={{ vencimiento: 15 }} aria-label="Ver permisos VUCE por vencer" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FileWarning} label="Permisos VUCE por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" /></Link>
+        <Link to="/transportes" search={{ estado: "en_transito,programado" }} aria-label="Ver transportes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" /></Link>
+        <Link to="/dashboard" hash="atencion-requerida" aria-label="Ver alertas activas" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={AlertTriangle} label="Alertas activas" value={reminders.length} tone="danger" /></Link>
       </div>
 
-      <RemindersPanel />
+      <div id="atencion-requerida" className="scroll-mt-4"><RemindersPanel /></div>
 
 
       <div className="grid gap-4 lg:grid-cols-2">

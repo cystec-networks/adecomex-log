@@ -23,10 +23,15 @@ import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
 
 
 export const Route = createFileRoute("/_authenticated/cotizaciones/")({
+  validateSearch: (s: Record<string, unknown>): { sinConvertir?: boolean } =>
+    s.sinConvertir === true || s.sinConvertir === "true" || s.sinConvertir === 1 || s.sinConvertir === "1"
+      ? { sinConvertir: true }
+      : {},
   component: Cotizaciones,
 });
 
 function Cotizaciones() {
+  const { sinConvertir = false } = Route.useSearch();
   const qc = useQueryClient();
   const { data: roles } = useMyRoles();
   const canEdit = (roles ?? []).some((r) => r === "admin" || r === "vendedor");
@@ -49,6 +54,16 @@ function Cotizaciones() {
       .select("*, clientes(nombre)")
       .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
+  });
+
+  const { data: ordenes } = useQuery({
+    queryKey: ["ordenes-cotizaciones-vinculadas"],
+    queryFn: async () => (await supabase
+      .from("ordenes")
+      .select("cotizacion_id")
+      .is("eliminado_en", null)
+      .not("cotizacion_id", "is", null)).data ?? [],
+    enabled: sinConvertir,
   });
 
   const { data: perfiles } = useQuery({
@@ -77,6 +92,10 @@ function Cotizaciones() {
   });
 
   const filtered = (data ?? []).filter((c: any) => {
+    if (sinConvertir) {
+      const cotizacionesConOrden = new Set((ordenes ?? []).map((o: any) => o.cotizacion_id));
+      if (c.estado === "rechazada" || c.estado === "expirada" || cotizacionesConOrden.has(c.id)) return false;
+    }
     if (estado !== "todas" && c.estado !== estado) return false;
     if (q && !JSON.stringify(c).toLowerCase().includes(q.toLowerCase())) return false;
     return true;

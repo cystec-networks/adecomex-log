@@ -20,10 +20,15 @@ import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
 
 
 export const Route = createFileRoute("/_authenticated/permisos/")({
+  validateSearch: (s: Record<string, unknown>): { vencimiento?: number } => {
+    const vencimiento = Number(s.vencimiento);
+    return Number.isFinite(vencimiento) && vencimiento > 0 ? { vencimiento: Math.min(365, Math.floor(vencimiento)) } : {};
+  },
   component: Permisos,
 });
 
 function Permisos() {
+  const { vencimiento } = Route.useSearch();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState("todos");
@@ -63,6 +68,11 @@ function Permisos() {
   const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
   const filtered = (data ?? []).filter((p: any) => {
+    if (vencimiento) {
+      if (!p.fecha_vencimiento || p.estado === "rechazado" || p.estado === "vencido") return false;
+      const days = daysFromToday(p.fecha_vencimiento);
+      if (days < 0 || days > vencimiento) return false;
+    }
     if (estado !== "todos" && p.estado !== estado) return false;
     if (cliente !== "todos" && p.cliente_id !== cliente) return false;
     if (q && !norm(JSON.stringify(p)).includes(norm(q))) return false;
