@@ -180,9 +180,10 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
       margin: { left: pageW - M - detalleCargaTableWidth },
       tableWidth: detalleCargaTableWidth,
     });
+    detalleCargaEndY = Math.max(detalleCargaEndY, (doc as any).lastAutoTable.finalY);
   }
 
-  const startResumen = (doc as any).lastAutoTable.finalY + 14;
+  const startResumen = detalleCargaEndY + 14;
   const mostrarRd = tasaCambio > 0;
   const resumenFontSize = startResumen + (mostrarRd ? 170 : 150) > pageH - 40 ? 7 : 8;
 
