@@ -2455,6 +2455,7 @@ function MercanciaItemsBlock({
   paisOrigen,
   paisOrigenCodigo,
   servicioAduaneroUsd = 0,
+  disabled = false,
 }: {
   expedienteId: string;
   seguro: number;
@@ -2465,6 +2466,7 @@ function MercanciaItemsBlock({
   paisOrigen?: string;
   paisOrigenCodigo?: string;
   servicioAduaneroUsd?: number;
+  disabled?: boolean;
 }) {
   const qc = useQueryClient();
   const { data: items } = useQuery({
