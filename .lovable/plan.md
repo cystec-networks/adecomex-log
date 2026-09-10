@@ -1,67 +1,58 @@
-## 1. Diagnóstico (8 vs 13)
+# KPI clicables y filtros por URL en el Dashboard
 
-Revisé `src/routes/_authenticated/dashboard.tsx` (líneas 106 y 113):
+## Objetivo
 
-- El **badge del encabezado** muestra `reminders.length` → total real de alertas visibles del hook `useReminders` (los 13 correctos, ya filtrados por las descartadas).
-- La **lista** se renderiza con `reminders.slice(0, 8)` → hay un **corte fijo hardcoded a 8**, sin scroll, sin paginación y sin indicación de "hay más".
+Retirar los cuatro indicadores añadidos en la ronda anterior y convertir los seis KPI operativos restantes en accesos directos a sus listados correspondientes, manteniendo el diseño actual.
 
-Por eso ves 13 en el contador y solo 8 filas. No es un bug de datos: el conteo es correcto; el bug es puramente de presentación (`slice(0, 8)`).
+## Cambios
 
-Nota adicional: el hook ya ordena por severidad (crítica → alta → media) y pone los hitos "CRÍTICO" primero, así que las 5 que se pierden actualmente son siempre las menos urgentes — pero igual deben ser visibles.
+### Dashboard principal
 
-## 2. Rediseño propuesto (mockup)
+- Eliminar los KPI nuevos que ya no aplican:
+  - Saldo pendiente de cobro.
+  - Documentos vencidos.
+  - Expedientes con desviación de costo.
+  - Cotizaciones sin movimiento como tarjeta independiente.
+- Conservar únicamente:
+  - Cotizaciones sin convertir.
+  - Expedientes en proceso.
+  - Facturados.
+  - Permisos VUCE por vencer.
+  - Transportes en tránsito.
+  - Alertas activas.
+- Retirar también las consultas y cálculos usados exclusivamente por los indicadores eliminados.
+- Convertir cada tarjeta conservada en un enlace accesible, con foco visible, cursor y una sombra sutil al pasar el puntero.
+- Destinos:
+  - Cotizaciones sin convertir → `/cotizaciones` (listado correspondiente; no se añadirá un filtro adicional fuera del alcance solicitado).
+  - Expedientes en proceso → `/expedientes?estado=digitar,en_transito,presentar,verificar,entregado`.
+  - Facturados → `/expedientes?estado=facturar`.
+  - Permisos VUCE por vencer → `/permisos?vencimiento=15`.
+  - Transportes en tránsito → `/transportes?estado=en_transito,programado`.
+  - Alertas activas → panel “Atención requerida” del mismo Dashboard mediante ancla, ya que no existe una ruta general de alertas.
 
-Reemplazo la lista plana por un **acordeón agrupado por categoría**, con contador por grupo y ordenado por urgencia. El grupo más crítico se abre por defecto; los demás inician colapsados y son expandibles de forma independiente (multi-open).
+### Listado de Expedientes
 
-```text
-┌─ Atención requerida ──────────────────────── [13] ─┐
-│                                                    │
-│  🔴 Hitos atrasados / críticos            (4) ▾   │  ← abierto por defecto
-│     • ⚠️ CRÍTICO · Verificación mercancía puerto  │
-│       Exp. EXP-0012 · vence hoy — cargos por…    │
-│     • Hito atrasado · Pago de impuestos           │
-│       Exp. EXP-0009 · vencido hace 2 días         │
-│     • …                                            │
-│                                                    │
-│  🟡 ETA / Expedientes                     (5) ▸   │
-│  🟠 Permisos por vencer                   (2) ▸   │
-│  🚚 Transportes retrasados                (1) ▸   │
-│  📥 Solicitudes sin convertir             (1) ▸   │
-│                                                    │
-│  ────────────────────────────────────────────────  │
-│  [ Marcar todo visto ]           [ Ver todas → ]  │
-└────────────────────────────────────────────────────┘
-```
+- Validar `estado` junto con el parámetro `tipo` existente.
+- Aceptar uno o varios estados separados por coma.
+- Aplicar esos estados desde la URL sin alterar el filtro por tipo, búsqueda o urgencia.
+- Mantener operativo el selector manual; cuando la URL contenga varios estados, mostrará una opción descriptiva de filtro múltiple.
+- Preservar el filtro de estado al cambiar entre Todos, Importación, Exportación y Facturados.
 
-### Reglas de agrupación
+### Listado de Permisos VUCE
 
-Mapeo de `ReminderKind` (definido en `src/lib/reminders.ts`) a grupos:
+- Validar el parámetro `vencimiento`.
+- Con `vencimiento=15`, mostrar únicamente permisos no rechazados ni vencidos cuya fecha de vencimiento esté entre hoy y los próximos 15 días.
+- Mantener compatibles los filtros actuales por estado, cliente y búsqueda.
 
-| Grupo                     | Kinds incluidos                              | Prioridad |
-| ------------------------- | -------------------------------------------- | --------- |
-| Hitos atrasados/críticos  | `hito_atrasado`, `hito_proximo`              | 1 (abierto) |
-| ETA / Expedientes         | `eta_proximo`, `expediente_inactivo`         | 2         |
-| Permisos                  | `permiso_vencido`, `permiso_por_vencer`      | 3         |
-| Transportes retrasados    | `transporte_retrasado`                       | 4         |
-| Solicitudes sin convertir | `solicitud_sin_convertir`                    | 5         |
+### Listado de Transportes
 
-Dentro de cada grupo se mantiene el orden actual del hook (severidad + CRÍTICO primero). Un grupo con 0 alertas no se renderiza.
+- Validar el parámetro `estado`.
+- Aceptar uno o varios estados separados por coma y aplicar el filtro al abrir la pantalla.
+- Mantener operativo el selector manual, mostrando una opción descriptiva cuando haya varios estados preseleccionados.
 
-### Comportamiento
+## Verificación
 
-- **Multi-open**: usar `Accordion type="multiple"` de shadcn.
-- **Default open**: solo el primer grupo con contenido (normalmente Hitos).
-- **Altura máxima con scroll interno** dentro del acordeón (`max-h-[420px] overflow-auto`) para que aunque todos se expandan el dashboard no crezca sin control.
-- **Sin corte de datos**: eliminar el `slice(0, 8)`. Todas las alertas quedan accesibles.
-- **Acciones al pie**: "Marcar todo visto" (llama a `dismiss` sobre las visibles) y opcional "Ver todas" (por ahora abre la campana de notificaciones ya existente; una ruta dedicada `/alertas` la dejo fuera de este cambio salvo que la pidas).
-- Cada fila conserva: link al recurso, título, detalle, severity badge.
-
-## 3. Alcance del cambio
-
-Solo frontend, un único archivo:
-
-- `src/routes/_authenticated/dashboard.tsx` — reemplazar el bloque de la Card "Atención requerida" (líneas ~101-126) por el acordeón agrupado. Importar `Accordion*` de `@/components/ui/accordion` (ya existe en el proyecto).
-
-Sin cambios en `useReminders`, sin cambios de BD, sin nuevas rutas.
-
-¿Apruebas para implementarlo así, o prefieres que además cree la ruta dedicada `/alertas` con tabla y filtros?
+- Comprobar que solo quedan los seis KPI solicitados.
+- Abrir cada KPI y confirmar su destino y el subconjunto mostrado.
+- Verificar especialmente los filtros múltiples de Expedientes y Transportes, y el rango de 15 días de Permisos VUCE.
+- Ejecutar la comprobación de TypeScript y revisar visualmente el Dashboard y los tres listados.
