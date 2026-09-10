@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_authenticated/expedientes/")({
 
 function Expedientes() {
   const { tipo = "todos", estado: estadoParam, eta: etaParam } = Route.useSearch();
-  const navigate = useNavigate({ from: "/expedientes" });
+  const navigate = useNavigate({ from: "/expedientes/" });
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState(estadoParam ?? "todos");
   const [etaFilter, setEtaFilter] = useState(etaParam ? String(etaParam) : "all");
