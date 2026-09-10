@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,26 +19,30 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
+import { daysFromToday } from "@/lib/dates";
 
 type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 
 export const Route = createFileRoute("/_authenticated/expedientes/")({
-  validateSearch: (s: Record<string, unknown>): { tipo?: TipoFilter; estado?: string } => {
+  validateSearch: (s: Record<string, unknown>): { tipo?: TipoFilter; estado?: string; eta?: number } => {
     const t = s.tipo;
     const tipo = t === "importacion" || t === "exportacion" || t === "facturados" || t === "todos" ? t : undefined;
     const estadosValidos = new Set<string>(ESTADO_ORDEN);
     const estado = typeof s.estado === "string"
       ? s.estado.split(",").filter((value) => estadosValidos.has(value)).join(",") || undefined
       : undefined;
-    return { ...(tipo ? { tipo } : {}), ...(estado ? { estado } : {}) };
+    const eta = typeof s.eta === "string" && /^\d+$/.test(s.eta) ? parseInt(s.eta, 10) : undefined;
+    return { ...(tipo ? { tipo } : {}), ...(estado ? { estado } : {}), ...(eta ? { eta } : {}) };
   },
   component: Expedientes,
 });
 
 function Expedientes() {
-  const { tipo = "todos", estado: estadoParam } = Route.useSearch();
+  const { tipo = "todos", estado: estadoParam, eta: etaParam } = Route.useSearch();
+  const navigate = useNavigate({ from: "/expedientes" });
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState(estadoParam ?? "todos");
+  const [etaFilter, setEtaFilter] = useState(etaParam ? String(etaParam) : "all");
   const [toTrash, setToTrash] = useState<{ id: string; numero: string } | null>(null);
   const [soloUrgentes, setSoloUrgentes] = useState(false);
   const [colapsados, setColapsados] = useState<Record<string, boolean>>(() => {
@@ -50,6 +54,7 @@ function Expedientes() {
   const qc = useQueryClient();
 
   useEffect(() => setEstado(estadoParam ?? "todos"), [estadoParam]);
+  useEffect(() => setEtaFilter(etaParam ? String(etaParam) : "all"), [etaParam]);
 
   const toggleGrupo = (key: string) => {
     setColapsados((prev) => {
