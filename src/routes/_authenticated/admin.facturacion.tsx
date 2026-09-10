@@ -244,9 +244,9 @@ function FacturacionPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-[70vh]">
             <table className="w-full text-sm">
-              <thead className="text-xs text-muted-foreground border-b bg-muted/30">
+              <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
                 <tr>
                   <th className="text-left px-3 py-2">e-NCF</th>
                   <th className="text-left">Tipo</th>

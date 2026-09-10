@@ -182,9 +182,9 @@ function Cotizaciones() {
           </Select>
           <Input placeholder="Buscar…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
         </CardHeader>
-        <CardContent className="p-0 overflow-x-auto">
+        <CardContent className="p-0 overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground border-b bg-muted/30">
+            <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
               <tr>
                 <Th k="numero" className="px-4 py-2">Número</Th>
                 <Th k="cliente">Cliente</Th>

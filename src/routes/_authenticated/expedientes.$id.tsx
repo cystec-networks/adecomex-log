@@ -247,6 +247,7 @@ function DetalleExpediente() {
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
+      <Tabs defaultValue="info">
       <div className="sticky top-0 z-20 bg-background border-b pb-3 pt-2 px-6">
         <div className="space-y-3">
         <div className="flex items-center gap-3 flex-wrap">
@@ -360,10 +361,7 @@ function DetalleExpediente() {
           })()}
         </div>
       </div>
-      </div>
-      <div className="px-6">
-        <Tabs defaultValue="info">
-        <TabsList className="flex flex-wrap h-auto">
+        <TabsList className="flex flex-wrap h-auto mt-3">
           {tabOrder.map((key) => {
             const label = TAB_LABELS[key];
             if (!label) return null;
@@ -398,8 +396,8 @@ function DetalleExpediente() {
             );
           })}
         </TabsList>
-
-
+      </div>
+      <div className="px-6">
         <TabsContent value="info"><TabInfo exp={exp} /></TabsContent>
         <TabsContent value="checklist"><ChecklistHitos expedienteId={id} /></TabsContent>
         
@@ -413,8 +411,8 @@ function DetalleExpediente() {
         <TabsContent value="cost"><TabCostos expedienteId={id} exp={exp} /></TabsContent>
         <TabsContent value="costprod"><TabCostosProducto expedienteId={id} /></TabsContent>
         <TabsContent value="aud"><TabAuditoria expedienteId={id} /></TabsContent>
+      </div>
       </Tabs>
-    </div>
     </div>
   );
 }
@@ -632,11 +630,11 @@ function TabInfo({ exp }: { exp: any }) {
 
   return (
     <div className="space-y-5">
-      <div className="flex justify-end gap-2">
-        <Button size="lg" variant="outline" onClick={() => refrescarExpediente(qc, exp.id)}>
+      <div className="flex justify-end gap-2 sticky bottom-4">
+        <Button size="lg" variant="outline" onClick={() => refrescarExpediente(qc, exp.id)} className="shadow-lg">
           <RefreshCw className="h-4 w-4 mr-1" /> Refrescar
         </Button>
-        <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending}>
+        <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
           {save.isPending ? "Guardando…" : "Guardar cambios"}
         </Button>
       </div>
