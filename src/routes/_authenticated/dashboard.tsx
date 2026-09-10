@@ -47,32 +47,55 @@ function Dashboard() {
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
-      const [sol, exp, inc, docs, per, tra] = await Promise.all([
-        supabase.from("solicitudes").select("id,numero,estado,prioridad,created_at").is("eliminado_en", null),
-        supabase.from("expedientes").select("id,numero,estado,etapa_actual,fecha_compromiso,created_at,updated_at").is("eliminado_en", null),
+      const [cot, ord, exp, inc, docs, per, tra, fac, pag, mi] = await Promise.all([
+        supabase.from("cotizaciones").select("id,numero,estado,created_at,updated_at,clientes(nombre)").is("eliminado_en", null),
+        supabase.from("ordenes").select("id,cotizacion_id").is("eliminado_en", null),
+        supabase.from("expedientes").select("id,numero,estado,etapa_actual,seguro,flete,otros,fecha_compromiso,created_at,updated_at").is("eliminado_en", null),
         supabase.from("incidencias").select("id,estado,severidad"),
         supabase.from("documentos").select("id,estado,fecha_vencimiento"),
         supabase.from("permisos").select("id,estado,fecha_vencimiento").is("eliminado_en", null),
         supabase.from("transportes").select("id,estado,eta").is("eliminado_en", null),
+        (supabase.from as any)("facturas_ecf").select("id,monto_total,estado").is("eliminado_en", null).neq("estado", "anulada"),
+        (supabase.from as any)("cxc_pagos").select("id,monto"),
+        supabase
+          .from("mercancia_items")
+          .select("expediente_id,valor_fob,cantidad,pct_gravamen,aplica_isc,pct_isc,pct_itbis,gravamen_real,isc_real,itbis_real")
+          .is("deleted_at", null),
       ]);
       return {
-        solicitudes: sol.data ?? [],
+        cotizaciones: cot.data ?? [],
+        ordenes: ord.data ?? [],
         expedientes: exp.data ?? [],
         incidencias: inc.data ?? [],
         documentos: docs.data ?? [],
         permisos: per.data ?? [],
         transportes: tra.data ?? [],
+        facturas: (fac as any).data ?? [],
+        pagos: (pag as any).data ?? [],
+        mercancia: mi.data ?? [],
       };
     },
   });
 
   const { visible: reminders } = useReminders();
 
-  const solicitudesActivas = stats?.solicitudes.filter((s) => s.estado !== "rechazada").length ?? 0;
+  const cotizacionesConOrden = new Set(
+    (stats?.ordenes ?? []).map((o: any) => o.cotizacion_id).filter(Boolean),
+  );
+  const cotizacionesSinConvertir = (stats?.cotizaciones ?? []).filter(
+    (c: any) => c.estado !== "rechazada" && c.estado !== "expirada" && !cotizacionesConOrden.has(c.id),
+  ).length;
+
+  const cotizacionesSinMovimiento = (stats?.cotizaciones ?? []).filter((c: any) => {
+    if (c.estado === "rechazada" || c.estado === "expirada") return false;
+    if (cotizacionesConOrden.has(c.id)) return false;
+    const ref = c.updated_at ?? c.created_at;
+    if (!ref) return false;
+    return (Date.now() - new Date(ref).getTime()) / 86400000 > 15;
+  }).length;
+
   const expedientesEnProceso = stats?.expedientes.filter((e) => e.estado === "digitar" || e.estado === "en_transito" || e.estado === "presentar" || e.estado === "verificar" || e.estado === "entregado").length ?? 0;
   const expedientesCerrados = stats?.expedientes.filter((e) => e.estado === "facturar").length ?? 0;
-  const incidenciasAbiertas = stats?.incidencias.filter((i) => i.estado !== "cerrada" && i.estado !== "resuelta").length ?? 0;
-  const urgentes = stats?.solicitudes.filter((s) => s.prioridad === "urgente" || s.prioridad === "alta").length ?? 0;
   const docsVencidos = stats?.documentos.filter((d) => {
     if (!d.fecha_vencimiento) return false;
     const days = daysFromToday(d.fecha_vencimiento);
@@ -85,23 +108,73 @@ function Dashboard() {
   }).length ?? 0;
   const transportesEnTransito = stats?.transportes.filter((t) => t.estado === "en_transito" || t.estado === "programado").length ?? 0;
 
-  const ultimasSol = [...(stats?.solicitudes ?? [])].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? "")).slice(0, 5);
+  const totalFacturado = (stats?.facturas ?? []).reduce((s: number, f: any) => s + Number(f.monto_total || 0), 0);
+  const totalPagado = (stats?.pagos ?? []).reduce((s: number, p: any) => s + Number(p.monto || 0), 0);
+  const saldoPorCobrar = totalFacturado - totalPagado;
+
+  // Expedientes con desviación de costo: impuestos reales vs estimados > 15%
+  const expedientesDesviados = (() => {
+    const porExp = new Map<string, any[]>();
+    for (const it of (stats?.mercancia ?? []) as any[]) {
+      if (!it.expediente_id) continue;
+      const arr = porExp.get(it.expediente_id) ?? [];
+      arr.push(it);
+      porExp.set(it.expediente_id, arr);
+    }
+    let n = 0;
+    for (const e of (stats?.expedientes ?? []) as any[]) {
+      const list = porExp.get(e.id) ?? [];
+      if (list.length === 0) continue;
+      const conReal = list.filter((it) => it.gravamen_real != null || it.isc_real != null || it.itbis_real != null);
+      if (conReal.length === 0) continue;
+      const totalFob = list.reduce((s, it) => s + (Number(it.valor_fob) || 0), 0);
+      let est = 0;
+      let real = 0;
+      for (const it of conReal) {
+        const c = calcImpuestosLinea(
+          Number(it.valor_fob) || 0,
+          totalFob,
+          Number(e.seguro) || 0,
+          Number(e.flete) || 0,
+          Number(e.otros) || 0,
+          it.pct_gravamen,
+          it.aplica_isc,
+          it.pct_isc,
+          it.pct_itbis,
+        );
+        est += c.total;
+        real += (Number(it.gravamen_real) || 0) + (Number(it.isc_real) || 0) + (Number(it.itbis_real) || 0);
+      }
+      if (est <= 0) continue;
+      if (Math.abs(real - est) / est > 0.15) n++;
+    }
+    return n;
+  })();
+
+  const fmtRd = (n: number) =>
+    "RD$ " + n.toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const ultimasCot = [...(stats?.cotizaciones ?? [])].sort((a: any, b: any) => (b.created_at ?? "").localeCompare(a.created_at ?? "")).slice(0, 5);
   const ultimosExp = [...(stats?.expedientes ?? [])].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? "")).slice(0, 5);
 
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       <div>
         <h1 className="font-display text-2xl font-bold">Panel de operaciones</h1>
-        <p className="text-sm text-muted-foreground">Estado general de solicitudes, expedientes y alertas críticas.</p>
+        <p className="text-sm text-muted-foreground">Estado general de cotizaciones, expedientes y alertas críticas.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <KPI icon={Inbox} label="SOLICITUDES RECIBIDAS" value={solicitudesActivas} tone="primary" />
+        <KPI icon={Inbox} label="COTIZACIONES SIN CONVERTIR" value={cotizacionesSinConvertir} tone="primary" sub={cotizacionesSinMovimiento > 0 ? `${cotizacionesSinMovimiento} sin movimiento +15 días` : undefined} />
         <KPI icon={FolderKanban} label="EXPEDIENTES EN PROCESOS" value={expedientesEnProceso} tone="info" />
         <KPI icon={CheckCircle2} label="FACTURADOS" value={expedientesCerrados} tone="success" />
         <KPI icon={FileWarning} label="Permisos VUCE por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" />
         <KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" />
         <KPI icon={AlertTriangle} label="Alertas activas" value={reminders.length} tone="danger" />
+        <KPI icon={Wallet} label="Saldo pendiente de cobro" value={fmtRd(saldoPorCobrar)} tone="warning" sub="Facturado menos pagado" />
+        <KPI icon={Clock} label="Documentos vencidos" value={docsVencidos} tone="danger" />
+        <KPI icon={Scale} label="Expedientes con desviación de costo" value={expedientesDesviados} tone="warning" sub="Impuestos reales vs estimados +15%" />
+        <KPI icon={Bell} label="Cotizaciones sin movimiento" value={cotizacionesSinMovimiento} tone="warning" sub="Más de 15 días" />
       </div>
 
       <RemindersPanel />
@@ -110,25 +183,29 @@ function Dashboard() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base font-display">Últimas solicitudes</CardTitle>
+            <CardTitle className="text-base font-display">Últimas Cotizaciones de Compras</CardTitle>
           </CardHeader>
           <CardContent className="p-0 overflow-auto max-h-[70vh]">
             <table className="w-full text-sm">
               <thead className="sticky-table-header text-xs text-muted-foreground border-b">
-                <tr><th className="text-left px-4 py-2">Solicitud</th><th className="text-left">Estado</th><th className="text-left">Prioridad</th><th /></tr>
+                <tr><th className="text-left px-4 py-2">Cotización</th><th className="text-left">Cliente</th><th className="text-left">Estado</th><th /></tr>
               </thead>
               <tbody>
-                {ultimasSol.map((s: any) => (
-                  <tr key={s.id} className="border-b last:border-0 hover:bg-muted/40">
+                {ultimasCot.map((c: any) => (
+                  <tr key={c.id} className="border-b last:border-0 hover:bg-muted/40">
                     <td className="px-4 py-2 font-medium">
-                      <Link to="/solicitudes/$id" params={{ id: s.id }} className="hover:underline">{s.numero ?? s.id.slice(0, 8)}</Link>
+                      <Link to="/cotizaciones/$id" params={{ id: c.id }} className="hover:underline">{c.numero ?? c.id.slice(0, 8)}</Link>
                     </td>
-                    <td><EstadoBadge value={s.estado} /></td>
-                    <td><PrioridadBadge value={s.prioridad} /></td>
-                    <td className="px-4 py-2 text-xs text-muted-foreground text-right">{new Date(s.created_at).toLocaleDateString("es-DO")}</td>
+                    <td className="text-xs">{c.clientes?.nombre ?? "—"}</td>
+                    <td>
+                      <Badge className={COTIZACION_ESTADO_CLASS[c.estado] ?? "bg-muted text-muted-foreground border-transparent"}>
+                        {cotizacionEstadoLabel(c.estado)}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-2 text-xs text-muted-foreground text-right">{new Date(c.created_at).toLocaleDateString("es-DO")}</td>
                   </tr>
                 ))}
-                {ultimasSol.length === 0 && <tr><td colSpan={4} className="px-4 py-6 text-center text-muted-foreground text-sm">Sin solicitudes registradas</td></tr>}
+                {ultimasCot.length === 0 && <tr><td colSpan={4} className="px-4 py-6 text-center text-muted-foreground text-sm">Sin cotizaciones registradas</td></tr>}
               </tbody>
             </table>
           </CardContent>
@@ -150,7 +227,7 @@ function Dashboard() {
                       <Link to="/expedientes/$id" params={{ id: e.id }} className="hover:underline">{e.numero ?? e.id.slice(0, 8)}</Link>
                     </td>
                     <td><EstadoBadge value={e.estado} /></td>
-                    <td className="text-xs">Etapa {e.etapa_actual}/14</td>
+                    <td><Badge variant="outline" className="text-[10px]">Etapa {e.etapa_actual ?? 1} de 14</Badge></td>
                     <td className="px-4 py-2 text-xs text-muted-foreground text-right">{new Date(e.created_at).toLocaleDateString("es-DO")}</td>
                   </tr>
                 ))}
@@ -163,6 +240,7 @@ function Dashboard() {
     </div>
   );
 }
+
 
 function EstadoBadge({ value }: { value: string }) {
   const map: Record<string, string> = {
