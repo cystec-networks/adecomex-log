@@ -230,6 +230,15 @@ function DetalleExpediente() {
     queryFn: async () => (await supabase.from("expedientes").select("*, clientes(*), solicitudes(numero)").eq("id", id).maybeSingle()).data,
   });
 
+  const { data: hitosHeader } = useQuery({
+    queryKey: ["expediente-hitos-header", id],
+    queryFn: async () => (await supabase.from("expediente_hitos").select("estado").eq("expediente_id", id)).data ?? [],
+  });
+
+  const hitosDone = (hitosHeader ?? []).filter((h) => h.estado === "completado" || h.estado === "no_aplica").length;
+  const hitosTotal = hitosHeader?.length ?? 0;
+
+
   const updateEstado = useMutation({
     mutationFn: async (estado: string) => {
       if (estado === "despachado" && !(exp as any)?.factura_ecf_id) {
