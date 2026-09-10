@@ -160,7 +160,7 @@ function Expedientes() {
     return activeSort.dir === "asc" ? r : -r;
   };
 
-  const grupos: Record<string, any[]> = { importacion: [], exportacion: [], otros: [] };
+  const grupos: Record<string, any[]> = { importacion: [], exportacion: [], facturados: [], otros: [] };
   filtered.forEach((e: any) => grupos[detectTipo(e)].push(e));
   // no se ordena aquí; cada subgrupo por estado se ordena dentro del render
 
