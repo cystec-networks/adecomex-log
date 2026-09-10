@@ -660,9 +660,11 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
         <Button size="lg" variant="outline" onClick={() => refrescarExpediente(qc, exp.id)} className="shadow-lg">
           <RefreshCw className="h-4 w-4 mr-1" /> Refrescar
         </Button>
-        <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
-          {save.isPending ? "Guardando…" : "Guardar cambios"}
-        </Button>
+        {editable && (
+          <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
+            {save.isPending ? "Guardando…" : "Guardar cambios"}
+          </Button>
+        )}
       </div>
       {hasSolicitud && (
         <Card className="bg-muted/30 border-dashed">
@@ -1051,9 +1053,11 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
         <Button size="lg" variant="outline" onClick={() => refrescarExpediente(qc, exp.id)} className="shadow-lg">
           <RefreshCw className="h-4 w-4 mr-1" /> Refrescar
         </Button>
-        <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
-          {save.isPending ? "Guardando…" : "Guardar cambios"}
-        </Button>
+        {editable && (
+          <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
+            {save.isPending ? "Guardando…" : "Guardar cambios"}
+          </Button>
+        )}
       </div>
     </div>
   );
