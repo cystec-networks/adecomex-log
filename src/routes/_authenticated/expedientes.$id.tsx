@@ -410,11 +410,9 @@ function DetalleExpediente() {
       <div className="px-6">
         <TabsContent value="info"><TabInfo exp={exp} /></TabsContent>
         <TabsContent value="checklist">
-          <div className="space-y-5">
-            <TabTimeline expedienteId={id} />
-            <ChecklistHitos expedienteId={id} />
-          </div>
+          <ChecklistHitos expedienteId={id} />
         </TabsContent>
+
         
         <TabsContent value="liqfinal"><LiquidacionFinalSection exp={exp} /></TabsContent>
         <TabsContent value="docs"><TabDocumentos expedienteId={id} /></TabsContent>
