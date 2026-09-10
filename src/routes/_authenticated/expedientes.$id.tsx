@@ -441,16 +441,16 @@ function DetalleExpediente() {
   );
 }
 
-function Field({ label, value, onChange, type = "text", className = "" }: { label: string; value: any; onChange: (v: string) => void; type?: string; className?: string }) {
+function Field({ label, value, onChange, type = "text", className = "", disabled = false }: { label: string; value: any; onChange: (v: string) => void; type?: string; className?: string; disabled?: boolean }) {
   return (
     <div className={`grid gap-1.5 ${className}`}>
       <Label>{label}</Label>
-      <Input type={type} value={value ?? ""} onChange={(e) => onChange(e.target.value)} />
+      <Input type={type} value={value ?? ""} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
     </div>
   );
 }
 
-function AutoField({ label, value, onChange, suggestion, className = "" }: { label: string; value: any; onChange: (v: string) => void; suggestion: string[]; className?: string }) {
+function AutoField({ label, value, onChange, suggestion, className = "", disabled = false }: { label: string; value: any; onChange: (v: string) => void; suggestion: string[]; className?: string; disabled?: boolean }) {
   return (
     <div className={`grid gap-1.5 ${className}`}>
       <Label>{label}</Label>
@@ -459,6 +459,7 @@ function AutoField({ label, value, onChange, suggestion, className = "" }: { lab
         onChange={onChange}
         suggestions={suggestion ?? []}
         placeholder={`Escribe para buscar ${label.toLowerCase()}…`}
+        disabled={disabled}
       />
     </div>
   );
