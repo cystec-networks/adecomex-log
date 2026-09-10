@@ -456,6 +456,16 @@ function Expedientes() {
               {ESTADO_ORDEN.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={etaFilter} onValueChange={(v) => {
+            setEtaFilter(v);
+            navigate({ search: (prev) => ({ ...prev, eta: v === "7" ? 7 : undefined }) });
+          }}>
+            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Cualquier ETA</SelectItem>
+              <SelectItem value="7">Por llegar (≤7 días)</SelectItem>
+            </SelectContent>
+          </Select>
           <Toggle
             pressed={soloUrgentes}
             onPressedChange={setSoloUrgentes}
