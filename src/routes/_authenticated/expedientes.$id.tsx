@@ -3089,7 +3089,8 @@ function LiquidacionEstimadaBlock({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { setRateInput(tasa != null ? tasa.toFixed(4) : ""); setEditandoTasa(true); }}
+              disabled={disabled}
+              onClick={() => { if (disabled) return; setRateInput(tasa != null ? tasa.toFixed(4) : ""); setEditandoTasa(true); }}
             >
               Editar tasa
             </Button>
