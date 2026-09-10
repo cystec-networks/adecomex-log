@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,26 +19,30 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
+import { daysFromToday } from "@/lib/dates";
 
 type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 
 export const Route = createFileRoute("/_authenticated/expedientes/")({
-  validateSearch: (s: Record<string, unknown>): { tipo?: TipoFilter; estado?: string } => {
+  validateSearch: (s: Record<string, unknown>): { tipo?: TipoFilter; estado?: string; eta?: number } => {
     const t = s.tipo;
     const tipo = t === "importacion" || t === "exportacion" || t === "facturados" || t === "todos" ? t : undefined;
     const estadosValidos = new Set<string>(ESTADO_ORDEN);
     const estado = typeof s.estado === "string"
       ? s.estado.split(",").filter((value) => estadosValidos.has(value)).join(",") || undefined
       : undefined;
-    return { ...(tipo ? { tipo } : {}), ...(estado ? { estado } : {}) };
+    const eta = typeof s.eta === "string" && /^\d+$/.test(s.eta) ? parseInt(s.eta, 10) : undefined;
+    return { ...(tipo ? { tipo } : {}), ...(estado ? { estado } : {}), ...(eta ? { eta } : {}) };
   },
   component: Expedientes,
 });
 
 function Expedientes() {
-  const { tipo = "todos", estado: estadoParam } = Route.useSearch();
+  const { tipo = "todos", estado: estadoParam, eta: etaParam } = Route.useSearch();
+  const navigate = useNavigate({ from: "/expedientes/" });
   const [q, setQ] = useState("");
   const [estado, setEstado] = useState(estadoParam ?? "todos");
+  const [etaFilter, setEtaFilter] = useState(etaParam ? String(etaParam) : "all");
   const [toTrash, setToTrash] = useState<{ id: string; numero: string } | null>(null);
   const [soloUrgentes, setSoloUrgentes] = useState(false);
   const [colapsados, setColapsados] = useState<Record<string, boolean>>(() => {
@@ -50,6 +54,7 @@ function Expedientes() {
   const qc = useQueryClient();
 
   useEffect(() => setEstado(estadoParam ?? "todos"), [estadoParam]);
+  useEffect(() => setEtaFilter(etaParam ? String(etaParam) : "all"), [etaParam]);
 
   const toggleGrupo = (key: string) => {
     setColapsados((prev) => {
@@ -134,6 +139,11 @@ function Expedientes() {
     if (estados.length > 0 && !estados.includes(e.estado)) return false;
     if (tipo !== "todos" && detectTipo(e) !== tipo) return false;
     if (soloUrgentes && !esUrgente(e)) return false;
+    if (etaParam === 7) {
+      if (!e.fecha_compromiso || ["facturar", "entregado"].includes(e.estado)) return false;
+      const d = daysFromToday(e.fecha_compromiso);
+      if (isNaN(d) || d < 0 || d > 7) return false;
+    }
     if (q && !norm(JSON.stringify(e)).includes(norm(q))) return false;
     return true;
   });
@@ -422,10 +432,10 @@ function Expedientes() {
           <p className="text-sm text-muted-foreground">Expedientes aduanales agrupados por tipo de solicitud.</p>
         </div>
         <div className="flex gap-1 rounded-md border p-1 bg-card">
-          <Link to="/expedientes" search={{ tipo: "todos", estado: estadoParam }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos <Badge variant="secondary" className="text-[10px] h-4 px-1">{countAll}</Badge></Link>
-          <Link to="/expedientes" search={{ tipo: "importacion", estado: estadoParam }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
-          <Link to="/expedientes" search={{ tipo: "exportacion", estado: estadoParam }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
-          <Link to="/expedientes" search={{ tipo: "facturados", estado: estadoParam }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
+          <Link to="/expedientes" search={{ tipo: "todos", estado: estadoParam, eta: etaParam }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos <Badge variant="secondary" className="text-[10px] h-4 px-1">{countAll}</Badge></Link>
+          <Link to="/expedientes" search={{ tipo: "importacion", estado: estadoParam, eta: etaParam }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
+          <Link to="/expedientes" search={{ tipo: "exportacion", estado: estadoParam, eta: etaParam }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
+          <Link to="/expedientes" search={{ tipo: "facturados", estado: estadoParam, eta: etaParam }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
         </div>
         <Button variant="outline" size="sm" asChild>
           <Link to="/expedientes/ocr"><ScanText className="h-4 w-4 mr-1" />Nuevo por OCR</Link>
@@ -444,6 +454,16 @@ function Expedientes() {
               <SelectItem value="todos">Todos los estados</SelectItem>
               {estado.includes(",") && <SelectItem value={estado}>Estados del Dashboard</SelectItem>}
               {ESTADO_ORDEN.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={etaFilter} onValueChange={(v) => {
+            setEtaFilter(v);
+            navigate({ search: (prev) => ({ ...prev, eta: v === "7" ? 7 : undefined }) });
+          }}>
+            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Cualquier ETA</SelectItem>
+              <SelectItem value="7">Por llegar (≤7 días)</SelectItem>
             </SelectContent>
           </Select>
           <Toggle

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Inbox, FolderKanban, CheckCircle2, FileWarning, TrendingUp, Bell, Truck } from "lucide-react";
+import { AlertTriangle, Inbox, FolderKanban, Clock, FileWarning, TrendingUp, Bell, Truck } from "lucide-react";
 import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,7 @@ function Dashboard() {
       const [cot, ord, exp, per, tra] = await Promise.all([
         supabase.from("cotizaciones").select("id,numero,estado,created_at,updated_at,clientes(nombre)").is("eliminado_en", null),
         supabase.from("ordenes").select("id,cotizacion_id").is("eliminado_en", null),
-        supabase.from("expedientes").select("id,numero,estado,etapa_actual,created_at").is("eliminado_en", null),
+        supabase.from("expedientes").select("id,numero,estado,etapa_actual,fecha_compromiso,created_at").is("eliminado_en", null),
         supabase.from("permisos").select("id,estado,fecha_vencimiento").is("eliminado_en", null),
         supabase.from("transportes").select("id,estado,eta").is("eliminado_en", null),
       ]);
@@ -81,7 +81,12 @@ function Dashboard() {
   }).length;
 
   const expedientesEnProceso = stats?.expedientes.filter((e) => e.estado === "digitar" || e.estado === "en_transito" || e.estado === "presentar" || e.estado === "verificar" || e.estado === "entregado").length ?? 0;
-  const expedientesCerrados = stats?.expedientes.filter((e) => e.estado === "facturar").length ?? 0;
+  const expedientesPorLlegar = stats?.expedientes.filter((e) => {
+    if (!e.fecha_compromiso) return false;
+    if (["facturar", "entregado"].includes(e.estado)) return false;
+    const d = daysFromToday(e.fecha_compromiso);
+    return d >= 0 && d <= 7;
+  }).length ?? 0;
   const permisosPorVencer = stats?.permisos.filter((p) => {
     if (!p.fecha_vencimiento) return false;
     if (p.estado !== "solicitado" && p.estado !== "en_tramite") return false;
@@ -103,7 +108,7 @@ function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Link to="/cotizaciones" search={{ sinConvertir: true }} aria-label="Ver cotizaciones sin convertir" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Inbox} label="COTIZACIONES SIN CONVERTIR" value={cotizacionesSinConvertir} tone="primary" sub={cotizacionesSinMovimiento > 0 ? `${cotizacionesSinMovimiento} sin movimiento +15 días` : undefined} /></Link>
         <Link to="/expedientes" search={{ estado: "digitar,en_transito,presentar,verificar,entregado" }} aria-label="Ver expedientes en proceso" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FolderKanban} label="EXPEDIENTES EN PROCESOS" value={expedientesEnProceso} tone="info" /></Link>
-        <Link to="/expedientes" search={{ estado: "facturar" }} aria-label="Ver expedientes facturados" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={CheckCircle2} label="FACTURADOS" value={expedientesCerrados} tone="success" /></Link>
+        <Link to="/expedientes" search={{ eta: 7 }} aria-label="Ver expedientes por llegar" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Clock} label="POR LLEGAR (7 DÍAS)" value={expedientesPorLlegar} tone="warning" /></Link>
         <Link to="/permisos" search={{ vencimiento: 15 }} aria-label="Ver permisos VUCE por vencer" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FileWarning} label="Permisos VUCE por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" /></Link>
         <Link to="/transportes" search={{ estado: "en_transito,programado" }} aria-label="Ver transportes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" /></Link>
         <Link to="/dashboard" hash="atencion-requerida" aria-label="Ver alertas activas" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={AlertTriangle} label="Alertas activas" value={reminders.length} tone="danger" /></Link>
