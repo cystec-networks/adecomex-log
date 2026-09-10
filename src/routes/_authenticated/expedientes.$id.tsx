@@ -414,7 +414,7 @@ function DetalleExpediente() {
         </TabsList>
       </div>
       <div className="px-6">
-        <TabsContent value="info"><TabInfo exp={exp} /></TabsContent>
+        <TabsContent value="info"><TabInfo exp={exp} modoEdicion={modoEdicion} setModoEdicion={setModoEdicion} canEdit={canEditExpediente} /></TabsContent>
         <TabsContent value="checklist">
           <ChecklistHitos expedienteId={id} />
         </TabsContent>
