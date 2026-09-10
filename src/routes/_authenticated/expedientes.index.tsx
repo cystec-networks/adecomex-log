@@ -417,6 +417,7 @@ function Expedientes() {
           <Link to="/expedientes" search={{ tipo: "todos" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos <Badge variant="secondary" className="text-[10px] h-4 px-1">{countAll}</Badge></Link>
           <Link to="/expedientes" search={{ tipo: "importacion" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
           <Link to="/expedientes" search={{ tipo: "exportacion" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
+          <Link to="/expedientes" search={{ tipo: "facturados" }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
         </div>
         <Button variant="outline" size="sm" asChild>
           <Link to="/expedientes/ocr"><ScanText className="h-4 w-4 mr-1" />Nuevo por OCR</Link>
