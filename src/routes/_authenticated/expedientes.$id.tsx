@@ -246,8 +246,9 @@ function DetalleExpediente() {
   if (!exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
   return (
-    <div className="p-6 max-w-[1600px] mx-auto space-y-6">
-      <div className="space-y-3">
+    <div className="max-w-[1600px] mx-auto space-y-6">
+      <div className="sticky top-0 z-20 bg-background border-b pb-3 pt-2 px-6">
+        <div className="space-y-3">
         <div className="flex items-center gap-3 flex-wrap">
           <Button variant="ghost" size="sm" asChild><Link to="/expedientes"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link></Button>
           <div className="flex-1 min-w-0">
@@ -333,6 +334,10 @@ function DetalleExpediente() {
               </span>
             )}
           </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">Etapa:</Label>
+            <span className="text-sm font-medium">{exp.etapa_actual ?? 1} de 14</span>
+          </div>
           {(() => {
             const a = alertaDeclaracionTardia(exp);
             if (!a) return null;
@@ -355,9 +360,9 @@ function DetalleExpediente() {
           })()}
         </div>
       </div>
-
-
-      <Tabs defaultValue="info">
+      </div>
+      <div className="px-6">
+        <Tabs defaultValue="info">
         <TabsList className="flex flex-wrap h-auto">
           {tabOrder.map((key) => {
             const label = TAB_LABELS[key];
@@ -410,6 +415,7 @@ function DetalleExpediente() {
         <TabsContent value="aud"><TabAuditoria expedienteId={id} /></TabsContent>
       </Tabs>
     </div>
+    </div>
   );
 }
 
@@ -458,7 +464,6 @@ function TabInfo({ exp }: { exp: any }) {
     bl_awb: exp.bl_awb ?? "",
     sla_dias: exp.sla_dias ?? 15,
     fecha_compromiso: exp.fecha_compromiso ?? "",
-    etapa_actual: exp.etapa_actual ?? 1,
     medio_transporte: exp.medio_transporte ?? "",
     naviera: exp.naviera ?? "",
     suplidor: exp.suplidor ?? "",
@@ -509,10 +514,6 @@ function TabInfo({ exp }: { exp: any }) {
     exp.tasa_cambio_usada,
   );
 
-  // etapa_actual se actualiza desde otra mutación (avanzar etapas); resincronízalo.
-  useEffect(() => {
-    setForm((f) => ({ ...f, etapa_actual: exp.etapa_actual ?? 1 }));
-  }, [exp.etapa_actual]);
 
 
 
@@ -670,7 +671,6 @@ function TabInfo({ exp }: { exp: any }) {
         <AutoField label="Naviera" value={form.naviera} onChange={(v) => set("naviera", v)} suggestion={sug.naviera ?? []} />
         <Field label="SLA (días)" value={form.sla_dias} onChange={(v) => set("sla_dias", v)} type="number" />
         <Field label="Fecha Estimada de Llegada (ETA)" value={form.fecha_compromiso} onChange={(v) => set("fecha_compromiso", v)} type="date" />
-        <Field label="Etapa actual (1-14)" value={form.etapa_actual} onChange={(v) => set("etapa_actual", v)} type="number" />
       </Section>
 
 
