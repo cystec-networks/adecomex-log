@@ -3200,7 +3200,7 @@ function LiquidacionEstimadaBlock({
   );
 }
 
-function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0 }: { exp: any; form: any; set: (k: string, v: any) => void; servicioAduaneroUsd?: number }) {
+function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabled = false }: { exp: any; form: any; set: (k: string, v: any) => void; servicioAduaneroUsd?: number; disabled?: boolean }) {
   const tc = useTasaCambioForExpediente(exp);
   // Estimado total en US$: recalculado a partir de items — para simplicidad, tomamos del form (mercancía se recalcula por línea).
   const { data: items } = useQuery({
