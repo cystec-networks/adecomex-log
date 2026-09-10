@@ -166,6 +166,8 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
     tableWidth: detalleCargaTableWidth,
   });
 
+  let detalleCargaEndY = (doc as any).lastAutoTable.finalY;
+
   const contenedores = String(input.contenedores ?? "").trim();
   if (contenedores) {
     autoTable(doc, {
