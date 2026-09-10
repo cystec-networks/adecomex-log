@@ -104,7 +104,8 @@ function Expedientes() {
     return { text: `${diff}`, full: `${Math.abs(diff)} días de atraso`, tone: "danger" as const };
   };
 
-  const detectTipo = (e: any): "importacion" | "exportacion" | "otros" => {
+  const detectTipo = (e: any): "importacion" | "exportacion" | "facturados" | "otros" => {
+    if (e.estado === "facturar") return "facturados";
     const t = norm(e.tipo_operacion ?? "");
     if (t.includes("import")) return "importacion";
     if (t.includes("export")) return "exportacion";
