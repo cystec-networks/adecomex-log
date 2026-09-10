@@ -25,7 +25,7 @@ type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 export const Route = createFileRoute("/_authenticated/expedientes/")({
   validateSearch: (s: Record<string, unknown>): { tipo?: TipoFilter } => {
     const t = s.tipo;
-    return t === "importacion" || t === "exportacion" || t === "todos" ? { tipo: t } : {};
+    return t === "importacion" || t === "exportacion" || t === "facturados" || t === "todos" ? { tipo: t } : {};
   },
   component: Expedientes,
 });
