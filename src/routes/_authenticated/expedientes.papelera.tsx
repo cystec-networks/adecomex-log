@@ -115,7 +115,7 @@ function Papelera() {
       const label: Record<Kind, string> = {
         expedientes: "Expediente restaurado",
         solicitudes: "Solicitud restaurada",
-        permisos: "Permiso restaurado",
+        permisos: "Permiso VUCE restaurado",
         transportes: "Transporte restaurado",
         cotizaciones: "Cotización restaurada",
         ordenes: "Orden restaurada",
@@ -188,7 +188,7 @@ function Papelera() {
         <TabsList>
           <TabsTrigger value="expedientes">Expedientes ({expRows.length})</TabsTrigger>
           <TabsTrigger value="solicitudes">Solicitudes ({solRows.length})</TabsTrigger>
-          <TabsTrigger value="permisos">Permisos ({perRows.length})</TabsTrigger>
+          <TabsTrigger value="permisos">Permisos VUCE ({perRows.length})</TabsTrigger>
           <TabsTrigger value="transportes">Transportes ({trRows.length})</TabsTrigger>
           <TabsTrigger value="cotizaciones">Cotizaciones ({cotRows.length})</TabsTrigger>
           <TabsTrigger value="ordenes">Órdenes ({ordRows.length})</TabsTrigger>
@@ -310,15 +310,15 @@ function Papelera() {
 
         <TabsContent value="permisos">
           <Card>
-            <CardHeader><CardTitle className="text-base">Permisos eliminados: {perRows.length}</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Permisos VUCE eliminados: {perRows.length}</CardTitle></CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               {perRows.length === 0 ? (
-                <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin permisos en papelera.</div>
+                <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin permisos VUCE en papelera.</div>
               ) : (
                 <table className="w-full text-sm">
                   <thead className="text-xs text-muted-foreground border-b bg-muted/20">
                     <tr>
-                      <th className="text-left px-4 py-2">N° Permiso</th>
+                      <th className="text-left px-4 py-2">N° Permiso VUCE</th>
                       <th className="text-left">Expediente</th>
                       <th className="text-left">Cliente</th>
                       <th className="text-left">Tipo</th>
