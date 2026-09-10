@@ -108,7 +108,7 @@ function DetalleCotizacion() {
       }
     },
     onSuccess: () => {
-      toast.success("Cotización actualizada");
+      toast.success("Cotización de compras actualizada");
       qc.invalidateQueries({ queryKey: ["cotizacion", id] });
       qc.invalidateQueries({ queryKey: ["cotizaciones"] });
     },

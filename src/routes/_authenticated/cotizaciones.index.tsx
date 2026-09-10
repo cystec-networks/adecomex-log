@@ -68,7 +68,7 @@ function Cotizaciones() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Cotización movida a la papelera");
+      toast.success("Cotización de compras movida a la papelera");
       qc.invalidateQueries({ queryKey: ["cotizaciones"] });
       qc.invalidateQueries({ queryKey: ["papelera-cotizaciones"] });
       setToTrash(null);
