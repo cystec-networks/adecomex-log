@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Fragment, useEffect, useState } from "react";
 import { Plus, Ship } from "lucide-react";
@@ -26,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/logistica/")({
 
 function LogisticaIndex() {
   const [q, setQ] = useState("");
+  const search = useSearch({ from: "/_authenticated/logistica/" });
   const { data: roles } = useMyRoles();
   const canEdit = (roles ?? []).some((r) => r === "admin" || r === "logistica");
   const { esColapsado, toggleGrupo } = useGruposColapsados("logistica-grupos-colapsados");
@@ -51,7 +52,10 @@ function LogisticaIndex() {
   });
   const responsablesMap = new Map(responsables.map((r) => [r.id, r.nombre]));
   const normalizar = (v: unknown) => String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  const filtered = operaciones.filter((o: any) => !q || normalizar(`${o.numero} ${o.clientes?.nombre}`).includes(normalizar(q)));
+  const activasOnly = (search as { estado?: string }).estado === "activas";
+  const filtered = operaciones
+    .filter((o: any) => !q || normalizar(`${o.numero} ${o.clientes?.nombre}`).includes(normalizar(q)))
+    .filter((o: any) => !activasOnly || o.estado !== "arribo");
   const ordenEstados = [...ETAPAS_LOGISTICA.map((e) => e.codigo), "finalizadas"];
   const grupos = ordenEstados.map((estado) => [estado, filtered.filter((o: any) => estado === "finalizadas" ? ["completada", "cancelada"].includes(o.estado) : o.estado === estado)] as const)
     .filter(([, rows]) => rows.length > 0);

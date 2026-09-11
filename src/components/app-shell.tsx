@@ -91,10 +91,10 @@ const GROUPS: Group[] = [
     label: "LOGÍSTICA",
     icon: Ship,
     items: [
-      { to: "/logistica", label: "Operaciones", icon: Ship,
-        match: (p) => (p === "/logistica" || p.startsWith("/logistica/")) && p !== "/logistica/nueva" },
       { to: "/logistica/nueva", label: "Nueva Operación", icon: Plus,
         roles: ["admin", "logistica"], match: (p) => p === "/logistica/nueva" },
+      { to: "/logistica", label: "Operaciones", icon: Ship,
+        match: (p) => (p === "/logistica" || p.startsWith("/logistica/")) && p !== "/logistica/nueva" },
     ],
   },
   {
