@@ -203,7 +203,7 @@ function DetalleCotizacion() {
           </p>
         </div>
         {!readOnly && (
-          <Button onClick={() => save.mutate()} disabled={save.isPending}><Save className="h-4 w-4 mr-1" />Guardar cambios</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg"><Save className="h-4 w-4 mr-1" />Guardar cambios</Button>
         )}
         {ordenVinculada ? (
           <Button variant="outline" asChild>
@@ -216,8 +216,10 @@ function DetalleCotizacion() {
             <PackagePlus className="h-4 w-4 mr-1" />{convertir.isPending ? "Convirtiendo…" : "Convertir a Orden de Compras"}
           </Button>
         ) : null}
+        </div>
       </div>
 
+      <div className="px-6 space-y-6">
       {convertida && (
         <Card className="border-dashed bg-muted/30">
           <CardContent className="py-4 text-sm text-muted-foreground">

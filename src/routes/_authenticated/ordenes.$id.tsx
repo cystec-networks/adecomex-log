@@ -169,10 +169,12 @@ function DetalleOrden() {
         ) : null}
 
         {canEdit && (
-          <Button onClick={() => save.mutate()} disabled={save.isPending}><Save className="h-4 w-4 mr-1" />Guardar cambios</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg"><Save className="h-4 w-4 mr-1" />Guardar cambios</Button>
         )}
+        </div>
       </div>
 
+      <div className="px-6 space-y-6">
       {o.cotizacion_id || o.cot_numero ? (
         <Card className="bg-muted/30 border-dashed">
           <CardHeader className="pb-3 border-b">
