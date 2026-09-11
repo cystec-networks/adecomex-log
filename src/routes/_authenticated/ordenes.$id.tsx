@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ORDEN_ESTADOS, ORDEN_ESTADO_CLASS, ordenEstadoLabel } from "@/lib/estados-orden";
-import { ArrowLeft, Save, FolderPlus } from "lucide-react";
+import { ArrowLeft, Save, FolderPlus, ShieldCheck, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
@@ -53,6 +53,13 @@ function DetalleOrden() {
       (await supabase.from("expedientes").select("id,numero").eq("orden_id", id).maybeSingle()).data,
   });
 
+  const { data: permisosVinculados } = useQuery({
+    queryKey: ["permisos-por-orden", id],
+    enabled: !!o,
+    queryFn: async () =>
+      (await supabase.from("permisos").select("id,numero,tipo,estado,fecha_vencimiento").eq("orden_id", id).order("created_at", { ascending: false })).data ?? [],
+  });
+
   const convertirExpediente = useMutation({
     mutationFn: async () => {
       const { data: exp, error } = await supabase
@@ -76,6 +83,7 @@ function DetalleOrden() {
         origenTabla: "orden_productos", origenCol: "orden_id", origenId: id,
         destinoTabla: "mercancia_items", destinoCol: "expediente_id", destinoId: exp.id,
       });
+      await supabase.from("permisos").update({ expediente_id: exp.id }).eq("orden_id", id);
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "creado" });
       return exp;
     },
@@ -225,6 +233,59 @@ function DetalleOrden() {
       )}
 
       <ProductosCard tabla="orden_productos" parentId={id} readOnly={!canEdit} paisOrigen={(o as any)?.cot_origen ?? ""} />
+
+      <Card>
+        <CardHeader className="pb-3 border-b">
+          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center justify-between">
+            <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" />Permisos VUCE vinculados</span>
+            {canEdit && (
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/permisos/nuevo" search={{ orden: id }}>
+                  <Plus className="h-4 w-4 mr-1" />Vincular Permiso VUCE
+                </Link>
+              </Button>
+            )}
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Los permisos vinculados aquí pasan automáticamente al Expediente cuando la Orden se convierte.
+          </p>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {(permisosVinculados ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">No hay permisos VUCE vinculados a esta orden.</p>
+          ) : (
+            <div className="border rounded-md overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="px-3 py-2">N° Permiso</th>
+                    <th className="px-3 py-2">Tipo</th>
+                    <th className="px-3 py-2">Estado</th>
+                    <th className="px-3 py-2">Vencimiento</th>
+                    <th className="px-3 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(permisosVinculados ?? []).map((p: any) => (
+                    <tr key={p.id} className="border-t">
+                      <td className="px-3 py-2 font-medium">{p.numero ?? "—"}</td>
+                      <td className="px-3 py-2 capitalize">{p.tipo ?? "—"}</td>
+                      <td className="px-3 py-2"><Badge variant="outline" className="capitalize">{p.estado}</Badge></td>
+                      <td className="px-3 py-2">{fmtLocalDate(p.fecha_vencimiento)}</td>
+                      <td className="px-3 py-2 text-right">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to="/permisos/$id" params={{ id: p.id }}>Ver / editar</Link>
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
 
       <Card>
         <CardHeader><CardTitle className="text-base">Orden de Compras</CardTitle></CardHeader>

@@ -44,16 +44,22 @@ type Props = {
   mode: "new" | "edit";
   id?: string;
   expedienteId?: string; // preselect
+  ordenId?: string; // preselect
 };
 
-export function PermisoForm({ mode, id, expedienteId }: Props) {
+export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
   const nav = useNavigate();
   const qc = useQueryClient();
 
   const { data: existing } = useQuery({
     enabled: mode === "edit" && !!id,
     queryKey: ["permiso", id],
-    queryFn: async () => (await supabase.from("permisos").select("*, clientes(nombre), expedientes(numero,cliente_id)").eq("id", id!).maybeSingle()).data,
+    queryFn: async () => (await supabase.from("permisos").select("*, clientes(nombre), expedientes(numero,cliente_id), ordenes(numero,cliente_id)").eq("id", id!).maybeSingle()).data,
+  });
+
+  const { data: ordenes } = useQuery({
+    queryKey: ["ordenes-lite"],
+    queryFn: async () => (await supabase.from("ordenes").select("id,numero,cliente_id,clientes(nombre)").order("numero", { ascending: false }).limit(500)).data ?? [],
   });
 
   const { data: expedientes } = useQuery({
@@ -65,6 +71,7 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
     numero: "",
     numero_resolucion: "",
     expediente_id: expedienteId ?? "",
+    orden_id: ordenId ?? "",
     cliente_id: "",
     tipo: "",
     institucion_emisora: "",
@@ -83,6 +90,7 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
         numero: existing.numero ?? "",
         numero_resolucion: existing.numero_resolucion ?? "",
         expediente_id: existing.expediente_id ?? "",
+        orden_id: (existing as any).orden_id ?? "",
         cliente_id: existing.cliente_id ?? "",
         tipo: existing.tipo ?? "",
         institucion_emisora: existing.institucion_emisora ?? "",
@@ -97,14 +105,22 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
     }
   }, [existing, mode, loaded]);
 
-  // Autocompletar cliente cuando cambie expediente
+  // Autocompletar cliente cuando cambie expediente u orden
   useEffect(() => {
-    if (!form.expediente_id) return;
-    const exp = (expedientes ?? []).find((e: any) => e.id === form.expediente_id);
-    if (exp && exp.cliente_id && !form.cliente_id) {
-      setForm((f) => ({ ...f, cliente_id: exp.cliente_id as string }));
+    if (form.expediente_id) {
+      const exp = (expedientes ?? []).find((e: any) => e.id === form.expediente_id);
+      if (exp && exp.cliente_id && !form.cliente_id) {
+        setForm((f) => ({ ...f, cliente_id: exp.cliente_id as string }));
+      }
+      return;
     }
-  }, [form.expediente_id, expedientes]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (form.orden_id) {
+      const ord = (ordenes ?? []).find((e: any) => e.id === form.orden_id);
+      if (ord && ord.cliente_id && !form.cliente_id) {
+        setForm((f) => ({ ...f, cliente_id: ord.cliente_id as string }));
+      }
+    }
+  }, [form.expediente_id, form.orden_id, expedientes, ordenes]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -125,7 +141,7 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
   const save = useMutation({
     mutationFn: async () => {
       const payload: any = { ...form };
-      ["expediente_id","cliente_id","tipo","fecha_solicitud","fecha_emision","fecha_vencimiento","documento_url","numero_resolucion","institucion_emisora","observaciones","numero"]
+      ["expediente_id","orden_id","cliente_id","tipo","fecha_solicitud","fecha_emision","fecha_vencimiento","documento_url","numero_resolucion","institucion_emisora","observaciones","numero"]
         .forEach((k) => { if (payload[k] === "") payload[k] = null; });
       if (mode === "new") {
         if (payload.numero == null) delete payload.numero; // auto-generated when empty
@@ -144,9 +160,11 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
       qc.invalidateQueries({ queryKey: ["permisos"] });
       qc.invalidateQueries({ queryKey: ["permiso", id] });
       qc.invalidateQueries({ queryKey: ["permisos-por-expediente"] });
+      qc.invalidateQueries({ queryKey: ["permisos-por-orden"] });
       toast.success(mode === "new" ? `Permiso VUCE ${row.numero} creado` : "Permiso VUCE actualizado");
       if (mode === "new") {
         if (expedienteId) nav({ to: "/expedientes/$id", params: { id: expedienteId } });
+        else if (ordenId) nav({ to: "/ordenes/$id", params: { id: ordenId } });
         else nav({ to: "/permisos" });
       }
     },
@@ -158,7 +176,10 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
     <div className="p-6 max-w-5xl mx-auto space-y-5">
       <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" size="sm" asChild>
-          <Link to={expedienteId ? "/expedientes/$id" : "/permisos"} params={expedienteId ? { id: expedienteId } : undefined as any}>
+          <Link
+            to={expedienteId ? "/expedientes/$id" : ordenId ? "/ordenes/$id" : "/permisos"}
+            params={expedienteId ? { id: expedienteId } : ordenId ? { id: ordenId } : undefined as any}
+          >
             <ArrowLeft className="h-4 w-4 mr-1" />Volver
           </Link>
         </Button>
@@ -182,7 +203,7 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
         <CardHeader className="pb-3 border-b">
           <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Vinculación</CardTitle>
         </CardHeader>
-        <CardContent className="pt-5 grid gap-4 md:grid-cols-2">
+        <CardContent className="pt-5 grid gap-4 md:grid-cols-3">
           <div className="grid gap-1.5">
             <Label>Expediente vinculado</Label>
             <Select value={form.expediente_id || undefined} onValueChange={(v) => set("expediente_id", v)}>
@@ -195,11 +216,23 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
             </Select>
           </div>
           <div className="grid gap-1.5">
+            <Label>Orden de Compra vinculada</Label>
+            <Select value={form.orden_id || undefined} onValueChange={(v) => set("orden_id", v)}>
+              <SelectTrigger><SelectValue placeholder="Selecciona orden (opcional)" /></SelectTrigger>
+              <SelectContent>
+                {(ordenes ?? []).map((e: any) => (
+                  <SelectItem key={e.id} value={e.id}>{e.numero} · {e.clientes?.nombre ?? "—"}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
             <Label>Cliente (auto)</Label>
             <div className="h-9 px-3 rounded-md border bg-muted/40 flex items-center text-sm">
               {(() => {
                 const exp = (expedientes ?? []).find((e: any) => e.id === form.expediente_id);
-                return exp?.clientes?.nombre ?? existing?.clientes?.nombre ?? <span className="text-muted-foreground">— (elige expediente)</span>;
+                const ord = (ordenes ?? []).find((e: any) => e.id === form.orden_id);
+                return exp?.clientes?.nombre ?? ord?.clientes?.nombre ?? existing?.clientes?.nombre ?? <span className="text-muted-foreground">— (elige expediente u orden)</span>;
               })()}
             </div>
           </div>
