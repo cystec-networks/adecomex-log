@@ -34,7 +34,7 @@ function LogisticaIndex() {
     queryKey: ["operaciones-logistica"],
     queryFn: async () => {
       const { data, error } = await supabase.from("operaciones_logistica")
-        .select("*, clientes(nombre), profiles(nombre)")
+        .select("*, clientes(nombre)")
         .is("eliminado_en", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -80,7 +80,7 @@ function LogisticaIndex() {
                 {!esColapsado(estado) && rows.map((o: any) => <tr key={o.id} className="border-b hover:bg-muted/40">
                   <td className="px-4 py-2 font-medium"><Link to="/logistica/$id" params={{ id: o.id }} className="text-primary hover:underline">{o.numero}</Link></td>
                   <td>{o.clientes?.nombre ?? "—"}</td><td className="capitalize">{o.tipo}</td><td>{o.proveedor_logistico ?? "—"}</td>
-                  <td>{fmtLocalDate(o.eta)}</td><td>{o.profiles?.nombre ?? responsablesMap.get(o.responsable_id) ?? "—"}</td>
+                  <td>{fmtLocalDate(o.eta)}</td><td>{responsablesMap.get(o.responsable_id) ?? "—"}</td>
                   <td className="px-4"><Badge className={estadoLogisticaClass(o.estado)}>{ESTADO_LOGISTICA_LABEL[o.estado] ?? o.estado}</Badge></td>
                 </tr>)}
               </Fragment>)}
