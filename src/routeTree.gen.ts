@@ -49,6 +49,7 @@ import { Route as AuthenticatedPermisosIdRouteImport } from './routes/_authentic
 import { Route as AuthenticatedOrdenesNuevaRouteImport } from './routes/_authenticated/ordenes.nueva'
 import { Route as AuthenticatedOrdenesIdRouteImport } from './routes/_authenticated/ordenes.$id'
 import { Route as AuthenticatedLogisticaNuevaRouteImport } from './routes/_authenticated/logistica.nueva'
+import { Route as AuthenticatedLogisticaIdRouteImport } from './routes/_authenticated/logistica.$id'
 import { Route as AuthenticatedExpedientesPapeleraRouteImport } from './routes/_authenticated/expedientes.papelera'
 import { Route as AuthenticatedExpedientesOcrRouteImport } from './routes/_authenticated/expedientes.ocr'
 import { Route as AuthenticatedExpedientesNuevoRouteImport } from './routes/_authenticated/expedientes.nuevo'
@@ -308,6 +309,12 @@ const AuthenticatedLogisticaNuevaRoute =
   AuthenticatedLogisticaNuevaRouteImport.update({
     id: '/logistica/nueva',
     path: '/logistica/nueva',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLogisticaIdRoute =
+  AuthenticatedLogisticaIdRouteImport.update({
+    id: '/logistica/$id',
+    path: '/logistica/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedExpedientesPapeleraRoute =
@@ -599,6 +606,7 @@ export interface FileRoutesByFullPath {
   '/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
   '/expedientes/ocr': typeof AuthenticatedExpedientesOcrRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
+  '/logistica/$id': typeof AuthenticatedLogisticaIdRoute
   '/logistica/nueva': typeof AuthenticatedLogisticaNuevaRoute
   '/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
   '/ordenes/nueva': typeof AuthenticatedOrdenesNuevaRoute
@@ -679,6 +687,7 @@ export interface FileRoutesByTo {
   '/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
   '/expedientes/ocr': typeof AuthenticatedExpedientesOcrRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
+  '/logistica/$id': typeof AuthenticatedLogisticaIdRoute
   '/logistica/nueva': typeof AuthenticatedLogisticaNuevaRoute
   '/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
   '/ordenes/nueva': typeof AuthenticatedOrdenesNuevaRoute
@@ -763,6 +772,7 @@ export interface FileRoutesById {
   '/_authenticated/expedientes/nuevo': typeof AuthenticatedExpedientesNuevoRoute
   '/_authenticated/expedientes/ocr': typeof AuthenticatedExpedientesOcrRoute
   '/_authenticated/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
+  '/_authenticated/logistica/$id': typeof AuthenticatedLogisticaIdRoute
   '/_authenticated/logistica/nueva': typeof AuthenticatedLogisticaNuevaRoute
   '/_authenticated/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
   '/_authenticated/ordenes/nueva': typeof AuthenticatedOrdenesNuevaRoute
@@ -845,6 +855,7 @@ export interface FileRouteTypes {
     | '/expedientes/nuevo'
     | '/expedientes/ocr'
     | '/expedientes/papelera'
+    | '/logistica/$id'
     | '/logistica/nueva'
     | '/ordenes/$id'
     | '/ordenes/nueva'
@@ -925,6 +936,7 @@ export interface FileRouteTypes {
     | '/expedientes/nuevo'
     | '/expedientes/ocr'
     | '/expedientes/papelera'
+    | '/logistica/$id'
     | '/logistica/nueva'
     | '/ordenes/$id'
     | '/ordenes/nueva'
@@ -1008,6 +1020,7 @@ export interface FileRouteTypes {
     | '/_authenticated/expedientes/nuevo'
     | '/_authenticated/expedientes/ocr'
     | '/_authenticated/expedientes/papelera'
+    | '/_authenticated/logistica/$id'
     | '/_authenticated/logistica/nueva'
     | '/_authenticated/ordenes/$id'
     | '/_authenticated/ordenes/nueva'
@@ -1347,6 +1360,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLogisticaNuevaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/logistica/$id': {
+      id: '/_authenticated/logistica/$id'
+      path: '/logistica/$id'
+      fullPath: '/logistica/$id'
+      preLoaderRoute: typeof AuthenticatedLogisticaIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/expedientes/papelera': {
       id: '/_authenticated/expedientes/papelera'
       path: '/expedientes/papelera'
@@ -1672,6 +1692,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedExpedientesNuevoRoute: typeof AuthenticatedExpedientesNuevoRoute
   AuthenticatedExpedientesOcrRoute: typeof AuthenticatedExpedientesOcrRoute
   AuthenticatedExpedientesPapeleraRoute: typeof AuthenticatedExpedientesPapeleraRoute
+  AuthenticatedLogisticaIdRoute: typeof AuthenticatedLogisticaIdRoute
   AuthenticatedLogisticaNuevaRoute: typeof AuthenticatedLogisticaNuevaRoute
   AuthenticatedOrdenesIdRoute: typeof AuthenticatedOrdenesIdRoute
   AuthenticatedOrdenesNuevaRoute: typeof AuthenticatedOrdenesNuevaRoute
@@ -1748,6 +1769,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedExpedientesNuevoRoute: AuthenticatedExpedientesNuevoRoute,
   AuthenticatedExpedientesOcrRoute: AuthenticatedExpedientesOcrRoute,
   AuthenticatedExpedientesPapeleraRoute: AuthenticatedExpedientesPapeleraRoute,
+  AuthenticatedLogisticaIdRoute: AuthenticatedLogisticaIdRoute,
   AuthenticatedLogisticaNuevaRoute: AuthenticatedLogisticaNuevaRoute,
   AuthenticatedOrdenesIdRoute: AuthenticatedOrdenesIdRoute,
   AuthenticatedOrdenesNuevaRoute: AuthenticatedOrdenesNuevaRoute,
