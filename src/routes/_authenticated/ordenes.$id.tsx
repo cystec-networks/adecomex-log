@@ -342,10 +342,21 @@ function DetalleOrden() {
                       <td className="px-3 py-2 capitalize">{p.tipo ?? "—"}</td>
                       <td className="px-3 py-2"><Badge variant="outline" className="capitalize">{p.estado}</Badge></td>
                       <td className="px-3 py-2">{fmtLocalDate(p.fecha_vencimiento)}</td>
-                      <td className="px-3 py-2 text-right">
+                      <td className="px-3 py-2 text-right whitespace-nowrap">
                         <Button variant="ghost" size="sm" asChild>
                           <Link to="/permisos/$id" params={{ id: p.id }}>Ver / editar</Link>
                         </Button>
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => desvincularPermiso.mutate(p.id)}
+                            disabled={desvincularPermiso.isPending}
+                          >
+                            Desvincular
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}
