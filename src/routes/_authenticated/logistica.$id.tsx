@@ -56,6 +56,7 @@ export const Route = createFileRoute("/_authenticated/logistica/$id")({
 });
 
 type FormState = {
+  numero: string;
   cliente_id: string; responsable_id: string; tipo: string; proveedor_logistico: string; proveedor_logistico_tid: string;
   proveedor_email: string; proveedor_telefono: string;
   producto: string; origen: string; destino: string; puerto_destino: string; buque: string;
@@ -66,6 +67,7 @@ type FormState = {
 };
 const cleanDate = (v: string | null) => v?.slice(0, 10) ?? "";
 const formFrom = (o: any): FormState => ({
+  numero: o.numero ?? "",
   cliente_id: o.cliente_id ?? "", responsable_id: o.responsable_id ?? "", tipo: o.tipo ?? "maritimo",
   proveedor_logistico: o.proveedor_logistico ?? "", proveedor_logistico_tid: o.proveedor_logistico_tid ?? "",
   proveedor_email: o.proveedor_email ?? "", proveedor_telefono: o.proveedor_telefono ?? "",
@@ -120,6 +122,7 @@ function DetalleLogistica() {
     const numeric = (v: string) => v === "" ? null : Number(v);
     const nullable = (v: string) => v || null;
     const { error } = await supabase.from("operaciones_logistica").update({
+      numero: form.numero,
       cliente_id: nullable(form.cliente_id), responsable_id: nullable(form.responsable_id), tipo: form.tipo,
       proveedor_logistico: nullable(form.proveedor_logistico), proveedor_logistico_tid: nullable(form.proveedor_logistico_tid), booking: nullable(form.booking),
       proveedor_email: nullable(form.proveedor_email), proveedor_telefono: nullable(form.proveedor_telefono),
@@ -131,7 +134,10 @@ function DetalleLogistica() {
       flete_moneda: form.flete_moneda, seguro_monto: numeric(form.seguro_monto), gastos_locales_monto: numeric(form.gastos_locales_monto),
       otros_monto: numeric(form.otros_monto), observaciones: nullable(form.observaciones), cotizacion_id: nullable(form.cotizacion_id),
       orden_id: nullable(form.orden_id), expediente_id: nullable(form.expediente_id),
-    }).eq("id", id); if (error) throw error;
+    }).eq("id", id); if (error) {
+      if (error.code === "23505") throw new Error("Ese número de operación ya está en uso — elige otro.");
+      throw error;
+    }
     await logAuditoria(id, "editado");
   }, onSuccess: () => { toast.success("Cambios guardados"); setModoEdicion(false); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["operaciones-logistica"] }); qc.invalidateQueries({ queryKey: ["auditoria-logistica", id] }); history.replaceState(null, "", `/logistica/${id}`); }, onError: (e: any) => toast.error(e.message) });
 
@@ -162,7 +168,7 @@ function DetalleLogistica() {
   const nombreEtapa = (codigo?: string) => ETAPAS_LOGISTICA.find((e) => e.codigo === codigo)?.nombre ?? codigo ?? "—";
 
   const datosConstancia = () => ({
-    numero: operacion.numero ?? "",
+    numero: form.numero,
     fechaInicio: fmtLocalDate(String(operacion.created_at ?? "").slice(0, 10)),
     cliente: operacion.clientes?.nombre ?? null,
     producto: form.producto || null,
@@ -181,7 +187,20 @@ function DetalleLogistica() {
     <div className="sticky top-0 z-20 border-b bg-background px-6 py-3 shadow-sm">
       <div className="max-w-[1500px] mx-auto flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="icon" asChild><Link to="/logistica"><ArrowLeft className="h-4 w-4" /></Link></Button>
-        <div className="min-w-0 flex-1"><h1 className="font-display text-xl font-bold truncate">{operacion.numero}</h1><p className="text-sm text-muted-foreground truncate">{operacion.clientes?.nombre ?? "Sin cliente"}</p></div>
+        <div className="min-w-0 flex-1">
+          <h1 className="font-display text-xl font-bold truncate">
+            {canEdit ? (
+              <Input
+                className="font-display text-2xl font-bold h-auto py-0 px-1 w-auto min-w-[8rem] max-w-[16rem] border-transparent hover:border-input focus-visible:border-input bg-transparent"
+                value={form.numero}
+                onChange={(e) => set("numero", e.target.value)}
+              />
+            ) : (
+              operacion.numero
+            )}
+          </h1>
+          <p className="text-sm text-muted-foreground truncate">{operacion.clientes?.nombre ?? "Sin cliente"}</p>
+        </div>
         <Badge variant="outline" className="capitalize">{operacion.tipo}</Badge><Badge className={estadoLogisticaClass(operacion.estado)}>{ESTADO_LOGISTICA_LABEL[operacion.estado] ?? operacion.estado}</Badge>
         <div className="min-w-48"><div className="text-xs font-medium mb-1">Progreso: {done} de {total} etapas</div><Progress value={(done / total) * 100} /></div>
         <ConstanciaLogisticaButton datos={datosConstancia} />
