@@ -4267,6 +4267,7 @@ export type Database = {
           numero: string
           numero_resolucion: string | null
           observaciones: string | null
+          orden_id: string | null
           tipo: Database["public"]["Enums"]["permiso_tipo"] | null
           updated_at: string
         }
@@ -4287,6 +4288,7 @@ export type Database = {
           numero?: string
           numero_resolucion?: string | null
           observaciones?: string | null
+          orden_id?: string | null
           tipo?: Database["public"]["Enums"]["permiso_tipo"] | null
           updated_at?: string
         }
@@ -4307,6 +4309,7 @@ export type Database = {
           numero?: string
           numero_resolucion?: string | null
           observaciones?: string | null
+          orden_id?: string | null
           tipo?: Database["public"]["Enums"]["permiso_tipo"] | null
           updated_at?: string
         }
@@ -4352,6 +4355,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_rentabilidad_expediente"
             referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "permisos_orden_id_fkey"
+            columns: ["orden_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes"
+            referencedColumns: ["id"]
           },
         ]
       }
