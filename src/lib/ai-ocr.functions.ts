@@ -70,5 +70,15 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
       productos: parsed.productos ?? null,
       eta: parsed.eta ?? null,
       puerto_arribo: parsed.puerto_arribo ?? null,
+      contenedores: Array.isArray(parsed.contenedores)
+        ? parsed.contenedores
+            .filter((c: any) => c && typeof c.numero === "string" && c.numero.trim())
+            .map((c: any) => ({
+              numero: String(c.numero).trim(),
+              sello1: c.sello1 ? String(c.sello1).trim() : null,
+              sello2: c.sello2 ? String(c.sello2).trim() : null,
+              tipo: c.tipo ? String(c.tipo).trim() : null,
+            }))
+        : null,
     };
   });
