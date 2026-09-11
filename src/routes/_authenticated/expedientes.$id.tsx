@@ -3546,9 +3546,9 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     const list = itemsRes.data ?? [];
     const expData: any = expRes.data ? { ...exp, ...expRes.data } : exp;
     const contenedoresList = (contRes.data ?? []).map((c: any) => ({
+      item_no: c.item_no,
       numero: c.numero_contenedor,
       sello1: c.sello1,
-      sello2: c.sello2,
       tipo: c.tipo_contenedor,
     }));
     if (list.length === 0) {
