@@ -46,16 +46,60 @@ function NuevaOperacion() {
       supabase.from("expedientes").select("id,numero").is("eliminado_en", null).order("created_at", { ascending: false }).limit(100),
     ]); return { cotizaciones: c.data ?? [], ordenes: o.data ?? [], expedientes: e.data ?? [] };
   }});
+  // Precarga de los datos de la carga desde la Cotización u Orden vinculada:
+  // no volver a digitar lo que ya se capturó en el flujo comercial. Todo queda editable.
+  const prefill = async (fuente: "cotizacion" | "orden", registroId: string) => {
+    try {
+      if (fuente === "cotizacion") {
+        const [{ data: cot }, { data: prods }] = await Promise.all([
+          supabase.from("cotizaciones").select("origen,destino,incoterm,peso_kg,volumen_m3").eq("id", registroId).maybeSingle(),
+          supabase.from("cotizacion_productos").select("detalle_producto").eq("cotizacion_id", registroId).limit(1),
+        ]);
+        if (!cot) return;
+        setForm((p) => ({
+          ...p,
+          producto: p.producto || (prods?.[0]?.detalle_producto ?? ""),
+          origen: p.origen || (cot.origen ?? ""), destino: p.destino || (cot.destino ?? ""),
+          incoterm: p.incoterm || (cot.incoterm ?? ""),
+          peso_bruto_kg: p.peso_bruto_kg || (cot.peso_kg != null ? String(cot.peso_kg) : ""),
+          volumen_m3: p.volumen_m3 || (cot.volumen_m3 != null ? String(cot.volumen_m3) : ""),
+        }));
+      } else {
+        const [{ data: ord }, { data: prods }] = await Promise.all([
+          supabase.from("ordenes").select("cot_origen,cot_destino,cot_incoterm,cot_peso_kg,cot_volumen_m3").eq("id", registroId).maybeSingle(),
+          supabase.from("orden_productos").select("detalle_producto").eq("orden_id", registroId).limit(1),
+        ]);
+        if (!ord) return;
+        setForm((p) => ({
+          ...p,
+          producto: p.producto || (prods?.[0]?.detalle_producto ?? ""),
+          origen: p.origen || (ord.cot_origen ?? ""), destino: p.destino || (ord.cot_destino ?? ""),
+          incoterm: p.incoterm || (ord.cot_incoterm ?? ""),
+          peso_bruto_kg: p.peso_bruto_kg || (ord.cot_peso_kg != null ? String(ord.cot_peso_kg) : ""),
+          volumen_m3: p.volumen_m3 || (ord.cot_volumen_m3 != null ? String(ord.cot_volumen_m3) : ""),
+        }));
+      }
+      toast.info("Datos de la carga precargados — puedes ajustarlos.");
+    } catch { /* la precarga es opcional */ }
+  };
+
   const createMut = useMutation({ mutationFn: async () => {
     if (!form.cliente_id) throw new Error("Selecciona un cliente.");
+    const num = (v: string) => (v === "" ? null : Number(v));
     const { data: user } = await supabase.auth.getUser();
     const { data, error } = await supabase.from("operaciones_logistica").insert({
       numero: "", cliente_id: form.cliente_id, tipo: form.tipo, responsable_id: form.responsable_id || null,
       cotizacion_id: form.cotizacion_id || null, orden_id: form.orden_id || null, expediente_id: form.expediente_id || null,
       proveedor_logistico: form.proveedor_logistico || null, proveedor_logistico_tid: form.proveedor_logistico_tid || null,
+      proveedor_email: form.proveedor_email || null, proveedor_telefono: form.proveedor_telefono || null,
+      producto: form.producto || null, origen: form.origen || null, destino: form.destino || null,
+      puerto_destino: form.puerto_destino || null, buque: form.buque || null, incoterm: form.incoterm || null,
+      peso_bruto_kg: num(form.peso_bruto_kg), volumen_m3: num(form.volumen_m3),
       observaciones: form.observaciones || null, creado_por: user.user?.id ?? null,
     }).select("id").single();
-    if (error) throw error; return data;
+    if (error) throw error;
+    await supabase.from("auditoria").insert({ entidad: "operaciones_logistica", entidad_id: data.id, accion: "creado", usuario_id: user.user?.id ?? null });
+    return data;
   }, onSuccess: (data) => { toast.success("Operación creada"); nav({ to: "/logistica/$id", params: { id: data.id }, search: { nuevo: "1" } }); }, onError: (e: any) => toast.error(e.message) });
 
   const LinkSelect = ({ label, field, rows }: { label: string; field: "cotizacion_id" | "orden_id" | "expediente_id"; rows: { id: string; numero: string | null }[] }) => <div className="space-y-1.5"><Label>{label}</Label><Select value={form[field] || "none"} onValueChange={(v) => set(field, v === "none" ? "" : v)}><SelectTrigger><SelectValue placeholder="Sin vincular" /></SelectTrigger><SelectContent><SelectItem value="none">Sin vincular</SelectItem>{rows.map((r) => <SelectItem key={r.id} value={r.id}>{r.numero ?? "Sin número"}</SelectItem>)}</SelectContent></Select></div>;
