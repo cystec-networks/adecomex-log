@@ -122,13 +122,18 @@ function DetalleLogistica() {
     const { error } = await supabase.from("operaciones_logistica").update({
       cliente_id: nullable(form.cliente_id), responsable_id: nullable(form.responsable_id), tipo: form.tipo,
       proveedor_logistico: nullable(form.proveedor_logistico), proveedor_logistico_tid: nullable(form.proveedor_logistico_tid), booking: nullable(form.booking),
+      proveedor_email: nullable(form.proveedor_email), proveedor_telefono: nullable(form.proveedor_telefono),
+      producto: nullable(form.producto), origen: nullable(form.origen), destino: nullable(form.destino),
+      puerto_destino: nullable(form.puerto_destino), buque: nullable(form.buque), incoterm: nullable(form.incoterm),
+      peso_bruto_kg: numeric(form.peso_bruto_kg), volumen_m3: numeric(form.volumen_m3),
       bl_awb: nullable(form.bl_awb), contenedor: nullable(form.contenedor), fecha_recogida: nullable(form.fecha_recogida), fecha_embarque: nullable(form.fecha_embarque),
       fecha_salida: nullable(form.fecha_salida), eta: nullable(form.eta), fecha_arribo: nullable(form.fecha_arribo), flete_monto: numeric(form.flete_monto),
       flete_moneda: form.flete_moneda, seguro_monto: numeric(form.seguro_monto), gastos_locales_monto: numeric(form.gastos_locales_monto),
       otros_monto: numeric(form.otros_monto), observaciones: nullable(form.observaciones), cotizacion_id: nullable(form.cotizacion_id),
       orden_id: nullable(form.orden_id), expediente_id: nullable(form.expediente_id),
     }).eq("id", id); if (error) throw error;
-  }, onSuccess: () => { toast.success("Cambios guardados"); setModoEdicion(false); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["operaciones-logistica"] }); history.replaceState(null, "", `/logistica/${id}`); }, onError: (e: any) => toast.error(e.message) });
+    await logAuditoria(id, "editado");
+  }, onSuccess: () => { toast.success("Cambios guardados"); setModoEdicion(false); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["operaciones-logistica"] }); qc.invalidateQueries({ queryKey: ["auditoria-logistica", id] }); history.replaceState(null, "", `/logistica/${id}`); }, onError: (e: any) => toast.error(e.message) });
 
   const completarEtapa = useMutation({ mutationFn: async (etapaId: string) => {
     const currentIndex = etapas.findIndex((e) => e.id === etapaId);
@@ -142,14 +147,8 @@ function DetalleLogistica() {
     } else {
       const { error: opError } = await supabase.from("operaciones_logistica").update({ estado: "completada" }).eq("id", id); if (opError) throw opError;
     }
-  }, onSuccess: () => { toast.success("Etapa completada"); qc.invalidateQueries({ queryKey: ["etapas-operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["operaciones-logistica"] }); }, onError: (e: any) => toast.error(e.message) });
-
-  const uploadMut = useMutation({ mutationFn: async (file: File) => {
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-"); const path = `logistica/${id}/${crypto.randomUUID()}-${safeName}`;
-    const { error } = await supabase.storage.from("documentos").upload(path, file); if (error) throw error;
-    const { error: updateError } = await supabase.from("operaciones_logistica").update({ documento_url: path }).eq("id", id); if (updateError) throw updateError;
-  }, onSuccess: () => { toast.success("Documento adjuntado"); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); }, onError: (e: any) => toast.error(e.message) });
-  const removeDoc = useMutation({ mutationFn: async () => { if (!operacion?.documento_url) return; const { error } = await supabase.storage.from("documentos").remove([operacion.documento_url]); if (error) throw error; const { error: u } = await supabase.from("operaciones_logistica").update({ documento_url: null }).eq("id", id); if (u) throw u; }, onSuccess: () => { toast.success("Documento quitado"); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); } });
+    await logAuditoria(id, `etapa_completada:${etapas[currentIndex].etapa_codigo}`);
+  }, onSuccess: () => { toast.success("Etapa completada"); qc.invalidateQueries({ queryKey: ["etapas-operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["operaciones-logistica"] }); qc.invalidateQueries({ queryKey: ["auditoria-logistica", id] }); }, onError: (e: any) => toast.error(e.message) });
 
   const totalCostos = useMemo(() => [form?.flete_monto, form?.seguro_monto, form?.gastos_locales_monto, form?.otros_monto].reduce<number>((sum, value) => sum + Number(value || 0), 0), [form]);
   if (isLoading || !operacion || !form) return <div className="p-8 text-muted-foreground">Cargando operación…</div>;
