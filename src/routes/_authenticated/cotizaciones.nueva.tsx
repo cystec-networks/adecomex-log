@@ -32,9 +32,24 @@ function NuevaCotizacion() {
     incoterm: "", peso_kg: "", volumen_m3: "", tarifa_propuesta: "", moneda: "USD",
     fecha_emision: new Date().toISOString().slice(0, 10), fecha_vigencia: "", notas: "",
     suplidor: "", suplidor_rnc: "", tipo_operacion: "Importación", tipo_carga: "", contacto: "",
+    documento_url: "",
   });
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
   const [productos, setProductos] = useState<any[]>([]);
+
+  const [uploading, setUploading] = useState(false);
+  const uploadFile = async (file: File) => {
+    setUploading(true);
+    try {
+      const path = `cotizaciones/${crypto.randomUUID()}-${file.name}`;
+      const { error } = await supabase.storage.from("documentos").upload(path, file, { upsert: false });
+      if (error) throw error;
+      set("documento_url", path);
+      toast.success("Documento subido");
+    } catch (e: any) {
+      toast.error(e.message ?? "Error al subir");
+    } finally { setUploading(false); }
+  };
 
 
   const { data: clientes } = useQuery({
@@ -53,7 +68,7 @@ function NuevaCotizacion() {
     mutationFn: async () => {
       if (!canEdit) throw new Error("No tienes permiso para crear cotizaciones.");
       const payload: any = { ...form };
-      for (const k of ["cliente_id", "vendedor_id", "fecha_vigencia"]) {
+      for (const k of ["cliente_id", "vendedor_id", "fecha_vigencia", "documento_url"]) {
         if (!payload[k]) payload[k] = null;
       }
       for (const k of ["peso_kg", "volumen_m3", "tarifa_propuesta"]) {
