@@ -103,7 +103,7 @@ function ExpedientesOCR() {
     },
     onSuccess: (exp) => {
       toast.success(`Expediente ${exp.numero} creado`);
-      nav({ to: "/expedientes/$id", params: { id: exp.id } });
+      nav({ to: "/expedientes/$id", params: { id: exp.id }, search: { nuevo: "1" } });
     },
     onError: (e: any) => toast.error(e.message),
   });

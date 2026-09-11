@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,7 +65,12 @@ const SUG_PUERTO_SALIDA = ["Shanghai", "Ningbo", "Shenzhen", "Hong Kong", "Busan
 const SUG_PUERTO_ARRIBO = ["Puerto Multimodal Caucedo", "Puerto de Haina Oriental", "Puerto de Haina Occidental", "Puerto de Río Haina", "Puerto de Boca Chica", "Puerto de Manzanillo", "Puerto Plata", "AILA (Las Américas)", "AIC (Cibao)", "AIP (Punta Cana)", "Aeropuerto La Isabela"];
 const SUG_PREFERENCIA = ["DR-CAFTA", "EPA (Unión Europea)", "ALADI", "SGP", "Ninguna"];
 
+const searchSchema = z.object({
+  nuevo: fallback(z.string(), "").default(""),
+});
+
 export const Route = createFileRoute("/_authenticated/expedientes/$id")({
+  validateSearch: zodValidator(searchSchema),
   component: DetalleExpediente,
 });
 
@@ -157,10 +164,11 @@ function refrescarExpediente(qc: ReturnType<typeof useQueryClient>, id: string) 
 
 function DetalleExpediente() {
   const { id } = Route.useParams();
+  const { nuevo } = Route.useSearch();
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const dragTab = useRef<string | null>(null);
-  const [modoEdicion, setModoEdicion] = useState(false);
+  const [modoEdicion, setModoEdicion] = useState(!!nuevo);
   const { data: roles } = useMyRoles();
   const canEditExpediente = (roles ?? []).some((r) =>
     ["admin", "finanzas", "operaciones", "agente_aduanal", "contabilidad"].includes(r),
@@ -261,7 +269,7 @@ function DetalleExpediente() {
   if (!exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
   return (
-    <div className={cn("max-w-[1600px] mx-auto space-y-6", modoEdicion && "bg-amber-50/40")}>
+    <div className={cn("max-w-[1600px] mx-auto space-y-6", modoEdicion && (nuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
       <Tabs defaultValue="info">
       <div className="sticky top-0 z-20 bg-background border-b pb-3 pt-2 px-6">
         <div className="space-y-3">
@@ -414,7 +422,7 @@ function DetalleExpediente() {
         </TabsList>
       </div>
       <div className="px-6">
-        <TabsContent value="info"><TabInfo exp={exp} modoEdicion={modoEdicion} setModoEdicion={setModoEdicion} canEdit={canEditExpediente} /></TabsContent>
+        <TabsContent value="info"><TabInfo exp={exp} modoEdicion={modoEdicion} setModoEdicion={setModoEdicion} canEdit={canEditExpediente} nuevo={!!nuevo} /></TabsContent>
         <TabsContent value="checklist">
           <ChecklistHitos expedienteId={id} />
         </TabsContent>
@@ -478,8 +486,9 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
 }
 
 
-function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean }) {
+function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean }) {
   const qc = useQueryClient();
+  const nav = useNavigate();
   const editable = canEdit && modoEdicion;
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -530,6 +539,10 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
     liq_oficial_total: exp.liq_oficial_total ?? "",
     tipo_despacho_aduanero: exp.tipo_despacho_aduanero ?? "",
     cantidad_despacho: exp.cantidad_despacho ?? "",
+
+    tipo_operacion: exp.tipo_operacion ?? "",
+    tipo_carga: exp.tipo_carga ?? "",
+    contacto_solicitud: exp.contacto_solicitud ?? "",
   });
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
   const servicioAd = useServicioAduaneroExpediente(
@@ -640,7 +653,17 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
     },
-    onSuccess: () => { ultimoGuardadoPropio.set(exp.id, Date.now()); toast.success("Guardado"); setModoEdicion(false); qc.invalidateQueries({ queryKey: ["expediente", exp.id] }); qc.invalidateQueries({ queryKey: ["expedientes"] }); qc.invalidateQueries({ queryKey: ["expedientes-hist"] }); },
+    onSuccess: () => {
+      ultimoGuardadoPropio.set(exp.id, Date.now());
+      toast.success("Guardado");
+      setModoEdicion(false);
+      if (nuevo) {
+        nav({ to: "/expedientes/$id", params: { id: exp.id }, search: {} });
+      }
+      qc.invalidateQueries({ queryKey: ["expediente", exp.id] });
+      qc.invalidateQueries({ queryKey: ["expedientes"] });
+      qc.invalidateQueries({ queryKey: ["expedientes-hist"] });
+    },
     onError: (e: any) => {
       if (e?.code === "23505") {
         toast.error("Ese número de permiso ya está en uso en otro Expediente — actualiza la página e intenta de nuevo.");
@@ -680,12 +703,12 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
             <p className="text-xs text-muted-foreground">Referencia conservada al momento de la conversión (solo lectura).</p>
           </CardHeader>
           <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <ReadOnlyField label="Tipo de operación" value={exp.tipo_operacion} />
-            <ReadOnlyField label="Tipo de carga" value={exp.tipo_carga} />
+            <Field label="Tipo de operación" value={form.tipo_operacion} onChange={(v) => set("tipo_operacion", v)} disabled={!editable} />
+            <Field label="Tipo de carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} disabled={!editable} />
             <ReadOnlyField label="Origen" value={exp.pais_origen} />
             <ReadOnlyField label="Incoterm" value={exp.incoterm} />
             <ReadOnlyField label="Medio de transporte" value={exp.medio_transporte} />
-            <ReadOnlyField label="Contacto" value={exp.contacto_solicitud} />
+            <Field label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} disabled={!editable} />
           </CardContent>
         </Card>
       )}
