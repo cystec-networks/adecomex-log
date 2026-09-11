@@ -111,6 +111,19 @@ function DetalleOrden() {
     onError: (e: any) => toast.error(e.message ?? "No se pudo vincular el permiso"),
   });
 
+  const desvincularPermiso = useMutation({
+    mutationFn: async (permisoId: string) => {
+      const { error } = await supabase.from("permisos").update({ orden_id: null }).eq("id", permisoId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Permiso desvinculado");
+      qc.invalidateQueries({ queryKey: ["permisos-por-orden", id] });
+      qc.invalidateQueries({ queryKey: ["permisos-disponibles", id] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo desvincular el permiso"),
+  });
+
   const convertirExpediente = useMutation({
     mutationFn: async () => {
       const { data: exp, error } = await supabase
@@ -329,10 +342,21 @@ function DetalleOrden() {
                       <td className="px-3 py-2 capitalize">{p.tipo ?? "—"}</td>
                       <td className="px-3 py-2"><Badge variant="outline" className="capitalize">{p.estado}</Badge></td>
                       <td className="px-3 py-2">{fmtLocalDate(p.fecha_vencimiento)}</td>
-                      <td className="px-3 py-2 text-right">
+                      <td className="px-3 py-2 text-right whitespace-nowrap">
                         <Button variant="ghost" size="sm" asChild>
                           <Link to="/permisos/$id" params={{ id: p.id }}>Ver / editar</Link>
                         </Button>
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => desvincularPermiso.mutate(p.id)}
+                            disabled={desvincularPermiso.isPending}
+                          >
+                            Desvincular
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}
