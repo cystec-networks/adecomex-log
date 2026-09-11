@@ -486,8 +486,9 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
 }
 
 
-function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean }) {
+function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean }) {
   const qc = useQueryClient();
+  const nav = useNavigate();
   const editable = canEdit && modoEdicion;
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState({
