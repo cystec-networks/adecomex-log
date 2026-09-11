@@ -34,9 +34,11 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
     const system =
       "Eres un asistente de operaciones aduanales en República Dominicana. " +
       "Extraes datos de documentos de importación (BL, factura comercial, packing list, AWB). " +
-      "Devuelve ÚNICAMENTE un objeto JSON con las claves exactas: cliente, bl, suplidor, numero_documento, productos, eta, puerto_arribo, contenedores. " +
+      "Devuelve ÚNICAMENTE un objeto JSON con las claves exactas: cliente, bl, suplidor, numero_documento, productos, fecha_cargado, eta, naviera, peso_bruto_kg, puerto_arribo, contenedores. " +
       "'contenedores' es un arreglo de objetos {numero, sello1, sello2, tipo} — busca una tabla tipo 'FURGONES' o 'CONTENEDORES' con columnas de número de contenedor/furgón, sello(s) y tipo de empaque/contenedor; si no hay tabla de contenedores en el documento, usa null. " +
-      "Usa null cuando el dato no aparezca. 'eta' en formato YYYY-MM-DD si es posible. 'productos' como resumen breve (máx 300 caracteres).";
+      "'fecha_cargado' es la fecha de embarque/carga que normalmente aparece en el BL (Shipped on Board / Fecha de Embarque). 'eta' es la fecha ESTIMADA DE LLEGADA — úsala solo si el documento la indica explícitamente como tal (poco común en un BL); si no aparece claramente etiquetada como fecha de llegada, usa null en vez de adivinar con la fecha de embarque. " +
+      "'naviera' es el nombre de la naviera/carrier (p. ej. MAERSK, MSC, CMA CGM). 'peso_bruto_kg' es el peso bruto total de la carga en kilogramos (número, sin unidades). " +
+      "Usa null cuando el dato no aparezca. Las fechas en formato YYYY-MM-DD si es posible. 'productos' como resumen breve (máx 300 caracteres).";
 
 
     const isPdf = data.mime === "application/pdf";
@@ -71,7 +73,11 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
       suplidor: parsed.suplidor ?? null,
       numero_documento: parsed.numero_documento ?? null,
       productos: parsed.productos ?? null,
+      fecha_cargado: parsed.fecha_cargado ?? null,
       eta: parsed.eta ?? null,
+      naviera: parsed.naviera ?? null,
+      peso_bruto_kg:
+        parsed.peso_bruto_kg != null && !isNaN(Number(parsed.peso_bruto_kg)) ? Number(parsed.peso_bruto_kg) : null,
       puerto_arribo: parsed.puerto_arribo ?? null,
       contenedores: Array.isArray(parsed.contenedores)
         ? parsed.contenedores
