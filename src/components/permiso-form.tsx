@@ -44,16 +44,22 @@ type Props = {
   mode: "new" | "edit";
   id?: string;
   expedienteId?: string; // preselect
+  ordenId?: string; // preselect
 };
 
-export function PermisoForm({ mode, id, expedienteId }: Props) {
+export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
   const nav = useNavigate();
   const qc = useQueryClient();
 
   const { data: existing } = useQuery({
     enabled: mode === "edit" && !!id,
     queryKey: ["permiso", id],
-    queryFn: async () => (await supabase.from("permisos").select("*, clientes(nombre), expedientes(numero,cliente_id)").eq("id", id!).maybeSingle()).data,
+    queryFn: async () => (await supabase.from("permisos").select("*, clientes(nombre), expedientes(numero,cliente_id), ordenes(numero,cliente_id)").eq("id", id!).maybeSingle()).data,
+  });
+
+  const { data: ordenes } = useQuery({
+    queryKey: ["ordenes-lite"],
+    queryFn: async () => (await supabase.from("ordenes").select("id,numero,cliente_id,clientes(nombre)").order("numero", { ascending: false }).limit(500)).data ?? [],
   });
 
   const { data: expedientes } = useQuery({
@@ -65,6 +71,7 @@ export function PermisoForm({ mode, id, expedienteId }: Props) {
     numero: "",
     numero_resolucion: "",
     expediente_id: expedienteId ?? "",
+    orden_id: ordenId ?? "",
     cliente_id: "",
     tipo: "",
     institucion_emisora: "",
