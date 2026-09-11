@@ -84,6 +84,7 @@ function DetalleCotizacion() {
         tipo_operacion: (c as any).tipo_operacion ?? "Importación",
         tipo_carga: (c as any).tipo_carga ?? "",
         contacto: (c as any).contacto ?? "",
+        documento_url: (c as any).documento_url ?? "",
       });
     }
   }, [c]);
@@ -91,10 +92,24 @@ function DetalleCotizacion() {
   const convertida = !!(c as any)?.orden_id || !!ordenVinculada;
   const readOnly = !canEdit || convertida;
 
+  const [uploading, setUploading] = useState(false);
+  const uploadFile = async (file: File) => {
+    setUploading(true);
+    try {
+      const path = `cotizaciones/${crypto.randomUUID()}-${file.name}`;
+      const { error } = await supabase.storage.from("documentos").upload(path, file, { upsert: false });
+      if (error) throw error;
+      set("documento_url", path);
+      toast.success("Documento subido");
+    } catch (e: any) {
+      toast.error(e.message ?? "Error al subir");
+    } finally { setUploading(false); }
+  };
+
   const save = useMutation({
     mutationFn: async () => {
       const payload: any = { ...form };
-      for (const k of ["cliente_id", "vendedor_id", "fecha_vigencia", "fecha_emision"]) {
+      for (const k of ["cliente_id", "vendedor_id", "fecha_vigencia", "fecha_emision", "documento_url"]) {
         if (!payload[k]) payload[k] = null;
       }
       for (const k of ["peso_kg", "volumen_m3", "tarifa_propuesta"]) {
