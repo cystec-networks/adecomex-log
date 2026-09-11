@@ -164,10 +164,11 @@ function refrescarExpediente(qc: ReturnType<typeof useQueryClient>, id: string) 
 
 function DetalleExpediente() {
   const { id } = Route.useParams();
+  const { nuevo } = Route.useSearch();
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const dragTab = useRef<string | null>(null);
-  const [modoEdicion, setModoEdicion] = useState(false);
+  const [modoEdicion, setModoEdicion] = useState(!!nuevo);
   const { data: roles } = useMyRoles();
   const canEditExpediente = (roles ?? []).some((r) =>
     ["admin", "finanzas", "operaciones", "agente_aduanal", "contabilidad"].includes(r),
