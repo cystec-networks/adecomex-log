@@ -209,7 +209,7 @@ function Cotizaciones() {
                 <Th k="numero" className="px-4 py-2">Número</Th>
                 <Th k="cliente">Cliente</Th>
                 <Th k="vendedor">Gestor de Compra</Th>
-                <Th k="tipo_mercancia">Mercancía</Th>
+                <Th k="detalle_producto">Detalles del producto</Th>
                 <Th k="origen">Origen</Th>
                 <Th k="destino">Destino</Th>
                 <Th k="tarifa_propuesta">Tarifa</Th>
