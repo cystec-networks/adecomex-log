@@ -99,6 +99,10 @@ function DetalleOrden() {
   });
 
   const [form, setForm] = useState<any>(null);
+  const [vincularOpen, setVincularOpen] = useState(false);
+  const [busquedaPermiso, setBusquedaPermiso] = useState("");
+  const [selectedPermisoId, setSelectedPermisoId] = useState<string | null>(null);
+
   useEffect(() => {
     if (o && !form) setForm({ numero: o.numero ?? "", estado: o.estado ?? "abierta", notas: o.notas ?? "" });
   }, [o]);
