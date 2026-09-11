@@ -1,0 +1,1 @@
+ALTER TABLE public.cotizaciones ADD COLUMN IF NOT EXISTS documento_url text;

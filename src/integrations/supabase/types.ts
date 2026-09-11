@@ -1446,6 +1446,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           destino: string | null
+          documento_url: string | null
           eliminado_en: string | null
           eliminado_por: string | null
           estado: Database["public"]["Enums"]["cotizacion_estado"]
@@ -1479,6 +1480,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           destino?: string | null
+          documento_url?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["cotizacion_estado"]
@@ -1512,6 +1514,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           destino?: string | null
+          documento_url?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["cotizacion_estado"]
