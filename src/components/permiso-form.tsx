@@ -90,6 +90,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
         numero: existing.numero ?? "",
         numero_resolucion: existing.numero_resolucion ?? "",
         expediente_id: existing.expediente_id ?? "",
+        orden_id: (existing as any).orden_id ?? "",
         cliente_id: existing.cliente_id ?? "",
         tipo: existing.tipo ?? "",
         institucion_emisora: existing.institucion_emisora ?? "",
@@ -104,14 +105,22 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
     }
   }, [existing, mode, loaded]);
 
-  // Autocompletar cliente cuando cambie expediente
+  // Autocompletar cliente cuando cambie expediente u orden
   useEffect(() => {
-    if (!form.expediente_id) return;
-    const exp = (expedientes ?? []).find((e: any) => e.id === form.expediente_id);
-    if (exp && exp.cliente_id && !form.cliente_id) {
-      setForm((f) => ({ ...f, cliente_id: exp.cliente_id as string }));
+    if (form.expediente_id) {
+      const exp = (expedientes ?? []).find((e: any) => e.id === form.expediente_id);
+      if (exp && exp.cliente_id && !form.cliente_id) {
+        setForm((f) => ({ ...f, cliente_id: exp.cliente_id as string }));
+      }
+      return;
     }
-  }, [form.expediente_id, expedientes]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (form.orden_id) {
+      const ord = (ordenes ?? []).find((e: any) => e.id === form.orden_id);
+      if (ord && ord.cliente_id && !form.cliente_id) {
+        setForm((f) => ({ ...f, cliente_id: ord.cliente_id as string }));
+      }
+    }
+  }, [form.expediente_id, form.orden_id, expedientes, ordenes]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
