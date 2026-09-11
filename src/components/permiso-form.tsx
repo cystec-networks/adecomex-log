@@ -141,7 +141,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
   const save = useMutation({
     mutationFn: async () => {
       const payload: any = { ...form };
-      ["expediente_id","cliente_id","tipo","fecha_solicitud","fecha_emision","fecha_vencimiento","documento_url","numero_resolucion","institucion_emisora","observaciones","numero"]
+      ["expediente_id","orden_id","cliente_id","tipo","fecha_solicitud","fecha_emision","fecha_vencimiento","documento_url","numero_resolucion","institucion_emisora","observaciones","numero"]
         .forEach((k) => { if (payload[k] === "") payload[k] = null; });
       if (mode === "new") {
         if (payload.numero == null) delete payload.numero; // auto-generated when empty
@@ -160,9 +160,11 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
       qc.invalidateQueries({ queryKey: ["permisos"] });
       qc.invalidateQueries({ queryKey: ["permiso", id] });
       qc.invalidateQueries({ queryKey: ["permisos-por-expediente"] });
+      qc.invalidateQueries({ queryKey: ["permisos-por-orden"] });
       toast.success(mode === "new" ? `Permiso VUCE ${row.numero} creado` : "Permiso VUCE actualizado");
       if (mode === "new") {
         if (expedienteId) nav({ to: "/expedientes/$id", params: { id: expedienteId } });
+        else if (ordenId) nav({ to: "/ordenes/$id", params: { id: ordenId } });
         else nav({ to: "/permisos" });
       }
     },
