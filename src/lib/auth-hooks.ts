@@ -14,7 +14,8 @@ export type AppRole =
   | "contabilidad"
   | "academia"
   | "rrhh"
-  | "vendedor";
+  | "vendedor"
+  | "logistica";
 
 
 export function useCurrentUser() {
