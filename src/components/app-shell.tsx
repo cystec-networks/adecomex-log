@@ -6,7 +6,7 @@ import {
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
   GraduationCap, BookOpen, UserPlus, ClipboardCheck,
   Briefcase, IdCard, HandCoins,
-  Scale, FileSpreadsheet, Warehouse, Boxes, Landmark, Calculator,
+  Scale, FileSpreadsheet, Warehouse, Boxes, Landmark, Calculator, Ship, Plus,
 
 
 } from "lucide-react";
@@ -86,6 +86,17 @@ const GROUPS: Group[] = [
   },
 
 
+  {
+    id: "logistica",
+    label: "LOGÍSTICA",
+    icon: Ship,
+    items: [
+      { to: "/logistica", label: "Operaciones", icon: Ship,
+        match: (p) => (p === "/logistica" || p.startsWith("/logistica/")) && p !== "/logistica/nueva" },
+      { to: "/logistica/nueva", label: "Nueva Operación", icon: Plus,
+        roles: ["admin", "logistica"], match: (p) => p === "/logistica/nueva" },
+    ],
+  },
   {
     id: "expedientes",
     label: "EXPEDIENTES",
@@ -297,6 +308,8 @@ function AppSidebarInner() {
         {/* Comercial group (Cotizaciones → Órdenes) */}
         {renderGroup(visibleGroups.find((g) => g.id === "comercial")!)}
 
+        {/* Logística group */}
+        {renderGroup(visibleGroups.find((g) => g.id === "logistica")!)}
 
         {/* Expedientes group */}
         {renderGroup(visibleGroups.find((g) => g.id === "expedientes")!)}

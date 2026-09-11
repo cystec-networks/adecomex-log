@@ -3603,7 +3603,7 @@ export type Database = {
           created_by: string | null
           descripcion: string | null
           estado: Database["public"]["Enums"]["incidencia_estado"]
-          expediente_id: string
+          expediente_id: string | null
           fecha_apertura: string
           fecha_resolucion: string | null
           id: string
@@ -3617,7 +3617,7 @@ export type Database = {
           created_by?: string | null
           descripcion?: string | null
           estado?: Database["public"]["Enums"]["incidencia_estado"]
-          expediente_id: string
+          expediente_id?: string | null
           fecha_apertura?: string
           fecha_resolucion?: string | null
           id?: string
@@ -3631,7 +3631,7 @@ export type Database = {
           created_by?: string | null
           descripcion?: string | null
           estado?: Database["public"]["Enums"]["incidencia_estado"]
-          expediente_id?: string
+          expediente_id?: string | null
           fecha_apertura?: string
           fecha_resolucion?: string | null
           id?: string
