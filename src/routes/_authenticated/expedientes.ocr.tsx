@@ -92,6 +92,7 @@ function ExpedientesOCR() {
         suplidor: suplidor || null,
         puerto_arribo: puerto || null,
         observaciones: obs || null,
+        descripcion_mercancia: obs || null,
         sla_dias: 5,
       };
       if (clienteId) payload.cliente_id = clienteId;
