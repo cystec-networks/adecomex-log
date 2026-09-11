@@ -117,9 +117,10 @@ function DetalleOrden() {
     v == null ? "—" : `${m ?? "USD"} ${Number(v).toLocaleString("es-DO", { minimumFractionDigits: 2 })}`;
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center gap-3 flex-wrap">
-        <Button variant="ghost" size="sm" asChild><Link to="/ordenes"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link></Button>
+    <div className="max-w-5xl mx-auto space-y-6">
+      <div className="sticky top-0 z-20 bg-background border-b pb-3 pt-2 px-6">
+        <div className="flex items-center gap-3 flex-wrap">
+          <Button variant="ghost" size="sm" asChild><Link to="/ordenes"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link></Button>
         <div className="flex-1 min-w-0">
           <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
             {canEdit ? (
@@ -168,10 +169,12 @@ function DetalleOrden() {
         ) : null}
 
         {canEdit && (
-          <Button onClick={() => save.mutate()} disabled={save.isPending}><Save className="h-4 w-4 mr-1" />Guardar cambios</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg"><Save className="h-4 w-4 mr-1" />Guardar cambios</Button>
         )}
+        </div>
       </div>
 
+      <div className="px-6 space-y-6">
       {o.cotizacion_id || o.cot_numero ? (
         <Card className="bg-muted/30 border-dashed">
           <CardHeader className="pb-3 border-b">
@@ -242,6 +245,7 @@ function DetalleOrden() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
