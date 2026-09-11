@@ -168,12 +168,28 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
 
   let detalleCargaEndY = (doc as any).lastAutoTable.finalY;
 
-  const contenedores = String(input.contenedores ?? "").trim();
-  if (contenedores) {
+  if (Array.isArray(input.contenedores) && input.contenedores.length) {
+    autoTable(doc, {
+      startY: detalleCargaStartY,
+      head: [["N° Contenedor", "Sello 1", "Sello 2", "Tipo"]],
+      body: input.contenedores.map((c) => [
+        c.numero,
+        c.sello1 ?? "—",
+        c.sello2 ?? "—",
+        c.tipo ?? "—",
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
+      bodyStyles: { fontSize: 8 },
+      margin: { left: pageW - M - detalleCargaTableWidth },
+      tableWidth: detalleCargaTableWidth,
+    });
+    detalleCargaEndY = Math.max(detalleCargaEndY, (doc as any).lastAutoTable.finalY);
+  } else if (typeof input.contenedores === "string" && input.contenedores.trim()) {
     autoTable(doc, {
       startY: detalleCargaStartY,
       head: [["Contenedores"]],
-      body: contenedores.split(/[,;\n/]+/).map((c) => [c.trim()]).filter((r) => r[0]),
+      body: input.contenedores.split(/[,;\n/]+/).map((c) => [c.trim()]).filter((r) => r[0]),
       theme: "grid",
       headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
       bodyStyles: { fontSize: 8 },
