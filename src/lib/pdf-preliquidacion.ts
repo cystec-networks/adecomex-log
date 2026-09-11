@@ -171,11 +171,11 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
   if (Array.isArray(input.contenedores) && input.contenedores.length) {
     autoTable(doc, {
       startY: detalleCargaStartY,
-      head: [["N° Contenedor", "Sello 1", "Sello 2", "Tipo"]],
-      body: input.contenedores.map((c) => [
+      head: [["# Item", "N° Contenedor", "Sello 1", "Tipo"]],
+      body: input.contenedores.map((c, i) => [
+        c.item_no ?? i + 1,
         c.numero,
         c.sello1 ?? "—",
-        c.sello2 ?? "—",
         c.tipo ?? "—",
       ]),
       theme: "grid",
