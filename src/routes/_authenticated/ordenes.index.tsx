@@ -34,7 +34,7 @@ function Ordenes() {
     queryKey: ["ordenes"],
     queryFn: async () => (await supabase
       .from("ordenes")
-      .select("*, clientes(nombre)")
+      .select("*, clientes(nombre), orden_productos(detalle_producto)")
       .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
   });
@@ -97,7 +97,7 @@ function Ordenes() {
                 <th className="text-left px-4 py-2">Número</th>
                 <th className="text-left">Cotización de Compras</th>
                 <th className="text-left">Cliente</th>
-                <th className="text-left">Mercancía</th>
+                <th className="text-left">Detalles del producto</th>
                 <th className="text-left">Origen</th>
                 <th className="text-left">Destino</th>
                 <th className="text-left">Estado</th>
@@ -122,7 +122,10 @@ function Ordenes() {
                       </td>
                       <td className="text-xs text-muted-foreground">{o.cot_numero ?? "—"}</td>
                       <td>{o.clientes?.nombre ?? "—"}</td>
-                      <td className="text-muted-foreground">{o.cot_tipo_mercancia ?? "—"}</td>
+                      <td className="text-muted-foreground">
+                        {(o.orden_productos?.[0]?.detalle_producto ?? "—")}
+                        {(o.orden_productos?.length ?? 0) > 1 && ` +${o.orden_productos.length - 1} más`}
+                      </td>
                       <td>{o.cot_origen ?? "—"}</td>
                       <td>{o.cot_destino ?? "—"}</td>
                       <td><Badge className={ORDEN_ESTADO_CLASS[o.estado] ?? ""}>{ordenEstadoLabel(o.estado)}</Badge></td>

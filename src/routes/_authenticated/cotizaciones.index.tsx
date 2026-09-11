@@ -51,7 +51,7 @@ function Cotizaciones() {
     queryKey: ["cotizaciones"],
     queryFn: async () => (await supabase
       .from("cotizaciones")
-      .select("*, clientes(nombre)")
+      .select("*, clientes(nombre), cotizacion_productos(detalle_producto)")
       .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
   });
@@ -101,7 +101,7 @@ function Cotizaciones() {
     return true;
   });
 
-  type SortKey = "numero" | "cliente" | "vendedor" | "tipo_mercancia" | "origen" | "destino"
+  type SortKey = "numero" | "cliente" | "vendedor" | "detalle_producto" | "origen" | "destino"
     | "tarifa_propuesta" | "fecha_emision" | "fecha_vigencia" | "estado";
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
   const toggleSort = (key: SortKey) => {
@@ -115,6 +115,7 @@ function Cotizaciones() {
   const getVal = (c: any, k: SortKey) =>
     k === "cliente" ? (c.clientes?.nombre ?? "")
       : k === "vendedor" ? nombreVendedor(c.vendedor_id)
+      : k === "detalle_producto" ? (c.cotizacion_productos?.[0]?.detalle_producto ?? "")
         : (c[k] ?? "");
 
   const sorted = [...filtered].sort((a, b) => {
@@ -239,7 +240,10 @@ function Cotizaciones() {
                       </td>
                       <td>{c.clientes?.nombre ?? "—"}</td>
                       <td className="text-muted-foreground">{nombreVendedor(c.vendedor_id)}</td>
-                      <td className="text-muted-foreground">{c.tipo_mercancia ?? "—"}</td>
+                      <td className="text-muted-foreground">
+                        {(c.cotizacion_productos?.[0]?.detalle_producto ?? "—")}
+                        {(c.cotizacion_productos?.length ?? 0) > 1 && ` +${c.cotizacion_productos.length - 1} más`}
+                      </td>
                       <td>{c.origen ?? "—"}</td>
                       <td>{c.destino ?? "—"}</td>
                       <td className="tabular-nums">
