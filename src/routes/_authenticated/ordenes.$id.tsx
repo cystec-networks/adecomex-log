@@ -111,6 +111,19 @@ function DetalleOrden() {
     onError: (e: any) => toast.error(e.message ?? "No se pudo vincular el permiso"),
   });
 
+  const desvincularPermiso = useMutation({
+    mutationFn: async (permisoId: string) => {
+      const { error } = await supabase.from("permisos").update({ orden_id: null }).eq("id", permisoId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Permiso desvinculado");
+      qc.invalidateQueries({ queryKey: ["permisos-por-orden", id] });
+      qc.invalidateQueries({ queryKey: ["permisos-disponibles", id] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo desvincular el permiso"),
+  });
+
   const convertirExpediente = useMutation({
     mutationFn: async () => {
       const { data: exp, error } = await supabase
