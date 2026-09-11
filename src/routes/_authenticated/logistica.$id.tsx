@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
-import { AlertTriangle, ArrowLeft, Check, CheckCircle2, Circle, Clock, FileText, Pencil, Plus, Save, Upload, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2, Circle, Clock, FileText, Pencil, Plus, Save, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConstanciaLogisticaButton } from "@/components/constancia-logistica-button";
+
+/** Registro de auditoría de la operación logística (mismo patrón que Expedientes). */
+const logAuditoria = async (operacionId: string, accion: string, cambios?: Record<string, unknown>) => {
+  const { data: u } = await supabase.auth.getUser();
+  await supabase.from("auditoria").insert({
+    entidad: "operaciones_logistica", entidad_id: operacionId, accion,
+    usuario_id: u.user?.id ?? null, cambios: (cambios ?? null) as any,
+  });
+};
+
+const TIPOS_DOCUMENTO = [
+  { codigo: "booking", nombre: "Booking" },
+  { codigo: "bl_awb", nombre: "BL / AWB" },
+  { codigo: "packing_list", nombre: "Lista de Empaque" },
+  { codigo: "hbl", nombre: "HBL" },
+  { codigo: "certificado_origen", nombre: "Certificado de Origen" },
+  { codigo: "otro", nombre: "Otro" },
+] as const;
 
 const searchSchema = z.object({ nuevo: fallback(z.string(), "").default("") });
 export const Route = createFileRoute("/_authenticated/logistica/$id")({
