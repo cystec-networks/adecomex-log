@@ -3607,6 +3607,7 @@ export type Database = {
           fecha_apertura: string
           fecha_resolucion: string | null
           id: string
+          logistica_id: string | null
           responsable_id: string | null
           severidad: Database["public"]["Enums"]["incidencia_severidad"]
           tipo: string
@@ -3620,6 +3621,7 @@ export type Database = {
           fecha_apertura?: string
           fecha_resolucion?: string | null
           id?: string
+          logistica_id?: string | null
           responsable_id?: string | null
           severidad?: Database["public"]["Enums"]["incidencia_severidad"]
           tipo: string
@@ -3633,6 +3635,7 @@ export type Database = {
           fecha_apertura?: string
           fecha_resolucion?: string | null
           id?: string
+          logistica_id?: string | null
           responsable_id?: string | null
           severidad?: Database["public"]["Enums"]["incidencia_severidad"]
           tipo?: string
@@ -3672,6 +3675,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_rentabilidad_expediente"
             referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "incidencias_logistica_id_fkey"
+            columns: ["logistica_id"]
+            isOneToOne: false
+            referencedRelation: "operaciones_logistica"
+            referencedColumns: ["id"]
           },
         ]
       }
