@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, FileText } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
@@ -15,6 +15,7 @@ import { TIPOS_MERCANCIA } from "@/lib/estados-cotizacion";
 import { useMyRoles } from "@/lib/auth-hooks";
 import { ProductosCard } from "@/components/productos-card";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
+import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
 
 export const Route = createFileRoute("/_authenticated/cotizaciones/nueva")({

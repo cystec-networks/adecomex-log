@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, PackagePlus } from "lucide-react";
+import { ArrowLeft, Save, PackagePlus, Upload, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
@@ -19,6 +19,7 @@ import { ProductosCard } from "@/components/productos-card";
 import { copiarProductos } from "@/lib/copiar-productos";
 import { fmtLocalDate } from "@/lib/dates";
 import { CalcularEstimadoButton, PreLiquidacionPdfButtonCotizacion } from "@/components/preliquidacion-cotizacion";
+import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import {
   COTIZACION_ESTADOS, COTIZACION_ESTADO_CLASS, cotizacionEstadoLabel, TIPOS_MERCANCIA,
 } from "@/lib/estados-cotizacion";
