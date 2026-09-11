@@ -674,6 +674,20 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
       }
       const { error } = await supabase.from("expedientes").update(payload).eq("id", exp.id);
       if (error) throw error;
+      await supabase.from("expediente_contenedores").delete().eq("expediente_id", exp.id);
+      if (contValidos.length) {
+        const { error: eCont } = await supabase.from("expediente_contenedores").insert(
+          contValidos.map((c, i) => ({
+            expediente_id: exp.id,
+            item_no: i + 1,
+            numero_contenedor: c.numero.trim(),
+            sello1: c.sello1.trim() || null,
+            sello2: c.sello2.trim() || null,
+            tipo_contenedor: c.tipo.trim() || null,
+          })),
+        );
+        if (eCont) throw eCont;
+      }
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
     },
     onSuccess: () => {
