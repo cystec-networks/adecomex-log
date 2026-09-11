@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, PackagePlus } from "lucide-react";
+import { ArrowLeft, Save, PackagePlus, Upload, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
@@ -19,6 +19,7 @@ import { ProductosCard } from "@/components/productos-card";
 import { copiarProductos } from "@/lib/copiar-productos";
 import { fmtLocalDate } from "@/lib/dates";
 import { CalcularEstimadoButton, PreLiquidacionPdfButtonCotizacion } from "@/components/preliquidacion-cotizacion";
+import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import {
   COTIZACION_ESTADOS, COTIZACION_ESTADO_CLASS, cotizacionEstadoLabel, TIPOS_MERCANCIA,
 } from "@/lib/estados-cotizacion";
@@ -83,6 +84,7 @@ function DetalleCotizacion() {
         tipo_operacion: (c as any).tipo_operacion ?? "Importación",
         tipo_carga: (c as any).tipo_carga ?? "",
         contacto: (c as any).contacto ?? "",
+        documento_url: (c as any).documento_url ?? "",
       });
     }
   }, [c]);
@@ -90,10 +92,24 @@ function DetalleCotizacion() {
   const convertida = !!(c as any)?.orden_id || !!ordenVinculada;
   const readOnly = !canEdit || convertida;
 
+  const [uploading, setUploading] = useState(false);
+  const uploadFile = async (file: File) => {
+    setUploading(true);
+    try {
+      const path = `cotizaciones/${crypto.randomUUID()}-${file.name}`;
+      const { error } = await supabase.storage.from("documentos").upload(path, file, { upsert: false });
+      if (error) throw error;
+      set("documento_url", path);
+      toast.success("Documento subido");
+    } catch (e: any) {
+      toast.error(e.message ?? "Error al subir");
+    } finally { setUploading(false); }
+  };
+
   const save = useMutation({
     mutationFn: async () => {
       const payload: any = { ...form };
-      for (const k of ["cliente_id", "vendedor_id", "fecha_vigencia", "fecha_emision"]) {
+      for (const k of ["cliente_id", "vendedor_id", "fecha_vigencia", "fecha_emision", "documento_url"]) {
         if (!payload[k]) payload[k] = null;
       }
       for (const k of ["peso_kg", "volumen_m3", "tarifa_propuesta"]) {
@@ -307,6 +323,32 @@ function DetalleCotizacion() {
           <p className="text-xs text-muted-foreground w-full">
             Estimación referencial — sujeta a la liquidación oficial de la Dirección General de Aduanas (DGA).
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Documento adjunto</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className={`inline-flex ${readOnly ? "opacity-50 cursor-not-allowed pointer-events-none" : ""}`}>
+              <input type="file" accept="application/pdf,image/*" className="hidden" disabled={readOnly} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])} />
+              <span className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md border bg-background hover:bg-muted cursor-pointer text-sm">
+                <Upload className="h-4 w-4" /> {uploading ? "Subiendo…" : "Subir PDF/imagen"}
+              </span>
+            </label>
+            {form.documento_url && (
+              <>
+                <DocumentoPreviewButton
+                  path={form.documento_url}
+                  variant="outline"
+                  size="sm"
+                  icon={<FileText className="h-4 w-4 mr-1" />}
+                  label="Ver documento"
+                />
+                <Button variant="ghost" size="sm" onClick={() => set("documento_url", "")} disabled={readOnly}>Quitar</Button>
+              </>
+            )}
+          </div>
         </CardContent>
       </Card>
 

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, FileText } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
@@ -15,6 +15,7 @@ import { TIPOS_MERCANCIA } from "@/lib/estados-cotizacion";
 import { useMyRoles } from "@/lib/auth-hooks";
 import { ProductosCard } from "@/components/productos-card";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
+import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
 
 export const Route = createFileRoute("/_authenticated/cotizaciones/nueva")({
@@ -31,9 +32,24 @@ function NuevaCotizacion() {
     incoterm: "", peso_kg: "", volumen_m3: "", tarifa_propuesta: "", moneda: "USD",
     fecha_emision: new Date().toISOString().slice(0, 10), fecha_vigencia: "", notas: "",
     suplidor: "", suplidor_rnc: "", tipo_operacion: "Importación", tipo_carga: "", contacto: "",
+    documento_url: "",
   });
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
   const [productos, setProductos] = useState<any[]>([]);
+
+  const [uploading, setUploading] = useState(false);
+  const uploadFile = async (file: File) => {
+    setUploading(true);
+    try {
+      const path = `cotizaciones/${crypto.randomUUID()}-${file.name}`;
+      const { error } = await supabase.storage.from("documentos").upload(path, file, { upsert: false });
+      if (error) throw error;
+      set("documento_url", path);
+      toast.success("Documento subido");
+    } catch (e: any) {
+      toast.error(e.message ?? "Error al subir");
+    } finally { setUploading(false); }
+  };
 
 
   const { data: clientes } = useQuery({
@@ -52,7 +68,7 @@ function NuevaCotizacion() {
     mutationFn: async () => {
       if (!canEdit) throw new Error("No tienes permiso para crear cotizaciones.");
       const payload: any = { ...form };
-      for (const k of ["cliente_id", "vendedor_id", "fecha_vigencia"]) {
+      for (const k of ["cliente_id", "vendedor_id", "fecha_vigencia", "documento_url"]) {
         if (!payload[k]) payload[k] = null;
       }
       for (const k of ["peso_kg", "volumen_m3", "tarifa_propuesta"]) {
@@ -183,6 +199,32 @@ function NuevaCotizacion() {
         <ProductosCard tabla="cotizacion_productos" items={productos} onItemsChange={setProductos} paisOrigen={form.origen} />
 
 
+
+        <Card>
+          <CardHeader><CardTitle className="text-base">Documento adjunto</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <label className="inline-flex">
+                <input type="file" accept="application/pdf,image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])} />
+                <span className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md border bg-background hover:bg-muted cursor-pointer text-sm">
+                  <Upload className="h-4 w-4" /> {uploading ? "Subiendo…" : "Subir PDF/imagen"}
+                </span>
+              </label>
+              {form.documento_url && (
+                <>
+                  <DocumentoPreviewButton
+                    path={form.documento_url}
+                    variant="outline"
+                    size="sm"
+                    icon={<FileText className="h-4 w-4 mr-1" />}
+                    label="Ver documento"
+                  />
+                  <Button variant="ghost" size="sm" onClick={() => set("documento_url", "")}>Quitar</Button>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader><CardTitle className="text-base">Notas / observaciones</CardTitle></CardHeader>
