@@ -363,6 +363,64 @@ function DetalleOrden() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={vincularOpen} onOpenChange={setVincularOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Vincular permiso VUCE existente</DialogTitle>
+            <DialogDescription>
+              Selecciona un permiso libre para asociarlo a esta orden de compra.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              placeholder="Buscar por número o tipo..."
+              value={busquedaPermiso}
+              onChange={(e) => setBusquedaPermiso(e.target.value)}
+            />
+            <div className="max-h-60 overflow-auto border rounded-md">
+              {disponiblesFiltrados.length === 0 ? (
+                <p className="p-3 text-sm text-muted-foreground">No hay permisos disponibles.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-muted text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">N° Permiso</th>
+                      <th className="px-3 py-2 text-left font-medium">Tipo</th>
+                      <th className="px-3 py-2 text-left font-medium">Vence</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {disponiblesFiltrados.map((p: any) => (
+                      <tr
+                        key={p.id}
+                        onClick={() => setSelectedPermisoId(p.id)}
+                        className={cn(
+                          "cursor-pointer border-t",
+                          selectedPermisoId === p.id ? "bg-accent" : "hover:bg-muted/50"
+                        )}
+                      >
+                        <td className="px-3 py-2 font-medium">{p.numero ?? "—"}</td>
+                        <td className="px-3 py-2 capitalize">{p.tipo}</td>
+                        <td className="px-3 py-2">{fmtLocalDate(p.fecha_vencimiento)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setVincularOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => selectedPermisoId && vincularPermiso.mutate(selectedPermisoId)}
+              disabled={!selectedPermisoId || vincularPermiso.isPending}
+            >
+              {vincularPermiso.isPending ? "Vinculando…" : "Confirmar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   );
