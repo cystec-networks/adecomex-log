@@ -926,6 +926,61 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
               disabled={!editable}
             />
           </div>
+          <div className="grid gap-2 md:col-span-2">
+            <div className="flex items-center justify-between">
+              <Label>Contenedores / Furgones</Label>
+              {editable && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setContenedores((r) => [...r, { numero: "", sello1: "", sello2: "", tipo: "" }])}
+                >
+                  Agregar contenedor
+                </Button>
+              )}
+            </div>
+            {contenedores.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sin contenedores registrados.</p>
+            ) : (
+              <div className="overflow-x-auto rounded-md border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="px-2 py-2 text-left w-10">#</th>
+                      <th className="px-2 py-2 text-left">Número</th>
+                      <th className="px-2 py-2 text-left">Sello 1</th>
+                      <th className="px-2 py-2 text-left">Sello 2</th>
+                      <th className="px-2 py-2 text-left">Tipo</th>
+                      {editable && <th className="px-2 py-2 w-10"></th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contenedores.map((c, i) => (
+                      <tr key={i} className="border-t">
+                        <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
+                        <td className="px-2 py-1"><Input value={c.numero} onChange={(e) => setCont(i, "numero", e.target.value)} disabled={!editable} placeholder="MSKU1234567" /></td>
+                        <td className="px-2 py-1"><Input value={c.sello1} onChange={(e) => setCont(i, "sello1", e.target.value)} disabled={!editable} /></td>
+                        <td className="px-2 py-1"><Input value={c.sello2} onChange={(e) => setCont(i, "sello2", e.target.value)} disabled={!editable} /></td>
+                        <td className="px-2 py-1"><Input value={c.tipo} onChange={(e) => setCont(i, "tipo", e.target.value)} disabled={!editable} placeholder="40HC" /></td>
+                        {editable && (
+                          <td className="px-2 py-1 text-right">
+                            <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                              onClick={() => setContenedores((r) => r.filter((_, idx) => idx !== i))}>
+                              ✕
+                            </Button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              El campo “Números de contenedores” se actualiza automáticamente con esta lista al guardar.
+            </p>
+          </div>
           <div className="grid gap-1.5">
             <Label>Rectificación técnica</Label>
             <div className="h-9 flex items-center gap-3">
