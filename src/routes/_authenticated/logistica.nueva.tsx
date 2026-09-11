@@ -113,7 +113,16 @@ function NuevaOperacion() {
       <div className="space-y-1.5"><TerceroExtranjeroPicker label="Proveedor logístico" onSelect={(t) => setForm((p) => ({ ...p, proveedor_logistico: t.nombre, proveedor_logistico_tid: t.tid ?? "" }))} /><Input value={form.proveedor_logistico} onChange={(e) => set("proveedor_logistico", e.target.value)} placeholder="Nombre del proveedor" /></div>
       <LinkSelect label="Cotización de Compras (opcional)" field="cotizacion_id" rows={vinculos?.cotizaciones ?? []} /><LinkSelect label="Orden de Compras (opcional)" field="orden_id" rows={vinculos?.ordenes ?? []} /><LinkSelect label="Expediente (opcional)" field="expediente_id" rows={vinculos?.expedientes ?? []} />
       <div className="space-y-1.5"><Label>TID del proveedor</Label><Input value={form.proveedor_logistico_tid} onChange={(e) => set("proveedor_logistico_tid", e.target.value)} /></div>
+      <CargaField label="Correo del proveedor" field="proveedor_email" />
+      <CargaField label="Teléfono del proveedor" field="proveedor_telefono" />
       <div className="md:col-span-2 space-y-1.5"><Label>Observaciones</Label><Textarea value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} rows={4} /></div>
+    </CardContent></Card>
+    <Card><CardHeader><CardTitle className="text-base">Datos de la carga</CardTitle></CardHeader><CardContent className="grid md:grid-cols-2 gap-4">
+      <div className="md:col-span-2 space-y-1.5"><Label>Producto</Label><Input value={form.producto} onChange={(e) => set("producto", e.target.value)} /></div>
+      <CargaField label="Origen" field="origen" /><CargaField label="Destino" field="destino" />
+      <CargaField label="Puerto / aeropuerto de destino" field="puerto_destino" /><CargaField label="Buque / vuelo" field="buque" />
+      <CargaField label="Peso bruto (kg)" field="peso_bruto_kg" type="number" /><CargaField label="Volumen (m³)" field="volumen_m3" type="number" />
+      <CargaField label="Incoterm" field="incoterm" />
     </CardContent></Card>
     <div className="sticky bottom-4 flex justify-end"><Button size="lg" className="shadow-lg" disabled={createMut.isPending} onClick={() => createMut.mutate()}><Save className="h-4 w-4 mr-2" />{createMut.isPending ? "Creando…" : "Crear operación"}</Button></div>
   </div>;
