@@ -538,6 +538,10 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
     liq_oficial_total: exp.liq_oficial_total ?? "",
     tipo_despacho_aduanero: exp.tipo_despacho_aduanero ?? "",
     cantidad_despacho: exp.cantidad_despacho ?? "",
+
+    tipo_operacion: exp.tipo_operacion ?? "",
+    tipo_carga: exp.tipo_carga ?? "",
+    contacto_solicitud: exp.contacto_solicitud ?? "",
   });
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
   const servicioAd = useServicioAduaneroExpediente(
