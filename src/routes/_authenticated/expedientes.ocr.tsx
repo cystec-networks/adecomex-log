@@ -93,6 +93,9 @@ function ExpedientesOCR() {
         puerto_arribo: puerto || null,
         observaciones: obs || null,
         descripcion_mercancia: obs || null,
+        fecha_cargado: data?.fecha_cargado || null,
+        naviera: data?.naviera || null,
+        peso_bruto: data?.peso_bruto_kg || null,
         numeros_contenedores: data?.contenedores?.length
           ? data.contenedores.map((c) => c.numero).join(", ")
           : null,
