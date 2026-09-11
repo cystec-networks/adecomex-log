@@ -692,12 +692,12 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit }: { exp: any; modo
             <p className="text-xs text-muted-foreground">Referencia conservada al momento de la conversión (solo lectura).</p>
           </CardHeader>
           <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <ReadOnlyField label="Tipo de operación" value={exp.tipo_operacion} />
-            <ReadOnlyField label="Tipo de carga" value={exp.tipo_carga} />
+            <Field label="Tipo de operación" value={form.tipo_operacion} onChange={(v) => set("tipo_operacion", v)} disabled={!editable} />
+            <Field label="Tipo de carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} disabled={!editable} />
             <ReadOnlyField label="Origen" value={exp.pais_origen} />
             <ReadOnlyField label="Incoterm" value={exp.incoterm} />
             <ReadOnlyField label="Medio de transporte" value={exp.medio_transporte} />
-            <ReadOnlyField label="Contacto" value={exp.contacto_solicitud} />
+            <Field label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} disabled={!editable} />
           </CardContent>
         </Card>
       )}
