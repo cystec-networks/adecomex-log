@@ -327,6 +327,32 @@ function DetalleCotizacion() {
       </Card>
 
       <Card>
+        <CardHeader><CardTitle className="text-base">Documento adjunto</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className={`inline-flex ${readOnly ? "opacity-50 cursor-not-allowed pointer-events-none" : ""}`}>
+              <input type="file" accept="application/pdf,image/*" className="hidden" disabled={readOnly} onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])} />
+              <span className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md border bg-background hover:bg-muted cursor-pointer text-sm">
+                <Upload className="h-4 w-4" /> {uploading ? "Subiendo…" : "Subir PDF/imagen"}
+              </span>
+            </label>
+            {form.documento_url && (
+              <>
+                <DocumentoPreviewButton
+                  path={form.documento_url}
+                  variant="outline"
+                  size="sm"
+                  icon={<FileText className="h-4 w-4 mr-1" />}
+                  label="Ver documento"
+                />
+                <Button variant="ghost" size="sm" onClick={() => set("documento_url", "")} disabled={readOnly}>Quitar</Button>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader><CardTitle className="text-base">Notas / observaciones</CardTitle></CardHeader>
         <CardContent><Textarea rows={4} value={form.notas} readOnly={readOnly} onChange={(e) => set("notas", e.target.value)} /></CardContent>
       </Card>
