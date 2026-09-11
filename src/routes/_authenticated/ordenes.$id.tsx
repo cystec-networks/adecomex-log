@@ -62,6 +62,36 @@ function DetalleOrden() {
       (await supabase.from("permisos").select("id,numero,tipo,estado,fecha_vencimiento").eq("orden_id", id).order("created_at", { ascending: false })).data ?? [],
   });
 
+  const { data: permisosDisponibles } = useQuery({
+    queryKey: ["permisos-disponibles", id],
+    enabled: vincularOpen,
+    queryFn: async () =>
+      (
+        await supabase
+          .from("permisos")
+          .select("id,numero,tipo,estado,fecha_vencimiento,cliente_id,created_at")
+          .is("orden_id", null)
+          .is("expediente_id", null)
+          .order("created_at", { ascending: false })
+      ).data ?? [],
+  });
+
+  const disponiblesFiltrados = useMemo(() => {
+    const q = busquedaPermiso.trim().toLowerCase();
+    const list = (permisosDisponibles ?? []).filter((p: any) =>
+      !q ||
+      (p.numero ?? "").toLowerCase().includes(q) ||
+      (p.tipo ?? "").toLowerCase().includes(q)
+    );
+    const ordenClienteId = (o as any)?.cliente_id;
+    return list.sort((a: any, b: any) => {
+      const aSame = a.cliente_id === ordenClienteId ? 1 : 0;
+      const bSame = b.cliente_id === ordenClienteId ? 1 : 0;
+      if (aSame !== bSame) return bSame - aSame;
+      return new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime();
+    });
+  }, [permisosDisponibles, busquedaPermiso, o]);
+
   const convertirExpediente = useMutation({
     mutationFn: async () => {
       const { data: exp, error } = await supabase
