@@ -594,10 +594,31 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
     };
   }, [histDb]);
 
+  const { data: contenedoresDb } = useQuery({
+    queryKey: ["expediente-contenedores", exp.id],
+    queryFn: async () =>
+      (await supabase.from("expediente_contenedores").select("*").eq("expediente_id", exp.id).order("item_no")).data ?? [],
+  });
+  const [contenedores, setContenedores] = useState<Array<{ numero: string; sello1: string; sello2: string; tipo: string }>>([]);
+  useEffect(() => {
+    if (!contenedoresDb) return;
+    setContenedores(
+      contenedoresDb.map((c: any) => ({
+        numero: c.numero_contenedor ?? "",
+        sello1: c.sello1 ?? "",
+        sello2: c.sello2 ?? "",
+        tipo: c.tipo_contenedor ?? "",
+      })),
+    );
+  }, [contenedoresDb]);
+  const setCont = (i: number, k: string, v: string) =>
+    setContenedores((rows) => rows.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)));
+
   const { data: mercItems } = useQuery({
     queryKey: ["mercancia-items", exp.id],
     queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
   });
+
   const sumFob = useMemo(
     () => (mercItems ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0),
     [mercItems],
@@ -615,6 +636,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
   const save = useMutation({
     mutationFn: async () => {
       const payload: any = { ...form };
+      const contValidos = contenedores.filter((c) => c.numero.trim());
+      if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
       payload.peso_neto = payload.peso_neto === "" ? null : Number(payload.peso_neto);
       payload.peso_bruto = payload.peso_bruto === "" ? null : Number(payload.peso_bruto);
@@ -651,6 +674,20 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
       }
       const { error } = await supabase.from("expedientes").update(payload).eq("id", exp.id);
       if (error) throw error;
+      await supabase.from("expediente_contenedores").delete().eq("expediente_id", exp.id);
+      if (contValidos.length) {
+        const { error: eCont } = await supabase.from("expediente_contenedores").insert(
+          contValidos.map((c, i) => ({
+            expediente_id: exp.id,
+            item_no: i + 1,
+            numero_contenedor: c.numero.trim(),
+            sello1: c.sello1.trim() || null,
+            sello2: c.sello2.trim() || null,
+            tipo_contenedor: c.tipo.trim() || null,
+          })),
+        );
+        if (eCont) throw eCont;
+      }
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
     },
     onSuccess: () => {
@@ -661,6 +698,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
         nav({ to: "/expedientes/$id", params: { id: exp.id }, search: {} });
       }
       qc.invalidateQueries({ queryKey: ["expediente", exp.id] });
+      qc.invalidateQueries({ queryKey: ["expediente-contenedores", exp.id] });
       qc.invalidateQueries({ queryKey: ["expedientes"] });
       qc.invalidateQueries({ queryKey: ["expedientes-hist"] });
     },
@@ -887,6 +925,61 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
               placeholder="MSKU1234567, TCLU7654321…"
               disabled={!editable}
             />
+          </div>
+          <div className="grid gap-2 md:col-span-2">
+            <div className="flex items-center justify-between">
+              <Label>Contenedores / Furgones</Label>
+              {editable && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setContenedores((r) => [...r, { numero: "", sello1: "", sello2: "", tipo: "" }])}
+                >
+                  Agregar contenedor
+                </Button>
+              )}
+            </div>
+            {contenedores.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sin contenedores registrados.</p>
+            ) : (
+              <div className="overflow-x-auto rounded-md border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="px-2 py-2 text-left w-10">#</th>
+                      <th className="px-2 py-2 text-left">Número</th>
+                      <th className="px-2 py-2 text-left">Sello 1</th>
+                      <th className="px-2 py-2 text-left">Sello 2</th>
+                      <th className="px-2 py-2 text-left">Tipo</th>
+                      {editable && <th className="px-2 py-2 w-10"></th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contenedores.map((c, i) => (
+                      <tr key={i} className="border-t">
+                        <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
+                        <td className="px-2 py-1"><Input value={c.numero} onChange={(e) => setCont(i, "numero", e.target.value)} disabled={!editable} placeholder="MSKU1234567" /></td>
+                        <td className="px-2 py-1"><Input value={c.sello1} onChange={(e) => setCont(i, "sello1", e.target.value)} disabled={!editable} /></td>
+                        <td className="px-2 py-1"><Input value={c.sello2} onChange={(e) => setCont(i, "sello2", e.target.value)} disabled={!editable} /></td>
+                        <td className="px-2 py-1"><Input value={c.tipo} onChange={(e) => setCont(i, "tipo", e.target.value)} disabled={!editable} placeholder="40HC" /></td>
+                        {editable && (
+                          <td className="px-2 py-1 text-right">
+                            <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                              onClick={() => setContenedores((r) => r.filter((_, idx) => idx !== i))}>
+                              ✕
+                            </Button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              El campo “Números de contenedores” se actualiza automáticamente con esta lista al guardar.
+            </p>
           </div>
           <div className="grid gap-1.5">
             <Label>Rectificación técnica</Label>
