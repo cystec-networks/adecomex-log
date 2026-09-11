@@ -93,12 +93,27 @@ function ExpedientesOCR() {
         puerto_arribo: puerto || null,
         observaciones: obs || null,
         descripcion_mercancia: obs || null,
+        numeros_contenedores: data?.contenedores?.length
+          ? data.contenedores.map((c) => c.numero).join(", ")
+          : null,
         sla_dias: 5,
       };
       if (clienteId) payload.cliente_id = clienteId;
       if (eta) payload.fecha_compromiso = eta;
       const { data: exp, error } = await supabase.from("expedientes").insert(payload).select().single();
       if (error) throw error;
+      if (data?.contenedores?.length) {
+        await supabase.from("expediente_contenedores").insert(
+          data.contenedores.map((c, i) => ({
+            expediente_id: exp.id,
+            item_no: i + 1,
+            numero_contenedor: c.numero,
+            sello1: c.sello1,
+            sello2: c.sello2,
+            tipo_contenedor: c.tipo,
+          })),
+        );
+      }
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "creado:ocr" });
       return exp;
     },
