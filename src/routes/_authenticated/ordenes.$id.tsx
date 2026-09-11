@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ORDEN_ESTADOS, ORDEN_ESTADO_CLASS, ordenEstadoLabel } from "@/lib/estados-orden";
-import { ArrowLeft, Save, FolderPlus, ShieldCheck, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowLeft, Save, FolderPlus, ShieldCheck, Plus, Link2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
@@ -36,6 +38,9 @@ function DetalleOrden() {
   const nav = useNavigate();
   const { data: roles } = useMyRoles();
   const canEdit = (roles ?? []).some((r) => r === "admin" || r === "vendedor");
+  const [vincularOpen, setVincularOpen] = useState(false);
+  const [busquedaPermiso, setBusquedaPermiso] = useState("");
+  const [selectedPermisoId, setSelectedPermisoId] = useState<string | null>(null);
 
   const { data: o } = useQuery({
     queryKey: ["orden", id],
@@ -58,6 +63,52 @@ function DetalleOrden() {
     enabled: !!o,
     queryFn: async () =>
       (await supabase.from("permisos").select("id,numero,tipo,estado,fecha_vencimiento").eq("orden_id", id).order("created_at", { ascending: false })).data ?? [],
+  });
+
+  const { data: permisosDisponibles } = useQuery({
+    queryKey: ["permisos-disponibles", id],
+    enabled: vincularOpen,
+    queryFn: async () =>
+      (
+        await supabase
+          .from("permisos")
+          .select("id,numero,tipo,estado,fecha_vencimiento,cliente_id,created_at")
+          .is("orden_id", null)
+          .is("expediente_id", null)
+          .order("created_at", { ascending: false })
+      ).data ?? [],
+  });
+
+  const disponiblesFiltrados = useMemo(() => {
+    const q = busquedaPermiso.trim().toLowerCase();
+    const list = (permisosDisponibles ?? []).filter((p: any) =>
+      !q ||
+      (p.numero ?? "").toLowerCase().includes(q) ||
+      (p.tipo ?? "").toLowerCase().includes(q)
+    );
+    const ordenClienteId = (o as any)?.cliente_id;
+    return list.sort((a: any, b: any) => {
+      const aSame = a.cliente_id === ordenClienteId ? 1 : 0;
+      const bSame = b.cliente_id === ordenClienteId ? 1 : 0;
+      if (aSame !== bSame) return bSame - aSame;
+      return new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime();
+    });
+  }, [permisosDisponibles, busquedaPermiso, o]);
+
+  const vincularPermiso = useMutation({
+    mutationFn: async (permisoId: string) => {
+      const { error } = await supabase.from("permisos").update({ orden_id: id }).eq("id", permisoId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Permiso vinculado a la orden");
+      qc.invalidateQueries({ queryKey: ["permisos-por-orden", id] });
+      qc.invalidateQueries({ queryKey: ["permisos-disponibles", id] });
+      setVincularOpen(false);
+      setBusquedaPermiso("");
+      setSelectedPermisoId(null);
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo vincular el permiso"),
   });
 
   const convertirExpediente = useMutation({
@@ -97,6 +148,7 @@ function DetalleOrden() {
   });
 
   const [form, setForm] = useState<any>(null);
+
   useEffect(() => {
     if (o && !form) setForm({ numero: o.numero ?? "", estado: o.estado ?? "abierta", notas: o.notas ?? "" });
   }, [o]);
@@ -239,11 +291,16 @@ function DetalleOrden() {
           <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center justify-between">
             <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" />Permisos VUCE vinculados</span>
             {canEdit && (
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/permisos/nuevo" search={{ orden: id }}>
-                  <Plus className="h-4 w-4 mr-1" />Vincular Permiso VUCE
-                </Link>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setVincularOpen(true)}>
+                  <Link2 className="h-4 w-4 mr-1" />Vincular existente
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/permisos/nuevo" search={{ orden: id }}>
+                    <Plus className="h-4 w-4 mr-1" />Vincular Permiso VUCE
+                  </Link>
+                </Button>
+              </div>
             )}
           </CardTitle>
           <p className="text-xs text-muted-foreground">
@@ -306,6 +363,64 @@ function DetalleOrden() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={vincularOpen} onOpenChange={setVincularOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Vincular permiso VUCE existente</DialogTitle>
+            <DialogDescription>
+              Selecciona un permiso libre para asociarlo a esta orden de compra.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              placeholder="Buscar por número o tipo..."
+              value={busquedaPermiso}
+              onChange={(e) => setBusquedaPermiso(e.target.value)}
+            />
+            <div className="max-h-60 overflow-auto border rounded-md">
+              {disponiblesFiltrados.length === 0 ? (
+                <p className="p-3 text-sm text-muted-foreground">No hay permisos disponibles.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-muted text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">N° Permiso</th>
+                      <th className="px-3 py-2 text-left font-medium">Tipo</th>
+                      <th className="px-3 py-2 text-left font-medium">Vence</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {disponiblesFiltrados.map((p: any) => (
+                      <tr
+                        key={p.id}
+                        onClick={() => setSelectedPermisoId(p.id)}
+                        className={cn(
+                          "cursor-pointer border-t",
+                          selectedPermisoId === p.id ? "bg-accent" : "hover:bg-muted/50"
+                        )}
+                      >
+                        <td className="px-3 py-2 font-medium">{p.numero ?? "—"}</td>
+                        <td className="px-3 py-2 capitalize">{p.tipo}</td>
+                        <td className="px-3 py-2">{fmtLocalDate(p.fecha_vencimiento)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setVincularOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => selectedPermisoId && vincularPermiso.mutate(selectedPermisoId)}
+              disabled={!selectedPermisoId || vincularPermiso.isPending}
+            >
+              {vincularPermiso.isPending ? "Vinculando…" : "Confirmar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   );
