@@ -916,16 +916,6 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
               </div>
             ) : null;
           })()}
-          <div className="grid gap-1.5 md:col-span-2">
-            <Label>Números de contenedores</Label>
-            <AutocompleteInput
-              value={form.numeros_contenedores}
-              onChange={(v) => set("numeros_contenedores", v)}
-              suggestions={sug.numeros_contenedores}
-              placeholder="MSKU1234567, TCLU7654321…"
-              disabled={!editable}
-            />
-          </div>
           <div className="grid gap-2 md:col-span-2">
             <div className="flex items-center justify-between">
               <Label>Contenedores / Furgones</Label>
