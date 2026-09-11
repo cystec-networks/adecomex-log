@@ -23,7 +23,11 @@ export const Route = createFileRoute("/_authenticated/logistica/nueva")({
   component: NuevaOperacion,
 });
 
-const EMPTY = { cliente_id: "", cotizacion_id: "", orden_id: "", expediente_id: "", tipo: "maritimo", responsable_id: "", proveedor_logistico: "", proveedor_logistico_tid: "", observaciones: "" };
+const EMPTY = {
+  cliente_id: "", cotizacion_id: "", orden_id: "", expediente_id: "", tipo: "maritimo", responsable_id: "",
+  proveedor_logistico: "", proveedor_logistico_tid: "", proveedor_email: "", proveedor_telefono: "", observaciones: "",
+  producto: "", origen: "", destino: "", puerto_destino: "", buque: "", peso_bruto_kg: "", volumen_m3: "", incoterm: "",
+};
 
 function NuevaOperacion() {
   const nav = useNavigate();
