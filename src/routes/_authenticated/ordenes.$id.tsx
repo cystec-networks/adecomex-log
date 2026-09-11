@@ -291,11 +291,16 @@ function DetalleOrden() {
           <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center justify-between">
             <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" />Permisos VUCE vinculados</span>
             {canEdit && (
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/permisos/nuevo" search={{ orden: id }}>
-                  <Plus className="h-4 w-4 mr-1" />Vincular Permiso VUCE
-                </Link>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setVincularOpen(true)}>
+                  <Link2 className="h-4 w-4 mr-1" />Vincular existente
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/permisos/nuevo" search={{ orden: id }}>
+                    <Plus className="h-4 w-4 mr-1" />Vincular Permiso VUCE
+                  </Link>
+                </Button>
+              </div>
             )}
           </CardTitle>
           <p className="text-xs text-muted-foreground">
