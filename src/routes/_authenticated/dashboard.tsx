@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Inbox, FolderKanban, Clock, FileWarning, TrendingUp, Bell, Truck } from "lucide-react";
+import { AlertTriangle, Inbox, Ship, Clock, FileWarning, TrendingUp, Bell, Truck } from "lucide-react";
 import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -46,12 +46,13 @@ function Dashboard() {
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
-      const [cot, ord, exp, per, tra] = await Promise.all([
+      const [cot, ord, exp, per, tra, log] = await Promise.all([
         supabase.from("cotizaciones").select("id,numero,estado,created_at,updated_at,clientes(nombre)").is("eliminado_en", null),
         supabase.from("ordenes").select("id,cotizacion_id").is("eliminado_en", null),
         supabase.from("expedientes").select("id,numero,estado,etapa_actual,fecha_compromiso,created_at").is("eliminado_en", null),
         supabase.from("permisos").select("id,estado,fecha_vencimiento").is("eliminado_en", null),
         supabase.from("transportes").select("id,estado,eta").is("eliminado_en", null),
+        supabase.from("operaciones_logistica").select("id,estado").is("eliminado_en", null),
       ]);
       return {
         cotizaciones: cot.data ?? [],
@@ -59,6 +60,7 @@ function Dashboard() {
         expedientes: exp.data ?? [],
         permisos: per.data ?? [],
         transportes: tra.data ?? [],
+        operacionesLogistica: log.data ?? [],
       };
     },
   });
@@ -80,7 +82,7 @@ function Dashboard() {
     return (Date.now() - new Date(ref).getTime()) / 86400000 > 15;
   }).length;
 
-  const expedientesEnTransito = stats?.expedientes.filter((e) => e.estado === "en_transito").length ?? 0;
+  const operacionesLogisticaActivas = stats?.operacionesLogistica.filter((o) => o.estado !== "arribo").length ?? 0;
   const expedientesPorLlegar = stats?.expedientes.filter((e) => {
     if (!e.fecha_compromiso) return false;
     if (["facturar", "entregado"].includes(e.estado)) return false;
@@ -107,7 +109,7 @@ function Dashboard() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Link to="/cotizaciones" search={{ sinConvertir: true }} aria-label="Ver cotizaciones sin convertir" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Inbox} label="COTIZACIONES SIN CONVERTIR" value={cotizacionesSinConvertir} tone="primary" sub={cotizacionesSinMovimiento > 0 ? `${cotizacionesSinMovimiento} sin movimiento +15 días` : undefined} /></Link>
-        <Link to="/expedientes" search={{ estado: "en_transito" }} aria-label="Ver expedientes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FolderKanban} label="EXPEDIENTES EN TRANSITO" value={expedientesEnTransito} tone="info" /></Link>
+        <Link to="/logistica" search={{ estado: "activas" }} aria-label="Ver operaciones de logística activas" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Ship} label="LOGÍSTICA EN CURSO" value={operacionesLogisticaActivas} tone="info" /></Link>
         <Link to="/expedientes" search={{ eta: 7 }} aria-label="Ver expedientes por llegar" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Clock} label="EXPEDIENTES POR LLEGAR" value={expedientesPorLlegar} tone="warning" sub="Próximos 7 días" /></Link>
         <Link to="/permisos" search={{ vencimiento: 15 }} aria-label="Ver permisos VUCE por vencer" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FileWarning} label="Permisos VUCE por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" /></Link>
         <Link to="/transportes" search={{ estado: "en_transito,programado" }} aria-label="Ver transportes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" /></Link>
