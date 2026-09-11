@@ -487,6 +487,30 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_etapas_logistica: {
+        Row: {
+          activo: boolean
+          codigo: string
+          id: string
+          nombre: string
+          orden: number
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          id?: string
+          nombre: string
+          orden: number
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          id?: string
+          nombre?: string
+          orden?: number
+        }
+        Relationships: []
+      }
       catalogo_hitos: {
         Row: {
           activo: boolean
@@ -4030,6 +4054,210 @@ export type Database = {
           },
         ]
       }
+      operacion_logistica_etapas: {
+        Row: {
+          comentario: string | null
+          completado_por: string | null
+          estado: string
+          etapa_codigo: string
+          fecha_cumplimiento: string | null
+          id: string
+          operacion_logistica_id: string
+        }
+        Insert: {
+          comentario?: string | null
+          completado_por?: string | null
+          estado?: string
+          etapa_codigo: string
+          fecha_cumplimiento?: string | null
+          id?: string
+          operacion_logistica_id: string
+        }
+        Update: {
+          comentario?: string | null
+          completado_por?: string | null
+          estado?: string
+          etapa_codigo?: string
+          fecha_cumplimiento?: string | null
+          id?: string
+          operacion_logistica_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operacion_logistica_etapas_etapa_codigo_fkey"
+            columns: ["etapa_codigo"]
+            isOneToOne: false
+            referencedRelation: "catalogo_etapas_logistica"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "operacion_logistica_etapas_operacion_logistica_id_fkey"
+            columns: ["operacion_logistica_id"]
+            isOneToOne: false
+            referencedRelation: "operaciones_logistica"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operaciones_logistica: {
+        Row: {
+          bl_awb: string | null
+          booking: string | null
+          cliente_id: string | null
+          contenedor: string | null
+          cotizacion_id: string | null
+          creado_por: string | null
+          created_at: string
+          documento_url: string | null
+          eliminado_en: string | null
+          eliminado_por: string | null
+          estado: string
+          eta: string | null
+          expediente_id: string | null
+          fecha_arribo: string | null
+          fecha_embarque: string | null
+          fecha_recogida: string | null
+          fecha_salida: string | null
+          flete_moneda: string | null
+          flete_monto: number | null
+          gastos_locales_monto: number | null
+          id: string
+          numero: string
+          observaciones: string | null
+          orden_id: string | null
+          otros_monto: number | null
+          proveedor_logistico: string | null
+          proveedor_logistico_tid: string | null
+          responsable_id: string | null
+          seguro_monto: number | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          bl_awb?: string | null
+          booking?: string | null
+          cliente_id?: string | null
+          contenedor?: string | null
+          cotizacion_id?: string | null
+          creado_por?: string | null
+          created_at?: string
+          documento_url?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
+          estado?: string
+          eta?: string | null
+          expediente_id?: string | null
+          fecha_arribo?: string | null
+          fecha_embarque?: string | null
+          fecha_recogida?: string | null
+          fecha_salida?: string | null
+          flete_moneda?: string | null
+          flete_monto?: number | null
+          gastos_locales_monto?: number | null
+          id?: string
+          numero: string
+          observaciones?: string | null
+          orden_id?: string | null
+          otros_monto?: number | null
+          proveedor_logistico?: string | null
+          proveedor_logistico_tid?: string | null
+          responsable_id?: string | null
+          seguro_monto?: number | null
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          bl_awb?: string | null
+          booking?: string | null
+          cliente_id?: string | null
+          contenedor?: string | null
+          cotizacion_id?: string | null
+          creado_por?: string | null
+          created_at?: string
+          documento_url?: string | null
+          eliminado_en?: string | null
+          eliminado_por?: string | null
+          estado?: string
+          eta?: string | null
+          expediente_id?: string | null
+          fecha_arribo?: string | null
+          fecha_embarque?: string | null
+          fecha_recogida?: string | null
+          fecha_salida?: string | null
+          flete_moneda?: string | null
+          flete_monto?: number | null
+          gastos_locales_monto?: number | null
+          id?: string
+          numero?: string
+          observaciones?: string | null
+          orden_id?: string | null
+          otros_monto?: number | null
+          proveedor_logistico?: string | null
+          proveedor_logistico_tid?: string | null
+          responsable_id?: string | null
+          seguro_monto?: number | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operaciones_logistica_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operaciones_logistica_cotizacion_id_fkey"
+            columns: ["cotizacion_id"]
+            isOneToOne: false
+            referencedRelation: "cotizaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operaciones_logistica_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operaciones_logistica_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operaciones_logistica_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "operaciones_logistica_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "operaciones_logistica_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "operaciones_logistica_orden_id_fkey"
+            columns: ["orden_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orden_productos: {
         Row: {
           aplica_isc: boolean | null
@@ -5744,6 +5972,13 @@ export type Database = {
       }
       expirar_cotizaciones_vencidas: { Args: never; Returns: number }
       immutable_unaccent: { Args: { "": string }; Returns: string }
+      listar_encargados_logistica: {
+        Args: never
+        Returns: {
+          id: string
+          nombre: string
+        }[]
+      }
       listar_vendedores: {
         Args: never
         Returns: {
