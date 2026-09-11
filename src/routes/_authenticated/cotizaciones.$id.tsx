@@ -365,6 +365,7 @@ function DetalleCotizacion() {
           <Button onClick={() => save.mutate()} disabled={save.isPending}><Save className="h-4 w-4 mr-1" />Guardar cambios</Button>
         </div>
       )}
+      </div>
     </div>
   );
 }

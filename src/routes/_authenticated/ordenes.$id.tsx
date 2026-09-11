@@ -245,6 +245,7 @@ function DetalleOrden() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
