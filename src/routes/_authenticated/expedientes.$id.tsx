@@ -3532,7 +3532,7 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
 
   const generar = async () => {
     // Siempre leer datos frescos de la base para que el PDF refleje los últimos cambios
-    const [itemsRes, expRes] = await Promise.all([
+    const [itemsRes, expRes, contRes] = await Promise.all([
       supabase
         .from("mercancia_items")
         .select("*")
@@ -3540,10 +3540,17 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
         .is("deleted_at", null)
         .order("item_no"),
       supabase.from("expedientes").select("*, clientes(nombre, rnc)").eq("id", exp.id).maybeSingle(),
+      supabase.from("expediente_contenedores").select("*").eq("expediente_id", exp.id).order("item_no"),
     ]);
 
     const list = itemsRes.data ?? [];
     const expData: any = expRes.data ? { ...exp, ...expRes.data } : exp;
+    const contenedoresList = (contRes.data ?? []).map((c: any) => ({
+      numero: c.numero_contenedor,
+      sello1: c.sello1,
+      sello2: c.sello2,
+      tipo: c.tipo_contenedor,
+    }));
     if (list.length === 0) {
       toast.error("El expediente no tiene ítems de mercancía.");
       return;
