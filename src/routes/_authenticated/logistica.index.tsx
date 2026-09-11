@@ -52,8 +52,8 @@ function LogisticaIndex() {
   const responsablesMap = new Map(responsables.map((r) => [r.id, r.nombre]));
   const normalizar = (v: unknown) => String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const filtered = operaciones.filter((o: any) => !q || normalizar(`${o.numero} ${o.clientes?.nombre}`).includes(normalizar(q)));
-  const ordenEstados = [...ETAPAS_LOGISTICA.map((e) => e.codigo), "completada", "cancelada"];
-  const grupos = ordenEstados.map((estado) => [estado, filtered.filter((o: any) => o.estado === estado)] as const)
+  const ordenEstados = [...ETAPAS_LOGISTICA.map((e) => e.codigo), "finalizadas"];
+  const grupos = ordenEstados.map((estado) => [estado, filtered.filter((o: any) => estado === "finalizadas" ? ["completada", "cancelada"].includes(o.estado) : o.estado === estado)] as const)
     .filter(([, rows]) => rows.length > 0);
 
   return (
@@ -76,7 +76,7 @@ function LogisticaIndex() {
             <tbody>
               {grupos.map(([estado, rows]) => <Fragment key={estado}>
                 <EstadoDivider colSpan={7} count={rows.length} colapsado={esColapsado(estado)} onToggle={() => toggleGrupo(estado)}
-                  label={<Badge className={estadoLogisticaClass(estado)}>{ESTADO_LOGISTICA_LABEL[estado] ?? estado}</Badge>} />
+                  label={<Badge className={estadoLogisticaClass(estado === "finalizadas" ? "completada" : estado)}>{estado === "finalizadas" ? "Completadas / canceladas" : (ESTADO_LOGISTICA_LABEL[estado] ?? estado)}</Badge>} />
                 {!esColapsado(estado) && rows.map((o: any) => <tr key={o.id} className="border-b hover:bg-muted/40">
                   <td className="px-4 py-2 font-medium"><Link to="/logistica/$id" params={{ id: o.id }} className="text-primary hover:underline">{o.numero}</Link></td>
                   <td>{o.clientes?.nombre ?? "—"}</td><td className="capitalize">{o.tipo}</td><td>{o.proveedor_logistico ?? "—"}</td>
