@@ -17,7 +17,10 @@ export type OcrExtraction = {
   suplidor: string | null;
   numero_documento: string | null;
   productos: string | null;
+  fecha_cargado: string | null;
   eta: string | null;
+  naviera: string | null;
+  peso_bruto_kg: number | null;
   puerto_arribo: string | null;
   contenedores: OcrContenedor[] | null;
 };
