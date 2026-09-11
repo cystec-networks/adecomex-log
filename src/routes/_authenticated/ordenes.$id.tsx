@@ -38,6 +38,9 @@ function DetalleOrden() {
   const nav = useNavigate();
   const { data: roles } = useMyRoles();
   const canEdit = (roles ?? []).some((r) => r === "admin" || r === "vendedor");
+  const [vincularOpen, setVincularOpen] = useState(false);
+  const [busquedaPermiso, setBusquedaPermiso] = useState("");
+  const [selectedPermisoId, setSelectedPermisoId] = useState<string | null>(null);
 
   const { data: o } = useQuery({
     queryKey: ["orden", id],
