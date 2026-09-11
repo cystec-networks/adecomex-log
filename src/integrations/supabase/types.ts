@@ -5770,6 +5770,7 @@ export type Database = {
         | "academia"
         | "rrhh"
         | "vendedor"
+        | "logistica"
       cotizacion_estado:
         | "solicitada"
         | "en_proceso"
@@ -6026,6 +6027,7 @@ export const Constants = {
         "academia",
         "rrhh",
         "vendedor",
+        "logistica",
       ],
       cotizacion_estado: [
         "solicitada",
