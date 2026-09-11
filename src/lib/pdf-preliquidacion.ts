@@ -34,7 +34,7 @@ export type PreLiqInput = {
   totalCifOverride?: number | null;
   pesoBruto?: number | null;
   pesoNeto?: number | null;
-  contenedores?: Array<{ numero: string; sello1?: string | null; sello2?: string | null; tipo?: string | null }> | string | null;
+  contenedores?: Array<{ item_no?: number | string | null; numero: string; sello1?: string | null; tipo?: string | null }> | string | null;
   /** Aviso extra visible (Cotizaciones) */
   avisoReferencial?: string | null;
   /** Tasa de Servicio Aduanero calculada (US$) */
