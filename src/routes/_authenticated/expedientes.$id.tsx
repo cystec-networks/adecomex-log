@@ -698,6 +698,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
         nav({ to: "/expedientes/$id", params: { id: exp.id }, search: {} });
       }
       qc.invalidateQueries({ queryKey: ["expediente", exp.id] });
+      qc.invalidateQueries({ queryKey: ["expediente-contenedores", exp.id] });
       qc.invalidateQueries({ queryKey: ["expedientes"] });
       qc.invalidateQueries({ queryKey: ["expedientes-hist"] });
     },
