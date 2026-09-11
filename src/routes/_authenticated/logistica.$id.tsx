@@ -261,3 +261,81 @@ function IncidenciasLogistica({ id, canEdit }: { id: string; canEdit: boolean })
     <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>Registrar incidencia</DialogTitle></DialogHeader><div className="space-y-4"><div className="space-y-1.5"><Label>Tipo</Label><Select value={form.tipo} onValueChange={(v) => setForm((p) => ({ ...p, tipo: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{TIPOS_INCIDENCIA.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div><div className="space-y-1.5"><Label>Severidad</Label><Select value={form.severidad} onValueChange={(v) => setForm((p) => ({ ...p, severidad: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["baja", "media", "alta", "critica"].map((s) => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent></Select></div><div className="space-y-1.5"><Label>Descripción</Label><Textarea value={form.descripcion} onChange={(e) => setForm((p) => ({ ...p, descripcion: e.target.value }))} /></div></div><DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button disabled={createMut.isPending} onClick={() => createMut.mutate()}>Registrar</Button></DialogFooter></DialogContent></Dialog>
   </CardContent></Card>;
 }
+/** Documentos categorizados de la operación (Booking, BL/AWB, Lista de Empaque, HBL, Certificado de Origen, Otro). */
+function DocumentosLogistica({ id, canEdit }: { id: string; canEdit: boolean }) {
+  const qc = useQueryClient();
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [subiendo, setSubiendo] = useState<string | null>(null);
+
+  const { data: docs = [] } = useQuery({ queryKey: ["documentos-logistica", id], queryFn: async () => {
+    const { data, error } = await supabase.from("logistica_documentos").select("*").eq("operacion_logistica_id", id).order("created_at", { ascending: false });
+    if (error) throw error; return data ?? [];
+  }});
+
+  const uploadMut = useMutation({ mutationFn: async ({ tipo, file }: { tipo: string; file: File }) => {
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+    const path = `logistica/${id}/${crypto.randomUUID()}-${safeName}`;
+    const { error } = await supabase.storage.from("documentos").upload(path, file); if (error) throw error;
+    const { data: u } = await supabase.auth.getUser();
+    const { error: insError } = await supabase.from("logistica_documentos").insert({
+      operacion_logistica_id: id, tipo, nombre_archivo: file.name, documento_url: path, subido_por: u.user?.id ?? null,
+    }); if (insError) throw insError;
+    await logAuditoria(id, `documento_subido:${tipo}`, { nombre_archivo: file.name });
+  }, onSuccess: () => { toast.success("Documento adjuntado"); qc.invalidateQueries({ queryKey: ["documentos-logistica", id] }); qc.invalidateQueries({ queryKey: ["auditoria-logistica", id] }); }, onError: (e: any) => toast.error(e.message), onSettled: () => setSubiendo(null) });
+
+  const removeMut = useMutation({ mutationFn: async (doc: any) => {
+    if (doc.documento_url) await supabase.storage.from("documentos").remove([doc.documento_url]);
+    const { error } = await supabase.from("logistica_documentos").delete().eq("id", doc.id); if (error) throw error;
+    await logAuditoria(id, `documento_eliminado:${doc.tipo}`, { nombre_archivo: doc.nombre_archivo });
+  }, onSuccess: () => { toast.success("Documento quitado"); qc.invalidateQueries({ queryKey: ["documentos-logistica", id] }); qc.invalidateQueries({ queryKey: ["auditoria-logistica", id] }); }, onError: (e: any) => toast.error(e.message) });
+
+  return <Card><CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" />Documentos de la operación</CardTitle></CardHeader><CardContent className="space-y-3">
+    {TIPOS_DOCUMENTO.map((t) => {
+      const propios = docs.filter((d) => d.tipo === t.codigo);
+      return <div key={t.codigo} className="border rounded-md p-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium flex-1">{t.nombre}</span>
+          {canEdit && <>
+            <input ref={(el) => { inputRefs.current[t.codigo] = el; }} type="file" className="hidden" accept=".pdf,.png,.jpg,.jpeg,.webp"
+              onChange={(e) => { const file = e.target.files?.[0]; if (file) { setSubiendo(t.codigo); uploadMut.mutate({ tipo: t.codigo, file }); } e.target.value = ""; }} />
+            <Button variant="outline" size="sm" disabled={subiendo === t.codigo} onClick={() => inputRefs.current[t.codigo]?.click()}>
+              <Upload className="h-4 w-4 mr-1" />{subiendo === t.codigo ? "Subiendo…" : "Subir"}
+            </Button>
+          </>}
+        </div>
+        {propios.length === 0
+          ? <p className="text-xs text-muted-foreground">Sin archivo cargado.</p>
+          : propios.map((d) => <div key={d.id} className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground truncate max-w-[200px]">{d.nombre_archivo ?? "Archivo"}</span>
+              {d.documento_url && <DocumentoPreviewButton path={d.documento_url} label="Vista previa" />}
+              {canEdit && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => removeMut.mutate(d)}><X className="h-4 w-4 mr-1" />Quitar</Button>}
+            </div>)}
+      </div>;
+    })}
+  </CardContent></Card>;
+}
+
+/** Bitácora de la operación (tabla auditoria, entidad = operaciones_logistica). */
+function HistorialLogistica({ id }: { id: string }) {
+  const { data } = useQuery({ queryKey: ["auditoria-logistica", id], queryFn: async () => (await supabase
+    .from("auditoria").select("*").eq("entidad", "operaciones_logistica").eq("entidad_id", id)
+    .order("created_at", { ascending: false }).limit(100)).data ?? [] });
+  return <Card>
+    <CardHeader><CardTitle className="text-base">Bitácora</CardTitle></CardHeader>
+    <CardContent className="p-0 overflow-auto max-h-[70vh]">
+      <table className="w-full text-sm">
+        <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
+          <tr><th className="text-left px-4 py-2">Fecha</th><th className="text-left">Acción</th><th className="text-left">Detalle</th></tr>
+        </thead>
+        <tbody>
+          {(data ?? []).map((a: any) => <tr key={a.id} className="border-b last:border-0">
+            <td className="px-4 py-2 text-xs">{new Date(a.created_at).toLocaleString("es-DO")}</td>
+            <td className="text-xs font-mono">{a.accion}</td>
+            <td className="text-xs text-muted-foreground">{a.cambios ? JSON.stringify(a.cambios) : "—"}</td>
+          </tr>)}
+          {(!data || data.length === 0) && <tr><td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">Sin registros aún.</td></tr>}
+        </tbody>
+      </table>
+    </CardContent>
+  </Card>;
+}
