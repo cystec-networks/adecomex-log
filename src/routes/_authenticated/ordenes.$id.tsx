@@ -235,6 +235,59 @@ function DetalleOrden() {
       <ProductosCard tabla="orden_productos" parentId={id} readOnly={!canEdit} paisOrigen={(o as any)?.cot_origen ?? ""} />
 
       <Card>
+        <CardHeader className="pb-3 border-b">
+          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center justify-between">
+            <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" />Permisos VUCE vinculados</span>
+            {canEdit && (
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/permisos/nuevo" search={{ orden: id }}>
+                  <Plus className="h-4 w-4 mr-1" />Vincular Permiso VUCE
+                </Link>
+              </Button>
+            )}
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Los permisos vinculados aquí pasan automáticamente al Expediente cuando la Orden se convierte.
+          </p>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {(permisosVinculados ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">No hay permisos VUCE vinculados a esta orden.</p>
+          ) : (
+            <div className="border rounded-md overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="px-3 py-2">N° Permiso</th>
+                    <th className="px-3 py-2">Tipo</th>
+                    <th className="px-3 py-2">Estado</th>
+                    <th className="px-3 py-2">Vencimiento</th>
+                    <th className="px-3 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(permisosVinculados ?? []).map((p: any) => (
+                    <tr key={p.id} className="border-t">
+                      <td className="px-3 py-2 font-medium">{p.numero ?? "—"}</td>
+                      <td className="px-3 py-2 capitalize">{p.tipo ?? "—"}</td>
+                      <td className="px-3 py-2"><Badge variant="outline" className="capitalize">{p.estado}</Badge></td>
+                      <td className="px-3 py-2">{fmtLocalDate(p.fecha_vencimiento)}</td>
+                      <td className="px-3 py-2 text-right">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to="/permisos/$id" params={{ id: p.id }}>Ver / editar</Link>
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+
+      <Card>
         <CardHeader><CardTitle className="text-base">Orden de Compras</CardTitle></CardHeader>
         <CardContent className="grid gap-4">
           <div className="grid gap-1.5 md:max-w-xs"><Label>Estado</Label>
