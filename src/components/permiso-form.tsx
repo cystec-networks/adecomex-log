@@ -176,7 +176,10 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
     <div className="p-6 max-w-5xl mx-auto space-y-5">
       <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" size="sm" asChild>
-          <Link to={expedienteId ? "/expedientes/$id" : "/permisos"} params={expedienteId ? { id: expedienteId } : undefined as any}>
+          <Link
+            to={expedienteId ? "/expedientes/$id" : ordenId ? "/ordenes/$id" : "/permisos"}
+            params={expedienteId ? { id: expedienteId } : ordenId ? { id: ordenId } : undefined as any}
+          >
             <ArrowLeft className="h-4 w-4 mr-1" />Volver
           </Link>
         </Button>
@@ -203,7 +206,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
         <CardContent className="pt-5 grid gap-4 md:grid-cols-3">
           <div className="grid gap-1.5">
             <Label>Expediente vinculado</Label>
-            <Select value={form.expediente_id || undefined} onValueChange={(v) => set("expediente_id", v)} disabled={!!ordenId && !form.expediente_id && mode === "new" ? false : false}>
+            <Select value={form.expediente_id || undefined} onValueChange={(v) => set("expediente_id", v)}>
               <SelectTrigger><SelectValue placeholder="Selecciona expediente" /></SelectTrigger>
               <SelectContent>
                 {(expedientes ?? []).map((e: any) => (
