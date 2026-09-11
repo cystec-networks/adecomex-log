@@ -34,7 +34,7 @@ export type PreLiqInput = {
   totalCifOverride?: number | null;
   pesoBruto?: number | null;
   pesoNeto?: number | null;
-  contenedores?: Array<{ numero: string; sello1?: string | null; sello2?: string | null; tipo?: string | null }> | string | null;
+  contenedores?: Array<{ item_no?: number | string | null; numero: string; sello1?: string | null; tipo?: string | null }> | string | null;
   /** Aviso extra visible (Cotizaciones) */
   avisoReferencial?: string | null;
   /** Tasa de Servicio Aduanero calculada (US$) */
@@ -171,11 +171,11 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
   if (Array.isArray(input.contenedores) && input.contenedores.length) {
     autoTable(doc, {
       startY: detalleCargaStartY,
-      head: [["N° Contenedor", "Sello 1", "Sello 2", "Tipo"]],
-      body: input.contenedores.map((c) => [
+      head: [["# Item", "N° Contenedor", "Sello 1", "Tipo"]],
+      body: input.contenedores.map((c, i) => [
+        c.item_no ?? i + 1,
         c.numero,
         c.sello1 ?? "—",
-        c.sello2 ?? "—",
         c.tipo ?? "—",
       ]),
       theme: "grid",
