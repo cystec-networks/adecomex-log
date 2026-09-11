@@ -497,6 +497,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
     bl_awb: exp.bl_awb ?? "",
     sla_dias: exp.sla_dias ?? 15,
     fecha_compromiso: exp.fecha_compromiso ?? "",
+    fecha_cargado: exp.fecha_cargado ?? "",
     medio_transporte: exp.medio_transporte ?? "",
     naviera: exp.naviera ?? "",
     suplidor: exp.suplidor ?? "",
@@ -639,6 +640,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
       const contValidos = contenedores.filter((c) => c.numero.trim());
       if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
+      if (!payload.fecha_cargado) payload.fecha_cargado = null;
       payload.peso_neto = payload.peso_neto === "" ? null : Number(payload.peso_neto);
       payload.peso_bruto = payload.peso_bruto === "" ? null : Number(payload.peso_bruto);
       const toNum = (v: any) => (v === "" || v == null ? null : Number(v));
@@ -758,6 +760,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
         <AutoField label="Naviera" value={form.naviera} onChange={(v) => set("naviera", v)} suggestion={sug.naviera ?? []} disabled={!editable} />
         <Field label="SLA (días)" value={form.sla_dias} onChange={(v) => set("sla_dias", v)} type="number" disabled={!editable} />
         <Field label="Fecha Estimada de Llegada (ETA)" value={form.fecha_compromiso} onChange={(v) => set("fecha_compromiso", v)} type="date" disabled={!editable} />
+        <Field label="Fecha de Cargado" value={form.fecha_cargado} onChange={(v) => set("fecha_cargado", v)} type="date" disabled={!editable} />
       </Section>
 
 
