@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ORDEN_ESTADOS, ORDEN_ESTADO_CLASS, ordenEstadoLabel } from "@/lib/estados-orden";
-import { ArrowLeft, Save, FolderPlus } from "lucide-react";
+import { ArrowLeft, Save, FolderPlus, ShieldCheck, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
@@ -53,6 +53,13 @@ function DetalleOrden() {
       (await supabase.from("expedientes").select("id,numero").eq("orden_id", id).maybeSingle()).data,
   });
 
+  const { data: permisosVinculados } = useQuery({
+    queryKey: ["permisos-por-orden", id],
+    enabled: !!o,
+    queryFn: async () =>
+      (await supabase.from("permisos").select("id,numero,tipo,estado,fecha_vencimiento").eq("orden_id", id).order("created_at", { ascending: false })).data ?? [],
+  });
+
   const convertirExpediente = useMutation({
     mutationFn: async () => {
       const { data: exp, error } = await supabase
@@ -76,6 +83,7 @@ function DetalleOrden() {
         origenTabla: "orden_productos", origenCol: "orden_id", origenId: id,
         destinoTabla: "mercancia_items", destinoCol: "expediente_id", destinoId: exp.id,
       });
+      await supabase.from("permisos").update({ expediente_id: exp.id }).eq("orden_id", id);
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "creado" });
       return exp;
     },
