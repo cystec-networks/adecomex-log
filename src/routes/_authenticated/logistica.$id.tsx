@@ -87,7 +87,7 @@ function DetalleLogistica() {
   const canEdit = (roles ?? []).some((r) => r === "admin" || r === "logistica");
   const [modoEdicion, setModoEdicion] = useState(nuevo === "1");
   const [form, setForm] = useState<FormState | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  
 
   const { data: operacion, isLoading } = useQuery({ queryKey: ["operacion-logistica", id], queryFn: async () => {
     const { data, error } = await supabase.from("operaciones_logistica").select("*, clientes(nombre)").eq("id", id).single();
