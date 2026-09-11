@@ -594,10 +594,31 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
     };
   }, [histDb]);
 
+  const { data: contenedoresDb } = useQuery({
+    queryKey: ["expediente-contenedores", exp.id],
+    queryFn: async () =>
+      (await supabase.from("expediente_contenedores").select("*").eq("expediente_id", exp.id).order("item_no")).data ?? [],
+  });
+  const [contenedores, setContenedores] = useState<Array<{ numero: string; sello1: string; sello2: string; tipo: string }>>([]);
+  useEffect(() => {
+    if (!contenedoresDb) return;
+    setContenedores(
+      contenedoresDb.map((c: any) => ({
+        numero: c.numero_contenedor ?? "",
+        sello1: c.sello1 ?? "",
+        sello2: c.sello2 ?? "",
+        tipo: c.tipo_contenedor ?? "",
+      })),
+    );
+  }, [contenedoresDb]);
+  const setCont = (i: number, k: string, v: string) =>
+    setContenedores((rows) => rows.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)));
+
   const { data: mercItems } = useQuery({
     queryKey: ["mercancia-items", exp.id],
     queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
   });
+
   const sumFob = useMemo(
     () => (mercItems ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0),
     [mercItems],
