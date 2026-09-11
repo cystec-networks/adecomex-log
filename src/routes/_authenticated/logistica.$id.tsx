@@ -156,6 +156,27 @@ function DetalleLogistica() {
   const Field = ({ label, name, type = "text" }: { label: string; name: keyof FormState; type?: string }) => <div className="space-y-1.5"><Label>{label}</Label><Input type={type} value={form[name]} disabled={readOnly} onChange={(e) => set(name, e.target.value)} /></div>;
   const LinkSelect = ({ label, name, rows }: { label: string; name: "cotizacion_id" | "orden_id" | "expediente_id"; rows: { id: string; numero: string | null }[] }) => <div className="space-y-1.5"><Label>{label}</Label><Select disabled={readOnly} value={form[name] || "none"} onValueChange={(v) => set(name, v === "none" ? "" : v)}><SelectTrigger><SelectValue placeholder="Sin vincular" /></SelectTrigger><SelectContent><SelectItem value="none">Sin vincular</SelectItem>{rows.map((r) => <SelectItem key={r.id} value={r.id}>{r.numero ?? "Sin número"}</SelectItem>)}</SelectContent></Select></div>;
 
+  const etapaActual = etapas.find((e) => e.estado === "en_curso");
+  const idxActual = etapaActual ? etapas.findIndex((e) => e.id === etapaActual.id) : -1;
+  const etapaSiguiente = idxActual >= 0 ? etapas[idxActual + 1] : undefined;
+  const nombreEtapa = (codigo?: string) => ETAPAS_LOGISTICA.find((e) => e.codigo === codigo)?.nombre ?? codigo ?? "—";
+
+  const datosConstancia = () => ({
+    numero: operacion.numero ?? "",
+    fechaInicio: fmtLocalDate(String(operacion.created_at ?? "").slice(0, 10)),
+    cliente: operacion.clientes?.nombre ?? null,
+    producto: form.producto || null,
+    origen: form.origen || null,
+    destino: form.destino || form.puerto_destino || null,
+    incoterm: form.incoterm || null,
+    tipo: operacion.tipo === "aereo" ? "Aéreo" : "Marítimo",
+    proveedorLogistico: form.proveedor_logistico || null,
+    proveedorEmail: form.proveedor_email || null,
+    proveedorTelefono: form.proveedor_telefono || null,
+    responsable: responsables.find((r: any) => r.id === form.responsable_id)?.nombre ?? null,
+    etapas: etapas.map((e) => ({ nombre: nombreEtapa(e.etapa_codigo), estado: e.estado })),
+  });
+
   return <div className={cn("min-h-full transition-colors", modoEdicion ? (nuevo === "1" ? "bg-success/10" : "bg-warning/10") : "bg-background")}>
     <div className="sticky top-0 z-20 border-b bg-background px-6 py-3 shadow-sm">
       <div className="max-w-[1500px] mx-auto flex flex-wrap items-center gap-3">
@@ -163,23 +184,42 @@ function DetalleLogistica() {
         <div className="min-w-0 flex-1"><h1 className="font-display text-xl font-bold truncate">{operacion.numero}</h1><p className="text-sm text-muted-foreground truncate">{operacion.clientes?.nombre ?? "Sin cliente"}</p></div>
         <Badge variant="outline" className="capitalize">{operacion.tipo}</Badge><Badge className={estadoLogisticaClass(operacion.estado)}>{ESTADO_LOGISTICA_LABEL[operacion.estado] ?? operacion.estado}</Badge>
         <div className="min-w-48"><div className="text-xs font-medium mb-1">Progreso: {done} de {total} etapas</div><Progress value={(done / total) * 100} /></div>
+        <ConstanciaLogisticaButton datos={datosConstancia} />
         {modoEdicion && <Button disabled={saveMut.isPending} onClick={() => saveMut.mutate()} className="shadow-lg"><Save className="h-4 w-4 mr-2" />Guardar cambios</Button>}
       </div>
     </div>
     <main className="p-6 max-w-[1500px] mx-auto space-y-6">
+      <Tabs defaultValue="operacion">
+        <TabsList><TabsTrigger value="operacion">Operación</TabsTrigger><TabsTrigger value="historial">Historial</TabsTrigger></TabsList>
+
+        <TabsContent value="operacion" className="space-y-6 mt-4">
       <Card><CardHeader><CardTitle className="text-base">Datos operativos</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="space-y-1.5"><Label>Cliente</Label><Select disabled={readOnly} value={form.cliente_id || "none"} onValueChange={(v) => set("cliente_id", v === "none" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sin cliente</SelectItem>{clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent></Select></div>
         <div className="space-y-1.5"><Label>Responsable</Label><Select disabled={readOnly} value={form.responsable_id || "none"} onValueChange={(v) => set("responsable_id", v === "none" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sin asignar</SelectItem>{responsables.map((r) => <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>)}</SelectContent></Select></div>
         <div className="space-y-1.5"><Label>Tipo</Label><Select disabled={readOnly} value={form.tipo} onValueChange={(v) => set("tipo", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="maritimo">Marítimo</SelectItem><SelectItem value="aereo">Aéreo</SelectItem></SelectContent></Select></div>
         <Field label="Booking" name="booking" /><Field label="BL / AWB" name="bl_awb" /><Field label="Contenedor" name="contenedor" />
         <div className="space-y-1.5"><TerceroExtranjeroPicker label="Proveedor logístico" onSelect={(t) => setForm((p) => p ? ({ ...p, proveedor_logistico: t.nombre, proveedor_logistico_tid: t.tid ?? "" }) : p)} /><Input disabled={readOnly} value={form.proveedor_logistico} onChange={(e) => set("proveedor_logistico", e.target.value)} /></div>
-        <Field label="TID del proveedor" name="proveedor_logistico_tid" /><Field label="Fecha de recogida" name="fecha_recogida" type="date" /><Field label="Fecha de embarque" name="fecha_embarque" type="date" /><Field label="Fecha de salida" name="fecha_salida" type="date" /><Field label="ETA" name="eta" type="date" /><Field label="Fecha de arribo" name="fecha_arribo" type="date" />
+        <Field label="TID del proveedor" name="proveedor_logistico_tid" /><Field label="Correo del proveedor" name="proveedor_email" /><Field label="Teléfono del proveedor" name="proveedor_telefono" />
+        <Field label="Fecha de recogida" name="fecha_recogida" type="date" /><Field label="Fecha de embarque" name="fecha_embarque" type="date" /><Field label="Fecha de salida" name="fecha_salida" type="date" /><Field label="ETA" name="eta" type="date" /><Field label="Fecha de arribo" name="fecha_arribo" type="date" />
         <LinkSelect label="Cotización de Compras" name="cotizacion_id" rows={vinculos?.cotizaciones ?? []} /><LinkSelect label="Orden de Compras" name="orden_id" rows={vinculos?.ordenes ?? []} /><LinkSelect label="Expediente" name="expediente_id" rows={vinculos?.expedientes ?? []} />
         <div className="sm:col-span-2 lg:col-span-4 space-y-1.5"><Label>Observaciones</Label><Textarea disabled={readOnly} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} rows={3} /></div>
       </CardContent></Card>
 
+      <Card><CardHeader><CardTitle className="text-base">Datos de la carga</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="sm:col-span-2 space-y-1.5"><Label>Producto</Label><Input disabled={readOnly} value={form.producto} onChange={(e) => set("producto", e.target.value)} /></div>
+        <Field label="Origen" name="origen" /><Field label="Destino" name="destino" />
+        <Field label="Puerto / aeropuerto de destino" name="puerto_destino" /><Field label="Buque / vuelo" name="buque" />
+        <Field label="Peso bruto (kg)" name="peso_bruto_kg" type="number" /><Field label="Volumen (m³)" name="volumen_m3" type="number" />
+        <Field label="Incoterm" name="incoterm" />
+      </CardContent></Card>
+
       <Card><CardHeader><CardTitle className="text-base">Progreso de la operación</CardTitle></CardHeader><CardContent className="space-y-3">
         <Progress value={(done / total) * 100} className="mb-5" />
+        <div className="rounded-md border bg-muted/30 p-4 space-y-1">
+          <div className="text-sm font-semibold flex items-center gap-2"><ArrowRight className="h-4 w-4 text-primary" />Próximas acciones</div>
+          <p className="text-sm">{etapaActual ? `En curso: ${nombreEtapa(etapaActual.etapa_codigo)}` : "No hay etapas en curso — la operación está completada."}</p>
+          {etapaSiguiente && <p className="text-sm text-muted-foreground">Próximo: {nombreEtapa(etapaSiguiente.etapa_codigo)}</p>}
+        </div>
         <div className="grid lg:grid-cols-2 gap-3">{etapas.map((etapa, index) => {
           const def = ETAPAS_LOGISTICA.find((e) => e.codigo === etapa.etapa_codigo); const completed = etapa.estado === "completada"; const current = etapa.estado === "en_curso";
           return <div key={etapa.id} className={cn("border rounded-md p-4 flex gap-3 items-start", current && "border-primary bg-primary/5", completed && "border-success/30 bg-success/5")}>
@@ -196,14 +236,15 @@ function DetalleLogistica() {
           <Field label="Seguro" name="seguro_monto" type="number" /><Field label="Gastos locales" name="gastos_locales_monto" type="number" /><Field label="Otros costos" name="otros_monto" type="number" />
           <div className="sm:col-span-2 border-t pt-4 flex justify-between font-semibold"><span>Total registrado</span><span>{money(totalCostos, form.flete_moneda)}</span></div>
         </CardContent></Card>
-        <Card><CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" />Documento adjunto</CardTitle></CardHeader><CardContent className="space-y-4">
-          {operacion.documento_url ? <div className="flex flex-wrap items-center gap-2"><DocumentoPreviewButton path={operacion.documento_url} label="Vista previa" />{modoEdicion && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => removeDoc.mutate()}><X className="h-4 w-4 mr-1" />Quitar</Button>}</div> : <p className="text-sm text-muted-foreground">No hay documento adjunto.</p>}
-          {modoEdicion && <><input ref={fileRef} type="file" className="hidden" accept=".pdf,.png,.jpg,.jpeg,.webp" onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadMut.mutate(file); e.target.value = ""; }} /><Button variant="outline" disabled={uploadMut.isPending} onClick={() => fileRef.current?.click()}><Upload className="h-4 w-4 mr-2" />{uploadMut.isPending ? "Subiendo…" : "Cargar documento"}</Button></>}
-        </CardContent></Card>
+        <DocumentosLogistica id={id} canEdit={canEdit} />
       </div>
       <IncidenciasLogistica id={id} canEdit={canEdit} />
       {canEdit && !modoEdicion && <div className="sticky bottom-4 flex justify-end pointer-events-none"><Button size="lg" className="shadow-lg pointer-events-auto" onClick={() => setModoEdicion(true)}><Pencil className="h-4 w-4 mr-2" />Editar</Button></div>}
       {modoEdicion && <div className="sticky bottom-4 flex justify-end pointer-events-none"><Button size="lg" className="shadow-lg pointer-events-auto" disabled={saveMut.isPending} onClick={() => saveMut.mutate()}><Save className="h-4 w-4 mr-2" />Guardar cambios</Button></div>}
+        </TabsContent>
+
+        <TabsContent value="historial" className="mt-4"><HistorialLogistica id={id} /></TabsContent>
+      </Tabs>
     </main>
   </div>;
 }
