@@ -57,6 +57,9 @@ export const Route = createFileRoute("/_authenticated/logistica/$id")({
 
 type FormState = {
   cliente_id: string; responsable_id: string; tipo: string; proveedor_logistico: string; proveedor_logistico_tid: string;
+  proveedor_email: string; proveedor_telefono: string;
+  producto: string; origen: string; destino: string; puerto_destino: string; buque: string;
+  peso_bruto_kg: string; volumen_m3: string; incoterm: string;
   booking: string; bl_awb: string; contenedor: string; fecha_recogida: string; fecha_embarque: string; fecha_salida: string;
   eta: string; fecha_arribo: string; flete_monto: string; flete_moneda: string; seguro_monto: string;
   gastos_locales_monto: string; otros_monto: string; observaciones: string; cotizacion_id: string; orden_id: string; expediente_id: string;
@@ -65,6 +68,9 @@ const cleanDate = (v: string | null) => v?.slice(0, 10) ?? "";
 const formFrom = (o: any): FormState => ({
   cliente_id: o.cliente_id ?? "", responsable_id: o.responsable_id ?? "", tipo: o.tipo ?? "maritimo",
   proveedor_logistico: o.proveedor_logistico ?? "", proveedor_logistico_tid: o.proveedor_logistico_tid ?? "",
+  proveedor_email: o.proveedor_email ?? "", proveedor_telefono: o.proveedor_telefono ?? "",
+  producto: o.producto ?? "", origen: o.origen ?? "", destino: o.destino ?? "", puerto_destino: o.puerto_destino ?? "", buque: o.buque ?? "",
+  peso_bruto_kg: String(o.peso_bruto_kg ?? ""), volumen_m3: String(o.volumen_m3 ?? ""), incoterm: o.incoterm ?? "",
   booking: o.booking ?? "", bl_awb: o.bl_awb ?? "", contenedor: o.contenedor ?? "", fecha_recogida: cleanDate(o.fecha_recogida),
   fecha_embarque: cleanDate(o.fecha_embarque), fecha_salida: cleanDate(o.fecha_salida), eta: cleanDate(o.eta), fecha_arribo: cleanDate(o.fecha_arribo),
   flete_monto: String(o.flete_monto ?? ""), flete_moneda: o.flete_moneda ?? "USD", seguro_monto: String(o.seguro_monto ?? ""),
