@@ -2673,6 +2673,75 @@ export type Database = {
           },
         ]
       }
+      expediente_contenedores: {
+        Row: {
+          created_at: string
+          expediente_id: string
+          id: string
+          item_no: number | null
+          numero_contenedor: string
+          sello1: string | null
+          sello2: string | null
+          tipo_contenedor: string | null
+        }
+        Insert: {
+          created_at?: string
+          expediente_id: string
+          id?: string
+          item_no?: number | null
+          numero_contenedor: string
+          sello1?: string | null
+          sello2?: string | null
+          tipo_contenedor?: string | null
+        }
+        Update: {
+          created_at?: string
+          expediente_id?: string
+          id?: string
+          item_no?: number | null
+          numero_contenedor?: string
+          sello1?: string | null
+          sello2?: string | null
+          tipo_contenedor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expediente_contenedores_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_contenedores_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_contenedores_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "expediente_contenedores_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "expediente_contenedores_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+        ]
+      }
       expediente_hitos: {
         Row: {
           created_at: string
