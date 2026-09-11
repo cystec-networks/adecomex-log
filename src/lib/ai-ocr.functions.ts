@@ -9,6 +9,8 @@ const Input = z.object({
   base64: z.string().min(20),
 });
 
+export type OcrContenedor = { numero: string; sello1: string | null; sello2: string | null; tipo: string | null };
+
 export type OcrExtraction = {
   cliente: string | null;
   bl: string | null;
@@ -17,6 +19,7 @@ export type OcrExtraction = {
   productos: string | null;
   eta: string | null;
   puerto_arribo: string | null;
+  contenedores: OcrContenedor[] | null;
 };
 
 export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
@@ -28,8 +31,10 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
     const system =
       "Eres un asistente de operaciones aduanales en República Dominicana. " +
       "Extraes datos de documentos de importación (BL, factura comercial, packing list, AWB). " +
-      "Devuelve ÚNICAMENTE un objeto JSON con las claves exactas: cliente, bl, suplidor, numero_documento, productos, eta, puerto_arribo. " +
+      "Devuelve ÚNICAMENTE un objeto JSON con las claves exactas: cliente, bl, suplidor, numero_documento, productos, eta, puerto_arribo, contenedores. " +
+      "'contenedores' es un arreglo de objetos {numero, sello1, sello2, tipo} — busca una tabla tipo 'FURGONES' o 'CONTENEDORES' con columnas de número de contenedor/furgón, sello(s) y tipo de empaque/contenedor; si no hay tabla de contenedores en el documento, usa null. " +
       "Usa null cuando el dato no aparezca. 'eta' en formato YYYY-MM-DD si es posible. 'productos' como resumen breve (máx 300 caracteres).";
+
 
     const isPdf = data.mime === "application/pdf";
     const raw = await callGateway({
