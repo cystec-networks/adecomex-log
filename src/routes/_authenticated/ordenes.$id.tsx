@@ -95,6 +95,22 @@ function DetalleOrden() {
     });
   }, [permisosDisponibles, busquedaPermiso, o]);
 
+  const vincularPermiso = useMutation({
+    mutationFn: async (permisoId: string) => {
+      const { error } = await supabase.from("permisos").update({ orden_id: id }).eq("id", permisoId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Permiso vinculado a la orden");
+      qc.invalidateQueries({ queryKey: ["permisos-por-orden", id] });
+      qc.invalidateQueries({ queryKey: ["permisos-disponibles", id] });
+      setVincularOpen(false);
+      setBusquedaPermiso("");
+      setSelectedPermisoId(null);
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo vincular el permiso"),
+  });
+
   const convertirExpediente = useMutation({
     mutationFn: async () => {
       const { data: exp, error } = await supabase
