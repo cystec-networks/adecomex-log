@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
-import { AlertTriangle, ArrowLeft, Check, CheckCircle2, Circle, Clock, FileText, Pencil, Plus, Save, Upload, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2, Circle, Clock, FileText, Pencil, Plus, Save, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConstanciaLogisticaButton } from "@/components/constancia-logistica-button";
+
+/** Registro de auditoría de la operación logística (mismo patrón que Expedientes). */
+const logAuditoria = async (operacionId: string, accion: string, cambios?: Record<string, unknown>) => {
+  const { data: u } = await supabase.auth.getUser();
+  await supabase.from("auditoria").insert({
+    entidad: "operaciones_logistica", entidad_id: operacionId, accion,
+    usuario_id: u.user?.id ?? null, cambios: (cambios ?? null) as any,
+  });
+};
+
+const TIPOS_DOCUMENTO = [
+  { codigo: "booking", nombre: "Booking" },
+  { codigo: "bl_awb", nombre: "BL / AWB" },
+  { codigo: "packing_list", nombre: "Lista de Empaque" },
+  { codigo: "hbl", nombre: "HBL" },
+  { codigo: "certificado_origen", nombre: "Certificado de Origen" },
+  { codigo: "otro", nombre: "Otro" },
+] as const;
 
 const searchSchema = z.object({ nuevo: fallback(z.string(), "").default("") });
 export const Route = createFileRoute("/_authenticated/logistica/$id")({
@@ -37,6 +57,9 @@ export const Route = createFileRoute("/_authenticated/logistica/$id")({
 
 type FormState = {
   cliente_id: string; responsable_id: string; tipo: string; proveedor_logistico: string; proveedor_logistico_tid: string;
+  proveedor_email: string; proveedor_telefono: string;
+  producto: string; origen: string; destino: string; puerto_destino: string; buque: string;
+  peso_bruto_kg: string; volumen_m3: string; incoterm: string;
   booking: string; bl_awb: string; contenedor: string; fecha_recogida: string; fecha_embarque: string; fecha_salida: string;
   eta: string; fecha_arribo: string; flete_monto: string; flete_moneda: string; seguro_monto: string;
   gastos_locales_monto: string; otros_monto: string; observaciones: string; cotizacion_id: string; orden_id: string; expediente_id: string;
@@ -45,6 +68,9 @@ const cleanDate = (v: string | null) => v?.slice(0, 10) ?? "";
 const formFrom = (o: any): FormState => ({
   cliente_id: o.cliente_id ?? "", responsable_id: o.responsable_id ?? "", tipo: o.tipo ?? "maritimo",
   proveedor_logistico: o.proveedor_logistico ?? "", proveedor_logistico_tid: o.proveedor_logistico_tid ?? "",
+  proveedor_email: o.proveedor_email ?? "", proveedor_telefono: o.proveedor_telefono ?? "",
+  producto: o.producto ?? "", origen: o.origen ?? "", destino: o.destino ?? "", puerto_destino: o.puerto_destino ?? "", buque: o.buque ?? "",
+  peso_bruto_kg: String(o.peso_bruto_kg ?? ""), volumen_m3: String(o.volumen_m3 ?? ""), incoterm: o.incoterm ?? "",
   booking: o.booking ?? "", bl_awb: o.bl_awb ?? "", contenedor: o.contenedor ?? "", fecha_recogida: cleanDate(o.fecha_recogida),
   fecha_embarque: cleanDate(o.fecha_embarque), fecha_salida: cleanDate(o.fecha_salida), eta: cleanDate(o.eta), fecha_arribo: cleanDate(o.fecha_arribo),
   flete_monto: String(o.flete_monto ?? ""), flete_moneda: o.flete_moneda ?? "USD", seguro_monto: String(o.seguro_monto ?? ""),
@@ -61,7 +87,7 @@ function DetalleLogistica() {
   const canEdit = (roles ?? []).some((r) => r === "admin" || r === "logistica");
   const [modoEdicion, setModoEdicion] = useState(nuevo === "1");
   const [form, setForm] = useState<FormState | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  
 
   const { data: operacion, isLoading } = useQuery({ queryKey: ["operacion-logistica", id], queryFn: async () => {
     const { data, error } = await supabase.from("operaciones_logistica").select("*, clientes(nombre)").eq("id", id).single();
@@ -96,13 +122,18 @@ function DetalleLogistica() {
     const { error } = await supabase.from("operaciones_logistica").update({
       cliente_id: nullable(form.cliente_id), responsable_id: nullable(form.responsable_id), tipo: form.tipo,
       proveedor_logistico: nullable(form.proveedor_logistico), proveedor_logistico_tid: nullable(form.proveedor_logistico_tid), booking: nullable(form.booking),
+      proveedor_email: nullable(form.proveedor_email), proveedor_telefono: nullable(form.proveedor_telefono),
+      producto: nullable(form.producto), origen: nullable(form.origen), destino: nullable(form.destino),
+      puerto_destino: nullable(form.puerto_destino), buque: nullable(form.buque), incoterm: nullable(form.incoterm),
+      peso_bruto_kg: numeric(form.peso_bruto_kg), volumen_m3: numeric(form.volumen_m3),
       bl_awb: nullable(form.bl_awb), contenedor: nullable(form.contenedor), fecha_recogida: nullable(form.fecha_recogida), fecha_embarque: nullable(form.fecha_embarque),
       fecha_salida: nullable(form.fecha_salida), eta: nullable(form.eta), fecha_arribo: nullable(form.fecha_arribo), flete_monto: numeric(form.flete_monto),
       flete_moneda: form.flete_moneda, seguro_monto: numeric(form.seguro_monto), gastos_locales_monto: numeric(form.gastos_locales_monto),
       otros_monto: numeric(form.otros_monto), observaciones: nullable(form.observaciones), cotizacion_id: nullable(form.cotizacion_id),
       orden_id: nullable(form.orden_id), expediente_id: nullable(form.expediente_id),
     }).eq("id", id); if (error) throw error;
-  }, onSuccess: () => { toast.success("Cambios guardados"); setModoEdicion(false); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["operaciones-logistica"] }); history.replaceState(null, "", `/logistica/${id}`); }, onError: (e: any) => toast.error(e.message) });
+    await logAuditoria(id, "editado");
+  }, onSuccess: () => { toast.success("Cambios guardados"); setModoEdicion(false); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["operaciones-logistica"] }); qc.invalidateQueries({ queryKey: ["auditoria-logistica", id] }); history.replaceState(null, "", `/logistica/${id}`); }, onError: (e: any) => toast.error(e.message) });
 
   const completarEtapa = useMutation({ mutationFn: async (etapaId: string) => {
     const currentIndex = etapas.findIndex((e) => e.id === etapaId);
@@ -116,20 +147,35 @@ function DetalleLogistica() {
     } else {
       const { error: opError } = await supabase.from("operaciones_logistica").update({ estado: "completada" }).eq("id", id); if (opError) throw opError;
     }
-  }, onSuccess: () => { toast.success("Etapa completada"); qc.invalidateQueries({ queryKey: ["etapas-operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["operaciones-logistica"] }); }, onError: (e: any) => toast.error(e.message) });
-
-  const uploadMut = useMutation({ mutationFn: async (file: File) => {
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-"); const path = `logistica/${id}/${crypto.randomUUID()}-${safeName}`;
-    const { error } = await supabase.storage.from("documentos").upload(path, file); if (error) throw error;
-    const { error: updateError } = await supabase.from("operaciones_logistica").update({ documento_url: path }).eq("id", id); if (updateError) throw updateError;
-  }, onSuccess: () => { toast.success("Documento adjuntado"); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); }, onError: (e: any) => toast.error(e.message) });
-  const removeDoc = useMutation({ mutationFn: async () => { if (!operacion?.documento_url) return; const { error } = await supabase.storage.from("documentos").remove([operacion.documento_url]); if (error) throw error; const { error: u } = await supabase.from("operaciones_logistica").update({ documento_url: null }).eq("id", id); if (u) throw u; }, onSuccess: () => { toast.success("Documento quitado"); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); } });
+    await logAuditoria(id, `etapa_completada:${etapas[currentIndex].etapa_codigo}`);
+  }, onSuccess: () => { toast.success("Etapa completada"); qc.invalidateQueries({ queryKey: ["etapas-operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["operaciones-logistica"] }); qc.invalidateQueries({ queryKey: ["auditoria-logistica", id] }); }, onError: (e: any) => toast.error(e.message) });
 
   const totalCostos = useMemo(() => [form?.flete_monto, form?.seguro_monto, form?.gastos_locales_monto, form?.otros_monto].reduce<number>((sum, value) => sum + Number(value || 0), 0), [form]);
   if (isLoading || !operacion || !form) return <div className="p-8 text-muted-foreground">Cargando operación…</div>;
   const readOnly = !modoEdicion;
   const Field = ({ label, name, type = "text" }: { label: string; name: keyof FormState; type?: string }) => <div className="space-y-1.5"><Label>{label}</Label><Input type={type} value={form[name]} disabled={readOnly} onChange={(e) => set(name, e.target.value)} /></div>;
   const LinkSelect = ({ label, name, rows }: { label: string; name: "cotizacion_id" | "orden_id" | "expediente_id"; rows: { id: string; numero: string | null }[] }) => <div className="space-y-1.5"><Label>{label}</Label><Select disabled={readOnly} value={form[name] || "none"} onValueChange={(v) => set(name, v === "none" ? "" : v)}><SelectTrigger><SelectValue placeholder="Sin vincular" /></SelectTrigger><SelectContent><SelectItem value="none">Sin vincular</SelectItem>{rows.map((r) => <SelectItem key={r.id} value={r.id}>{r.numero ?? "Sin número"}</SelectItem>)}</SelectContent></Select></div>;
+
+  const etapaActual = etapas.find((e) => e.estado === "en_curso");
+  const idxActual = etapaActual ? etapas.findIndex((e) => e.id === etapaActual.id) : -1;
+  const etapaSiguiente = idxActual >= 0 ? etapas[idxActual + 1] : undefined;
+  const nombreEtapa = (codigo?: string) => ETAPAS_LOGISTICA.find((e) => e.codigo === codigo)?.nombre ?? codigo ?? "—";
+
+  const datosConstancia = () => ({
+    numero: operacion.numero ?? "",
+    fechaInicio: fmtLocalDate(String(operacion.created_at ?? "").slice(0, 10)),
+    cliente: operacion.clientes?.nombre ?? null,
+    producto: form.producto || null,
+    origen: form.origen || null,
+    destino: form.destino || form.puerto_destino || null,
+    incoterm: form.incoterm || null,
+    tipo: operacion.tipo === "aereo" ? "Aéreo" : "Marítimo",
+    proveedorLogistico: form.proveedor_logistico || null,
+    proveedorEmail: form.proveedor_email || null,
+    proveedorTelefono: form.proveedor_telefono || null,
+    responsable: responsables.find((r: any) => r.id === form.responsable_id)?.nombre ?? null,
+    etapas: etapas.map((e) => ({ nombre: nombreEtapa(e.etapa_codigo), estado: e.estado })),
+  });
 
   return <div className={cn("min-h-full transition-colors", modoEdicion ? (nuevo === "1" ? "bg-success/10" : "bg-warning/10") : "bg-background")}>
     <div className="sticky top-0 z-20 border-b bg-background px-6 py-3 shadow-sm">
@@ -138,23 +184,42 @@ function DetalleLogistica() {
         <div className="min-w-0 flex-1"><h1 className="font-display text-xl font-bold truncate">{operacion.numero}</h1><p className="text-sm text-muted-foreground truncate">{operacion.clientes?.nombre ?? "Sin cliente"}</p></div>
         <Badge variant="outline" className="capitalize">{operacion.tipo}</Badge><Badge className={estadoLogisticaClass(operacion.estado)}>{ESTADO_LOGISTICA_LABEL[operacion.estado] ?? operacion.estado}</Badge>
         <div className="min-w-48"><div className="text-xs font-medium mb-1">Progreso: {done} de {total} etapas</div><Progress value={(done / total) * 100} /></div>
+        <ConstanciaLogisticaButton datos={datosConstancia} />
         {modoEdicion && <Button disabled={saveMut.isPending} onClick={() => saveMut.mutate()} className="shadow-lg"><Save className="h-4 w-4 mr-2" />Guardar cambios</Button>}
       </div>
     </div>
     <main className="p-6 max-w-[1500px] mx-auto space-y-6">
+      <Tabs defaultValue="operacion">
+        <TabsList><TabsTrigger value="operacion">Operación</TabsTrigger><TabsTrigger value="historial">Historial</TabsTrigger></TabsList>
+
+        <TabsContent value="operacion" className="space-y-6 mt-4">
       <Card><CardHeader><CardTitle className="text-base">Datos operativos</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="space-y-1.5"><Label>Cliente</Label><Select disabled={readOnly} value={form.cliente_id || "none"} onValueChange={(v) => set("cliente_id", v === "none" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sin cliente</SelectItem>{clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent></Select></div>
         <div className="space-y-1.5"><Label>Responsable</Label><Select disabled={readOnly} value={form.responsable_id || "none"} onValueChange={(v) => set("responsable_id", v === "none" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sin asignar</SelectItem>{responsables.map((r) => <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>)}</SelectContent></Select></div>
         <div className="space-y-1.5"><Label>Tipo</Label><Select disabled={readOnly} value={form.tipo} onValueChange={(v) => set("tipo", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="maritimo">Marítimo</SelectItem><SelectItem value="aereo">Aéreo</SelectItem></SelectContent></Select></div>
         <Field label="Booking" name="booking" /><Field label="BL / AWB" name="bl_awb" /><Field label="Contenedor" name="contenedor" />
         <div className="space-y-1.5"><TerceroExtranjeroPicker label="Proveedor logístico" onSelect={(t) => setForm((p) => p ? ({ ...p, proveedor_logistico: t.nombre, proveedor_logistico_tid: t.tid ?? "" }) : p)} /><Input disabled={readOnly} value={form.proveedor_logistico} onChange={(e) => set("proveedor_logistico", e.target.value)} /></div>
-        <Field label="TID del proveedor" name="proveedor_logistico_tid" /><Field label="Fecha de recogida" name="fecha_recogida" type="date" /><Field label="Fecha de embarque" name="fecha_embarque" type="date" /><Field label="Fecha de salida" name="fecha_salida" type="date" /><Field label="ETA" name="eta" type="date" /><Field label="Fecha de arribo" name="fecha_arribo" type="date" />
+        <Field label="TID del proveedor" name="proveedor_logistico_tid" /><Field label="Correo del proveedor" name="proveedor_email" /><Field label="Teléfono del proveedor" name="proveedor_telefono" />
+        <Field label="Fecha de recogida" name="fecha_recogida" type="date" /><Field label="Fecha de embarque" name="fecha_embarque" type="date" /><Field label="Fecha de salida" name="fecha_salida" type="date" /><Field label="ETA" name="eta" type="date" /><Field label="Fecha de arribo" name="fecha_arribo" type="date" />
         <LinkSelect label="Cotización de Compras" name="cotizacion_id" rows={vinculos?.cotizaciones ?? []} /><LinkSelect label="Orden de Compras" name="orden_id" rows={vinculos?.ordenes ?? []} /><LinkSelect label="Expediente" name="expediente_id" rows={vinculos?.expedientes ?? []} />
         <div className="sm:col-span-2 lg:col-span-4 space-y-1.5"><Label>Observaciones</Label><Textarea disabled={readOnly} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} rows={3} /></div>
       </CardContent></Card>
 
+      <Card><CardHeader><CardTitle className="text-base">Datos de la carga</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="sm:col-span-2 space-y-1.5"><Label>Producto</Label><Input disabled={readOnly} value={form.producto} onChange={(e) => set("producto", e.target.value)} /></div>
+        <Field label="Origen" name="origen" /><Field label="Destino" name="destino" />
+        <Field label="Puerto / aeropuerto de destino" name="puerto_destino" /><Field label="Buque / vuelo" name="buque" />
+        <Field label="Peso bruto (kg)" name="peso_bruto_kg" type="number" /><Field label="Volumen (m³)" name="volumen_m3" type="number" />
+        <Field label="Incoterm" name="incoterm" />
+      </CardContent></Card>
+
       <Card><CardHeader><CardTitle className="text-base">Progreso de la operación</CardTitle></CardHeader><CardContent className="space-y-3">
         <Progress value={(done / total) * 100} className="mb-5" />
+        <div className="rounded-md border bg-muted/30 p-4 space-y-1">
+          <div className="text-sm font-semibold flex items-center gap-2"><ArrowRight className="h-4 w-4 text-primary" />Próximas acciones</div>
+          <p className="text-sm">{etapaActual ? `En curso: ${nombreEtapa(etapaActual.etapa_codigo)}` : "No hay etapas en curso — la operación está completada."}</p>
+          {etapaSiguiente && <p className="text-sm text-muted-foreground">Próximo: {nombreEtapa(etapaSiguiente.etapa_codigo)}</p>}
+        </div>
         <div className="grid lg:grid-cols-2 gap-3">{etapas.map((etapa, index) => {
           const def = ETAPAS_LOGISTICA.find((e) => e.codigo === etapa.etapa_codigo); const completed = etapa.estado === "completada"; const current = etapa.estado === "en_curso";
           return <div key={etapa.id} className={cn("border rounded-md p-4 flex gap-3 items-start", current && "border-primary bg-primary/5", completed && "border-success/30 bg-success/5")}>
@@ -171,14 +236,15 @@ function DetalleLogistica() {
           <Field label="Seguro" name="seguro_monto" type="number" /><Field label="Gastos locales" name="gastos_locales_monto" type="number" /><Field label="Otros costos" name="otros_monto" type="number" />
           <div className="sm:col-span-2 border-t pt-4 flex justify-between font-semibold"><span>Total registrado</span><span>{money(totalCostos, form.flete_moneda)}</span></div>
         </CardContent></Card>
-        <Card><CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" />Documento adjunto</CardTitle></CardHeader><CardContent className="space-y-4">
-          {operacion.documento_url ? <div className="flex flex-wrap items-center gap-2"><DocumentoPreviewButton path={operacion.documento_url} label="Vista previa" />{modoEdicion && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => removeDoc.mutate()}><X className="h-4 w-4 mr-1" />Quitar</Button>}</div> : <p className="text-sm text-muted-foreground">No hay documento adjunto.</p>}
-          {modoEdicion && <><input ref={fileRef} type="file" className="hidden" accept=".pdf,.png,.jpg,.jpeg,.webp" onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadMut.mutate(file); e.target.value = ""; }} /><Button variant="outline" disabled={uploadMut.isPending} onClick={() => fileRef.current?.click()}><Upload className="h-4 w-4 mr-2" />{uploadMut.isPending ? "Subiendo…" : "Cargar documento"}</Button></>}
-        </CardContent></Card>
+        <DocumentosLogistica id={id} canEdit={canEdit} />
       </div>
       <IncidenciasLogistica id={id} canEdit={canEdit} />
       {canEdit && !modoEdicion && <div className="sticky bottom-4 flex justify-end pointer-events-none"><Button size="lg" className="shadow-lg pointer-events-auto" onClick={() => setModoEdicion(true)}><Pencil className="h-4 w-4 mr-2" />Editar</Button></div>}
       {modoEdicion && <div className="sticky bottom-4 flex justify-end pointer-events-none"><Button size="lg" className="shadow-lg pointer-events-auto" disabled={saveMut.isPending} onClick={() => saveMut.mutate()}><Save className="h-4 w-4 mr-2" />Guardar cambios</Button></div>}
+        </TabsContent>
+
+        <TabsContent value="historial" className="mt-4"><HistorialLogistica id={id} /></TabsContent>
+      </Tabs>
     </main>
   </div>;
 }
@@ -194,4 +260,82 @@ function IncidenciasLogistica({ id, canEdit }: { id: string; canEdit: boolean })
     <div className="overflow-auto"><table className="w-full min-w-[700px] text-sm"><thead className="text-xs text-muted-foreground border-b"><tr><th className="text-left py-2">Tipo</th><th className="text-left">Severidad</th><th className="text-left">Descripción</th><th className="text-left">Estado</th><th className="text-right">Acción</th></tr></thead><tbody>{incidencias.map((inc) => <tr key={inc.id} className="border-b"><td className="py-3">{inc.tipo}</td><td><Badge className={sevClass[inc.severidad]}>{inc.severidad}</Badge></td><td>{inc.descripcion ?? "—"}</td><td className="capitalize">{inc.estado.replace("_", " ")}</td><td className="text-right">{canEdit && !["resuelta", "cerrada"].includes(inc.estado) && <Button variant="ghost" size="sm" onClick={() => resolveMut.mutate(inc.id)}>Resolver</Button>}</td></tr>)}{incidencias.length === 0 && <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">Sin incidencias registradas.</td></tr>}</tbody></table></div>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>Registrar incidencia</DialogTitle></DialogHeader><div className="space-y-4"><div className="space-y-1.5"><Label>Tipo</Label><Select value={form.tipo} onValueChange={(v) => setForm((p) => ({ ...p, tipo: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{TIPOS_INCIDENCIA.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div><div className="space-y-1.5"><Label>Severidad</Label><Select value={form.severidad} onValueChange={(v) => setForm((p) => ({ ...p, severidad: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["baja", "media", "alta", "critica"].map((s) => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent></Select></div><div className="space-y-1.5"><Label>Descripción</Label><Textarea value={form.descripcion} onChange={(e) => setForm((p) => ({ ...p, descripcion: e.target.value }))} /></div></div><DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button disabled={createMut.isPending} onClick={() => createMut.mutate()}>Registrar</Button></DialogFooter></DialogContent></Dialog>
   </CardContent></Card>;
+}
+/** Documentos categorizados de la operación (Booking, BL/AWB, Lista de Empaque, HBL, Certificado de Origen, Otro). */
+function DocumentosLogistica({ id, canEdit }: { id: string; canEdit: boolean }) {
+  const qc = useQueryClient();
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [subiendo, setSubiendo] = useState<string | null>(null);
+
+  const { data: docs = [] } = useQuery({ queryKey: ["documentos-logistica", id], queryFn: async () => {
+    const { data, error } = await supabase.from("logistica_documentos").select("*").eq("operacion_logistica_id", id).order("created_at", { ascending: false });
+    if (error) throw error; return data ?? [];
+  }});
+
+  const uploadMut = useMutation({ mutationFn: async ({ tipo, file }: { tipo: string; file: File }) => {
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+    const path = `logistica/${id}/${crypto.randomUUID()}-${safeName}`;
+    const { error } = await supabase.storage.from("documentos").upload(path, file); if (error) throw error;
+    const { data: u } = await supabase.auth.getUser();
+    const { error: insError } = await supabase.from("logistica_documentos").insert({
+      operacion_logistica_id: id, tipo, nombre_archivo: file.name, documento_url: path, subido_por: u.user?.id ?? null,
+    }); if (insError) throw insError;
+    await logAuditoria(id, `documento_subido:${tipo}`, { nombre_archivo: file.name });
+  }, onSuccess: () => { toast.success("Documento adjuntado"); qc.invalidateQueries({ queryKey: ["documentos-logistica", id] }); qc.invalidateQueries({ queryKey: ["auditoria-logistica", id] }); }, onError: (e: any) => toast.error(e.message), onSettled: () => setSubiendo(null) });
+
+  const removeMut = useMutation({ mutationFn: async (doc: any) => {
+    if (doc.documento_url) await supabase.storage.from("documentos").remove([doc.documento_url]);
+    const { error } = await supabase.from("logistica_documentos").delete().eq("id", doc.id); if (error) throw error;
+    await logAuditoria(id, `documento_eliminado:${doc.tipo}`, { nombre_archivo: doc.nombre_archivo });
+  }, onSuccess: () => { toast.success("Documento quitado"); qc.invalidateQueries({ queryKey: ["documentos-logistica", id] }); qc.invalidateQueries({ queryKey: ["auditoria-logistica", id] }); }, onError: (e: any) => toast.error(e.message) });
+
+  return <Card><CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" />Documentos de la operación</CardTitle></CardHeader><CardContent className="space-y-3">
+    {TIPOS_DOCUMENTO.map((t) => {
+      const propios = docs.filter((d) => d.tipo === t.codigo);
+      return <div key={t.codigo} className="border rounded-md p-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium flex-1">{t.nombre}</span>
+          {canEdit && <>
+            <input ref={(el) => { inputRefs.current[t.codigo] = el; }} type="file" className="hidden" accept=".pdf,.png,.jpg,.jpeg,.webp"
+              onChange={(e) => { const file = e.target.files?.[0]; if (file) { setSubiendo(t.codigo); uploadMut.mutate({ tipo: t.codigo, file }); } e.target.value = ""; }} />
+            <Button variant="outline" size="sm" disabled={subiendo === t.codigo} onClick={() => inputRefs.current[t.codigo]?.click()}>
+              <Upload className="h-4 w-4 mr-1" />{subiendo === t.codigo ? "Subiendo…" : "Subir"}
+            </Button>
+          </>}
+        </div>
+        {propios.length === 0
+          ? <p className="text-xs text-muted-foreground">Sin archivo cargado.</p>
+          : propios.map((d) => <div key={d.id} className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground truncate max-w-[200px]">{d.nombre_archivo ?? "Archivo"}</span>
+              {d.documento_url && <DocumentoPreviewButton path={d.documento_url} label="Vista previa" />}
+              {canEdit && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => removeMut.mutate(d)}><X className="h-4 w-4 mr-1" />Quitar</Button>}
+            </div>)}
+      </div>;
+    })}
+  </CardContent></Card>;
+}
+
+/** Bitácora de la operación (tabla auditoria, entidad = operaciones_logistica). */
+function HistorialLogistica({ id }: { id: string }) {
+  const { data } = useQuery({ queryKey: ["auditoria-logistica", id], queryFn: async () => (await supabase
+    .from("auditoria").select("*").eq("entidad", "operaciones_logistica").eq("entidad_id", id)
+    .order("created_at", { ascending: false }).limit(100)).data ?? [] });
+  return <Card>
+    <CardHeader><CardTitle className="text-base">Bitácora</CardTitle></CardHeader>
+    <CardContent className="p-0 overflow-auto max-h-[70vh]">
+      <table className="w-full text-sm">
+        <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
+          <tr><th className="text-left px-4 py-2">Fecha</th><th className="text-left">Acción</th><th className="text-left">Detalle</th></tr>
+        </thead>
+        <tbody>
+          {(data ?? []).map((a: any) => <tr key={a.id} className="border-b last:border-0">
+            <td className="px-4 py-2 text-xs">{new Date(a.created_at).toLocaleString("es-DO")}</td>
+            <td className="text-xs font-mono">{a.accion}</td>
+            <td className="text-xs text-muted-foreground">{a.cambios ? JSON.stringify(a.cambios) : "—"}</td>
+          </tr>)}
+          {(!data || data.length === 0) && <tr><td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">Sin registros aún.</td></tr>}
+        </tbody>
+      </table>
+    </CardContent>
+  </Card>;
 }

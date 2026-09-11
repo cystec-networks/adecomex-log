@@ -3914,6 +3914,44 @@ export type Database = {
         }
         Relationships: []
       }
+      logistica_documentos: {
+        Row: {
+          created_at: string
+          documento_url: string | null
+          id: string
+          nombre_archivo: string | null
+          operacion_logistica_id: string
+          subido_por: string | null
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          documento_url?: string | null
+          id?: string
+          nombre_archivo?: string | null
+          operacion_logistica_id: string
+          subido_por?: string | null
+          tipo: string
+        }
+        Update: {
+          created_at?: string
+          documento_url?: string | null
+          id?: string
+          nombre_archivo?: string | null
+          operacion_logistica_id?: string
+          subido_por?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistica_documentos_operacion_logistica_id_fkey"
+            columns: ["operacion_logistica_id"]
+            isOneToOne: false
+            referencedRelation: "operaciones_logistica"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mercancia_items: {
         Row: {
           aplica_isc: boolean | null
@@ -4113,12 +4151,13 @@ export type Database = {
         Row: {
           bl_awb: string | null
           booking: string | null
+          buque: string | null
           cliente_id: string | null
           contenedor: string | null
           cotizacion_id: string | null
           creado_por: string | null
           created_at: string
-          documento_url: string | null
+          destino: string | null
           eliminado_en: string | null
           eliminado_por: string | null
           estado: string
@@ -4132,26 +4171,35 @@ export type Database = {
           flete_monto: number | null
           gastos_locales_monto: number | null
           id: string
+          incoterm: string | null
           numero: string
           observaciones: string | null
           orden_id: string | null
+          origen: string | null
           otros_monto: number | null
+          peso_bruto_kg: number | null
+          producto: string | null
+          proveedor_email: string | null
           proveedor_logistico: string | null
           proveedor_logistico_tid: string | null
+          proveedor_telefono: string | null
+          puerto_destino: string | null
           responsable_id: string | null
           seguro_monto: number | null
           tipo: string
           updated_at: string
+          volumen_m3: number | null
         }
         Insert: {
           bl_awb?: string | null
           booking?: string | null
+          buque?: string | null
           cliente_id?: string | null
           contenedor?: string | null
           cotizacion_id?: string | null
           creado_por?: string | null
           created_at?: string
-          documento_url?: string | null
+          destino?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado?: string
@@ -4165,26 +4213,35 @@ export type Database = {
           flete_monto?: number | null
           gastos_locales_monto?: number | null
           id?: string
+          incoterm?: string | null
           numero: string
           observaciones?: string | null
           orden_id?: string | null
+          origen?: string | null
           otros_monto?: number | null
+          peso_bruto_kg?: number | null
+          producto?: string | null
+          proveedor_email?: string | null
           proveedor_logistico?: string | null
           proveedor_logistico_tid?: string | null
+          proveedor_telefono?: string | null
+          puerto_destino?: string | null
           responsable_id?: string | null
           seguro_monto?: number | null
           tipo?: string
           updated_at?: string
+          volumen_m3?: number | null
         }
         Update: {
           bl_awb?: string | null
           booking?: string | null
+          buque?: string | null
           cliente_id?: string | null
           contenedor?: string | null
           cotizacion_id?: string | null
           creado_por?: string | null
           created_at?: string
-          documento_url?: string | null
+          destino?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado?: string
@@ -4198,16 +4255,24 @@ export type Database = {
           flete_monto?: number | null
           gastos_locales_monto?: number | null
           id?: string
+          incoterm?: string | null
           numero?: string
           observaciones?: string | null
           orden_id?: string | null
+          origen?: string | null
           otros_monto?: number | null
+          peso_bruto_kg?: number | null
+          producto?: string | null
+          proveedor_email?: string | null
           proveedor_logistico?: string | null
           proveedor_logistico_tid?: string | null
+          proveedor_telefono?: string | null
+          puerto_destino?: string | null
           responsable_id?: string | null
           seguro_monto?: number | null
           tipo?: string
           updated_at?: string
+          volumen_m3?: number | null
         }
         Relationships: [
           {
