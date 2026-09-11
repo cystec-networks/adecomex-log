@@ -636,6 +636,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
   const save = useMutation({
     mutationFn: async () => {
       const payload: any = { ...form };
+      const contValidos = contenedores.filter((c) => c.numero.trim());
+      if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
       payload.peso_neto = payload.peso_neto === "" ? null : Number(payload.peso_neto);
       payload.peso_bruto = payload.peso_bruto === "" ? null : Number(payload.peso_bruto);
