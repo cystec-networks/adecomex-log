@@ -706,7 +706,14 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
     },
     onError: (e: any) => {
       if (e?.code === "23505") {
-        toast.error("Ese número de permiso ya está en uso en otro Expediente — actualiza la página e intenta de nuevo.");
+        const msg = String(e?.message || "");
+        if (msg.includes("numero_vuce")) {
+          toast.error("Ese número de permiso ya está en uso en otro Expediente — actualiza la página e intenta de nuevo.");
+        } else if (msg.includes("numero") || msg.includes("expedientes_numero")) {
+          toast.error("Ese número de Expediente ya está en uso — elige otro número o actualiza la página.");
+        } else {
+          toast.error("Ya existe un registro con ese mismo valor en un campo único — revisa los datos e intenta de nuevo.");
+        }
       } else {
         toast.error(e.message);
       }
