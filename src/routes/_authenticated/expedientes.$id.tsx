@@ -3587,8 +3587,8 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
       totalCifOverride: Number(expData.total_cif) || null,
       pesoBruto: expData.peso_bruto ?? null,
       pesoNeto: expData.peso_neto ?? null,
-      contenedores: contenedores.length
-        ? contenedores.map((c) => ({ numero: c.numero, sello1: c.sello1, sello2: c.sello2, tipo: c.tipo }))
+      contenedores: contenedoresList.length
+        ? contenedoresList.map((c) => ({ numero: c.numero, sello1: c.sello1, sello2: c.sello2, tipo: c.tipo }))
         : (expData.numeros_contenedores ?? null),
       servicioAduaneroUsd: await servicioAduaneroDeExpediente(expData),
     });
