@@ -17,7 +17,7 @@ import { fmtLocalDate } from "@/lib/dates";
 import { fmtRD } from "@/lib/facturas-ecf";
 import { useMyRoles } from "@/lib/auth-hooks";
 
-type Kind = "expedientes" | "solicitudes" | "permisos" | "transportes" | "cotizaciones" | "ordenes" | "facturas_ecf";
+type Kind = "expedientes" | "solicitudes" | "permisos" | "transportes" | "cotizaciones" | "ordenes" | "facturas_ecf" | "operaciones_logistica";
 
 export const Route = createFileRoute("/_authenticated/expedientes/papelera")({
   component: Papelera,
@@ -103,6 +103,16 @@ function Papelera() {
       .order("eliminado_en", { ascending: false })).data ?? [],
   });
 
+  const operacionesLogistica = useQuery({
+    queryKey: ["papelera-operaciones_logistica"],
+    enabled: !!isAdmin,
+    queryFn: async () => (await supabase
+      .from("operaciones_logistica")
+      .select("*, clientes(nombre)")
+      .not("eliminado_en", "is", null)
+      .order("eliminado_en", { ascending: false })).data ?? [],
+  });
+
   const restoreMut = useMutation({
     mutationFn: async ({ kind, id }: { kind: Kind; id: string }) => {
       const { error } = await supabase
@@ -120,11 +130,13 @@ function Papelera() {
         cotizaciones: "Cotización restaurada",
         ordenes: "Orden restaurada",
         facturas_ecf: "Factura restaurada",
+        operaciones_logistica: "Operación logística restaurada",
       };
 
       toast.success(label[vars.kind]);
       qc.invalidateQueries({ queryKey: [vars.kind] });
       qc.invalidateQueries({ queryKey: [`papelera-${vars.kind}`] });
+      if (vars.kind === "operaciones_logistica") qc.invalidateQueries({ queryKey: ["operaciones-logistica"] });
       setToRestore(null);
     },
     onError: (e: any) => toast.error(e.message ?? "No se pudo restaurar"),
@@ -171,6 +183,7 @@ function Papelera() {
   const cotRows = cotizaciones.data ?? [];
   const ordRows = ordenes.data ?? [];
   const facRows = facturas.data ?? [];
+  const logRows = operacionesLogistica.data ?? [];
 
 
   return (
@@ -193,6 +206,7 @@ function Papelera() {
           <TabsTrigger value="cotizaciones">Cotizaciones ({cotRows.length})</TabsTrigger>
           <TabsTrigger value="ordenes">Órdenes ({ordRows.length})</TabsTrigger>
           <TabsTrigger value="facturas_ecf">Facturas ({facRows.length})</TabsTrigger>
+          <TabsTrigger value="operaciones_logistica">Logística ({logRows.length})</TabsTrigger>
 
         </TabsList>
 
@@ -537,6 +551,50 @@ function Papelera() {
                           </Button>
                           <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
                             onClick={() => { setToDelete({ kind: "facturas_ecf", id: f.id, numero: f.encf }); setConfirmText(""); }}>
+                            <Trash2 className="h-4 w-4 mr-1" /> Eliminar
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="operaciones_logistica">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Operaciones logísticas eliminadas: {logRows.length}</CardTitle></CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              {logRows.length === 0 ? (
+                <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin operaciones logísticas en papelera.</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-muted-foreground border-b bg-muted/20">
+                    <tr>
+                      <th className="text-left px-4 py-2">Número</th>
+                      <th className="text-left">Cliente</th>
+                      <th className="text-left">Tipo</th>
+                      <th className="text-left">Estado</th>
+                      <th className="text-left">Eliminado el</th>
+                      <th className="text-right px-4 py-2">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {logRows.map((o: any) => (
+                      <tr key={o.id} className="border-b last:border-0 hover:bg-muted/40">
+                        <td className="px-4 py-2 font-medium">{o.numero}</td>
+                        <td>{o.clientes?.nombre ?? "—"}</td>
+                        <td className="capitalize text-muted-foreground">{o.tipo ?? "—"}</td>
+                        <td><Badge variant="outline">{o.estado?.replaceAll("_", " ")}</Badge></td>
+                        <td className="text-xs text-muted-foreground">{o.eliminado_en ? new Date(o.eliminado_en).toLocaleString("es-DO") : "—"}</td>
+                        <td className="px-4 py-2 text-right whitespace-nowrap">
+                          <Button variant="ghost" size="sm" onClick={() => setToRestore({ kind: "operaciones_logistica", id: o.id, numero: o.numero })}>
+                            <RotateCcw className="h-4 w-4 mr-1" /> Restaurar
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                            onClick={() => { setToDelete({ kind: "operaciones_logistica", id: o.id, numero: o.numero }); setConfirmText(""); }}>
                             <Trash2 className="h-4 w-4 mr-1" /> Eliminar
                           </Button>
                         </td>
