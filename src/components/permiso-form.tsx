@@ -200,13 +200,24 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
         <CardHeader className="pb-3 border-b">
           <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Vinculación</CardTitle>
         </CardHeader>
-        <CardContent className="pt-5 grid gap-4 md:grid-cols-2">
+        <CardContent className="pt-5 grid gap-4 md:grid-cols-3">
           <div className="grid gap-1.5">
             <Label>Expediente vinculado</Label>
-            <Select value={form.expediente_id || undefined} onValueChange={(v) => set("expediente_id", v)}>
+            <Select value={form.expediente_id || undefined} onValueChange={(v) => set("expediente_id", v)} disabled={!!ordenId && !form.expediente_id && mode === "new" ? false : false}>
               <SelectTrigger><SelectValue placeholder="Selecciona expediente" /></SelectTrigger>
               <SelectContent>
                 {(expedientes ?? []).map((e: any) => (
+                  <SelectItem key={e.id} value={e.id}>{e.numero} · {e.clientes?.nombre ?? "—"}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Orden de Compra vinculada</Label>
+            <Select value={form.orden_id || undefined} onValueChange={(v) => set("orden_id", v)}>
+              <SelectTrigger><SelectValue placeholder="Selecciona orden (opcional)" /></SelectTrigger>
+              <SelectContent>
+                {(ordenes ?? []).map((e: any) => (
                   <SelectItem key={e.id} value={e.id}>{e.numero} · {e.clientes?.nombre ?? "—"}</SelectItem>
                 ))}
               </SelectContent>
@@ -217,7 +228,8 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
             <div className="h-9 px-3 rounded-md border bg-muted/40 flex items-center text-sm">
               {(() => {
                 const exp = (expedientes ?? []).find((e: any) => e.id === form.expediente_id);
-                return exp?.clientes?.nombre ?? existing?.clientes?.nombre ?? <span className="text-muted-foreground">— (elige expediente)</span>;
+                const ord = (ordenes ?? []).find((e: any) => e.id === form.orden_id);
+                return exp?.clientes?.nombre ?? ord?.clientes?.nombre ?? existing?.clientes?.nombre ?? <span className="text-muted-foreground">— (elige expediente u orden)</span>;
               })()}
             </div>
           </div>
