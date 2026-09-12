@@ -437,6 +437,10 @@ function NuevoExpediente() {
           <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div className="grid gap-1.5"><Label>Peso bruto (kg)</Label><Input type="number" value={form.peso_bruto} onChange={(e) => set("peso_bruto", e.target.value)} /></div>
             <div className="grid gap-1.5"><Label>Peso neto (kg)</Label><Input type="number" value={form.peso_neto} onChange={(e) => set("peso_neto", e.target.value)} /></div>
+            <div className="grid gap-1.5"><Label>Valor FOB total</Label><Input type="number" value={form.total_fob} onChange={(e) => set("total_fob", e.target.value)} /></div>
+            <div className="grid gap-1.5"><Label>Seguro</Label><Input type="number" value={form.seguro} onChange={(e) => set("seguro", e.target.value)} /></div>
+            <div className="grid gap-1.5"><Label>Flete</Label><Input type="number" value={form.flete} onChange={(e) => set("flete", e.target.value)} /></div>
+            <div className="grid gap-1.5"><Label>Otros gastos</Label><Input type="number" value={form.otros} onChange={(e) => set("otros", e.target.value)} /></div>
             <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
               <Label>Descripción de mercancía</Label>
               <Textarea rows={4} value={form.descripcion_mercancia} onChange={(e) => set("descripcion_mercancia", e.target.value)} />
