@@ -1447,7 +1447,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
             const fob = isNuevo ? (productosNuevos.length ? sumFob : toN(form.total_fob)) : sumFob;
             const cif = fob + toN(form.seguro) + toN(form.flete) + toN(form.otros);
             const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const renderMoney = (label: string, k: "seguro" | "flete" | "otros" | "total_fob", helper?: string) => {
+            const renderMoney = (label: string, k: "seguro" | "flete" | "otros" | "total_fob", helper?: string, req = false) => {
               const raw = (form as any)[k];
               const rawStr = raw === "" || raw == null ? "" : String(raw);
               const isFocused = focusedMoney === k;
@@ -1457,8 +1457,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
                   ? ""
                   : `$${Number(rawStr).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
               return (
-                <div className="grid gap-1.5" key={k}>
-                  <Label>{label} (US$)</Label>
+                <div className="grid gap-1.5" key={k} id={req ? `req-${k}` : undefined}>
+                  <Label>{req && isNuevo && <ReqMark />}{label} (US$)</Label>
                   <Input
                     type="text"
                     inputMode="decimal"
