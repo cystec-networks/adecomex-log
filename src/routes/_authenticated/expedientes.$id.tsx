@@ -1466,8 +1466,9 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
                 : rawStr === "" || isNaN(Number(rawStr))
                   ? ""
                   : `$${Number(rawStr).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              const reqId = req ? `req-${k}` : undefined;
               return (
-                <div className="grid gap-1.5" key={k} id={req ? `req-${k}` : undefined}>
+                <div className={cn("grid gap-1.5", reqId && camposFaltantes.has(reqId) && "ring-2 ring-destructive rounded-md p-2 -m-2")} key={k} id={reqId}>
                   <Label>{req && isNuevo && <ReqMark />}{label} (US$)</Label>
                   <Input
                     type="text"
@@ -1478,6 +1479,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
                       if (!editable) return;
                       const v = e.target.value.replace(/[$,\s]/g, "");
                       if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set(k, v);
+                      if (reqId) limpiarFaltante(reqId);
                     }}
                     onBlur={(e) => {
                       if (!editable) return;
