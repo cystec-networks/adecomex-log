@@ -754,6 +754,9 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
   /** Modo creación: líneas de mercancía en memoria hasta que exista el Expediente. */
   const [productosNuevos, setProductosNuevos] = useState<any[]>([]);
   const [camposFaltantes, setCamposFaltantes] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (productosNuevos.length > 0) limpiarFaltante("req-mercancia");
+  }, [productosNuevos]);
 
   useEffect(() => {
     if (!isNuevo || !ocrAplicado || ocrAplicado.seq === ultimoOcrSeq.current) return;
