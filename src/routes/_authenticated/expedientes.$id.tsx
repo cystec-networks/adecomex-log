@@ -776,6 +776,20 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   /** Modo creación: líneas de mercancía en memoria hasta que exista el Expediente. */
   const [productosNuevos, setProductosNuevos] = useState<any[]>([]);
   const [camposFaltantes, setCamposFaltantes] = useState<Set<string>>(new Set());
+  const [contenedores, setContenedores] = useState<Array<{ numero: string; sello1: string; sello2: string; tipo: string }>>([]);
+
+  useEffect(() => {
+    if (!isNuevo && !exp) return;
+    setForm(construirFormInicial(isNuevo ? null : exp, isNuevo));
+    setCamposFaltantes(new Set());
+    setProductosNuevos([]);
+    setClienteExtraidoSinMatch(null);
+    setClienteOcr(null);
+    ocrPuesto.current = {};
+    ultimoOcrSeq.current = 0;
+    setContenedores([]);
+  }, [id, isNuevo]);
+
   useEffect(() => {
     if (productosNuevos.length > 0) limpiarFaltante("req-mercancia");
   }, [productosNuevos]);
