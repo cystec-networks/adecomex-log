@@ -113,11 +113,36 @@ function NuevoExpediente() {
       incoterm: fromFac("incoterm"),
       factura_comercial: fromFac("factura_comercial"),
       descripcion_mercancia: fromFac("descripcion_mercancia"),
+      fob_total: fromFac("fob_total"),
+      seguro: fromFac("seguro"),
+      flete: fromFac("flete"),
+      otros_gastos: fromFac("otros_gastos"),
     };
   };
 
-  const aplicarCombinado = () => {
+  const resolverContraCatalogo = async (
+    tabla: "dga_paises" | "dga_puertos",
+    campoNombre: "pais" | "puerto",
+    valorTexto: string | null,
+  ): Promise<{ nombre: string | null; codigo: string | null }> => {
+    if (!valorTexto) return { nombre: null, codigo: null };
+    const { data } = await (supabase.from(tabla) as any)
+      .select(`codigo, ${campoNombre}`)
+      .ilike(campoNombre, `%${valorTexto}%`)
+      .limit(1)
+      .maybeSingle();
+    return data ? { nombre: data[campoNombre], codigo: data.codigo } : { nombre: valorTexto, codigo: null };
+  };
+
+  const aplicarCombinado = async () => {
     const res = combinar();
+
+    const [pOrigen, pProced, ptSalida, ptArribo] = await Promise.all([
+      resolverContraCatalogo("dga_paises", "pais", res.pais_origen),
+      resolverContraCatalogo("dga_paises", "pais", res.pais_procedencia),
+      resolverContraCatalogo("dga_puertos", "puerto", res.puerto_salida),
+      resolverContraCatalogo("dga_puertos", "puerto", res.puerto_arribo),
+    ]);
     if (res.contenedores?.length) setContenedores(res.contenedores);
 
     const obs = [
