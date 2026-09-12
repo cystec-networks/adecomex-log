@@ -102,8 +102,6 @@ const GROUPS: Group[] = [
     label: "EXPEDIENTES",
     icon: FolderKanban,
     items: [
-      { to: "/expedientes/ocr", label: "Nuevo por OCR", icon: ScanText,
-        match: (p) => p === "/expedientes/ocr" },
       { to: "/expedientes/nuevo", label: "Nuevo Expediente", icon: FileText,
         match: (p) => p === "/expedientes/nuevo" },
       { to: "/expedientes", label: "Expedientes", icon: FolderKanban,
