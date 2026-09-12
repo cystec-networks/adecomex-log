@@ -1504,26 +1504,30 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
             );
           })()}
 
-          <div className="md:col-span-2 lg:col-span-3">
-            <LiquidacionEstimadaBlock
-              exp={exp}
-              seguro={Number(form.seguro) || 0}
-              flete={Number(form.flete) || 0}
-              otros={Number(form.otros) || 0}
-              servicioAduaneroUsd={servicioAd.servicioUsd}
-              disabled={!editable}
-            />
-          </div>
+          {!isNuevo && (
+            <>
+              <div className="md:col-span-2 lg:col-span-3">
+                <LiquidacionEstimadaBlock
+                  exp={exp}
+                  seguro={Number(form.seguro) || 0}
+                  flete={Number(form.flete) || 0}
+                  otros={Number(form.otros) || 0}
+                  servicioAduaneroUsd={servicioAd.servicioUsd}
+                  disabled={!editable}
+                />
+              </div>
 
-          <div className="md:col-span-2 lg:col-span-3">
-            <ResultadoOficialBlock
-              exp={exp}
-              form={form}
-              set={set}
-              servicioAduaneroUsd={servicioAd.servicioUsd}
-              disabled={!editable}
-            />
-          </div>
+              <div className="md:col-span-2 lg:col-span-3">
+                <ResultadoOficialBlock
+                  exp={exp}
+                  form={form}
+                  set={set}
+                  servicioAduaneroUsd={servicioAd.servicioUsd}
+                  disabled={!editable}
+                />
+              </div>
+            </>
+          )}
 
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
             <Label>Observaciones</Label>
@@ -1532,16 +1536,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
         </CardContent>
       </Card>
 
-      <div className="flex justify-end gap-2 sticky bottom-4">
-        <Button size="lg" variant="outline" onClick={() => refrescarExpediente(qc, exp.id)} className="shadow-lg">
-          <RefreshCw className="h-4 w-4 mr-1" /> Refrescar
-        </Button>
-        {editable && (
-          <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
-            {save.isPending ? "Guardando…" : "Guardar cambios"}
-          </Button>
-        )}
-      </div>
+      <BotonesAccion />
     </div>
   );
 }
