@@ -1253,8 +1253,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
           <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} />
           <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} />
           <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} disabled={!editable} />
-          <div className="grid gap-1.5">
-            <Label>Puerto de arribo</Label>
+          <div className="grid gap-1.5" id="req-puerto_arribo">
+            <Label><ReqMark />Puerto de arribo</Label>
             <DgaCombobox
               table="dga_puertos"
               value={form.puerto_arribo}
@@ -1267,8 +1267,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo para el XML.</span>
             )}
           </div>
-          <div className="grid gap-1.5">
-            <Label>Área / Administración aduanera</Label>
+          <div className="grid gap-1.5" id="req-area_aduanera">
+            <Label><ReqMark />Área / Administración aduanera</Label>
             <DgaCombobox
               table="dga_areas"
               value={form.area_aduanera}
