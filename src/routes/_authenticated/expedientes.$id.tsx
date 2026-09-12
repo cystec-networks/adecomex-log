@@ -1225,7 +1225,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
           )}
         </div>
 
-        <AutoField label="Factura comercial" value={form.factura_comercial} onChange={(v) => set("factura_comercial", v)} suggestion={sug.factura_comercial ?? []} disabled={!editable} />
+        <AutoField label="Factura comercial" value={form.factura_comercial} onChange={(v) => set("factura_comercial", v)} suggestion={sug.factura_comercial ?? []} disabled={!editable} req fieldId="req-factura_comercial" />
         <AutoField label="Incoterm" value={form.incoterm} onChange={(v) => set("incoterm", v)} suggestion={sug.incoterm ?? []} disabled={!editable} />
         <div className="grid gap-1.5">
           <Label>Puerto de salida</Label>
