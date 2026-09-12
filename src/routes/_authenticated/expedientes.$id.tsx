@@ -51,6 +51,8 @@ import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
 import { TabRecepcion } from "@/components/tab-recepcion";
+import { EscanearBlButton, EscanearFacturaButton } from "@/components/escanear-documento-expediente-buttons";
+import { type OcrExtraction } from "@/lib/ai-ocr.functions";
 import {
   FORMULARIO_DUA_RD,
   ServicioAduaneroFields,
