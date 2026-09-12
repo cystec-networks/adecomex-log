@@ -848,6 +848,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
 
   const { data: mercItems } = useQuery({
     queryKey: ["mercancia-items", exp.id],
+    enabled: !isNuevo,
     queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
   });
 
