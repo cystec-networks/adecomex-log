@@ -637,18 +637,18 @@ function ReqMark() {
   return <span className="text-destructive mr-0.5">*</span>;
 }
 
-function Field({ label, value, onChange, type = "text", className = "", disabled = false, req = false, fieldId }: { label: string; value: any; onChange: (v: string) => void; type?: string; className?: string; disabled?: boolean; req?: boolean; fieldId?: string }) {
+function Field({ label, value, onChange, type = "text", className = "", disabled = false, req = false, fieldId, highlight = false }: { label: string; value: any; onChange: (v: string) => void; type?: string; className?: string; disabled?: boolean; req?: boolean; fieldId?: string; highlight?: boolean }) {
   return (
-    <div className={`grid gap-1.5 ${className}`} id={fieldId}>
+    <div className={cn("grid gap-1.5", highlight && "ring-2 ring-destructive rounded-md p-2 -m-2", className)} id={fieldId}>
       <Label>{req && <ReqMark />}{label}</Label>
       <Input type={type} value={value ?? ""} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
     </div>
   );
 }
 
-function AutoField({ label, value, onChange, suggestion, className = "", disabled = false, req = false, fieldId }: { label: string; value: any; onChange: (v: string) => void; suggestion: string[]; className?: string; disabled?: boolean; req?: boolean; fieldId?: string }) {
+function AutoField({ label, value, onChange, suggestion, className = "", disabled = false, req = false, fieldId, highlight = false }: { label: string; value: any; onChange: (v: string) => void; suggestion: string[]; className?: string; disabled?: boolean; req?: boolean; fieldId?: string; highlight?: boolean }) {
   return (
-    <div className={`grid gap-1.5 ${className}`} id={fieldId}>
+    <div className={cn("grid gap-1.5", highlight && "ring-2 ring-destructive rounded-md p-2 -m-2", className)} id={fieldId}>
       <Label>{req && <ReqMark />}{label}</Label>
       <AutocompleteInput
         value={value ?? ""}
