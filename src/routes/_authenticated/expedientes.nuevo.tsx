@@ -1,18 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { extractSolicitudFromDocument, type OcrExtraction } from "@/lib/ai-ocr.functions";
+import { type OcrExtraction } from "@/lib/ai-ocr.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Check, X, FileUp, Loader2, Sparkles } from "lucide-react";
-import { useRef, useState } from "react";
+import { ArrowLeft, Check, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DgaCombobox } from "@/components/dga-combobox";
+import { EscanearBlButton, EscanearFacturaButton } from "@/components/escanear-documento-expediente-buttons";
 
 export const Route = createFileRoute("/_authenticated/expedientes/nuevo")({
   component: NuevoExpediente,
@@ -21,10 +21,7 @@ export const Route = createFileRoute("/_authenticated/expedientes/nuevo")({
 function NuevoExpediente() {
   const nav = useNavigate();
   const qc = useQueryClient();
-  const extractFn = useServerFn(extractSolicitudFromDocument);
-
-  const [blFile, setBlFile] = useState<File | null>(null);
-  const [facFile, setFacFile] = useState<File | null>(null);
+  const [clienteOcr, setClienteOcr] = useState<string | null>(null);
   const blRes = useRef<OcrExtraction | null>(null);
   const facRes = useRef<OcrExtraction | null>(null);
   const applied = useRef<Record<string, any>>({});
@@ -69,16 +66,6 @@ function NuevoExpediente() {
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
-  const runExtract = async (f: File) => {
-    if (f.size > 15 * 1024 * 1024) throw new Error("Archivo demasiado grande (máx 15MB).");
-    const buf = await f.arrayBuffer();
-    let binary = "";
-    const bytes = new Uint8Array(buf);
-    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-    return await extractFn({
-      data: { filename: f.name, mime: f.type || "application/pdf", base64: btoa(binary) },
-    });
-  };
 
   const pick = <K extends keyof OcrExtraction>(
     a: OcrExtraction | null,
@@ -195,41 +182,32 @@ function NuevoExpediente() {
       return next;
     });
 
-    if (res.cliente && clientes) {
-      const match = (clientes as any[]).find(
-        (c) =>
-          c.nombre.toLowerCase().includes(res.cliente!.toLowerCase()) ||
-          res.cliente!.toLowerCase().includes(c.nombre.toLowerCase()),
-      );
-      if (match) setForm((f) => (f.cliente_id ? f : { ...f, cliente_id: match.id }));
-    }
+    // el match se hace en un efecto, para no depender de que la lista de
+    // clientes ya haya terminado de cargar cuando el OCR devuelve resultados
+    if (res.cliente) setClienteOcr(res.cliente);
   };
 
-  const extractBl = useMutation({
-    mutationFn: async () => {
-      if (!blFile) throw new Error("Selecciona el BL / AWB.");
-      return await runExtract(blFile);
-    },
-    onSuccess: (res) => {
-      blRes.current = res;
-      aplicarCombinado();
-      toast.success("BL procesado — revisa y ajusta los campos");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
+  useEffect(() => {
+    if (!clienteOcr || !clientes?.length) return;
+    const objetivo = clienteOcr.toLowerCase();
+    const match = (clientes as any[]).find(
+      (c) =>
+        c.nombre.toLowerCase().includes(objetivo) || objetivo.includes(c.nombre.toLowerCase()),
+    );
+    if (match) setForm((f) => (f.cliente_id ? f : { ...f, cliente_id: match.id }));
+  }, [clienteOcr, clientes]);
 
-  const extractFac = useMutation({
-    mutationFn: async () => {
-      if (!facFile) throw new Error("Selecciona la factura comercial.");
-      return await runExtract(facFile);
-    },
-    onSuccess: (res) => {
-      facRes.current = res;
-      aplicarCombinado();
-      toast.success("Factura procesada — revisa y ajusta los campos");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
+  const onBlExtracted = (res: OcrExtraction) => {
+    blRes.current = res;
+    aplicarCombinado();
+    toast.success("BL procesado — revisa y ajusta los campos");
+  };
+
+  const onFacturaExtracted = (res: OcrExtraction) => {
+    facRes.current = res;
+    aplicarCombinado();
+    toast.success("Factura procesada — revisa y ajusta los campos");
+  };
 
   const confirmar = useMutation({
     mutationFn: async () => {
@@ -282,9 +260,11 @@ function NuevoExpediente() {
           <div className="flex-1 min-w-0">
             <h1 className="font-display text-2xl font-bold">Nuevo Expediente</h1>
             <p className="text-sm text-muted-foreground">
-              Sube un BL o factura comercial para autollenar los campos, o complétalos a mano. El número se genera automáticamente.
+              Completa los campos a mano, o escanea el BL y/o la factura comercial para autollenarlos. El número se genera automáticamente.
             </p>
           </div>
+          <EscanearBlButton onExtracted={onBlExtracted} />
+          <EscanearFacturaButton onExtracted={onFacturaExtracted} />
           <Button variant="outline" onClick={() => nav({ to: "/expedientes" })}>
             <X className="h-4 w-4 mr-1" />Cancelar
           </Button>
@@ -293,43 +273,9 @@ function NuevoExpediente() {
           </Button>
         </div>
 
-        <Card>
-          <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-accent" /> Subir documentos
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Opcional — PDF, JPG o PNG (máx 15MB cada uno). Puedes subir uno, los dos o ninguno. Los datos extraídos se pueden editar abajo.</p>
-          </CardHeader>
-          <CardContent className="pt-5 grid gap-5 md:grid-cols-2">
-            <div className="grid gap-2 rounded-md border p-4">
-              <Label className="text-sm font-medium">Subir BL / AWB</Label>
-              <Input type="file" accept="application/pdf,image/*" onChange={(e) => setBlFile(e.target.files?.[0] ?? null)} />
-              <Button className="justify-self-start" onClick={() => extractBl.mutate()} disabled={!blFile || extractBl.isPending}>
-                {extractBl.isPending
-                  ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Analizando…</>
-                  : <><FileUp className="h-4 w-4 mr-1" />Extraer datos del BL</>}
-              </Button>
-              {blRes.current && !extractBl.isPending ? (
-                <span className="text-xs text-emerald-700">BL procesado</span>
-              ) : null}
-            </div>
-            <div className="grid gap-2 rounded-md border p-4">
-              <Label className="text-sm font-medium">Subir Factura Comercial</Label>
-              <Input type="file" accept="application/pdf,image/*" onChange={(e) => setFacFile(e.target.files?.[0] ?? null)} />
-              <Button className="justify-self-start" onClick={() => extractFac.mutate()} disabled={!facFile || extractFac.isPending}>
-                {extractFac.isPending
-                  ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Analizando…</>
-                  : <><FileUp className="h-4 w-4 mr-1" />Extraer datos de la factura</>}
-              </Button>
-              {facRes.current && !extractFac.isPending ? (
-                <span className="text-xs text-emerald-700">Factura procesada</span>
-              ) : null}
-            </div>
-            {contenedores?.length ? (
-              <span className="text-xs text-muted-foreground md:col-span-2">{contenedores.length} contenedor(es) detectado(s)</span>
-            ) : null}
-          </CardContent>
-        </Card>
+        {contenedores?.length ? (
+          <p className="text-xs text-muted-foreground">{contenedores.length} contenedor(es) detectado(s)</p>
+        ) : null}
 
         <Card>
           <CardHeader className="pb-3 border-b">
