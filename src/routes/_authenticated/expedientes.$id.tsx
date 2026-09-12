@@ -1277,13 +1277,13 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo para el XML.</span>
             )}
           </div>
-          <div className="grid gap-1.5" id="req-area_aduanera">
+          <div className={cn("grid gap-1.5", camposFaltantes.has("req-area_aduanera") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-area_aduanera">
             <Label><ReqMark />Área / Administración aduanera</Label>
             <DgaCombobox
               table="dga_areas"
               value={form.area_aduanera}
               codigo={form.area_aduanera_codigo}
-              onChange={(nombre, codigo) => setForm((f) => ({ ...f, area_aduanera: nombre, area_aduanera_codigo: codigo }))}
+              onChange={(nombre, codigo) => { setForm((f) => ({ ...f, area_aduanera: nombre, area_aduanera_codigo: codigo })); limpiarFaltante("req-area_aduanera"); }}
               placeholder="Buscar área (catálogo DGA)"
               disabled={!editable}
             />
