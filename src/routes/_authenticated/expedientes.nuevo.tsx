@@ -65,59 +65,131 @@ function NuevoExpediente() {
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
-  const extract = useMutation({
+  const runExtract = async (f: File) => {
+    if (f.size > 15 * 1024 * 1024) throw new Error("Archivo demasiado grande (máx 15MB).");
+    const buf = await f.arrayBuffer();
+    let binary = "";
+    const bytes = new Uint8Array(buf);
+    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+    return await extractFn({
+      data: { filename: f.name, mime: f.type || "application/pdf", base64: btoa(binary) },
+    });
+  };
+
+  const pick = <K extends keyof OcrExtraction>(
+    a: OcrExtraction | null,
+    b: OcrExtraction | null,
+    k: K,
+  ): OcrExtraction[K] | null => {
+    const va = a ? a[k] : null;
+    if (va !== null && va !== undefined && va !== "") return va;
+    const vb = b ? b[k] : null;
+    if (vb !== null && vb !== undefined && vb !== "") return vb;
+    return null;
+  };
+
+  const combinar = (): OcrExtraction => {
+    const bl = blRes.current;
+    const fac = facRes.current;
+    const fromBl = <K extends keyof OcrExtraction>(k: K) => pick(bl, fac, k);
+    const fromFac = <K extends keyof OcrExtraction>(k: K) => pick(fac, bl, k);
+    return {
+      bl: fromBl("bl"),
+      medio_transporte: fromBl("medio_transporte"),
+      puerto_salida: fromBl("puerto_salida"),
+      puerto_arribo: fromBl("puerto_arribo"),
+      naviera: fromBl("naviera"),
+      peso_bruto_kg: fromBl("peso_bruto_kg"),
+      peso_neto_kg: fromBl("peso_neto_kg"),
+      contenedores: fromBl("contenedores"),
+      fecha_cargado: fromBl("fecha_cargado"),
+      eta: fromBl("eta"),
+      pais_procedencia: fromBl("pais_procedencia"),
+      cliente: fromFac("cliente"),
+      suplidor: fromFac("suplidor"),
+      numero_documento: fromFac("numero_documento"),
+      productos: fromFac("productos"),
+      pais_origen: fromFac("pais_origen"),
+      incoterm: fromFac("incoterm"),
+      factura_comercial: fromFac("factura_comercial"),
+      descripcion_mercancia: fromFac("descripcion_mercancia"),
+    };
+  };
+
+  const aplicarCombinado = () => {
+    const res = combinar();
+    if (res.contenedores?.length) setContenedores(res.contenedores);
+
+    const obs = [
+      res.suplidor && `Suplidor: ${res.suplidor}`,
+      res.numero_documento && `Nº Documento: ${res.numero_documento}`,
+      res.productos && `Productos: ${res.productos}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    setForm((f) => {
+      const next: any = { ...f };
+      // solo sobrescribe campos vacíos o que el usuario no haya editado a mano
+      const put = (k: string, v: any) => {
+        if (v === null || v === undefined || v === "") return;
+        const actual = (f as any)[k];
+        if (actual === "" || actual === null || actual === undefined || actual === applied.current[k]) {
+          next[k] = v;
+          applied.current[k] = v;
+        }
+      };
+      put("bl_awb", res.bl);
+      put("factura_comercial", res.factura_comercial ?? res.numero_documento);
+      put("suplidor", res.suplidor);
+      put("naviera", res.naviera);
+      put("puerto_arribo", res.puerto_arribo);
+      put("puerto_salida", res.puerto_salida);
+      put("fecha_cargado", res.fecha_cargado);
+      put("fecha_compromiso", res.eta);
+      put("medio_transporte", res.medio_transporte ? (res.medio_transporte === "aereo" ? "Aéreo" : "Marítimo") : null);
+      put("pais_origen", res.pais_origen);
+      put("pais_procedencia", res.pais_procedencia);
+      put("incoterm", res.incoterm);
+      put("peso_bruto", res.peso_bruto_kg);
+      put("peso_neto", res.peso_neto_kg);
+      put("descripcion_mercancia", res.descripcion_mercancia || obs);
+      put("observaciones", obs);
+      return next;
+    });
+
+    if (res.cliente && clientes) {
+      const match = (clientes as any[]).find(
+        (c) =>
+          c.nombre.toLowerCase().includes(res.cliente!.toLowerCase()) ||
+          res.cliente!.toLowerCase().includes(c.nombre.toLowerCase()),
+      );
+      if (match) setForm((f) => (f.cliente_id ? f : { ...f, cliente_id: match.id }));
+    }
+  };
+
+  const extractBl = useMutation({
     mutationFn: async () => {
-      if (!file) throw new Error("Selecciona un archivo PDF o imagen.");
-      if (file.size > 15 * 1024 * 1024) throw new Error("Archivo demasiado grande (máx 15MB).");
-      const buf = await file.arrayBuffer();
-      let binary = "";
-      const bytes = new Uint8Array(buf);
-      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-      return await extractFn({
-        data: { filename: file.name, mime: file.type || "application/pdf", base64: btoa(binary) },
-      });
+      if (!blFile) throw new Error("Selecciona el BL / AWB.");
+      return await runExtract(blFile);
     },
     onSuccess: (res) => {
-      setContenedores(res.contenedores ?? null);
-      const obs = [
-        res.suplidor && `Suplidor: ${res.suplidor}`,
-        res.numero_documento && `Nº Documento: ${res.numero_documento}`,
-        res.productos && `Productos: ${res.productos}`,
-      ]
-        .filter(Boolean)
-        .join("\n");
+      blRes.current = res;
+      aplicarCombinado();
+      toast.success("BL procesado — revisa y ajusta los campos");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
-      setForm((f) => {
-        const next = { ...f };
-        if (res.bl) next.bl_awb = res.bl;
-        if (res.factura_comercial || res.numero_documento)
-          next.factura_comercial = res.factura_comercial ?? res.numero_documento ?? "";
-        if (res.suplidor) next.suplidor = res.suplidor;
-        if (res.naviera) next.naviera = res.naviera;
-        if (res.puerto_arribo) next.puerto_arribo = res.puerto_arribo;
-        if (res.puerto_salida) next.puerto_salida = res.puerto_salida;
-        if (res.fecha_cargado) next.fecha_cargado = res.fecha_cargado;
-        if (res.eta) next.fecha_compromiso = res.eta;
-        if (res.medio_transporte) next.medio_transporte = res.medio_transporte === "aereo" ? "Aéreo" : "Marítimo";
-        if (res.pais_origen) next.pais_origen = res.pais_origen;
-        if (res.pais_procedencia) next.pais_procedencia = res.pais_procedencia;
-        if (res.incoterm) next.incoterm = res.incoterm;
-        if (res.peso_bruto_kg != null) next.peso_bruto = res.peso_bruto_kg;
-        if (res.peso_neto_kg != null) next.peso_neto = res.peso_neto_kg;
-        next.descripcion_mercancia = res.descripcion_mercancia || obs || f.descripcion_mercancia;
-        if (!f.observaciones && obs) next.observaciones = obs;
-        return next;
-      });
-
-      if (res.cliente && clientes) {
-        const match = (clientes as any[]).find(
-          (c) =>
-            c.nombre.toLowerCase().includes(res.cliente!.toLowerCase()) ||
-            res.cliente!.toLowerCase().includes(c.nombre.toLowerCase()),
-        );
-        if (match) setForm((f) => ({ ...f, cliente_id: match.id }));
-      }
-      toast.success("Documento procesado — revisa y ajusta los campos");
+  const extractFac = useMutation({
+    mutationFn: async () => {
+      if (!facFile) throw new Error("Selecciona la factura comercial.");
+      return await runExtract(facFile);
+    },
+    onSuccess: (res) => {
+      facRes.current = res;
+      aplicarCombinado();
+      toast.success("Factura procesada — revisa y ajusta los campos");
     },
     onError: (e: any) => toast.error(e.message),
   });
