@@ -984,7 +984,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
       const toNum = (v: any) => (v === "" || v == null ? null : Number(v));
       payload.peso_neto = toNum(payload.peso_neto);
       payload.peso_bruto = toNum(payload.peso_bruto);
-      payload.total_fob = toNum(payload.total_fob);
+      payload.total_fob = productosNuevos.length ? sumFob : toNum(payload.total_fob);
       payload.seguro = toNum(payload.seguro);
       payload.flete = toNum(payload.flete);
       payload.otros = toNum(payload.otros);
