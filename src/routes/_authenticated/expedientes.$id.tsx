@@ -1139,14 +1139,19 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
       <Section title="1. Información general" subtitle="Identificación y logística base del expediente">
         {isNuevo ? (
           <>
-            <div className="grid gap-1.5">
-              <Label>Cliente</Label>
+            <div className="grid gap-1.5" id="req-cliente_id">
+              <Label><ReqMark />Cliente</Label>
               <Select value={form.cliente_id || undefined} onValueChange={(v) => { set("cliente_id", v); if (v) setClienteExtraidoSinMatch(null); }}>
                 <SelectTrigger><SelectValue placeholder="Selecciona cliente" /></SelectTrigger>
                 <SelectContent>
                   {(clientesLite ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {form.cliente_id && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  RNC: {(clientesLite ?? []).find((c: any) => c.id === form.cliente_id)?.rnc ?? "—"}
+                </p>
+              )}
               {clienteExtraidoSinMatch && (
                 <p className="text-xs text-amber-600 mt-1">
                   El documento indica "{clienteExtraidoSinMatch}" — no se encontró un cliente registrado con ese nombre, selecciónalo manualmente.
@@ -1157,8 +1162,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               <Label>Tipo de operación</Label>
               <Input value={form.tipo_operacion} onChange={(e) => set("tipo_operacion", e.target.value)} />
             </div>
-            <div className="grid gap-1.5">
-              <Label>Tipo de carga</Label>
+            <div className="grid gap-1.5" id="req-tipo_carga">
+              <Label><ReqMark />Tipo de carga</Label>
               <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />
             </div>
             <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sug.contacto_solicitud ?? []} />
@@ -1166,7 +1171,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
         ) : (
           <Field label="Número / ID" value={form.numero} onChange={(v) => set("numero", v)} disabled={!editable} />
         )}
-        <Field label="BL / AWB / Guía" value={form.bl_awb} onChange={(v) => set("bl_awb", v)} disabled={!editable} />
+        <Field label="BL / AWB / Guía" value={form.bl_awb} onChange={(v) => set("bl_awb", v)} disabled={!editable} req fieldId="req-bl_awb" />
         <AutoField label="Medio de transporte" value={form.medio_transporte} onChange={(v) => set("medio_transporte", v)} suggestion={sug.medio_transporte ?? []} disabled={!editable} />
         <AutoField label="Naviera" value={form.naviera} onChange={(v) => set("naviera", v)} suggestion={sug.naviera ?? []} disabled={!editable} />
         <Field label="SLA (días)" value={form.sla_dias} onChange={(v) => set("sla_dias", v)} type="number" disabled={!editable} />
