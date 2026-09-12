@@ -66,16 +66,6 @@ function NuevoExpediente() {
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
-  const runExtract = async (f: File) => {
-    if (f.size > 15 * 1024 * 1024) throw new Error("Archivo demasiado grande (máx 15MB).");
-    const buf = await f.arrayBuffer();
-    let binary = "";
-    const bytes = new Uint8Array(buf);
-    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-    return await extractFn({
-      data: { filename: f.name, mime: f.type || "application/pdf", base64: btoa(binary) },
-    });
-  };
 
   const pick = <K extends keyof OcrExtraction>(
     a: OcrExtraction | null,
