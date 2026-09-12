@@ -51,6 +51,8 @@ import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
 import { TabRecepcion } from "@/components/tab-recepcion";
+import { EscanearBlButton, EscanearFacturaButton as EscanearFacturaExpButton } from "@/components/escanear-documento-expediente-buttons";
+import { type OcrExtraction } from "@/lib/ai-ocr.functions";
 import {
   FORMULARIO_DUA_RD,
   ServicioAduaneroFields,
@@ -68,6 +70,7 @@ const SUG_PREFERENCIA = ["DR-CAFTA", "EPA (Unión Europea)", "ALADI", "SGP", "Ni
 
 const searchSchema = z.object({
   nuevo: fallback(z.string(), "").default(""),
+  solicitud: fallback(z.string(), "").default(""),
 });
 
 export const Route = createFileRoute("/_authenticated/expedientes/$id")({
@@ -163,20 +166,154 @@ function refrescarExpediente(qc: ReturnType<typeof useQueryClient>, id: string) 
   toast.success("Actualizado");
 }
 
+// Expediente en blanco usado cuando la pantalla funciona en modo creación (id === "nuevo").
+const EXPEDIENTE_VACIO: any = {
+  id: "nuevo",
+  numero: "",
+  estado: "digitar",
+  cliente_id: null,
+  clientes: null,
+  solicitudes: null,
+  bl_awb: "",
+  tipo_operacion: "Importación",
+  sla_dias: 5,
+};
+
+function pickOcr<K extends keyof OcrExtraction>(
+  a: OcrExtraction | null,
+  b: OcrExtraction | null,
+  k: K,
+): OcrExtraction[K] | null {
+  const va = a ? a[k] : null;
+  if (va !== null && va !== undefined && (va as any) !== "") return va;
+  const vb = b ? b[k] : null;
+  if (vb !== null && vb !== undefined && (vb as any) !== "") return vb;
+  return null;
+}
+
+function combinarOcr(bl: OcrExtraction | null, fac: OcrExtraction | null): OcrExtraction {
+  const fromBl = <K extends keyof OcrExtraction>(k: K) => pickOcr(bl, fac, k);
+  const fromFac = <K extends keyof OcrExtraction>(k: K) => pickOcr(fac, bl, k);
+  return {
+    bl: fromBl("bl"),
+    medio_transporte: fromBl("medio_transporte"),
+    puerto_salida: fromBl("puerto_salida"),
+    puerto_arribo: fromBl("puerto_arribo"),
+    naviera: fromBl("naviera"),
+    peso_bruto_kg: fromBl("peso_bruto_kg"),
+    peso_neto_kg: fromBl("peso_neto_kg"),
+    contenedores: fromBl("contenedores"),
+    fecha_cargado: fromBl("fecha_cargado"),
+    eta: fromBl("eta"),
+    pais_procedencia: fromBl("pais_procedencia"),
+    cliente: fromFac("cliente"),
+    suplidor: fromFac("suplidor"),
+    numero_documento: fromFac("numero_documento"),
+    productos: fromFac("productos"),
+    pais_origen: fromFac("pais_origen"),
+    incoterm: fromFac("incoterm"),
+    factura_comercial: fromFac("factura_comercial"),
+    descripcion_mercancia: fromFac("descripcion_mercancia"),
+    fob_total: fromFac("fob_total"),
+    seguro: fromFac("seguro"),
+    flete: fromFac("flete"),
+    otros_gastos: fromFac("otros_gastos"),
+  };
+}
+
+async function resolverContraCatalogo(
+  tabla: "dga_paises" | "dga_puertos",
+  campoNombre: "pais" | "puerto",
+  valorTexto: string | null,
+): Promise<{ nombre: string | null; codigo: string | null }> {
+  if (!valorTexto) return { nombre: null, codigo: null };
+  const { data } = await (supabase.from(tabla) as any)
+    .select(`codigo, ${campoNombre}`)
+    .ilike(campoNombre, `%${valorTexto}%`)
+    .limit(1)
+    .maybeSingle();
+  return data ? { nombre: data[campoNombre], codigo: data.codigo } : { nombre: valorTexto, codigo: null };
+}
+
+export type OcrAplicado = {
+  seq: number;
+  campos: Record<string, any>;
+  contenedores: OcrExtraction["contenedores"];
+  cliente: string | null;
+};
+
 function DetalleExpediente() {
   const { id } = Route.useParams();
   const { nuevo } = Route.useSearch();
+  const isNuevo = id === "nuevo";
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const dragTab = useRef<string | null>(null);
-  const [modoEdicion, setModoEdicion] = useState(!!nuevo);
+  const [modoEdicion, setModoEdicion] = useState(!!nuevo || isNuevo);
   const { data: roles } = useMyRoles();
   const canEditExpediente = (roles ?? []).some((r) =>
     ["admin", "finanzas", "operaciones", "agente_aduanal", "contabilidad"].includes(r),
   );
 
+  // OCR (solo modo creación): BL y Factura se combinan y se aplican al formulario.
+  const blRes = useRef<OcrExtraction | null>(null);
+  const facRes = useRef<OcrExtraction | null>(null);
+  const ocrSeq = useRef(0);
+  const [ocrAplicado, setOcrAplicado] = useState<OcrAplicado | null>(null);
+
+  const aplicarCombinado = async () => {
+    const res = combinarOcr(blRes.current, facRes.current);
+    const [pOrigen, pProced, ptSalida, ptArribo] = await Promise.all([
+      resolverContraCatalogo("dga_paises", "pais", res.pais_origen),
+      resolverContraCatalogo("dga_paises", "pais", res.pais_procedencia),
+      resolverContraCatalogo("dga_puertos", "puerto", res.puerto_salida),
+      resolverContraCatalogo("dga_puertos", "puerto", res.puerto_arribo),
+    ]);
+    const obs = [
+      res.suplidor && `Suplidor: ${res.suplidor}`,
+      res.numero_documento && `Nº Documento: ${res.numero_documento}`,
+      res.productos && `Productos: ${res.productos}`,
+    ].filter(Boolean).join("\n");
+
+    ocrSeq.current += 1;
+    setOcrAplicado({
+      seq: ocrSeq.current,
+      cliente: res.cliente ?? null,
+      contenedores: res.contenedores ?? null,
+      campos: {
+        bl_awb: res.bl,
+        factura_comercial: res.factura_comercial ?? res.numero_documento,
+        suplidor: res.suplidor,
+        naviera: res.naviera,
+        puerto_arribo: ptArribo.nombre,
+        puerto_arribo_codigo: ptArribo.codigo,
+        puerto_salida: ptSalida.nombre,
+        puerto_salida_codigo: ptSalida.codigo,
+        fecha_cargado: res.fecha_cargado,
+        fecha_compromiso: res.eta,
+        medio_transporte: res.medio_transporte
+          ? (res.medio_transporte === "aereo" ? "Aéreo" : "Marítimo")
+          : null,
+        pais_origen: pOrigen.nombre,
+        pais_origen_codigo: pOrigen.codigo,
+        pais_procedencia: pProced.nombre,
+        pais_procedencia_codigo: pProced.codigo,
+        incoterm: res.incoterm,
+        total_fob: res.fob_total,
+        seguro: res.seguro,
+        flete: res.flete,
+        otros: res.otros_gastos,
+        peso_bruto: res.peso_bruto_kg,
+        peso_neto: res.peso_neto_kg,
+        descripcion_mercancia: res.descripcion_mercancia || obs,
+        observaciones: obs,
+      },
+    });
+  };
+
   // Aviso en tiempo real cuando otro usuario actualiza este expediente.
   useEffect(() => {
+    if (isNuevo) return;
     const channel = supabase
       .channel(`expediente-${id}`)
       .on(
@@ -193,7 +330,8 @@ function DetalleExpediente() {
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [id, qc]);
+  }, [id, qc, isNuevo]);
+
 
   const normalizeOrder = (saved: string[]) => {
     const valid = saved.filter((k) => DEFAULT_TAB_ORDER.includes(k));
@@ -242,11 +380,13 @@ function DetalleExpediente() {
 
   const { data: exp } = useQuery({
     queryKey: ["expediente", id],
+    enabled: !isNuevo,
     queryFn: async () => (await supabase.from("expedientes").select("*, clientes(*), solicitudes(numero)").eq("id", id).maybeSingle()).data,
   });
 
   const { data: hitosHeader } = useQuery({
     queryKey: ["expediente-hitos-header", id],
+    enabled: !isNuevo,
     queryFn: async () => (await supabase.from("expediente_hitos").select("estado").eq("expediente_id", id)).data ?? [],
   });
 
@@ -267,93 +407,114 @@ function DetalleExpediente() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  if (!exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
+  if (!isNuevo && !exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
+
+  const expData: any = isNuevo ? EXPEDIENTE_VACIO : exp;
 
   return (
-    <div className={cn("max-w-[1600px] mx-auto space-y-6", modoEdicion && (nuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
+    <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
       <Tabs defaultValue="info">
       <div className="sticky top-0 z-20 bg-background border-b pb-3 pt-2 px-6">
         <div className="space-y-3">
         <div className="flex items-center gap-3 flex-wrap">
           <Button variant="ghost" size="sm" asChild><Link to="/expedientes"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link></Button>
           <div className="flex-1 min-w-0">
-            <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
-              {exp.numero}
-              <Badge className="bg-primary/10 text-primary border-transparent">{ESTADO_LABEL[exp.estado ?? ""] ?? exp.estado?.replace("_"," ")}</Badge>
-              {exp.solicitudes?.numero && <Badge variant="outline">← {exp.solicitudes.numero}</Badge>}
-            </h1>
-            <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
-              <span>{exp.clientes?.nombre ?? "Sin cliente"}</span>
-              {exp.clientes && (
-                <>
-                  <WhatsAppButton
-                    phone={exp.clientes.telefono}
-                    clientName={exp.clientes.nombre}
-                    recordType="Expediente"
-                    recordNumber={exp.numero}
-                    variant="icon"
+            {isNuevo ? (
+              <>
+                <h1 className="font-display text-2xl font-bold">Nuevo Expediente</h1>
+                <p className="text-sm text-muted-foreground">
+                  Completa los campos a mano, o escanea el BL y/o la factura comercial para autollenarlos. El número se genera automáticamente.
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
+                  {expData.numero}
+                  <Badge className="bg-primary/10 text-primary border-transparent">{ESTADO_LABEL[expData.estado ?? ""] ?? expData.estado?.replace("_"," ")}</Badge>
+                  {expData.solicitudes?.numero && <Badge variant="outline">← {expData.solicitudes.numero}</Badge>}
+                </h1>
+                <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+                  <span>{expData.clientes?.nombre ?? "Sin cliente"}</span>
+                  {expData.clientes && (
+                    <>
+                      <WhatsAppButton
+                        phone={expData.clientes.telefono}
+                        clientName={expData.clientes.nombre}
+                        recordType="Expediente"
+                        recordNumber={expData.numero}
+                        variant="icon"
+                      />
+                      <EmailButton
+                        email={(expData.clientes as any).email}
+                        clientName={expData.clientes.nombre}
+                        recordType="Expediente"
+                        recordNumber={expData.numero}
+                        variant="icon"
+                      />
+                      <SearchEmailButton
+                        recordType="Expediente"
+                        recordNumber={expData.numero}
+                        variant="icon"
+                      />
+                    </>
+                  )}
+                  <RastrearEmbarqueButton
+                    containerNumber={expData.numeros_contenedores}
+                    blNumber={expData.bl_awb}
+                    expedienteNumber={expData.numero}
                   />
-                  <EmailButton
-                    email={(exp.clientes as any).email}
-                    clientName={exp.clientes.nombre}
-                    recordType="Expediente"
-                    recordNumber={exp.numero}
-                    variant="icon"
-                  />
-                  <SearchEmailButton
-                    recordType="Expediente"
-                    recordNumber={exp.numero}
-                    variant="icon"
-                  />
-                </>
-              )}
-              <RastrearEmbarqueButton
-                containerNumber={exp.numeros_contenedores}
-                blNumber={exp.bl_awb}
-                expedienteNumber={exp.numero}
-              />
-              <span>· BL/AWB: {exp.bl_awb ?? "—"}</span>
-            </p>
+                  <span>· BL/AWB: {expData.bl_awb ?? "—"}</span>
+                </p>
+              </>
+            )}
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
-                <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 p-1">
-              <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:text-sm [&_button:hover]:bg-accent">
-                <GenerarXmlSigaButton expedienteId={id} />
-                <GenerarXmlCertificadoOrigenButton expedienteId={id} />
-                <PreLiquidacionPdfButton exp={exp} />
-                <GenerarDocumentoButton exp={exp} />
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {isNuevo ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <EscanearBlButton onExtracted={(res) => { blRes.current = res; void aplicarCombinado(); toast.success("BL procesado — revisa y ajusta los campos"); }} />
+              <EscanearFacturaExpButton onExtracted={(res) => { facRes.current = res; void aplicarCombinado(); toast.success("Factura procesada — revisa y ajusta los campos"); }} />
+            </div>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
+                  <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 p-1">
+                <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:text-sm [&_button:hover]:bg-accent">
+                  <GenerarXmlSigaButton expedienteId={id} />
+                  <GenerarXmlCertificadoOrigenButton expedienteId={id} />
+                  <PreLiquidacionPdfButton exp={expData} />
+                  <GenerarDocumentoButton exp={expData} />
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
+        {!isNuevo && (
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">Estado:</Label>
-            <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
+            <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
               <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {ESTADO_ORDEN.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
               </SelectContent>
             </Select>
-            {exp.estado && (
+            {expData.estado && (
               <span className="text-sm text-muted-foreground whitespace-nowrap">
                 {(() => {
                   const fecha = {
-                    digitar: exp.fecha_recibido,
-                    en_transito: exp.fecha_en_transito,
-                    presentar: exp.fecha_presentado,
-                    verificar: exp.fecha_verificado,
-                    despachado: exp.fecha_despachado,
-                    entregado: exp.fecha_entregado,
-                    facturar: exp.fecha_facturado,
-                  }[exp.estado];
+                    digitar: expData.fecha_recibido,
+                    en_transito: expData.fecha_en_transito,
+                    presentar: expData.fecha_presentado,
+                    verificar: expData.fecha_verificado,
+                    despachado: expData.fecha_despachado,
+                    entregado: expData.fecha_entregado,
+                    facturar: expData.fecha_facturado,
+                  }[expData.estado as string];
                   return fecha ? `· ${fmtLocalDate(fecha)}` : null;
                 })()}
               </span>
@@ -365,7 +526,7 @@ function DetalleExpediente() {
           </div>
 
           {(() => {
-            const a = alertaDeclaracionTardia(exp);
+            const a = alertaDeclaracionTardia(expData);
             if (!a) return null;
             const cls = a.tone === "danger"
               ? "border-destructive/40 bg-destructive/10 text-destructive"
@@ -385,6 +546,7 @@ function DetalleExpediente() {
             );
           })()}
         </div>
+        )}
       </div>
         <TabsList className="flex flex-wrap h-auto mt-3">
           {tabOrder.map((key) => {
@@ -394,7 +556,8 @@ function DetalleExpediente() {
               <TabsTrigger
                 key={key}
                 value={key}
-                draggable
+                disabled={isNuevo && key !== "info"}
+                draggable={!isNuevo}
                 onDragStart={(e) => {
                   dragTab.current = key;
                   e.dataTransfer.effectAllowed = "move";
@@ -414,34 +577,51 @@ function DetalleExpediente() {
 
                 }}
                 className="cursor-grab active:cursor-grabbing"
-                title="Arrastra para reordenar"
+                title={isNuevo && key !== "info" ? "Disponible después de crear el Expediente." : "Arrastra para reordenar"}
               >
                 {label}
               </TabsTrigger>
             );
           })}
         </TabsList>
+        {isNuevo && (
+          <p className="text-xs text-muted-foreground mt-1">Disponible después de crear el Expediente.</p>
+        )}
       </div>
       <div className="px-6">
-        <TabsContent value="info"><TabInfo exp={exp} modoEdicion={modoEdicion} setModoEdicion={setModoEdicion} canEdit={canEditExpediente} nuevo={!!nuevo} /></TabsContent>
+        <TabsContent value="info">
+          <TabInfo
+            exp={expData}
+            modoEdicion={modoEdicion}
+            setModoEdicion={setModoEdicion}
+            canEdit={canEditExpediente || isNuevo}
+            nuevo={!!nuevo}
+            isNuevo={isNuevo}
+            ocrAplicado={ocrAplicado}
+          />
+        </TabsContent>
+        {!isNuevo && (
+        <>
         <TabsContent value="checklist">
           <ChecklistHitos expedienteId={id} />
         </TabsContent>
 
         
-        <TabsContent value="liqfinal"><LiquidacionFinalSection exp={exp} /></TabsContent>
+        <TabsContent value="liqfinal"><LiquidacionFinalSection exp={expData} /></TabsContent>
         <TabsContent value="docs"><TabDocumentos expedienteId={id} /></TabsContent>
 
         <TabsContent value="permisos"><TabPermisosExp expedienteId={id} /></TabsContent>
         <TabsContent value="transportes"><TabTransportesExp expedienteId={id} /></TabsContent>
         <TabsContent value="recepcion"><TabRecepcion expedienteId={id} /></TabsContent>
         <TabsContent value="inc"><TabIncidencias expedienteId={id} /></TabsContent>
-        <TabsContent value="cost"><TabCostos expedienteId={id} exp={exp} /></TabsContent>
+        <TabsContent value="cost"><TabCostos expedienteId={id} exp={expData} /></TabsContent>
         <TabsContent value="costprod"><TabCostosProducto expedienteId={id} /></TabsContent>
         <TabsContent value="aud"><TabAuditoria expedienteId={id} /></TabsContent>
+        </>
+        )}
       </div>
       </Tabs>
-      {canEditExpediente && !modoEdicion && (
+      {!isNuevo && canEditExpediente && !modoEdicion && (
         <Button onClick={() => setModoEdicion(true)} className="fixed bottom-6 right-24 z-30 shadow-lg" size="lg">
           <Pencil className="h-4 w-4 mr-1" /> Editar
         </Button>
@@ -487,14 +667,15 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
 }
 
 
-function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean }) {
+function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null }: { exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null }) {
   const qc = useQueryClient();
   const nav = useNavigate();
-  const editable = canEdit && modoEdicion;
+  const editable = (canEdit && modoEdicion) || isNuevo;
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState({
 
     numero: exp.numero ?? "",
+    cliente_id: exp.cliente_id ?? "",
     bl_awb: exp.bl_awb ?? "",
     sla_dias: exp.sla_dias ?? 15,
     fecha_compromiso: exp.fecha_compromiso ?? "",
@@ -553,6 +734,53 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
     exp.tasa_cambio_usada,
   );
 
+  // ---- Modo creación: clientes, OCR y contenedores extraídos ----
+  const { data: clientesLite } = useQuery({
+    queryKey: ["clientes-lite"],
+    enabled: isNuevo,
+    queryFn: async () => (await supabase.from("clientes").select("id,nombre").order("nombre")).data ?? [],
+  });
+  const [clienteOcr, setClienteOcr] = useState<string | null>(null);
+  const ocrPuesto = useRef<Record<string, any>>({});
+  const ultimoOcrSeq = useRef(0);
+
+  useEffect(() => {
+    if (!isNuevo || !ocrAplicado || ocrAplicado.seq === ultimoOcrSeq.current) return;
+    ultimoOcrSeq.current = ocrAplicado.seq;
+    if (ocrAplicado.contenedores?.length) {
+      setContenedores(
+        ocrAplicado.contenedores.map((c) => ({
+          numero: c.numero ?? "",
+          sello1: c.sello1 ?? "",
+          sello2: c.sello2 ?? "",
+          tipo: c.tipo ?? "",
+        })),
+      );
+    }
+    setForm((f) => {
+      const next: any = { ...f };
+      for (const [k, v] of Object.entries(ocrAplicado.campos)) {
+        if (v === null || v === undefined || v === "") continue;
+        const actual = (f as any)[k];
+        if (actual === "" || actual === null || actual === undefined || actual === ocrPuesto.current[k]) {
+          next[k] = v;
+          ocrPuesto.current[k] = v;
+        }
+      }
+      return next;
+    });
+    if (ocrAplicado.cliente) setClienteOcr(ocrAplicado.cliente);
+  }, [ocrAplicado, isNuevo]);
+
+  useEffect(() => {
+    if (!clienteOcr || !clientesLite?.length) return;
+    const objetivo = clienteOcr.toLowerCase();
+    const match = (clientesLite as any[]).find(
+      (c) => c.nombre.toLowerCase().includes(objetivo) || objetivo.includes(c.nombre.toLowerCase()),
+    );
+    if (match) setForm((f) => (f.cliente_id ? f : { ...f, cliente_id: match.id }));
+  }, [clienteOcr, clientesLite]);
+
 
 
 
@@ -599,6 +827,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
 
   const { data: contenedoresDb } = useQuery({
     queryKey: ["expediente-contenedores", exp.id],
+    enabled: !isNuevo,
     queryFn: async () =>
       (await supabase.from("expediente_contenedores").select("*").eq("expediente_id", exp.id).order("item_no")).data ?? [],
   });
