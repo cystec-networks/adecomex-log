@@ -166,20 +166,154 @@ function refrescarExpediente(qc: ReturnType<typeof useQueryClient>, id: string) 
   toast.success("Actualizado");
 }
 
+// Expediente en blanco usado cuando la pantalla funciona en modo creación (id === "nuevo").
+const EXPEDIENTE_VACIO: any = {
+  id: "nuevo",
+  numero: "",
+  estado: "digitar",
+  cliente_id: null,
+  clientes: null,
+  solicitudes: null,
+  bl_awb: "",
+  tipo_operacion: "Importación",
+  sla_dias: 5,
+};
+
+function pickOcr<K extends keyof OcrExtraction>(
+  a: OcrExtraction | null,
+  b: OcrExtraction | null,
+  k: K,
+): OcrExtraction[K] | null {
+  const va = a ? a[k] : null;
+  if (va !== null && va !== undefined && (va as any) !== "") return va;
+  const vb = b ? b[k] : null;
+  if (vb !== null && vb !== undefined && (vb as any) !== "") return vb;
+  return null;
+}
+
+function combinarOcr(bl: OcrExtraction | null, fac: OcrExtraction | null): OcrExtraction {
+  const fromBl = <K extends keyof OcrExtraction>(k: K) => pickOcr(bl, fac, k);
+  const fromFac = <K extends keyof OcrExtraction>(k: K) => pickOcr(fac, bl, k);
+  return {
+    bl: fromBl("bl"),
+    medio_transporte: fromBl("medio_transporte"),
+    puerto_salida: fromBl("puerto_salida"),
+    puerto_arribo: fromBl("puerto_arribo"),
+    naviera: fromBl("naviera"),
+    peso_bruto_kg: fromBl("peso_bruto_kg"),
+    peso_neto_kg: fromBl("peso_neto_kg"),
+    contenedores: fromBl("contenedores"),
+    fecha_cargado: fromBl("fecha_cargado"),
+    eta: fromBl("eta"),
+    pais_procedencia: fromBl("pais_procedencia"),
+    cliente: fromFac("cliente"),
+    suplidor: fromFac("suplidor"),
+    numero_documento: fromFac("numero_documento"),
+    productos: fromFac("productos"),
+    pais_origen: fromFac("pais_origen"),
+    incoterm: fromFac("incoterm"),
+    factura_comercial: fromFac("factura_comercial"),
+    descripcion_mercancia: fromFac("descripcion_mercancia"),
+    fob_total: fromFac("fob_total"),
+    seguro: fromFac("seguro"),
+    flete: fromFac("flete"),
+    otros_gastos: fromFac("otros_gastos"),
+  };
+}
+
+async function resolverContraCatalogo(
+  tabla: "dga_paises" | "dga_puertos",
+  campoNombre: "pais" | "puerto",
+  valorTexto: string | null,
+): Promise<{ nombre: string | null; codigo: string | null }> {
+  if (!valorTexto) return { nombre: null, codigo: null };
+  const { data } = await (supabase.from(tabla) as any)
+    .select(`codigo, ${campoNombre}`)
+    .ilike(campoNombre, `%${valorTexto}%`)
+    .limit(1)
+    .maybeSingle();
+  return data ? { nombre: data[campoNombre], codigo: data.codigo } : { nombre: valorTexto, codigo: null };
+}
+
+export type OcrAplicado = {
+  seq: number;
+  campos: Record<string, any>;
+  contenedores: OcrExtraction["contenedores"];
+  cliente: string | null;
+};
+
 function DetalleExpediente() {
   const { id } = Route.useParams();
   const { nuevo } = Route.useSearch();
+  const isNuevo = id === "nuevo";
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const dragTab = useRef<string | null>(null);
-  const [modoEdicion, setModoEdicion] = useState(!!nuevo);
+  const [modoEdicion, setModoEdicion] = useState(!!nuevo || isNuevo);
   const { data: roles } = useMyRoles();
   const canEditExpediente = (roles ?? []).some((r) =>
     ["admin", "finanzas", "operaciones", "agente_aduanal", "contabilidad"].includes(r),
   );
 
+  // OCR (solo modo creación): BL y Factura se combinan y se aplican al formulario.
+  const blRes = useRef<OcrExtraction | null>(null);
+  const facRes = useRef<OcrExtraction | null>(null);
+  const ocrSeq = useRef(0);
+  const [ocrAplicado, setOcrAplicado] = useState<OcrAplicado | null>(null);
+
+  const aplicarCombinado = async () => {
+    const res = combinarOcr(blRes.current, facRes.current);
+    const [pOrigen, pProced, ptSalida, ptArribo] = await Promise.all([
+      resolverContraCatalogo("dga_paises", "pais", res.pais_origen),
+      resolverContraCatalogo("dga_paises", "pais", res.pais_procedencia),
+      resolverContraCatalogo("dga_puertos", "puerto", res.puerto_salida),
+      resolverContraCatalogo("dga_puertos", "puerto", res.puerto_arribo),
+    ]);
+    const obs = [
+      res.suplidor && `Suplidor: ${res.suplidor}`,
+      res.numero_documento && `Nº Documento: ${res.numero_documento}`,
+      res.productos && `Productos: ${res.productos}`,
+    ].filter(Boolean).join("\n");
+
+    ocrSeq.current += 1;
+    setOcrAplicado({
+      seq: ocrSeq.current,
+      cliente: res.cliente ?? null,
+      contenedores: res.contenedores ?? null,
+      campos: {
+        bl_awb: res.bl,
+        factura_comercial: res.factura_comercial ?? res.numero_documento,
+        suplidor: res.suplidor,
+        naviera: res.naviera,
+        puerto_arribo: ptArribo.nombre,
+        puerto_arribo_codigo: ptArribo.codigo,
+        puerto_salida: ptSalida.nombre,
+        puerto_salida_codigo: ptSalida.codigo,
+        fecha_cargado: res.fecha_cargado,
+        fecha_compromiso: res.eta,
+        medio_transporte: res.medio_transporte
+          ? (res.medio_transporte === "aereo" ? "Aéreo" : "Marítimo")
+          : null,
+        pais_origen: pOrigen.nombre,
+        pais_origen_codigo: pOrigen.codigo,
+        pais_procedencia: pProced.nombre,
+        pais_procedencia_codigo: pProced.codigo,
+        incoterm: res.incoterm,
+        total_fob: res.fob_total,
+        seguro: res.seguro,
+        flete: res.flete,
+        otros: res.otros_gastos,
+        peso_bruto: res.peso_bruto_kg,
+        peso_neto: res.peso_neto_kg,
+        descripcion_mercancia: res.descripcion_mercancia || obs,
+        observaciones: obs,
+      },
+    });
+  };
+
   // Aviso en tiempo real cuando otro usuario actualiza este expediente.
   useEffect(() => {
+    if (isNuevo) return;
     const channel = supabase
       .channel(`expediente-${id}`)
       .on(
@@ -196,7 +330,8 @@ function DetalleExpediente() {
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [id, qc]);
+  }, [id, qc, isNuevo]);
+
 
   const normalizeOrder = (saved: string[]) => {
     const valid = saved.filter((k) => DEFAULT_TAB_ORDER.includes(k));
