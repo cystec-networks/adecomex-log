@@ -24,6 +24,7 @@ import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
 import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
 import { AutocompleteInput } from "@/components/autocomplete-input";
 import { CatalogCombobox } from "@/components/catalog-combobox";
+import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { DgaCombobox } from "@/components/dga-combobox";
 import { DgaProductoSearch } from "@/components/dga-producto-search";
 import { normalizarNombre, patronSinTildes } from "@/lib/search-filter";
@@ -563,7 +564,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
         await supabase
           .from("expedientes")
           .select(
-            "medio_transporte, naviera, suplidor, pais_origen, factura_comercial, incoterm, puerto_salida, puerto_arribo, numero_dua, numero_vuce, numero_igra, preferencia_comercial, numeros_contenedores"
+            "medio_transporte, naviera, suplidor, pais_origen, factura_comercial, incoterm, puerto_salida, puerto_arribo, numero_dua, numero_vuce, numero_igra, preferencia_comercial, numeros_contenedores, contacto_solicitud"
           )
           .limit(500)
       ).data ?? [],
@@ -592,6 +593,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
       numero_igra: uniq("numero_igra"),
       preferencia_comercial: uniq("preferencia_comercial", SUG_PREFERENCIA),
       numeros_contenedores: uniq("numeros_contenedores"),
+      contacto_solicitud: uniq("contacto_solicitud"),
     };
   }, [histDb]);
 
@@ -751,11 +753,13 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: an
           </CardHeader>
           <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Field label="Tipo de operación" value={form.tipo_operacion} onChange={(v) => set("tipo_operacion", v)} disabled={!editable} />
-            <Field label="Tipo de carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} disabled={!editable} />
+            {!editable
+              ? <ReadOnlyField label="Tipo de carga" value={form.tipo_carga} />
+              : <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />}
             <ReadOnlyField label="Origen" value={exp.pais_origen} />
             <ReadOnlyField label="Incoterm" value={exp.incoterm} />
             <ReadOnlyField label="Medio de transporte" value={exp.medio_transporte} />
-            <Field label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} disabled={!editable} />
+            <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sug.contacto_solicitud ?? []} disabled={!editable} />
           </CardContent>
         </Card>
       )}
