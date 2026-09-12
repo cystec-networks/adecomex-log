@@ -1071,17 +1071,26 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
     { id: "req-flete", ok: lleno(form.flete) },
     { id: "req-seguro", ok: lleno(form.seguro) },
   ];
+  const limpiarFaltante = (id: string) =>
+    setCamposFaltantes((prev) => {
+      if (!prev.has(id)) return prev;
+      const s = new Set(prev);
+      s.delete(id);
+      return s;
+    });
   const intentarCrear = () => {
-    const faltante = OBLIGATORIOS.find((o) => !o.ok);
-    if (faltante) {
+    const faltantes = OBLIGATORIOS.filter((o) => !o.ok);
+    if (faltantes.length > 0) {
+      setCamposFaltantes(new Set(faltantes.map((f) => f.id)));
       toast.error("Completa los campos obligatorios antes de crear el Expediente");
-      const el = typeof document !== "undefined" ? document.getElementById(faltante.id) : null;
+      const el = typeof document !== "undefined" ? document.getElementById(faltantes[0].id) : null;
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
         (el.querySelector("input, button, textarea") as HTMLElement | null)?.focus?.();
       }
       return;
     }
+    setCamposFaltantes(new Set());
     crear.mutate();
   };
 
