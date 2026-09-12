@@ -1,18 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { extractSolicitudFromDocument, type OcrExtraction } from "@/lib/ai-ocr.functions";
+import { type OcrExtraction } from "@/lib/ai-ocr.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Check, X, FileUp, Loader2, Sparkles } from "lucide-react";
-import { useRef, useState } from "react";
+import { ArrowLeft, Check, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DgaCombobox } from "@/components/dga-combobox";
+import { EscanearBlButton, EscanearFacturaButton } from "@/components/escanear-documento-expediente-buttons";
 
 export const Route = createFileRoute("/_authenticated/expedientes/nuevo")({
   component: NuevoExpediente,
