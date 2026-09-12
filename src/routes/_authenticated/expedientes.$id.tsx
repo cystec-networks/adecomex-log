@@ -1263,13 +1263,13 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
           <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} />
           <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} />
           <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} disabled={!editable} />
-          <div className="grid gap-1.5" id="req-puerto_arribo">
+          <div className={cn("grid gap-1.5", camposFaltantes.has("req-puerto_arribo") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-puerto_arribo">
             <Label><ReqMark />Puerto de arribo</Label>
             <DgaCombobox
               table="dga_puertos"
               value={form.puerto_arribo}
               codigo={form.puerto_arribo_codigo}
-              onChange={(nombre, codigo) => setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo }))}
+              onChange={(nombre, codigo) => { setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo })); limpiarFaltante("req-puerto_arribo"); }}
               placeholder="Buscar puerto (catálogo DGA)"
               disabled={!editable}
             />
