@@ -632,19 +632,24 @@ function DetalleExpediente() {
   );
 }
 
-function Field({ label, value, onChange, type = "text", className = "", disabled = false }: { label: string; value: any; onChange: (v: string) => void; type?: string; className?: string; disabled?: boolean }) {
+/** Asterisco rojo para campos obligatorios. */
+function ReqMark() {
+  return <span className="text-destructive mr-0.5">*</span>;
+}
+
+function Field({ label, value, onChange, type = "text", className = "", disabled = false, req = false, fieldId }: { label: string; value: any; onChange: (v: string) => void; type?: string; className?: string; disabled?: boolean; req?: boolean; fieldId?: string }) {
   return (
-    <div className={`grid gap-1.5 ${className}`}>
-      <Label>{label}</Label>
+    <div className={`grid gap-1.5 ${className}`} id={fieldId}>
+      <Label>{req && <ReqMark />}{label}</Label>
       <Input type={type} value={value ?? ""} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
     </div>
   );
 }
 
-function AutoField({ label, value, onChange, suggestion, className = "", disabled = false }: { label: string; value: any; onChange: (v: string) => void; suggestion: string[]; className?: string; disabled?: boolean }) {
+function AutoField({ label, value, onChange, suggestion, className = "", disabled = false, req = false, fieldId }: { label: string; value: any; onChange: (v: string) => void; suggestion: string[]; className?: string; disabled?: boolean; req?: boolean; fieldId?: string }) {
   return (
-    <div className={`grid gap-1.5 ${className}`}>
-      <Label>{label}</Label>
+    <div className={`grid gap-1.5 ${className}`} id={fieldId}>
+      <Label>{req && <ReqMark />}{label}</Label>
       <AutocompleteInput
         value={value ?? ""}
         onChange={onChange}
@@ -740,12 +745,14 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
   const { data: clientesLite } = useQuery({
     queryKey: ["clientes-lite"],
     enabled: isNuevo,
-    queryFn: async () => (await supabase.from("clientes").select("id,nombre").order("nombre")).data ?? [],
+    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc").order("nombre")).data ?? [],
   });
   const [clienteOcr, setClienteOcr] = useState<string | null>(null);
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
   const ocrPuesto = useRef<Record<string, any>>({});
   const ultimoOcrSeq = useRef(0);
+  /** Modo creación: líneas de mercancía en memoria hasta que exista el Expediente. */
+  const [productosNuevos, setProductosNuevos] = useState<any[]>([]);
 
   useEffect(() => {
     if (!isNuevo || !ocrAplicado || ocrAplicado.seq === ultimoOcrSeq.current) return;
@@ -865,8 +872,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
   });
 
   const sumFob = useMemo(
-    () => (mercItems ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0),
-    [mercItems],
+    () => (isNuevo ? productosNuevos : (mercItems ?? [])).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0),
+    [mercItems, productosNuevos, isNuevo],
   );
 
   useEffect(() => {
@@ -977,7 +984,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
       const toNum = (v: any) => (v === "" || v == null ? null : Number(v));
       payload.peso_neto = toNum(payload.peso_neto);
       payload.peso_bruto = toNum(payload.peso_bruto);
-      payload.total_fob = toNum(payload.total_fob);
+      payload.total_fob = productosNuevos.length ? sumFob : toNum(payload.total_fob);
       payload.seguro = toNum(payload.seguro);
       payload.flete = toNum(payload.flete);
       payload.otros = toNum(payload.otros);
@@ -1004,6 +1011,17 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
 
       const { data, error } = await supabase.from("expedientes").insert(payload).select().single();
       if (error) throw error;
+
+      if (productosNuevos.length) {
+        const { error: eProd } = await supabase.from("mercancia_items").insert(
+          productosNuevos.map((p: any, i: number) => {
+            const { id: _localId, item_no: _no, ...resto } = p;
+            return { ...resto, expediente_id: data.id, item_no: i + 1 };
+          }),
+        );
+        if (eProd) throw eProd;
+      }
+
 
       if (contValidos.length) {
         await supabase.from("expediente_contenedores").insert(
@@ -1037,12 +1055,41 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
 
   const hasSolicitud = !isNuevo && !!(exp.solicitud_id || exp.tipo_operacion || exp.tipo_carga || exp.contacto_solicitud);
 
+  // Campos obligatorios para poder crear el Expediente.
+  const lleno = (v: any) => String(v ?? "").trim() !== "";
+  const OBLIGATORIOS: Array<{ id: string; ok: boolean }> = [
+    { id: "req-tipo_carga", ok: lleno(form.tipo_carga) },
+    { id: "req-cliente_id", ok: lleno(form.cliente_id) },
+    { id: "req-suplidor", ok: lleno(form.suplidor) },
+    { id: "req-bl_awb", ok: lleno(form.bl_awb) },
+    { id: "req-factura_comercial", ok: lleno(form.factura_comercial) },
+    { id: "req-puerto_arribo", ok: lleno(form.puerto_arribo) },
+    { id: "req-area_aduanera", ok: lleno(form.area_aduanera) },
+    { id: "req-regimen_aduanero", ok: lleno(form.regimen_aduanero) },
+    { id: "req-mercancia", ok: productosNuevos.length > 0 },
+    { id: "req-flete", ok: lleno(form.flete) },
+    { id: "req-seguro", ok: lleno(form.seguro) },
+  ];
+  const intentarCrear = () => {
+    const faltante = OBLIGATORIOS.find((o) => !o.ok);
+    if (faltante) {
+      toast.error("Completa los campos obligatorios antes de crear el Expediente");
+      const el = typeof document !== "undefined" ? document.getElementById(faltante.id) : null;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        (el.querySelector("input, button, textarea") as HTMLElement | null)?.focus?.();
+      }
+      return;
+    }
+    crear.mutate();
+  };
+
   const BotonesAccion = () => (
     <div className="flex justify-end gap-2 sticky bottom-4">
       {isNuevo ? (
         <>
           <Button size="lg" variant="outline" onClick={() => nav({ to: "/expedientes" })} className="shadow-lg">Cancelar</Button>
-          <Button size="lg" onClick={() => crear.mutate()} disabled={crear.isPending} className="shadow-lg">
+          <Button size="lg" onClick={intentarCrear} disabled={crear.isPending} className="shadow-lg">
             <Check className="h-4 w-4 mr-1" />{crear.isPending ? "Creando…" : "Crear expediente"}
           </Button>
         </>
@@ -1092,14 +1139,19 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
       <Section title="1. Información general" subtitle="Identificación y logística base del expediente">
         {isNuevo ? (
           <>
-            <div className="grid gap-1.5">
-              <Label>Cliente</Label>
+            <div className="grid gap-1.5" id="req-cliente_id">
+              <Label><ReqMark />Cliente</Label>
               <Select value={form.cliente_id || undefined} onValueChange={(v) => { set("cliente_id", v); if (v) setClienteExtraidoSinMatch(null); }}>
                 <SelectTrigger><SelectValue placeholder="Selecciona cliente" /></SelectTrigger>
                 <SelectContent>
                   {(clientesLite ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {form.cliente_id && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  RNC: {(clientesLite ?? []).find((c: any) => c.id === form.cliente_id)?.rnc ?? "—"}
+                </p>
+              )}
               {clienteExtraidoSinMatch && (
                 <p className="text-xs text-amber-600 mt-1">
                   El documento indica "{clienteExtraidoSinMatch}" — no se encontró un cliente registrado con ese nombre, selecciónalo manualmente.
@@ -1110,8 +1162,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               <Label>Tipo de operación</Label>
               <Input value={form.tipo_operacion} onChange={(e) => set("tipo_operacion", e.target.value)} />
             </div>
-            <div className="grid gap-1.5">
-              <Label>Tipo de carga</Label>
+            <div className="grid gap-1.5" id="req-tipo_carga">
+              <Label><ReqMark />Tipo de carga</Label>
               <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />
             </div>
             <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sug.contacto_solicitud ?? []} />
@@ -1119,7 +1171,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
         ) : (
           <Field label="Número / ID" value={form.numero} onChange={(v) => set("numero", v)} disabled={!editable} />
         )}
-        <Field label="BL / AWB / Guía" value={form.bl_awb} onChange={(v) => set("bl_awb", v)} disabled={!editable} />
+        <Field label="BL / AWB / Guía" value={form.bl_awb} onChange={(v) => set("bl_awb", v)} disabled={!editable} req fieldId="req-bl_awb" />
         <AutoField label="Medio de transporte" value={form.medio_transporte} onChange={(v) => set("medio_transporte", v)} suggestion={sug.medio_transporte ?? []} disabled={!editable} />
         <AutoField label="Naviera" value={form.naviera} onChange={(v) => set("naviera", v)} suggestion={sug.naviera ?? []} disabled={!editable} />
         <Field label="SLA (días)" value={form.sla_dias} onChange={(v) => set("sla_dias", v)} type="number" disabled={!editable} />
@@ -1129,9 +1181,9 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
 
 
       <Section title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
-        <div className="grid gap-1.5">
+        <div className="grid gap-1.5" id="req-suplidor">
           <div className="flex items-center justify-between gap-2">
-            <Label>Exportador / Suplidor</Label>
+            <Label><ReqMark />Exportador / Suplidor</Label>
             {editable && (
               <TerceroExtranjeroPicker
                 onSelect={(t) => setForm((f) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid }))}
@@ -1173,7 +1225,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
           )}
         </div>
 
-        <AutoField label="Factura comercial" value={form.factura_comercial} onChange={(v) => set("factura_comercial", v)} suggestion={sug.factura_comercial ?? []} disabled={!editable} />
+        <AutoField label="Factura comercial" value={form.factura_comercial} onChange={(v) => set("factura_comercial", v)} suggestion={sug.factura_comercial ?? []} disabled={!editable} req fieldId="req-factura_comercial" />
         <AutoField label="Incoterm" value={form.incoterm} onChange={(v) => set("incoterm", v)} suggestion={sug.incoterm ?? []} disabled={!editable} />
         <div className="grid gap-1.5">
           <Label>Puerto de salida</Label>
@@ -1201,8 +1253,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
           <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} />
           <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} />
           <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} disabled={!editable} />
-          <div className="grid gap-1.5">
-            <Label>Puerto de arribo</Label>
+          <div className="grid gap-1.5" id="req-puerto_arribo">
+            <Label><ReqMark />Puerto de arribo</Label>
             <DgaCombobox
               table="dga_puertos"
               value={form.puerto_arribo}
@@ -1215,8 +1267,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo para el XML.</span>
             )}
           </div>
-          <div className="grid gap-1.5">
-            <Label>Área / Administración aduanera</Label>
+          <div className="grid gap-1.5" id="req-area_aduanera">
+            <Label><ReqMark />Área / Administración aduanera</Label>
             <DgaCombobox
               table="dga_areas"
               value={form.area_aduanera}
@@ -1371,8 +1423,10 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               </SelectContent>
             </Select>
           </div>
-          {!isNuevo && (
-          <div className="md:col-span-2 lg:col-span-3">
+          <div className="md:col-span-2 lg:col-span-3" id="req-mercancia">
+            {isNuevo && (
+              <Label className="mb-1.5 block"><ReqMark />Detalle de mercancía (al menos 1 producto)</Label>
+            )}
             <MercanciaItemsBlock
               expedienteId={exp.id}
               servicioAduaneroUsd={servicioAd.servicioUsd}
@@ -1384,16 +1438,16 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               paisOrigen={form.pais_origen || ""}
               paisOrigenCodigo={form.pais_origen_codigo || ""}
               disabled={!editable}
+              {...(isNuevo ? { localItems: productosNuevos, onLocalItemsChange: setProductosNuevos } : {})}
             />
           </div>
-          )}
           <HerramientasDgaVuce />
           {(() => {
             const toN = (v: any) => (v === "" || v == null ? 0 : Number(v) || 0);
-            const fob = isNuevo ? toN(form.total_fob) : sumFob;
+            const fob = isNuevo ? (productosNuevos.length ? sumFob : toN(form.total_fob)) : sumFob;
             const cif = fob + toN(form.seguro) + toN(form.flete) + toN(form.otros);
             const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const renderMoney = (label: string, k: "seguro" | "flete" | "otros" | "total_fob", helper?: string) => {
+            const renderMoney = (label: string, k: "seguro" | "flete" | "otros" | "total_fob", helper?: string, req = false) => {
               const raw = (form as any)[k];
               const rawStr = raw === "" || raw == null ? "" : String(raw);
               const isFocused = focusedMoney === k;
@@ -1403,8 +1457,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
                   ? ""
                   : `$${Number(rawStr).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
               return (
-                <div className="grid gap-1.5" key={k}>
-                  <Label>{label} (US$)</Label>
+                <div className="grid gap-1.5" key={k} id={req ? `req-${k}` : undefined}>
+                  <Label>{req && isNuevo && <ReqMark />}{label} (US$)</Label>
                   <Input
                     type="text"
                     inputMode="decimal"
@@ -1449,8 +1503,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               <div className="md:col-span-2 lg:col-span-3 grid gap-4 pt-2 border-t">
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-2">Valores CIF</div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                  {isNuevo ? (
-                    renderMoney("Total FOB", "total_fob", "Podrás detallar la mercancía por ítem después de crear el Expediente.")
+                  {isNuevo && !productosNuevos.length ? (
+                    renderMoney("Total FOB", "total_fob", "Se calcula automáticamente al agregar productos al Detalle de Mercancía.")
                   ) : (
                   <div className="grid gap-1.5">
                     <Label className="flex items-center gap-1.5">
@@ -1462,8 +1516,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
                     </div>
                   </div>
                   )}
-                  {renderMoney("Seguro", "seguro", "Por defecto 2% del FOB (valor de referencia). Edítalo si tienes el monto real de la póliza.")}
-                  {renderMoney("Flete", "flete")}
+                  {renderMoney("Seguro", "seguro", "Por defecto 2% del FOB (valor de referencia). Edítalo si tienes el monto real de la póliza.", true)}
+                  {renderMoney("Flete", "flete", undefined, true)}
                   {renderMoney("Otros", "otros")}
 
                 </div>
@@ -1477,8 +1531,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
                       {fmt(cif)}
                     </div>
                   </div>
-                  <div className="grid gap-1.5 md:col-span-2">
-                    <Label>Régimen Aduanero</Label>
+                  <div className="grid gap-1.5 md:col-span-2" id="req-regimen_aduanero">
+                    <Label>{isNuevo && <ReqMark />}Régimen Aduanero</Label>
                     <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => set("regimen_aduanero", v)} disabled={!editable}>
                       <SelectTrigger><SelectValue placeholder="Selecciona régimen" /></SelectTrigger>
                       <SelectContent>
@@ -2937,6 +2991,8 @@ function MercanciaItemsBlock({
   paisOrigenCodigo,
   servicioAduaneroUsd = 0,
   disabled = false,
+  localItems,
+  onLocalItemsChange,
 }: {
   expedienteId: string;
   seguro: number;
@@ -2948,12 +3004,19 @@ function MercanciaItemsBlock({
   paisOrigenCodigo?: string;
   servicioAduaneroUsd?: number;
   disabled?: boolean;
+  /** Modo creación: líneas en memoria (aún sin Expediente en la base). */
+  localItems?: any[];
+  onLocalItemsChange?: (items: any[]) => void;
 }) {
   const qc = useQueryClient();
-  const { data: items } = useQuery({
+  const local = !!onLocalItemsChange;
+  const { data: itemsDb } = useQuery({
     queryKey: ["mercancia-items", expedienteId],
+    enabled: !local,
     queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", expedienteId).is("deleted_at", null).order("item_no")).data ?? [],
   });
+  const items: any[] = local ? (localItems ?? []) : (itemsDb ?? []);
+  const renumerar = (arr: any[]) => arr.map((it, i) => ({ ...it, item_no: i + 1 }));
 
   const codigos = useMemo(() => Array.from(new Set(((items ?? []) as any[]).map((it) => (it.codigo_arancelario || "").trim()).filter(Boolean))), [items]);
   const { data: tasas } = useQuery({
@@ -3060,6 +3123,13 @@ function MercanciaItemsBlock({
         pais_origen_codigo: f.pais_origen_codigo?.trim() || null,
       };
 
+      if (local) {
+        const next = editingId
+          ? items.map((it) => (it.id === editingId ? { ...it, ...payload } : it))
+          : [...items, { ...payload, id: crypto.randomUUID() }];
+        onLocalItemsChange!(renumerar(next));
+        return;
+      }
       if (editingId) {
         const { error } = await supabase.from("mercancia_items").update(payload).eq("id", editingId);
         if (error) throw error;
@@ -3070,17 +3140,21 @@ function MercanciaItemsBlock({
       }
       await autoLearnTasa(codigo, payload.pct_gravamen, payload.aplica_isc, payload.pct_isc, payload.pct_itbis ?? null);
     },
-    onSuccess: () => { toast.success(editingId ? "Ítem actualizado" : "Ítem agregado"); setOpen(false); setEditingId(null); setF(emptyForm); setValorUnitario(""); invalidate(); },
+    onSuccess: () => { toast.success(editingId ? "Ítem actualizado" : "Ítem agregado"); setOpen(false); setEditingId(null); setF(emptyForm); setValorUnitario(""); if (!local) invalidate(); },
     onError: (e: any) => toast.error(e.message),
   });
 
   const eliminar = useMutation({
     mutationFn: async (id: string) => {
+      if (local) {
+        onLocalItemsChange!(renumerar(items.filter((it) => it.id !== id)));
+        return;
+      }
       const { data: userRes } = await supabase.auth.getUser();
       const { error } = await supabase.from("mercancia_items").update({ deleted_at: new Date().toISOString(), deleted_by: userRes.user?.id ?? null }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Ítem movido a papelera"); invalidate(); },
+    onSuccess: () => { toast.success(local ? "Ítem eliminado" : "Ítem movido a papelera"); if (!local) invalidate(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -3088,6 +3162,10 @@ function MercanciaItemsBlock({
     mutationFn: async (it: any) => {
       const nextNo = ((items ?? []).reduce((m: number, itm: any) => Math.max(m, itm.item_no || 0), 0)) + 1;
       const { deleted_at, deleted_by, created_at, updated_at, id, item_no, expediente_id, ...resto } = it;
+      if (local) {
+        onLocalItemsChange!(renumerar([...items, { ...resto, id: crypto.randomUUID() }]));
+        return;
+      }
       const { error } = await supabase.from("mercancia_items").insert({
         ...resto,
         expediente_id: expedienteId,
@@ -3095,7 +3173,7 @@ function MercanciaItemsBlock({
       });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Línea duplicada"); invalidate(); },
+    onSuccess: () => { toast.success("Línea duplicada"); if (!local) invalidate(); },
     onError: (e: any) => toast.error(e.message),
   });
 
