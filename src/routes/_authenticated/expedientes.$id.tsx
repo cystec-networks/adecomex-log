@@ -444,8 +444,8 @@ function DetalleExpediente() {
                           {expData.clientes.nombre}
                         </span>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 border-none bg-transparent shadow-none" side="bottom" align="start">
-                        <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-0.5 max-w-sm">
+                      <PopoverContent className="w-auto p-0 border-none bg-transparent shadow-none z-50" side="bottom" align="start" sideOffset={8}>
+                        <div className="rounded-md border bg-background shadow-lg px-3 py-2 text-xs space-y-0.5 max-w-sm">
                           <div><span className="text-muted-foreground">RNC:</span> {expData.clientes.rnc ?? "—"}</div>
                           <div><span className="text-muted-foreground">Contacto:</span> {expData.clientes.contacto ?? "—"}</div>
                           <div><span className="text-muted-foreground">Email:</span> {(expData.clientes as any).email ?? "—"}</div>
