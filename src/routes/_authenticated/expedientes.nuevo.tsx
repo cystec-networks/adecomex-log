@@ -61,6 +61,10 @@ function NuevoExpediente() {
     peso_bruto: "" as string | number,
     peso_neto: "" as string | number,
     contacto_solicitud: "",
+    total_fob: "" as string | number,
+    seguro: "" as string | number,
+    flete: "" as string | number,
+    otros: "" as string | number,
   });
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
@@ -235,6 +239,9 @@ function NuevoExpediente() {
       if (!payload.cliente_id) payload.cliente_id = null;
       payload.peso_bruto = payload.peso_bruto === "" ? null : Number(payload.peso_bruto);
       payload.peso_neto = payload.peso_neto === "" ? null : Number(payload.peso_neto);
+      for (const k of ["total_fob", "seguro", "flete", "otros"]) {
+        payload[k] = payload[k] === "" ? null : Number(payload[k]);
+      }
       if (contenedores?.length) payload.numeros_contenedores = contenedores.map((c) => c.numero).join(", ");
 
       const { data, error } = await supabase.from("expedientes").insert(payload).select().single();
@@ -375,6 +382,9 @@ function NuevoExpediente() {
                 onChange={(nombre, codigo) => setForm((f) => ({ ...f, puerto_salida: nombre, puerto_salida_codigo: codigo }))}
                 placeholder="Buscar puerto de salida"
               />
+              {form.puerto_salida && !form.puerto_salida_codigo && (
+                <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo para el XML.</span>
+              )}
             </div>
             <div className="grid gap-1.5">
               <Label>Puerto de arribo</Label>
@@ -398,6 +408,9 @@ function NuevoExpediente() {
                 onChange={(nombre, codigo) => setForm((f) => ({ ...f, pais_origen: nombre, pais_origen_codigo: codigo }))}
                 placeholder="Buscar país de origen"
               />
+              {form.pais_origen && !form.pais_origen_codigo && (
+                <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el país del catálogo para el XML.</span>
+              )}
             </div>
             <div className="grid gap-1.5">
               <Label>País de procedencia</Label>
@@ -408,6 +421,9 @@ function NuevoExpediente() {
                 onChange={(nombre, codigo) => setForm((f) => ({ ...f, pais_procedencia: nombre, pais_procedencia_codigo: codigo }))}
                 placeholder="Buscar país de procedencia"
               />
+              {form.pais_procedencia && !form.pais_procedencia_codigo && (
+                <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el país del catálogo para el XML.</span>
+              )}
             </div>
             <div className="grid gap-1.5"><Label>Fecha de cargado</Label><Input type="date" value={form.fecha_cargado} onChange={(e) => set("fecha_cargado", e.target.value)} /></div>
             <div className="grid gap-1.5"><Label>ETA / Fecha de llegada</Label><Input type="date" value={form.fecha_compromiso} onChange={(e) => set("fecha_compromiso", e.target.value)} /></div>
