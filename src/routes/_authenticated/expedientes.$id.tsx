@@ -1354,6 +1354,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               </SelectContent>
             </Select>
           </div>
+          {!isNuevo && (
           <div className="md:col-span-2 lg:col-span-3">
             <MercanciaItemsBlock
               expedienteId={exp.id}
@@ -1368,13 +1369,14 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               disabled={!editable}
             />
           </div>
+          )}
           <HerramientasDgaVuce />
           {(() => {
             const toN = (v: any) => (v === "" || v == null ? 0 : Number(v) || 0);
-            const fob = sumFob;
+            const fob = isNuevo ? toN(form.total_fob) : sumFob;
             const cif = fob + toN(form.seguro) + toN(form.flete) + toN(form.otros);
             const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const renderMoney = (label: string, k: "seguro" | "flete" | "otros", helper?: string) => {
+            const renderMoney = (label: string, k: "seguro" | "flete" | "otros" | "total_fob", helper?: string) => {
               const raw = (form as any)[k];
               const rawStr = raw === "" || raw == null ? "" : String(raw);
               const isFocused = focusedMoney === k;
