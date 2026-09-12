@@ -1012,6 +1012,17 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
       const { data, error } = await supabase.from("expedientes").insert(payload).select().single();
       if (error) throw error;
 
+      if (productosNuevos.length) {
+        const { error: eProd } = await supabase.from("mercancia_items").insert(
+          productosNuevos.map((p: any, i: number) => {
+            const { id: _localId, item_no: _no, ...resto } = p;
+            return { ...resto, expediente_id: data.id, item_no: i + 1 };
+          }),
+        );
+        if (eProd) throw eProd;
+      }
+
+
       if (contValidos.length) {
         await supabase.from("expediente_contenedores").insert(
           contValidos.map((c, i) => ({
