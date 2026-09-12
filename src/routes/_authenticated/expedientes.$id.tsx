@@ -1543,9 +1543,9 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
                       {fmt(cif)}
                     </div>
                   </div>
-                  <div className="grid gap-1.5 md:col-span-2" id="req-regimen_aduanero">
+                  <div className={cn("grid gap-1.5 md:col-span-2", camposFaltantes.has("req-regimen_aduanero") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-regimen_aduanero">
                     <Label>{isNuevo && <ReqMark />}Régimen Aduanero</Label>
-                    <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => set("regimen_aduanero", v)} disabled={!editable}>
+                    <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => { set("regimen_aduanero", v); limpiarFaltante("req-regimen_aduanero"); }} disabled={!editable}>
                       <SelectTrigger><SelectValue placeholder="Selecciona régimen" /></SelectTrigger>
                       <SelectContent>
                         {REGIMENES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
