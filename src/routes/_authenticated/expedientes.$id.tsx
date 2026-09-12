@@ -1433,7 +1433,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               </SelectContent>
             </Select>
           </div>
-          <div className="md:col-span-2 lg:col-span-3" id="req-mercancia">
+          <div className={cn("md:col-span-2 lg:col-span-3", camposFaltantes.has("req-mercancia") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-mercancia">
             {isNuevo && (
               <Label className="mb-1.5 block"><ReqMark />Detalle de mercancía (al menos 1 producto)</Label>
             )}
