@@ -61,6 +61,10 @@ function NuevoExpediente() {
     peso_bruto: "" as string | number,
     peso_neto: "" as string | number,
     contacto_solicitud: "",
+    total_fob: "" as string | number,
+    seguro: "" as string | number,
+    flete: "" as string | number,
+    otros: "" as string | number,
   });
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
@@ -113,11 +117,36 @@ function NuevoExpediente() {
       incoterm: fromFac("incoterm"),
       factura_comercial: fromFac("factura_comercial"),
       descripcion_mercancia: fromFac("descripcion_mercancia"),
+      fob_total: fromFac("fob_total"),
+      seguro: fromFac("seguro"),
+      flete: fromFac("flete"),
+      otros_gastos: fromFac("otros_gastos"),
     };
   };
 
-  const aplicarCombinado = () => {
+  const resolverContraCatalogo = async (
+    tabla: "dga_paises" | "dga_puertos",
+    campoNombre: "pais" | "puerto",
+    valorTexto: string | null,
+  ): Promise<{ nombre: string | null; codigo: string | null }> => {
+    if (!valorTexto) return { nombre: null, codigo: null };
+    const { data } = await (supabase.from(tabla) as any)
+      .select(`codigo, ${campoNombre}`)
+      .ilike(campoNombre, `%${valorTexto}%`)
+      .limit(1)
+      .maybeSingle();
+    return data ? { nombre: data[campoNombre], codigo: data.codigo } : { nombre: valorTexto, codigo: null };
+  };
+
+  const aplicarCombinado = async () => {
     const res = combinar();
+
+    const [pOrigen, pProced, ptSalida, ptArribo] = await Promise.all([
+      resolverContraCatalogo("dga_paises", "pais", res.pais_origen),
+      resolverContraCatalogo("dga_paises", "pais", res.pais_procedencia),
+      resolverContraCatalogo("dga_puertos", "puerto", res.puerto_salida),
+      resolverContraCatalogo("dga_puertos", "puerto", res.puerto_arribo),
+    ]);
     if (res.contenedores?.length) setContenedores(res.contenedores);
 
     const obs = [
@@ -143,14 +172,22 @@ function NuevoExpediente() {
       put("factura_comercial", res.factura_comercial ?? res.numero_documento);
       put("suplidor", res.suplidor);
       put("naviera", res.naviera);
-      put("puerto_arribo", res.puerto_arribo);
-      put("puerto_salida", res.puerto_salida);
+      put("puerto_arribo", ptArribo.nombre);
+      put("puerto_arribo_codigo", ptArribo.codigo);
+      put("puerto_salida", ptSalida.nombre);
+      put("puerto_salida_codigo", ptSalida.codigo);
       put("fecha_cargado", res.fecha_cargado);
       put("fecha_compromiso", res.eta);
       put("medio_transporte", res.medio_transporte ? (res.medio_transporte === "aereo" ? "Aéreo" : "Marítimo") : null);
-      put("pais_origen", res.pais_origen);
-      put("pais_procedencia", res.pais_procedencia);
+      put("pais_origen", pOrigen.nombre);
+      put("pais_origen_codigo", pOrigen.codigo);
+      put("pais_procedencia", pProced.nombre);
+      put("pais_procedencia_codigo", pProced.codigo);
       put("incoterm", res.incoterm);
+      put("total_fob", res.fob_total);
+      put("seguro", res.seguro);
+      put("flete", res.flete);
+      put("otros", res.otros_gastos);
       put("peso_bruto", res.peso_bruto_kg);
       put("peso_neto", res.peso_neto_kg);
       put("descripcion_mercancia", res.descripcion_mercancia || obs);
@@ -202,6 +239,9 @@ function NuevoExpediente() {
       if (!payload.cliente_id) payload.cliente_id = null;
       payload.peso_bruto = payload.peso_bruto === "" ? null : Number(payload.peso_bruto);
       payload.peso_neto = payload.peso_neto === "" ? null : Number(payload.peso_neto);
+      for (const k of ["total_fob", "seguro", "flete", "otros"]) {
+        payload[k] = payload[k] === "" ? null : Number(payload[k]);
+      }
       if (contenedores?.length) payload.numeros_contenedores = contenedores.map((c) => c.numero).join(", ");
 
       const { data, error } = await supabase.from("expedientes").insert(payload).select().single();
@@ -342,6 +382,9 @@ function NuevoExpediente() {
                 onChange={(nombre, codigo) => setForm((f) => ({ ...f, puerto_salida: nombre, puerto_salida_codigo: codigo }))}
                 placeholder="Buscar puerto de salida"
               />
+              {form.puerto_salida && !form.puerto_salida_codigo && (
+                <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo para el XML.</span>
+              )}
             </div>
             <div className="grid gap-1.5">
               <Label>Puerto de arribo</Label>
@@ -365,6 +408,9 @@ function NuevoExpediente() {
                 onChange={(nombre, codigo) => setForm((f) => ({ ...f, pais_origen: nombre, pais_origen_codigo: codigo }))}
                 placeholder="Buscar país de origen"
               />
+              {form.pais_origen && !form.pais_origen_codigo && (
+                <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el país del catálogo para el XML.</span>
+              )}
             </div>
             <div className="grid gap-1.5">
               <Label>País de procedencia</Label>
@@ -375,6 +421,9 @@ function NuevoExpediente() {
                 onChange={(nombre, codigo) => setForm((f) => ({ ...f, pais_procedencia: nombre, pais_procedencia_codigo: codigo }))}
                 placeholder="Buscar país de procedencia"
               />
+              {form.pais_procedencia && !form.pais_procedencia_codigo && (
+                <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el país del catálogo para el XML.</span>
+              )}
             </div>
             <div className="grid gap-1.5"><Label>Fecha de cargado</Label><Input type="date" value={form.fecha_cargado} onChange={(e) => set("fecha_cargado", e.target.value)} /></div>
             <div className="grid gap-1.5"><Label>ETA / Fecha de llegada</Label><Input type="date" value={form.fecha_compromiso} onChange={(e) => set("fecha_compromiso", e.target.value)} /></div>
@@ -388,6 +437,10 @@ function NuevoExpediente() {
           <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div className="grid gap-1.5"><Label>Peso bruto (kg)</Label><Input type="number" value={form.peso_bruto} onChange={(e) => set("peso_bruto", e.target.value)} /></div>
             <div className="grid gap-1.5"><Label>Peso neto (kg)</Label><Input type="number" value={form.peso_neto} onChange={(e) => set("peso_neto", e.target.value)} /></div>
+            <div className="grid gap-1.5"><Label>Valor FOB total</Label><Input type="number" value={form.total_fob} onChange={(e) => set("total_fob", e.target.value)} /></div>
+            <div className="grid gap-1.5"><Label>Seguro</Label><Input type="number" value={form.seguro} onChange={(e) => set("seguro", e.target.value)} /></div>
+            <div className="grid gap-1.5"><Label>Flete</Label><Input type="number" value={form.flete} onChange={(e) => set("flete", e.target.value)} /></div>
+            <div className="grid gap-1.5"><Label>Otros gastos</Label><Input type="number" value={form.otros} onChange={(e) => set("otros", e.target.value)} /></div>
             <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
               <Label>Descripción de mercancía</Label>
               <Textarea rows={4} value={form.descripcion_mercancia} onChange={(e) => set("descripcion_mercancia", e.target.value)} />

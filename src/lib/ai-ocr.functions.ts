@@ -31,6 +31,10 @@ export type OcrExtraction = {
   factura_comercial: string | null;
   descripcion_mercancia: string | null;
   peso_neto_kg: number | null;
+  fob_total: number | null;
+  seguro: number | null;
+  flete: number | null;
+  otros_gastos: number | null;
 };
 
 export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
@@ -52,6 +56,7 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
       "factura_comercial (el número de factura comercial); descripcion_mercancia (un resumen breve de las líneas de producto de la factura); " +
       "peso_neto_kg (el peso neto si aparece junto al peso bruto en el BL — usa null si no aparece). " +
       "Para todos estos: si el dato no aparece claramente en el documento, usa null en vez de inventar o asumir un valor. " +
+      "Agrega también: fob_total (el valor FOB total de la factura, suma de todas las líneas si no hay un total explícito), seguro, flete, otros_gastos — estos últimos 3 solo si aparecen explícitamente desglosados en la factura (no los calcules ni los asumas); usa null si no aparecen. " +
       "Usa null cuando el dato no aparezca. Las fechas en formato YYYY-MM-DD si es posible. 'productos' como resumen breve (máx 300 caracteres).";
 
 
@@ -72,6 +77,8 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
         },
       ],
     });
+
+    const num = (v: unknown) => (v != null && v !== "" && !isNaN(Number(v)) ? Number(v) : null);
 
     let parsed: Partial<OcrExtraction> = {};
     try {
@@ -113,5 +120,9 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
       descripcion_mercancia: parsed.descripcion_mercancia ?? null,
       peso_neto_kg:
         parsed.peso_neto_kg != null && !isNaN(Number(parsed.peso_neto_kg)) ? Number(parsed.peso_neto_kg) : null,
+      fob_total: num(parsed.fob_total),
+      seguro: num(parsed.seguro),
+      flete: num(parsed.flete),
+      otros_gastos: num(parsed.otros_gastos),
     };
   });
