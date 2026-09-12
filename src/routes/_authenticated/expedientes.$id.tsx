@@ -1503,8 +1503,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               <div className="md:col-span-2 lg:col-span-3 grid gap-4 pt-2 border-t">
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-2">Valores CIF</div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                  {isNuevo ? (
-                    renderMoney("Total FOB", "total_fob", "Podrás detallar la mercancía por ítem después de crear el Expediente.")
+                  {isNuevo && !productosNuevos.length ? (
+                    renderMoney("Total FOB", "total_fob", "Se calcula automáticamente al agregar productos al Detalle de Mercancía.")
                   ) : (
                   <div className="grid gap-1.5">
                     <Label className="flex items-center gap-1.5">
@@ -1516,8 +1516,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
                     </div>
                   </div>
                   )}
-                  {renderMoney("Seguro", "seguro", "Por defecto 2% del FOB (valor de referencia). Edítalo si tienes el monto real de la póliza.")}
-                  {renderMoney("Flete", "flete")}
+                  {renderMoney("Seguro", "seguro", "Por defecto 2% del FOB (valor de referencia). Edítalo si tienes el monto real de la póliza.", true)}
+                  {renderMoney("Flete", "flete", undefined, true)}
                   {renderMoney("Otros", "otros")}
 
                 </div>
