@@ -2942,6 +2942,8 @@ function MercanciaItemsBlock({
   paisOrigenCodigo,
   servicioAduaneroUsd = 0,
   disabled = false,
+  localItems,
+  onLocalItemsChange,
 }: {
   expedienteId: string;
   seguro: number;
@@ -2953,12 +2955,19 @@ function MercanciaItemsBlock({
   paisOrigenCodigo?: string;
   servicioAduaneroUsd?: number;
   disabled?: boolean;
+  /** Modo creación: líneas en memoria (aún sin Expediente en la base). */
+  localItems?: any[];
+  onLocalItemsChange?: (items: any[]) => void;
 }) {
   const qc = useQueryClient();
-  const { data: items } = useQuery({
+  const local = !!onLocalItemsChange;
+  const { data: itemsDb } = useQuery({
     queryKey: ["mercancia-items", expedienteId],
+    enabled: !local,
     queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", expedienteId).is("deleted_at", null).order("item_no")).data ?? [],
   });
+  const items: any[] = local ? (localItems ?? []) : (itemsDb ?? []);
+  const renumerar = (arr: any[]) => arr.map((it, i) => ({ ...it, item_no: i + 1 }));
 
   const codigos = useMemo(() => Array.from(new Set(((items ?? []) as any[]).map((it) => (it.codigo_arancelario || "").trim()).filter(Boolean))), [items]);
   const { data: tasas } = useQuery({
