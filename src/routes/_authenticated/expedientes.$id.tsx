@@ -3074,6 +3074,13 @@ function MercanciaItemsBlock({
         pais_origen_codigo: f.pais_origen_codigo?.trim() || null,
       };
 
+      if (local) {
+        const next = editingId
+          ? items.map((it) => (it.id === editingId ? { ...it, ...payload } : it))
+          : [...items, { ...payload, id: crypto.randomUUID() }];
+        onLocalItemsChange!(renumerar(next));
+        return;
+      }
       if (editingId) {
         const { error } = await supabase.from("mercancia_items").update(payload).eq("id", editingId);
         if (error) throw error;
@@ -3084,17 +3091,21 @@ function MercanciaItemsBlock({
       }
       await autoLearnTasa(codigo, payload.pct_gravamen, payload.aplica_isc, payload.pct_isc, payload.pct_itbis ?? null);
     },
-    onSuccess: () => { toast.success(editingId ? "Ítem actualizado" : "Ítem agregado"); setOpen(false); setEditingId(null); setF(emptyForm); setValorUnitario(""); invalidate(); },
+    onSuccess: () => { toast.success(editingId ? "Ítem actualizado" : "Ítem agregado"); setOpen(false); setEditingId(null); setF(emptyForm); setValorUnitario(""); if (!local) invalidate(); },
     onError: (e: any) => toast.error(e.message),
   });
 
   const eliminar = useMutation({
     mutationFn: async (id: string) => {
+      if (local) {
+        onLocalItemsChange!(renumerar(items.filter((it) => it.id !== id)));
+        return;
+      }
       const { data: userRes } = await supabase.auth.getUser();
       const { error } = await supabase.from("mercancia_items").update({ deleted_at: new Date().toISOString(), deleted_by: userRes.user?.id ?? null }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Ítem movido a papelera"); invalidate(); },
+    onSuccess: () => { toast.success(local ? "Ítem eliminado" : "Ítem movido a papelera"); if (!local) invalidate(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -3102,6 +3113,10 @@ function MercanciaItemsBlock({
     mutationFn: async (it: any) => {
       const nextNo = ((items ?? []).reduce((m: number, itm: any) => Math.max(m, itm.item_no || 0), 0)) + 1;
       const { deleted_at, deleted_by, created_at, updated_at, id, item_no, expediente_id, ...resto } = it;
+      if (local) {
+        onLocalItemsChange!(renumerar([...items, { ...resto, id: crypto.randomUUID() }]));
+        return;
+      }
       const { error } = await supabase.from("mercancia_items").insert({
         ...resto,
         expediente_id: expedienteId,
@@ -3109,7 +3124,7 @@ function MercanciaItemsBlock({
       });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Línea duplicada"); invalidate(); },
+    onSuccess: () => { toast.success("Línea duplicada"); if (!local) invalidate(); },
     onError: (e: any) => toast.error(e.message),
   });
 
