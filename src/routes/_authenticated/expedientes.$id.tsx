@@ -1181,9 +1181,9 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
 
 
       <Section title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
-        <div className="grid gap-1.5">
+        <div className="grid gap-1.5" id="req-suplidor">
           <div className="flex items-center justify-between gap-2">
-            <Label>Exportador / Suplidor</Label>
+            <Label><ReqMark />Exportador / Suplidor</Label>
             {editable && (
               <TerceroExtranjeroPicker
                 onSelect={(t) => setForm((f) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid }))}
