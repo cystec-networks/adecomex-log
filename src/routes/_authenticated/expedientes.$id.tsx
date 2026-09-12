@@ -235,6 +235,9 @@ async function resolverContraCatalogo(
   return data ? { nombre: data[campoNombre], codigo: data.codigo } : { nombre: valorTexto, codigo: null };
 }
 
+const normalizarCliente = (s: string) =>
+  s.toLowerCase().replace(/[.,]/g, "").replace(/\bs\.?r\.?l\.?\b/g, "srl").replace(/\s+/g, " ").trim();
+
 export type OcrAplicado = {
   seq: number;
   campos: Record<string, any>;
