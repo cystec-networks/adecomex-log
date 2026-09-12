@@ -23,6 +23,14 @@ export type OcrExtraction = {
   peso_bruto_kg: number | null;
   puerto_arribo: string | null;
   contenedores: OcrContenedor[] | null;
+  medio_transporte: "maritimo" | "aereo" | null;
+  puerto_salida: string | null;
+  pais_origen: string | null;
+  pais_procedencia: string | null;
+  incoterm: string | null;
+  factura_comercial: string | null;
+  descripcion_mercancia: string | null;
+  peso_neto_kg: number | null;
 };
 
 export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
