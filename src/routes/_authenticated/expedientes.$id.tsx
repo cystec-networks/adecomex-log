@@ -444,8 +444,8 @@ function DetalleExpediente() {
                           {expData.clientes.nombre}
                         </span>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 border-none bg-transparent shadow-none" side="bottom" align="start">
-                        <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-0.5 max-w-sm">
+                      <PopoverContent className="w-auto p-0 border-none bg-transparent shadow-none z-50" side="bottom" align="start" sideOffset={8}>
+                        <div className="rounded-md border bg-background shadow-lg px-3 py-2 text-xs space-y-0.5 max-w-sm">
                           <div><span className="text-muted-foreground">RNC:</span> {expData.clientes.rnc ?? "—"}</div>
                           <div><span className="text-muted-foreground">Contacto:</span> {expData.clientes.contacto ?? "—"}</div>
                           <div><span className="text-muted-foreground">Email:</span> {(expData.clientes as any).email ?? "—"}</div>
@@ -613,6 +613,7 @@ function DetalleExpediente() {
       <div className="px-6">
         <TabsContent value="info">
           <TabInfo
+            id={id}
             exp={expData}
             modoEdicion={modoEdicion}
             setModoEdicion={setModoEdicion}
@@ -694,66 +695,67 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
 }
 
 
-function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null }: { exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null }) {
+function construirFormInicial(data: any, nuevo: boolean) {
+  const d = nuevo ? {} : (data || {});
+  return {
+    numero: d.numero ?? "",
+    cliente_id: d.cliente_id ?? "",
+    bl_awb: d.bl_awb ?? "",
+    sla_dias: d.sla_dias ?? 15,
+    fecha_compromiso: d.fecha_compromiso ?? "",
+    fecha_cargado: d.fecha_cargado ?? "",
+    medio_transporte: d.medio_transporte ?? "",
+    naviera: d.naviera ?? "",
+    suplidor: d.suplidor ?? "",
+    suplidor_rnc: d.suplidor_rnc ?? "",
+    pais_origen: d.pais_origen ?? "",
+    factura_comercial: d.factura_comercial ?? "",
+    incoterm: d.incoterm ?? "",
+    puerto_salida: d.puerto_salida ?? "",
+    puerto_salida_codigo: d.puerto_salida_codigo ?? "",
+    puerto_arribo: d.puerto_arribo ?? "",
+    numero_dua: d.numero_dua ?? "",
+    numero_vuce: d.numero_vuce ?? "",
+    numero_igra: d.numero_igra ?? "",
+    descripcion_mercancia: d.descripcion_mercancia ?? "",
+    peso_neto: d.peso_neto ?? "",
+    peso_bruto: d.peso_bruto ?? "",
+    numeros_contenedores: d.numeros_contenedores ?? "",
+    preferencia_comercial: d.preferencia_comercial ?? "",
+    numero_certificado_origen: d.numero_certificado_origen ?? "",
+    rectificacion_tecnica: !!d.rectificacion_tecnica,
+    numero_tramite_rectificacion: d.numero_tramite_rectificacion ?? "",
+    canal_riesgo: d.canal_riesgo ?? "",
+    total_fob: d.total_fob ?? "",
+    seguro: d.seguro ?? "",
+    flete: d.flete ?? "",
+    otros: d.otros ?? "",
+    regimen_aduanero: d.regimen_aduanero ?? "",
+    acuerdo_comercial: d.acuerdo_comercial ?? "",
+    observaciones: d.observaciones ?? "",
+    pais_origen_codigo: d.pais_origen_codigo ?? "",
+    pais_procedencia: d.pais_procedencia ?? "",
+    pais_procedencia_codigo: d.pais_procedencia_codigo ?? "",
+    puerto_arribo_codigo: d.puerto_arribo_codigo ?? "",
+    area_aduanera: d.area_aduanera ?? "",
+    area_aduanera_codigo: d.area_aduanera_codigo ?? "",
+    liq_siga_numero: d.liq_siga_numero ?? "",
+    liq_siga_estado: d.liq_siga_estado ?? "",
+    liq_oficial_total: d.liq_oficial_total ?? "",
+    tipo_despacho_aduanero: d.tipo_despacho_aduanero ?? "",
+    cantidad_despacho: d.cantidad_despacho ?? "",
+    tipo_operacion: d.tipo_operacion ?? "",
+    tipo_carga: d.tipo_carga ?? "",
+    contacto_solicitud: d.contacto_solicitud ?? "",
+  };
+}
+
+function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null }) {
   const qc = useQueryClient();
   const nav = useNavigate();
   const editable = (canEdit && modoEdicion) || isNuevo;
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
-  const [form, setForm] = useState({
-
-    numero: exp.numero ?? "",
-    cliente_id: exp.cliente_id ?? "",
-    bl_awb: exp.bl_awb ?? "",
-    sla_dias: exp.sla_dias ?? 15,
-    fecha_compromiso: exp.fecha_compromiso ?? "",
-    fecha_cargado: exp.fecha_cargado ?? "",
-    medio_transporte: exp.medio_transporte ?? "",
-    naviera: exp.naviera ?? "",
-    suplidor: exp.suplidor ?? "",
-    suplidor_rnc: exp.suplidor_rnc ?? "",
-    pais_origen: exp.pais_origen ?? "",
-    factura_comercial: exp.factura_comercial ?? "",
-    incoterm: exp.incoterm ?? "",
-    puerto_salida: exp.puerto_salida ?? "",
-    puerto_salida_codigo: exp.puerto_salida_codigo ?? "",
-
-    puerto_arribo: exp.puerto_arribo ?? "",
-    numero_dua: exp.numero_dua ?? "",
-    numero_vuce: exp.numero_vuce ?? "",
-    numero_igra: exp.numero_igra ?? "",
-    descripcion_mercancia: exp.descripcion_mercancia ?? "",
-    peso_neto: exp.peso_neto ?? "",
-    peso_bruto: exp.peso_bruto ?? "",
-    numeros_contenedores: exp.numeros_contenedores ?? "",
-    preferencia_comercial: exp.preferencia_comercial ?? "",
-    numero_certificado_origen: exp.numero_certificado_origen ?? "",
-    rectificacion_tecnica: !!exp.rectificacion_tecnica,
-    numero_tramite_rectificacion: exp.numero_tramite_rectificacion ?? "",
-    canal_riesgo: exp.canal_riesgo ?? "",
-    total_fob: exp.total_fob ?? "",
-    seguro: exp.seguro ?? "",
-    flete: exp.flete ?? "",
-    otros: exp.otros ?? "",
-    regimen_aduanero: exp.regimen_aduanero ?? "",
-    acuerdo_comercial: exp.acuerdo_comercial ?? "",
-    observaciones: exp.observaciones ?? "",
-    pais_origen_codigo: exp.pais_origen_codigo ?? "",
-    pais_procedencia: exp.pais_procedencia ?? "",
-    pais_procedencia_codigo: exp.pais_procedencia_codigo ?? "",
-    puerto_arribo_codigo: exp.puerto_arribo_codigo ?? "",
-
-    area_aduanera: exp.area_aduanera ?? "",
-    area_aduanera_codigo: exp.area_aduanera_codigo ?? "",
-    liq_siga_numero: exp.liq_siga_numero ?? "",
-    liq_siga_estado: exp.liq_siga_estado ?? "",
-    liq_oficial_total: exp.liq_oficial_total ?? "",
-    tipo_despacho_aduanero: exp.tipo_despacho_aduanero ?? "",
-    cantidad_despacho: exp.cantidad_despacho ?? "",
-
-    tipo_operacion: exp.tipo_operacion ?? "",
-    tipo_carga: exp.tipo_carga ?? "",
-    contacto_solicitud: exp.contacto_solicitud ?? "",
-  });
+  const [form, setForm] = useState(() => construirFormInicial(isNuevo ? null : exp, isNuevo));
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
   const servicioAd = useServicioAduaneroExpediente(
     form.tipo_despacho_aduanero,
@@ -771,9 +773,26 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
   const ocrPuesto = useRef<Record<string, any>>({});
   const ultimoOcrSeq = useRef(0);
+  const lastResetId = useRef<string | null>(null);
   /** Modo creación: líneas de mercancía en memoria hasta que exista el Expediente. */
   const [productosNuevos, setProductosNuevos] = useState<any[]>([]);
   const [camposFaltantes, setCamposFaltantes] = useState<Set<string>>(new Set());
+  const [contenedores, setContenedores] = useState<Array<{ numero: string; sello1: string; sello2: string; tipo: string }>>([]);
+
+  useEffect(() => {
+    if (!isNuevo && !exp) return;
+    if (lastResetId.current === id) return;
+    lastResetId.current = id;
+    setForm(construirFormInicial(isNuevo ? null : exp, isNuevo));
+    setCamposFaltantes(new Set());
+    setProductosNuevos([]);
+    setClienteExtraidoSinMatch(null);
+    setClienteOcr(null);
+    ocrPuesto.current = {};
+    ultimoOcrSeq.current = 0;
+    setContenedores([]);
+  }, [id, isNuevo, exp]);
+
   useEffect(() => {
     if (productosNuevos.length > 0) limpiarFaltante("req-mercancia");
   }, [productosNuevos]);
@@ -874,7 +893,6 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
     queryFn: async () =>
       (await supabase.from("expediente_contenedores").select("*").eq("expediente_id", exp.id).order("item_no")).data ?? [],
   });
-  const [contenedores, setContenedores] = useState<Array<{ numero: string; sello1: string; sello2: string; tipo: string }>>([]);
   useEffect(() => {
     if (!contenedoresDb) return;
     setContenedores(
