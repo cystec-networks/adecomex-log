@@ -23,7 +23,11 @@ function NuevoExpediente() {
   const qc = useQueryClient();
   const extractFn = useServerFn(extractSolicitudFromDocument);
 
-  const [file, setFile] = useState<File | null>(null);
+  const [blFile, setBlFile] = useState<File | null>(null);
+  const [facFile, setFacFile] = useState<File | null>(null);
+  const blRes = useRef<OcrExtraction | null>(null);
+  const facRes = useRef<OcrExtraction | null>(null);
+  const applied = useRef<Record<string, any>>({});
   const [contenedores, setContenedores] = useState<OcrExtraction["contenedores"]>(null);
 
   const { data: clientes } = useQuery({
