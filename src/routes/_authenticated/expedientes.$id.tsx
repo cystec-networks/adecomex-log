@@ -695,7 +695,62 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
 }
 
 
-function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null }: { exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null }) {
+function construirFormInicial(data: any, nuevo: boolean) {
+  const d = nuevo ? {} : (data || {});
+  return {
+    numero: d.numero ?? "",
+    cliente_id: d.cliente_id ?? "",
+    bl_awb: d.bl_awb ?? "",
+    sla_dias: d.sla_dias ?? 15,
+    fecha_compromiso: d.fecha_compromiso ?? "",
+    fecha_cargado: d.fecha_cargado ?? "",
+    medio_transporte: d.medio_transporte ?? "",
+    naviera: d.naviera ?? "",
+    suplidor: d.suplidor ?? "",
+    suplidor_rnc: d.suplidor_rnc ?? "",
+    pais_origen: d.pais_origen ?? "",
+    factura_comercial: d.factura_comercial ?? "",
+    incoterm: d.incoterm ?? "",
+    puerto_salida: d.puerto_salida ?? "",
+    puerto_salida_codigo: d.puerto_salida_codigo ?? "",
+    puerto_arribo: d.puerto_arribo ?? "",
+    numero_dua: d.numero_dua ?? "",
+    numero_vuce: d.numero_vuce ?? "",
+    numero_igra: d.numero_igra ?? "",
+    descripcion_mercancia: d.descripcion_mercancia ?? "",
+    peso_neto: d.peso_neto ?? "",
+    peso_bruto: d.peso_bruto ?? "",
+    numeros_contenedores: d.numeros_contenedores ?? "",
+    preferencia_comercial: d.preferencia_comercial ?? "",
+    numero_certificado_origen: d.numero_certificado_origen ?? "",
+    rectificacion_tecnica: !!d.rectificacion_tecnica,
+    numero_tramite_rectificacion: d.numero_tramite_rectificacion ?? "",
+    canal_riesgo: d.canal_riesgo ?? "",
+    total_fob: d.total_fob ?? "",
+    seguro: d.seguro ?? "",
+    flete: d.flete ?? "",
+    otros: d.otros ?? "",
+    regimen_aduanero: d.regimen_aduanero ?? "",
+    acuerdo_comercial: d.acuerdo_comercial ?? "",
+    observaciones: d.observaciones ?? "",
+    pais_origen_codigo: d.pais_origen_codigo ?? "",
+    pais_procedencia: d.pais_procedencia ?? "",
+    pais_procedencia_codigo: d.pais_procedencia_codigo ?? "",
+    puerto_arribo_codigo: d.puerto_arribo_codigo ?? "",
+    area_aduanera: d.area_aduanera ?? "",
+    area_aduanera_codigo: d.area_aduanera_codigo ?? "",
+    liq_siga_numero: d.liq_siga_numero ?? "",
+    liq_siga_estado: d.liq_siga_estado ?? "",
+    liq_oficial_total: d.liq_oficial_total ?? "",
+    tipo_despacho_aduanero: d.tipo_despacho_aduanero ?? "",
+    cantidad_despacho: d.cantidad_despacho ?? "",
+    tipo_operacion: d.tipo_operacion ?? "",
+    tipo_carga: d.tipo_carga ?? "",
+    contacto_solicitud: d.contacto_solicitud ?? "",
+  };
+}
+
+function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null }) {
   const qc = useQueryClient();
   const nav = useNavigate();
   const editable = (canEdit && modoEdicion) || isNuevo;
