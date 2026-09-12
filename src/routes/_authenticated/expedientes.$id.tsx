@@ -1149,9 +1149,9 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
       <Section title="1. Información general" subtitle="Identificación y logística base del expediente">
         {isNuevo ? (
           <>
-            <div className="grid gap-1.5" id="req-cliente_id">
+            <div className={cn("grid gap-1.5", camposFaltantes.has("req-cliente_id") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-cliente_id">
               <Label><ReqMark />Cliente</Label>
-              <Select value={form.cliente_id || undefined} onValueChange={(v) => { set("cliente_id", v); if (v) setClienteExtraidoSinMatch(null); }}>
+              <Select value={form.cliente_id || undefined} onValueChange={(v) => { set("cliente_id", v); if (v) setClienteExtraidoSinMatch(null); limpiarFaltante("req-cliente_id"); }}>
                 <SelectTrigger><SelectValue placeholder="Selecciona cliente" /></SelectTrigger>
                 <SelectContent>
                   {(clientesLite ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}
