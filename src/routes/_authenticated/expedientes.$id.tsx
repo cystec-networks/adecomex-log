@@ -1191,16 +1191,16 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
 
 
       <Section title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
-        <div className="grid gap-1.5" id="req-suplidor">
+        <div className={cn("grid gap-1.5", camposFaltantes.has("req-suplidor") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-suplidor">
           <div className="flex items-center justify-between gap-2">
             <Label><ReqMark />Exportador / Suplidor</Label>
             {editable && (
               <TerceroExtranjeroPicker
-                onSelect={(t) => setForm((f) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid }))}
+                onSelect={(t) => { setForm((f) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid })); limpiarFaltante("req-suplidor"); }}
               />
             )}
           </div>
-          <Input value={form.suplidor} onChange={(e) => set("suplidor", e.target.value)} placeholder="Nombre del exportador/suplidor" disabled={!editable} />
+          <Input value={form.suplidor} onChange={(e) => { set("suplidor", e.target.value); limpiarFaltante("req-suplidor"); }} placeholder="Nombre del exportador/suplidor" disabled={!editable} />
         </div>
         <div className="grid gap-1.5">
           <Label>TID del exportador/suplidor</Label>
