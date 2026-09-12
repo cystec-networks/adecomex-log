@@ -1172,9 +1172,9 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               <Label>Tipo de operación</Label>
               <Input value={form.tipo_operacion} onChange={(e) => set("tipo_operacion", e.target.value)} />
             </div>
-            <div className="grid gap-1.5" id="req-tipo_carga">
+            <div className={cn("grid gap-1.5", camposFaltantes.has("req-tipo_carga") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-tipo_carga">
               <Label><ReqMark />Tipo de carga</Label>
-              <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />
+              <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => { set("tipo_carga", v); limpiarFaltante("req-tipo_carga"); }} placeholder="Escribe o selecciona…" />
             </div>
             <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sug.contacto_solicitud ?? []} />
           </>
