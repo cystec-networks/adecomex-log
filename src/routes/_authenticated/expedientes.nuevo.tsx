@@ -293,43 +293,9 @@ function NuevoExpediente() {
           </Button>
         </div>
 
-        <Card>
-          <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-accent" /> Subir documentos
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Opcional — PDF, JPG o PNG (máx 15MB cada uno). Puedes subir uno, los dos o ninguno. Los datos extraídos se pueden editar abajo.</p>
-          </CardHeader>
-          <CardContent className="pt-5 grid gap-5 md:grid-cols-2">
-            <div className="grid gap-2 rounded-md border p-4">
-              <Label className="text-sm font-medium">Subir BL / AWB</Label>
-              <Input type="file" accept="application/pdf,image/*" onChange={(e) => setBlFile(e.target.files?.[0] ?? null)} />
-              <Button className="justify-self-start" onClick={() => extractBl.mutate()} disabled={!blFile || extractBl.isPending}>
-                {extractBl.isPending
-                  ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Analizando…</>
-                  : <><FileUp className="h-4 w-4 mr-1" />Extraer datos del BL</>}
-              </Button>
-              {blRes.current && !extractBl.isPending ? (
-                <span className="text-xs text-emerald-700">BL procesado</span>
-              ) : null}
-            </div>
-            <div className="grid gap-2 rounded-md border p-4">
-              <Label className="text-sm font-medium">Subir Factura Comercial</Label>
-              <Input type="file" accept="application/pdf,image/*" onChange={(e) => setFacFile(e.target.files?.[0] ?? null)} />
-              <Button className="justify-self-start" onClick={() => extractFac.mutate()} disabled={!facFile || extractFac.isPending}>
-                {extractFac.isPending
-                  ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Analizando…</>
-                  : <><FileUp className="h-4 w-4 mr-1" />Extraer datos de la factura</>}
-              </Button>
-              {facRes.current && !extractFac.isPending ? (
-                <span className="text-xs text-emerald-700">Factura procesada</span>
-              ) : null}
-            </div>
-            {contenedores?.length ? (
-              <span className="text-xs text-muted-foreground md:col-span-2">{contenedores.length} contenedor(es) detectado(s)</span>
-            ) : null}
-          </CardContent>
-        </Card>
+        {contenedores?.length ? (
+          <p className="text-xs text-muted-foreground">{contenedores.length} contenedor(es) detectado(s)</p>
+        ) : null}
 
         <Card>
           <CardHeader className="pb-3 border-b">
