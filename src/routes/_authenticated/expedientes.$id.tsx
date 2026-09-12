@@ -745,7 +745,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
   const { data: clientesLite } = useQuery({
     queryKey: ["clientes-lite"],
     enabled: isNuevo,
-    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc").order("nombre")).data ?? [],
+    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc,contacto,email,telefono,direccion").order("nombre")).data ?? [],
   });
   const [clienteOcr, setClienteOcr] = useState<string | null>(null);
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
@@ -1160,11 +1160,19 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
                   {(clientesLite ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}
                 </SelectContent>
               </Select>
-              {form.cliente_id && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  RNC: {(clientesLite ?? []).find((c: any) => c.id === form.cliente_id)?.rnc ?? "—"}
-                </p>
-              )}
+              {form.cliente_id && (() => {
+                const c = (clientesLite ?? []).find((cl: any) => cl.id === form.cliente_id);
+                if (!c) return null;
+                return (
+                  <div className="mt-1.5 rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
+                    <div><span className="text-muted-foreground">RNC:</span> {c.rnc ?? "—"}</div>
+                    <div><span className="text-muted-foreground">Contacto:</span> {c.contacto ?? "—"}</div>
+                    <div><span className="text-muted-foreground">Email:</span> {c.email ?? "—"}</div>
+                    <div><span className="text-muted-foreground">Teléfono:</span> {c.telefono ?? "—"}</div>
+                    <div><span className="text-muted-foreground">Dirección:</span> {c.direccion ?? "—"}</div>
+                  </div>
+                );
+              })()}
               {clienteExtraidoSinMatch && (
                 <p className="text-xs text-amber-600 mt-1">
                   El documento indica "{clienteExtraidoSinMatch}" — no se encontró un cliente registrado con ese nombre, selecciónalo manualmente.
