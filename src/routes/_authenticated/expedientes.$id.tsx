@@ -437,7 +437,26 @@ function DetalleExpediente() {
                   {expData.solicitudes?.numero && <Badge variant="outline">← {expData.solicitudes.numero}</Badge>}
                 </h1>
                 <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
-                  <span>{expData.clientes?.nombre ?? "Sin cliente"}</span>
+                  {expData.clientes ? (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <span className="cursor-help underline decoration-dotted underline-offset-2">
+                          {expData.clientes.nombre}
+                        </span>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 border-none bg-transparent shadow-none" side="bottom" align="start">
+                        <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-0.5 max-w-sm">
+                          <div><span className="text-muted-foreground">RNC:</span> {expData.clientes.rnc ?? "—"}</div>
+                          <div><span className="text-muted-foreground">Contacto:</span> {expData.clientes.contacto ?? "—"}</div>
+                          <div><span className="text-muted-foreground">Email:</span> {(expData.clientes as any).email ?? "—"}</div>
+                          <div><span className="text-muted-foreground">Teléfono:</span> {expData.clientes.telefono ?? "—"}</div>
+                          <div><span className="text-muted-foreground">Dirección:</span> {(expData.clientes as any).direccion ?? "—"}</div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                    <span>Sin cliente</span>
+                  )}
                   {expData.clientes && (
                     <>
                       <WhatsAppButton
