@@ -953,21 +953,105 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
   });
 
 
+  // Creación de un Expediente nuevo (id === "nuevo").
+  const crear = useMutation({
+    mutationFn: async () => {
+      const payload: any = { ...form };
+      const contValidos = contenedores.filter((c) => c.numero.trim());
+      if (!payload.numero) delete payload.numero; // numeración automática
+      if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
+      if (!payload.fecha_cargado) payload.fecha_cargado = null;
+      if (!payload.cliente_id) payload.cliente_id = null;
+      const toNum = (v: any) => (v === "" || v == null ? null : Number(v));
+      payload.peso_neto = toNum(payload.peso_neto);
+      payload.peso_bruto = toNum(payload.peso_bruto);
+      payload.total_fob = toNum(payload.total_fob);
+      payload.seguro = toNum(payload.seguro);
+      payload.flete = toNum(payload.flete);
+      payload.otros = toNum(payload.otros);
+      payload.total_cif = (payload.total_fob ?? 0) + (payload.seguro ?? 0) + (payload.flete ?? 0) + (payload.otros ?? 0);
+      payload.liq_oficial_total = toNum(payload.liq_oficial_total);
+      payload.cantidad_despacho = toNum(payload.cantidad_despacho);
+      if (!payload.tipo_despacho_aduanero) payload.tipo_despacho_aduanero = null;
+      if (!payload.liq_siga_numero) payload.liq_siga_numero = null;
+      if (!payload.liq_siga_estado) payload.liq_siga_estado = null;
+      if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
+      if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
+      if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
 
-  const hasSolicitud = !!(exp.solicitud_id || exp.tipo_operacion || exp.tipo_carga || exp.contacto_solicitud);
+      if (payload.numero_vuce) {
+        const { data: conflicto } = await supabase
+          .from("expedientes")
+          .select("id, numero")
+          .eq("numero_vuce", payload.numero_vuce)
+          .maybeSingle();
+        if (conflicto) {
+          throw new Error(`El número de permiso "${payload.numero_vuce}" ya fue utilizado en el Expediente ${conflicto.numero}.`);
+        }
+      }
+
+      const { data, error } = await supabase.from("expedientes").insert(payload).select().single();
+      if (error) throw error;
+
+      if (contValidos.length) {
+        await supabase.from("expediente_contenedores").insert(
+          contValidos.map((c, i) => ({
+            expediente_id: data.id,
+            item_no: i + 1,
+            numero_contenedor: c.numero.trim(),
+            sello1: c.sello1.trim() || null,
+            sello2: c.sello2.trim() || null,
+            tipo_contenedor: c.tipo.trim() || null,
+          })),
+        );
+      }
+      await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: data.id, accion: "creado" });
+      return data;
+    },
+    onSuccess: (row: any) => {
+      qc.invalidateQueries({ queryKey: ["expedientes"] });
+      qc.invalidateQueries({ queryKey: ["expedientes-hist"] });
+      toast.success(`Expediente ${row.numero} creado`);
+      nav({ to: "/expedientes/$id", params: { id: row.id }, search: { nuevo: "1", solicitud: "" } });
+    },
+    onError: (e: any) => {
+      if (e?.code === "23505") {
+        toast.error("Ya existe un Expediente con ese mismo valor en un campo único — revisa los datos e intenta de nuevo.");
+      } else {
+        toast.error(e.message);
+      }
+    },
+  });
+
+  const hasSolicitud = !isNuevo && !!(exp.solicitud_id || exp.tipo_operacion || exp.tipo_carga || exp.contacto_solicitud);
+
+  const BotonesAccion = () => (
+    <div className="flex justify-end gap-2 sticky bottom-4">
+      {isNuevo ? (
+        <>
+          <Button size="lg" variant="outline" onClick={() => nav({ to: "/expedientes" })} className="shadow-lg">Cancelar</Button>
+          <Button size="lg" onClick={() => crear.mutate()} disabled={crear.isPending} className="shadow-lg">
+            <Check className="h-4 w-4 mr-1" />{crear.isPending ? "Creando…" : "Crear expediente"}
+          </Button>
+        </>
+      ) : (
+        <>
+          <Button size="lg" variant="outline" onClick={() => refrescarExpediente(qc, exp.id)} className="shadow-lg">
+            <RefreshCw className="h-4 w-4 mr-1" /> Refrescar
+          </Button>
+          {editable && (
+            <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
+              {save.isPending ? "Guardando…" : "Guardar cambios"}
+            </Button>
+          )}
+        </>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-5">
-      <div className="flex justify-end gap-2 sticky bottom-4">
-        <Button size="lg" variant="outline" onClick={() => refrescarExpediente(qc, exp.id)} className="shadow-lg">
-          <RefreshCw className="h-4 w-4 mr-1" /> Refrescar
-        </Button>
-        {editable && (
-          <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
-            {save.isPending ? "Guardando…" : "Guardar cambios"}
-          </Button>
-        )}
-      </div>
+      <BotonesAccion />
       {hasSolicitud && (
         <Card className="bg-muted/30 border-dashed">
           <CardHeader className="pb-3 border-b">
@@ -979,7 +1063,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
                 </Link>
               )}
             </CardTitle>
-            <p className="text-xs text-muted-foreground">Referencia conservada al momento de la conversión (solo lectura).</p>
+            <p className="text-xs text-muted-foreground">Referencia conservada al momento de la conversión. Tipo de operación, tipo de carga y contacto son editables con el botón "Editar".</p>
           </CardHeader>
           <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Field label="Tipo de operación" value={form.tipo_operacion} onChange={(v) => set("tipo_operacion", v)} disabled={!editable} />
@@ -988,14 +1072,36 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               : <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />}
             <ReadOnlyField label="Origen" value={exp.pais_origen} />
             <ReadOnlyField label="Incoterm" value={exp.incoterm} />
-            <ReadOnlyField label="Medio de transporte" value={exp.medio_transporte} />
             <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sug.contacto_solicitud ?? []} disabled={!editable} />
           </CardContent>
         </Card>
       )}
 
       <Section title="1. Información general" subtitle="Identificación y logística base del expediente">
-        <Field label="Número / ID" value={form.numero} onChange={(v) => set("numero", v)} disabled={!editable} />
+        {isNuevo ? (
+          <>
+            <div className="grid gap-1.5">
+              <Label>Cliente</Label>
+              <Select value={form.cliente_id || undefined} onValueChange={(v) => set("cliente_id", v)}>
+                <SelectTrigger><SelectValue placeholder="Selecciona cliente" /></SelectTrigger>
+                <SelectContent>
+                  {(clientesLite ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Tipo de operación</Label>
+              <Input value={form.tipo_operacion} onChange={(e) => set("tipo_operacion", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Tipo de carga</Label>
+              <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />
+            </div>
+            <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sug.contacto_solicitud ?? []} />
+          </>
+        ) : (
+          <Field label="Número / ID" value={form.numero} onChange={(v) => set("numero", v)} disabled={!editable} />
+        )}
         <Field label="BL / AWB / Guía" value={form.bl_awb} onChange={(v) => set("bl_awb", v)} disabled={!editable} />
         <AutoField label="Medio de transporte" value={form.medio_transporte} onChange={(v) => set("medio_transporte", v)} suggestion={sug.medio_transporte ?? []} disabled={!editable} />
         <AutoField label="Naviera" value={form.naviera} onChange={(v) => set("naviera", v)} suggestion={sug.naviera ?? []} disabled={!editable} />
