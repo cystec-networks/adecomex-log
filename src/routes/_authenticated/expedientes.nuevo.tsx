@@ -21,10 +21,7 @@ export const Route = createFileRoute("/_authenticated/expedientes/nuevo")({
 function NuevoExpediente() {
   const nav = useNavigate();
   const qc = useQueryClient();
-  const extractFn = useServerFn(extractSolicitudFromDocument);
-
-  const [blFile, setBlFile] = useState<File | null>(null);
-  const [facFile, setFacFile] = useState<File | null>(null);
+  const [clienteOcr, setClienteOcr] = useState<string | null>(null);
   const blRes = useRef<OcrExtraction | null>(null);
   const facRes = useRef<OcrExtraction | null>(null);
   const applied = useRef<Record<string, any>>({});
