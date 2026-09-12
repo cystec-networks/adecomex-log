@@ -827,6 +827,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
 
   const { data: contenedoresDb } = useQuery({
     queryKey: ["expediente-contenedores", exp.id],
+    enabled: !isNuevo,
     queryFn: async () =>
       (await supabase.from("expediente_contenedores").select("*").eq("expediente_id", exp.id).order("item_no")).data ?? [],
   });
