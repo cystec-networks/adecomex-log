@@ -380,11 +380,13 @@ function DetalleExpediente() {
 
   const { data: exp } = useQuery({
     queryKey: ["expediente", id],
+    enabled: !isNuevo,
     queryFn: async () => (await supabase.from("expedientes").select("*, clientes(*), solicitudes(numero)").eq("id", id).maybeSingle()).data,
   });
 
   const { data: hitosHeader } = useQuery({
     queryKey: ["expediente-hitos-header", id],
+    enabled: !isNuevo,
     queryFn: async () => (await supabase.from("expediente_hitos").select("estado").eq("expediente_id", id)).data ?? [],
   });
 
@@ -405,10 +407,12 @@ function DetalleExpediente() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  if (!exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
+  if (!isNuevo && !exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
+
+  const expData: any = isNuevo ? EXPEDIENTE_VACIO : exp;
 
   return (
-    <div className={cn("max-w-[1600px] mx-auto space-y-6", modoEdicion && (nuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
+    <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
       <Tabs defaultValue="info">
       <div className="sticky top-0 z-20 bg-background border-b pb-3 pt-2 px-6">
         <div className="space-y-3">
