@@ -613,6 +613,7 @@ function DetalleExpediente() {
       <div className="px-6">
         <TabsContent value="info">
           <TabInfo
+            id={id}
             exp={expData}
             modoEdicion={modoEdicion}
             setModoEdicion={setModoEdicion}
