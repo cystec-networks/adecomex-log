@@ -260,9 +260,11 @@ function NuevoExpediente() {
           <div className="flex-1 min-w-0">
             <h1 className="font-display text-2xl font-bold">Nuevo Expediente</h1>
             <p className="text-sm text-muted-foreground">
-              Sube un BL o factura comercial para autollenar los campos, o complétalos a mano. El número se genera automáticamente.
+              Completa los campos a mano, o escanea el BL y/o la factura comercial para autollenarlos. El número se genera automáticamente.
             </p>
           </div>
+          <EscanearBlButton onExtracted={onBlExtracted} />
+          <EscanearFacturaButton onExtracted={onFacturaExtracted} />
           <Button variant="outline" onClick={() => nav({ to: "/expedientes" })}>
             <X className="h-4 w-4 mr-1" />Cancelar
           </Button>
