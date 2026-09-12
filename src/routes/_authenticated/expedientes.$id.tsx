@@ -872,8 +872,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
   });
 
   const sumFob = useMemo(
-    () => (mercItems ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0),
-    [mercItems],
+    () => (isNuevo ? productosNuevos : (mercItems ?? [])).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0),
+    [mercItems, productosNuevos, isNuevo],
   );
 
   useEffect(() => {
