@@ -419,83 +419,102 @@ function DetalleExpediente() {
         <div className="flex items-center gap-3 flex-wrap">
           <Button variant="ghost" size="sm" asChild><Link to="/expedientes"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link></Button>
           <div className="flex-1 min-w-0">
-            <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
-              {exp.numero}
-              <Badge className="bg-primary/10 text-primary border-transparent">{ESTADO_LABEL[exp.estado ?? ""] ?? exp.estado?.replace("_"," ")}</Badge>
-              {exp.solicitudes?.numero && <Badge variant="outline">← {exp.solicitudes.numero}</Badge>}
-            </h1>
-            <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
-              <span>{exp.clientes?.nombre ?? "Sin cliente"}</span>
-              {exp.clientes && (
-                <>
-                  <WhatsAppButton
-                    phone={exp.clientes.telefono}
-                    clientName={exp.clientes.nombre}
-                    recordType="Expediente"
-                    recordNumber={exp.numero}
-                    variant="icon"
+            {isNuevo ? (
+              <>
+                <h1 className="font-display text-2xl font-bold">Nuevo Expediente</h1>
+                <p className="text-sm text-muted-foreground">
+                  Completa los campos a mano, o escanea el BL y/o la factura comercial para autollenarlos. El número se genera automáticamente.
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
+                  {expData.numero}
+                  <Badge className="bg-primary/10 text-primary border-transparent">{ESTADO_LABEL[expData.estado ?? ""] ?? expData.estado?.replace("_"," ")}</Badge>
+                  {expData.solicitudes?.numero && <Badge variant="outline">← {expData.solicitudes.numero}</Badge>}
+                </h1>
+                <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+                  <span>{expData.clientes?.nombre ?? "Sin cliente"}</span>
+                  {expData.clientes && (
+                    <>
+                      <WhatsAppButton
+                        phone={expData.clientes.telefono}
+                        clientName={expData.clientes.nombre}
+                        recordType="Expediente"
+                        recordNumber={expData.numero}
+                        variant="icon"
+                      />
+                      <EmailButton
+                        email={(expData.clientes as any).email}
+                        clientName={expData.clientes.nombre}
+                        recordType="Expediente"
+                        recordNumber={expData.numero}
+                        variant="icon"
+                      />
+                      <SearchEmailButton
+                        recordType="Expediente"
+                        recordNumber={expData.numero}
+                        variant="icon"
+                      />
+                    </>
+                  )}
+                  <RastrearEmbarqueButton
+                    containerNumber={expData.numeros_contenedores}
+                    blNumber={expData.bl_awb}
+                    expedienteNumber={expData.numero}
                   />
-                  <EmailButton
-                    email={(exp.clientes as any).email}
-                    clientName={exp.clientes.nombre}
-                    recordType="Expediente"
-                    recordNumber={exp.numero}
-                    variant="icon"
-                  />
-                  <SearchEmailButton
-                    recordType="Expediente"
-                    recordNumber={exp.numero}
-                    variant="icon"
-                  />
-                </>
-              )}
-              <RastrearEmbarqueButton
-                containerNumber={exp.numeros_contenedores}
-                blNumber={exp.bl_awb}
-                expedienteNumber={exp.numero}
-              />
-              <span>· BL/AWB: {exp.bl_awb ?? "—"}</span>
-            </p>
+                  <span>· BL/AWB: {expData.bl_awb ?? "—"}</span>
+                </p>
+              </>
+            )}
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
-                <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 p-1">
-              <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:text-sm [&_button:hover]:bg-accent">
-                <GenerarXmlSigaButton expedienteId={id} />
-                <GenerarXmlCertificadoOrigenButton expedienteId={id} />
-                <PreLiquidacionPdfButton exp={exp} />
-                <GenerarDocumentoButton exp={exp} />
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {isNuevo ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <EscanearBlButton onExtracted={(res) => { blRes.current = res; void aplicarCombinado(); toast.success("BL procesado — revisa y ajusta los campos"); }} />
+              <EscanearFacturaExpButton onExtracted={(res) => { facRes.current = res; void aplicarCombinado(); toast.success("Factura procesada — revisa y ajusta los campos"); }} />
+            </div>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
+                  <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 p-1">
+                <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:text-sm [&_button:hover]:bg-accent">
+                  <GenerarXmlSigaButton expedienteId={id} />
+                  <GenerarXmlCertificadoOrigenButton expedienteId={id} />
+                  <PreLiquidacionPdfButton exp={expData} />
+                  <GenerarDocumentoButton exp={expData} />
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
+        {!isNuevo && (
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">Estado:</Label>
-            <Select value={exp.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
+            <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
               <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {ESTADO_ORDEN.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
               </SelectContent>
             </Select>
-            {exp.estado && (
+            {expData.estado && (
               <span className="text-sm text-muted-foreground whitespace-nowrap">
                 {(() => {
                   const fecha = {
-                    digitar: exp.fecha_recibido,
-                    en_transito: exp.fecha_en_transito,
-                    presentar: exp.fecha_presentado,
-                    verificar: exp.fecha_verificado,
-                    despachado: exp.fecha_despachado,
-                    entregado: exp.fecha_entregado,
-                    facturar: exp.fecha_facturado,
-                  }[exp.estado];
+                    digitar: expData.fecha_recibido,
+                    en_transito: expData.fecha_en_transito,
+                    presentar: expData.fecha_presentado,
+                    verificar: expData.fecha_verificado,
+                    despachado: expData.fecha_despachado,
+                    entregado: expData.fecha_entregado,
+                    facturar: expData.fecha_facturado,
+                  }[expData.estado as string];
                   return fecha ? `· ${fmtLocalDate(fecha)}` : null;
                 })()}
               </span>
@@ -507,7 +526,7 @@ function DetalleExpediente() {
           </div>
 
           {(() => {
-            const a = alertaDeclaracionTardia(exp);
+            const a = alertaDeclaracionTardia(expData);
             if (!a) return null;
             const cls = a.tone === "danger"
               ? "border-destructive/40 bg-destructive/10 text-destructive"
@@ -527,6 +546,7 @@ function DetalleExpediente() {
             );
           })()}
         </div>
+        )}
       </div>
         <TabsList className="flex flex-wrap h-auto mt-3">
           {tabOrder.map((key) => {
@@ -536,7 +556,8 @@ function DetalleExpediente() {
               <TabsTrigger
                 key={key}
                 value={key}
-                draggable
+                disabled={isNuevo && key !== "info"}
+                draggable={!isNuevo}
                 onDragStart={(e) => {
                   dragTab.current = key;
                   e.dataTransfer.effectAllowed = "move";
@@ -556,34 +577,51 @@ function DetalleExpediente() {
 
                 }}
                 className="cursor-grab active:cursor-grabbing"
-                title="Arrastra para reordenar"
+                title={isNuevo && key !== "info" ? "Disponible después de crear el Expediente." : "Arrastra para reordenar"}
               >
                 {label}
               </TabsTrigger>
             );
           })}
         </TabsList>
+        {isNuevo && (
+          <p className="text-xs text-muted-foreground mt-1">Disponible después de crear el Expediente.</p>
+        )}
       </div>
       <div className="px-6">
-        <TabsContent value="info"><TabInfo exp={exp} modoEdicion={modoEdicion} setModoEdicion={setModoEdicion} canEdit={canEditExpediente} nuevo={!!nuevo} /></TabsContent>
+        <TabsContent value="info">
+          <TabInfo
+            exp={expData}
+            modoEdicion={modoEdicion}
+            setModoEdicion={setModoEdicion}
+            canEdit={canEditExpediente || isNuevo}
+            nuevo={!!nuevo}
+            isNuevo={isNuevo}
+            ocrAplicado={ocrAplicado}
+          />
+        </TabsContent>
+        {!isNuevo && (
+        <>
         <TabsContent value="checklist">
           <ChecklistHitos expedienteId={id} />
         </TabsContent>
 
         
-        <TabsContent value="liqfinal"><LiquidacionFinalSection exp={exp} /></TabsContent>
+        <TabsContent value="liqfinal"><LiquidacionFinalSection exp={expData} /></TabsContent>
         <TabsContent value="docs"><TabDocumentos expedienteId={id} /></TabsContent>
 
         <TabsContent value="permisos"><TabPermisosExp expedienteId={id} /></TabsContent>
         <TabsContent value="transportes"><TabTransportesExp expedienteId={id} /></TabsContent>
         <TabsContent value="recepcion"><TabRecepcion expedienteId={id} /></TabsContent>
         <TabsContent value="inc"><TabIncidencias expedienteId={id} /></TabsContent>
-        <TabsContent value="cost"><TabCostos expedienteId={id} exp={exp} /></TabsContent>
+        <TabsContent value="cost"><TabCostos expedienteId={id} exp={expData} /></TabsContent>
         <TabsContent value="costprod"><TabCostosProducto expedienteId={id} /></TabsContent>
         <TabsContent value="aud"><TabAuditoria expedienteId={id} /></TabsContent>
+        </>
+        )}
       </div>
       </Tabs>
-      {canEditExpediente && !modoEdicion && (
+      {!isNuevo && canEditExpediente && !modoEdicion && (
         <Button onClick={() => setModoEdicion(true)} className="fixed bottom-6 right-24 z-30 shadow-lg" size="lg">
           <Pencil className="h-4 w-4 mr-1" /> Editar
         </Button>
