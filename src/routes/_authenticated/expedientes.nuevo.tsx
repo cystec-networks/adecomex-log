@@ -195,15 +195,20 @@ function NuevoExpediente() {
       return next;
     });
 
-    if (res.cliente && clientes) {
-      const match = (clientes as any[]).find(
-        (c) =>
-          c.nombre.toLowerCase().includes(res.cliente!.toLowerCase()) ||
-          res.cliente!.toLowerCase().includes(c.nombre.toLowerCase()),
-      );
-      if (match) setForm((f) => (f.cliente_id ? f : { ...f, cliente_id: match.id }));
-    }
+    // el match se hace en un efecto, para no depender de que la lista de
+    // clientes ya haya terminado de cargar cuando el OCR devuelve resultados
+    if (res.cliente) setClienteOcr(res.cliente);
   };
+
+  useEffect(() => {
+    if (!clienteOcr || !clientes?.length) return;
+    const objetivo = clienteOcr.toLowerCase();
+    const match = (clientes as any[]).find(
+      (c) =>
+        c.nombre.toLowerCase().includes(objetivo) || objetivo.includes(c.nombre.toLowerCase()),
+    );
+    if (match) setForm((f) => (f.cliente_id ? f : { ...f, cliente_id: match.id }));
+  }, [clienteOcr, clientes]);
 
   const onBlExtracted = (res: OcrExtraction) => {
     blRes.current = res;
