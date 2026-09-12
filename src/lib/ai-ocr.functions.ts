@@ -46,6 +46,12 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
       "'contenedores' es un arreglo de objetos {numero, sello1, sello2, tipo} — busca una tabla tipo 'FURGONES' o 'CONTENEDORES' con columnas de número de contenedor/furgón, sello(s) y tipo de empaque/contenedor; si no hay tabla de contenedores en el documento, usa null. " +
       "'fecha_cargado' es la fecha de embarque/carga que normalmente aparece en el BL (Shipped on Board / Fecha de Embarque). 'eta' es la fecha ESTIMADA DE LLEGADA — úsala solo si el documento la indica explícitamente como tal (poco común en un BL); si no aparece claramente etiquetada como fecha de llegada, usa null en vez de adivinar con la fecha de embarque. " +
       "'naviera' es el nombre de la naviera/carrier (p. ej. MAERSK, MSC, CMA CGM). 'peso_bruto_kg' es el peso bruto total de la carga en kilogramos (número, sin unidades). " +
+      "Agrega estas claves: medio_transporte ('maritimo' si el documento es un Bill of Lading/BL, 'aereo' si es un Airway Bill/AWB — infiérelo del tipo de documento, no necesitas que lo diga explícitamente el texto); " +
+      "puerto_salida (el 'Port of Loading' indicado en el BL); pais_origen y pais_procedencia (del país del exportador/embarque); " +
+      "incoterm (el término de compra FOB, CIF, EXW, etc. si aparece en la factura — usa null si no aparece explícito, no lo adivines); " +
+      "factura_comercial (el número de factura comercial); descripcion_mercancia (un resumen breve de las líneas de producto de la factura); " +
+      "peso_neto_kg (el peso neto si aparece junto al peso bruto en el BL — usa null si no aparece). " +
+      "Para todos estos: si el dato no aparece claramente en el documento, usa null en vez de inventar o asumir un valor. " +
       "Usa null cuando el dato no aparezca. Las fechas en formato YYYY-MM-DD si es posible. 'productos' como resumen breve (máx 300 caracteres).";
 
 
