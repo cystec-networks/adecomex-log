@@ -1531,8 +1531,8 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
                       {fmt(cif)}
                     </div>
                   </div>
-                  <div className="grid gap-1.5 md:col-span-2">
-                    <Label>Régimen Aduanero</Label>
+                  <div className="grid gap-1.5 md:col-span-2" id="req-regimen_aduanero">
+                    <Label>{isNuevo && <ReqMark />}Régimen Aduanero</Label>
                     <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => set("regimen_aduanero", v)} disabled={!editable}>
                       <SelectTrigger><SelectValue placeholder="Selecciona régimen" /></SelectTrigger>
                       <SelectContent>
