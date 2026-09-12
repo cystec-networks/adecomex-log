@@ -755,61 +755,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const nav = useNavigate();
   const editable = (canEdit && modoEdicion) || isNuevo;
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
-  const [form, setForm] = useState({
-
-    numero: exp.numero ?? "",
-    cliente_id: exp.cliente_id ?? "",
-    bl_awb: exp.bl_awb ?? "",
-    sla_dias: exp.sla_dias ?? 15,
-    fecha_compromiso: exp.fecha_compromiso ?? "",
-    fecha_cargado: exp.fecha_cargado ?? "",
-    medio_transporte: exp.medio_transporte ?? "",
-    naviera: exp.naviera ?? "",
-    suplidor: exp.suplidor ?? "",
-    suplidor_rnc: exp.suplidor_rnc ?? "",
-    pais_origen: exp.pais_origen ?? "",
-    factura_comercial: exp.factura_comercial ?? "",
-    incoterm: exp.incoterm ?? "",
-    puerto_salida: exp.puerto_salida ?? "",
-    puerto_salida_codigo: exp.puerto_salida_codigo ?? "",
-
-    puerto_arribo: exp.puerto_arribo ?? "",
-    numero_dua: exp.numero_dua ?? "",
-    numero_vuce: exp.numero_vuce ?? "",
-    numero_igra: exp.numero_igra ?? "",
-    descripcion_mercancia: exp.descripcion_mercancia ?? "",
-    peso_neto: exp.peso_neto ?? "",
-    peso_bruto: exp.peso_bruto ?? "",
-    numeros_contenedores: exp.numeros_contenedores ?? "",
-    preferencia_comercial: exp.preferencia_comercial ?? "",
-    numero_certificado_origen: exp.numero_certificado_origen ?? "",
-    rectificacion_tecnica: !!exp.rectificacion_tecnica,
-    numero_tramite_rectificacion: exp.numero_tramite_rectificacion ?? "",
-    canal_riesgo: exp.canal_riesgo ?? "",
-    total_fob: exp.total_fob ?? "",
-    seguro: exp.seguro ?? "",
-    flete: exp.flete ?? "",
-    otros: exp.otros ?? "",
-    regimen_aduanero: exp.regimen_aduanero ?? "",
-    acuerdo_comercial: exp.acuerdo_comercial ?? "",
-    observaciones: exp.observaciones ?? "",
-    pais_origen_codigo: exp.pais_origen_codigo ?? "",
-    pais_procedencia: exp.pais_procedencia ?? "",
-    pais_procedencia_codigo: exp.pais_procedencia_codigo ?? "",
-    puerto_arribo_codigo: exp.puerto_arribo_codigo ?? "",
-
-    area_aduanera: exp.area_aduanera ?? "",
-    area_aduanera_codigo: exp.area_aduanera_codigo ?? "",
-    liq_siga_numero: exp.liq_siga_numero ?? "",
-    liq_siga_estado: exp.liq_siga_estado ?? "",
-    liq_oficial_total: exp.liq_oficial_total ?? "",
-    tipo_despacho_aduanero: exp.tipo_despacho_aduanero ?? "",
-    cantidad_despacho: exp.cantidad_despacho ?? "",
-
-    tipo_operacion: exp.tipo_operacion ?? "",
-    tipo_carga: exp.tipo_carga ?? "",
-    contacto_solicitud: exp.contacto_solicitud ?? "",
-  });
+  const [form, setForm] = useState(() => construirFormInicial(isNuevo ? null : exp, isNuevo));
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
   const servicioAd = useServicioAduaneroExpediente(
     form.tipo_despacho_aduanero,
