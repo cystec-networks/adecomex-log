@@ -773,6 +773,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
   const ocrPuesto = useRef<Record<string, any>>({});
   const ultimoOcrSeq = useRef(0);
+  const lastResetId = useRef<string | null>(null);
   /** Modo creación: líneas de mercancía en memoria hasta que exista el Expediente. */
   const [productosNuevos, setProductosNuevos] = useState<any[]>([]);
   const [camposFaltantes, setCamposFaltantes] = useState<Set<string>>(new Set());
@@ -780,6 +781,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
   useEffect(() => {
     if (!isNuevo && !exp) return;
+    if (lastResetId.current === id) return;
+    lastResetId.current = id;
     setForm(construirFormInicial(isNuevo ? null : exp, isNuevo));
     setCamposFaltantes(new Set());
     setProductosNuevos([]);
@@ -788,7 +791,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     ocrPuesto.current = {};
     ultimoOcrSeq.current = 0;
     setContenedores([]);
-  }, [id, isNuevo]);
+  }, [id, isNuevo, exp]);
 
   useEffect(() => {
     if (productosNuevos.length > 0) limpiarFaltante("req-mercancia");
