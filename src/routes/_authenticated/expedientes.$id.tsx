@@ -637,18 +637,18 @@ function ReqMark() {
   return <span className="text-destructive mr-0.5">*</span>;
 }
 
-function Field({ label, value, onChange, type = "text", className = "", disabled = false, req = false, fieldId }: { label: string; value: any; onChange: (v: string) => void; type?: string; className?: string; disabled?: boolean; req?: boolean; fieldId?: string }) {
+function Field({ label, value, onChange, type = "text", className = "", disabled = false, req = false, fieldId, highlight = false }: { label: string; value: any; onChange: (v: string) => void; type?: string; className?: string; disabled?: boolean; req?: boolean; fieldId?: string; highlight?: boolean }) {
   return (
-    <div className={`grid gap-1.5 ${className}`} id={fieldId}>
+    <div className={cn("grid gap-1.5", highlight && "ring-2 ring-destructive rounded-md p-2 -m-2", className)} id={fieldId}>
       <Label>{req && <ReqMark />}{label}</Label>
       <Input type={type} value={value ?? ""} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
     </div>
   );
 }
 
-function AutoField({ label, value, onChange, suggestion, className = "", disabled = false, req = false, fieldId }: { label: string; value: any; onChange: (v: string) => void; suggestion: string[]; className?: string; disabled?: boolean; req?: boolean; fieldId?: string }) {
+function AutoField({ label, value, onChange, suggestion, className = "", disabled = false, req = false, fieldId, highlight = false }: { label: string; value: any; onChange: (v: string) => void; suggestion: string[]; className?: string; disabled?: boolean; req?: boolean; fieldId?: string; highlight?: boolean }) {
   return (
-    <div className={`grid gap-1.5 ${className}`} id={fieldId}>
+    <div className={cn("grid gap-1.5", highlight && "ring-2 ring-destructive rounded-md p-2 -m-2", className)} id={fieldId}>
       <Label>{req && <ReqMark />}{label}</Label>
       <AutocompleteInput
         value={value ?? ""}
@@ -753,6 +753,10 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
   const ultimoOcrSeq = useRef(0);
   /** Modo creación: líneas de mercancía en memoria hasta que exista el Expediente. */
   const [productosNuevos, setProductosNuevos] = useState<any[]>([]);
+  const [camposFaltantes, setCamposFaltantes] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (productosNuevos.length > 0) limpiarFaltante("req-mercancia");
+  }, [productosNuevos]);
 
   useEffect(() => {
     if (!isNuevo || !ocrAplicado || ocrAplicado.seq === ultimoOcrSeq.current) return;
@@ -1070,17 +1074,26 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
     { id: "req-flete", ok: lleno(form.flete) },
     { id: "req-seguro", ok: lleno(form.seguro) },
   ];
+  const limpiarFaltante = (id: string) =>
+    setCamposFaltantes((prev) => {
+      if (!prev.has(id)) return prev;
+      const s = new Set(prev);
+      s.delete(id);
+      return s;
+    });
   const intentarCrear = () => {
-    const faltante = OBLIGATORIOS.find((o) => !o.ok);
-    if (faltante) {
+    const faltantes = OBLIGATORIOS.filter((o) => !o.ok);
+    if (faltantes.length > 0) {
+      setCamposFaltantes(new Set(faltantes.map((f) => f.id)));
       toast.error("Completa los campos obligatorios antes de crear el Expediente");
-      const el = typeof document !== "undefined" ? document.getElementById(faltante.id) : null;
+      const el = typeof document !== "undefined" ? document.getElementById(faltantes[0].id) : null;
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
         (el.querySelector("input, button, textarea") as HTMLElement | null)?.focus?.();
       }
       return;
     }
+    setCamposFaltantes(new Set());
     crear.mutate();
   };
 
@@ -1139,9 +1152,9 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
       <Section title="1. Información general" subtitle="Identificación y logística base del expediente">
         {isNuevo ? (
           <>
-            <div className="grid gap-1.5" id="req-cliente_id">
+            <div className={cn("grid gap-1.5", camposFaltantes.has("req-cliente_id") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-cliente_id">
               <Label><ReqMark />Cliente</Label>
-              <Select value={form.cliente_id || undefined} onValueChange={(v) => { set("cliente_id", v); if (v) setClienteExtraidoSinMatch(null); }}>
+              <Select value={form.cliente_id || undefined} onValueChange={(v) => { set("cliente_id", v); if (v) setClienteExtraidoSinMatch(null); limpiarFaltante("req-cliente_id"); }}>
                 <SelectTrigger><SelectValue placeholder="Selecciona cliente" /></SelectTrigger>
                 <SelectContent>
                   {(clientesLite ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}
@@ -1162,16 +1175,16 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               <Label>Tipo de operación</Label>
               <Input value={form.tipo_operacion} onChange={(e) => set("tipo_operacion", e.target.value)} />
             </div>
-            <div className="grid gap-1.5" id="req-tipo_carga">
+            <div className={cn("grid gap-1.5", camposFaltantes.has("req-tipo_carga") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-tipo_carga">
               <Label><ReqMark />Tipo de carga</Label>
-              <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />
+              <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => { set("tipo_carga", v); limpiarFaltante("req-tipo_carga"); }} placeholder="Escribe o selecciona…" />
             </div>
             <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sug.contacto_solicitud ?? []} />
           </>
         ) : (
           <Field label="Número / ID" value={form.numero} onChange={(v) => set("numero", v)} disabled={!editable} />
         )}
-        <Field label="BL / AWB / Guía" value={form.bl_awb} onChange={(v) => set("bl_awb", v)} disabled={!editable} req fieldId="req-bl_awb" />
+        <Field label="BL / AWB / Guía" value={form.bl_awb} onChange={(v) => { set("bl_awb", v); limpiarFaltante("req-bl_awb"); }} disabled={!editable} req fieldId="req-bl_awb" highlight={camposFaltantes.has("req-bl_awb")} />
         <AutoField label="Medio de transporte" value={form.medio_transporte} onChange={(v) => set("medio_transporte", v)} suggestion={sug.medio_transporte ?? []} disabled={!editable} />
         <AutoField label="Naviera" value={form.naviera} onChange={(v) => set("naviera", v)} suggestion={sug.naviera ?? []} disabled={!editable} />
         <Field label="SLA (días)" value={form.sla_dias} onChange={(v) => set("sla_dias", v)} type="number" disabled={!editable} />
@@ -1181,16 +1194,16 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
 
 
       <Section title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
-        <div className="grid gap-1.5" id="req-suplidor">
+        <div className={cn("grid gap-1.5", camposFaltantes.has("req-suplidor") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-suplidor">
           <div className="flex items-center justify-between gap-2">
             <Label><ReqMark />Exportador / Suplidor</Label>
             {editable && (
               <TerceroExtranjeroPicker
-                onSelect={(t) => setForm((f) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid }))}
+                onSelect={(t) => { setForm((f) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid })); limpiarFaltante("req-suplidor"); }}
               />
             )}
           </div>
-          <Input value={form.suplidor} onChange={(e) => set("suplidor", e.target.value)} placeholder="Nombre del exportador/suplidor" disabled={!editable} />
+          <Input value={form.suplidor} onChange={(e) => { set("suplidor", e.target.value); limpiarFaltante("req-suplidor"); }} placeholder="Nombre del exportador/suplidor" disabled={!editable} />
         </div>
         <div className="grid gap-1.5">
           <Label>TID del exportador/suplidor</Label>
@@ -1225,7 +1238,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
           )}
         </div>
 
-        <AutoField label="Factura comercial" value={form.factura_comercial} onChange={(v) => set("factura_comercial", v)} suggestion={sug.factura_comercial ?? []} disabled={!editable} req fieldId="req-factura_comercial" />
+        <AutoField label="Factura comercial" value={form.factura_comercial} onChange={(v) => { set("factura_comercial", v); limpiarFaltante("req-factura_comercial"); }} suggestion={sug.factura_comercial ?? []} disabled={!editable} req fieldId="req-factura_comercial" highlight={camposFaltantes.has("req-factura_comercial")} />
         <AutoField label="Incoterm" value={form.incoterm} onChange={(v) => set("incoterm", v)} suggestion={sug.incoterm ?? []} disabled={!editable} />
         <div className="grid gap-1.5">
           <Label>Puerto de salida</Label>
@@ -1253,13 +1266,13 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
           <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} />
           <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} />
           <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} disabled={!editable} />
-          <div className="grid gap-1.5" id="req-puerto_arribo">
+          <div className={cn("grid gap-1.5", camposFaltantes.has("req-puerto_arribo") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-puerto_arribo">
             <Label><ReqMark />Puerto de arribo</Label>
             <DgaCombobox
               table="dga_puertos"
               value={form.puerto_arribo}
               codigo={form.puerto_arribo_codigo}
-              onChange={(nombre, codigo) => setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo }))}
+              onChange={(nombre, codigo) => { setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo })); limpiarFaltante("req-puerto_arribo"); }}
               placeholder="Buscar puerto (catálogo DGA)"
               disabled={!editable}
             />
@@ -1267,13 +1280,13 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo para el XML.</span>
             )}
           </div>
-          <div className="grid gap-1.5" id="req-area_aduanera">
+          <div className={cn("grid gap-1.5", camposFaltantes.has("req-area_aduanera") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-area_aduanera">
             <Label><ReqMark />Área / Administración aduanera</Label>
             <DgaCombobox
               table="dga_areas"
               value={form.area_aduanera}
               codigo={form.area_aduanera_codigo}
-              onChange={(nombre, codigo) => setForm((f) => ({ ...f, area_aduanera: nombre, area_aduanera_codigo: codigo }))}
+              onChange={(nombre, codigo) => { setForm((f) => ({ ...f, area_aduanera: nombre, area_aduanera_codigo: codigo })); limpiarFaltante("req-area_aduanera"); }}
               placeholder="Buscar área (catálogo DGA)"
               disabled={!editable}
             />
@@ -1423,7 +1436,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               </SelectContent>
             </Select>
           </div>
-          <div className="md:col-span-2 lg:col-span-3" id="req-mercancia">
+          <div className={cn("md:col-span-2 lg:col-span-3", camposFaltantes.has("req-mercancia") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-mercancia">
             {isNuevo && (
               <Label className="mb-1.5 block"><ReqMark />Detalle de mercancía (al menos 1 producto)</Label>
             )}
@@ -1456,8 +1469,9 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
                 : rawStr === "" || isNaN(Number(rawStr))
                   ? ""
                   : `$${Number(rawStr).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              const reqId = req ? `req-${k}` : undefined;
               return (
-                <div className="grid gap-1.5" key={k} id={req ? `req-${k}` : undefined}>
+                <div className={cn("grid gap-1.5", reqId && camposFaltantes.has(reqId) && "ring-2 ring-destructive rounded-md p-2 -m-2")} key={k} id={reqId}>
                   <Label>{req && isNuevo && <ReqMark />}{label} (US$)</Label>
                   <Input
                     type="text"
@@ -1468,6 +1482,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
                       if (!editable) return;
                       const v = e.target.value.replace(/[$,\s]/g, "");
                       if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set(k, v);
+                      if (reqId) limpiarFaltante(reqId);
                     }}
                     onBlur={(e) => {
                       if (!editable) return;
@@ -1531,9 +1546,9 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
                       {fmt(cif)}
                     </div>
                   </div>
-                  <div className="grid gap-1.5 md:col-span-2" id="req-regimen_aduanero">
+                  <div className={cn("grid gap-1.5 md:col-span-2", camposFaltantes.has("req-regimen_aduanero") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-regimen_aduanero">
                     <Label>{isNuevo && <ReqMark />}Régimen Aduanero</Label>
-                    <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => set("regimen_aduanero", v)} disabled={!editable}>
+                    <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => { set("regimen_aduanero", v); limpiarFaltante("req-regimen_aduanero"); }} disabled={!editable}>
                       <SelectTrigger><SelectValue placeholder="Selecciona régimen" /></SelectTrigger>
                       <SelectContent>
                         {REGIMENES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
