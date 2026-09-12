@@ -204,7 +204,7 @@ function DetalleSolicitud() {
           </Button>
         ) : form.estado !== "convertida" ? (
           <Button variant="outline" asChild>
-            <Link to="/expedientes/nuevo" search={{ solicitud: id }}>
+            <Link to="/expedientes/$id" params={{ id: "nuevo" }} search={{ solicitud: id, nuevo: "" }}>
               <FolderPlus className="h-4 w-4 mr-1" />Convertir en Expediente
             </Link>
           </Button>
