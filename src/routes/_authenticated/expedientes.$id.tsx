@@ -1055,12 +1055,41 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
 
   const hasSolicitud = !isNuevo && !!(exp.solicitud_id || exp.tipo_operacion || exp.tipo_carga || exp.contacto_solicitud);
 
+  // Campos obligatorios para poder crear el Expediente.
+  const lleno = (v: any) => String(v ?? "").trim() !== "";
+  const OBLIGATORIOS: Array<{ id: string; ok: boolean }> = [
+    { id: "req-tipo_carga", ok: lleno(form.tipo_carga) },
+    { id: "req-cliente_id", ok: lleno(form.cliente_id) },
+    { id: "req-suplidor", ok: lleno(form.suplidor) },
+    { id: "req-bl_awb", ok: lleno(form.bl_awb) },
+    { id: "req-factura_comercial", ok: lleno(form.factura_comercial) },
+    { id: "req-puerto_arribo", ok: lleno(form.puerto_arribo) },
+    { id: "req-area_aduanera", ok: lleno(form.area_aduanera) },
+    { id: "req-regimen_aduanero", ok: lleno(form.regimen_aduanero) },
+    { id: "req-mercancia", ok: productosNuevos.length > 0 },
+    { id: "req-flete", ok: lleno(form.flete) },
+    { id: "req-seguro", ok: lleno(form.seguro) },
+  ];
+  const intentarCrear = () => {
+    const faltante = OBLIGATORIOS.find((o) => !o.ok);
+    if (faltante) {
+      toast.error("Completa los campos obligatorios antes de crear el Expediente");
+      const el = typeof document !== "undefined" ? document.getElementById(faltante.id) : null;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        (el.querySelector("input, button, textarea") as HTMLElement | null)?.focus?.();
+      }
+      return;
+    }
+    crear.mutate();
+  };
+
   const BotonesAccion = () => (
     <div className="flex justify-end gap-2 sticky bottom-4">
       {isNuevo ? (
         <>
           <Button size="lg" variant="outline" onClick={() => nav({ to: "/expedientes" })} className="shadow-lg">Cancelar</Button>
-          <Button size="lg" onClick={() => crear.mutate()} disabled={crear.isPending} className="shadow-lg">
+          <Button size="lg" onClick={intentarCrear} disabled={crear.isPending} className="shadow-lg">
             <Check className="h-4 w-4 mr-1" />{crear.isPending ? "Creando…" : "Crear expediente"}
           </Button>
         </>
