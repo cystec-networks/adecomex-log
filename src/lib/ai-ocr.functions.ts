@@ -42,7 +42,7 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
     const system =
       "Eres un asistente de operaciones aduanales en República Dominicana. " +
       "Extraes datos de documentos de importación (BL, factura comercial, packing list, AWB). " +
-      "Devuelve ÚNICAMENTE un objeto JSON con las claves exactas: cliente, bl, suplidor, numero_documento, productos, fecha_cargado, eta, naviera, peso_bruto_kg, puerto_arribo, contenedores. " +
+      "Devuelve ÚNICAMENTE un objeto JSON con las claves exactas: cliente, bl, suplidor, numero_documento, productos, fecha_cargado, eta, naviera, peso_bruto_kg, puerto_arribo, contenedores, medio_transporte, puerto_salida, pais_origen, pais_procedencia, incoterm, factura_comercial, descripcion_mercancia, peso_neto_kg. " +
       "'contenedores' es un arreglo de objetos {numero, sello1, sello2, tipo} — busca una tabla tipo 'FURGONES' o 'CONTENEDORES' con columnas de número de contenedor/furgón, sello(s) y tipo de empaque/contenedor; si no hay tabla de contenedores en el documento, usa null. " +
       "'fecha_cargado' es la fecha de embarque/carga que normalmente aparece en el BL (Shipped on Board / Fecha de Embarque). 'eta' es la fecha ESTIMADA DE LLEGADA — úsala solo si el documento la indica explícitamente como tal (poco común en un BL); si no aparece claramente etiquetada como fecha de llegada, usa null en vez de adivinar con la fecha de embarque. " +
       "'naviera' es el nombre de la naviera/carrier (p. ej. MAERSK, MSC, CMA CGM). 'peso_bruto_kg' es el peso bruto total de la carga en kilogramos (número, sin unidades). " +
@@ -103,5 +103,15 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
               tipo: c.tipo ? String(c.tipo).trim() : null,
             }))
         : null,
+      medio_transporte:
+        parsed.medio_transporte === "maritimo" || parsed.medio_transporte === "aereo" ? parsed.medio_transporte : null,
+      puerto_salida: parsed.puerto_salida ?? null,
+      pais_origen: parsed.pais_origen ?? null,
+      pais_procedencia: parsed.pais_procedencia ?? null,
+      incoterm: parsed.incoterm ?? null,
+      factura_comercial: parsed.factura_comercial ?? null,
+      descripcion_mercancia: parsed.descripcion_mercancia ?? null,
+      peso_neto_kg:
+        parsed.peso_neto_kg != null && !isNaN(Number(parsed.peso_neto_kg)) ? Number(parsed.peso_neto_kg) : null,
     };
   });
