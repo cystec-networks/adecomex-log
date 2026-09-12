@@ -438,7 +438,7 @@ function Expedientes() {
           <Link to="/expedientes" search={{ tipo: "facturados", estado: estadoParam, eta: etaParam }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
         </div>
         <Button size="sm" asChild>
-          <Link to="/expedientes/nuevo"><Plus className="h-4 w-4 mr-1" />Nuevo Expediente</Link>
+          <Link to="/expedientes/$id" params={{ id: "nuevo" }} search={{ nuevo: "", solicitud: "" }}><Plus className="h-4 w-4 mr-1" />Nuevo Expediente</Link>
         </Button>
       </div>
 
