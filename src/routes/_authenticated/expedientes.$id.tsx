@@ -734,6 +734,53 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
     exp.tasa_cambio_usada,
   );
 
+  // ---- Modo creación: clientes, OCR y contenedores extraídos ----
+  const { data: clientesLite } = useQuery({
+    queryKey: ["clientes-lite"],
+    enabled: isNuevo,
+    queryFn: async () => (await supabase.from("clientes").select("id,nombre").order("nombre")).data ?? [],
+  });
+  const [clienteOcr, setClienteOcr] = useState<string | null>(null);
+  const ocrPuesto = useRef<Record<string, any>>({});
+  const ultimoOcrSeq = useRef(0);
+
+  useEffect(() => {
+    if (!isNuevo || !ocrAplicado || ocrAplicado.seq === ultimoOcrSeq.current) return;
+    ultimoOcrSeq.current = ocrAplicado.seq;
+    if (ocrAplicado.contenedores?.length) {
+      setContenedores(
+        ocrAplicado.contenedores.map((c) => ({
+          numero: c.numero ?? "",
+          sello1: c.sello1 ?? "",
+          sello2: c.sello2 ?? "",
+          tipo: c.tipo ?? "",
+        })),
+      );
+    }
+    setForm((f) => {
+      const next: any = { ...f };
+      for (const [k, v] of Object.entries(ocrAplicado.campos)) {
+        if (v === null || v === undefined || v === "") continue;
+        const actual = (f as any)[k];
+        if (actual === "" || actual === null || actual === undefined || actual === ocrPuesto.current[k]) {
+          next[k] = v;
+          ocrPuesto.current[k] = v;
+        }
+      }
+      return next;
+    });
+    if (ocrAplicado.cliente) setClienteOcr(ocrAplicado.cliente);
+  }, [ocrAplicado, isNuevo]);
+
+  useEffect(() => {
+    if (!clienteOcr || !clientesLite?.length) return;
+    const objetivo = clienteOcr.toLowerCase();
+    const match = (clientesLite as any[]).find(
+      (c) => c.nombre.toLowerCase().includes(objetivo) || objetivo.includes(c.nombre.toLowerCase()),
+    );
+    if (match) setForm((f) => (f.cliente_id ? f : { ...f, cliente_id: match.id }));
+  }, [clienteOcr, clientesLite]);
+
 
 
 
