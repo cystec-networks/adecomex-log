@@ -753,6 +753,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
   const ultimoOcrSeq = useRef(0);
   /** Modo creación: líneas de mercancía en memoria hasta que exista el Expediente. */
   const [productosNuevos, setProductosNuevos] = useState<any[]>([]);
+  const [camposFaltantes, setCamposFaltantes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!isNuevo || !ocrAplicado || ocrAplicado.seq === ultimoOcrSeq.current) return;
