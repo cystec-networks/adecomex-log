@@ -70,6 +70,7 @@ const SUG_PREFERENCIA = ["DR-CAFTA", "EPA (Unión Europea)", "ALADI", "SGP", "Ni
 
 const searchSchema = z.object({
   nuevo: fallback(z.string(), "").default(""),
+  solicitud: fallback(z.string(), "").default(""),
 });
 
 export const Route = createFileRoute("/_authenticated/expedientes/$id")({
