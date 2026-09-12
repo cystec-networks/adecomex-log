@@ -1423,8 +1423,10 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               </SelectContent>
             </Select>
           </div>
-          {!isNuevo && (
-          <div className="md:col-span-2 lg:col-span-3">
+          <div className="md:col-span-2 lg:col-span-3" id="req-mercancia">
+            {isNuevo && (
+              <Label className="mb-1.5 block"><ReqMark />Detalle de mercancía (al menos 1 producto)</Label>
+            )}
             <MercanciaItemsBlock
               expedienteId={exp.id}
               servicioAduaneroUsd={servicioAd.servicioUsd}
@@ -1436,13 +1438,13 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
               paisOrigen={form.pais_origen || ""}
               paisOrigenCodigo={form.pais_origen_codigo || ""}
               disabled={!editable}
+              {...(isNuevo ? { localItems: productosNuevos, onLocalItemsChange: setProductosNuevos } : {})}
             />
           </div>
-          )}
           <HerramientasDgaVuce />
           {(() => {
             const toN = (v: any) => (v === "" || v == null ? 0 : Number(v) || 0);
-            const fob = isNuevo ? toN(form.total_fob) : sumFob;
+            const fob = isNuevo ? (productosNuevos.length ? sumFob : toN(form.total_fob)) : sumFob;
             const cif = fob + toN(form.seguro) + toN(form.flete) + toN(form.otros);
             const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             const renderMoney = (label: string, k: "seguro" | "flete" | "otros" | "total_fob", helper?: string) => {
