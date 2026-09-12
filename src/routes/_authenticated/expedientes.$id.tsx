@@ -667,14 +667,15 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
 }
 
 
-function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo }: { exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean }) {
+function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null }: { exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null }) {
   const qc = useQueryClient();
   const nav = useNavigate();
-  const editable = canEdit && modoEdicion;
+  const editable = (canEdit && modoEdicion) || isNuevo;
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState({
 
     numero: exp.numero ?? "",
+    cliente_id: exp.cliente_id ?? "",
     bl_awb: exp.bl_awb ?? "",
     sla_dias: exp.sla_dias ?? 15,
     fecha_compromiso: exp.fecha_compromiso ?? "",
