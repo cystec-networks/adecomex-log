@@ -205,31 +205,17 @@ function NuevoExpediente() {
     }
   };
 
-  const extractBl = useMutation({
-    mutationFn: async () => {
-      if (!blFile) throw new Error("Selecciona el BL / AWB.");
-      return await runExtract(blFile);
-    },
-    onSuccess: (res) => {
-      blRes.current = res;
-      aplicarCombinado();
-      toast.success("BL procesado — revisa y ajusta los campos");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
+  const onBlExtracted = (res: OcrExtraction) => {
+    blRes.current = res;
+    aplicarCombinado();
+    toast.success("BL procesado — revisa y ajusta los campos");
+  };
 
-  const extractFac = useMutation({
-    mutationFn: async () => {
-      if (!facFile) throw new Error("Selecciona la factura comercial.");
-      return await runExtract(facFile);
-    },
-    onSuccess: (res) => {
-      facRes.current = res;
-      aplicarCombinado();
-      toast.success("Factura procesada — revisa y ajusta los campos");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
+  const onFacturaExtracted = (res: OcrExtraction) => {
+    facRes.current = res;
+    aplicarCombinado();
+    toast.success("Factura procesada — revisa y ajusta los campos");
+  };
 
   const confirmar = useMutation({
     mutationFn: async () => {
