@@ -293,7 +293,6 @@ function DetalleExpediente() {
         puerto_salida: ptSalida.nombre,
         puerto_salida_codigo: ptSalida.codigo,
         fecha_cargado: res.fecha_cargado,
-        fecha_compromiso: res.eta,
         medio_transporte: res.medio_transporte
           ? (res.medio_transporte === "aereo" ? "Aéreo" : "Marítimo")
           : null,
@@ -744,6 +743,7 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
     queryFn: async () => (await supabase.from("clientes").select("id,nombre").order("nombre")).data ?? [],
   });
   const [clienteOcr, setClienteOcr] = useState<string | null>(null);
+  const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
   const ocrPuesto = useRef<Record<string, any>>({});
   const ultimoOcrSeq = useRef(0);
 
@@ -776,12 +776,21 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
   }, [ocrAplicado, isNuevo]);
 
   useEffect(() => {
-    if (!clienteOcr || !clientesLite?.length) return;
-    const objetivo = clienteOcr.toLowerCase();
-    const match = (clientesLite as any[]).find(
-      (c) => c.nombre.toLowerCase().includes(objetivo) || objetivo.includes(c.nombre.toLowerCase()),
-    );
-    if (match) setForm((f) => (f.cliente_id ? f : { ...f, cliente_id: match.id }));
+    if (!clienteOcr || !clientesLite?.length) {
+      setClienteExtraidoSinMatch(null);
+      return;
+    }
+    const match = (clientesLite as any[]).find((c: any) => {
+      const a = normalizarCliente(c.nombre);
+      const b = normalizarCliente(clienteOcr);
+      return b && (a.includes(b) || b.includes(a));
+    });
+    if (match) {
+      setForm((f) => (f.cliente_id ? f : { ...f, cliente_id: match.id }));
+      setClienteExtraidoSinMatch(null);
+    } else {
+      setClienteExtraidoSinMatch(clienteOcr);
+    }
   }, [clienteOcr, clientesLite]);
 
 
@@ -1085,12 +1094,17 @@ function TabInfo({ exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = f
           <>
             <div className="grid gap-1.5">
               <Label>Cliente</Label>
-              <Select value={form.cliente_id || undefined} onValueChange={(v) => set("cliente_id", v)}>
+              <Select value={form.cliente_id || undefined} onValueChange={(v) => { set("cliente_id", v); if (v) setClienteExtraidoSinMatch(null); }}>
                 <SelectTrigger><SelectValue placeholder="Selecciona cliente" /></SelectTrigger>
                 <SelectContent>
                   {(clientesLite ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {clienteExtraidoSinMatch && (
+                <p className="text-xs text-amber-600 mt-1">
+                  El documento indica "{clienteExtraidoSinMatch}" — no se encontró un cliente registrado con ese nombre, selecciónalo manualmente.
+                </p>
+              )}
             </div>
             <div className="grid gap-1.5">
               <Label>Tipo de operación</Label>
