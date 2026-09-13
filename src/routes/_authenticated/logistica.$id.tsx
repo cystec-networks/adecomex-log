@@ -28,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConstanciaLogisticaButton } from "@/components/constancia-logistica-button";
 import { BlHijoPdfButton } from "@/components/bl-hijo-pdf-button";
 import { SolicitudBookingPdfButton } from "@/components/solicitud-booking-pdf-button";
+import { CotizacionLogisticaPdfButton } from "@/components/cotizacion-logistica-pdf-button";
 
 /** Registro de auditoría de la operación logística (mismo patrón que Expedientes). */
 const logAuditoria = async (operacionId: string, accion: string, cambios?: Record<string, unknown>) => {
@@ -555,6 +556,41 @@ function DetalleLogistica() {
     };
   };
 
+  // Cotización de servicio logístico: costos referenciales para el cliente, vigencia de 15 días.
+  const datosCotizacionLogistica = async () => {
+    let cliente = { nombre: "", rnc: "", contacto: "" };
+    if (form.cliente_id) {
+      const { data: cli } = await supabase
+        .from("clientes")
+        .select("nombre,rnc,contacto")
+        .eq("id", form.cliente_id)
+        .maybeSingle();
+      if (cli) cliente = { nombre: cli.nombre ?? "", rnc: cli.rnc ?? "", contacto: (cli as any).contacto ?? "" };
+    }
+    const emision = new Date();
+    const vigencia = new Date(emision);
+    vigencia.setDate(vigencia.getDate() + 15);
+    return {
+      numeroOperacion: form.numero,
+      fechaEmision: emision.toLocaleDateString("es-DO"),
+      fechaVigencia: vigencia.toLocaleDateString("es-DO"),
+      cliente,
+      tipoOperacion: form.tipo_operacion,
+      tipoTransporte: form.tipo === "aereo" ? "Aéreo" : "Marítimo",
+      origen: form.origen,
+      destino: form.destino || form.puerto_destino,
+      descripcionMercancia: form.producto,
+      pesoBrutoKg: form.peso_bruto_kg ? Number(form.peso_bruto_kg) : null,
+      volumenM3: form.volumen_m3 ? Number(form.volumen_m3) : null,
+      moneda: form.flete_moneda || "USD",
+      fleteMonto: form.flete_monto ? Number(form.flete_monto) : null,
+      seguroMonto: form.seguro_monto ? Number(form.seguro_monto) : null,
+      gastosLocalesMonto: form.gastos_locales_monto ? Number(form.gastos_locales_monto) : null,
+      otrosMonto: form.otros_monto ? Number(form.otros_monto) : null,
+      responsable: responsables.find((responsable: any) => responsable.id === form.responsable_id)?.nombre ?? "",
+    };
+  };
+
   return <div className={cn("min-h-full transition-colors", isNuevo ? "bg-success/10" : modoEdicion ? "bg-warning/10" : "bg-background")}>
     <div className="sticky top-0 z-20 border-b bg-background px-6 py-3 shadow-sm">
       <div className="max-w-[1500px] mx-auto flex flex-wrap items-center gap-3">
@@ -595,6 +631,7 @@ function DetalleLogistica() {
             <ConstanciaLogisticaButton datos={datosConstancia} />
             <BlHijoPdfButton datos={datosBlHijo} />
             <SolicitudBookingPdfButton datos={datosSolicitudBooking} />
+            <CotizacionLogisticaPdfButton datos={datosCotizacionLogistica} />
             {modoEdicion && <Button disabled={saveMut.isPending} onClick={() => saveMut.mutate()} className="shadow-lg"><Save className="h-4 w-4 mr-2" />Guardar cambios</Button>}
           </>
         )}
