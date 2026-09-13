@@ -6,7 +6,7 @@ export type BlHijoInput = {
   booking: string;
   fechaEmision: string; // fecha actual al generar
   shipper: { nombre: string; taxId: string; direccion: string; telefono: string; email: string };
-  consignee: { nombre: string; rnc: string; direccion: string; telefono: string; email: string };
+  consignee: { nombre: string; rnc?: string; taxId?: string; direccion: string; telefono: string; email: string };
   notifyParty: string;
   agenteEntrega: { nombre: string; contacto: string };
   buque: string;
@@ -103,53 +103,59 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
     value(rightValue, M + half + 5, y + 20, half - 10, 1, 8);
   };
 
-  // Encabezado institucional y referencias.
-  const logo = await loadLogo();
-  if (logo) {
-    const w = 150;
-    const h = Math.min(62, (logo.h / logo.w) * w);
-    doc.addImage(logo.dataUrl, "PNG", M, 32, w, h);
-  } else {
-    doc.setFontSize(13);
-    doc.setFont("helvetica", "bold");
-    doc.text("ADECOMEX SRL", M, 54);
-  }
+  // Título superior, separado del bloque de partes y del emisor.
   doc.setFont("helvetica", "bold");
   doc.setFontSize(17);
-  doc.text("HOUSE BILL OF LADING", pageW / 2, 108, { align: "center" });
+  doc.text("HOUSE BILL OF LADING", pageW / 2, 52, { align: "center" });
+
+  const rightX = 340;
+  const rightW = pageW - M - rightX;
+  doc.rect(rightX, 90, rightW, 300);
+  doc.line(rightX, 150, rightX + rightW, 150);
+  doc.line(rightX, 110, rightX + rightW, 110);
+  doc.line(rightX, 130, rightX + rightW, 130);
+  label("B/L NUMBER", rightX + 5, 98);
+  value(input.numero, rightX + 92, 99, rightW - 97, 1, 8.5);
+  label("REF. B/L CONSOLIDADOR", rightX + 5, 118);
+  value(input.referenciaConsolidadora, rightX + 92, 119, rightW - 97, 1, 7.5);
+  label("BOOKING N°", rightX + 5, 138);
+  value(input.booking, rightX + 92, 139, rightW - 97, 1, 7.5);
+
+  const logo = await loadLogo();
+  if (logo) {
+    const w = 120;
+    const h = Math.min(70, (logo.h / logo.w) * w);
+    doc.addImage(logo.dataUrl, "PNG", rightX + (rightW - w) / 2, 174, w, h);
+  }
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("ADECOMEX SRL", rightX + rightW / 2, 267, { align: "center" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text("ADECOMEX SRL — Agencia de Comercio Exterior", pageW / 2, 122, { align: "center" });
+  doc.text("Agencia de Comercio Exterior", rightX + rightW / 2, 280, { align: "center" });
+  const emisorLines = doc.splitTextToSize(
+    "Calle Resp. San Miguel No. 12, Bayona, Santo Domingo Oeste, República Dominicana\nTels. 809-237-5418 · 809-931-3246",
+    rightW - 28,
+  ) as string[];
+  doc.setFontSize(7.5);
+  doc.text(emisorLines, rightX + rightW / 2, 302, { align: "center", lineHeightFactor: 1.35 });
 
-  const refX = 420;
-  const refW = pageW - M - refX;
-  doc.rect(refX, 30, refW, 62);
-  doc.line(refX, 50, refX + refW, 50);
-  doc.line(refX, 71, refX + refW, 71);
-  label("B/L NUMBER", refX + 5, 39);
-  value(input.numero, refX + 5, 47, refW - 10, 1, 8.5);
-  label("REF. B/L CONSOLIDADOR", refX + 5, 59);
-  value(input.referenciaConsolidadora, refX + 5, 68, refW - 10, 1, 7.5);
-  label("BOOKING N°", refX + 5, 80);
-  value(input.booking, refX + 5, 89, refW - 10, 1, 7.5);
-
-  // Partes del conocimiento de embarque.
-  const partyY = 145;
-  const partyH = 145;
-  const partyW = contentW / 3;
-  drawLabeledBox(M, partyY, partyW, partyH, "SHIPPER (EXPORTADOR)", [
+  // Partes del conocimiento de embarque, apiladas en la columna izquierda.
+  const partyW = 300;
+  drawLabeledBox(M, 90, partyW, 130, "SHIPPER (EXPORTADOR)", [
     input.shipper.nombre, input.shipper.direccion, input.shipper.taxId && `Tax ID: ${input.shipper.taxId}`,
     input.shipper.telefono && `Tel: ${input.shipper.telefono}`, input.shipper.email,
   ].filter(Boolean) as string[]);
-  drawLabeledBox(M + partyW, partyY, partyW, partyH, "CONSIGNEE (CONSIGNATARIO)", [
-    input.consignee.nombre, input.consignee.direccion, input.consignee.rnc && `RNC: ${input.consignee.rnc}`,
+  drawLabeledBox(M, 220, partyW, 100, "CONSIGNEE (CONSIGNATARIO)", [
+    input.consignee.nombre, input.consignee.direccion,
+    input.consignee.taxId ? `Tax ID: ${input.consignee.taxId}` : input.consignee.rnc && `RNC: ${input.consignee.rnc}`,
     input.consignee.telefono && `Tel: ${input.consignee.telefono}`, input.consignee.email,
   ].filter(Boolean) as string[]);
-  drawLabeledBox(M + partyW * 2, partyY, partyW, partyH, "NOTIFY PARTY", [input.notifyParty || "SAME AS CONSIGNEE"]);
+  drawLabeledBox(M, 320, partyW, 70, "NOTIFY PARTY", [input.notifyParty || "SAME AS CONSIGNEE"]);
 
-  drawVoyageRow(290, "BUQUE / VESSEL", input.buque, "VOYAGE", input.voyage);
-  drawVoyageRow(317, "LUGAR DE RECEPCIÓN", input.lugarRecepcion, "PUERTO DE CARGA", input.puertoCarga);
-  drawVoyageRow(344, "PUERTO DE DESCARGA", input.puertoDescarga, "LUGAR DE ENTREGA", input.lugarEntrega);
+  drawVoyageRow(390, "BUQUE / VESSEL", input.buque, "VOYAGE", input.voyage);
+  drawVoyageRow(417, "LUGAR DE RECEPCIÓN", input.lugarRecepcion, "PUERTO DE CARGA", input.puertoCarga);
+  drawVoyageRow(444, "PUERTO DE DESCARGA", input.puertoDescarga, "LUGAR DE ENTREGA", input.lugarEntrega);
 
   // ---- Tabla principal de carga ----
   const bultos = input.cantidadBultos != null
@@ -177,7 +183,7 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
     ]);
   }
   autoTable(doc, {
-    startY: 379,
+    startY: 479,
     head: [["Marcas y Números", "Cantidad y Tipo de Bultos", "Descripción de Mercancía", "Peso Bruto (Kg)", "Volumen (M3)"]],
     body: cuerpoCarga,
     theme: "grid",
