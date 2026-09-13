@@ -303,6 +303,38 @@ export function useReminders() {
 
       }
 
+      // Logística: ETA vencida sin arribo
+      for (const o of (logi.data ?? []) as any[]) {
+        if (!o.eta) continue;
+        const dias = daysBetween(today, parseLocalDate(o.eta));
+        if (dias <= 0) continue;
+        out.push({
+          id: `logistica_eta_vencida:${o.id}`,
+          kind: "logistica_eta_vencida",
+          severity: dias > 3 ? "critica" : "alta",
+          title: `Operación ${o.numero ?? ""} · ETA vencida sin arribo`,
+          detail: `${o.clientes?.nombre ?? "Sin cliente"} · ETA vencida hace ${dias} días`,
+          href: `/logistica/${o.id}`,
+          createdAt: o.eta,
+        });
+      }
+
+      // Logística: embarcada sin documentos cargados
+      for (const r of opsSinDocs) {
+        const op = r.operaciones_logistica;
+        out.push({
+          id: `logistica_sin_documentos:${r.operacion_logistica_id}`,
+          kind: "logistica_sin_documentos",
+          severity: "media",
+          title: `Operación ${op?.numero ?? ""} sin documentos cargados`,
+          detail: "Embarque completado y aún no hay documentos adjuntos",
+          href: `/logistica/${r.operacion_logistica_id}`,
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+
+
       const sevOrder: Record<ReminderSeverity, number> = { critica: 0, alta: 1, media: 2 };
       // Ordena por severidad; dentro de "crítica", el hito de Verificación va primero.
       out.sort((a, b) => {
