@@ -4249,6 +4249,7 @@ export type Database = {
           id: string
           incoterm: string | null
           lugar_recepcion: string | null
+          naviera: string | null
           notify_party: string | null
           numero: string
           observaciones: string | null
@@ -4306,6 +4307,7 @@ export type Database = {
           id?: string
           incoterm?: string | null
           lugar_recepcion?: string | null
+          naviera?: string | null
           notify_party?: string | null
           numero: string
           observaciones?: string | null
@@ -4363,6 +4365,7 @@ export type Database = {
           id?: string
           incoterm?: string | null
           lugar_recepcion?: string | null
+          naviera?: string | null
           notify_party?: string | null
           numero?: string
           observaciones?: string | null
