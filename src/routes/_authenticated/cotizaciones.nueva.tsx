@@ -16,6 +16,8 @@ import { useMyRoles } from "@/lib/auth-hooks";
 import { ProductosCard } from "@/components/productos-card";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
+import { EscanearBlButton, EscanearFacturaButton } from "@/components/escanear-documento-expediente-buttons";
+import type { OcrExtraction } from "@/lib/ai-ocr.functions";
 
 
 export const Route = createFileRoute("/_authenticated/cotizaciones/nueva")({
