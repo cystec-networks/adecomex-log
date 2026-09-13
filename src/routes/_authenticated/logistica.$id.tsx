@@ -687,10 +687,10 @@ function DetalleLogistica() {
                 <DropdownMenuItem onSelect={() => constanciaRef.current?.generar()} className="cursor-pointer">
                   Generar Constancia (PDF)
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => blHijoRef.current?.generar()} className="cursor-pointer">
+                <DropdownMenuItem onSelect={() => { if (validarHazmat()) blHijoRef.current?.generar(); }} className="cursor-pointer">
                   Generar BL Hijo (PDF)
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => bookingRef.current?.generar()} className="cursor-pointer">
+                <DropdownMenuItem onSelect={() => { if (validarHazmat()) bookingRef.current?.generar(); }} className="cursor-pointer">
                   Generar Solicitud de Booking (PDF)
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => cotizacionRef.current?.generar()} className="cursor-pointer">
