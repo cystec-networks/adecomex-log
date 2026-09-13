@@ -15,6 +15,8 @@ const KIND_ICON = {
   transporte_retrasado: Truck,
   hito_proximo: CheckCircle2,
   hito_atrasado: AlertTriangle,
+  logistica_eta_vencida: Ship,
+  logistica_sin_documentos: FileWarning,
 } as const;
 
 const SEV_STYLE = {
