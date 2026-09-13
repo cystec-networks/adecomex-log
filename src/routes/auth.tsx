@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePortal } from "@/integrations/supabase/portal-client";
 import { Button } from "@/components/ui/button";
@@ -207,6 +207,13 @@ function AuthPage() {
       : variant === "estudiante"
         ? "¿No tienes acceso? Contacta a la coordinación académica de ADECOMEX SRL."
         : "¿No tienes acceso? Solicítalo al administrador del sistema.";
+
+  // Esta ruta no se renderiza en el servidor (ssr: false). Sin esta espera,
+  // el primer render del cliente no coincide con el HTML vacío del servidor y
+  // React descarta el árbol (pantalla en blanco momentánea).
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+  if (!hydrated) return null;
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
