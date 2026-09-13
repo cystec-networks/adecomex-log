@@ -24,6 +24,7 @@ export type BlHijoInput = {
   terminosFlete: string;
   monedaFlete: string;
   cargos: Array<{ descripcion: string; monto: number | null }>;
+  observaciones: string;
 };
 
 const v = (text: string | null | undefined) => (text && String(text).trim() ? String(text).trim() : "—");
