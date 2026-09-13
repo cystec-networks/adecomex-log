@@ -30,7 +30,6 @@ import type { ReactNode, ComponentType } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
-import logoAsset from "@/assets/logo-adecomex-horizontal.png.asset.json";
 
 type SubItem = {
   to: string;
@@ -277,13 +276,13 @@ function AppSidebarInner() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2 px-2 py-2">
-          <div className="h-9 grid place-items-center rounded-md bg-white shrink-0 overflow-hidden px-1.5">
-            <img src={logoAsset.url} alt="ADECOMEX SRL" className="h-full w-auto object-contain" />
+          <div className="h-9 w-9 grid shrink-0 place-items-center overflow-hidden rounded-md bg-sidebar-accent">
+            <img src="/favicon.png" alt="A de ADECOMEX SRL" className="h-8 w-8 object-contain" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <div className="font-display font-bold text-sidebar-foreground leading-tight">ADECOMEX SRL</div>
-              <div className="text-[10px] uppercase tracking-wider text-sidebar-foreground/60">GESTION Y LOGISTICA</div>
+              <div className="font-display font-bold text-sidebar-accent-foreground leading-tight">ADECOMEX SRL</div>
+              <div className="text-[10px] uppercase tracking-wider text-sidebar-accent-foreground">GESTION Y LOGISTICA</div>
             </div>
           )}
         </div>
