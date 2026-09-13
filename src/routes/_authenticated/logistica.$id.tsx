@@ -12,6 +12,7 @@ import { ETAPAS_LOGISTICA, ESTADO_LOGISTICA_LABEL, estadoLogisticaClass, money }
 import { fmtLocalDate } from "@/lib/dates";
 import { useCurrentUser, useMyRoles } from "@/lib/auth-hooks";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
+import { ProveedorLogisticoCombobox } from "@/components/proveedor-logistico-combobox";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { EscanearBlButton, EscanearFacturaButton } from "@/components/escanear-documento-expediente-buttons";
 import { type OcrExtraction } from "@/lib/ai-ocr.functions";
