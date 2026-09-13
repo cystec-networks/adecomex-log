@@ -847,7 +847,7 @@ function DetalleLogistica() {
           return <div key={etapa.id} className={cn("border rounded-md p-4 flex gap-3 items-start", current && "border-primary bg-primary/5", completed && "border-success/30 bg-success/5")}>
             <div className="mt-0.5">{completed ? <CheckCircle2 className="h-5 w-5 text-success" /> : current ? <Clock className="h-5 w-5 text-primary" /> : <Circle className="h-5 w-5 text-muted-foreground" />}</div>
             <div className="flex-1"><div className="font-medium">{index + 1}. {def?.nombre ?? etapa.etapa_codigo}</div><div className="text-xs text-muted-foreground mt-1">{completed ? `Completada ${fmtLocalDate(etapa.fecha_cumplimiento?.slice(0, 10))}` : current ? "En curso" : "Pendiente"}</div>{etapa.comentario && <p className="text-sm mt-2">{etapa.comentario}</p>}</div>
-            {canEdit && current && <Button size="sm" onClick={() => completarEtapa.mutate(etapa.id)} disabled={completarEtapa.isPending}><Check className="h-4 w-4 mr-1" />Completar</Button>}
+            {canEdit && current && <Button size="sm" onClick={() => { if (etapa.etapa_codigo === "embarque" && !validarHazmat()) return; completarEtapa.mutate(etapa.id); }} disabled={completarEtapa.isPending}><Check className="h-4 w-4 mr-1" />Completar</Button>}
           </div>;
         })}</div>
       </CardContent></Card>
