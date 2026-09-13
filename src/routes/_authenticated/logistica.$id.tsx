@@ -156,6 +156,8 @@ function LinkSelect({ label, name, rows, form, set, readOnly, isNuevo, prefill }
 /** Documento en borrador (modo "nuevo"): se sube a storage y se inserta al crear la operación. */
 export type DocumentoNuevo = { tipo: string; nombre_archivo: string; file: File };
 export type IncidenciaNueva = { tipo: string; severidad: string; descripcion: string };
+/** Contenedor estructurado de la operación (mismo patrón que Expedientes). */
+type ContenedorFila = { numero: string; sello1: string; sello2: string; tipo: string };
 
 function DetalleLogistica() {
   const { id } = Route.useParams();
@@ -171,6 +173,9 @@ function DetalleLogistica() {
   const [incidenciasNuevas, setIncidenciasNuevas] = useState<IncidenciaNueva[]>([]);
   const [incidenciasResueltas, setIncidenciasResueltas] = useState<number[]>([]);
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
+  const [contenedores, setContenedores] = useState<ContenedorFila[]>([]);
+  const setCont = (i: number, key: keyof ContenedorFila, value: string) =>
+    setContenedores((rows) => rows.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
 
   const { data: operacion, isLoading } = useQuery({ queryKey: ["operacion-logistica", id], enabled: !isNuevo, queryFn: async () => {
     const { data, error } = await supabase.from("operaciones_logistica").select("*, clientes(nombre)").eq("id", id).single();
