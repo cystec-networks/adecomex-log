@@ -78,7 +78,7 @@ type FormState = {
   bl_hijo_numero: string;
   es_mercancia_peligrosa: string;
   hazmat_un_numero: string; hazmat_clase: string; hazmat_grupo_empaque: string; hazmat_punto_inflamacion: string;
-  hazmat_contaminante_marino: string; hazmat_nombre_tecnico: string;
+  hazmat_contaminante_marino: string; hazmat_nombre_tecnico: string; hazmat_recargo: string;
 };
 const cleanDate = (v: string | null) => v?.slice(0, 10) ?? "";
 const formFrom = (o: any): FormState => ({
@@ -105,6 +105,7 @@ const formFrom = (o: any): FormState => ({
   hazmat_un_numero: o.hazmat_un_numero ?? "", hazmat_clase: o.hazmat_clase ?? "", hazmat_grupo_empaque: o.hazmat_grupo_empaque ?? "",
   hazmat_punto_inflamacion: o.hazmat_punto_inflamacion ?? "", hazmat_contaminante_marino: String(o.hazmat_contaminante_marino ?? false),
   hazmat_nombre_tecnico: o.hazmat_nombre_tecnico ?? "",
+  hazmat_recargo: o.hazmat_recargo == null ? "" : String(o.hazmat_recargo),
 });
 
 const normalizarCliente = (s: string) =>
@@ -350,6 +351,7 @@ function DetalleLogistica() {
     hazmat_un_numero: nullable(f.hazmat_un_numero), hazmat_clase: nullable(f.hazmat_clase),
     hazmat_grupo_empaque: nullable(f.hazmat_grupo_empaque), hazmat_punto_inflamacion: nullable(f.hazmat_punto_inflamacion),
     hazmat_contaminante_marino: f.hazmat_contaminante_marino === "true", hazmat_nombre_tecnico: nullable(f.hazmat_nombre_tecnico),
+    hazmat_recargo: numeric(f.hazmat_recargo),
   });
 
   const saveMut = useMutation({ mutationFn: async () => {
@@ -436,6 +438,13 @@ function DetalleLogistica() {
     proveedorTelefono: form.proveedor_telefono || null,
     responsable: responsables.find((r: any) => r.id === form.responsable_id)?.nombre ?? null,
     etapas: etapas.map((e) => ({ nombre: nombreEtapa(e.etapa_codigo), estado: e.estado })),
+    esMercanciaPeligrosa: form.es_mercancia_peligrosa === "true",
+    hazmatUnNumero: form.hazmat_un_numero || null,
+    hazmatClase: form.hazmat_clase || null,
+    hazmatGrupoEmpaque: form.hazmat_grupo_empaque || null,
+    hazmatPuntoInflamacion: form.hazmat_punto_inflamacion || null,
+    hazmatNombreTecnico: form.hazmat_nombre_tecnico || null,
+    hazmatContaminanteMarino: form.hazmat_contaminante_marino === "true",
   });
 
   // Datos del BL Hijo (House B/L): incluye Consignee desde la ficha del cliente.
@@ -498,6 +507,14 @@ function DetalleLogistica() {
         { descripcion: "GASTOS LOCALES", monto: form.gastos_locales_monto ? Number(form.gastos_locales_monto) : null },
         { descripcion: "OTROS COSTOS", monto: form.otros_monto ? Number(form.otros_monto) : null },
       ],
+      esMercanciaPeligrosa: form.es_mercancia_peligrosa === "true",
+      hazmatUnNumero: form.hazmat_un_numero,
+      hazmatNombreTecnico: form.hazmat_nombre_tecnico,
+      hazmatClase: form.hazmat_clase,
+      hazmatGrupoEmpaque: form.hazmat_grupo_empaque,
+      hazmatPuntoInflamacion: form.hazmat_punto_inflamacion,
+      hazmatContaminanteMarino: form.hazmat_contaminante_marino === "true",
+      hazmatRecargo: form.hazmat_recargo ? Number(form.hazmat_recargo) : null,
     };
   };
 
@@ -592,6 +609,8 @@ function DetalleLogistica() {
       seguroMonto: form.seguro_monto ? Number(form.seguro_monto) : null,
       gastosLocalesMonto: form.gastos_locales_monto ? Number(form.gastos_locales_monto) : null,
       otrosMonto: form.otros_monto ? Number(form.otros_monto) : null,
+      esMercanciaPeligrosa: form.es_mercancia_peligrosa === "true",
+      hazmatRecargo: form.hazmat_recargo ? Number(form.hazmat_recargo) : null,
       responsable: responsables.find((responsable: any) => responsable.id === form.responsable_id)?.nombre ?? "",
     };
   };
@@ -765,6 +784,7 @@ function DetalleLogistica() {
             <Field form={form} set={set} readOnly={readOnly} label="Clase" name="hazmat_clase" />
             <Field form={form} set={set} readOnly={readOnly} label="Grupo de Empaque" name="hazmat_grupo_empaque" />
             <Field form={form} set={set} readOnly={readOnly} label="Punto de Inflamación" name="hazmat_punto_inflamacion" />
+            <Field form={form} set={set} readOnly={readOnly} label="Recargo por Mercancía Peligrosa (US$)" name="hazmat_recargo" type="number" />
             <div className="sm:col-span-2 space-y-1.5"><Label>Nombre Técnico</Label><Input disabled={readOnly} value={form.hazmat_nombre_tecnico} onChange={(e) => set("hazmat_nombre_tecnico", e.target.value)} /></div>
             <div className="flex items-center gap-3 rounded-md border border-amber-200 bg-background p-3 dark:border-amber-900">
               <Switch
