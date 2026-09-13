@@ -535,6 +535,39 @@ function DetalleLogistica() {
       </CardContent></Card>}
 
       <Card><CardHeader><CardTitle className="text-base">Datos de la carga</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="sm:col-span-2 lg:col-span-4 flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/20">
+          <Switch
+            id="es_mercancia_peligrosa"
+            disabled={readOnly}
+            checked={form.es_mercancia_peligrosa === "true"}
+            onCheckedChange={(checked) => set("es_mercancia_peligrosa", checked ? "true" : "false")}
+          />
+          <div className="flex-1">
+            <Label htmlFor="es_mercancia_peligrosa" className="cursor-pointer font-medium text-amber-900 dark:text-amber-100">¿Mercancía peligrosa?</Label>
+            <p className="text-xs text-amber-700 dark:text-amber-300">Activa esta opción si la carga requiere declaración HAZMAT / IMO.</p>
+          </div>
+        </div>
+
+        {form.es_mercancia_peligrosa === "true" && (
+          <div className="sm:col-span-2 lg:col-span-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 rounded-md border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+            <div className="sm:col-span-2 lg:col-span-4 flex items-center gap-2 text-sm font-semibold text-amber-800 dark:text-amber-200"><AlertTriangle className="h-4 w-4" />Datos HAZMAT</div>
+            <Field form={form} set={set} readOnly={readOnly} label="N° UN" name="hazmat_un_numero" />
+            <Field form={form} set={set} readOnly={readOnly} label="Clase" name="hazmat_clase" />
+            <Field form={form} set={set} readOnly={readOnly} label="Grupo de Empaque" name="hazmat_grupo_empaque" />
+            <Field form={form} set={set} readOnly={readOnly} label="Punto de Inflamación" name="hazmat_punto_inflamacion" />
+            <div className="sm:col-span-2 space-y-1.5"><Label>Nombre Técnico</Label><Input disabled={readOnly} value={form.hazmat_nombre_tecnico} onChange={(e) => set("hazmat_nombre_tecnico", e.target.value)} /></div>
+            <div className="flex items-center gap-3 rounded-md border border-amber-200 bg-background p-3 dark:border-amber-900">
+              <Switch
+                id="hazmat_contaminante_marino"
+                disabled={readOnly}
+                checked={form.hazmat_contaminante_marino === "true"}
+                onCheckedChange={(checked) => set("hazmat_contaminante_marino", checked ? "true" : "false")}
+              />
+              <Label htmlFor="hazmat_contaminante_marino" className="cursor-pointer text-sm">Contaminante marino</Label>
+            </div>
+          </div>
+        )}
+
         <div className="sm:col-span-2 space-y-1.5"><Label>Producto</Label><Input disabled={readOnly} value={form.producto} onChange={(e) => set("producto", e.target.value)} /></div>
         <Field form={form} set={set} readOnly={readOnly} label="Origen" name="origen" /><Field form={form} set={set} readOnly={readOnly} label="Destino" name="destino" />
         <Field form={form} set={set} readOnly={readOnly} label="Puerto / aeropuerto de destino" name="puerto_destino" /><Field form={form} set={set} readOnly={readOnly} label="Buque / vuelo" name="buque" />
