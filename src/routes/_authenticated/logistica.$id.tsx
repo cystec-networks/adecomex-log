@@ -367,6 +367,7 @@ function DetalleLogistica() {
       throw error;
     }
     const newId = data.id;
+    await guardarContenedores(newId);
     // Documentos en borrador: subir a storage y registrar.
     for (const doc of documentosNuevos) {
       const safeName = doc.nombre_archivo.replace(/[^a-zA-Z0-9._-]/g, "-");
