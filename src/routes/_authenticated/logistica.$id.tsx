@@ -351,8 +351,9 @@ function DetalleLogistica() {
       if (error.code === "23505") throw new Error("Ese número de operación ya está en uso — elige otro.");
       throw error;
     }
+    await guardarContenedores(id);
     await logAuditoria(id, "editado");
-  }, onSuccess: () => { toast.success("Cambios guardados"); setModoEdicion(false); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["operaciones-logistica"] }); qc.invalidateQueries({ queryKey: ["auditoria-logistica", id] }); history.replaceState(null, "", `/logistica/${id}`); }, onError: (e: any) => toast.error(e.message) });
+  }, onSuccess: () => { toast.success("Cambios guardados"); setModoEdicion(false); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["contenedores-logistica", id] }); qc.invalidateQueries({ queryKey: ["operaciones-logistica"] }); qc.invalidateQueries({ queryKey: ["auditoria-logistica", id] }); history.replaceState(null, "", `/logistica/${id}`); }, onError: (e: any) => toast.error(e.message) });
 
   const createMut = useMutation({ mutationFn: async () => {
     if (!form) throw new Error("Formulario incompleto.");
