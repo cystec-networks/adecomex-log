@@ -276,8 +276,8 @@ function AppSidebarInner() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-3 py-3">
-          <div className="h-12 w-12 grid shrink-0 place-items-center overflow-hidden rounded-md bg-sidebar-accent">
-            <img src="/favicon.png" alt="A de ADECOMEX SRL" className="h-10 w-10 object-contain" />
+          <div className="h-14 w-14 grid shrink-0 place-items-center overflow-hidden rounded-2xl bg-sidebar-accent border-2 border-sidebar-accent-foreground/30 shadow-sm">
+            <img src="/favicon.png" alt="A de ADECOMEX SRL" className="h-12 w-12 object-contain" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
