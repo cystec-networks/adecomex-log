@@ -20,6 +20,13 @@ export type ConstanciaInput = {
   proveedorTelefono?: string | null;
   responsable?: string | null;
   etapas: ConstanciaEtapa[];
+  esMercanciaPeligrosa?: boolean;
+  hazmatUnNumero?: string | null;
+  hazmatClase?: string | null;
+  hazmatGrupoEmpaque?: string | null;
+  hazmatPuntoInflamacion?: string | null;
+  hazmatNombreTecnico?: string | null;
+  hazmatContaminanteMarino?: boolean;
 };
 
 const v = (s: string | null | undefined) => (s && String(s).trim() ? String(s) : "—");
@@ -63,6 +70,25 @@ export async function buildConstanciaLogisticaPdf(input: ConstanciaInput) {
     },
     margin: { left: M, right: M },
   });
+
+  // Bloque de mercancía peligrosa: se muestra solo cuando aplica, con estilo de advertencia.
+  if (input.esMercanciaPeligrosa) {
+    const lineas = [
+      `UN ${v(input.hazmatUnNumero)} — ${v(input.hazmatNombreTecnico)}`,
+      `CLASS ${v(input.hazmatClase)}   ·   PG ${v(input.hazmatGrupoEmpaque)}   ·   FLASH POINT: ${v(input.hazmatPuntoInflamacion) === "—" ? "N/A" : input.hazmatPuntoInflamacion}`,
+      ...(input.hazmatContaminanteMarino ? ["MARINE POLLUTANT / CONTAMINANTE MARINO"] : []),
+    ];
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 10,
+      head: [["⚠ MERCANCÍA PELIGROSA (HAZMAT)"]],
+      body: [[lineas.join("\n")]],
+      theme: "grid",
+      headStyles: { fillColor: [217, 119, 6], fontSize: 8.5 },
+      bodyStyles: { fontSize: 8.5, fillColor: [255, 247, 214] },
+      styles: { lineColor: [194, 116, 0], lineWidth: 1 },
+      margin: { left: M, right: M },
+    });
+  }
 
   autoTable(doc, {
     startY: (doc as any).lastAutoTable.finalY + 14,

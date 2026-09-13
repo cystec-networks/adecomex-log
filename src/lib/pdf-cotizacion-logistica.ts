@@ -19,6 +19,8 @@ export type CotizacionLogisticaInput = {
   gastosLocalesMonto: number | null;
   otrosMonto: number | null;
   responsable: string;
+  esMercanciaPeligrosa?: boolean;
+  hazmatRecargo?: number | null;
 };
 
 const valueOrDash = (text: string | null | undefined) => text?.trim() || "—";
@@ -147,6 +149,9 @@ export async function buildCotizacionLogisticaPdf(input: CotizacionLogisticaInpu
     ["Seguro", input.seguroMonto],
     ["Gastos Locales", input.gastosLocalesMonto],
     ["Otros", input.otrosMonto],
+    ...(input.esMercanciaPeligrosa && input.hazmatRecargo != null
+      ? [["Recargo Mercancía Peligrosa", input.hazmatRecargo] as [string, number | null]]
+      : []),
   ];
   const total = costos.reduce<number>((sum, [, monto]) => sum + (monto ?? 0), 0);
   autoTable(doc, {
