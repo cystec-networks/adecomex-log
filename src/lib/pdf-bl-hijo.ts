@@ -70,7 +70,7 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
   if (logo) {
     const h = 52;
     const w = (logo.w / logo.h) * h;
-    doc.addImage(logo.dataUrl, "JPEG", M, 30, Math.min(w, 170), h);
+    doc.addImage(logo.dataUrl, "PNG", M, 30, Math.min(w, 170), h);
   } else {
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
