@@ -192,16 +192,14 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
     ...(observationLines.length ? ["", ...observationLines] : []),
   ].join("\n");
   const cargoRows = containers.map((container, index) => [
-    container.numero
-      ? compactCargo
-        ? [
-            [container.numero, container.tipo].filter(Boolean).join(" / "),
-            [container.sello1 && `Sello: ${container.sello1}`, container.sello2 && `Sello 2: ${container.sello2}`].filter(Boolean).join(" / "),
-          ].filter(Boolean).join("\n")
-        : [container.numero, container.tipo, container.sello1 && `Sello: ${container.sello1}`, container.sello2 && `Sello 2: ${container.sello2}`]
-            .filter(Boolean)
-            .join("\n")
-      : "—",
+    (() => {
+      if (!container.numero) return "—";
+      const seals = [container.sello1, container.sello2].filter((seal) => seal && String(seal).trim());
+      const sealLine = seals.length ? `Seal: ${seals.join(" / ")}` : "";
+      return compactCargo
+        ? [[container.numero, container.tipo].filter(Boolean).join(" / "), sealLine].filter(Boolean).join("\n")
+        : [container.numero, container.tipo, sealLine].filter(Boolean).join("\n");
+    })(),
     index === 0 ? bultos : "",
     index === 0 ? description : "",
     index === 0 ? nf(input.pesoBrutoKg) : "",
