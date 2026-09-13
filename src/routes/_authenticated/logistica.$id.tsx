@@ -476,7 +476,7 @@ function DetalleLogistica() {
       puertoCarga: form.origen,
       puertoDescarga: form.puerto_descarga,
       lugarEntrega: form.destino || form.puerto_destino,
-      contenedores,
+      contenedores: contenedoresBl,
       cantidadBultos: form.cantidad_bultos ? Number(form.cantidad_bultos) : null,
       tipoBultos: form.tipo_bultos || null,
       descripcionMercancia: form.producto,
@@ -551,7 +551,53 @@ function DetalleLogistica() {
         <div className="space-y-1.5"><Label>Responsable</Label><Select disabled={readOnly} value={form.responsable_id || "none"} onValueChange={(v) => set("responsable_id", v === "none" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sin asignar</SelectItem>{responsables.map((r) => <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>)}</SelectContent></Select></div>
         <div className="space-y-1.5"><Label>Tipo</Label><Select disabled={readOnly} value={form.tipo} onValueChange={(v) => set("tipo", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="maritimo">Marítimo</SelectItem><SelectItem value="aereo">Aéreo</SelectItem></SelectContent></Select></div>
         <div className="space-y-1.5"><Label>Tipo de Operación</Label><Select disabled={readOnly} value={form.tipo_operacion} onValueChange={(v) => set("tipo_operacion", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Importación">Importación</SelectItem><SelectItem value="Exportación">Exportación</SelectItem></SelectContent></Select></div>
-        <Field form={form} set={set} readOnly={readOnly} label="Booking" name="booking" /><Field form={form} set={set} readOnly={readOnly} label="BL / AWB" name="bl_awb" /><Field form={form} set={set} readOnly={readOnly} label="Contenedor" name="contenedor" /><Field form={form} set={set} readOnly={readOnly} label="BL Hijo (se asigna automático si se deja vacío)" name="bl_hijo_numero" />
+        <Field form={form} set={set} readOnly={readOnly} label="Booking" name="booking" /><Field form={form} set={set} readOnly={readOnly} label="BL / AWB" name="bl_awb" /><Field form={form} set={set} readOnly={readOnly} label="BL Hijo (se asigna automático si se deja vacío)" name="bl_hijo_numero" />
+        <div className="sm:col-span-2 lg:col-span-4 grid gap-2">
+          <div className="flex items-center justify-between">
+            <Label>Contenedores</Label>
+            {!readOnly && (
+              <Button type="button" variant="outline" size="sm"
+                onClick={() => setContenedores((r) => [...r, { numero: "", sello1: "", sello2: "", tipo: "" }])}>
+                Agregar contenedor
+              </Button>
+            )}
+          </div>
+          {contenedores.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sin contenedores registrados.</p>
+          ) : (
+            <div className="overflow-x-auto rounded-md border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="px-2 py-2 text-left w-10">#</th>
+                    <th className="px-2 py-2 text-left">Número de Contenedor</th>
+                    <th className="px-2 py-2 text-left">Sello 1</th>
+                    <th className="px-2 py-2 text-left">Sello 2</th>
+                    <th className="px-2 py-2 text-left">Tipo</th>
+                    {!readOnly && <th className="px-2 py-2 w-10"></th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {contenedores.map((c, i) => (
+                    <tr key={i} className="border-t">
+                      <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
+                      <td className="px-2 py-1"><Input value={c.numero} onChange={(e) => setCont(i, "numero", e.target.value)} disabled={readOnly} placeholder="MSKU1234567" /></td>
+                      <td className="px-2 py-1"><Input value={c.sello1} onChange={(e) => setCont(i, "sello1", e.target.value)} disabled={readOnly} /></td>
+                      <td className="px-2 py-1"><Input value={c.sello2} onChange={(e) => setCont(i, "sello2", e.target.value)} disabled={readOnly} /></td>
+                      <td className="px-2 py-1"><Input value={c.tipo} onChange={(e) => setCont(i, "tipo", e.target.value)} disabled={readOnly} placeholder="40HC" /></td>
+                      {!readOnly && (
+                        <td className="px-2 py-1 text-right">
+                          <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                            onClick={() => setContenedores((r) => r.filter((_, idx) => idx !== i))}>✕</Button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
         <Field form={form} set={set} readOnly={readOnly} label="Notify Party" name="notify_party" /><Field form={form} set={set} readOnly={readOnly} label="Agente de entrega" name="agente_entrega" /><Field form={form} set={set} readOnly={readOnly} label="Contacto del agente de entrega" name="agente_entrega_contacto" />
         <div className="space-y-1.5"><TerceroExtranjeroPicker label="Agente de Carga / Consolidadora" onSelect={(t) => setForm((p) => p ? ({ ...p, proveedor_logistico: t.nombre, proveedor_logistico_tid: t.tid ?? "" }) : p)} /><Input disabled={readOnly} value={form.proveedor_logistico} onChange={(e) => set("proveedor_logistico", e.target.value)} placeholder="Nombre del proveedor" /></div>
         <Field form={form} set={set} readOnly={readOnly} label="TID del proveedor" name="proveedor_logistico_tid" /><Field form={form} set={set} readOnly={readOnly} label="Correo del proveedor" name="proveedor_email" /><Field form={form} set={set} readOnly={readOnly} label="Teléfono del proveedor" name="proveedor_telefono" />
