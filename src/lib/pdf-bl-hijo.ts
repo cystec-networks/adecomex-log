@@ -254,6 +254,13 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
 
   const tableEndY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
   const cargoColumnWidths = [118, 91, 231, 68, contentWidth - 508];
+  // Elimina la división horizontal que autoTable dibuja al terminar la descripción.
+  // Las columnas continúan visualmente, sin interrupción, hasta sus totales.
+  doc.setDrawColor(255);
+  doc.setLineWidth(1);
+  doc.line(margin + 0.5, tableEndY, margin + contentWidth - 0.5, tableEndY);
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.5);
   // Extensión continua hasta los totales, sin una línea horizontal que parezca una fila adicional.
   if (tableEndY < cargoBottomY) {
     doc.line(margin, tableEndY, margin, cargoBottomY);
