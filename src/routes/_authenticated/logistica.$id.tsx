@@ -96,6 +96,51 @@ const normalizarCliente = (s: string) =>
   s.toLowerCase().replace(/[.,]/g, "").replace(/\bs\.?r\.?l\.?\b/g, "srl").replace(/\s+/g, " ").trim();
 const EMPTY_FORM: FormState = formFrom({});
 
+function Field({ label, name, type = "text", form, set, readOnly }: {
+  label: string;
+  name: keyof FormState;
+  type?: string;
+  form: FormState;
+  set: (name: keyof FormState, value: string) => void;
+  readOnly: boolean;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <Input type={type} value={form[name]} disabled={readOnly} onChange={(e) => set(name, e.target.value)} />
+    </div>
+  );
+}
+
+function LinkSelect({ label, name, rows, form, set, readOnly, isNuevo, prefill }: {
+  label: string;
+  name: "cotizacion_id" | "orden_id" | "expediente_id";
+  rows: { id: string; numero: string | null }[];
+  form: FormState;
+  set: (name: keyof FormState, value: string) => void;
+  readOnly: boolean;
+  isNuevo: boolean;
+  prefill: (fuente: "cotizacion" | "orden", registroId: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <Select disabled={readOnly} value={form[name] || "none"} onValueChange={(v) => {
+        const val = v === "none" ? "" : v;
+        set(name, val);
+        if (isNuevo && val && name === "cotizacion_id") prefill("cotizacion", val);
+        if (isNuevo && val && name === "orden_id") prefill("orden", val);
+      }}>
+        <SelectTrigger><SelectValue placeholder="Sin vincular" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="none">Sin vincular</SelectItem>
+          {rows.map((r) => <SelectItem key={r.id} value={r.id}>{r.numero ?? "Sin número"}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 /** Documento en borrador (modo "nuevo"): se sube a storage y se inserta al crear la operación. */
 export type DocumentoNuevo = { tipo: string; nombre_archivo: string; file: File };
 export type IncidenciaNueva = { tipo: string; severidad: string; descripcion: string };
