@@ -182,7 +182,15 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
     : [{ numero: "", sello1: null, sello2: null, tipo: null }];
   const compactCargo = containers.length > 6;
   const maxDescriptionLines = compactCargo ? 4 : containers.length > 4 ? 5 : 9;
-  const description = fitLines(input.descripcionMercancia, 220, maxDescriptionLines).join("\n");
+  const descriptionLines = fitLines(input.descripcionMercancia, 220, maxDescriptionLines);
+  const observaciones = input.observaciones?.trim();
+  const observationLines = observaciones
+    ? fitLines(observaciones, 220, compactCargo ? 3 : 6)
+    : [];
+  const description = [
+    ...descriptionLines,
+    ...(observationLines.length ? ["", ...observationLines] : []),
+  ].join("\n");
   const cargoRows = containers.map((container, index) => [
     container.numero
       ? compactCargo
@@ -238,31 +246,25 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
       // La columna de descripción se prolonga hasta el área de totales: sin líneas horizontales internas.
       if (hook.section === "body" && hook.column.index === 2) {
         hook.cell.styles.lineWidth = { top: 0, right: 0.5, bottom: 0, left: 0.5 };
+      } else if (hook.section === "body" && hook.row.index === cargoRows.length - 1) {
+        hook.cell.styles.lineWidth = { top: 0.5, right: 0.5, bottom: 0, left: 0.5 };
       }
     },
   });
 
   const tableEndY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
   const cargoColumnWidths = [118, 91, 231, 68, contentWidth - 508];
-  // Área de totales: rectángulo y líneas verticales. La columna de descripción sigue abierta.
-  if (tableEndY < cargoBottomY) doc.rect(margin, tableEndY, contentWidth, cargoBottomY - tableEndY);
+  // Extensión continua hasta los totales, sin una línea horizontal que parezca una fila adicional.
+  if (tableEndY < cargoBottomY) {
+    doc.line(margin, tableEndY, margin, cargoBottomY);
+    doc.line(margin + contentWidth, tableEndY, margin + contentWidth, cargoBottomY);
+    doc.line(margin, cargoBottomY, margin + contentWidth, cargoBottomY);
+  }
   let cargoColumnX = margin;
   cargoColumnWidths.slice(0, -1).forEach((columnWidth) => {
     cargoColumnX += columnWidth;
     doc.line(cargoColumnX, tableEndY, cargoColumnX, cargoBottomY);
   });
-
-  // Observaciones libres dentro de la columna de descripción, debajo de la mercancía.
-  const obsText = input.observaciones?.trim();
-  if (obsText) {
-    const descX = margin + cargoColumnWidths[0] + cargoColumnWidths[1] + 4;
-    const descW = cargoColumnWidths[2] - 8;
-    const obsTop = tableEndY + 6;
-    const obsBottom = cargoBottomY - cargoTotalHeight - 4;
-    const maxObsLines = Math.max(1, Math.floor((obsBottom - obsTop) / 8));
-    label("OBSERVACIONES:", descX, obsTop, 5.3);
-    value(obsText, descX, obsTop + 10, descW, maxObsLines, 6);
-  }
 
   const cargoTotalY = cargoBottomY - 7;
   label("TOTAL", margin + cargoColumnWidths[0] + cargoColumnWidths[1] - 28, cargoTotalY, 6);
