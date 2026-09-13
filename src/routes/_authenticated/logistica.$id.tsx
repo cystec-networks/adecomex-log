@@ -112,21 +112,31 @@ const normalizarCliente = (s: string) =>
   s.toLowerCase().replace(/[.,]/g, "").replace(/\bs\.?r\.?l\.?\b/g, "srl").replace(/\s+/g, " ").trim();
 const EMPTY_FORM: FormState = formFrom({});
 
-function Field({ label, name, type = "text", form, set, readOnly }: {
+/** Campos HAZMAT obligatorios antes de embarcar o emitir documentos de transporte. */
+export const HAZMAT_REQUERIDOS = [
+  { name: "hazmat_un_numero", label: "N° UN" },
+  { name: "hazmat_clase", label: "Clase" },
+  { name: "hazmat_grupo_empaque", label: "Grupo de Empaque" },
+  { name: "hazmat_nombre_tecnico", label: "Nombre Técnico" },
+] as const;
+
+function Field({ label, name, type = "text", form, set, readOnly, invalid }: {
   label: string;
   name: keyof FormState;
   type?: string;
   form: FormState;
   set: (name: keyof FormState, value: string) => void;
   readOnly: boolean;
+  invalid?: boolean;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className={cn("space-y-1.5", invalid && "ring-2 ring-destructive rounded-md p-2 -m-2")}>
       <Label>{label}</Label>
       <Input type={type} value={form[name]} disabled={readOnly} onChange={(e) => set(name, e.target.value)} />
     </div>
   );
 }
+
 
 function LinkSelect({ label, name, rows, form, set, readOnly, isNuevo, prefill }: {
   label: string;
