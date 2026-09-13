@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,9 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { buildCotizacionLogisticaPdf, type CotizacionLogisticaInput } from "@/lib/pdf-cotizacion-logistica";
 
 /** Genera, previsualiza y descarga la cotización de servicio logístico de una operación. */
-export function CotizacionLogisticaPdfButton({ datos }: { datos: () => Promise<CotizacionLogisticaInput> }) {
+export type CotizacionLogisticaPdfButtonHandle = { generar: () => void };
+
+export const CotizacionLogisticaPdfButton = forwardRef<CotizacionLogisticaPdfButtonHandle, { datos: () => Promise<CotizacionLogisticaInput>; showTrigger?: boolean }>(function CotizacionLogisticaPdfButton({ datos, showTrigger = true }, ref) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [generando, setGenerando] = useState(false);
   const docRef = useRef<Awaited<ReturnType<typeof buildCotizacionLogisticaPdf>> | null>(null);
@@ -33,12 +35,14 @@ export function CotizacionLogisticaPdfButton({ datos }: { datos: () => Promise<C
     }
   };
 
+  useImperativeHandle(ref, () => ({ generar }));
+
   return (
     <>
-      <Button variant="outline" size="sm" disabled={generando} onClick={generar}>
+      {showTrigger && <Button variant="outline" size="sm" disabled={generando} onClick={generar}>
         <FileText className="mr-1 h-4 w-4" />
         {generando ? "Generando…" : "Generar Cotización (PDF)"}
-      </Button>
+      </Button>}
 
       <Dialog open={Boolean(previewUrl)} onOpenChange={(open) => { if (!open) cerrar(); }}>
         <DialogContent className="flex h-[90vh] w-[95vw] max-w-5xl flex-col gap-0 p-0">
@@ -58,6 +62,6 @@ export function CotizacionLogisticaPdfButton({ datos }: { datos: () => Promise<C
       </Dialog>
     </>
   );
-}
+});
 
 export default CotizacionLogisticaPdfButton;

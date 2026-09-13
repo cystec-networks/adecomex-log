@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,9 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { buildBlHijoPdf, type BlHijoInput } from "@/lib/pdf-bl-hijo";
 
 /** Botón + vista previa del House Bill of Lading (BL Hijo) emitido por ADECOMEX. */
-export function BlHijoPdfButton({ datos }: { datos: () => Promise<BlHijoInput> }) {
+export type BlHijoPdfButtonHandle = { generar: () => void };
+
+export const BlHijoPdfButton = forwardRef<BlHijoPdfButtonHandle, { datos: () => Promise<BlHijoInput>; showTrigger?: boolean }>(function BlHijoPdfButton({ datos, showTrigger = true }, ref) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [generando, setGenerando] = useState(false);
   const docRef = useRef<any>(null);
@@ -33,12 +35,14 @@ export function BlHijoPdfButton({ datos }: { datos: () => Promise<BlHijoInput> }
     }
   };
 
+  useImperativeHandle(ref, () => ({ generar }));
+
   return (
     <>
-      <Button variant="outline" size="sm" disabled={generando} onClick={generar}>
+      {showTrigger && <Button variant="outline" size="sm" disabled={generando} onClick={generar}>
         <FileText className="h-4 w-4 mr-1" />
         {generando ? "Generando…" : "Generar BL Hijo (PDF)"}
-      </Button>
+      </Button>}
 
       <Dialog open={!!previewUrl} onOpenChange={(o) => { if (!o) cerrar(); }}>
         <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-0 gap-0">
@@ -58,6 +62,6 @@ export function BlHijoPdfButton({ datos }: { datos: () => Promise<BlHijoInput> }
       </Dialog>
     </>
   );
-}
+});
 
 export default BlHijoPdfButton;
