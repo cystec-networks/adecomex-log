@@ -1180,7 +1180,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             <Field label="Tipo de operación" value={form.tipo_operacion} onChange={(v) => set("tipo_operacion", v)} disabled={!editable} />
             {!editable
               ? <ReadOnlyField label="Tipo de carga" value={form.tipo_carga} />
-              : <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />}
+              : <CatalogoAutocomplete tabla="catalogo_tipos_carga" label="Tipo de carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />}
             <ReadOnlyField label="Origen" value={exp.pais_origen} />
             <ReadOnlyField label="Incoterm" value={exp.incoterm} />
             <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sug.contacto_solicitud ?? []} disabled={!editable} />
