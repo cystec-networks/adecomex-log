@@ -177,13 +177,19 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
   const containers = input.contenedores.length
     ? input.contenedores
     : [{ numero: "", sello1: null, sello2: null, tipo: null }];
-  const maxDescriptionLines = containers.length > 4 ? 5 : 9;
+  const compactCargo = containers.length > 6;
+  const maxDescriptionLines = compactCargo ? 4 : containers.length > 4 ? 5 : 9;
   const description = fitLines(input.descripcionMercancia, 220, maxDescriptionLines).join("\n");
   const cargoRows = containers.map((container, index) => [
     container.numero
-      ? [container.numero, container.tipo, container.sello1 && `Sello: ${container.sello1}`, container.sello2 && `Sello 2: ${container.sello2}`]
-          .filter(Boolean)
-          .join("\n")
+      ? compactCargo
+        ? [
+            [container.numero, container.tipo].filter(Boolean).join(" / "),
+            [container.sello1 && `Sello: ${container.sello1}`, container.sello2 && `Sello 2: ${container.sello2}`].filter(Boolean).join(" / "),
+          ].filter(Boolean).join("\n")
+        : [container.numero, container.tipo, container.sello1 && `Sello: ${container.sello1}`, container.sello2 && `Sello 2: ${container.sello2}`]
+            .filter(Boolean)
+            .join("\n")
       : "—",
     index === 0 ? bultos : "",
     index === 0 ? description : "",
@@ -203,9 +209,17 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
     margin: { left: margin, right: margin },
     pageBreak: "avoid",
     rowPageBreak: "avoid",
-    styles: { font: "helvetica", fontSize: containers.length > 4 ? 6.2 : 6.8, cellPadding: 3, lineColor: 0, lineWidth: 0.5, valign: "top", textColor: 0 },
+    styles: {
+      font: "helvetica",
+      fontSize: compactCargo ? 5.3 : containers.length > 4 ? 6.2 : 6.8,
+      cellPadding: compactCargo ? 1.5 : 3,
+      lineColor: 0,
+      lineWidth: 0.5,
+      valign: "top",
+      textColor: 0,
+    },
     headStyles: { fillColor: blue, textColor: 255, fontStyle: "bold", fontSize: 6.1, halign: "center", minCellHeight: 22 },
-    bodyStyles: { minCellHeight: containers.length > 4 ? 20 : 26 },
+    bodyStyles: { minCellHeight: compactCargo ? 14 : containers.length > 4 ? 20 : 26 },
     columnStyles: {
       0: { cellWidth: 118 },
       1: { cellWidth: 91 },
