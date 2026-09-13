@@ -5,6 +5,8 @@ import { ArrowLeft, Save, Ship } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
+import { EscanearBlButton, EscanearFacturaButton } from "@/components/escanear-documento-expediente-buttons";
+import { type OcrExtraction } from "@/lib/ai-ocr.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
