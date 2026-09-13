@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, CheckCircle2, Copy, Printer } from "lucide-react";
 import { toast } from "sonner";
-import logoAsset from "@/assets/logo-adecomex.jpg.asset.json";
+import logoAsset from "@/assets/logo-adecomex-vertical.png.asset.json";
 import { SolicitudPagoPdfDialog } from "@/components/solicitud-pago-pdf-dialog";
 
 const WHATSAPP = "18099313246";
