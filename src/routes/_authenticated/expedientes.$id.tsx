@@ -233,6 +233,7 @@ function combinarOcr(bl: OcrExtraction | null, fac: OcrExtraction | null): OcrEx
     puerto_salida: fromBl("puerto_salida"),
     puerto_arribo: fromBl("puerto_arribo"),
     naviera: fromBl("naviera"),
+    buque: fromBl("buque"),
     peso_bruto_kg: fromBl("peso_bruto_kg"),
     peso_neto_kg: fromBl("peso_neto_kg"),
     contenedores: fromBl("contenedores"),

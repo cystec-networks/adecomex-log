@@ -62,7 +62,7 @@ type FormState = {
   numero: string;
   cliente_id: string; responsable_id: string; tipo: string; proveedor_logistico: string; proveedor_logistico_tid: string;
   proveedor_email: string; proveedor_telefono: string;
-  producto: string; origen: string; destino: string; puerto_destino: string; buque: string;
+  producto: string; origen: string; destino: string; puerto_destino: string; buque: string; naviera: string;
   voyage: string; lugar_recepcion: string; puerto_descarga: string; cantidad_bultos: string; tipo_bultos: string; terminos_flete: string;
   peso_bruto_kg: string; volumen_m3: string; incoterm: string;
   booking: string; bl_awb: string; contenedor: string; fecha_recogida: string; fecha_embarque: string; fecha_salida: string;
@@ -78,7 +78,7 @@ const formFrom = (o: any): FormState => ({
   cliente_id: o.cliente_id ?? "", responsable_id: o.responsable_id ?? "", tipo: o.tipo ?? "maritimo",
   proveedor_logistico: o.proveedor_logistico ?? "", proveedor_logistico_tid: o.proveedor_logistico_tid ?? "",
   proveedor_email: o.proveedor_email ?? "", proveedor_telefono: o.proveedor_telefono ?? "",
-  producto: o.producto ?? "", origen: o.origen ?? "", destino: o.destino ?? "", puerto_destino: o.puerto_destino ?? "", buque: o.buque ?? "",
+  producto: o.producto ?? "", origen: o.origen ?? "", destino: o.destino ?? "", puerto_destino: o.puerto_destino ?? "", buque: o.buque ?? "", naviera: o.naviera ?? "",
   voyage: o.voyage ?? "", lugar_recepcion: o.lugar_recepcion ?? "", puerto_descarga: o.puerto_descarga ?? "",
   cantidad_bultos: String(o.cantidad_bultos ?? ""), tipo_bultos: o.tipo_bultos ?? "", terminos_flete: o.terminos_flete ?? "",
   peso_bruto_kg: String(o.peso_bruto_kg ?? ""), volumen_m3: String(o.volumen_m3 ?? ""), incoterm: o.incoterm ?? "",
@@ -255,7 +255,8 @@ function DetalleLogistica() {
       origen: res.puerto_salida || f.origen,
       destino: res.puerto_arribo || f.destino,
       puerto_destino: res.puerto_arribo || f.puerto_destino,
-      buque: res.naviera || f.buque,
+      buque: res.buque || f.buque,
+      naviera: res.naviera || f.naviera,
       peso_bruto_kg: f.peso_bruto_kg || (res.peso_bruto_kg != null ? String(res.peso_bruto_kg) : ""),
       incoterm: res.incoterm || f.incoterm,
       producto: res.descripcion_mercancia || f.producto,
@@ -275,7 +276,7 @@ function DetalleLogistica() {
     proveedor_logistico: nullable(f.proveedor_logistico), proveedor_logistico_tid: nullable(f.proveedor_logistico_tid), booking: nullable(f.booking),
     proveedor_email: nullable(f.proveedor_email), proveedor_telefono: nullable(f.proveedor_telefono),
     producto: nullable(f.producto), origen: nullable(f.origen), destino: nullable(f.destino),
-    puerto_destino: nullable(f.puerto_destino), buque: nullable(f.buque),
+    puerto_destino: nullable(f.puerto_destino), buque: nullable(f.buque), naviera: nullable(f.naviera),
     voyage: nullable(f.voyage), lugar_recepcion: nullable(f.lugar_recepcion), puerto_descarga: nullable(f.puerto_descarga),
     cantidad_bultos: numeric(f.cantidad_bultos), tipo_bultos: nullable(f.tipo_bultos), terminos_flete: nullable(f.terminos_flete),
     incoterm: nullable(f.incoterm), peso_bruto_kg: numeric(f.peso_bruto_kg), volumen_m3: numeric(f.volumen_m3),
@@ -395,6 +396,7 @@ function DetalleLogistica() {
     return {
       numero: form.bl_hijo_numero,
       referenciaConsolidadora: form.bl_awb || form.booking,
+      booking: form.booking,
       fechaEmision: new Date().toLocaleDateString("es-DO"),
       shipper: {
         nombre: form.shipper_nombre, taxId: form.shipper_tax_id, direccion: form.shipper_direccion,
@@ -494,6 +496,7 @@ function DetalleLogistica() {
         <div className="sm:col-span-2 space-y-1.5"><Label>Producto</Label><Input disabled={readOnly} value={form.producto} onChange={(e) => set("producto", e.target.value)} /></div>
         <Field form={form} set={set} readOnly={readOnly} label="Origen" name="origen" /><Field form={form} set={set} readOnly={readOnly} label="Destino" name="destino" />
         <Field form={form} set={set} readOnly={readOnly} label="Puerto / aeropuerto de destino" name="puerto_destino" /><Field form={form} set={set} readOnly={readOnly} label="Buque / vuelo" name="buque" />
+        <Field form={form} set={set} readOnly={readOnly} label="Naviera / carrier" name="naviera" />
         <Field form={form} set={set} readOnly={readOnly} label="Voyage" name="voyage" /><Field form={form} set={set} readOnly={readOnly} label="Lugar de recepción" name="lugar_recepcion" />
         <Field form={form} set={set} readOnly={readOnly} label="Puerto de descarga" name="puerto_descarga" />
         <Field form={form} set={set} readOnly={readOnly} label="Cantidad de bultos" name="cantidad_bultos" type="number" /><Field form={form} set={set} readOnly={readOnly} label="Tipo de bultos" name="tipo_bultos" />
