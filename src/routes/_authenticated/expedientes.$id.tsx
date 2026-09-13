@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -80,6 +80,26 @@ const DGA_VUCE_TOOLS = [
   { label: "DPW - Caucedo", url: "https://webapp.caucedo.com/#/home", icon: Ship },
   { label: "HIT - Estatus de Contenedores", url: "https://hit.com.do/estatus-de-contenedores/", icon: Container },
 ];
+
+const RASTREO_ENVIO_TOOLS = {
+  maritimos: [
+    { label: "CMA-CGM", url: "http://www.cma-cgm.com/eBusiness/Tracking/Default.aspx" },
+    { label: "COSCO SHIPPING", url: "https://elines.coscoshipping.com/ebusiness/cargoTracking?trackingType=BILLOFLADING&number" },
+    { label: "EVERGREEN", url: "http://www.shipmentlink.com/servlet/TDB1_CargoTracking.do" },
+    { label: "HAPAG LLOYD", url: "https://www.hapag-lloyd.com/en/online-business/track/track-by-booking-solution.html" },
+    { label: "MAERSK S (Hamburg Süd)", url: "https://www.hamburgsud.com/tracking/" },
+    { label: "MAERSK L", url: "http://www.maerskline.com/appmanager/maerskline/public?_nfpb=true&_nfls=false&_pageLabel=page_tracking3_trackSimple" },
+    { label: "MSC", url: "https://www.msc.com/es/track-a-shipment" },
+    { label: "OOCL", url: "https://www.oocl.com/eng/ourservices/eservices/cargotracking/Pages/cargotracking.aspx" },
+    { label: "ONE", url: "https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking" },
+    { label: "ZIM", url: "https://www.zim.com/es/tools/track-a-shipment" },
+  ],
+  aereos: [
+    { label: "DHL", url: "https://www.dhl.com/do-es/home/rastreo.html" },
+    { label: "FEDEX", url: "http://www.fedex.com/us_espanol/" },
+    { label: "UPS", url: "http://www.ups.com/WebTracking/track?loc=es_ES&WT.svl=PriNav" },
+  ],
+};
 
 const searchSchema = z.object({
   nuevo: fallback(z.string(), "").default(""),
@@ -545,6 +565,29 @@ function DetalleExpediente() {
                       </DropdownMenuItem>
                     );
                   })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Ship className="h-4 w-4 mr-1" /> Rastreos de Envío
+                    <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 p-1 max-h-96 overflow-y-auto">
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">Marítimos</DropdownMenuLabel>
+                  {RASTREO_ENVIO_TOOLS.maritimos.map((t) => (
+                    <DropdownMenuItem key={t.url} asChild>
+                      <a href={t.url} target="_blank" rel="noopener noreferrer" className="cursor-pointer">{t.label}</a>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">Aéreos</DropdownMenuLabel>
+                  {RASTREO_ENVIO_TOOLS.aereos.map((t) => (
+                    <DropdownMenuItem key={t.url} asChild>
+                      <a href={t.url} target="_blank" rel="noopener noreferrer" className="cursor-pointer">{t.label}</a>
+                    </DropdownMenuItem>
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
