@@ -87,8 +87,8 @@ function PortalLayout() {
       <header className="h-16 border-b bg-card/60 backdrop-blur sticky top-0 z-30">
         <div className="max-w-6xl mx-auto h-full px-4 flex items-center gap-3">
           <Link to="/portal" className="flex items-center gap-2 min-w-0">
-            <div className="h-10 w-10 rounded-md bg-white overflow-hidden grid place-items-center shrink-0">
-              <img src={logoAsset.url} alt="ADECOMEX SRL" className="h-full w-full object-contain" />
+            <div className="h-10 px-1.5 rounded-md bg-white overflow-hidden grid place-items-center shrink-0">
+              <img src={logoAsset.url} alt="ADECOMEX SRL" className="h-full w-auto object-contain" />
             </div>
             <div className="min-w-0">
               <div className="font-display font-bold leading-tight">ADECOMEX SRL</div>

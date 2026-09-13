@@ -162,8 +162,8 @@ function SolicitudPagoTransportePage() {
     <div className="min-h-screen bg-muted/30 px-4 py-10">
       <div className="mx-auto w-full max-w-2xl space-y-6">
         <header className="flex items-center gap-3">
-          <div className="h-14 w-14 overflow-hidden rounded-lg bg-background shadow-sm">
-            <img src={logoAsset.url} alt="ADECOMEX SRL" className="h-full w-full object-contain" />
+          <div className="h-14 px-2 overflow-hidden rounded-lg bg-background shadow-sm">
+            <img src={logoAsset.url} alt="ADECOMEX SRL" className="h-full w-auto object-contain" />
           </div>
           <div>
             <div className="font-display text-lg font-bold leading-tight">ADECOMEX SRL</div>
