@@ -445,10 +445,9 @@ function DetalleLogistica() {
         telefono: cli.telefono ?? "", email: cli.email ?? "",
       };
     }
-    const contenedores = form.contenedor
-      .split(/[,;\n/]+/)
-      .map((numero) => ({ numero: numero.trim() }))
-      .filter((c) => c.numero);
+    const contenedoresBl = contenedoresValidos.map((c) => ({
+      numero: c.numero.trim(), sello1: c.sello1.trim() || null, sello2: c.sello2.trim() || null, tipo: c.tipo.trim() || null,
+    }));
     const esExportacion = form.tipo_operacion === "Exportación";
     const shipper = esExportacion
       ? { nombre: cliente.nombre, taxId: cliente.rnc, direccion: cliente.direccion, telefono: cliente.telefono, email: cliente.email }
