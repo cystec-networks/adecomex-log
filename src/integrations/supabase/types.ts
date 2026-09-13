@@ -4221,6 +4221,8 @@ export type Database = {
       }
       operaciones_logistica: {
         Row: {
+          agente_entrega: string | null
+          agente_entrega_contacto: string | null
           bl_awb: string | null
           booking: string | null
           buque: string | null
@@ -4246,6 +4248,7 @@ export type Database = {
           id: string
           incoterm: string | null
           lugar_recepcion: string | null
+          notify_party: string | null
           numero: string
           observaciones: string | null
           orden_id: string | null
@@ -4269,6 +4272,8 @@ export type Database = {
           voyage: string | null
         }
         Insert: {
+          agente_entrega?: string | null
+          agente_entrega_contacto?: string | null
           bl_awb?: string | null
           booking?: string | null
           buque?: string | null
@@ -4294,6 +4299,7 @@ export type Database = {
           id?: string
           incoterm?: string | null
           lugar_recepcion?: string | null
+          notify_party?: string | null
           numero: string
           observaciones?: string | null
           orden_id?: string | null
@@ -4317,6 +4323,8 @@ export type Database = {
           voyage?: string | null
         }
         Update: {
+          agente_entrega?: string | null
+          agente_entrega_contacto?: string | null
           bl_awb?: string | null
           booking?: string | null
           buque?: string | null
@@ -4342,6 +4350,7 @@ export type Database = {
           id?: string
           incoterm?: string | null
           lugar_recepcion?: string | null
+          notify_party?: string | null
           numero?: string
           observaciones?: string | null
           orden_id?: string | null
