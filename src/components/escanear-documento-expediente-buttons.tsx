@@ -152,6 +152,7 @@ export function EscanearBlButton({
       title="Escanear BL / AWB"
       campos={[
         { label: "BL / AWB", key: "bl" },
+        { label: "Buque", key: "buque" },
         { label: "Naviera", key: "naviera" },
         { label: "Puerto salida", key: "puerto_salida" },
         { label: "Puerto arribo", key: "puerto_arribo" },
