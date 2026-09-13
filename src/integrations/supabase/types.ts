@@ -4276,6 +4276,7 @@ export type Database = {
           comprador_tax_id: string | null
           comprador_telefono: string | null
           contenedor: string | null
+          costo_interno_total: number | null
           cotizacion_id: string | null
           creado_por: string | null
           created_at: string
@@ -4348,6 +4349,7 @@ export type Database = {
           comprador_tax_id?: string | null
           comprador_telefono?: string | null
           contenedor?: string | null
+          costo_interno_total?: number | null
           cotizacion_id?: string | null
           creado_por?: string | null
           created_at?: string
@@ -4420,6 +4422,7 @@ export type Database = {
           comprador_tax_id?: string | null
           comprador_telefono?: string | null
           contenedor?: string | null
+          costo_interno_total?: number | null
           cotizacion_id?: string | null
           creado_por?: string | null
           created_at?: string
