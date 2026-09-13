@@ -35,6 +35,8 @@ export type OcrExtraction = {
   seguro: number | null;
   flete: number | null;
   otros_gastos: number | null;
+  notify_party: string | null;
+  agente_entrega: string | null;
 };
 
 export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
@@ -59,6 +61,7 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
       "peso_neto_kg (el peso neto si aparece junto al peso bruto en el BL — usa null si no aparece). " +
       "Para todos estos: si el dato no aparece claramente en el documento, usa null en vez de inventar o asumir un valor. " +
       "Agrega también: fob_total (el valor FOB total de la factura, suma de todas las líneas si no hay un total explícito), seguro, flete, otros_gastos — estos últimos 3 solo si aparecen explícitamente desglosados en la factura (no los calcules ni los asumas); usa null si no aparecen. " +
+      "Agrega también las claves 'notify_party' y 'agente_entrega': 'notify_party' es la parte a quien se notifica la llegada de la carga (campo 'Notify Party' en el BL — a menudo igual al consignatario, pero puede ser distinto, tómalo tal como aparece). 'agente_entrega' es el agente o empresa indicada para gestionar la entrega en destino (suele aparecer como 'For particulars of delivery apply to' o similar en el BL). " +
       "Usa null cuando el dato no aparezca. Las fechas en formato YYYY-MM-DD si es posible. 'productos' como resumen breve (máx 300 caracteres).";
 
 
@@ -126,5 +129,7 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
       seguro: num(parsed.seguro),
       flete: num(parsed.flete),
       otros_gastos: num(parsed.otros_gastos),
+      notify_party: parsed.notify_party ?? null,
+      agente_entrega: parsed.agente_entrega ?? null,
     };
   });

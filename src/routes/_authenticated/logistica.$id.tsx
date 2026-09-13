@@ -67,6 +67,7 @@ type FormState = {
   booking: string; bl_awb: string; contenedor: string; fecha_recogida: string; fecha_embarque: string; fecha_salida: string;
   eta: string; fecha_arribo: string; flete_monto: string; flete_moneda: string; seguro_monto: string;
   gastos_locales_monto: string; otros_monto: string; observaciones: string; cotizacion_id: string; orden_id: string; expediente_id: string;
+  notify_party: string; agente_entrega: string; agente_entrega_contacto: string;
 };
 const cleanDate = (v: string | null) => v?.slice(0, 10) ?? "";
 const formFrom = (o: any): FormState => ({
@@ -83,7 +84,11 @@ const formFrom = (o: any): FormState => ({
   flete_monto: String(o.flete_monto ?? ""), flete_moneda: o.flete_moneda ?? "USD", seguro_monto: String(o.seguro_monto ?? ""),
   gastos_locales_monto: String(o.gastos_locales_monto ?? ""), otros_monto: String(o.otros_monto ?? ""), observaciones: o.observaciones ?? "",
   cotizacion_id: o.cotizacion_id ?? "", orden_id: o.orden_id ?? "", expediente_id: o.expediente_id ?? "",
+  notify_party: o.notify_party ?? "", agente_entrega: o.agente_entrega ?? "", agente_entrega_contacto: o.agente_entrega_contacto ?? "",
 });
+
+const normalizarCliente = (s: string) =>
+  s.toLowerCase().replace(/[.,]/g, "").replace(/\bs\.?r\.?l\.?\b/g, "srl").replace(/\s+/g, " ").trim();
 const EMPTY_FORM: FormState = formFrom({});
 
 /** Documento en borrador (modo "nuevo"): se sube a storage y se inserta al crear la operación. */
@@ -103,6 +108,7 @@ function DetalleLogistica() {
   const [documentosNuevos, setDocumentosNuevos] = useState<DocumentoNuevo[]>([]);
   const [incidenciasNuevas, setIncidenciasNuevas] = useState<IncidenciaNueva[]>([]);
   const [incidenciasResueltas, setIncidenciasResueltas] = useState<number[]>([]);
+  const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
 
   const { data: operacion, isLoading } = useQuery({ queryKey: ["operacion-logistica", id], enabled: !isNuevo, queryFn: async () => {
     const { data, error } = await supabase.from("operaciones_logistica").select("*, clientes(nombre)").eq("id", id).single();
@@ -133,6 +139,7 @@ function DetalleLogistica() {
     setDocumentosNuevos([]);
     setIncidenciasNuevas([]);
     setIncidenciasResueltas([]);
+    setClienteExtraidoSinMatch(null);
     setModoEdicion(true);
   }
   if (!isNuevo && operacion && cargadoId !== operacion.id) { setCargadoId(operacion.id); setForm(formFrom(operacion)); }
@@ -183,9 +190,16 @@ function DetalleLogistica() {
       if (m.includes("mar") || m.includes("sea") || m.includes("nav") || m.includes("vessel")) return "maritimo";
       return form?.tipo ?? "maritimo";
     })();
+    const clienteMatch = (clientes ?? []).find((c: any) => {
+      const a = normalizarCliente(c.nombre);
+      const b = normalizarCliente(res.cliente ?? "");
+      return b && (a.includes(b) || b.includes(a));
+    });
+    setClienteExtraidoSinMatch(res.cliente && !clienteMatch ? res.cliente : null);
     setForm((f) => f && ({
       ...f,
       proveedor_logistico: res.suplidor || f.proveedor_logistico,
+      cliente_id: clienteMatch?.id || f.cliente_id,
       tipo: tipoNorm,
       origen: res.puerto_salida || f.origen,
       destino: res.puerto_arribo || f.destino,
@@ -195,7 +209,9 @@ function DetalleLogistica() {
       incoterm: res.incoterm || f.incoterm,
       producto: res.descripcion_mercancia || f.producto,
       bl_awb: res.numero_documento || f.bl_awb,
-      observaciones: f.observaciones || (res.contenedores?.length ? `Contenedores: ${res.contenedores.map((c) => c.numero).join(", ")}` : ""),
+      contenedor: res.contenedores?.length ? res.contenedores.map((c) => c.numero).join(", ") : f.contenedor,
+      notify_party: res.notify_party || f.notify_party,
+      agente_entrega: res.agente_entrega || f.agente_entrega,
     }));
     toast.success("Datos extraídos — revisa y ajusta los campos");
   };
@@ -217,6 +233,7 @@ function DetalleLogistica() {
     flete_moneda: f.flete_moneda, seguro_monto: numeric(f.seguro_monto), gastos_locales_monto: numeric(f.gastos_locales_monto),
     otros_monto: numeric(f.otros_monto), observaciones: nullable(f.observaciones), cotizacion_id: nullable(f.cotizacion_id),
     orden_id: nullable(f.orden_id), expediente_id: nullable(f.expediente_id),
+    notify_party: nullable(f.notify_party), agente_entrega: nullable(f.agente_entrega), agente_entrega_contacto: nullable(f.agente_entrega_contacto),
   });
 
   const saveMut = useMutation({ mutationFn: async () => {
@@ -357,10 +374,11 @@ function DetalleLogistica() {
 
         <TabsContent value="operacion" className="space-y-6 mt-4">
       <Card><CardHeader><CardTitle className="text-base">Datos operativos</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="space-y-1.5"><Label>Cliente{isNuevo && " *"}</Label><Select disabled={readOnly} value={form.cliente_id || "none"} onValueChange={(v) => set("cliente_id", v === "none" ? "" : v)}><SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger><SelectContent><SelectItem value="none">Sin cliente</SelectItem>{clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent></Select></div>
+        <div className="space-y-1.5"><Label>Cliente{isNuevo && " *"}</Label><Select disabled={readOnly} value={form.cliente_id || "none"} onValueChange={(v) => set("cliente_id", v === "none" ? "" : v)}><SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger><SelectContent><SelectItem value="none">Sin cliente</SelectItem>{clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent></Select>{clienteExtraidoSinMatch && <p className="text-xs text-amber-600 mt-1">El documento indica "{clienteExtraidoSinMatch}" — no se encontró un cliente registrado con ese nombre, selecciónalo manualmente.</p>}</div>
         <div className="space-y-1.5"><Label>Responsable</Label><Select disabled={readOnly} value={form.responsable_id || "none"} onValueChange={(v) => set("responsable_id", v === "none" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sin asignar</SelectItem>{responsables.map((r) => <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>)}</SelectContent></Select></div>
         <div className="space-y-1.5"><Label>Tipo</Label><Select disabled={readOnly} value={form.tipo} onValueChange={(v) => set("tipo", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="maritimo">Marítimo</SelectItem><SelectItem value="aereo">Aéreo</SelectItem></SelectContent></Select></div>
         <Field label="Booking" name="booking" /><Field label="BL / AWB" name="bl_awb" /><Field label="Contenedor" name="contenedor" />
+        <Field label="Notify Party" name="notify_party" /><Field label="Agente de entrega" name="agente_entrega" /><Field label="Contacto del agente de entrega" name="agente_entrega_contacto" />
         <div className="space-y-1.5"><TerceroExtranjeroPicker label="Proveedor logístico" onSelect={(t) => setForm((p) => p ? ({ ...p, proveedor_logistico: t.nombre, proveedor_logistico_tid: t.tid ?? "" }) : p)} /><Input disabled={readOnly} value={form.proveedor_logistico} onChange={(e) => set("proveedor_logistico", e.target.value)} placeholder="Nombre del proveedor" /></div>
         <Field label="TID del proveedor" name="proveedor_logistico_tid" /><Field label="Correo del proveedor" name="proveedor_email" /><Field label="Teléfono del proveedor" name="proveedor_telefono" />
         <Field label="Fecha de recogida" name="fecha_recogida" type="date" /><Field label="Fecha de embarque" name="fecha_embarque" type="date" /><Field label="Fecha de salida" name="fecha_salida" type="date" /><Field label="ETA" name="eta" type="date" /><Field label="Fecha de arribo" name="fecha_arribo" type="date" />

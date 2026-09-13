@@ -251,6 +251,8 @@ function combinarOcr(bl: OcrExtraction | null, fac: OcrExtraction | null): OcrEx
     seguro: fromFac("seguro"),
     flete: fromFac("flete"),
     otros_gastos: fromFac("otros_gastos"),
+    notify_party: fromBl("notify_party"),
+    agente_entrega: fromBl("agente_entrega"),
   };
 }
 
