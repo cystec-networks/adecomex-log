@@ -85,6 +85,29 @@ function NuevaOperacion() {
     } catch { /* la precarga es opcional */ }
   };
 
+  const aplicarOcr = (res: OcrExtraction) => {
+    const tipoNorm = (() => {
+      const m = (res.medio_transporte || "").toLowerCase();
+      if (m.includes("aer") || m.includes("air") || m.includes("avi")) return "aereo";
+      if (m.includes("mar") || m.includes("sea") || m.includes("nav") || m.includes("vessel")) return "maritimo";
+      return form.tipo;
+    })();
+    setForm((f) => ({
+      ...f,
+      proveedor_logistico: res.suplidor || f.proveedor_logistico,
+      tipo: tipoNorm,
+      origen: res.puerto_salida || f.origen,
+      destino: res.puerto_arribo || f.destino,
+      puerto_destino: res.puerto_arribo || f.puerto_destino,
+      buque: res.naviera || f.buque,
+      peso_bruto_kg: f.peso_bruto_kg || (res.peso_bruto_kg != null ? String(res.peso_bruto_kg) : ""),
+      incoterm: res.incoterm || f.incoterm,
+      producto: res.descripcion_mercancia || f.producto,
+      observaciones: f.observaciones || (res.contenedores?.length ? `Contenedores: ${res.contenedores.map((c) => c.numero).join(", ")}` : ""),
+    }));
+    toast.success("Datos extraídos — revisa y ajusta los campos");
+  };
+
   const createMut = useMutation({ mutationFn: async () => {
     if (!form.cliente_id) throw new Error("Selecciona un cliente.");
     const num = (v: string) => (v === "" ? null : Number(v));
