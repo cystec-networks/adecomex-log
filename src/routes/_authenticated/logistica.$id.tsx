@@ -303,6 +303,21 @@ function DetalleLogistica() {
 
   const numeric = (v: string) => v === "" ? null : Number(v);
   const nullable = (v: string) => v || null;
+  // La lista estructurada es la fuente de verdad; el campo de texto se recalcula para no romper lecturas existentes.
+  const contenedoresValidos = contenedores.filter((c) => c.numero.trim());
+  const contenedoresTexto = contenedoresValidos.map((c) => c.numero.trim()).join(", ");
+  /** Reescribe la lista estructurada de contenedores de una operación. */
+  const guardarContenedores = async (operacionId: string) => {
+    await supabase.from("logistica_contenedores").delete().eq("operacion_logistica_id", operacionId);
+    if (!contenedoresValidos.length) return;
+    const { error } = await supabase.from("logistica_contenedores").insert(
+      contenedoresValidos.map((c, i) => ({
+        operacion_logistica_id: operacionId, item_no: i + 1, numero_contenedor: c.numero.trim(),
+        sello1: c.sello1.trim() || null, sello2: c.sello2.trim() || null, tipo_contenedor: c.tipo.trim() || null,
+      })),
+    );
+    if (error) throw error;
+  };
   const payloadFrom = (f: FormState) => ({
     numero: f.numero,
     cliente_id: nullable(f.cliente_id), responsable_id: nullable(f.responsable_id), tipo: f.tipo, tipo_operacion: f.tipo_operacion,
