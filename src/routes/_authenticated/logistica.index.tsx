@@ -36,6 +36,7 @@ function LogisticaIndex() {
   const search = useSearch({ from: "/_authenticated/logistica/" });
   const { data: roles } = useMyRoles();
   const canEdit = (roles ?? []).some((r) => r === "admin" || r === "logistica");
+  const canSeeMargen = (roles ?? []).some((r) => r === "admin" || r === "logistica" || r === "finanzas");
   const { esColapsado, toggleGrupo } = useGruposColapsados("logistica-grupos-colapsados");
 
   const { data: operaciones = [], isLoading } = useQuery({
@@ -96,28 +97,34 @@ function LogisticaIndex() {
         </CardHeader>
         <CardContent className="p-0 overflow-auto max-h-[72vh]">
           <table className="w-full min-w-[940px] text-sm">
-            <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30 uppercase"><tr>
-              <th className="text-left px-4 py-2">Número</th><th className="text-left">Cliente</th><th className="text-left">Tipo</th>
-               <th className="text-left">Proveedor logístico</th><th className="text-left">ETA</th><th className="text-left">Responsable</th><th className="text-left">Estado</th><th className="text-right px-4 py-2">Acciones</th>
-            </tr></thead>
+             <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30 uppercase"><tr>
+               <th className="text-left px-4 py-2">Número</th><th className="text-left">Cliente</th><th className="text-left">Tipo</th>
+                <th className="text-left">Proveedor logístico</th><th className="text-left">ETA</th><th className="text-left">Responsable</th><th className="text-left">Estado</th>{canSeeMargen && <th className="text-left">Margen</th>}<th className="text-right px-4 py-2">Acciones</th>
+             </tr></thead>
             <tbody>
               {grupos.map(([estado, rows]) => <Fragment key={estado}>
                 <EstadoDivider colSpan={8} count={rows.length} colapsado={esColapsado(estado)} onToggle={() => toggleGrupo(estado)}
                   label={<Badge className={estadoLogisticaClass(estado === "finalizadas" ? "completada" : estado)}>{estado === "finalizadas" ? "Completadas / canceladas" : (ESTADO_LOGISTICA_LABEL[estado] ?? estado)}</Badge>} />
-                {!esColapsado(estado) && rows.map((o: any) => <tr key={o.id} className="border-b hover:bg-muted/40">
-                  <td className="px-4 py-2 font-medium"><Link to="/logistica/$id" params={{ id: o.id }} className="text-primary hover:underline">{o.numero}</Link></td>
-                  <td>{o.clientes?.nombre ?? "—"}</td><td className="capitalize">{o.tipo}</td><td>{o.proveedor_logistico ?? "—"}</td>
-                  <td>{fmtLocalDate(o.eta)}</td><td>{responsablesMap.get(o.responsable_id) ?? "—"}</td>
-                  <td><Badge className={estadoLogisticaClass(o.estado)}>{ESTADO_LOGISTICA_LABEL[o.estado] ?? o.estado}</Badge></td>
-                  <td className="px-4 py-2 text-right whitespace-nowrap">
-                    {canEdit && <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
-                      onClick={() => setToTrash({ id: o.id, numero: o.numero })} title="Mover a la papelera">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>}
-                  </td>
-                </tr>)}
+                 {!esColapsado(estado) && rows.map((o: any) => {
+                   const precioCliente = (Number(o.flete_monto) || 0) + (Number(o.seguro_monto) || 0) + (Number(o.gastos_locales_monto) || 0) + (Number(o.otros_monto) || 0) + (Number(o.hazmat_recargo) || 0);
+                   const costoInterno = Number(o.costo_interno_total) || 0;
+                   const margen = precioCliente - costoInterno;
+                   const margenPct = precioCliente > 0 ? (margen / precioCliente) * 100 : null;
+                   return <tr key={o.id} className="border-b hover:bg-muted/40">
+                   <td className="px-4 py-2 font-medium"><Link to="/logistica/$id" params={{ id: o.id }} className="text-primary hover:underline">{o.numero}</Link></td>
+                   <td>{o.clientes?.nombre ?? "—"}</td><td className="capitalize">{o.tipo}</td><td>{o.proveedor_logistico ?? "—"}</td>
+                   <td>{fmtLocalDate(o.eta)}</td><td>{responsablesMap.get(o.responsable_id) ?? "—"}</td>
+                   <td><Badge className={estadoLogisticaClass(o.estado)}>{ESTADO_LOGISTICA_LABEL[o.estado] ?? o.estado}</Badge></td>
+                   {canSeeMargen && <td className={cn("text-sm font-medium", margen >= 0 ? "text-emerald-600" : "text-destructive")}>US$ {margen.toFixed(2)} {margenPct !== null && `(${margenPct.toFixed(1)}%)`}</td>}
+                   <td className="px-4 py-2 text-right whitespace-nowrap">
+                     {canEdit && <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                       onClick={() => setToTrash({ id: o.id, numero: o.numero })} title="Mover a la papelera">
+                       <Trash2 className="h-4 w-4" />
+                     </Button>}
+                   </td>
+                 </tr>})}
               </Fragment>)}
-              {!isLoading && filtered.length === 0 && <tr><td colSpan={8} className="py-10 text-center text-muted-foreground">No hay operaciones de Logística.</td></tr>}
+               {!isLoading && filtered.length === 0 && <tr><td colSpan={canSeeMargen ? 9 : 8} className="py-10 text-center text-muted-foreground">No hay operaciones de Logística.</td></tr>}
             </tbody>
           </table>
         </CardContent>
