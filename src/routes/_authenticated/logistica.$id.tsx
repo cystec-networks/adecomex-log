@@ -802,14 +802,15 @@ function DetalleLogistica() {
         </div>
 
         {form.es_mercancia_peligrosa === "true" && (
-          <div className="sm:col-span-2 lg:col-span-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 rounded-md border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+          <div id="bloque-hazmat" className="sm:col-span-2 lg:col-span-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 rounded-md border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/20">
             <div className="sm:col-span-2 lg:col-span-4 flex items-center gap-2 text-sm font-semibold text-amber-800 dark:text-amber-200"><AlertTriangle className="h-4 w-4" />Datos HAZMAT</div>
-            <Field form={form} set={set} readOnly={readOnly} label="N° UN" name="hazmat_un_numero" />
-            <Field form={form} set={set} readOnly={readOnly} label="Clase" name="hazmat_clase" />
-            <Field form={form} set={set} readOnly={readOnly} label="Grupo de Empaque" name="hazmat_grupo_empaque" />
+            <Field form={form} set={set} readOnly={readOnly} invalid={hazmatFaltantes.includes("hazmat_un_numero")} label="N° UN" name="hazmat_un_numero" />
+            <Field form={form} set={set} readOnly={readOnly} invalid={hazmatFaltantes.includes("hazmat_clase")} label="Clase" name="hazmat_clase" />
+            <Field form={form} set={set} readOnly={readOnly} invalid={hazmatFaltantes.includes("hazmat_grupo_empaque")} label="Grupo de Empaque" name="hazmat_grupo_empaque" />
             <Field form={form} set={set} readOnly={readOnly} label="Punto de Inflamación" name="hazmat_punto_inflamacion" />
             <Field form={form} set={set} readOnly={readOnly} label="Recargo por Mercancía Peligrosa (US$)" name="hazmat_recargo" type="number" />
-            <div className="sm:col-span-2 space-y-1.5"><Label>Nombre Técnico</Label><Input disabled={readOnly} value={form.hazmat_nombre_tecnico} onChange={(e) => set("hazmat_nombre_tecnico", e.target.value)} /></div>
+            <div className={cn("sm:col-span-2 space-y-1.5", hazmatFaltantes.includes("hazmat_nombre_tecnico") && "ring-2 ring-destructive rounded-md p-2 -m-2")}><Label>Nombre Técnico</Label><Input disabled={readOnly} value={form.hazmat_nombre_tecnico} onChange={(e) => set("hazmat_nombre_tecnico", e.target.value)} /></div>
+
             <div className="flex items-center gap-3 rounded-md border border-amber-200 bg-background p-3 dark:border-amber-900">
               <Switch
                 id="hazmat_contaminante_marino"
