@@ -208,6 +208,13 @@ function AuthPage() {
         ? "¿No tienes acceso? Contacta a la coordinación académica de ADECOMEX SRL."
         : "¿No tienes acceso? Solicítalo al administrador del sistema.";
 
+  // Esta ruta no se renderiza en el servidor (ssr: false). Sin esta espera,
+  // el primer render del cliente no coincide con el HTML vacío del servidor y
+  // React descarta el árbol (pantalla en blanco momentánea).
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+  if (!hydrated) return null;
+
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       <div className="hidden lg:flex flex-col justify-between p-12 bg-[var(--primary-deep)] text-primary-foreground">
