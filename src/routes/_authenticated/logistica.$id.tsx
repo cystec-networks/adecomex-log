@@ -68,6 +68,8 @@ type FormState = {
   eta: string; fecha_arribo: string; flete_monto: string; flete_moneda: string; seguro_monto: string;
   gastos_locales_monto: string; otros_monto: string; observaciones: string; cotizacion_id: string; orden_id: string; expediente_id: string;
   notify_party: string; agente_entrega: string; agente_entrega_contacto: string;
+  shipper_nombre: string; shipper_tax_id: string; shipper_direccion: string; shipper_telefono: string; shipper_email: string;
+  bl_hijo_numero: string;
 };
 const cleanDate = (v: string | null) => v?.slice(0, 10) ?? "";
 const formFrom = (o: any): FormState => ({
@@ -85,6 +87,9 @@ const formFrom = (o: any): FormState => ({
   gastos_locales_monto: String(o.gastos_locales_monto ?? ""), otros_monto: String(o.otros_monto ?? ""), observaciones: o.observaciones ?? "",
   cotizacion_id: o.cotizacion_id ?? "", orden_id: o.orden_id ?? "", expediente_id: o.expediente_id ?? "",
   notify_party: o.notify_party ?? "", agente_entrega: o.agente_entrega ?? "", agente_entrega_contacto: o.agente_entrega_contacto ?? "",
+  shipper_nombre: o.shipper_nombre ?? "", shipper_tax_id: o.shipper_tax_id ?? "", shipper_direccion: o.shipper_direccion ?? "",
+  shipper_telefono: o.shipper_telefono ?? "", shipper_email: o.shipper_email ?? "",
+  bl_hijo_numero: o.bl_hijo_numero ?? "",
 });
 
 const normalizarCliente = (s: string) =>
@@ -198,7 +203,7 @@ function DetalleLogistica() {
     setClienteExtraidoSinMatch(res.cliente && !clienteMatch ? res.cliente : null);
     setForm((f) => f && ({
       ...f,
-      proveedor_logistico: res.suplidor || f.proveedor_logistico,
+      shipper_nombre: res.suplidor || f.shipper_nombre,
       cliente_id: clienteMatch?.id || f.cliente_id,
       tipo: tipoNorm,
       origen: res.puerto_salida || f.origen,
@@ -234,6 +239,9 @@ function DetalleLogistica() {
     otros_monto: numeric(f.otros_monto), observaciones: nullable(f.observaciones), cotizacion_id: nullable(f.cotizacion_id),
     orden_id: nullable(f.orden_id), expediente_id: nullable(f.expediente_id),
     notify_party: nullable(f.notify_party), agente_entrega: nullable(f.agente_entrega), agente_entrega_contacto: nullable(f.agente_entrega_contacto),
+    shipper_nombre: nullable(f.shipper_nombre), shipper_tax_id: nullable(f.shipper_tax_id), shipper_direccion: nullable(f.shipper_direccion),
+    shipper_telefono: nullable(f.shipper_telefono), shipper_email: nullable(f.shipper_email),
+    bl_hijo_numero: nullable(f.bl_hijo_numero),
   });
 
   const saveMut = useMutation({ mutationFn: async () => {
@@ -377,9 +385,9 @@ function DetalleLogistica() {
         <div className="space-y-1.5"><Label>Cliente{isNuevo && " *"}</Label><Select disabled={readOnly} value={form.cliente_id || "none"} onValueChange={(v) => set("cliente_id", v === "none" ? "" : v)}><SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger><SelectContent><SelectItem value="none">Sin cliente</SelectItem>{clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent></Select>{clienteExtraidoSinMatch && <p className="text-xs text-amber-600 mt-1">El documento indica "{clienteExtraidoSinMatch}" — no se encontró un cliente registrado con ese nombre, selecciónalo manualmente.</p>}</div>
         <div className="space-y-1.5"><Label>Responsable</Label><Select disabled={readOnly} value={form.responsable_id || "none"} onValueChange={(v) => set("responsable_id", v === "none" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sin asignar</SelectItem>{responsables.map((r) => <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>)}</SelectContent></Select></div>
         <div className="space-y-1.5"><Label>Tipo</Label><Select disabled={readOnly} value={form.tipo} onValueChange={(v) => set("tipo", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="maritimo">Marítimo</SelectItem><SelectItem value="aereo">Aéreo</SelectItem></SelectContent></Select></div>
-        <Field label="Booking" name="booking" /><Field label="BL / AWB" name="bl_awb" /><Field label="Contenedor" name="contenedor" />
+        <Field label="Booking" name="booking" /><Field label="BL / AWB" name="bl_awb" /><Field label="Contenedor" name="contenedor" /><Field label="BL Hijo (se asigna automático si se deja vacío)" name="bl_hijo_numero" />
         <Field label="Notify Party" name="notify_party" /><Field label="Agente de entrega" name="agente_entrega" /><Field label="Contacto del agente de entrega" name="agente_entrega_contacto" />
-        <div className="space-y-1.5"><TerceroExtranjeroPicker label="Proveedor logístico" onSelect={(t) => setForm((p) => p ? ({ ...p, proveedor_logistico: t.nombre, proveedor_logistico_tid: t.tid ?? "" }) : p)} /><Input disabled={readOnly} value={form.proveedor_logistico} onChange={(e) => set("proveedor_logistico", e.target.value)} placeholder="Nombre del proveedor" /></div>
+        <div className="space-y-1.5"><TerceroExtranjeroPicker label="Agente de Carga / Consolidadora" onSelect={(t) => setForm((p) => p ? ({ ...p, proveedor_logistico: t.nombre, proveedor_logistico_tid: t.tid ?? "" }) : p)} /><Input disabled={readOnly} value={form.proveedor_logistico} onChange={(e) => set("proveedor_logistico", e.target.value)} placeholder="Nombre del proveedor" /></div>
         <Field label="TID del proveedor" name="proveedor_logistico_tid" /><Field label="Correo del proveedor" name="proveedor_email" /><Field label="Teléfono del proveedor" name="proveedor_telefono" />
         <Field label="Fecha de recogida" name="fecha_recogida" type="date" /><Field label="Fecha de embarque" name="fecha_embarque" type="date" /><Field label="Fecha de salida" name="fecha_salida" type="date" /><Field label="ETA" name="eta" type="date" /><Field label="Fecha de arribo" name="fecha_arribo" type="date" />
         <LinkSelect label="Cotización de Compras" name="cotizacion_id" rows={vinculos?.cotizaciones ?? []} /><LinkSelect label="Orden de Compras" name="orden_id" rows={vinculos?.ordenes ?? []} /><LinkSelect label="Expediente" name="expediente_id" rows={vinculos?.expedientes ?? []} />
