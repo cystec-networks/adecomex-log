@@ -198,8 +198,13 @@ function DetalleLogistica() {
       supabase.from("expedientes").select("id,numero").is("eliminado_en", null).order("created_at", { ascending: false }).limit(100),
     ]); return { cotizaciones: c.data ?? [], ordenes: o.data ?? [], expedientes: e.data ?? [] };
   }});
+  const { data: contenedoresDb } = useQuery({ queryKey: ["contenedores-logistica", id], enabled: !isNuevo, queryFn: async () => {
+    const { data, error } = await supabase.from("logistica_contenedores").select("*").eq("operacion_logistica_id", id).order("item_no");
+    if (error) throw error; return data ?? [];
+  }});
   // Sincroniza el formulario con la operación cargada (solo modo edición de una existente).
   const [cargadoId, setCargadoId] = useState<string | null>(null);
+  const [contenedoresCargadoId, setContenedoresCargadoId] = useState<string | null>(null);
   if (isNuevo && cargadoId !== "nuevo") {
     setCargadoId("nuevo");
     setForm(EMPTY_FORM);
@@ -207,9 +212,17 @@ function DetalleLogistica() {
     setIncidenciasNuevas([]);
     setIncidenciasResueltas([]);
     setClienteExtraidoSinMatch(null);
+    setContenedores([]);
+    setContenedoresCargadoId("nuevo");
     setModoEdicion(true);
   }
   if (!isNuevo && operacion && cargadoId !== operacion.id) { setCargadoId(operacion.id); setForm(formFrom(operacion)); }
+  if (!isNuevo && contenedoresDb && contenedoresCargadoId !== id) {
+    setContenedoresCargadoId(id);
+    setContenedores(contenedoresDb.map((c) => ({
+      numero: c.numero_contenedor ?? "", sello1: c.sello1 ?? "", sello2: c.sello2 ?? "", tipo: c.tipo_contenedor ?? "",
+    })));
+  }
   const set = (key: keyof FormState, value: string) => setForm((p) => p ? ({ ...p, [key]: value }) : p);
   const done = etapas.filter((e) => e.estado === "completada").length;
   const total = etapas.length || 6;
