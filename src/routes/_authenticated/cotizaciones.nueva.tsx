@@ -111,13 +111,38 @@ function NuevaCotizacion() {
     );
   }
 
+  const aplicarOcr = (res: OcrExtraction) => {
+    setForm((f: any) => ({
+      ...f,
+      suplidor: f.suplidor || res.suplidor || f.suplidor,
+      origen: f.origen || res.puerto_salida || f.origen,
+      destino: f.destino || res.puerto_arribo || f.destino,
+      incoterm: f.incoterm || res.incoterm || f.incoterm,
+      peso_kg: f.peso_kg || (res.peso_bruto_kg != null ? String(res.peso_bruto_kg) : f.peso_kg),
+      tipo_mercancia: f.tipo_mercancia || f.tipo_mercancia,
+      notas: [f.notas, res.descripcion_mercancia || res.productos].filter(Boolean).join("\n"),
+    }));
+    if (res.cliente && clientes) {
+      const match = clientes.find(
+        (c: any) =>
+          c.nombre.toLowerCase().includes(res.cliente!.toLowerCase()) ||
+          res.cliente!.toLowerCase().includes(c.nombre.toLowerCase()),
+      );
+      if (match) set("cliente_id", match.id);
+    }
+  };
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" size="sm" asChild><Link to="/cotizaciones"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link></Button>
-        <div>
+        <div className="flex-1 min-w-40">
           <h1 className="font-display text-2xl font-bold">Nueva cotización de compras</h1>
           <p className="text-sm text-muted-foreground">Captura inicial del flujo comercial.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <EscanearBlButton onExtracted={aplicarOcr} />
+          <EscanearFacturaButton onExtracted={aplicarOcr} />
         </div>
       </div>
 
