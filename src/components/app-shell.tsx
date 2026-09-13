@@ -275,14 +275,14 @@ function AppSidebarInner() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2 px-2 py-2">
-          <div className="h-9 w-9 grid shrink-0 place-items-center overflow-hidden rounded-md bg-sidebar-accent">
-            <img src="/favicon.png" alt="A de ADECOMEX SRL" className="h-8 w-8 object-contain" />
+        <div className="flex items-center gap-3 px-3 py-3">
+          <div className="h-12 w-12 grid shrink-0 place-items-center overflow-hidden rounded-md bg-sidebar-accent">
+            <img src="/favicon.png" alt="A de ADECOMEX SRL" className="h-10 w-10 object-contain" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <div className="font-display font-bold text-sidebar-accent-foreground leading-tight">ADECOMEX SRL</div>
-              <div className="text-[10px] uppercase tracking-wider text-sidebar-accent-foreground">GESTION Y LOGISTICA</div>
+              <div className="font-display font-bold text-lg text-sidebar-accent-foreground leading-tight">ADECOMEX SRL</div>
+              <div className="text-xs uppercase tracking-wider text-sidebar-accent-foreground/90">GESTION Y LOGISTICA</div>
             </div>
           )}
         </div>
