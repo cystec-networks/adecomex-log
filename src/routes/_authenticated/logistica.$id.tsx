@@ -771,7 +771,19 @@ function DetalleLogistica() {
           )}
         </div>
         <Field form={form} set={set} readOnly={readOnly} label="Notify Party" name="notify_party" /><Field form={form} set={set} readOnly={readOnly} label="Agente de entrega" name="agente_entrega" /><Field form={form} set={set} readOnly={readOnly} label="Contacto del agente de entrega" name="agente_entrega_contacto" />
-        <div className="space-y-1.5"><TerceroExtranjeroPicker label="Agente de Carga / Consolidadora" onSelect={(t) => setForm((p) => p ? ({ ...p, proveedor_logistico: t.nombre, proveedor_logistico_tid: t.tid ?? "" }) : p)} /><Input disabled={readOnly} value={form.proveedor_logistico} onChange={(e) => set("proveedor_logistico", e.target.value)} placeholder="Nombre del proveedor" /></div>
+        <ProveedorLogisticoCombobox
+          label="Agente de Carga / Consolidadora"
+          disabled={readOnly}
+          value={form.proveedor_logistico}
+          onChange={(v) => set("proveedor_logistico", v)}
+          onSelect={(p) => setForm((f) => f ? ({
+            ...f,
+            proveedor_logistico: p.nombre,
+            proveedor_logistico_tid: p.tax_id ?? f.proveedor_logistico_tid,
+            proveedor_email: p.email ?? f.proveedor_email,
+            proveedor_telefono: p.telefono ?? f.proveedor_telefono,
+          }) : f)}
+        />
         <Field form={form} set={set} readOnly={readOnly} label="TID del proveedor" name="proveedor_logistico_tid" /><Field form={form} set={set} readOnly={readOnly} label="Correo del proveedor" name="proveedor_email" /><Field form={form} set={set} readOnly={readOnly} label="Teléfono del proveedor" name="proveedor_telefono" />
         <Field form={form} set={set} readOnly={readOnly} label="Fecha de recogida" name="fecha_recogida" type="date" /><Field form={form} set={set} readOnly={readOnly} label="Fecha de embarque" name="fecha_embarque" type="date" /><Field form={form} set={set} readOnly={readOnly} label="Fecha de salida" name="fecha_salida" type="date" /><Field form={form} set={set} readOnly={readOnly} label="ETA" name="eta" type="date" /><Field form={form} set={set} readOnly={readOnly} label="Fecha de arribo" name="fecha_arribo" type="date" />
         <LinkSelect form={form} set={set} readOnly={readOnly} isNuevo={isNuevo} prefill={prefill} label="Cotización de Compras" name="cotizacion_id" rows={vinculos?.cotizaciones ?? []} /><LinkSelect form={form} set={set} readOnly={readOnly} isNuevo={isNuevo} prefill={prefill} label="Orden de Compras" name="orden_id" rows={vinculos?.ordenes ?? []} /><LinkSelect form={form} set={set} readOnly={readOnly} isNuevo={isNuevo} prefill={prefill} label="Expediente" name="expediente_id" rows={vinculos?.expedientes ?? []} />
