@@ -290,10 +290,14 @@ function DetalleLogistica() {
       incoterm: res.incoterm || f.incoterm,
       producto: res.descripcion_mercancia || f.producto,
       bl_awb: res.numero_documento || f.bl_awb,
-      contenedor: res.contenedores?.length ? res.contenedores.map((c) => c.numero).join(", ") : f.contenedor,
       notify_party: res.notify_party || f.notify_party,
       agente_entrega: res.agente_entrega || f.agente_entrega,
     }));
+    if (res.contenedores?.length) {
+      setContenedores((prev) => prev.length ? prev : res.contenedores!.map((c: any) => ({
+        numero: c.numero ?? "", sello1: c.sello1 ?? "", sello2: c.sello2 ?? "", tipo: c.tipo ?? "",
+      })));
+    }
     toast.success("Datos extraídos — revisa y ajusta los campos");
   };
 
