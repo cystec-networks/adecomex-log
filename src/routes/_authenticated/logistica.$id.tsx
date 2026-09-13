@@ -328,7 +328,7 @@ function DetalleLogistica() {
     voyage: nullable(f.voyage), lugar_recepcion: nullable(f.lugar_recepcion), puerto_descarga: nullable(f.puerto_descarga),
     cantidad_bultos: numeric(f.cantidad_bultos), tipo_bultos: nullable(f.tipo_bultos), terminos_flete: nullable(f.terminos_flete),
     incoterm: nullable(f.incoterm), peso_bruto_kg: numeric(f.peso_bruto_kg), volumen_m3: numeric(f.volumen_m3),
-    bl_awb: nullable(f.bl_awb), contenedor: nullable(f.contenedor), fecha_recogida: nullable(f.fecha_recogida), fecha_embarque: nullable(f.fecha_embarque),
+    bl_awb: nullable(f.bl_awb), contenedor: contenedoresTexto || null, fecha_recogida: nullable(f.fecha_recogida), fecha_embarque: nullable(f.fecha_embarque),
     fecha_salida: nullable(f.fecha_salida), eta: nullable(f.eta), fecha_arribo: nullable(f.fecha_arribo), flete_monto: numeric(f.flete_monto),
     flete_moneda: f.flete_moneda, seguro_monto: numeric(f.seguro_monto), gastos_locales_monto: numeric(f.gastos_locales_monto),
     otros_monto: numeric(f.otros_monto), observaciones: nullable(f.observaciones), cotizacion_id: nullable(f.cotizacion_id),
