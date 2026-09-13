@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
@@ -76,6 +76,9 @@ const DGA_VUCE_TOOLS = [
   { label: "Portal VUCE-RD", url: "https://vucerd.gob.do/", icon: ShieldCheck },
   { label: "Portal SIGA", url: "https://siga.aduanas.gob.do/", icon: LayoutGrid },
   { label: "VUCE - Gestión de Trámites", url: "https://app.vucerd.gob.do/auth", icon: FileCheck },
+  { label: "DPH", url: "https://www.dph.net.do/Account/Login?ReturnUrl=%2F", icon: Globe },
+  { label: "DPW - Caucedo", url: "https://webapp.caucedo.com/#/home", icon: Ship },
+  { label: "HIT - Estatus de Contenedores", url: "https://hit.com.do/estatus-de-contenedores/", icon: Container },
 ];
 
 const searchSchema = z.object({
