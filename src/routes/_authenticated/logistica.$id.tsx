@@ -243,7 +243,10 @@ function DetalleLogistica() {
       numero: c.numero_contenedor ?? "", sello1: c.sello1 ?? "", sello2: c.sello2 ?? "", tipo: c.tipo_contenedor ?? "",
     })));
   }
-  const set = (key: keyof FormState, value: string) => setForm((p) => p ? ({ ...p, [key]: value }) : p);
+  const set = (key: keyof FormState, value: string) => {
+    setForm((p) => p ? ({ ...p, [key]: value }) : p);
+    if (value.trim()) setHazmatFaltantes((prev) => prev.length && prev.includes(key as string) ? prev.filter((k) => k !== key) : prev);
+  };
   const done = etapas.filter((e) => e.estado === "completada").length;
   const total = etapas.length || 6;
 
