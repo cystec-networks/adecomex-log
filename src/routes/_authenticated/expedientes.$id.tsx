@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -68,6 +68,15 @@ const SUG_INCOTERM = ["EXW", "FCA", "FAS", "FOB", "CFR", "CIF", "CPT", "CIP", "D
 const SUG_PUERTO_SALIDA = ["Shanghai", "Ningbo", "Shenzhen", "Hong Kong", "Busan", "Kaohsiung", "Miami", "Port Everglades", "Jacksonville", "Houston", "New York", "Valencia", "Barcelona", "Algeciras", "Rotterdam", "Hamburgo", "Amberes", "Cartagena", "Manzanillo (PA)", "Balboa"];
 const SUG_PUERTO_ARRIBO = ["Puerto Multimodal Caucedo", "Puerto de Haina Oriental", "Puerto de Haina Occidental", "Puerto de Río Haina", "Puerto de Boca Chica", "Puerto de Manzanillo", "Puerto Plata", "AILA (Las Américas)", "AIC (Cibao)", "AIP (Punta Cana)", "Aeropuerto La Isabela"];
 const SUG_PREFERENCIA = ["DR-CAFTA", "EPA (Unión Europea)", "ALADI", "SGP", "Ninguna"];
+
+const DGA_VUCE_TOOLS = [
+  { label: "Buscador de Productos", url: "https://www.aduanas.gob.do/consultas/buscador-de-productos/", icon: Search },
+  { label: "Consulta Aranceles VUCE", url: "https://sirevuce.aduanas.gob.do/", icon: FileText },
+  { label: "Arancel de Aduanas 7ma Enmienda 2022", url: "https://www.aduanas.gob.do/consultas/arancel-de-aduanas-7ma-enmienda-2022/", icon: Scale },
+  { label: "Portal VUCE-RD", url: "https://vucerd.gob.do/", icon: ShieldCheck },
+  { label: "Portal SIGA", url: "https://siga.aduanas.gob.do/", icon: LayoutGrid },
+  { label: "VUCE - Gestión de Trámites", url: "https://app.vucerd.gob.do/auth", icon: FileCheck },
+];
 
 const searchSchema = z.object({
   nuevo: fallback(z.string(), "").default(""),
@@ -497,22 +506,45 @@ function DetalleExpediente() {
               <EscanearFacturaExpButton onExtracted={(res) => { facRes.current = res; void aplicarCombinado(); toast.success("Factura procesada — revisa y ajusta los campos"); }} />
             </div>
           ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
-                  <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 p-1">
-                <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:text-sm [&_button:hover]:bg-accent">
-                  <GenerarXmlSigaButton expedienteId={id} />
-                  <GenerarXmlCertificadoOrigenButton expedienteId={id} />
-                  <PreLiquidacionPdfButton exp={expData} />
-                  <GenerarDocumentoButton exp={expData} />
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-2 flex-wrap">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
+                    <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 p-1">
+                  <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:text-sm [&_button:hover]:bg-accent">
+                    <GenerarXmlSigaButton expedienteId={id} />
+                    <GenerarXmlCertificadoOrigenButton expedienteId={id} />
+                    <PreLiquidacionPdfButton exp={expData} />
+                    <GenerarDocumentoButton exp={expData} />
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <ShieldCheck className="h-4 w-4 mr-1" /> Herramientas DGA/VUCE
+                    <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 p-1">
+                  {DGA_VUCE_TOOLS.map((t) => {
+                    const Icon = t.icon;
+                    return (
+                      <DropdownMenuItem key={t.url} asChild>
+                        <a href={t.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
+                          <Icon className="h-4 w-4 shrink-0 text-accent" />
+                          <span>{t.label}</span>
+                        </a>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
         </div>
 
@@ -1512,7 +1544,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               {...(isNuevo ? { localItems: productosNuevos, onLocalItemsChange: setProductosNuevos } : {})}
             />
           </div>
-          <HerramientasDgaVuce />
+          
           {(() => {
             const toN = (v: any) => (v === "" || v == null ? 0 : Number(v) || 0);
             const fob = isNuevo ? (productosNuevos.length ? sumFob : toN(form.total_fob)) : sumFob;
@@ -3903,45 +3935,6 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
   );
 }
 
-function HerramientasDgaVuce() {
-  const tools = [
-    { label: "Buscador de Productos", url: "https://www.aduanas.gob.do/consultas/buscador-de-productos/", icon: Search },
-    { label: "Consulta Aranceles VUCE", url: "https://sirevuce.aduanas.gob.do/", icon: FileText },
-    { label: "Arancel de Aduanas 7ma Enmienda 2022", url: "https://www.aduanas.gob.do/consultas/arancel-de-aduanas-7ma-enmienda-2022/", icon: Scale },
-    { label: "Portal VUCE-RD", url: "https://vucerd.gob.do/", icon: ShieldCheck },
-    { label: "Portal SIGA", url: "https://siga.aduanas.gob.do/", icon: LayoutGrid },
-    { label: "VUCE - Gestión de Trámites", url: "https://app.vucerd.gob.do/auth", icon: FileCheck },
-  ];
-
-  return (
-    <div className="md:col-span-2 lg:col-span-3">
-      <div className="rounded-lg border border-dashed border-accent/30 bg-accent/[0.03] p-4">
-        <div className="flex items-center gap-2 text-sm font-semibold text-foreground mb-3">
-          <Clock className="h-4 w-4 text-accent" />
-          <span>Herramientas DGA/VUCE</span>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {tools.map((t) => {
-            const Icon = t.icon;
-            return (
-              <a
-                key={t.url}
-                href={t.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center gap-2 rounded-md border border-border bg-background/60 px-3 py-2.5 text-sm hover:border-accent/50 hover:bg-accent/5 transition-colors"
-              >
-                <Icon className="h-4 w-4 shrink-0 text-accent" />
-                <span className="flex-1 leading-tight">{t.label}</span>
-                <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-accent" />
-              </a>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function CotizacionServiciosExpedienteButton({ exp }: { exp: any }) {
   const { data: roles } = useMyRoles();
