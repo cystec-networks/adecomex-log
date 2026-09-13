@@ -436,6 +436,18 @@ function DetalleLogistica() {
   const etapaSiguiente = idxActual >= 0 ? etapas[idxActual + 1] : undefined;
   const nombreEtapa = (codigo?: string) => ETAPAS_LOGISTICA.find((e) => e.codigo === codigo)?.nombre ?? codigo ?? "—";
 
+  /** Gate de cumplimiento DG: bloquea embarque y documentos de transporte si faltan datos HAZMAT. */
+  const validarHazmat = (): boolean => {
+    if (form.es_mercancia_peligrosa !== "true") { setHazmatFaltantes([]); return true; }
+    const faltan = HAZMAT_REQUERIDOS.filter((c) => !(form[c.name] ?? "").trim());
+    setHazmatFaltantes(faltan.map((c) => c.name));
+    if (faltan.length === 0) return true;
+    toast.error(`Faltan datos obligatorios de mercancía peligrosa antes de continuar: ${faltan.map((c) => c.label).join(", ")}`);
+    document.getElementById("bloque-hazmat")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    return false;
+  };
+
+
   const datosConstancia = () => ({
     numero: form.numero,
     fechaInicio: fmtLocalDate(String(operacion?.created_at ?? "").slice(0, 10)),
