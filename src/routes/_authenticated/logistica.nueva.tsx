@@ -5,6 +5,8 @@ import { ArrowLeft, Save, Ship } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
+import { EscanearBlButton, EscanearFacturaButton } from "@/components/escanear-documento-expediente-buttons";
+import { type OcrExtraction } from "@/lib/ai-ocr.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -83,6 +85,29 @@ function NuevaOperacion() {
     } catch { /* la precarga es opcional */ }
   };
 
+  const aplicarOcr = (res: OcrExtraction) => {
+    const tipoNorm = (() => {
+      const m = (res.medio_transporte || "").toLowerCase();
+      if (m.includes("aer") || m.includes("air") || m.includes("avi")) return "aereo";
+      if (m.includes("mar") || m.includes("sea") || m.includes("nav") || m.includes("vessel")) return "maritimo";
+      return form.tipo;
+    })();
+    setForm((f) => ({
+      ...f,
+      proveedor_logistico: res.suplidor || f.proveedor_logistico,
+      tipo: tipoNorm,
+      origen: res.puerto_salida || f.origen,
+      destino: res.puerto_arribo || f.destino,
+      puerto_destino: res.puerto_arribo || f.puerto_destino,
+      buque: res.naviera || f.buque,
+      peso_bruto_kg: f.peso_bruto_kg || (res.peso_bruto_kg != null ? String(res.peso_bruto_kg) : ""),
+      incoterm: res.incoterm || f.incoterm,
+      producto: res.descripcion_mercancia || f.producto,
+      observaciones: f.observaciones || (res.contenedores?.length ? `Contenedores: ${res.contenedores.map((c) => c.numero).join(", ")}` : ""),
+    }));
+    toast.success("Datos extraídos — revisa y ajusta los campos");
+  };
+
   const createMut = useMutation({ mutationFn: async () => {
     if (!form.cliente_id) throw new Error("Selecciona un cliente.");
     const num = (v: string) => (v === "" ? null : Number(v));
@@ -105,7 +130,16 @@ function NuevaOperacion() {
   const LinkSelect = ({ label, field, rows }: { label: string; field: "cotizacion_id" | "orden_id" | "expediente_id"; rows: { id: string; numero: string | null }[] }) => <div className="space-y-1.5"><Label>{label}</Label><Select value={form[field] || "none"} onValueChange={(v) => { const val = v === "none" ? "" : v; set(field, val); if (val && field === "cotizacion_id") void prefill("cotizacion", val); if (val && field === "orden_id") void prefill("orden", val); }}><SelectTrigger><SelectValue placeholder="Sin vincular" /></SelectTrigger><SelectContent><SelectItem value="none">Sin vincular</SelectItem>{rows.map((r) => <SelectItem key={r.id} value={r.id}>{r.numero ?? "Sin número"}</SelectItem>)}</SelectContent></Select></div>;
   const CargaField = ({ label, field, type = "text" }: { label: string; field: keyof typeof EMPTY; type?: string }) => <div className="space-y-1.5"><Label>{label}</Label><Input type={type} value={form[field]} onChange={(e) => set(field, e.target.value)} /></div>;
   return <div className="p-6 max-w-5xl mx-auto space-y-6 bg-success/10 min-h-full">
-    <div className="flex items-center gap-3"><Button variant="ghost" size="icon" onClick={() => history.back()}><ArrowLeft className="h-4 w-4" /></Button><div><h1 className="font-display text-2xl font-bold">Nueva Operación Logística</h1><p className="text-sm text-muted-foreground">Registra la carga desde su punto de origen.</p></div></div>
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => history.back()}><ArrowLeft className="h-4 w-4" /></Button>
+        <div><h1 className="font-display text-2xl font-bold">Nueva Operación Logística</h1><p className="text-sm text-muted-foreground">Registra la carga desde su punto de origen.</p></div>
+      </div>
+      <div className="flex items-center gap-2">
+        <EscanearBlButton onExtracted={aplicarOcr} />
+        <EscanearFacturaButton onExtracted={aplicarOcr} />
+      </div>
+    </div>
     <Card><CardHeader><CardTitle className="text-base flex items-center gap-2"><Ship className="h-4 w-4" />Datos iniciales</CardTitle></CardHeader><CardContent className="grid md:grid-cols-2 gap-4">
       <div className="space-y-1.5"><Label>Cliente *</Label><Select value={form.cliente_id} onValueChange={(v) => set("cliente_id", v)}><SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger><SelectContent>{clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent></Select></div>
       <div className="space-y-1.5"><Label>Tipo de transporte</Label><Select value={form.tipo} onValueChange={(v) => set("tipo", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="maritimo">Marítimo</SelectItem><SelectItem value="aereo">Aéreo</SelectItem></SelectContent></Select></div>
