@@ -436,7 +436,7 @@ function DetalleExpediente() {
                   <Badge className="bg-primary/10 text-primary border-transparent">{ESTADO_LABEL[expData.estado ?? ""] ?? expData.estado?.replace("_"," ")}</Badge>
                   {expData.solicitudes?.numero && <Badge variant="outline">← {expData.solicitudes.numero}</Badge>}
                 </h1>
-                <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap text-xl font-bold text-foreground">
                   {expData.clientes ? (
                     <Popover>
                       <PopoverTrigger asChild>
@@ -485,8 +485,9 @@ function DetalleExpediente() {
                     blNumber={expData.bl_awb}
                     expedienteNumber={expData.numero}
                   />
-                  <span>· BL/AWB: {expData.bl_awb ?? "—"}</span>
-                </p>
+                  <span className="text-muted-foreground font-normal">·</span>
+                  <span>BL/AWB: {expData.bl_awb ?? "—"}</span>
+                </div>
               </>
             )}
           </div>
