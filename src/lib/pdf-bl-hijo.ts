@@ -202,7 +202,6 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
   const cargoStartY = voyageY + 48;
   const cargoBottomY = 574;
   const cargoTotalHeight = 18;
-  const cargoBodyBottomY = cargoBottomY - cargoTotalHeight;
   autoTable(doc, {
     startY: cargoStartY,
     head: [["Marcas y Números", "Cantidad y Tipo de Bultos", "Descripción de Mercancía", "Peso Bruto (Kg)", "Volumen (M3)"]],
@@ -239,20 +238,24 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
 
   const tableEndY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
   const cargoColumnWidths = [118, 91, 231, 68, contentWidth - 508];
-  // Las columnas continúan hasta los totales, sin una línea horizontal que separe la descripción.
-  if (tableEndY < cargoBottomY) doc.rect(margin, tableEndY, contentWidth, cargoBottomY - tableEndY);
-  let cargoColumnX = margin;
-  cargoColumnWidths.slice(0, -1).forEach((columnWidth) => {
-    cargoColumnX += columnWidth;
-    doc.line(cargoColumnX, tableEndY, cargoColumnX, cargoBottomY);
-  });
+  const totalsTopY = cargoBottomY - cargoTotalHeight;
+
+  // Espacio libre entre la descripción y los totales; solo se dibujan los bordes de la fila de totales.
+  if (tableEndY < totalsTopY) {
+    doc.line(margin, totalsTopY, margin + contentWidth, totalsTopY);
+    let cargoColumnX = margin;
+    cargoColumnWidths.slice(0, -1).forEach((columnWidth) => {
+      cargoColumnX += columnWidth;
+      doc.line(cargoColumnX, totalsTopY, cargoColumnX, cargoBottomY);
+    });
+    doc.line(margin, cargoBottomY, margin + contentWidth, cargoBottomY);
+  }
+
   const cargoTotalY = cargoBottomY - 7;
   label("TOTAL", margin + cargoColumnWidths[0] + cargoColumnWidths[1] + cargoColumnWidths[2] - 34, cargoTotalY, 6);
   value(input.cantidadBultos == null ? "—" : Number(input.cantidadBultos).toLocaleString("en-US"), margin + cargoColumnWidths[0] + 4, cargoTotalY, cargoColumnWidths[1] - 8, 1, 6.8);
   value(nf(input.pesoBrutoKg), margin + cargoColumnWidths[0] + cargoColumnWidths[1] + cargoColumnWidths[2] + 4, cargoTotalY, cargoColumnWidths[3] - 8, 1, 6.8);
   value(nf(input.volumenM3), margin + cargoColumnWidths[0] + cargoColumnWidths[1] + cargoColumnWidths[2] + cargoColumnWidths[3] + 4, cargoTotalY, cargoColumnWidths[4] - 8, 1, 6.8);
-
-  label("PARTICULARS OF GOODS ARE THOSE DECLARED BY SHIPPERS", margin + 5, cargoBodyBottomY - 5, 5.2);
 
   // Pie integrado y extendido hasta el borde inferior útil de la hoja carta.
   const legalTop = cargoBottomY;
