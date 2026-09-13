@@ -98,6 +98,10 @@ const formFrom = (o: any): FormState => ({
   comprador_nombre: o.comprador_nombre ?? "", comprador_tax_id: o.comprador_tax_id ?? "", comprador_direccion: o.comprador_direccion ?? "",
   comprador_telefono: o.comprador_telefono ?? "", comprador_email: o.comprador_email ?? "",
   bl_hijo_numero: o.bl_hijo_numero ?? "",
+  es_mercancia_peligrosa: String(o.es_mercancia_peligrosa ?? false),
+  hazmat_un_numero: o.hazmat_un_numero ?? "", hazmat_clase: o.hazmat_clase ?? "", hazmat_grupo_empaque: o.hazmat_grupo_empaque ?? "",
+  hazmat_punto_inflamacion: o.hazmat_punto_inflamacion ?? "", hazmat_contaminante_marino: String(o.hazmat_contaminante_marino ?? false),
+  hazmat_nombre_tecnico: o.hazmat_nombre_tecnico ?? "",
 });
 
 const normalizarCliente = (s: string) =>
