@@ -646,6 +646,42 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_proveedores_logisticos: {
+        Row: {
+          activo: boolean
+          contacto: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nombre: string
+          tax_id: string | null
+          telefono: string | null
+          tipo: string | null
+        }
+        Insert: {
+          activo?: boolean
+          contacto?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nombre: string
+          tax_id?: string | null
+          telefono?: string | null
+          tipo?: string | null
+        }
+        Update: {
+          activo?: boolean
+          contacto?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nombre?: string
+          tax_id?: string | null
+          telefono?: string | null
+          tipo?: string | null
+        }
+        Relationships: []
+      }
       catalogo_puertos: {
         Row: {
           activo: boolean
