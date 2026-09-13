@@ -351,8 +351,6 @@ function DetalleLogistica() {
   const totalCostos = useMemo(() => [form?.flete_monto, form?.seguro_monto, form?.gastos_locales_monto, form?.otros_monto].reduce<number>((sum, value) => sum + Number(value || 0), 0), [form]);
   if (isLoading || !form || (!isNuevo && !operacion)) return <div className="p-8 text-muted-foreground">Cargando operación…</div>;
   const readOnly = !isNuevo && !modoEdicion;
-  const Field = ({ label, name, type = "text" }: { label: string; name: keyof FormState; type?: string }) => <div className="space-y-1.5"><Label>{label}</Label><Input type={type} value={form[name]} disabled={readOnly} onChange={(e) => set(name, e.target.value)} /></div>;
-  const LinkSelect = ({ label, name, rows }: { label: string; name: "cotizacion_id" | "orden_id" | "expediente_id"; rows: { id: string; numero: string | null }[] }) => <div className="space-y-1.5"><Label>{label}</Label><Select disabled={readOnly} value={form[name] || "none"} onValueChange={(v) => { const val = v === "none" ? "" : v; set(name, val); if (isNuevo && val && name === "cotizacion_id") void prefill("cotizacion", val); if (isNuevo && val && name === "orden_id") void prefill("orden", val); }}><SelectTrigger><SelectValue placeholder="Sin vincular" /></SelectTrigger><SelectContent><SelectItem value="none">Sin vincular</SelectItem>{rows.map((r) => <SelectItem key={r.id} value={r.id}>{r.numero ?? "Sin número"}</SelectItem>)}</SelectContent></Select></div>;
 
   const etapaActual = etapas.find((e) => e.estado === "en_curso");
   const idxActual = etapaActual ? etapas.findIndex((e) => e.id === etapaActual.id) : -1;
