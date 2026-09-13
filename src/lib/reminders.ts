@@ -125,7 +125,35 @@ export function useReminders() {
           .not("fecha_programada", "is", null)
           .lte("fecha_programada", isoDay(hitoLimite))
           .limit(300),
+        supabase
+          .from("operaciones_logistica")
+          .select("id,numero,estado,eta, clientes(nombre)")
+          .is("eliminado_en", null)
+          .not("estado", "in", "(arribo,completada,cancelada)")
+          .not("eta", "is", null)
+          .lt("eta", isoDay(today))
+          .limit(200),
+        supabase
+          .from("operacion_logistica_etapas")
+          .select("operacion_logistica_id, operaciones_logistica!inner(id,numero,eliminado_en)")
+          .eq("etapa_codigo", "embarque")
+          .eq("estado", "completada")
+          .limit(300),
       ]);
+
+      // Operaciones con etapa "Embarque" completada y sin documentos cargados.
+      const opsEmbarcadas = (emb.data ?? []).filter((r: any) => !r.operaciones_logistica?.eliminado_en);
+      let opsSinDocs: any[] = [];
+      if (opsEmbarcadas.length) {
+        const ids = opsEmbarcadas.map((r: any) => r.operacion_logistica_id);
+        const { data: docs } = await supabase
+          .from("logistica_documentos")
+          .select("operacion_logistica_id")
+          .in("operacion_logistica_id", ids);
+        const conDocs = new Set((docs ?? []).map((d: any) => d.operacion_logistica_id));
+        opsSinDocs = opsEmbarcadas.filter((r: any) => !conDocs.has(r.operacion_logistica_id));
+      }
+
 
       const out: Reminder[] = [];
 
