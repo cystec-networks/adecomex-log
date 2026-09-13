@@ -124,6 +124,14 @@ function DetalleLogistica() {
   }});
   // Sincroniza el formulario con la operación cargada (solo modo edición de una existente).
   const [cargadoId, setCargadoId] = useState<string | null>(null);
+  if (isNuevo && cargadoId !== "nuevo") {
+    setCargadoId("nuevo");
+    setForm(EMPTY_FORM);
+    setDocumentosNuevos([]);
+    setIncidenciasNuevas([]);
+    setIncidenciasResueltas([]);
+    setModoEdicion(true);
+  }
   if (!isNuevo && operacion && cargadoId !== operacion.id) { setCargadoId(operacion.id); setForm(formFrom(operacion)); }
   const set = (key: keyof FormState, value: string) => setForm((p) => p ? ({ ...p, [key]: value }) : p);
   const done = etapas.filter((e) => e.estado === "completada").length;
