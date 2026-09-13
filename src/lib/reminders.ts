@@ -12,7 +12,9 @@ export type ReminderKind =
   | "permiso_vencido"
   | "transporte_retrasado"
   | "hito_proximo"
-  | "hito_atrasado";
+  | "hito_atrasado"
+  | "logistica_eta_vencida"
+  | "logistica_sin_documentos";
 
 export type Reminder = {
   id: string; // clave única `${kind}:${entidad_id}`
@@ -84,7 +86,7 @@ export function useReminders() {
       const hitoLimite = new Date(today); hitoLimite.setDate(hitoLimite.getDate() + 3);
       const traLimite = new Date(today); traLimite.setDate(traLimite.getDate() - cfg.transporteRetrasadoDias);
 
-      const [sol, exp, per, tra, hit] = await Promise.all([
+      const [sol, exp, per, tra, hit, logi, emb] = await Promise.all([
         supabase
           .from("solicitudes")
           .select("id,numero,estado,created_at, cliente:clientes(nombre)")
@@ -123,7 +125,35 @@ export function useReminders() {
           .not("fecha_programada", "is", null)
           .lte("fecha_programada", isoDay(hitoLimite))
           .limit(300),
+        supabase
+          .from("operaciones_logistica")
+          .select("id,numero,estado,eta, clientes(nombre)")
+          .is("eliminado_en", null)
+          .not("estado", "in", "(arribo,completada,cancelada)")
+          .not("eta", "is", null)
+          .lt("eta", isoDay(today))
+          .limit(200),
+        supabase
+          .from("operacion_logistica_etapas")
+          .select("operacion_logistica_id, operaciones_logistica!inner(id,numero,eliminado_en)")
+          .eq("etapa_codigo", "embarque")
+          .eq("estado", "completada")
+          .limit(300),
       ]);
+
+      // Operaciones con etapa "Embarque" completada y sin documentos cargados.
+      const opsEmbarcadas = (emb.data ?? []).filter((r: any) => !r.operaciones_logistica?.eliminado_en);
+      let opsSinDocs: any[] = [];
+      if (opsEmbarcadas.length) {
+        const ids = opsEmbarcadas.map((r: any) => r.operacion_logistica_id);
+        const { data: docs } = await supabase
+          .from("logistica_documentos")
+          .select("operacion_logistica_id")
+          .in("operacion_logistica_id", ids);
+        const conDocs = new Set((docs ?? []).map((d: any) => d.operacion_logistica_id));
+        opsSinDocs = opsEmbarcadas.filter((r: any) => !conDocs.has(r.operacion_logistica_id));
+      }
+
 
       const out: Reminder[] = [];
 
@@ -272,6 +302,38 @@ export function useReminders() {
         }
 
       }
+
+      // Logística: ETA vencida sin arribo
+      for (const o of (logi.data ?? []) as any[]) {
+        if (!o.eta) continue;
+        const dias = daysBetween(today, parseLocalDate(o.eta));
+        if (dias <= 0) continue;
+        out.push({
+          id: `logistica_eta_vencida:${o.id}`,
+          kind: "logistica_eta_vencida",
+          severity: dias > 3 ? "critica" : "alta",
+          title: `Operación ${o.numero ?? ""} · ETA vencida sin arribo`,
+          detail: `${o.clientes?.nombre ?? "Sin cliente"} · ETA vencida hace ${dias} días`,
+          href: `/logistica/${o.id}`,
+          createdAt: o.eta,
+        });
+      }
+
+      // Logística: embarcada sin documentos cargados
+      for (const r of opsSinDocs) {
+        const op = r.operaciones_logistica;
+        out.push({
+          id: `logistica_sin_documentos:${r.operacion_logistica_id}`,
+          kind: "logistica_sin_documentos",
+          severity: "media",
+          title: `Operación ${op?.numero ?? ""} sin documentos cargados`,
+          detail: "Embarque completado y aún no hay documentos adjuntos",
+          href: `/logistica/${r.operacion_logistica_id}`,
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+
 
       const sevOrder: Record<ReminderSeverity, number> = { critica: 0, alta: 1, media: 2 };
       // Ordena por severidad; dentro de "crítica", el hito de Verificación va primero.

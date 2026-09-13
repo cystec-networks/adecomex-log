@@ -11,7 +11,8 @@ import { cn } from "@/lib/utils";
 import { ETAPAS_LOGISTICA, ESTADO_LOGISTICA_LABEL, estadoLogisticaClass, money } from "@/lib/logistica";
 import { fmtLocalDate } from "@/lib/dates";
 import { useCurrentUser, useMyRoles } from "@/lib/auth-hooks";
-import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
+
+import { ProveedorLogisticoCombobox } from "@/components/proveedor-logistico-combobox";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { EscanearBlButton, EscanearFacturaButton } from "@/components/escanear-documento-expediente-buttons";
 import { type OcrExtraction } from "@/lib/ai-ocr.functions";
@@ -112,21 +113,31 @@ const normalizarCliente = (s: string) =>
   s.toLowerCase().replace(/[.,]/g, "").replace(/\bs\.?r\.?l\.?\b/g, "srl").replace(/\s+/g, " ").trim();
 const EMPTY_FORM: FormState = formFrom({});
 
-function Field({ label, name, type = "text", form, set, readOnly }: {
+/** Campos HAZMAT obligatorios antes de embarcar o emitir documentos de transporte. */
+export const HAZMAT_REQUERIDOS = [
+  { name: "hazmat_un_numero", label: "N° UN" },
+  { name: "hazmat_clase", label: "Clase" },
+  { name: "hazmat_grupo_empaque", label: "Grupo de Empaque" },
+  { name: "hazmat_nombre_tecnico", label: "Nombre Técnico" },
+] as const;
+
+function Field({ label, name, type = "text", form, set, readOnly, invalid }: {
   label: string;
   name: keyof FormState;
   type?: string;
   form: FormState;
   set: (name: keyof FormState, value: string) => void;
   readOnly: boolean;
+  invalid?: boolean;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className={cn("space-y-1.5", invalid && "ring-2 ring-destructive rounded-md p-2 -m-2")}>
       <Label>{label}</Label>
       <Input type={type} value={form[name]} disabled={readOnly} onChange={(e) => set(name, e.target.value)} />
     </div>
   );
 }
+
 
 function LinkSelect({ label, name, rows, form, set, readOnly, isNuevo, prefill }: {
   label: string;
@@ -178,6 +189,8 @@ function DetalleLogistica() {
   const [incidenciasResueltas, setIncidenciasResueltas] = useState<number[]>([]);
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
   const [contenedores, setContenedores] = useState<ContenedorFila[]>([]);
+  const [hazmatFaltantes, setHazmatFaltantes] = useState<string[]>([]);
+
   const constanciaRef = useRef<ConstanciaLogisticaButtonHandle>(null);
   const blHijoRef = useRef<BlHijoPdfButtonHandle>(null);
   const bookingRef = useRef<SolicitudBookingPdfButtonHandle>(null);
@@ -231,7 +244,10 @@ function DetalleLogistica() {
       numero: c.numero_contenedor ?? "", sello1: c.sello1 ?? "", sello2: c.sello2 ?? "", tipo: c.tipo_contenedor ?? "",
     })));
   }
-  const set = (key: keyof FormState, value: string) => setForm((p) => p ? ({ ...p, [key]: value }) : p);
+  const set = (key: keyof FormState, value: string) => {
+    setForm((p) => p ? ({ ...p, [key]: value }) : p);
+    if (value.trim()) setHazmatFaltantes((prev) => prev.length && prev.includes(key as string) ? prev.filter((k) => k !== key) : prev);
+  };
   const done = etapas.filter((e) => e.estado === "completada").length;
   const total = etapas.length || 6;
 
@@ -423,6 +439,18 @@ function DetalleLogistica() {
   const idxActual = etapaActual ? etapas.findIndex((e) => e.id === etapaActual.id) : -1;
   const etapaSiguiente = idxActual >= 0 ? etapas[idxActual + 1] : undefined;
   const nombreEtapa = (codigo?: string) => ETAPAS_LOGISTICA.find((e) => e.codigo === codigo)?.nombre ?? codigo ?? "—";
+
+  /** Gate de cumplimiento DG: bloquea embarque y documentos de transporte si faltan datos HAZMAT. */
+  const validarHazmat = (): boolean => {
+    if (form.es_mercancia_peligrosa !== "true") { setHazmatFaltantes([]); return true; }
+    const faltan = HAZMAT_REQUERIDOS.filter((c) => !(form[c.name] ?? "").trim());
+    setHazmatFaltantes(faltan.map((c) => c.name));
+    if (faltan.length === 0) return true;
+    toast.error(`Faltan datos obligatorios de mercancía peligrosa antes de continuar: ${faltan.map((c) => c.label).join(", ")}`);
+    document.getElementById("bloque-hazmat")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    return false;
+  };
+
 
   const datosConstancia = () => ({
     numero: form.numero,
@@ -663,10 +691,10 @@ function DetalleLogistica() {
                 <DropdownMenuItem onSelect={() => constanciaRef.current?.generar()} className="cursor-pointer">
                   Generar Constancia (PDF)
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => blHijoRef.current?.generar()} className="cursor-pointer">
+                <DropdownMenuItem onSelect={() => { if (validarHazmat()) blHijoRef.current?.generar(); }} className="cursor-pointer">
                   Generar BL Hijo (PDF)
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => bookingRef.current?.generar()} className="cursor-pointer">
+                <DropdownMenuItem onSelect={() => { if (validarHazmat()) bookingRef.current?.generar(); }} className="cursor-pointer">
                   Generar Solicitud de Booking (PDF)
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => cotizacionRef.current?.generar()} className="cursor-pointer">
@@ -744,7 +772,19 @@ function DetalleLogistica() {
           )}
         </div>
         <Field form={form} set={set} readOnly={readOnly} label="Notify Party" name="notify_party" /><Field form={form} set={set} readOnly={readOnly} label="Agente de entrega" name="agente_entrega" /><Field form={form} set={set} readOnly={readOnly} label="Contacto del agente de entrega" name="agente_entrega_contacto" />
-        <div className="space-y-1.5"><TerceroExtranjeroPicker label="Agente de Carga / Consolidadora" onSelect={(t) => setForm((p) => p ? ({ ...p, proveedor_logistico: t.nombre, proveedor_logistico_tid: t.tid ?? "" }) : p)} /><Input disabled={readOnly} value={form.proveedor_logistico} onChange={(e) => set("proveedor_logistico", e.target.value)} placeholder="Nombre del proveedor" /></div>
+        <ProveedorLogisticoCombobox
+          label="Agente de Carga / Consolidadora"
+          disabled={readOnly}
+          value={form.proveedor_logistico}
+          onChange={(v) => set("proveedor_logistico", v)}
+          onSelect={(p) => setForm((f) => f ? ({
+            ...f,
+            proveedor_logistico: p.nombre,
+            proveedor_logistico_tid: p.tax_id ?? f.proveedor_logistico_tid,
+            proveedor_email: p.email ?? f.proveedor_email,
+            proveedor_telefono: p.telefono ?? f.proveedor_telefono,
+          }) : f)}
+        />
         <Field form={form} set={set} readOnly={readOnly} label="TID del proveedor" name="proveedor_logistico_tid" /><Field form={form} set={set} readOnly={readOnly} label="Correo del proveedor" name="proveedor_email" /><Field form={form} set={set} readOnly={readOnly} label="Teléfono del proveedor" name="proveedor_telefono" />
         <Field form={form} set={set} readOnly={readOnly} label="Fecha de recogida" name="fecha_recogida" type="date" /><Field form={form} set={set} readOnly={readOnly} label="Fecha de embarque" name="fecha_embarque" type="date" /><Field form={form} set={set} readOnly={readOnly} label="Fecha de salida" name="fecha_salida" type="date" /><Field form={form} set={set} readOnly={readOnly} label="ETA" name="eta" type="date" /><Field form={form} set={set} readOnly={readOnly} label="Fecha de arribo" name="fecha_arribo" type="date" />
         <LinkSelect form={form} set={set} readOnly={readOnly} isNuevo={isNuevo} prefill={prefill} label="Cotización de Compras" name="cotizacion_id" rows={vinculos?.cotizaciones ?? []} /><LinkSelect form={form} set={set} readOnly={readOnly} isNuevo={isNuevo} prefill={prefill} label="Orden de Compras" name="orden_id" rows={vinculos?.ordenes ?? []} /><LinkSelect form={form} set={set} readOnly={readOnly} isNuevo={isNuevo} prefill={prefill} label="Expediente" name="expediente_id" rows={vinculos?.expedientes ?? []} />
@@ -778,14 +818,15 @@ function DetalleLogistica() {
         </div>
 
         {form.es_mercancia_peligrosa === "true" && (
-          <div className="sm:col-span-2 lg:col-span-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 rounded-md border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+          <div id="bloque-hazmat" className="sm:col-span-2 lg:col-span-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 rounded-md border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/20">
             <div className="sm:col-span-2 lg:col-span-4 flex items-center gap-2 text-sm font-semibold text-amber-800 dark:text-amber-200"><AlertTriangle className="h-4 w-4" />Datos HAZMAT</div>
-            <Field form={form} set={set} readOnly={readOnly} label="N° UN" name="hazmat_un_numero" />
-            <Field form={form} set={set} readOnly={readOnly} label="Clase" name="hazmat_clase" />
-            <Field form={form} set={set} readOnly={readOnly} label="Grupo de Empaque" name="hazmat_grupo_empaque" />
+            <Field form={form} set={set} readOnly={readOnly} invalid={hazmatFaltantes.includes("hazmat_un_numero")} label="N° UN" name="hazmat_un_numero" />
+            <Field form={form} set={set} readOnly={readOnly} invalid={hazmatFaltantes.includes("hazmat_clase")} label="Clase" name="hazmat_clase" />
+            <Field form={form} set={set} readOnly={readOnly} invalid={hazmatFaltantes.includes("hazmat_grupo_empaque")} label="Grupo de Empaque" name="hazmat_grupo_empaque" />
             <Field form={form} set={set} readOnly={readOnly} label="Punto de Inflamación" name="hazmat_punto_inflamacion" />
             <Field form={form} set={set} readOnly={readOnly} label="Recargo por Mercancía Peligrosa (US$)" name="hazmat_recargo" type="number" />
-            <div className="sm:col-span-2 space-y-1.5"><Label>Nombre Técnico</Label><Input disabled={readOnly} value={form.hazmat_nombre_tecnico} onChange={(e) => set("hazmat_nombre_tecnico", e.target.value)} /></div>
+            <div className={cn("sm:col-span-2 space-y-1.5", hazmatFaltantes.includes("hazmat_nombre_tecnico") && "ring-2 ring-destructive rounded-md p-2 -m-2")}><Label>Nombre Técnico</Label><Input disabled={readOnly} value={form.hazmat_nombre_tecnico} onChange={(e) => set("hazmat_nombre_tecnico", e.target.value)} /></div>
+
             <div className="flex items-center gap-3 rounded-md border border-amber-200 bg-background p-3 dark:border-amber-900">
               <Switch
                 id="hazmat_contaminante_marino"
@@ -823,7 +864,7 @@ function DetalleLogistica() {
           return <div key={etapa.id} className={cn("border rounded-md p-4 flex gap-3 items-start", current && "border-primary bg-primary/5", completed && "border-success/30 bg-success/5")}>
             <div className="mt-0.5">{completed ? <CheckCircle2 className="h-5 w-5 text-success" /> : current ? <Clock className="h-5 w-5 text-primary" /> : <Circle className="h-5 w-5 text-muted-foreground" />}</div>
             <div className="flex-1"><div className="font-medium">{index + 1}. {def?.nombre ?? etapa.etapa_codigo}</div><div className="text-xs text-muted-foreground mt-1">{completed ? `Completada ${fmtLocalDate(etapa.fecha_cumplimiento?.slice(0, 10))}` : current ? "En curso" : "Pendiente"}</div>{etapa.comentario && <p className="text-sm mt-2">{etapa.comentario}</p>}</div>
-            {canEdit && current && <Button size="sm" onClick={() => completarEtapa.mutate(etapa.id)} disabled={completarEtapa.isPending}><Check className="h-4 w-4 mr-1" />Completar</Button>}
+            {canEdit && current && <Button size="sm" onClick={() => { if (etapa.etapa_codigo === "embarque" && !validarHazmat()) return; completarEtapa.mutate(etapa.id); }} disabled={completarEtapa.isPending}><Check className="h-4 w-4 mr-1" />Completar</Button>}
           </div>;
         })}</div>
       </CardContent></Card>
