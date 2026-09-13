@@ -108,6 +108,7 @@ function DetalleLogistica() {
   const [documentosNuevos, setDocumentosNuevos] = useState<DocumentoNuevo[]>([]);
   const [incidenciasNuevas, setIncidenciasNuevas] = useState<IncidenciaNueva[]>([]);
   const [incidenciasResueltas, setIncidenciasResueltas] = useState<number[]>([]);
+  const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
 
   const { data: operacion, isLoading } = useQuery({ queryKey: ["operacion-logistica", id], enabled: !isNuevo, queryFn: async () => {
     const { data, error } = await supabase.from("operaciones_logistica").select("*, clientes(nombre)").eq("id", id).single();
@@ -138,6 +139,7 @@ function DetalleLogistica() {
     setDocumentosNuevos([]);
     setIncidenciasNuevas([]);
     setIncidenciasResueltas([]);
+    setClienteExtraidoSinMatch(null);
     setModoEdicion(true);
   }
   if (!isNuevo && operacion && cargadoId !== operacion.id) { setCargadoId(operacion.id); setForm(formFrom(operacion)); }
@@ -188,9 +190,16 @@ function DetalleLogistica() {
       if (m.includes("mar") || m.includes("sea") || m.includes("nav") || m.includes("vessel")) return "maritimo";
       return form?.tipo ?? "maritimo";
     })();
+    const clienteMatch = (clientes ?? []).find((c: any) => {
+      const a = normalizarCliente(c.nombre);
+      const b = normalizarCliente(res.cliente ?? "");
+      return b && (a.includes(b) || b.includes(a));
+    });
+    setClienteExtraidoSinMatch(res.cliente && !clienteMatch ? res.cliente : null);
     setForm((f) => f && ({
       ...f,
       proveedor_logistico: res.suplidor || f.proveedor_logistico,
+      cliente_id: clienteMatch?.id || f.cliente_id,
       tipo: tipoNorm,
       origen: res.puerto_salida || f.origen,
       destino: res.puerto_arribo || f.destino,
@@ -200,7 +209,9 @@ function DetalleLogistica() {
       incoterm: res.incoterm || f.incoterm,
       producto: res.descripcion_mercancia || f.producto,
       bl_awb: res.numero_documento || f.bl_awb,
-      observaciones: f.observaciones || (res.contenedores?.length ? `Contenedores: ${res.contenedores.map((c) => c.numero).join(", ")}` : ""),
+      contenedor: res.contenedores?.length ? res.contenedores.map((c) => c.numero).join(", ") : f.contenedor,
+      notify_party: res.notify_party || f.notify_party,
+      agente_entrega: res.agente_entrega || f.agente_entrega,
     }));
     toast.success("Datos extraídos — revisa y ajusta los campos");
   };
