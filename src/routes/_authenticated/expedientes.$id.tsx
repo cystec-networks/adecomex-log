@@ -69,6 +69,15 @@ const SUG_PUERTO_SALIDA = ["Shanghai", "Ningbo", "Shenzhen", "Hong Kong", "Busan
 const SUG_PUERTO_ARRIBO = ["Puerto Multimodal Caucedo", "Puerto de Haina Oriental", "Puerto de Haina Occidental", "Puerto de Río Haina", "Puerto de Boca Chica", "Puerto de Manzanillo", "Puerto Plata", "AILA (Las Américas)", "AIC (Cibao)", "AIP (Punta Cana)", "Aeropuerto La Isabela"];
 const SUG_PREFERENCIA = ["DR-CAFTA", "EPA (Unión Europea)", "ALADI", "SGP", "Ninguna"];
 
+const DGA_VUCE_TOOLS = [
+  { label: "Buscador de Productos", url: "https://www.aduanas.gob.do/consultas/buscador-de-productos/", icon: Search },
+  { label: "Consulta Aranceles VUCE", url: "https://sirevuce.aduanas.gob.do/", icon: FileText },
+  { label: "Arancel de Aduanas 7ma Enmienda 2022", url: "https://www.aduanas.gob.do/consultas/arancel-de-aduanas-7ma-enmienda-2022/", icon: Scale },
+  { label: "Portal VUCE-RD", url: "https://vucerd.gob.do/", icon: ShieldCheck },
+  { label: "Portal SIGA", url: "https://siga.aduanas.gob.do/", icon: LayoutGrid },
+  { label: "VUCE - Gestión de Trámites", url: "https://app.vucerd.gob.do/auth", icon: FileCheck },
+];
+
 const searchSchema = z.object({
   nuevo: fallback(z.string(), "").default(""),
   solicitud: fallback(z.string(), "").default(""),
