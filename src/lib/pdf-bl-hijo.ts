@@ -22,6 +22,8 @@ export type BlHijoInput = {
   pesoBrutoKg: number | null;
   volumenM3: number | null;
   terminosFlete: string;
+  monedaFlete: string;
+  cargos: Array<{ descripcion: string; monto: number | null }>;
 };
 
 const v = (text: string | null | undefined) => (text && String(text).trim() ? String(text).trim() : "—");
@@ -236,17 +238,19 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
   });
 
   const tableEndY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
-  if (tableEndY < cargoBodyBottomY) doc.rect(margin, tableEndY, contentWidth, cargoBodyBottomY - tableEndY);
-
-  // Fila de totales disponible para completar manualmente, manteniendo los importes en blanco.
   const cargoColumnWidths = [118, 91, 231, 68, contentWidth - 508];
-  doc.rect(margin, cargoBodyBottomY, contentWidth, cargoTotalHeight);
+  // Las columnas continúan hasta los totales, sin una línea horizontal que separe la descripción.
+  if (tableEndY < cargoBottomY) doc.rect(margin, tableEndY, contentWidth, cargoBottomY - tableEndY);
   let cargoColumnX = margin;
   cargoColumnWidths.slice(0, -1).forEach((columnWidth) => {
     cargoColumnX += columnWidth;
-    doc.line(cargoColumnX, cargoBodyBottomY, cargoColumnX, cargoBottomY);
+    doc.line(cargoColumnX, tableEndY, cargoColumnX, cargoBottomY);
   });
-  label("TOTAL", margin + 5, cargoBodyBottomY + 11, 6);
+  const cargoTotalY = cargoBottomY - 7;
+  label("TOTAL", margin + cargoColumnWidths[0] + cargoColumnWidths[1] + cargoColumnWidths[2] - 34, cargoTotalY, 6);
+  value(input.cantidadBultos == null ? "—" : Number(input.cantidadBultos).toLocaleString("en-US"), margin + cargoColumnWidths[0] + 4, cargoTotalY, cargoColumnWidths[1] - 8, 1, 6.8);
+  value(nf(input.pesoBrutoKg), margin + cargoColumnWidths[0] + cargoColumnWidths[1] + cargoColumnWidths[2] + 4, cargoTotalY, cargoColumnWidths[3] - 8, 1, 6.8);
+  value(nf(input.volumenM3), margin + cargoColumnWidths[0] + cargoColumnWidths[1] + cargoColumnWidths[2] + cargoColumnWidths[3] + 4, cargoTotalY, cargoColumnWidths[4] - 8, 1, 6.8);
 
   label("PARTICULARS OF GOODS ARE THOSE DECLARED BY SHIPPERS", margin + 5, cargoBodyBottomY - 5, 5.2);
 
@@ -279,11 +283,24 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
   label("DESCRIPCIÓN DE FLETE Y CARGOS", margin + 5, footerTop + 13);
   label("PREPAID", margin + third + third / 2, footerTop + 13);
   label("COLLECT", margin + third * 2 + third / 2, footerTop + 13);
-  value("AS AGREED", margin + 5, footerTop + 43, third - 10, 2, 7.2);
   const freight = input.terminosFlete?.toLowerCase();
-  if (freight === "prepaid") value("X", margin + third + third / 2, footerTop + 43, 10, 1, 9);
-  if (freight === "collect") value("X", margin + third * 2 + third / 2, footerTop + 43, 10, 1, 9);
+  const cargos = input.cargos.filter((cargo) => cargo.monto != null && Number.isFinite(cargo.monto));
+  const cargoAmount = (monto: number | null) => monto == null ? "" : `${v(input.monedaFlete)} ${nf(monto)}`;
+  cargos.slice(0, 4).forEach((cargo, index) => {
+    const rowY = chargesHeaderBottom + 11 + index * 10;
+    value(cargo.descripcion, margin + 5, rowY, third - 10, 1, 5.8);
+    if (freight === "collect") {
+      value(cargoAmount(cargo.monto), margin + third * 2 + 4, rowY, third - 8, 1, 5.8);
+    } else {
+      value(cargoAmount(cargo.monto), margin + third + 4, rowY, third - 8, 1, 5.8);
+    }
+  });
   label("TOTAL", margin + 5, chargesTotalTop + 14, 6);
+  const totalCargos = cargos.reduce((total, cargo) => total + (cargo.monto ?? 0), 0);
+  if (cargos.length) {
+    const totalX = freight === "collect" ? margin + third * 2 + 4 : margin + third + 4;
+    value(`${v(input.monedaFlete)} ${nf(totalCargos)}`, totalX, chargesTotalTop + 14, third - 8, 1, 6.5);
+  }
   label("AGENTE DE ENTREGA EN DESTINO", margin + 5, deliveryAgentTop + 12);
   value(
     [input.agenteEntrega.nombre, input.agenteEntrega.contacto].filter((text) => text?.trim()).join(" — "),

@@ -433,6 +433,13 @@ function DetalleLogistica() {
       pesoBrutoKg: form.peso_bruto_kg ? Number(form.peso_bruto_kg) : null,
       volumenM3: form.volumen_m3 ? Number(form.volumen_m3) : null,
       terminosFlete: form.terminos_flete,
+      monedaFlete: form.flete_moneda,
+      cargos: [
+        { descripcion: "FLETE INTERNACIONAL", monto: form.flete_monto ? Number(form.flete_monto) : null },
+        { descripcion: "SEGURO", monto: form.seguro_monto ? Number(form.seguro_monto) : null },
+        { descripcion: "GASTOS LOCALES", monto: form.gastos_locales_monto ? Number(form.gastos_locales_monto) : null },
+        { descripcion: "OTROS COSTOS", monto: form.otros_monto ? Number(form.otros_monto) : null },
+      ],
     };
   };
 
