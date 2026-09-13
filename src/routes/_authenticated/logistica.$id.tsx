@@ -71,7 +71,7 @@ type FormState = {
   peso_bruto_kg: string; volumen_m3: string; incoterm: string;
   booking: string; bl_awb: string; contenedor: string; fecha_recogida: string; fecha_embarque: string; fecha_salida: string;
   eta: string; fecha_arribo: string; flete_monto: string; flete_moneda: string; seguro_monto: string;
-  gastos_locales_monto: string; otros_monto: string; observaciones: string; cotizacion_id: string; orden_id: string; expediente_id: string;
+  gastos_locales_monto: string; otros_monto: string; costo_interno_total: string; observaciones: string; cotizacion_id: string; orden_id: string; expediente_id: string;
   notify_party: string; agente_entrega: string; agente_entrega_contacto: string;
   shipper_nombre: string; shipper_tax_id: string; shipper_direccion: string; shipper_telefono: string; shipper_email: string;
   comprador_nombre: string; comprador_tax_id: string; comprador_direccion: string; comprador_telefono: string; comprador_email: string;
@@ -93,7 +93,7 @@ const formFrom = (o: any): FormState => ({
   booking: o.booking ?? "", bl_awb: o.bl_awb ?? "", contenedor: o.contenedor ?? "", fecha_recogida: cleanDate(o.fecha_recogida),
   fecha_embarque: cleanDate(o.fecha_embarque), fecha_salida: cleanDate(o.fecha_salida), eta: cleanDate(o.eta), fecha_arribo: cleanDate(o.fecha_arribo),
   flete_monto: String(o.flete_monto ?? ""), flete_moneda: o.flete_moneda ?? "USD", seguro_monto: String(o.seguro_monto ?? ""),
-  gastos_locales_monto: String(o.gastos_locales_monto ?? ""), otros_monto: String(o.otros_monto ?? ""), observaciones: o.observaciones ?? "",
+  gastos_locales_monto: String(o.gastos_locales_monto ?? ""), otros_monto: String(o.otros_monto ?? ""), costo_interno_total: String(o.costo_interno_total ?? ""), observaciones: o.observaciones ?? "",
   cotizacion_id: o.cotizacion_id ?? "", orden_id: o.orden_id ?? "", expediente_id: o.expediente_id ?? "",
   notify_party: o.notify_party ?? "", agente_entrega: o.agente_entrega ?? "", agente_entrega_contacto: o.agente_entrega_contacto ?? "",
   shipper_nombre: o.shipper_nombre ?? "", shipper_tax_id: o.shipper_tax_id ?? "", shipper_direccion: o.shipper_direccion ?? "",
@@ -339,7 +339,7 @@ function DetalleLogistica() {
     bl_awb: nullable(f.bl_awb), contenedor: contenedoresTexto || null, fecha_recogida: nullable(f.fecha_recogida), fecha_embarque: nullable(f.fecha_embarque),
     fecha_salida: nullable(f.fecha_salida), eta: nullable(f.eta), fecha_arribo: nullable(f.fecha_arribo), flete_monto: numeric(f.flete_monto),
     flete_moneda: f.flete_moneda, seguro_monto: numeric(f.seguro_monto), gastos_locales_monto: numeric(f.gastos_locales_monto),
-    otros_monto: numeric(f.otros_monto), observaciones: nullable(f.observaciones), cotizacion_id: nullable(f.cotizacion_id),
+    otros_monto: numeric(f.otros_monto), costo_interno_total: numeric(f.costo_interno_total), observaciones: nullable(f.observaciones), cotizacion_id: nullable(f.cotizacion_id),
     orden_id: nullable(f.orden_id), expediente_id: nullable(f.expediente_id),
     notify_party: nullable(f.notify_party), agente_entrega: nullable(f.agente_entrega), agente_entrega_contacto: nullable(f.agente_entrega_contacto),
     shipper_nombre: nullable(f.shipper_nombre), shipper_tax_id: nullable(f.shipper_tax_id), shipper_direccion: nullable(f.shipper_direccion),
@@ -833,6 +833,23 @@ function DetalleLogistica() {
         <Card><CardHeader><CardTitle className="text-base">Costos de Logística</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 gap-4">
           <Field form={form} set={set} readOnly={readOnly} label="Flete internacional" name="flete_monto" type="number" /><div className="space-y-1.5"><Label>Moneda</Label><Select disabled={readOnly} value={form.flete_moneda} onValueChange={(v) => set("flete_moneda", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="DOP">DOP</SelectItem><SelectItem value="EUR">EUR</SelectItem></SelectContent></Select></div>
           <Field form={form} set={set} readOnly={readOnly} label="Seguro" name="seguro_monto" type="number" /><Field form={form} set={set} readOnly={readOnly} label="Gastos locales" name="gastos_locales_monto" type="number" /><Field form={form} set={set} readOnly={readOnly} label="Otros costos" name="otros_monto" type="number" />
+          <Field form={form} set={set} readOnly={readOnly} label="Costo Interno Estimado (US$)" name="costo_interno_total" type="number" />
+          <div className="sm:col-span-2 -mt-2"><p className="text-xs text-muted-foreground">Dato de uso interno. No aparece en Cotización, BL Hijo, Solicitud de Booking ni Constancia.</p></div>
+          {(() => {
+            const precioCliente = (Number(form.flete_monto) || 0) + (Number(form.seguro_monto) || 0) + (Number(form.gastos_locales_monto) || 0) + (Number(form.otros_monto) || 0) + (Number(form.hazmat_recargo) || 0);
+            const costoInterno = Number(form.costo_interno_total) || 0;
+            const margen = precioCliente - costoInterno;
+            const margenPct = precioCliente > 0 ? (margen / precioCliente) * 100 : null;
+            return (
+              <div className="sm:col-span-2 grid gap-1.5">
+                <Label className="text-muted-foreground">Margen Estimado</Label>
+                <div className={cn("h-9 flex items-center px-3 rounded-md border text-sm font-medium",
+                  margen >= 0 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-destructive/10 text-destructive border-destructive/30")}>
+                  US$ {margen.toFixed(2)} {margenPct !== null && `(${margenPct.toFixed(1)}%)`}
+                </div>
+              </div>
+            );
+          })()}
           <div className="sm:col-span-2 border-t pt-4 flex justify-between font-semibold"><span>Total registrado</span><span>{money(totalCostos, form.flete_moneda)}</span></div>
         </CardContent></Card>
         {isNuevo
