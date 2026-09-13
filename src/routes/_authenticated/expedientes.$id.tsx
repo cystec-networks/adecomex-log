@@ -506,22 +506,45 @@ function DetalleExpediente() {
               <EscanearFacturaExpButton onExtracted={(res) => { facRes.current = res; void aplicarCombinado(); toast.success("Factura procesada — revisa y ajusta los campos"); }} />
             </div>
           ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
-                  <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 p-1">
-                <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:text-sm [&_button:hover]:bg-accent">
-                  <GenerarXmlSigaButton expedienteId={id} />
-                  <GenerarXmlCertificadoOrigenButton expedienteId={id} />
-                  <PreLiquidacionPdfButton exp={expData} />
-                  <GenerarDocumentoButton exp={expData} />
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-2 flex-wrap">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
+                    <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 p-1">
+                  <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:text-sm [&_button:hover]:bg-accent">
+                    <GenerarXmlSigaButton expedienteId={id} />
+                    <GenerarXmlCertificadoOrigenButton expedienteId={id} />
+                    <PreLiquidacionPdfButton exp={expData} />
+                    <GenerarDocumentoButton exp={expData} />
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <ShieldCheck className="h-4 w-4 mr-1" /> Herramientas DGA/VUCE
+                    <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 p-1">
+                  {DGA_VUCE_TOOLS.map((t) => {
+                    const Icon = t.icon;
+                    return (
+                      <DropdownMenuItem key={t.url} asChild>
+                        <a href={t.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
+                          <Icon className="h-4 w-4 shrink-0 text-accent" />
+                          <span>{t.label}</span>
+                        </a>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
         </div>
 
