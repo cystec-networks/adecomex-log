@@ -60,7 +60,7 @@ export const Route = createFileRoute("/_authenticated/logistica/$id")({
 
 type FormState = {
   numero: string;
-  cliente_id: string; responsable_id: string; tipo: string; proveedor_logistico: string; proveedor_logistico_tid: string;
+  cliente_id: string; responsable_id: string; tipo: string; tipo_operacion: string; proveedor_logistico: string; proveedor_logistico_tid: string;
   proveedor_email: string; proveedor_telefono: string;
   producto: string; origen: string; destino: string; puerto_destino: string; buque: string; naviera: string;
   voyage: string; lugar_recepcion: string; puerto_descarga: string; cantidad_bultos: string; tipo_bultos: string; terminos_flete: string;
@@ -70,12 +70,13 @@ type FormState = {
   gastos_locales_monto: string; otros_monto: string; observaciones: string; cotizacion_id: string; orden_id: string; expediente_id: string;
   notify_party: string; agente_entrega: string; agente_entrega_contacto: string;
   shipper_nombre: string; shipper_tax_id: string; shipper_direccion: string; shipper_telefono: string; shipper_email: string;
+  comprador_nombre: string; comprador_tax_id: string; comprador_direccion: string; comprador_telefono: string; comprador_email: string;
   bl_hijo_numero: string;
 };
 const cleanDate = (v: string | null) => v?.slice(0, 10) ?? "";
 const formFrom = (o: any): FormState => ({
   numero: o.numero ?? "",
-  cliente_id: o.cliente_id ?? "", responsable_id: o.responsable_id ?? "", tipo: o.tipo ?? "maritimo",
+  cliente_id: o.cliente_id ?? "", responsable_id: o.responsable_id ?? "", tipo: o.tipo ?? "maritimo", tipo_operacion: o.tipo_operacion ?? "Importación",
   proveedor_logistico: o.proveedor_logistico ?? "", proveedor_logistico_tid: o.proveedor_logistico_tid ?? "",
   proveedor_email: o.proveedor_email ?? "", proveedor_telefono: o.proveedor_telefono ?? "",
   producto: o.producto ?? "", origen: o.origen ?? "", destino: o.destino ?? "", puerto_destino: o.puerto_destino ?? "", buque: o.buque ?? "", naviera: o.naviera ?? "",
@@ -90,6 +91,8 @@ const formFrom = (o: any): FormState => ({
   notify_party: o.notify_party ?? "", agente_entrega: o.agente_entrega ?? "", agente_entrega_contacto: o.agente_entrega_contacto ?? "",
   shipper_nombre: o.shipper_nombre ?? "", shipper_tax_id: o.shipper_tax_id ?? "", shipper_direccion: o.shipper_direccion ?? "",
   shipper_telefono: o.shipper_telefono ?? "", shipper_email: o.shipper_email ?? "",
+  comprador_nombre: o.comprador_nombre ?? "", comprador_tax_id: o.comprador_tax_id ?? "", comprador_direccion: o.comprador_direccion ?? "",
+  comprador_telefono: o.comprador_telefono ?? "", comprador_email: o.comprador_email ?? "",
   bl_hijo_numero: o.bl_hijo_numero ?? "",
 });
 
@@ -272,7 +275,7 @@ function DetalleLogistica() {
   const nullable = (v: string) => v || null;
   const payloadFrom = (f: FormState) => ({
     numero: f.numero,
-    cliente_id: nullable(f.cliente_id), responsable_id: nullable(f.responsable_id), tipo: f.tipo,
+    cliente_id: nullable(f.cliente_id), responsable_id: nullable(f.responsable_id), tipo: f.tipo, tipo_operacion: f.tipo_operacion,
     proveedor_logistico: nullable(f.proveedor_logistico), proveedor_logistico_tid: nullable(f.proveedor_logistico_tid), booking: nullable(f.booking),
     proveedor_email: nullable(f.proveedor_email), proveedor_telefono: nullable(f.proveedor_telefono),
     producto: nullable(f.producto), origen: nullable(f.origen), destino: nullable(f.destino),
@@ -288,6 +291,8 @@ function DetalleLogistica() {
     notify_party: nullable(f.notify_party), agente_entrega: nullable(f.agente_entrega), agente_entrega_contacto: nullable(f.agente_entrega_contacto),
     shipper_nombre: nullable(f.shipper_nombre), shipper_tax_id: nullable(f.shipper_tax_id), shipper_direccion: nullable(f.shipper_direccion),
     shipper_telefono: nullable(f.shipper_telefono), shipper_email: nullable(f.shipper_email),
+    comprador_nombre: nullable(f.comprador_nombre), comprador_tax_id: nullable(f.comprador_tax_id), comprador_direccion: nullable(f.comprador_direccion),
+    comprador_telefono: nullable(f.comprador_telefono), comprador_email: nullable(f.comprador_email),
     bl_hijo_numero: nullable(f.bl_hijo_numero),
   });
 
@@ -377,14 +382,14 @@ function DetalleLogistica() {
 
   // Datos del BL Hijo (House B/L): incluye Consignee desde la ficha del cliente.
   const datosBlHijo = async () => {
-    let consignee = { nombre: "", rnc: "", direccion: "", telefono: "", email: "" };
+    let cliente = { nombre: "", rnc: "", direccion: "", telefono: "", email: "" };
     if (form.cliente_id) {
       const { data: cli } = await supabase
         .from("clientes")
         .select("nombre,rnc,direccion,telefono,email")
         .eq("id", form.cliente_id)
         .maybeSingle();
-      if (cli) consignee = {
+      if (cli) cliente = {
         nombre: cli.nombre ?? "", rnc: cli.rnc ?? "", direccion: cli.direccion ?? "",
         telefono: cli.telefono ?? "", email: cli.email ?? "",
       };
@@ -393,15 +398,25 @@ function DetalleLogistica() {
       .split(/[,;\n/]+/)
       .map((numero) => ({ numero: numero.trim() }))
       .filter((c) => c.numero);
+    const esExportacion = form.tipo_operacion === "Exportación";
+    const shipper = esExportacion
+      ? { nombre: cliente.nombre, taxId: cliente.rnc, direccion: cliente.direccion, telefono: cliente.telefono, email: cliente.email }
+      : {
+          nombre: form.shipper_nombre, taxId: form.shipper_tax_id, direccion: form.shipper_direccion,
+          telefono: form.shipper_telefono, email: form.shipper_email,
+        };
+    const consignee = esExportacion
+      ? {
+          nombre: form.comprador_nombre, taxId: form.comprador_tax_id, direccion: form.comprador_direccion,
+          telefono: form.comprador_telefono, email: form.comprador_email,
+        }
+      : cliente;
     return {
       numero: form.bl_hijo_numero,
       referenciaConsolidadora: form.bl_awb || form.booking,
       booking: form.booking,
       fechaEmision: new Date().toLocaleDateString("es-DO"),
-      shipper: {
-        nombre: form.shipper_nombre, taxId: form.shipper_tax_id, direccion: form.shipper_direccion,
-        telefono: form.shipper_telefono, email: form.shipper_email,
-      },
+      shipper,
       consignee,
       notifyParty: form.notify_party,
       agenteEntrega: { nombre: form.agente_entrega, contacto: form.agente_entrega_contacto },
@@ -477,6 +492,7 @@ function DetalleLogistica() {
         <div className="space-y-1.5"><Label>Cliente{isNuevo && " *"}</Label><Select disabled={readOnly} value={form.cliente_id || "none"} onValueChange={(v) => set("cliente_id", v === "none" ? "" : v)}><SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger><SelectContent><SelectItem value="none">Sin cliente</SelectItem>{clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent></Select>{clienteExtraidoSinMatch && <p className="text-xs text-amber-600 mt-1">El documento indica "{clienteExtraidoSinMatch}" — no se encontró un cliente registrado con ese nombre, selecciónalo manualmente.</p>}</div>
         <div className="space-y-1.5"><Label>Responsable</Label><Select disabled={readOnly} value={form.responsable_id || "none"} onValueChange={(v) => set("responsable_id", v === "none" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sin asignar</SelectItem>{responsables.map((r) => <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>)}</SelectContent></Select></div>
         <div className="space-y-1.5"><Label>Tipo</Label><Select disabled={readOnly} value={form.tipo} onValueChange={(v) => set("tipo", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="maritimo">Marítimo</SelectItem><SelectItem value="aereo">Aéreo</SelectItem></SelectContent></Select></div>
+        <div className="space-y-1.5"><Label>Tipo de Operación</Label><Select disabled={readOnly} value={form.tipo_operacion} onValueChange={(v) => set("tipo_operacion", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Importación">Importación</SelectItem><SelectItem value="Exportación">Exportación</SelectItem></SelectContent></Select></div>
         <Field form={form} set={set} readOnly={readOnly} label="Booking" name="booking" /><Field form={form} set={set} readOnly={readOnly} label="BL / AWB" name="bl_awb" /><Field form={form} set={set} readOnly={readOnly} label="Contenedor" name="contenedor" /><Field form={form} set={set} readOnly={readOnly} label="BL Hijo (se asigna automático si se deja vacío)" name="bl_hijo_numero" />
         <Field form={form} set={set} readOnly={readOnly} label="Notify Party" name="notify_party" /><Field form={form} set={set} readOnly={readOnly} label="Agente de entrega" name="agente_entrega" /><Field form={form} set={set} readOnly={readOnly} label="Contacto del agente de entrega" name="agente_entrega_contacto" />
         <div className="space-y-1.5"><TerceroExtranjeroPicker label="Agente de Carga / Consolidadora" onSelect={(t) => setForm((p) => p ? ({ ...p, proveedor_logistico: t.nombre, proveedor_logistico_tid: t.tid ?? "" }) : p)} /><Input disabled={readOnly} value={form.proveedor_logistico} onChange={(e) => set("proveedor_logistico", e.target.value)} placeholder="Nombre del proveedor" /></div>
@@ -486,11 +502,17 @@ function DetalleLogistica() {
         <div className="sm:col-span-2 lg:col-span-4 space-y-1.5"><Label>Observaciones</Label><Textarea disabled={readOnly} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} rows={3} /></div>
       </CardContent></Card>
 
-      <Card><CardHeader><CardTitle className="text-base">Shipper (Exportador Real)</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {form.tipo_operacion === "Importación" && <Card><CardHeader><CardTitle className="text-base">Shipper (Exportador Real)</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Field form={form} set={set} readOnly={readOnly} label="Nombre" name="shipper_nombre" /><Field form={form} set={set} readOnly={readOnly} label="Tax ID" name="shipper_tax_id" />
         <Field form={form} set={set} readOnly={readOnly} label="Teléfono" name="shipper_telefono" /><Field form={form} set={set} readOnly={readOnly} label="Email" name="shipper_email" type="email" />
         <div className="sm:col-span-2 lg:col-span-4 space-y-1.5"><Label>Dirección</Label><Input disabled={readOnly} value={form.shipper_direccion} onChange={(e) => set("shipper_direccion", e.target.value)} /></div>
-      </CardContent></Card>
+      </CardContent></Card>}
+
+      {form.tipo_operacion === "Exportación" && <Card><CardHeader><CardTitle className="text-base">Comprador (Consignatario Extranjero)</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Field form={form} set={set} readOnly={readOnly} label="Nombre" name="comprador_nombre" /><Field form={form} set={set} readOnly={readOnly} label="Tax ID" name="comprador_tax_id" />
+        <Field form={form} set={set} readOnly={readOnly} label="Teléfono" name="comprador_telefono" /><Field form={form} set={set} readOnly={readOnly} label="Email" name="comprador_email" type="email" />
+        <div className="sm:col-span-2 lg:col-span-4 space-y-1.5"><Label>Dirección</Label><Input disabled={readOnly} value={form.comprador_direccion} onChange={(e) => set("comprador_direccion", e.target.value)} /></div>
+      </CardContent></Card>}
 
       <Card><CardHeader><CardTitle className="text-base">Datos de la carga</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="sm:col-span-2 space-y-1.5"><Label>Producto</Label><Input disabled={readOnly} value={form.producto} onChange={(e) => set("producto", e.target.value)} /></div>
