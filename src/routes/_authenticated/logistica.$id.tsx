@@ -188,6 +188,8 @@ function DetalleLogistica() {
   const [incidenciasResueltas, setIncidenciasResueltas] = useState<number[]>([]);
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
   const [contenedores, setContenedores] = useState<ContenedorFila[]>([]);
+  const [hazmatFaltantes, setHazmatFaltantes] = useState<string[]>([]);
+
   const constanciaRef = useRef<ConstanciaLogisticaButtonHandle>(null);
   const blHijoRef = useRef<BlHijoPdfButtonHandle>(null);
   const bookingRef = useRef<SolicitudBookingPdfButtonHandle>(null);
