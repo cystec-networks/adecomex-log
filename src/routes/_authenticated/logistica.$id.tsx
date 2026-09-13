@@ -302,6 +302,10 @@ function DetalleLogistica() {
     comprador_nombre: nullable(f.comprador_nombre), comprador_tax_id: nullable(f.comprador_tax_id), comprador_direccion: nullable(f.comprador_direccion),
     comprador_telefono: nullable(f.comprador_telefono), comprador_email: nullable(f.comprador_email),
     bl_hijo_numero: nullable(f.bl_hijo_numero),
+    es_mercancia_peligrosa: f.es_mercancia_peligrosa === "true",
+    hazmat_un_numero: nullable(f.hazmat_un_numero), hazmat_clase: nullable(f.hazmat_clase),
+    hazmat_grupo_empaque: nullable(f.hazmat_grupo_empaque), hazmat_punto_inflamacion: nullable(f.hazmat_punto_inflamacion),
+    hazmat_contaminante_marino: f.hazmat_contaminante_marino === "true", hazmat_nombre_tecnico: nullable(f.hazmat_nombre_tecnico),
   });
 
   const saveMut = useMutation({ mutationFn: async () => {
