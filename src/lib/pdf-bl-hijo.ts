@@ -196,10 +196,11 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
     index === 0 ? nf(input.pesoBrutoKg) : "",
     index === 0 ? nf(input.volumenM3) : "",
   ]);
-  if (containers.length > 1) cargoRows.push(["TOTAL", bultos, "", nf(input.pesoBrutoKg), nf(input.volumenM3)]);
 
   const cargoStartY = voyageY + 48;
   const cargoBottomY = 574;
+  const cargoTotalHeight = 18;
+  const cargoBodyBottomY = cargoBottomY - cargoTotalHeight;
   autoTable(doc, {
     startY: cargoStartY,
     head: [["Marcas y Números", "Cantidad y Tipo de Bultos", "Descripción de Mercancía", "Peso Bruto (Kg)", "Volumen (M3)"]],
@@ -235,9 +236,19 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
   });
 
   const tableEndY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
-  if (tableEndY < cargoBottomY) doc.rect(margin, tableEndY, contentWidth, cargoBottomY - tableEndY);
+  if (tableEndY < cargoBodyBottomY) doc.rect(margin, tableEndY, contentWidth, cargoBodyBottomY - tableEndY);
 
-  label("PARTICULARS OF GOODS ARE THOSE DECLARED BY SHIPPERS", margin + 5, cargoBottomY - 7, 5.2);
+  // Fila de totales disponible para completar manualmente, manteniendo los importes en blanco.
+  const cargoColumnWidths = [118, 91, 231, 68, contentWidth - 508];
+  doc.rect(margin, cargoBodyBottomY, contentWidth, cargoTotalHeight);
+  let cargoColumnX = margin;
+  cargoColumnWidths.slice(0, -1).forEach((columnWidth) => {
+    cargoColumnX += columnWidth;
+    doc.line(cargoColumnX, cargoBodyBottomY, cargoColumnX, cargoBottomY);
+  });
+  label("TOTAL", margin + 5, cargoBodyBottomY + 11, 6);
+
+  label("PARTICULARS OF GOODS ARE THOSE DECLARED BY SHIPPERS", margin + 5, cargoBodyBottomY - 5, 5.2);
 
   // Pie integrado y extendido hasta el borde inferior útil de la hoja carta.
   const legalTop = cargoBottomY;
@@ -257,21 +268,27 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
   const third = chargesWidth / 3;
   doc.rect(margin, footerTop, contentWidth, footerHeight);
   doc.line(margin + chargesWidth, footerTop, margin + chargesWidth, footerBottom);
-  doc.line(margin, footerTop + 21, margin + chargesWidth, footerTop + 21);
+  const chargesHeaderBottom = footerTop + 21;
+  const chargesTotalTop = footerTop + 72;
+  const deliveryAgentTop = footerTop + 94;
+  doc.line(margin, chargesHeaderBottom, margin + chargesWidth, chargesHeaderBottom);
+  doc.line(margin, chargesTotalTop, margin + chargesWidth, chargesTotalTop);
+  doc.line(margin, deliveryAgentTop, margin + chargesWidth, deliveryAgentTop);
   doc.line(margin + third, footerTop, margin + third, footerBottom);
   doc.line(margin + third * 2, footerTop, margin + third * 2, footerBottom);
-  label("DESCRIPCIÓN DE CARGOS", margin + 5, footerTop + 13);
+  label("DESCRIPCIÓN DE FLETE Y CARGOS", margin + 5, footerTop + 13);
   label("PREPAID", margin + third + third / 2, footerTop + 13);
   label("COLLECT", margin + third * 2 + third / 2, footerTop + 13);
   value("AS AGREED", margin + 5, footerTop + 43, third - 10, 2, 7.2);
   const freight = input.terminosFlete?.toLowerCase();
   if (freight === "prepaid") value("X", margin + third + third / 2, footerTop + 43, 10, 1, 9);
   if (freight === "collect") value("X", margin + third * 2 + third / 2, footerTop + 43, 10, 1, 9);
-  label("AGENTE DE ENTREGA EN DESTINO", margin + 5, footerBottom - 28);
+  label("TOTAL", margin + 5, chargesTotalTop + 14, 6);
+  label("AGENTE DE ENTREGA EN DESTINO", margin + 5, deliveryAgentTop + 12);
   value(
     [input.agenteEntrega.nombre, input.agenteEntrega.contacto].filter((text) => text?.trim()).join(" — "),
     margin + 5,
-    footerBottom - 17,
+    deliveryAgentTop + 24,
     chargesWidth - 10,
     2,
     6.5,
