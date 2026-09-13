@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConstanciaLogisticaButton } from "@/components/constancia-logistica-button";
+import { BlHijoPdfButton } from "@/components/bl-hijo-pdf-button";
 
 /** Registro de auditoría de la operación logística (mismo patrón que Expedientes). */
 const logAuditoria = async (operacionId: string, accion: string, cambios?: Record<string, unknown>) => {
@@ -372,6 +373,51 @@ function DetalleLogistica() {
     responsable: responsables.find((r: any) => r.id === form.responsable_id)?.nombre ?? null,
     etapas: etapas.map((e) => ({ nombre: nombreEtapa(e.etapa_codigo), estado: e.estado })),
   });
+
+  // Datos del BL Hijo (House B/L): incluye Consignee desde la ficha del cliente.
+  const datosBlHijo = async () => {
+    let consignee = { nombre: "", rnc: "", direccion: "", telefono: "", email: "" };
+    if (form.cliente_id) {
+      const { data: cli } = await supabase
+        .from("clientes")
+        .select("nombre,rnc,direccion,telefono,email")
+        .eq("id", form.cliente_id)
+        .maybeSingle();
+      if (cli) consignee = {
+        nombre: cli.nombre ?? "", rnc: cli.rnc ?? "", direccion: cli.direccion ?? "",
+        telefono: cli.telefono ?? "", email: cli.email ?? "",
+      };
+    }
+    const contenedores = form.contenedor
+      .split(/[,;\n/]+/)
+      .map((numero) => ({ numero: numero.trim() }))
+      .filter((c) => c.numero);
+    return {
+      numero: form.bl_hijo_numero,
+      referenciaConsolidadora: form.bl_awb || form.booking,
+      fechaEmision: new Date().toLocaleDateString("es-DO"),
+      shipper: {
+        nombre: form.shipper_nombre, taxId: form.shipper_tax_id, direccion: form.shipper_direccion,
+        telefono: form.shipper_telefono, email: form.shipper_email,
+      },
+      consignee,
+      notifyParty: form.notify_party,
+      agenteEntrega: { nombre: form.agente_entrega, contacto: form.agente_entrega_contacto },
+      buque: form.buque,
+      voyage: form.voyage,
+      lugarRecepcion: form.lugar_recepcion,
+      puertoCarga: form.origen,
+      puertoDescarga: form.puerto_descarga,
+      lugarEntrega: form.destino || form.puerto_destino,
+      contenedores,
+      cantidadBultos: form.cantidad_bultos ? Number(form.cantidad_bultos) : null,
+      tipoBultos: form.tipo_bultos || null,
+      descripcionMercancia: form.producto,
+      pesoBrutoKg: form.peso_bruto_kg ? Number(form.peso_bruto_kg) : null,
+      volumenM3: form.volumen_m3 ? Number(form.volumen_m3) : null,
+      terminosFlete: form.terminos_flete,
+    };
+  };
 
   return <div className={cn("min-h-full transition-colors", isNuevo ? "bg-success/10" : modoEdicion ? "bg-warning/10" : "bg-background")}>
     <div className="sticky top-0 z-20 border-b bg-background px-6 py-3 shadow-sm">
