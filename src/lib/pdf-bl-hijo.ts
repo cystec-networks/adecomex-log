@@ -25,6 +25,14 @@ export type BlHijoInput = {
   monedaFlete: string;
   cargos: Array<{ descripcion: string; monto: number | null }>;
   observaciones: string;
+  esMercanciaPeligrosa?: boolean;
+  hazmatUnNumero?: string;
+  hazmatNombreTecnico?: string;
+  hazmatClase?: string;
+  hazmatGrupoEmpaque?: string;
+  hazmatPuntoInflamacion?: string;
+  hazmatContaminanteMarino?: boolean;
+  hazmatRecargo?: number | null;
 };
 
 const v = (text: string | null | undefined) => (text && String(text).trim() ? String(text).trim() : "—");
@@ -192,8 +200,20 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
   const observationLines = observaciones
     ? fitLines(observaciones, 220, compactCargo ? 3 : 6)
     : [];
+  // Bloque HAZMAT con el formato usual de un BL: UN / nombre técnico / clase / PG / flash point.
+  const hazmatLines = input.esMercanciaPeligrosa
+    ? [
+        "",
+        `UN ${v(input.hazmatUnNumero)}`,
+        v(input.hazmatNombreTecnico),
+        `CLASS ${v(input.hazmatClase)}${input.hazmatGrupoEmpaque?.trim() ? `, PG ${input.hazmatGrupoEmpaque.trim()}` : ""}`,
+        `FLASH POINT: ${input.hazmatPuntoInflamacion?.trim() || "N/A"}`,
+        ...(input.hazmatContaminanteMarino ? ["MARINE POLLUTANT"] : []),
+      ]
+    : [];
   const description = [
     ...descriptionLines,
+    ...hazmatLines,
     ...(observationLines.length ? ["", ...observationLines] : []),
   ].join("\n");
   const cargoRows = containers.map((container, index) => [
@@ -314,10 +334,17 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
   label("PREPAID", margin + third + third / 2, footerTop + 13);
   label("COLLECT", margin + third * 2 + third / 2, footerTop + 13);
   const freight = input.terminosFlete?.toLowerCase();
-  const cargos = input.cargos.filter((cargo) => cargo.monto != null && Number.isFinite(cargo.monto));
+  const cargos = [
+    ...input.cargos.filter((cargo) => cargo.monto != null && Number.isFinite(cargo.monto)),
+    // Recargo por mercancía peligrosa: línea adicional dentro de flete y cargos.
+    ...(input.hazmatRecargo != null && Number.isFinite(input.hazmatRecargo)
+      ? [{ descripcion: "RECARGO MERCANCÍA PELIGROSA", monto: input.hazmatRecargo }]
+      : []),
+  ];
   const cargoAmount = (monto: number | null) => monto == null ? "" : `${v(input.monedaFlete)} ${nf(monto)}`;
-  cargos.slice(0, 4).forEach((cargo, index) => {
-    const rowY = chargesHeaderBottom + 11 + index * 10;
+  const cargoSpacing = cargos.length > 4 ? 8 : 10;
+  cargos.slice(0, 5).forEach((cargo, index) => {
+    const rowY = chargesHeaderBottom + 11 + index * cargoSpacing;
     value(cargo.descripcion, margin + 5, rowY, third - 10, 1, 5.8);
     if (freight === "collect") {
       value(cargoAmount(cargo.monto), margin + third * 2 + 4, rowY, third - 8, 1, 5.8);
