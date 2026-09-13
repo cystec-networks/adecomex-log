@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMyRoles } from "@/lib/auth-hooks";
 import { ETAPAS_LOGISTICA, ESTADO_LOGISTICA_LABEL, estadoLogisticaClass } from "@/lib/logistica";
 import { fmtLocalDate } from "@/lib/dates";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
