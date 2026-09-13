@@ -99,12 +99,12 @@ export async function buildSolicitudBookingPdf(input: SolicitudBookingInput) {
     doc.setTextColor(0);
     doc.text(fitLines(text, width, maxLines), x, y, { lineHeightFactor: 1.2 });
   };
-  const drawCell = (x: number, y: number, width: number, height: number, title: string, text: string) => {
+  const drawCell = (x: number, y: number, width: number, height: number, title: string, text: string, maxLines = 2, fontSize = 7.5) => {
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
     doc.rect(x, y, width, height);
     label(title, x + 5, y + 10);
-    value(text, x + 5, y + 23, width - 10, 2, 7.5);
+    value(text, x + 5, y + 23, width - 10, maxLines, fontSize);
   };
   const partyText = (party: SolicitudBookingParty) => [
     party.nombre,
@@ -156,8 +156,8 @@ export async function buildSolicitudBookingPdf(input: SolicitudBookingInput) {
   drawCell(margin, 319, contentWidth, 38, "FECHA DE EMBARQUE DESEADA (TENTATIVA)", input.fechaEmbarque);
 
   const partyY = 368;
-  drawCell(margin, partyY, half, 76, "SHIPPER", partyText(input.shipper));
-  drawCell(margin + half, partyY, half, 76, "CONSIGNEE", partyText(input.consignee));
+  drawCell(margin, partyY, half, 76, "SHIPPER", partyText(input.shipper), 5, 6.8);
+  drawCell(margin + half, partyY, half, 76, "CONSIGNEE", partyText(input.consignee), 5, 6.8);
 
   const containerTypes = Array.from(new Set(input.contenedores.map((container) => container.tipo?.trim()).filter(Boolean)));
   const containerReference = containerTypes.length
