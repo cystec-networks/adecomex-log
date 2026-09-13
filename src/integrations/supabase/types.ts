@@ -3986,6 +3986,47 @@ export type Database = {
         }
         Relationships: []
       }
+      logistica_contenedores: {
+        Row: {
+          created_at: string
+          id: string
+          item_no: number | null
+          numero_contenedor: string
+          operacion_logistica_id: string
+          sello1: string | null
+          sello2: string | null
+          tipo_contenedor: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_no?: number | null
+          numero_contenedor: string
+          operacion_logistica_id: string
+          sello1?: string | null
+          sello2?: string | null
+          tipo_contenedor?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_no?: number | null
+          numero_contenedor?: string
+          operacion_logistica_id?: string
+          sello1?: string | null
+          sello2?: string | null
+          tipo_contenedor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistica_contenedores_operacion_logistica_id_fkey"
+            columns: ["operacion_logistica_id"]
+            isOneToOne: false
+            referencedRelation: "operaciones_logistica"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logistica_documentos: {
         Row: {
           created_at: string
