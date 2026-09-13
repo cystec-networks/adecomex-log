@@ -62,6 +62,7 @@ type FormState = {
   cliente_id: string; responsable_id: string; tipo: string; proveedor_logistico: string; proveedor_logistico_tid: string;
   proveedor_email: string; proveedor_telefono: string;
   producto: string; origen: string; destino: string; puerto_destino: string; buque: string;
+  voyage: string; lugar_recepcion: string; puerto_descarga: string; cantidad_bultos: string; tipo_bultos: string; terminos_flete: string;
   peso_bruto_kg: string; volumen_m3: string; incoterm: string;
   booking: string; bl_awb: string; contenedor: string; fecha_recogida: string; fecha_embarque: string; fecha_salida: string;
   eta: string; fecha_arribo: string; flete_monto: string; flete_moneda: string; seguro_monto: string;
@@ -74,6 +75,8 @@ const formFrom = (o: any): FormState => ({
   proveedor_logistico: o.proveedor_logistico ?? "", proveedor_logistico_tid: o.proveedor_logistico_tid ?? "",
   proveedor_email: o.proveedor_email ?? "", proveedor_telefono: o.proveedor_telefono ?? "",
   producto: o.producto ?? "", origen: o.origen ?? "", destino: o.destino ?? "", puerto_destino: o.puerto_destino ?? "", buque: o.buque ?? "",
+  voyage: o.voyage ?? "", lugar_recepcion: o.lugar_recepcion ?? "", puerto_descarga: o.puerto_descarga ?? "",
+  cantidad_bultos: String(o.cantidad_bultos ?? ""), tipo_bultos: o.tipo_bultos ?? "", terminos_flete: o.terminos_flete ?? "",
   peso_bruto_kg: String(o.peso_bruto_kg ?? ""), volumen_m3: String(o.volumen_m3 ?? ""), incoterm: o.incoterm ?? "",
   booking: o.booking ?? "", bl_awb: o.bl_awb ?? "", contenedor: o.contenedor ?? "", fecha_recogida: cleanDate(o.fecha_recogida),
   fecha_embarque: cleanDate(o.fecha_embarque), fecha_salida: cleanDate(o.fecha_salida), eta: cleanDate(o.eta), fecha_arribo: cleanDate(o.fecha_arribo),
