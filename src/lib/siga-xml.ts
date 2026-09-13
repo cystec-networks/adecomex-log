@@ -42,8 +42,8 @@ export const DEFAULT_BROKER: BrokerConfig = {
   transportCompanyCode: "",
   transportNationality: "214",
   defaultNationality: "214",
-  brokerEmail: "info@adecomex.com.do",
-  brokerTel: "809-000-0000",
+  brokerEmail: "operaciones@adecomex.com",
+  brokerTel: "809-531-3888",
 };
 
 // Migra valores ISO alfa-2 antiguos ("DO") al código numérico DGA (214)
@@ -74,6 +74,12 @@ export function loadBrokerConfig(): BrokerConfig {
     // Los tipos de despacho antiguos ("IM4") no existen en SIGA: se migran al código oficial.
     if (!cfg.clearanceType || !/^IC38-/.test(cfg.clearanceType)) cfg.clearanceType = DEFAULT_BROKER.clearanceType;
     if (!cfg.brokerEmployeeCode) cfg.brokerEmployeeCode = DEFAULT_BROKER.brokerEmployeeCode;
+    if (["info@adecomex.com.do", "contabilidad@adecomex.com"].includes(cfg.brokerEmail?.trim().toLowerCase())) {
+      cfg.brokerEmail = DEFAULT_BROKER.brokerEmail;
+    }
+    if (["809-000-0000", "809-237-5418"].includes(cfg.brokerTel?.trim())) {
+      cfg.brokerTel = DEFAULT_BROKER.brokerTel;
+    }
     return cfg;
   } catch {
     return DEFAULT_BROKER;

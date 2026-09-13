@@ -9,17 +9,17 @@ import { fmtLocalDate } from "@/lib/dates";
 export const EMPRESA = {
   nombre: "ADECOMEX SRL",
   lineas: [
-    "AVENIDA CAONABO 85E",
-    "LOS RESTAURADORES",
-    "SANTO DOMINGO OESTE 10114 DO",
-    "+18095313888",
-    "contabilidad@adecomex.com",
+    "OFICINA COMERCIAL: AVENIDA CAONABO 85E",
+    "LOS RESTAURADORES, DISTRITO NACIONAL",
+    "SANTO DOMINGO, REPÚBLICA DOMINICANA",
+    "TELÉFONO 809-531-3888 · WHATSAPP 809-931-3246",
+    "operaciones@adecomex.com",
     "www.adecomex.com",
     "RNC 130481301",
   ],
   pieTitulo: "SERVICIOS DE GESTION Y LOGISTICA DE CARGAS",
   pieDireccion:
-    "Oficina Principal: Calle Resp. San Miguel No. 12, Bayona, Santo Domingo Oeste. Rep. Dom. Tels. 809-237-5418, Móvil: 809-931-3246.",
+    "Oficina Comercial: Avenida Caonabo 85E, Los Restauradores, Distrito Nacional, Santo Domingo, República Dominicana. Teléfono: 809-531-3888 · WhatsApp: 809-931-3246 · operaciones@adecomex.com.",
 };
 
 export type DocLinea = {

@@ -249,7 +249,7 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
               <Input
                 value={broker.brokerEmail}
                 onChange={(e) => setBroker({ ...broker, brokerEmail: e.target.value })}
-                placeholder="info@adecomex.com.do"
+                placeholder="operaciones@adecomex.com"
               />
             </div>
             <div className="grid gap-1.5">
@@ -257,7 +257,7 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
               <Input
                 value={broker.brokerTel}
                 onChange={(e) => setBroker({ ...broker, brokerTel: e.target.value })}
-                placeholder="809-000-0000"
+                placeholder="809-531-3888"
               />
             </div>
             <div className="grid gap-1.5">

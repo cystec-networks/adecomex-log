@@ -236,9 +236,9 @@ export async function buildSolicitudBookingPdf(input: SolicitudBookingInput) {
   doc.setTextColor(0);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  doc.text("ADECOMEX SRL — Tel. 809-237-5418 / 809-931-3246 — info@adecomex.com.do", pageWidth / 2, footerY + 48, { align: "center" });
+  doc.text("ADECOMEX SRL — Tel. 809-531-3888 — WhatsApp 809-931-3246 — operaciones@adecomex.com", pageWidth / 2, footerY + 48, { align: "center" });
   doc.setFontSize(6);
-  doc.text("Calle Resp. San Miguel No. 12, Bayona, Santo Domingo Oeste, República Dominicana", pageWidth / 2, footerY + 61, { align: "center" });
+  doc.text("Oficina Comercial: Avenida Caonabo 85E, Los Restauradores, Distrito Nacional, Santo Domingo, República Dominicana", pageWidth / 2, footerY + 61, { align: "center" });
 
   return doc;
 }

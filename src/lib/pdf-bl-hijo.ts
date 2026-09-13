@@ -155,9 +155,14 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6.4);
   doc.text(
-    ["Calle Resp. San Miguel No. 12, Bayona", "Santo Domingo Oeste, República Dominicana", "809-237-5418  ·  809-931-3246"],
+    [
+      "Oficina Comercial: Avenida Caonabo 85E, Los Restauradores",
+      "Distrito Nacional, Santo Domingo, República Dominicana",
+      "Tel. 809-531-3888  ·  WhatsApp 809-931-3246",
+      "operaciones@adecomex.com",
+    ],
     rightX + rightWidth / 2,
-    headerY + 184,
+    headerY + 177,
     { align: "center", lineHeightFactor: 1.3 },
   );
 
