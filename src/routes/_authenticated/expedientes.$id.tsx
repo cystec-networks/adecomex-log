@@ -1011,6 +1011,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       const payload: any = { ...form };
       const contValidos = contenedores.filter((c) => c.numero.trim());
       if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
+      if (!payload.cliente_id) payload.cliente_id = null;
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
       if (!payload.fecha_cargado) payload.fecha_cargado = null;
       payload.peso_neto = payload.peso_neto === "" ? null : Number(payload.peso_neto);
@@ -1499,7 +1500,21 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               )}
             </div>
             {contenedores.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Sin contenedores registrados.</p>
+              form.numeros_contenedores ? (
+                <div className="grid gap-1.5">
+                  <Input
+                    value={form.numeros_contenedores}
+                    onChange={(e) => set("numeros_contenedores", e.target.value)}
+                    disabled={!editable}
+                    placeholder="MSKU1234567, TCLU7654321"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Contenedores registrados como texto (formato anterior). Puedes editarlos aquí o agregarlos a la lista estructurada con “Agregar contenedor”.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Sin contenedores registrados.</p>
+              )
             ) : (
               <div className="overflow-x-auto rounded-md border">
                 <table className="w-full text-sm">
