@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2, Circle, Clock, FileText, Pencil, Plus, Save, Upload, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2, ChevronDown, Circle, Clock, FileOutput, FileText, Pencil, Plus, Save, Upload, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,10 +25,11 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ConstanciaLogisticaButton } from "@/components/constancia-logistica-button";
-import { BlHijoPdfButton } from "@/components/bl-hijo-pdf-button";
-import { SolicitudBookingPdfButton } from "@/components/solicitud-booking-pdf-button";
-import { CotizacionLogisticaPdfButton } from "@/components/cotizacion-logistica-pdf-button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ConstanciaLogisticaButton, type ConstanciaLogisticaButtonHandle } from "@/components/constancia-logistica-button";
+import { BlHijoPdfButton, type BlHijoPdfButtonHandle } from "@/components/bl-hijo-pdf-button";
+import { SolicitudBookingPdfButton, type SolicitudBookingPdfButtonHandle } from "@/components/solicitud-booking-pdf-button";
+import { CotizacionLogisticaPdfButton, type CotizacionLogisticaPdfButtonHandle } from "@/components/cotizacion-logistica-pdf-button";
 
 /** Registro de auditoría de la operación logística (mismo patrón que Expedientes). */
 const logAuditoria = async (operacionId: string, accion: string, cambios?: Record<string, unknown>) => {
@@ -176,6 +177,10 @@ function DetalleLogistica() {
   const [incidenciasResueltas, setIncidenciasResueltas] = useState<number[]>([]);
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
   const [contenedores, setContenedores] = useState<ContenedorFila[]>([]);
+  const constanciaRef = useRef<ConstanciaLogisticaButtonHandle>(null);
+  const blHijoRef = useRef<BlHijoPdfButtonHandle>(null);
+  const bookingRef = useRef<SolicitudBookingPdfButtonHandle>(null);
+  const cotizacionRef = useRef<CotizacionLogisticaPdfButtonHandle>(null);
   const setCont = (i: number, key: keyof ContenedorFila, value: string) =>
     setContenedores((rows) => rows.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
 
@@ -628,10 +633,32 @@ function DetalleLogistica() {
           <>
             <Badge variant="outline" className="capitalize">{form.tipo}</Badge><Badge className={estadoLogisticaClass(operacion!.estado)}>{ESTADO_LOGISTICA_LABEL[operacion!.estado] ?? operacion!.estado}</Badge>
             <div className="min-w-48"><div className="text-xs font-medium mb-1">Progreso: {done} de {total} etapas</div><Progress value={(done / total) * 100} /></div>
-            <ConstanciaLogisticaButton datos={datosConstancia} />
-            <BlHijoPdfButton datos={datosBlHijo} />
-            <SolicitudBookingPdfButton datos={datosSolicitudBooking} />
-            <CotizacionLogisticaPdfButton datos={datosCotizacionLogistica} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <FileOutput className="h-4 w-4 mr-1" /> Documentos
+                  <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 p-1">
+                <DropdownMenuItem onSelect={() => constanciaRef.current?.generar()} className="cursor-pointer">
+                  Generar Constancia (PDF)
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => blHijoRef.current?.generar()} className="cursor-pointer">
+                  Generar BL Hijo (PDF)
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => bookingRef.current?.generar()} className="cursor-pointer">
+                  Generar Solicitud de Booking (PDF)
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => cotizacionRef.current?.generar()} className="cursor-pointer">
+                  Generar Cotización (PDF)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <ConstanciaLogisticaButton ref={constanciaRef} datos={datosConstancia} showTrigger={false} />
+            <BlHijoPdfButton ref={blHijoRef} datos={datosBlHijo} showTrigger={false} />
+            <SolicitudBookingPdfButton ref={bookingRef} datos={datosSolicitudBooking} showTrigger={false} />
+            <CotizacionLogisticaPdfButton ref={cotizacionRef} datos={datosCotizacionLogistica} showTrigger={false} />
             {modoEdicion && <Button disabled={saveMut.isPending} onClick={() => saveMut.mutate()} className="shadow-lg"><Save className="h-4 w-4 mr-2" />Guardar cambios</Button>}
           </>
         )}

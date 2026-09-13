@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,9 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { buildConstanciaLogisticaPdf, type ConstanciaInput } from "@/lib/pdf-constancia-logistica";
 
 /** Botón + vista previa de la "Constancia de Inicio de Gestión Logística". */
-export function ConstanciaLogisticaButton({ datos }: { datos: () => ConstanciaInput }) {
+export type ConstanciaLogisticaButtonHandle = { generar: () => void };
+
+export const ConstanciaLogisticaButton = forwardRef<ConstanciaLogisticaButtonHandle, { datos: () => ConstanciaInput; showTrigger?: boolean }>(function ConstanciaLogisticaButton({ datos, showTrigger = true }, ref) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const docRef = useRef<any>(null);
   const fileNameRef = useRef("Constancia.pdf");
@@ -29,12 +31,14 @@ export function ConstanciaLogisticaButton({ datos }: { datos: () => ConstanciaIn
     }
   };
 
+  useImperativeHandle(ref, () => ({ generar }));
+
   return (
     <>
-      <Button variant="outline" size="sm" onClick={generar}>
+      {showTrigger && <Button variant="outline" size="sm" onClick={generar}>
         <FileText className="h-4 w-4 mr-1" />
         Generar Constancia (PDF)
-      </Button>
+      </Button>}
 
       <Dialog open={!!previewUrl} onOpenChange={(o) => { if (!o) cerrar(); }}>
         <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-0 gap-0">
@@ -54,6 +58,6 @@ export function ConstanciaLogisticaButton({ datos }: { datos: () => ConstanciaIn
       </Dialog>
     </>
   );
-}
+});
 
 export default ConstanciaLogisticaButton;

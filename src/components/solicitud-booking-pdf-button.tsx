@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,9 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { buildSolicitudBookingPdf, type SolicitudBookingInput } from "@/lib/pdf-solicitud-booking";
 
 /** Genera, previsualiza y descarga la solicitud de booking de una operación logística. */
-export function SolicitudBookingPdfButton({ datos }: { datos: () => Promise<SolicitudBookingInput> }) {
+export type SolicitudBookingPdfButtonHandle = { generar: () => void };
+
+export const SolicitudBookingPdfButton = forwardRef<SolicitudBookingPdfButtonHandle, { datos: () => Promise<SolicitudBookingInput>; showTrigger?: boolean }>(function SolicitudBookingPdfButton({ datos, showTrigger = true }, ref) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [generando, setGenerando] = useState(false);
   const docRef = useRef<Awaited<ReturnType<typeof buildSolicitudBookingPdf>> | null>(null);
@@ -33,12 +35,14 @@ export function SolicitudBookingPdfButton({ datos }: { datos: () => Promise<Soli
     }
   };
 
+  useImperativeHandle(ref, () => ({ generar }));
+
   return (
     <>
-      <Button variant="outline" size="sm" disabled={generando} onClick={generar}>
+      {showTrigger && <Button variant="outline" size="sm" disabled={generando} onClick={generar}>
         <FileText className="mr-1 h-4 w-4" />
         {generando ? "Generando…" : "Generar Solicitud de Booking (PDF)"}
-      </Button>
+      </Button>}
 
       <Dialog open={Boolean(previewUrl)} onOpenChange={(open) => { if (!open) cerrar(); }}>
         <DialogContent className="flex h-[90vh] w-[95vw] max-w-5xl flex-col gap-0 p-0">
@@ -58,6 +62,6 @@ export function SolicitudBookingPdfButton({ datos }: { datos: () => Promise<Soli
       </Dialog>
     </>
   );
-}
+});
 
 export default SolicitudBookingPdfButton;
