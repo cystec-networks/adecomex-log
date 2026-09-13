@@ -4224,6 +4224,7 @@ export type Database = {
           bl_awb: string | null
           booking: string | null
           buque: string | null
+          cantidad_bultos: number | null
           cliente_id: string | null
           contenedor: string | null
           cotizacion_id: string | null
@@ -4244,6 +4245,7 @@ export type Database = {
           gastos_locales_monto: number | null
           id: string
           incoterm: string | null
+          lugar_recepcion: string | null
           numero: string
           observaciones: string | null
           orden_id: string | null
@@ -4255,17 +4257,22 @@ export type Database = {
           proveedor_logistico: string | null
           proveedor_logistico_tid: string | null
           proveedor_telefono: string | null
+          puerto_descarga: string | null
           puerto_destino: string | null
           responsable_id: string | null
           seguro_monto: number | null
+          terminos_flete: string | null
           tipo: string
+          tipo_bultos: string | null
           updated_at: string
           volumen_m3: number | null
+          voyage: string | null
         }
         Insert: {
           bl_awb?: string | null
           booking?: string | null
           buque?: string | null
+          cantidad_bultos?: number | null
           cliente_id?: string | null
           contenedor?: string | null
           cotizacion_id?: string | null
@@ -4286,6 +4293,7 @@ export type Database = {
           gastos_locales_monto?: number | null
           id?: string
           incoterm?: string | null
+          lugar_recepcion?: string | null
           numero: string
           observaciones?: string | null
           orden_id?: string | null
@@ -4297,17 +4305,22 @@ export type Database = {
           proveedor_logistico?: string | null
           proveedor_logistico_tid?: string | null
           proveedor_telefono?: string | null
+          puerto_descarga?: string | null
           puerto_destino?: string | null
           responsable_id?: string | null
           seguro_monto?: number | null
+          terminos_flete?: string | null
           tipo?: string
+          tipo_bultos?: string | null
           updated_at?: string
           volumen_m3?: number | null
+          voyage?: string | null
         }
         Update: {
           bl_awb?: string | null
           booking?: string | null
           buque?: string | null
+          cantidad_bultos?: number | null
           cliente_id?: string | null
           contenedor?: string | null
           cotizacion_id?: string | null
@@ -4328,6 +4341,7 @@ export type Database = {
           gastos_locales_monto?: number | null
           id?: string
           incoterm?: string | null
+          lugar_recepcion?: string | null
           numero?: string
           observaciones?: string | null
           orden_id?: string | null
@@ -4339,12 +4353,16 @@ export type Database = {
           proveedor_logistico?: string | null
           proveedor_logistico_tid?: string | null
           proveedor_telefono?: string | null
+          puerto_descarga?: string | null
           puerto_destino?: string | null
           responsable_id?: string | null
           seguro_monto?: number | null
+          terminos_flete?: string | null
           tipo?: string
+          tipo_bultos?: string | null
           updated_at?: string
           volumen_m3?: number | null
+          voyage?: string | null
         }
         Relationships: [
           {
