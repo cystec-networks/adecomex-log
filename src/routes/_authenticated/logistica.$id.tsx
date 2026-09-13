@@ -394,6 +394,12 @@ function DetalleLogistica() {
         <div className="sm:col-span-2 lg:col-span-4 space-y-1.5"><Label>Observaciones</Label><Textarea disabled={readOnly} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} rows={3} /></div>
       </CardContent></Card>
 
+      <Card><CardHeader><CardTitle className="text-base">Shipper (Exportador Real)</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Field label="Nombre" name="shipper_nombre" /><Field label="Tax ID" name="shipper_tax_id" />
+        <Field label="Teléfono" name="shipper_telefono" /><Field label="Email" name="shipper_email" type="email" />
+        <div className="sm:col-span-2 lg:col-span-4 space-y-1.5"><Label>Dirección</Label><Input disabled={readOnly} value={form.shipper_direccion} onChange={(e) => set("shipper_direccion", e.target.value)} /></div>
+      </CardContent></Card>
+
       <Card><CardHeader><CardTitle className="text-base">Datos de la carga</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="sm:col-span-2 space-y-1.5"><Label>Producto</Label><Input disabled={readOnly} value={form.producto} onChange={(e) => set("producto", e.target.value)} /></div>
         <Field label="Origen" name="origen" /><Field label="Destino" name="destino" />
