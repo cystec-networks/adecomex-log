@@ -87,7 +87,7 @@ function LogisticaIndex() {
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><h1 className="font-display text-2xl font-bold">Logística</h1><p className="text-sm text-muted-foreground">Carga marítima y aérea desde origen hasta República Dominicana.</p></div>
-        {canEdit && <Button asChild><Link to="/logistica/nueva"><Plus className="h-4 w-4 mr-1" />Nueva Operación</Link></Button>}
+        {canEdit && <Button asChild><Link to="/logistica/$id" params={{ id: "nuevo" }}><Plus className="h-4 w-4 mr-1" />Nueva Operación</Link></Button>}
       </div>
       <Card>
         <CardHeader className="flex-row items-center gap-3">
