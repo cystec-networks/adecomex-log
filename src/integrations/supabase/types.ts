@@ -4241,6 +4241,7 @@ export type Database = {
           destino: string | null
           eliminado_en: string | null
           eliminado_por: string | null
+          es_mercancia_peligrosa: boolean
           estado: string
           eta: string | null
           expediente_id: string | null
@@ -4251,6 +4252,12 @@ export type Database = {
           flete_moneda: string | null
           flete_monto: number | null
           gastos_locales_monto: number | null
+          hazmat_clase: string | null
+          hazmat_contaminante_marino: boolean
+          hazmat_grupo_empaque: string | null
+          hazmat_nombre_tecnico: string | null
+          hazmat_punto_inflamacion: string | null
+          hazmat_un_numero: string | null
           id: string
           incoterm: string | null
           lugar_recepcion: string | null
@@ -4305,6 +4312,7 @@ export type Database = {
           destino?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
+          es_mercancia_peligrosa?: boolean
           estado?: string
           eta?: string | null
           expediente_id?: string | null
@@ -4315,6 +4323,12 @@ export type Database = {
           flete_moneda?: string | null
           flete_monto?: number | null
           gastos_locales_monto?: number | null
+          hazmat_clase?: string | null
+          hazmat_contaminante_marino?: boolean
+          hazmat_grupo_empaque?: string | null
+          hazmat_nombre_tecnico?: string | null
+          hazmat_punto_inflamacion?: string | null
+          hazmat_un_numero?: string | null
           id?: string
           incoterm?: string | null
           lugar_recepcion?: string | null
@@ -4369,6 +4383,7 @@ export type Database = {
           destino?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
+          es_mercancia_peligrosa?: boolean
           estado?: string
           eta?: string | null
           expediente_id?: string | null
@@ -4379,6 +4394,12 @@ export type Database = {
           flete_moneda?: string | null
           flete_monto?: number | null
           gastos_locales_monto?: number | null
+          hazmat_clase?: string | null
+          hazmat_contaminante_marino?: boolean
+          hazmat_grupo_empaque?: string | null
+          hazmat_nombre_tecnico?: string | null
+          hazmat_punto_inflamacion?: string | null
+          hazmat_un_numero?: string | null
           id?: string
           incoterm?: string | null
           lugar_recepcion?: string | null

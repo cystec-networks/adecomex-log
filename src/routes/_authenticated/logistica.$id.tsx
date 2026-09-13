@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2, Circle, Clock, FileText, Pencil, Plus, Save, Upload, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -72,6 +73,9 @@ type FormState = {
   shipper_nombre: string; shipper_tax_id: string; shipper_direccion: string; shipper_telefono: string; shipper_email: string;
   comprador_nombre: string; comprador_tax_id: string; comprador_direccion: string; comprador_telefono: string; comprador_email: string;
   bl_hijo_numero: string;
+  es_mercancia_peligrosa: string;
+  hazmat_un_numero: string; hazmat_clase: string; hazmat_grupo_empaque: string; hazmat_punto_inflamacion: string;
+  hazmat_contaminante_marino: string; hazmat_nombre_tecnico: string;
 };
 const cleanDate = (v: string | null) => v?.slice(0, 10) ?? "";
 const formFrom = (o: any): FormState => ({
@@ -94,6 +98,10 @@ const formFrom = (o: any): FormState => ({
   comprador_nombre: o.comprador_nombre ?? "", comprador_tax_id: o.comprador_tax_id ?? "", comprador_direccion: o.comprador_direccion ?? "",
   comprador_telefono: o.comprador_telefono ?? "", comprador_email: o.comprador_email ?? "",
   bl_hijo_numero: o.bl_hijo_numero ?? "",
+  es_mercancia_peligrosa: String(o.es_mercancia_peligrosa ?? false),
+  hazmat_un_numero: o.hazmat_un_numero ?? "", hazmat_clase: o.hazmat_clase ?? "", hazmat_grupo_empaque: o.hazmat_grupo_empaque ?? "",
+  hazmat_punto_inflamacion: o.hazmat_punto_inflamacion ?? "", hazmat_contaminante_marino: String(o.hazmat_contaminante_marino ?? false),
+  hazmat_nombre_tecnico: o.hazmat_nombre_tecnico ?? "",
 });
 
 const normalizarCliente = (s: string) =>
@@ -294,6 +302,10 @@ function DetalleLogistica() {
     comprador_nombre: nullable(f.comprador_nombre), comprador_tax_id: nullable(f.comprador_tax_id), comprador_direccion: nullable(f.comprador_direccion),
     comprador_telefono: nullable(f.comprador_telefono), comprador_email: nullable(f.comprador_email),
     bl_hijo_numero: nullable(f.bl_hijo_numero),
+    es_mercancia_peligrosa: f.es_mercancia_peligrosa === "true",
+    hazmat_un_numero: nullable(f.hazmat_un_numero), hazmat_clase: nullable(f.hazmat_clase),
+    hazmat_grupo_empaque: nullable(f.hazmat_grupo_empaque), hazmat_punto_inflamacion: nullable(f.hazmat_punto_inflamacion),
+    hazmat_contaminante_marino: f.hazmat_contaminante_marino === "true", hazmat_nombre_tecnico: nullable(f.hazmat_nombre_tecnico),
   });
 
   const saveMut = useMutation({ mutationFn: async () => {
@@ -523,6 +535,39 @@ function DetalleLogistica() {
       </CardContent></Card>}
 
       <Card><CardHeader><CardTitle className="text-base">Datos de la carga</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="sm:col-span-2 lg:col-span-4 flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/20">
+          <Switch
+            id="es_mercancia_peligrosa"
+            disabled={readOnly}
+            checked={form.es_mercancia_peligrosa === "true"}
+            onCheckedChange={(checked) => set("es_mercancia_peligrosa", checked ? "true" : "false")}
+          />
+          <div className="flex-1">
+            <Label htmlFor="es_mercancia_peligrosa" className="cursor-pointer font-medium text-amber-900 dark:text-amber-100">¿Mercancía peligrosa?</Label>
+            <p className="text-xs text-amber-700 dark:text-amber-300">Activa esta opción si la carga requiere declaración HAZMAT / IMO.</p>
+          </div>
+        </div>
+
+        {form.es_mercancia_peligrosa === "true" && (
+          <div className="sm:col-span-2 lg:col-span-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 rounded-md border border-amber-200 bg-amber-50/70 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+            <div className="sm:col-span-2 lg:col-span-4 flex items-center gap-2 text-sm font-semibold text-amber-800 dark:text-amber-200"><AlertTriangle className="h-4 w-4" />Datos HAZMAT</div>
+            <Field form={form} set={set} readOnly={readOnly} label="N° UN" name="hazmat_un_numero" />
+            <Field form={form} set={set} readOnly={readOnly} label="Clase" name="hazmat_clase" />
+            <Field form={form} set={set} readOnly={readOnly} label="Grupo de Empaque" name="hazmat_grupo_empaque" />
+            <Field form={form} set={set} readOnly={readOnly} label="Punto de Inflamación" name="hazmat_punto_inflamacion" />
+            <div className="sm:col-span-2 space-y-1.5"><Label>Nombre Técnico</Label><Input disabled={readOnly} value={form.hazmat_nombre_tecnico} onChange={(e) => set("hazmat_nombre_tecnico", e.target.value)} /></div>
+            <div className="flex items-center gap-3 rounded-md border border-amber-200 bg-background p-3 dark:border-amber-900">
+              <Switch
+                id="hazmat_contaminante_marino"
+                disabled={readOnly}
+                checked={form.hazmat_contaminante_marino === "true"}
+                onCheckedChange={(checked) => set("hazmat_contaminante_marino", checked ? "true" : "false")}
+              />
+              <Label htmlFor="hazmat_contaminante_marino" className="cursor-pointer text-sm">Contaminante marino</Label>
+            </div>
+          </div>
+        )}
+
         <div className="sm:col-span-2 space-y-1.5"><Label>Producto</Label><Input disabled={readOnly} value={form.producto} onChange={(e) => set("producto", e.target.value)} /></div>
         <Field form={form} set={set} readOnly={readOnly} label="Origen" name="origen" /><Field form={form} set={set} readOnly={readOnly} label="Destino" name="destino" />
         <Field form={form} set={set} readOnly={readOnly} label="Puerto / aeropuerto de destino" name="puerto_destino" /><Field form={form} set={set} readOnly={readOnly} label="Buque / vuelo" name="buque" />
