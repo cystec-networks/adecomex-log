@@ -73,6 +73,9 @@ type FormState = {
   shipper_nombre: string; shipper_tax_id: string; shipper_direccion: string; shipper_telefono: string; shipper_email: string;
   comprador_nombre: string; comprador_tax_id: string; comprador_direccion: string; comprador_telefono: string; comprador_email: string;
   bl_hijo_numero: string;
+  es_mercancia_peligrosa: string;
+  hazmat_un_numero: string; hazmat_clase: string; hazmat_grupo_empaque: string; hazmat_punto_inflamacion: string;
+  hazmat_contaminante_marino: string; hazmat_nombre_tecnico: string;
 };
 const cleanDate = (v: string | null) => v?.slice(0, 10) ?? "";
 const formFrom = (o: any): FormState => ({
