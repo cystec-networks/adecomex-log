@@ -2,7 +2,7 @@
  * Generador del House Bill of Lading (BL Hijo) emitido por ADECOMEX SRL.
  * Mismo patrón jsPDF + jspdf-autotable que pdf-preliquidacion.ts (A4, portrait).
  */
-import logoAsset from "@/assets/logo-adecomex.jpg.asset.json";
+import logoAsset from "@/assets/logo-adecomex-vertical.png.asset.json";
 
 export type BlHijoInput = {
   numero: string; // bl_hijo_numero
