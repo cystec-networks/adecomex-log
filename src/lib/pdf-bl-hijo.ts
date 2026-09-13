@@ -248,7 +248,7 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
   });
   label("TOTAL", margin + 5, cargoBodyBottomY + 11, 6);
 
-  label("PARTICULARS OF GOODS ARE THOSE DECLARED BY SHIPPERS", margin + 5, cargoBottomY - 7, 5.2);
+  label("PARTICULARS OF GOODS ARE THOSE DECLARED BY SHIPPERS", margin + 5, cargoBodyBottomY - 5, 5.2);
 
   // Pie integrado y extendido hasta el borde inferior útil de la hoja carta.
   const legalTop = cargoBottomY;
