@@ -1235,8 +1235,19 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         <AutoField label="Medio de transporte" value={form.medio_transporte} onChange={(v) => set("medio_transporte", v)} suggestion={sug.medio_transporte ?? []} disabled={!editable} />
         <AutoField label="Naviera" value={form.naviera} onChange={(v) => set("naviera", v)} suggestion={sug.naviera ?? []} disabled={!editable} />
         <Field label="SLA (días)" value={form.sla_dias} onChange={(v) => set("sla_dias", v)} type="number" disabled={!editable} />
-        <Field label="Fecha Estimada de Llegada (ETA)" value={form.fecha_compromiso} onChange={(v) => set("fecha_compromiso", v)} type="date" disabled={!editable} />
         <Field label="Fecha de Cargado" value={form.fecha_cargado} onChange={(v) => set("fecha_cargado", v)} type="date" disabled={!editable} />
+        <Field label="Fecha Estimada de Llegada (ETA)" value={form.fecha_compromiso} onChange={(v) => set("fecha_compromiso", v)} type="date" disabled={!editable} />
+        {form.fecha_cargado && form.fecha_compromiso && (() => {
+          const dias = Math.round((new Date(form.fecha_compromiso).getTime() - new Date(form.fecha_cargado).getTime()) / 86400000);
+          return (
+            <div className="grid gap-1.5">
+              <Label className="text-muted-foreground">Días de tránsito</Label>
+              <div className="h-9 flex items-center px-3 rounded-md border bg-muted/30 text-sm">
+                {dias >= 0 ? `${dias} día${dias === 1 ? "" : "s"}` : "Fechas inconsistentes"}
+              </div>
+            </div>
+          );
+        })()}
       </Section>
 
 
