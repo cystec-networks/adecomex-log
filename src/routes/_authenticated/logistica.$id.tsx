@@ -430,6 +430,7 @@ function DetalleLogistica() {
       cantidadBultos: form.cantidad_bultos ? Number(form.cantidad_bultos) : null,
       tipoBultos: form.tipo_bultos || null,
       descripcionMercancia: form.producto,
+      observaciones: form.observaciones,
       pesoBrutoKg: form.peso_bruto_kg ? Number(form.peso_bruto_kg) : null,
       volumenM3: form.volumen_m3 ? Number(form.volumen_m3) : null,
       terminosFlete: form.terminos_flete,

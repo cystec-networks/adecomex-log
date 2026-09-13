@@ -24,6 +24,7 @@ export type BlHijoInput = {
   terminosFlete: string;
   monedaFlete: string;
   cargos: Array<{ descripcion: string; monto: number | null }>;
+  observaciones: string;
 };
 
 const v = (text: string | null | undefined) => (text && String(text).trim() ? String(text).trim() : "—");
@@ -234,20 +235,37 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
       if (containers.length > 1 && hook.section === "body" && hook.row.index === cargoRows.length - 1) {
         hook.cell.styles.fontStyle = "bold";
       }
+      // La columna de descripción se prolonga hasta el área de totales: sin líneas horizontales internas.
+      if (hook.section === "body" && hook.column.index === 2) {
+        hook.cell.styles.lineWidth = { top: 0, right: 0.5, bottom: 0, left: 0.5 };
+      }
     },
   });
 
   const tableEndY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
   const cargoColumnWidths = [118, 91, 231, 68, contentWidth - 508];
-  // Las columnas continúan hasta los totales, sin una línea horizontal que separe la descripción.
+  // Área de totales: rectángulo y líneas verticales. La columna de descripción sigue abierta.
   if (tableEndY < cargoBottomY) doc.rect(margin, tableEndY, contentWidth, cargoBottomY - tableEndY);
   let cargoColumnX = margin;
   cargoColumnWidths.slice(0, -1).forEach((columnWidth) => {
     cargoColumnX += columnWidth;
     doc.line(cargoColumnX, tableEndY, cargoColumnX, cargoBottomY);
   });
+
+  // Observaciones libres dentro de la columna de descripción, debajo de la mercancía.
+  const obsText = input.observaciones?.trim();
+  if (obsText) {
+    const descX = margin + cargoColumnWidths[0] + cargoColumnWidths[1] + 4;
+    const descW = cargoColumnWidths[2] - 8;
+    const obsTop = tableEndY + 6;
+    const obsBottom = cargoBottomY - cargoTotalHeight - 4;
+    const maxObsLines = Math.max(1, Math.floor((obsBottom - obsTop) / 8));
+    label("OBSERVACIONES:", descX, obsTop, 5.3);
+    value(obsText, descX, obsTop + 10, descW, maxObsLines, 6);
+  }
+
   const cargoTotalY = cargoBottomY - 7;
-  label("TOTAL", margin + cargoColumnWidths[0] + cargoColumnWidths[1] + cargoColumnWidths[2] - 34, cargoTotalY, 6);
+  label("TOTAL", margin + cargoColumnWidths[0] + cargoColumnWidths[1] - 28, cargoTotalY, 6);
   value(input.cantidadBultos == null ? "—" : Number(input.cantidadBultos).toLocaleString("en-US"), margin + cargoColumnWidths[0] + 4, cargoTotalY, cargoColumnWidths[1] - 8, 1, 6.8);
   value(nf(input.pesoBrutoKg), margin + cargoColumnWidths[0] + cargoColumnWidths[1] + cargoColumnWidths[2] + 4, cargoTotalY, cargoColumnWidths[3] - 8, 1, 6.8);
   value(nf(input.volumenM3), margin + cargoColumnWidths[0] + cargoColumnWidths[1] + cargoColumnWidths[2] + cargoColumnWidths[3] + 4, cargoTotalY, cargoColumnWidths[4] - 8, 1, 6.8);
