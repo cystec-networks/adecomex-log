@@ -104,8 +104,8 @@ function LogisticaIndex() {
              </tr></thead>
             <tbody>
               {grupos.map(([estado, rows]) => <Fragment key={estado}>
-                <EstadoDivider colSpan={8} count={rows.length} colapsado={esColapsado(estado)} onToggle={() => toggleGrupo(estado)}
-                  label={<Badge className={estadoLogisticaClass(estado === "finalizadas" ? "completada" : estado)}>{estado === "finalizadas" ? "Completadas / canceladas" : (ESTADO_LOGISTICA_LABEL[estado] ?? estado)}</Badge>} />
+                 <EstadoDivider colSpan={canSeeMargen ? 9 : 8} count={rows.length} colapsado={esColapsado(estado)} onToggle={() => toggleGrupo(estado)}
+                   label={<Badge className={estadoLogisticaClass(estado === "finalizadas" ? "completada" : estado)}>{estado === "finalizadas" ? "Completadas / canceladas" : (ESTADO_LOGISTICA_LABEL[estado] ?? estado)}</Badge>} />
                  {!esColapsado(estado) && rows.map((o: any) => {
                    const precioCliente = (Number(o.flete_monto) || 0) + (Number(o.seguro_monto) || 0) + (Number(o.gastos_locales_monto) || 0) + (Number(o.otros_monto) || 0) + (Number(o.hazmat_recargo) || 0);
                    const costoInterno = Number(o.costo_interno_total) || 0;
