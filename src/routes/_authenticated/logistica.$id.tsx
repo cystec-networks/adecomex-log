@@ -156,6 +156,8 @@ function LinkSelect({ label, name, rows, form, set, readOnly, isNuevo, prefill }
 /** Documento en borrador (modo "nuevo"): se sube a storage y se inserta al crear la operación. */
 export type DocumentoNuevo = { tipo: string; nombre_archivo: string; file: File };
 export type IncidenciaNueva = { tipo: string; severidad: string; descripcion: string };
+/** Contenedor estructurado de la operación (mismo patrón que Expedientes). */
+type ContenedorFila = { numero: string; sello1: string; sello2: string; tipo: string };
 
 function DetalleLogistica() {
   const { id } = Route.useParams();
@@ -171,6 +173,9 @@ function DetalleLogistica() {
   const [incidenciasNuevas, setIncidenciasNuevas] = useState<IncidenciaNueva[]>([]);
   const [incidenciasResueltas, setIncidenciasResueltas] = useState<number[]>([]);
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
+  const [contenedores, setContenedores] = useState<ContenedorFila[]>([]);
+  const setCont = (i: number, key: keyof ContenedorFila, value: string) =>
+    setContenedores((rows) => rows.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
 
   const { data: operacion, isLoading } = useQuery({ queryKey: ["operacion-logistica", id], enabled: !isNuevo, queryFn: async () => {
     const { data, error } = await supabase.from("operaciones_logistica").select("*, clientes(nombre)").eq("id", id).single();
@@ -193,8 +198,13 @@ function DetalleLogistica() {
       supabase.from("expedientes").select("id,numero").is("eliminado_en", null).order("created_at", { ascending: false }).limit(100),
     ]); return { cotizaciones: c.data ?? [], ordenes: o.data ?? [], expedientes: e.data ?? [] };
   }});
+  const { data: contenedoresDb } = useQuery({ queryKey: ["contenedores-logistica", id], enabled: !isNuevo, queryFn: async () => {
+    const { data, error } = await supabase.from("logistica_contenedores").select("*").eq("operacion_logistica_id", id).order("item_no");
+    if (error) throw error; return data ?? [];
+  }});
   // Sincroniza el formulario con la operación cargada (solo modo edición de una existente).
   const [cargadoId, setCargadoId] = useState<string | null>(null);
+  const [contenedoresCargadoId, setContenedoresCargadoId] = useState<string | null>(null);
   if (isNuevo && cargadoId !== "nuevo") {
     setCargadoId("nuevo");
     setForm(EMPTY_FORM);
@@ -202,9 +212,17 @@ function DetalleLogistica() {
     setIncidenciasNuevas([]);
     setIncidenciasResueltas([]);
     setClienteExtraidoSinMatch(null);
+    setContenedores([]);
+    setContenedoresCargadoId("nuevo");
     setModoEdicion(true);
   }
   if (!isNuevo && operacion && cargadoId !== operacion.id) { setCargadoId(operacion.id); setForm(formFrom(operacion)); }
+  if (!isNuevo && contenedoresDb && contenedoresCargadoId !== id) {
+    setContenedoresCargadoId(id);
+    setContenedores(contenedoresDb.map((c) => ({
+      numero: c.numero_contenedor ?? "", sello1: c.sello1 ?? "", sello2: c.sello2 ?? "", tipo: c.tipo_contenedor ?? "",
+    })));
+  }
   const set = (key: keyof FormState, value: string) => setForm((p) => p ? ({ ...p, [key]: value }) : p);
   const done = etapas.filter((e) => e.estado === "completada").length;
   const total = etapas.length || 6;
@@ -272,15 +290,34 @@ function DetalleLogistica() {
       incoterm: res.incoterm || f.incoterm,
       producto: res.descripcion_mercancia || f.producto,
       bl_awb: res.numero_documento || f.bl_awb,
-      contenedor: res.contenedores?.length ? res.contenedores.map((c) => c.numero).join(", ") : f.contenedor,
       notify_party: res.notify_party || f.notify_party,
       agente_entrega: res.agente_entrega || f.agente_entrega,
     }));
+    if (res.contenedores?.length) {
+      setContenedores((prev) => prev.length ? prev : res.contenedores!.map((c: any) => ({
+        numero: c.numero ?? "", sello1: c.sello1 ?? "", sello2: c.sello2 ?? "", tipo: c.tipo ?? "",
+      })));
+    }
     toast.success("Datos extraídos — revisa y ajusta los campos");
   };
 
   const numeric = (v: string) => v === "" ? null : Number(v);
   const nullable = (v: string) => v || null;
+  // La lista estructurada es la fuente de verdad; el campo de texto se recalcula para no romper lecturas existentes.
+  const contenedoresValidos = contenedores.filter((c) => c.numero.trim());
+  const contenedoresTexto = contenedoresValidos.map((c) => c.numero.trim()).join(", ");
+  /** Reescribe la lista estructurada de contenedores de una operación. */
+  const guardarContenedores = async (operacionId: string) => {
+    await supabase.from("logistica_contenedores").delete().eq("operacion_logistica_id", operacionId);
+    if (!contenedoresValidos.length) return;
+    const { error } = await supabase.from("logistica_contenedores").insert(
+      contenedoresValidos.map((c, i) => ({
+        operacion_logistica_id: operacionId, item_no: i + 1, numero_contenedor: c.numero.trim(),
+        sello1: c.sello1.trim() || null, sello2: c.sello2.trim() || null, tipo_contenedor: c.tipo.trim() || null,
+      })),
+    );
+    if (error) throw error;
+  };
   const payloadFrom = (f: FormState) => ({
     numero: f.numero,
     cliente_id: nullable(f.cliente_id), responsable_id: nullable(f.responsable_id), tipo: f.tipo, tipo_operacion: f.tipo_operacion,
@@ -291,7 +328,7 @@ function DetalleLogistica() {
     voyage: nullable(f.voyage), lugar_recepcion: nullable(f.lugar_recepcion), puerto_descarga: nullable(f.puerto_descarga),
     cantidad_bultos: numeric(f.cantidad_bultos), tipo_bultos: nullable(f.tipo_bultos), terminos_flete: nullable(f.terminos_flete),
     incoterm: nullable(f.incoterm), peso_bruto_kg: numeric(f.peso_bruto_kg), volumen_m3: numeric(f.volumen_m3),
-    bl_awb: nullable(f.bl_awb), contenedor: nullable(f.contenedor), fecha_recogida: nullable(f.fecha_recogida), fecha_embarque: nullable(f.fecha_embarque),
+    bl_awb: nullable(f.bl_awb), contenedor: contenedoresTexto || null, fecha_recogida: nullable(f.fecha_recogida), fecha_embarque: nullable(f.fecha_embarque),
     fecha_salida: nullable(f.fecha_salida), eta: nullable(f.eta), fecha_arribo: nullable(f.fecha_arribo), flete_monto: numeric(f.flete_monto),
     flete_moneda: f.flete_moneda, seguro_monto: numeric(f.seguro_monto), gastos_locales_monto: numeric(f.gastos_locales_monto),
     otros_monto: numeric(f.otros_monto), observaciones: nullable(f.observaciones), cotizacion_id: nullable(f.cotizacion_id),
@@ -314,8 +351,9 @@ function DetalleLogistica() {
       if (error.code === "23505") throw new Error("Ese número de operación ya está en uso — elige otro.");
       throw error;
     }
+    await guardarContenedores(id);
     await logAuditoria(id, "editado");
-  }, onSuccess: () => { toast.success("Cambios guardados"); setModoEdicion(false); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["operaciones-logistica"] }); qc.invalidateQueries({ queryKey: ["auditoria-logistica", id] }); history.replaceState(null, "", `/logistica/${id}`); }, onError: (e: any) => toast.error(e.message) });
+  }, onSuccess: () => { toast.success("Cambios guardados"); setModoEdicion(false); qc.invalidateQueries({ queryKey: ["operacion-logistica", id] }); qc.invalidateQueries({ queryKey: ["contenedores-logistica", id] }); qc.invalidateQueries({ queryKey: ["operaciones-logistica"] }); qc.invalidateQueries({ queryKey: ["auditoria-logistica", id] }); history.replaceState(null, "", `/logistica/${id}`); }, onError: (e: any) => toast.error(e.message) });
 
   const createMut = useMutation({ mutationFn: async () => {
     if (!form) throw new Error("Formulario incompleto.");
@@ -329,6 +367,7 @@ function DetalleLogistica() {
       throw error;
     }
     const newId = data.id;
+    await guardarContenedores(newId);
     // Documentos en borrador: subir a storage y registrar.
     for (const doc of documentosNuevos) {
       const safeName = doc.nombre_archivo.replace(/[^a-zA-Z0-9._-]/g, "-");
@@ -406,10 +445,9 @@ function DetalleLogistica() {
         telefono: cli.telefono ?? "", email: cli.email ?? "",
       };
     }
-    const contenedores = form.contenedor
-      .split(/[,;\n/]+/)
-      .map((numero) => ({ numero: numero.trim() }))
-      .filter((c) => c.numero);
+    const contenedoresBl = contenedoresValidos.map((c) => ({
+      numero: c.numero.trim(), sello1: c.sello1.trim() || null, sello2: c.sello2.trim() || null, tipo: c.tipo.trim() || null,
+    }));
     const esExportacion = form.tipo_operacion === "Exportación";
     const shipper = esExportacion
       ? { nombre: cliente.nombre, taxId: cliente.rnc, direccion: cliente.direccion, telefono: cliente.telefono, email: cliente.email }
@@ -438,7 +476,7 @@ function DetalleLogistica() {
       puertoCarga: form.origen,
       puertoDescarga: form.puerto_descarga,
       lugarEntrega: form.destino || form.puerto_destino,
-      contenedores,
+      contenedores: contenedoresBl,
       cantidadBultos: form.cantidad_bultos ? Number(form.cantidad_bultos) : null,
       tipoBultos: form.tipo_bultos || null,
       descripcionMercancia: form.producto,
@@ -513,7 +551,53 @@ function DetalleLogistica() {
         <div className="space-y-1.5"><Label>Responsable</Label><Select disabled={readOnly} value={form.responsable_id || "none"} onValueChange={(v) => set("responsable_id", v === "none" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sin asignar</SelectItem>{responsables.map((r) => <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>)}</SelectContent></Select></div>
         <div className="space-y-1.5"><Label>Tipo</Label><Select disabled={readOnly} value={form.tipo} onValueChange={(v) => set("tipo", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="maritimo">Marítimo</SelectItem><SelectItem value="aereo">Aéreo</SelectItem></SelectContent></Select></div>
         <div className="space-y-1.5"><Label>Tipo de Operación</Label><Select disabled={readOnly} value={form.tipo_operacion} onValueChange={(v) => set("tipo_operacion", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Importación">Importación</SelectItem><SelectItem value="Exportación">Exportación</SelectItem></SelectContent></Select></div>
-        <Field form={form} set={set} readOnly={readOnly} label="Booking" name="booking" /><Field form={form} set={set} readOnly={readOnly} label="BL / AWB" name="bl_awb" /><Field form={form} set={set} readOnly={readOnly} label="Contenedor" name="contenedor" /><Field form={form} set={set} readOnly={readOnly} label="BL Hijo (se asigna automático si se deja vacío)" name="bl_hijo_numero" />
+        <Field form={form} set={set} readOnly={readOnly} label="Booking" name="booking" /><Field form={form} set={set} readOnly={readOnly} label="BL / AWB" name="bl_awb" /><Field form={form} set={set} readOnly={readOnly} label="BL Hijo (se asigna automático si se deja vacío)" name="bl_hijo_numero" />
+        <div className="sm:col-span-2 lg:col-span-4 grid gap-2">
+          <div className="flex items-center justify-between">
+            <Label>Contenedores</Label>
+            {!readOnly && (
+              <Button type="button" variant="outline" size="sm"
+                onClick={() => setContenedores((r) => [...r, { numero: "", sello1: "", sello2: "", tipo: "" }])}>
+                Agregar contenedor
+              </Button>
+            )}
+          </div>
+          {contenedores.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sin contenedores registrados.</p>
+          ) : (
+            <div className="overflow-x-auto rounded-md border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="px-2 py-2 text-left w-10">#</th>
+                    <th className="px-2 py-2 text-left">Número de Contenedor</th>
+                    <th className="px-2 py-2 text-left">Sello 1</th>
+                    <th className="px-2 py-2 text-left">Sello 2</th>
+                    <th className="px-2 py-2 text-left">Tipo</th>
+                    {!readOnly && <th className="px-2 py-2 w-10"></th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {contenedores.map((c, i) => (
+                    <tr key={i} className="border-t">
+                      <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
+                      <td className="px-2 py-1"><Input value={c.numero} onChange={(e) => setCont(i, "numero", e.target.value)} disabled={readOnly} placeholder="MSKU1234567" /></td>
+                      <td className="px-2 py-1"><Input value={c.sello1} onChange={(e) => setCont(i, "sello1", e.target.value)} disabled={readOnly} /></td>
+                      <td className="px-2 py-1"><Input value={c.sello2} onChange={(e) => setCont(i, "sello2", e.target.value)} disabled={readOnly} /></td>
+                      <td className="px-2 py-1"><Input value={c.tipo} onChange={(e) => setCont(i, "tipo", e.target.value)} disabled={readOnly} placeholder="40HC" /></td>
+                      {!readOnly && (
+                        <td className="px-2 py-1 text-right">
+                          <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                            onClick={() => setContenedores((r) => r.filter((_, idx) => idx !== i))}>✕</Button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
         <Field form={form} set={set} readOnly={readOnly} label="Notify Party" name="notify_party" /><Field form={form} set={set} readOnly={readOnly} label="Agente de entrega" name="agente_entrega" /><Field form={form} set={set} readOnly={readOnly} label="Contacto del agente de entrega" name="agente_entrega_contacto" />
         <div className="space-y-1.5"><TerceroExtranjeroPicker label="Agente de Carga / Consolidadora" onSelect={(t) => setForm((p) => p ? ({ ...p, proveedor_logistico: t.nombre, proveedor_logistico_tid: t.tid ?? "" }) : p)} /><Input disabled={readOnly} value={form.proveedor_logistico} onChange={(e) => set("proveedor_logistico", e.target.value)} placeholder="Nombre del proveedor" /></div>
         <Field form={form} set={set} readOnly={readOnly} label="TID del proveedor" name="proveedor_logistico_tid" /><Field form={form} set={set} readOnly={readOnly} label="Correo del proveedor" name="proveedor_email" /><Field form={form} set={set} readOnly={readOnly} label="Teléfono del proveedor" name="proveedor_telefono" />
