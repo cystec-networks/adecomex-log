@@ -202,7 +202,6 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
   const cargoStartY = voyageY + 48;
   const cargoBottomY = 574;
   const cargoTotalHeight = 18;
-  const cargoBodyBottomY = cargoBottomY - cargoTotalHeight;
   autoTable(doc, {
     startY: cargoStartY,
     head: [["Marcas y Números", "Cantidad y Tipo de Bultos", "Descripción de Mercancía", "Peso Bruto (Kg)", "Volumen (M3)"]],
