@@ -372,6 +372,10 @@ function DetalleLogistica() {
         <div className="sm:col-span-2 space-y-1.5"><Label>Producto</Label><Input disabled={readOnly} value={form.producto} onChange={(e) => set("producto", e.target.value)} /></div>
         <Field label="Origen" name="origen" /><Field label="Destino" name="destino" />
         <Field label="Puerto / aeropuerto de destino" name="puerto_destino" /><Field label="Buque / vuelo" name="buque" />
+        <Field label="Voyage" name="voyage" /><Field label="Lugar de recepción" name="lugar_recepcion" />
+        <Field label="Puerto de descarga" name="puerto_descarga" />
+        <Field label="Cantidad de bultos" name="cantidad_bultos" type="number" /><Field label="Tipo de bultos" name="tipo_bultos" />
+        <div className="space-y-1.5"><Label>Términos de flete</Label><Select disabled={readOnly} value={form.terminos_flete || "none"} onValueChange={(v) => set("terminos_flete", v === "none" ? "" : v)}><SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger><SelectContent><SelectItem value="none">—</SelectItem><SelectItem value="prepaid">Prepaid</SelectItem><SelectItem value="collect">Collect</SelectItem></SelectContent></Select></div>
         <Field label="Peso bruto (kg)" name="peso_bruto_kg" type="number" /><Field label="Volumen (m³)" name="volumen_m3" type="number" />
         <Field label="Incoterm" name="incoterm" />
       </CardContent></Card>
