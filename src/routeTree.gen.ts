@@ -48,7 +48,6 @@ import { Route as AuthenticatedPermisosNuevoRouteImport } from './routes/_authen
 import { Route as AuthenticatedPermisosIdRouteImport } from './routes/_authenticated/permisos.$id'
 import { Route as AuthenticatedOrdenesNuevaRouteImport } from './routes/_authenticated/ordenes.nueva'
 import { Route as AuthenticatedOrdenesIdRouteImport } from './routes/_authenticated/ordenes.$id'
-import { Route as AuthenticatedLogisticaNuevaRouteImport } from './routes/_authenticated/logistica.nueva'
 import { Route as AuthenticatedLogisticaIdRouteImport } from './routes/_authenticated/logistica.$id'
 import { Route as AuthenticatedExpedientesPapeleraRouteImport } from './routes/_authenticated/expedientes.papelera'
 import { Route as AuthenticatedExpedientesDashboardRouteImport } from './routes/_authenticated/expedientes.dashboard'
@@ -302,12 +301,6 @@ const AuthenticatedOrdenesIdRoute = AuthenticatedOrdenesIdRouteImport.update({
   path: '/ordenes/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedLogisticaNuevaRoute =
-  AuthenticatedLogisticaNuevaRouteImport.update({
-    id: '/logistica/nueva',
-    path: '/logistica/nueva',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedLogisticaIdRoute =
   AuthenticatedLogisticaIdRouteImport.update({
     id: '/logistica/$id',
@@ -583,7 +576,6 @@ export interface FileRoutesByFullPath {
   '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/logistica/$id': typeof AuthenticatedLogisticaIdRoute
-  '/logistica/nueva': typeof AuthenticatedLogisticaNuevaRoute
   '/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
   '/ordenes/nueva': typeof AuthenticatedOrdenesNuevaRoute
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
@@ -661,7 +653,6 @@ export interface FileRoutesByTo {
   '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/logistica/$id': typeof AuthenticatedLogisticaIdRoute
-  '/logistica/nueva': typeof AuthenticatedLogisticaNuevaRoute
   '/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
   '/ordenes/nueva': typeof AuthenticatedOrdenesNuevaRoute
   '/permisos/$id': typeof AuthenticatedPermisosIdRoute
@@ -743,7 +734,6 @@ export interface FileRoutesById {
   '/_authenticated/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/_authenticated/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/_authenticated/logistica/$id': typeof AuthenticatedLogisticaIdRoute
-  '/_authenticated/logistica/nueva': typeof AuthenticatedLogisticaNuevaRoute
   '/_authenticated/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
   '/_authenticated/ordenes/nueva': typeof AuthenticatedOrdenesNuevaRoute
   '/_authenticated/permisos/$id': typeof AuthenticatedPermisosIdRoute
@@ -823,7 +813,6 @@ export interface FileRouteTypes {
     | '/expedientes/dashboard'
     | '/expedientes/papelera'
     | '/logistica/$id'
-    | '/logistica/nueva'
     | '/ordenes/$id'
     | '/ordenes/nueva'
     | '/permisos/$id'
@@ -901,7 +890,6 @@ export interface FileRouteTypes {
     | '/expedientes/dashboard'
     | '/expedientes/papelera'
     | '/logistica/$id'
-    | '/logistica/nueva'
     | '/ordenes/$id'
     | '/ordenes/nueva'
     | '/permisos/$id'
@@ -982,7 +970,6 @@ export interface FileRouteTypes {
     | '/_authenticated/expedientes/dashboard'
     | '/_authenticated/expedientes/papelera'
     | '/_authenticated/logistica/$id'
-    | '/_authenticated/logistica/nueva'
     | '/_authenticated/ordenes/$id'
     | '/_authenticated/ordenes/nueva'
     | '/_authenticated/permisos/$id'
@@ -1314,13 +1301,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrdenesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/logistica/nueva': {
-      id: '/_authenticated/logistica/nueva'
-      path: '/logistica/nueva'
-      fullPath: '/logistica/nueva'
-      preLoaderRoute: typeof AuthenticatedLogisticaNuevaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/logistica/$id': {
       id: '/_authenticated/logistica/$id'
       path: '/logistica/$id'
@@ -1630,7 +1610,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedExpedientesDashboardRoute: typeof AuthenticatedExpedientesDashboardRoute
   AuthenticatedExpedientesPapeleraRoute: typeof AuthenticatedExpedientesPapeleraRoute
   AuthenticatedLogisticaIdRoute: typeof AuthenticatedLogisticaIdRoute
-  AuthenticatedLogisticaNuevaRoute: typeof AuthenticatedLogisticaNuevaRoute
   AuthenticatedOrdenesIdRoute: typeof AuthenticatedOrdenesIdRoute
   AuthenticatedOrdenesNuevaRoute: typeof AuthenticatedOrdenesNuevaRoute
   AuthenticatedPermisosIdRoute: typeof AuthenticatedPermisosIdRoute
@@ -1704,7 +1683,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedExpedientesDashboardRoute,
   AuthenticatedExpedientesPapeleraRoute: AuthenticatedExpedientesPapeleraRoute,
   AuthenticatedLogisticaIdRoute: AuthenticatedLogisticaIdRoute,
-  AuthenticatedLogisticaNuevaRoute: AuthenticatedLogisticaNuevaRoute,
   AuthenticatedOrdenesIdRoute: AuthenticatedOrdenesIdRoute,
   AuthenticatedOrdenesNuevaRoute: AuthenticatedOrdenesNuevaRoute,
   AuthenticatedPermisosIdRoute: AuthenticatedPermisosIdRoute,
