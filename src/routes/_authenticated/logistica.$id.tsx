@@ -428,31 +428,31 @@ function DetalleLogistica() {
         <div className="space-y-1.5"><Label>Cliente{isNuevo && " *"}</Label><Select disabled={readOnly} value={form.cliente_id || "none"} onValueChange={(v) => set("cliente_id", v === "none" ? "" : v)}><SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger><SelectContent><SelectItem value="none">Sin cliente</SelectItem>{clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent></Select>{clienteExtraidoSinMatch && <p className="text-xs text-amber-600 mt-1">El documento indica "{clienteExtraidoSinMatch}" — no se encontró un cliente registrado con ese nombre, selecciónalo manualmente.</p>}</div>
         <div className="space-y-1.5"><Label>Responsable</Label><Select disabled={readOnly} value={form.responsable_id || "none"} onValueChange={(v) => set("responsable_id", v === "none" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Sin asignar</SelectItem>{responsables.map((r) => <SelectItem key={r.id} value={r.id}>{r.nombre}</SelectItem>)}</SelectContent></Select></div>
         <div className="space-y-1.5"><Label>Tipo</Label><Select disabled={readOnly} value={form.tipo} onValueChange={(v) => set("tipo", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="maritimo">Marítimo</SelectItem><SelectItem value="aereo">Aéreo</SelectItem></SelectContent></Select></div>
-        <Field label="Booking" name="booking" /><Field label="BL / AWB" name="bl_awb" /><Field label="Contenedor" name="contenedor" /><Field label="BL Hijo (se asigna automático si se deja vacío)" name="bl_hijo_numero" />
-        <Field label="Notify Party" name="notify_party" /><Field label="Agente de entrega" name="agente_entrega" /><Field label="Contacto del agente de entrega" name="agente_entrega_contacto" />
+        <Field form={form} set={set} readOnly={readOnly} label="Booking" name="booking" /><Field form={form} set={set} readOnly={readOnly} label="BL / AWB" name="bl_awb" /><Field form={form} set={set} readOnly={readOnly} label="Contenedor" name="contenedor" /><Field form={form} set={set} readOnly={readOnly} label="BL Hijo (se asigna automático si se deja vacío)" name="bl_hijo_numero" />
+        <Field form={form} set={set} readOnly={readOnly} label="Notify Party" name="notify_party" /><Field form={form} set={set} readOnly={readOnly} label="Agente de entrega" name="agente_entrega" /><Field form={form} set={set} readOnly={readOnly} label="Contacto del agente de entrega" name="agente_entrega_contacto" />
         <div className="space-y-1.5"><TerceroExtranjeroPicker label="Agente de Carga / Consolidadora" onSelect={(t) => setForm((p) => p ? ({ ...p, proveedor_logistico: t.nombre, proveedor_logistico_tid: t.tid ?? "" }) : p)} /><Input disabled={readOnly} value={form.proveedor_logistico} onChange={(e) => set("proveedor_logistico", e.target.value)} placeholder="Nombre del proveedor" /></div>
-        <Field label="TID del proveedor" name="proveedor_logistico_tid" /><Field label="Correo del proveedor" name="proveedor_email" /><Field label="Teléfono del proveedor" name="proveedor_telefono" />
-        <Field label="Fecha de recogida" name="fecha_recogida" type="date" /><Field label="Fecha de embarque" name="fecha_embarque" type="date" /><Field label="Fecha de salida" name="fecha_salida" type="date" /><Field label="ETA" name="eta" type="date" /><Field label="Fecha de arribo" name="fecha_arribo" type="date" />
-        <LinkSelect label="Cotización de Compras" name="cotizacion_id" rows={vinculos?.cotizaciones ?? []} /><LinkSelect label="Orden de Compras" name="orden_id" rows={vinculos?.ordenes ?? []} /><LinkSelect label="Expediente" name="expediente_id" rows={vinculos?.expedientes ?? []} />
+        <Field form={form} set={set} readOnly={readOnly} label="TID del proveedor" name="proveedor_logistico_tid" /><Field form={form} set={set} readOnly={readOnly} label="Correo del proveedor" name="proveedor_email" /><Field form={form} set={set} readOnly={readOnly} label="Teléfono del proveedor" name="proveedor_telefono" />
+        <Field form={form} set={set} readOnly={readOnly} label="Fecha de recogida" name="fecha_recogida" type="date" /><Field form={form} set={set} readOnly={readOnly} label="Fecha de embarque" name="fecha_embarque" type="date" /><Field form={form} set={set} readOnly={readOnly} label="Fecha de salida" name="fecha_salida" type="date" /><Field form={form} set={set} readOnly={readOnly} label="ETA" name="eta" type="date" /><Field form={form} set={set} readOnly={readOnly} label="Fecha de arribo" name="fecha_arribo" type="date" />
+        <LinkSelect form={form} set={set} readOnly={readOnly} isNuevo={isNuevo} prefill={prefill} label="Cotización de Compras" name="cotizacion_id" rows={vinculos?.cotizaciones ?? []} /><LinkSelect form={form} set={set} readOnly={readOnly} isNuevo={isNuevo} prefill={prefill} label="Orden de Compras" name="orden_id" rows={vinculos?.ordenes ?? []} /><LinkSelect form={form} set={set} readOnly={readOnly} isNuevo={isNuevo} prefill={prefill} label="Expediente" name="expediente_id" rows={vinculos?.expedientes ?? []} />
         <div className="sm:col-span-2 lg:col-span-4 space-y-1.5"><Label>Observaciones</Label><Textarea disabled={readOnly} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} rows={3} /></div>
       </CardContent></Card>
 
       <Card><CardHeader><CardTitle className="text-base">Shipper (Exportador Real)</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Field label="Nombre" name="shipper_nombre" /><Field label="Tax ID" name="shipper_tax_id" />
-        <Field label="Teléfono" name="shipper_telefono" /><Field label="Email" name="shipper_email" type="email" />
+        <Field form={form} set={set} readOnly={readOnly} label="Nombre" name="shipper_nombre" /><Field form={form} set={set} readOnly={readOnly} label="Tax ID" name="shipper_tax_id" />
+        <Field form={form} set={set} readOnly={readOnly} label="Teléfono" name="shipper_telefono" /><Field form={form} set={set} readOnly={readOnly} label="Email" name="shipper_email" type="email" />
         <div className="sm:col-span-2 lg:col-span-4 space-y-1.5"><Label>Dirección</Label><Input disabled={readOnly} value={form.shipper_direccion} onChange={(e) => set("shipper_direccion", e.target.value)} /></div>
       </CardContent></Card>
 
       <Card><CardHeader><CardTitle className="text-base">Datos de la carga</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="sm:col-span-2 space-y-1.5"><Label>Producto</Label><Input disabled={readOnly} value={form.producto} onChange={(e) => set("producto", e.target.value)} /></div>
-        <Field label="Origen" name="origen" /><Field label="Destino" name="destino" />
-        <Field label="Puerto / aeropuerto de destino" name="puerto_destino" /><Field label="Buque / vuelo" name="buque" />
-        <Field label="Voyage" name="voyage" /><Field label="Lugar de recepción" name="lugar_recepcion" />
-        <Field label="Puerto de descarga" name="puerto_descarga" />
-        <Field label="Cantidad de bultos" name="cantidad_bultos" type="number" /><Field label="Tipo de bultos" name="tipo_bultos" />
+        <Field form={form} set={set} readOnly={readOnly} label="Origen" name="origen" /><Field form={form} set={set} readOnly={readOnly} label="Destino" name="destino" />
+        <Field form={form} set={set} readOnly={readOnly} label="Puerto / aeropuerto de destino" name="puerto_destino" /><Field form={form} set={set} readOnly={readOnly} label="Buque / vuelo" name="buque" />
+        <Field form={form} set={set} readOnly={readOnly} label="Voyage" name="voyage" /><Field form={form} set={set} readOnly={readOnly} label="Lugar de recepción" name="lugar_recepcion" />
+        <Field form={form} set={set} readOnly={readOnly} label="Puerto de descarga" name="puerto_descarga" />
+        <Field form={form} set={set} readOnly={readOnly} label="Cantidad de bultos" name="cantidad_bultos" type="number" /><Field form={form} set={set} readOnly={readOnly} label="Tipo de bultos" name="tipo_bultos" />
         <div className="space-y-1.5"><Label>Términos de flete</Label><Select disabled={readOnly} value={form.terminos_flete || "none"} onValueChange={(v) => set("terminos_flete", v === "none" ? "" : v)}><SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger><SelectContent><SelectItem value="none">—</SelectItem><SelectItem value="prepaid">Prepaid</SelectItem><SelectItem value="collect">Collect</SelectItem></SelectContent></Select></div>
-        <Field label="Peso bruto (kg)" name="peso_bruto_kg" type="number" /><Field label="Volumen (m³)" name="volumen_m3" type="number" />
-        <Field label="Incoterm" name="incoterm" />
+        <Field form={form} set={set} readOnly={readOnly} label="Peso bruto (kg)" name="peso_bruto_kg" type="number" /><Field form={form} set={set} readOnly={readOnly} label="Volumen (m³)" name="volumen_m3" type="number" />
+        <Field form={form} set={set} readOnly={readOnly} label="Incoterm" name="incoterm" />
       </CardContent></Card>
 
       {!isNuevo && (
@@ -476,8 +476,8 @@ function DetalleLogistica() {
 
       <div className="grid lg:grid-cols-2 gap-6">
         <Card><CardHeader><CardTitle className="text-base">Costos de Logística</CardTitle></CardHeader><CardContent className="grid sm:grid-cols-2 gap-4">
-          <Field label="Flete internacional" name="flete_monto" type="number" /><div className="space-y-1.5"><Label>Moneda</Label><Select disabled={readOnly} value={form.flete_moneda} onValueChange={(v) => set("flete_moneda", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="DOP">DOP</SelectItem><SelectItem value="EUR">EUR</SelectItem></SelectContent></Select></div>
-          <Field label="Seguro" name="seguro_monto" type="number" /><Field label="Gastos locales" name="gastos_locales_monto" type="number" /><Field label="Otros costos" name="otros_monto" type="number" />
+          <Field form={form} set={set} readOnly={readOnly} label="Flete internacional" name="flete_monto" type="number" /><div className="space-y-1.5"><Label>Moneda</Label><Select disabled={readOnly} value={form.flete_moneda} onValueChange={(v) => set("flete_moneda", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="DOP">DOP</SelectItem><SelectItem value="EUR">EUR</SelectItem></SelectContent></Select></div>
+          <Field form={form} set={set} readOnly={readOnly} label="Seguro" name="seguro_monto" type="number" /><Field form={form} set={set} readOnly={readOnly} label="Gastos locales" name="gastos_locales_monto" type="number" /><Field form={form} set={set} readOnly={readOnly} label="Otros costos" name="otros_monto" type="number" />
           <div className="sm:col-span-2 border-t pt-4 flex justify-between font-semibold"><span>Total registrado</span><span>{money(totalCostos, form.flete_moneda)}</span></div>
         </CardContent></Card>
         {isNuevo
