@@ -4224,6 +4224,7 @@ export type Database = {
           agente_entrega: string | null
           agente_entrega_contacto: string | null
           bl_awb: string | null
+          bl_hijo_numero: string | null
           booking: string | null
           buque: string | null
           cantidad_bultos: number | null
@@ -4264,6 +4265,11 @@ export type Database = {
           puerto_destino: string | null
           responsable_id: string | null
           seguro_monto: number | null
+          shipper_direccion: string | null
+          shipper_email: string | null
+          shipper_nombre: string | null
+          shipper_tax_id: string | null
+          shipper_telefono: string | null
           terminos_flete: string | null
           tipo: string
           tipo_bultos: string | null
@@ -4275,6 +4281,7 @@ export type Database = {
           agente_entrega?: string | null
           agente_entrega_contacto?: string | null
           bl_awb?: string | null
+          bl_hijo_numero?: string | null
           booking?: string | null
           buque?: string | null
           cantidad_bultos?: number | null
@@ -4315,6 +4322,11 @@ export type Database = {
           puerto_destino?: string | null
           responsable_id?: string | null
           seguro_monto?: number | null
+          shipper_direccion?: string | null
+          shipper_email?: string | null
+          shipper_nombre?: string | null
+          shipper_tax_id?: string | null
+          shipper_telefono?: string | null
           terminos_flete?: string | null
           tipo?: string
           tipo_bultos?: string | null
@@ -4326,6 +4338,7 @@ export type Database = {
           agente_entrega?: string | null
           agente_entrega_contacto?: string | null
           bl_awb?: string | null
+          bl_hijo_numero?: string | null
           booking?: string | null
           buque?: string | null
           cantidad_bultos?: number | null
@@ -4366,6 +4379,11 @@ export type Database = {
           puerto_destino?: string | null
           responsable_id?: string | null
           seguro_monto?: number | null
+          shipper_direccion?: string | null
+          shipper_email?: string | null
+          shipper_nombre?: string | null
+          shipper_tax_id?: string | null
+          shipper_telefono?: string | null
           terminos_flete?: string | null
           tipo?: string
           tipo_bultos?: string | null
