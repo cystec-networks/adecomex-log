@@ -4229,6 +4229,11 @@ export type Database = {
           buque: string | null
           cantidad_bultos: number | null
           cliente_id: string | null
+          comprador_direccion: string | null
+          comprador_email: string | null
+          comprador_nombre: string | null
+          comprador_tax_id: string | null
+          comprador_telefono: string | null
           contenedor: string | null
           cotizacion_id: string | null
           creado_por: string | null
@@ -4274,6 +4279,7 @@ export type Database = {
           terminos_flete: string | null
           tipo: string
           tipo_bultos: string | null
+          tipo_operacion: string | null
           updated_at: string
           volumen_m3: number | null
           voyage: string | null
@@ -4287,6 +4293,11 @@ export type Database = {
           buque?: string | null
           cantidad_bultos?: number | null
           cliente_id?: string | null
+          comprador_direccion?: string | null
+          comprador_email?: string | null
+          comprador_nombre?: string | null
+          comprador_tax_id?: string | null
+          comprador_telefono?: string | null
           contenedor?: string | null
           cotizacion_id?: string | null
           creado_por?: string | null
@@ -4332,6 +4343,7 @@ export type Database = {
           terminos_flete?: string | null
           tipo?: string
           tipo_bultos?: string | null
+          tipo_operacion?: string | null
           updated_at?: string
           volumen_m3?: number | null
           voyage?: string | null
@@ -4345,6 +4357,11 @@ export type Database = {
           buque?: string | null
           cantidad_bultos?: number | null
           cliente_id?: string | null
+          comprador_direccion?: string | null
+          comprador_email?: string | null
+          comprador_nombre?: string | null
+          comprador_tax_id?: string | null
+          comprador_telefono?: string | null
           contenedor?: string | null
           cotizacion_id?: string | null
           creado_por?: string | null
@@ -4390,6 +4407,7 @@ export type Database = {
           terminos_flete?: string | null
           tipo?: string
           tipo_bultos?: string | null
+          tipo_operacion?: string | null
           updated_at?: string
           volumen_m3?: number | null
           voyage?: string | null
