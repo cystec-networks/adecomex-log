@@ -20,6 +20,7 @@ export type OcrExtraction = {
   fecha_cargado: string | null;
   eta: string | null;
   naviera: string | null;
+  buque: string | null;
   peso_bruto_kg: number | null;
   puerto_arribo: string | null;
   contenedores: OcrContenedor[] | null;
@@ -48,11 +49,13 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
     const system =
       "Eres un asistente de operaciones aduanales en República Dominicana. " +
       "Extraes datos de documentos de importación (BL, factura comercial, packing list, AWB). " +
-      "Devuelve ÚNICAMENTE un objeto JSON con las claves exactas: cliente, bl, suplidor, numero_documento, productos, fecha_cargado, eta, naviera, peso_bruto_kg, puerto_arribo, contenedores, medio_transporte, puerto_salida, pais_origen, pais_procedencia, incoterm, factura_comercial, descripcion_mercancia, peso_neto_kg. " +
+      "Devuelve ÚNICAMENTE un objeto JSON con las claves exactas: cliente, bl, suplidor, numero_documento, productos, fecha_cargado, eta, naviera, buque, peso_bruto_kg, puerto_arribo, contenedores, medio_transporte, puerto_salida, pais_origen, pais_procedencia, incoterm, factura_comercial, descripcion_mercancia, peso_neto_kg. " +
       "'cliente' es el CONSIGNATARIO/IMPORTADOR — la empresa que RECIBE la mercancía en República Dominicana (normalmente aparece como 'Consignee' en el BL, o como el comprador en la factura). NO es el exportador/proveedor (ese es 'suplidor'). Devuelve el nombre tal como aparece en el documento. " +
       "'contenedores' es un arreglo de objetos {numero, sello1, sello2, tipo} — busca una tabla tipo 'FURGONES' o 'CONTENEDORES' con columnas de número de contenedor/furgón, sello(s) y tipo de empaque/contenedor; si no hay tabla de contenedores en el documento, usa null. " +
       "'fecha_cargado' es la fecha de embarque/carga que normalmente aparece en el BL (Shipped on Board / Fecha de Embarque). 'eta' es la fecha ESTIMADA DE LLEGADA — úsala solo si el documento la indica explícitamente como tal (poco común en un BL); si no aparece claramente etiquetada como fecha de llegada, usa null en vez de adivinar con la fecha de embarque. " +
-      "'naviera' es el nombre de la naviera/carrier (p. ej. MAERSK, MSC, CMA CGM). 'peso_bruto_kg' es el peso bruto total de la carga en kilogramos (número, sin unidades). " +
+      "'naviera' es el nombre de la naviera/carrier (p. ej. MAERSK, MSC, CMA CGM). " +
+      "'buque' es el nombre específico del buque/vessel que transporta la carga (ej. 'Mizar', 'Marti Caribs', normalmente bajo 'Ocean Vessel' o 'Vessel/Conveyance' en el BL) — distinto de 'naviera', que es el nombre de la empresa naviera/carrier (ej. Maersk, MSC, 'Maritime Services Line'). No confundas ambos: una naviera puede operar varios buques distintos. " +
+      "'peso_bruto_kg' es el peso bruto total de la carga en kilogramos (número, sin unidades). " +
       "Agrega estas claves: medio_transporte ('maritimo' si el documento es un Bill of Lading/BL, 'aereo' si es un Airway Bill/AWB — infiérelo del tipo de documento, no necesitas que lo diga explícitamente el texto); " +
       "'pais_origen', 'pais_procedencia', 'puerto_salida' y 'puerto_arribo': devuelve el nombre en ESPAÑOL (ej. 'Lituania' en vez de 'Lithuania', 'China' se mantiene igual, 'Estados Unidos' en vez de 'United States') — los documentos suelen venir en inglés, pero nuestro catálogo interno usa nombres en español. Traduce nombres de países/ciudades conocidos; si no reconoces el nombre o no hay una traducción clara, devuelve el texto original tal cual. " +
       "puerto_salida (el 'Port of Loading' indicado en el BL); pais_origen y pais_procedencia (del país del exportador/embarque); " +
@@ -102,6 +105,7 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
       fecha_cargado: parsed.fecha_cargado ?? null,
       eta: parsed.eta ?? null,
       naviera: parsed.naviera ?? null,
+      buque: parsed.buque ?? null,
       peso_bruto_kg:
         parsed.peso_bruto_kg != null && !isNaN(Number(parsed.peso_bruto_kg)) ? Number(parsed.peso_bruto_kg) : null,
       puerto_arribo: parsed.puerto_arribo ?? null,
