@@ -457,6 +457,7 @@ function DetalleLogistica() {
             <Badge variant="outline" className="capitalize">{form.tipo}</Badge><Badge className={estadoLogisticaClass(operacion!.estado)}>{ESTADO_LOGISTICA_LABEL[operacion!.estado] ?? operacion!.estado}</Badge>
             <div className="min-w-48"><div className="text-xs font-medium mb-1">Progreso: {done} de {total} etapas</div><Progress value={(done / total) * 100} /></div>
             <ConstanciaLogisticaButton datos={datosConstancia} />
+            <BlHijoPdfButton datos={datosBlHijo} />
             {modoEdicion && <Button disabled={saveMut.isPending} onClick={() => saveMut.mutate()} className="shadow-lg"><Save className="h-4 w-4 mr-2" />Guardar cambios</Button>}
           </>
         )}
