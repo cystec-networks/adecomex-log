@@ -4298,6 +4298,7 @@ export type Database = {
           hazmat_grupo_empaque: string | null
           hazmat_nombre_tecnico: string | null
           hazmat_punto_inflamacion: string | null
+          hazmat_recargo: number | null
           hazmat_un_numero: string | null
           id: string
           incoterm: string | null
@@ -4369,6 +4370,7 @@ export type Database = {
           hazmat_grupo_empaque?: string | null
           hazmat_nombre_tecnico?: string | null
           hazmat_punto_inflamacion?: string | null
+          hazmat_recargo?: number | null
           hazmat_un_numero?: string | null
           id?: string
           incoterm?: string | null
@@ -4440,6 +4442,7 @@ export type Database = {
           hazmat_grupo_empaque?: string | null
           hazmat_nombre_tecnico?: string | null
           hazmat_punto_inflamacion?: string | null
+          hazmat_recargo?: number | null
           hazmat_un_numero?: string | null
           id?: string
           incoterm?: string | null
