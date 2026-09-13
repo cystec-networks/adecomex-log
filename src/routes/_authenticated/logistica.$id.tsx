@@ -27,6 +27,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConstanciaLogisticaButton } from "@/components/constancia-logistica-button";
 import { BlHijoPdfButton } from "@/components/bl-hijo-pdf-button";
+import { SolicitudBookingPdfButton } from "@/components/solicitud-booking-pdf-button";
 
 /** Registro de auditoría de la operación logística (mismo patrón que Expedientes). */
 const logAuditoria = async (operacionId: string, accion: string, cambios?: Record<string, unknown>) => {
@@ -494,6 +495,66 @@ function DetalleLogistica() {
     };
   };
 
+  // La solicitud usa la información previa a la reserva y conserva el mismo criterio Shipper/Consignee del BL Hijo.
+  const datosSolicitudBooking = async () => {
+    let cliente = { nombre: "", rnc: "", direccion: "", telefono: "", email: "" };
+    if (form.cliente_id) {
+      const { data: cli } = await supabase
+        .from("clientes")
+        .select("nombre,rnc,direccion,telefono,email")
+        .eq("id", form.cliente_id)
+        .maybeSingle();
+      if (cli) cliente = {
+        nombre: cli.nombre ?? "", rnc: cli.rnc ?? "", direccion: cli.direccion ?? "",
+        telefono: cli.telefono ?? "", email: cli.email ?? "",
+      };
+    }
+    const esExportacion = form.tipo_operacion === "Exportación";
+    const shipper = esExportacion
+      ? { nombre: cliente.nombre, taxId: cliente.rnc, direccion: cliente.direccion, telefono: cliente.telefono, email: cliente.email }
+      : {
+          nombre: form.shipper_nombre, taxId: form.shipper_tax_id, direccion: form.shipper_direccion,
+          telefono: form.shipper_telefono, email: form.shipper_email,
+        };
+    const consignee = esExportacion
+      ? {
+          nombre: form.comprador_nombre, taxId: form.comprador_tax_id, direccion: form.comprador_direccion,
+          telefono: form.comprador_telefono, email: form.comprador_email,
+        }
+      : { nombre: cliente.nombre, taxId: cliente.rnc, direccion: cliente.direccion, telefono: cliente.telefono, email: cliente.email };
+    return {
+      numeroOperacion: form.numero,
+      fechaSolicitud: new Date().toLocaleDateString("es-DO"),
+      proveedorLogistico: form.proveedor_logistico,
+      responsable: responsables.find((responsable: any) => responsable.id === form.responsable_id)?.nombre ?? "",
+      tipoOperacion: form.tipo_operacion,
+      tipoTransporte: form.tipo === "aereo" ? "Aéreo" : "Marítimo",
+      lugarRecepcion: form.lugar_recepcion,
+      puertoCarga: form.origen,
+      puertoDescarga: form.puerto_descarga || form.puerto_destino,
+      lugarEntrega: form.destino,
+      fechaEmbarque: form.fecha_embarque ? fmtLocalDate(form.fecha_embarque) : "",
+      shipper,
+      consignee,
+      descripcionMercancia: form.producto,
+      cantidadBultos: form.cantidad_bultos ? Number(form.cantidad_bultos) : null,
+      tipoBultos: form.tipo_bultos,
+      pesoBrutoKg: form.peso_bruto_kg ? Number(form.peso_bruto_kg) : null,
+      volumenM3: form.volumen_m3 ? Number(form.volumen_m3) : null,
+      contenedores: contenedoresValidos.map((contenedor) => ({ numero: contenedor.numero.trim(), tipo: contenedor.tipo.trim() || null })),
+      esMercanciaPeligrosa: form.es_mercancia_peligrosa === "true",
+      hazmat: {
+        unNumero: form.hazmat_un_numero,
+        clase: form.hazmat_clase,
+        grupoEmpaque: form.hazmat_grupo_empaque,
+        puntoInflamacion: form.hazmat_punto_inflamacion,
+        nombreTecnico: form.hazmat_nombre_tecnico,
+        contaminanteMarino: form.hazmat_contaminante_marino === "true",
+      },
+      observaciones: form.observaciones,
+    };
+  };
+
   return <div className={cn("min-h-full transition-colors", isNuevo ? "bg-success/10" : modoEdicion ? "bg-warning/10" : "bg-background")}>
     <div className="sticky top-0 z-20 border-b bg-background px-6 py-3 shadow-sm">
       <div className="max-w-[1500px] mx-auto flex flex-wrap items-center gap-3">
@@ -533,6 +594,7 @@ function DetalleLogistica() {
             <div className="min-w-48"><div className="text-xs font-medium mb-1">Progreso: {done} de {total} etapas</div><Progress value={(done / total) * 100} /></div>
             <ConstanciaLogisticaButton datos={datosConstancia} />
             <BlHijoPdfButton datos={datosBlHijo} />
+            <SolicitudBookingPdfButton datos={datosSolicitudBooking} />
             {modoEdicion && <Button disabled={saveMut.isPending} onClick={() => saveMut.mutate()} className="shadow-lg"><Save className="h-4 w-4 mr-2" />Guardar cambios</Button>}
           </>
         )}
