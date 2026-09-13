@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { LogOut, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
-import logoAsset from "@/assets/logo-adecomex-vertical.png.asset.json";
+import logoAsset from "@/assets/logo-adecomex-horizontal.png.asset.json";
 
 export const Route = createFileRoute("/_portal-estudiante")({
   ssr: false,
