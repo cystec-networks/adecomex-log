@@ -785,14 +785,27 @@ function AutoField({ label, value, onChange, suggestion, className = "", disable
   );
 }
 
-function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Section({ title, subtitle, children, id, className }: { title: React.ReactNode; subtitle?: string; children: React.ReactNode; id: string; className?: string }) {
+  const [abierto, setAbierto] = useState(() => {
+    try { return localStorage.getItem(`exp-section-${id}`) === "1"; } catch { return false; }
+  });
+  const toggle = () => {
+    const next = !abierto;
+    setAbierto(next);
+    try { localStorage.setItem(`exp-section-${id}`, next ? "1" : "0"); } catch { /* ignore */ }
+  };
   return (
-    <Card>
-      <CardHeader className="pb-3 border-b">
-        <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">{title}</CardTitle>
-        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+    <Card className={className}>
+      <CardHeader className="pb-3 border-b cursor-pointer select-none" onClick={toggle}>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">{title}</CardTitle>
+            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+          </div>
+          <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", abierto && "rotate-180")} />
+        </div>
       </CardHeader>
-      <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{children}</CardContent>
+      {abierto && <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{children}</CardContent>}
     </Card>
   );
 }
@@ -1267,19 +1280,16 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     <div className="space-y-5">
       <BotonesAccion />
       {hasSolicitud && (
-        <Card className="bg-muted/30 border-dashed">
-          <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center justify-between">
-              <span>Datos de la Solicitud Original</span>
-              {exp.solicitudes?.numero && exp.solicitud_id && (
-                <Link to="/solicitudes/$id" params={{ id: exp.solicitud_id }} className="text-xs font-normal text-primary underline">
-                  {exp.solicitudes.numero} ↗
-                </Link>
-              )}
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Referencia conservada al momento de la conversión. Tipo de operación, tipo de carga y contacto son editables con el botón "Editar".</p>
-          </CardHeader>
-          <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Section id="datos-solicitud-original" className="bg-muted/30 border-dashed" title={
+          <span className="flex items-center justify-between gap-3">
+            <span>Datos de la Solicitud Original</span>
+            {exp.solicitudes?.numero && exp.solicitud_id && (
+              <Link to="/solicitudes/$id" params={{ id: exp.solicitud_id }} className="text-xs font-normal text-primary underline" onClick={(e) => e.stopPropagation()}>
+                {exp.solicitudes.numero} ↗
+              </Link>
+            )}
+          </span>
+        } subtitle="Referencia conservada al momento de la conversión. Tipo de operación, tipo de carga y contacto son editables con el botón &quot;Editar&quot;.">
             <Field label="Tipo de operación" value={form.tipo_operacion} onChange={(v) => set("tipo_operacion", v)} disabled={!editable} />
             {!editable
               ? <ReadOnlyField label="Tipo de carga" value={form.tipo_carga} />
