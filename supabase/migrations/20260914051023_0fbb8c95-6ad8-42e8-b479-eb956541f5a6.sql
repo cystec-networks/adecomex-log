@@ -1,0 +1,1 @@
+GRANT INSERT, UPDATE, DELETE ON public.catalogo_proveedores_logisticos TO authenticated;
