@@ -92,6 +92,16 @@ function Expedientes() {
     onError: (e: any) => toast.error(e.message ?? "No se pudo mover a papelera"),
   });
 
+  const duplicarMut = useMutation({
+    mutationFn: (id: string) => duplicarExpediente(id),
+    onSuccess: (nuevoId) => {
+      qc.invalidateQueries({ queryKey: ["expedientes"] });
+      toast.success("Expediente duplicado — completa los datos del nuevo embarque (BL, fechas, contenedores).");
+      navigate({ to: "/expedientes/$id", params: { id: nuevoId }, search: { nuevo: "1" } as any });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo duplicar el expediente"),
+  });
+
   const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
   // Parse YYYY-MM-DD (or ISO with time) as LOCAL date to avoid UTC->local day shift
