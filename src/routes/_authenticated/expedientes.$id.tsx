@@ -445,6 +445,16 @@ function DetalleExpediente() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const duplicarMut = useMutation({
+    mutationFn: () => duplicarExpediente(id),
+    onSuccess: (nuevoId) => {
+      qc.invalidateQueries({ queryKey: ["expedientes"] });
+      toast.success("Expediente duplicado — completa los datos del nuevo embarque (BL, fechas, contenedores).");
+      navExp({ to: "/expedientes/$id", params: { id: nuevoId }, search: { nuevo: "1" } as any });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo duplicar el expediente"),
+  });
+
   if (!isNuevo && !exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
   const expData: any = isNuevo ? EXPEDIENTE_VACIO : exp;
