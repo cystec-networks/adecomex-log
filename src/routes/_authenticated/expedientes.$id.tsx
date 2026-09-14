@@ -2416,8 +2416,8 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
               {(!costos || costos.length === 0) && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Sin costos de producto registrados.</td></tr>}
             </tbody>
           </table>
-        </CardContent>
-      </Card>
+        </div>
+      </Section>
     </div>
   );
 }
