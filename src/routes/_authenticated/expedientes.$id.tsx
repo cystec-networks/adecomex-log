@@ -1464,12 +1464,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-3 border-b">
-          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">4. Descripción de mercancía</CardTitle>
-          <p className="text-xs text-muted-foreground">Detalle físico y clasificación de la carga</p>
-        </CardHeader>
-        <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <Section id="descripcion-mercancia" title="4. Descripción de mercancía" subtitle="Detalle físico y clasificación de la carga">
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
             <Label>Descripción</Label>
             <Textarea rows={3} value={form.descripcion_mercancia} onChange={(e) => set("descripcion_mercancia", e.target.value)} disabled={!editable} />
@@ -1803,8 +1798,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             <Label>Observaciones</Label>
             <Textarea rows={3} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} disabled={!editable} />
           </div>
-        </CardContent>
-      </Card>
+      </Section>
 
       <BotonesAccion />
     </div>
