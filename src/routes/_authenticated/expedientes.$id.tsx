@@ -785,7 +785,7 @@ function AutoField({ label, value, onChange, suggestion, className = "", disable
   );
 }
 
-function Section({ title, subtitle, children, id }: { title: string; subtitle?: string; children: React.ReactNode; id: string }) {
+function Section({ title, subtitle, children, id, className }: { title: string; subtitle?: string; children: React.ReactNode; id: string; className?: string }) {
   const [abierto, setAbierto] = useState(() => {
     try { return localStorage.getItem(`exp-section-${id}`) === "1"; } catch { return false; }
   });
@@ -795,7 +795,7 @@ function Section({ title, subtitle, children, id }: { title: string; subtitle?: 
     try { localStorage.setItem(`exp-section-${id}`, next ? "1" : "0"); } catch {}
   };
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader className="pb-3 border-b cursor-pointer select-none" onClick={toggle}>
         <div className="flex items-center justify-between">
           <div>
