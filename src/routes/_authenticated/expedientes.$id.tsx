@@ -1929,30 +1929,27 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
 
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="text-base">Documentos ({docs?.length ?? 0})</CardTitle>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
-          <Button size="sm" onClick={() => openNuevo()}><Upload className="h-4 w-4 mr-1" />Subir documento</Button>
-          <DialogContent>
-            <DialogHeader><DialogTitle>{editId ? "Editar documento" : "Nuevo documento"}</DialogTitle></DialogHeader>
-            <div className="grid gap-3">
-              <div className="grid gap-1.5"><Label>Tipo</Label>
-                <Select value={tipo} onValueChange={setTipo}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{TIPOS_DOC.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}</Label><Input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></div>
-              <div className="grid gap-1.5"><Label>Fecha vencimiento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
-              <div className="grid gap-1.5"><Label>Observaciones</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
+    <Section id="documentos" title={`Documentos (${docs?.length ?? 0})`} action={
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
+        <Button size="sm" onClick={() => openNuevo()}><Upload className="h-4 w-4 mr-1" />Subir documento</Button>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editId ? "Editar documento" : "Nuevo documento"}</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid gap-1.5"><Label>Tipo</Label>
+              <Select value={tipo} onValueChange={setTipo}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{TIPOS_DOC.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+              </Select>
             </div>
-            <DialogFooter><Button onClick={upload} disabled={uploading}>Guardar</Button></DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </CardHeader>
-
-      <CardContent className="p-0">
+            <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}</Label><Input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></div>
+            <div className="grid gap-1.5"><Label>Fecha vencimiento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
+            <div className="grid gap-1.5"><Label>Observaciones</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
+          </div>
+          <DialogFooter><Button onClick={upload} disabled={uploading}>Guardar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    }>
+      <div className="p-0 -m-5">
         {(() => {
           const latestByTipo = new Map<string, any>();
           for (const d of (docs ?? []) as any[]) {
