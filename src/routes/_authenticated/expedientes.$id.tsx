@@ -1304,7 +1304,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         </Card>
       )}
 
-      <Section title="1. Información general" subtitle="Identificación y logística base del expediente">
+      <Section id="informacion-general" title="1. Información general" subtitle="Identificación y logística base del expediente">
         {isNuevo ? (
           <>
             <div className={cn("grid gap-1.5", camposFaltantes.has("req-cliente_id") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-cliente_id">
