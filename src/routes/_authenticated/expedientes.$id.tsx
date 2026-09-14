@@ -785,30 +785,14 @@ function AutoField({ label, value, onChange, suggestion, className = "", disable
   );
 }
 
-function Section({ title, subtitle, children, id, className, action }: { title: React.ReactNode; subtitle?: string; children: React.ReactNode; id: string; className?: string; action?: React.ReactNode }) {
-  const [abierto, setAbierto] = useState(() => {
-    try { return localStorage.getItem(`exp-section-${id}`) === "1"; } catch { return false; }
-  });
-  const toggle = () => {
-    const next = !abierto;
-    setAbierto(next);
-    try { localStorage.setItem(`exp-section-${id}`, next ? "1" : "0"); } catch {}
-  };
+function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <Card className={className}>
-      <CardHeader className="pb-3 border-b cursor-pointer select-none" onClick={toggle}>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">{title}</CardTitle>
-            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-          </div>
-          <div className="flex items-center gap-2">
-            {action && <div onClick={(e) => e.stopPropagation()}>{action}</div>}
-            <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", abierto && "rotate-180")} />
-          </div>
-        </div>
+    <Card>
+      <CardHeader className="pb-3 border-b">
+        <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">{title}</CardTitle>
+        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
       </CardHeader>
-      {abierto && <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{children}</CardContent>}
+      <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{children}</CardContent>
     </Card>
   );
 }
@@ -1283,27 +1267,31 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     <div className="space-y-5">
       <BotonesAccion />
       {hasSolicitud && (
-        <Section id="datos-solicitud-original" className="bg-muted/30 border-dashed" title={
-          <span className="flex items-center justify-between">
-            <span>Datos de la Solicitud Original</span>
-            {exp.solicitudes?.numero && exp.solicitud_id && (
-              <Link to="/solicitudes/$id" params={{ id: exp.solicitud_id }} className="text-xs font-normal text-primary underline" onClick={(e) => e.stopPropagation()}>
-                {exp.solicitudes.numero} ↗
-              </Link>
-            )}
-          </span>
-        } subtitle="Referencia conservada al momento de la conversión. Tipo de operación, tipo de carga y contacto son editables con el botón 'Editar'.">
-          <Field label="Tipo de operación" value={form.tipo_operacion} onChange={(v) => set("tipo_operacion", v)} disabled={!editable} />
-          {!editable
-            ? <ReadOnlyField label="Tipo de carga" value={form.tipo_carga} />
-            : <CatalogoAutocomplete tabla="catalogo_tipos_carga" label="Tipo de carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />}
-          <ReadOnlyField label="Origen" value={exp.pais_origen} />
-          <ReadOnlyField label="Incoterm" value={exp.incoterm} />
-          <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sug.contacto_solicitud ?? []} disabled={!editable} />
-        </Section>
+        <Card className="bg-muted/30 border-dashed">
+          <CardHeader className="pb-3 border-b">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center justify-between">
+              <span>Datos de la Solicitud Original</span>
+              {exp.solicitudes?.numero && exp.solicitud_id && (
+                <Link to="/solicitudes/$id" params={{ id: exp.solicitud_id }} className="text-xs font-normal text-primary underline">
+                  {exp.solicitudes.numero} ↗
+                </Link>
+              )}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Referencia conservada al momento de la conversión. Tipo de operación, tipo de carga y contacto son editables con el botón "Editar".</p>
+          </CardHeader>
+          <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Field label="Tipo de operación" value={form.tipo_operacion} onChange={(v) => set("tipo_operacion", v)} disabled={!editable} />
+            {!editable
+              ? <ReadOnlyField label="Tipo de carga" value={form.tipo_carga} />
+              : <CatalogoAutocomplete tabla="catalogo_tipos_carga" label="Tipo de carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />}
+            <ReadOnlyField label="Origen" value={exp.pais_origen} />
+            <ReadOnlyField label="Incoterm" value={exp.incoterm} />
+            <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sug.contacto_solicitud ?? []} disabled={!editable} />
+          </CardContent>
+        </Card>
       )}
 
-      <Section id="informacion-general" title="1. Información general" subtitle="Identificación y logística base del expediente">
+      <Section title="1. Información general" subtitle="Identificación y logística base del expediente">
         {isNuevo ? (
           <>
             <div className={cn("grid gap-1.5", camposFaltantes.has("req-cliente_id") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-cliente_id">
@@ -1366,7 +1354,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       </Section>
 
 
-      <Section id="datos-importacion" title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
+      <Section title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
         <div className={cn("grid gap-1.5", camposFaltantes.has("req-suplidor") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-suplidor">
           <div className="flex items-center justify-between gap-2">
             <Label><ReqMark />Exportador / Suplidor</Label>
@@ -1430,38 +1418,49 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
       </Section>
 
-      <Section id="declaracion" title="3. Declaración" subtitle="Documentos oficiales ante DGA y VUCE">
-        <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} />
-        <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} />
-        <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} disabled={!editable} />
-        <div className={cn("grid gap-1.5", camposFaltantes.has("req-puerto_arribo") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-puerto_arribo">
-          <Label><ReqMark />Puerto de arribo</Label>
-          <DgaCombobox
-            table="dga_puertos"
-            value={form.puerto_arribo}
-            codigo={form.puerto_arribo_codigo}
-            onChange={(nombre, codigo) => { setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo })); limpiarFaltante("req-puerto_arribo"); }}
-            placeholder="Buscar puerto (catálogo DGA)"
-            disabled={!editable}
-          />
-          {form.puerto_arribo && !form.puerto_arribo_codigo && (
-            <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo para el XML.</span>
-          )}
-        </div>
-        <div className={cn("grid gap-1.5", camposFaltantes.has("req-area_aduanera") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-area_aduanera">
-          <Label><ReqMark />Área / Administración aduanera</Label>
-          <DgaCombobox
-            table="dga_areas"
-            value={form.area_aduanera}
-            codigo={form.area_aduanera_codigo}
-            onChange={(nombre, codigo) => { setForm((f) => ({ ...f, area_aduanera: nombre, area_aduanera_codigo: codigo })); limpiarFaltante("req-area_aduanera"); }}
-            placeholder="Buscar área (catálogo DGA)"
-            disabled={!editable}
-          />
-        </div>
-      </Section>
+      <Card>
+        <CardHeader className="pb-3 border-b">
+          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">3. Declaración</CardTitle>
+          <p className="text-xs text-muted-foreground">Documentos oficiales ante DGA y VUCE</p>
+        </CardHeader>
+        <CardContent className="pt-5 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} />
+          <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} />
+          <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} disabled={!editable} />
+          <div className={cn("grid gap-1.5", camposFaltantes.has("req-puerto_arribo") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-puerto_arribo">
+            <Label><ReqMark />Puerto de arribo</Label>
+            <DgaCombobox
+              table="dga_puertos"
+              value={form.puerto_arribo}
+              codigo={form.puerto_arribo_codigo}
+              onChange={(nombre, codigo) => { setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo })); limpiarFaltante("req-puerto_arribo"); }}
+              placeholder="Buscar puerto (catálogo DGA)"
+              disabled={!editable}
+            />
+            {form.puerto_arribo && !form.puerto_arribo_codigo && (
+              <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo para el XML.</span>
+            )}
+          </div>
+          <div className={cn("grid gap-1.5", camposFaltantes.has("req-area_aduanera") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-area_aduanera">
+            <Label><ReqMark />Área / Administración aduanera</Label>
+            <DgaCombobox
+              table="dga_areas"
+              value={form.area_aduanera}
+              codigo={form.area_aduanera_codigo}
+              onChange={(nombre, codigo) => { setForm((f) => ({ ...f, area_aduanera: nombre, area_aduanera_codigo: codigo })); limpiarFaltante("req-area_aduanera"); }}
+              placeholder="Buscar área (catálogo DGA)"
+              disabled={!editable}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-      <Section id="descripcion-mercancia" title="4. Descripción de mercancía" subtitle="Detalle físico y clasificación de la carga">
+      <Card>
+        <CardHeader className="pb-3 border-b">
+          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">4. Descripción de mercancía</CardTitle>
+          <p className="text-xs text-muted-foreground">Detalle físico y clasificación de la carga</p>
+        </CardHeader>
+        <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
             <Label>Descripción</Label>
             <Textarea rows={3} value={form.descripcion_mercancia} onChange={(e) => set("descripcion_mercancia", e.target.value)} disabled={!editable} />
@@ -1795,7 +1794,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             <Label>Observaciones</Label>
             <Textarea rows={3} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} disabled={!editable} />
           </div>
-      </Section>
+        </CardContent>
+      </Card>
 
       <BotonesAccion />
     </div>
@@ -1923,27 +1923,30 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
 
 
   return (
-    <Section id="documentos" title={`Documentos (${docs?.length ?? 0})`} action={
-      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
-        <Button size="sm" onClick={() => openNuevo()}><Upload className="h-4 w-4 mr-1" />Subir documento</Button>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{editId ? "Editar documento" : "Nuevo documento"}</DialogTitle></DialogHeader>
-          <div className="grid gap-3">
-            <div className="grid gap-1.5"><Label>Tipo</Label>
-              <Select value={tipo} onValueChange={setTipo}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{TIPOS_DOC.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-              </Select>
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-base">Documentos ({docs?.length ?? 0})</CardTitle>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
+          <Button size="sm" onClick={() => openNuevo()}><Upload className="h-4 w-4 mr-1" />Subir documento</Button>
+          <DialogContent>
+            <DialogHeader><DialogTitle>{editId ? "Editar documento" : "Nuevo documento"}</DialogTitle></DialogHeader>
+            <div className="grid gap-3">
+              <div className="grid gap-1.5"><Label>Tipo</Label>
+                <Select value={tipo} onValueChange={setTipo}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{TIPOS_DOC.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}</Label><Input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></div>
+              <div className="grid gap-1.5"><Label>Fecha vencimiento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
+              <div className="grid gap-1.5"><Label>Observaciones</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
             </div>
-            <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}</Label><Input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></div>
-            <div className="grid gap-1.5"><Label>Fecha vencimiento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
-            <div className="grid gap-1.5"><Label>Observaciones</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
-          </div>
-          <DialogFooter><Button onClick={upload} disabled={uploading}>Guardar</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-    }>
-      <div className="p-0 -m-5">
+            <DialogFooter><Button onClick={upload} disabled={uploading}>Guardar</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+
+      <CardContent className="p-0">
         {(() => {
           const latestByTipo = new Map<string, any>();
           for (const d of (docs ?? []) as any[]) {
@@ -2034,8 +2037,8 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
             {(!docs || docs.length === 0) && <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Sin documentos.</td></tr>}
           </tbody>
         </table>
-      </div>
-    </Section>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -2070,31 +2073,33 @@ function TabIncidencias({ expedienteId }: { expedienteId: string }) {
   };
 
   return (
-    <Section id="incidencias" title={<span className="flex items-center gap-2"><AlertTriangle className="h-4 w-4" />Incidencias</span>} action={
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />Nueva</Button></DialogTrigger>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Registrar incidencia</DialogTitle></DialogHeader>
-          <div className="grid gap-3">
-            <div className="grid gap-1.5"><Label>Tipo</Label>
-              <Select value={f.tipo} onValueChange={(v) => setF({ ...f, tipo: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{TIPOS_INCIDENCIA.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-              </Select>
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-4 w-4" />Incidencias</CardTitle>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />Nueva</Button></DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Registrar incidencia</DialogTitle></DialogHeader>
+            <div className="grid gap-3">
+              <div className="grid gap-1.5"><Label>Tipo</Label>
+                <Select value={f.tipo} onValueChange={(v) => setF({ ...f, tipo: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{TIPOS_INCIDENCIA.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5"><Label>Severidad</Label>
+                <Select value={f.severidad} onValueChange={(v) => setF({ ...f, severidad: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{["baja","media","alta","critica"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5"><Label>Descripción</Label><Textarea rows={3} value={f.descripcion} onChange={(e) => setF({ ...f, descripcion: e.target.value })} /></div>
             </div>
-            <div className="grid gap-1.5"><Label>Severidad</Label>
-              <Select value={f.severidad} onValueChange={(v) => setF({ ...f, severidad: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{["baja","media","alta","critica"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-1.5"><Label>Descripción</Label><Textarea rows={3} value={f.descripcion} onChange={(e) => setF({ ...f, descripcion: e.target.value })} /></div>
-          </div>
-          <DialogFooter><Button onClick={() => add.mutate()} disabled={add.isPending}>Registrar</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-    }>
-      <div className="p-0 overflow-auto max-h-[70vh] -m-5">
+            <DialogFooter><Button onClick={() => add.mutate()} disabled={add.isPending}>Registrar</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent className="p-0 overflow-auto max-h-[70vh]">
         <table className="w-full text-sm">
           <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
             <tr><th className="text-left px-4 py-2">Tipo</th><th className="text-left">Severidad</th><th className="text-left">Estado</th><th className="text-left">Apertura</th><th /></tr>
@@ -2119,8 +2124,8 @@ function TabIncidencias({ expedienteId }: { expedienteId: string }) {
             {(!incs || incs.length === 0) && <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Sin incidencias.</td></tr>}
           </tbody>
         </table>
-      </div>
-    </Section>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -2232,32 +2237,45 @@ function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Diferencia</div><div className={`text-2xl font-display font-bold mt-1 ${totalReal - totalEst > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(totalReal - totalEst)}</div></CardContent></Card>
       </div>
 
-      <Section id="cotizacion-prefactura" className="border-primary/20 bg-primary/5" title={<span className="flex items-center gap-2 text-primary"><FileText className="h-4 w-4" />Cotización / Pre-factura de servicios</span>} subtitle="Genera una pre-factura desde este expediente y conviértela en la factura e-CF definitiva." action={<CotizacionServiciosExpedienteButton exp={exp} />}>
-        <p className="text-sm text-muted-foreground md:col-span-2 lg:col-span-3">Usa el botón del encabezado para generar o gestionar la pre-factura de servicios de este expediente.</p>
-      </Section>
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="flex-row items-center justify-between pb-3">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2 text-primary">
+              <FileText className="h-4 w-4" />
+              Cotización / Pre-factura de servicios
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Genera una pre-factura desde este expediente y conviértela en la factura e-CF definitiva.
+            </p>
+          </div>
+          <CotizacionServiciosExpedienteButton exp={exp} />
+        </CardHeader>
+      </Card>
 
-      <Section id="costos-expediente" title={<span className="flex items-center gap-2"><DollarSign className="h-4 w-4" />Costos del expediente</span>} action={
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
-          <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar</Button>
-          <DialogContent>
-            <DialogHeader><DialogTitle>{editingId ? "Editar costo" : "Nuevo costo"}</DialogTitle></DialogHeader>
-            <div className="grid gap-3">
-              <div className="grid gap-1.5"><Label>Concepto</Label>
-                <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CONCEPTOS_COSTO.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costos del expediente</CardTitle>
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
+            <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar</Button>
+            <DialogContent>
+              <DialogHeader><DialogTitle>{editingId ? "Editar costo" : "Nuevo costo"}</DialogTitle></DialogHeader>
+              <div className="grid gap-3">
+                <div className="grid gap-1.5"><Label>Concepto</Label>
+                  <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{CONCEPTOS_COSTO.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-1.5"><Label>Monto estimado (DOP)</Label><Input type="number" step="0.01" value={f.monto_estimado} onChange={(e) => setF({ ...f, monto_estimado: Number(e.target.value) })} /></div>
+                  <div className="grid gap-1.5"><Label>Monto real (DOP)</Label><Input type="number" step="0.01" value={f.monto_real} onChange={(e) => setF({ ...f, monto_real: Number(e.target.value) })} /></div>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-1.5"><Label>Monto estimado (DOP)</Label><Input type="number" step="0.01" value={f.monto_estimado} onChange={(e) => setF({ ...f, monto_estimado: Number(e.target.value) })} /></div>
-                <div className="grid gap-1.5"><Label>Monto real (DOP)</Label><Input type="number" step="0.01" value={f.monto_real} onChange={(e) => setF({ ...f, monto_real: Number(e.target.value) })} /></div>
-              </div>
-            </div>
-            <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
-          </DialogContent>
-        </Dialog>
-      }>
-        <div className="p-0 overflow-auto max-h-[70vh] -m-5">
+              <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent className="p-0 overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
             <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
               <tr><th className="text-left px-4 py-2">Concepto</th><th className="text-right">Estimado</th><th className="text-right">Real</th><th className="text-right">Δ</th><th className="text-right pr-4 w-24">Acciones</th></tr>
@@ -2283,8 +2301,8 @@ function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
               {(!costos || costos.length === 0) && <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Sin costos registrados.</td></tr>}
             </tbody>
           </table>
-        </div>
-      </Section>
+        </CardContent>
+      </Card>
 
       <LiquidacionSection expedienteId={expedienteId} />
     </div>
@@ -2361,29 +2379,31 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Diferencia</div><div className={`text-2xl font-display font-bold mt-1 ${totalReal - totalEst > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(totalReal - totalEst)}</div></CardContent></Card>
       </div>
 
-      <Section id="costos-producto" title={<span className="flex items-center gap-2"><DollarSign className="h-4 w-4" />Costos del producto</span>} action={
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
-          <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar</Button>
-          <DialogContent>
-            <DialogHeader><DialogTitle>{editingId ? "Editar costo de producto" : "Nuevo costo de producto"}</DialogTitle></DialogHeader>
-            <div className="grid gap-3">
-              <div className="grid gap-1.5"><Label>Concepto</Label>
-                <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CONCEPTOS_COSTO_ADICIONALES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costos del producto</CardTitle>
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
+            <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar</Button>
+            <DialogContent>
+              <DialogHeader><DialogTitle>{editingId ? "Editar costo de producto" : "Nuevo costo de producto"}</DialogTitle></DialogHeader>
+              <div className="grid gap-3">
+                <div className="grid gap-1.5"><Label>Concepto</Label>
+                  <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{CONCEPTOS_COSTO_ADICIONALES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-1.5"><Label>Monto estimado (DOP)</Label><Input type="number" step="0.01" value={f.monto_estimado} onChange={(e) => setF({ ...f, monto_estimado: Number(e.target.value) })} /></div>
+                  <div className="grid gap-1.5"><Label>Monto real (DOP)</Label><Input type="number" step="0.01" value={f.monto_real} onChange={(e) => setF({ ...f, monto_real: Number(e.target.value) })} /></div>
+                </div>
+                <div className="grid gap-1.5"><Label>Observaciones</Label><Input value={f.observaciones} onChange={(e) => setF({ ...f, observaciones: e.target.value })} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-1.5"><Label>Monto estimado (DOP)</Label><Input type="number" step="0.01" value={f.monto_estimado} onChange={(e) => setF({ ...f, monto_estimado: Number(e.target.value) })} /></div>
-                <div className="grid gap-1.5"><Label>Monto real (DOP)</Label><Input type="number" step="0.01" value={f.monto_real} onChange={(e) => setF({ ...f, monto_real: Number(e.target.value) })} /></div>
-              </div>
-              <div className="grid gap-1.5"><Label>Observaciones</Label><Input value={f.observaciones} onChange={(e) => setF({ ...f, observaciones: e.target.value })} /></div>
-            </div>
-            <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
-          </DialogContent>
-        </Dialog>
-      }>
-        <div className="p-0 overflow-auto max-h-[70vh] -m-5">
+              <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent className="p-0 overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
             <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
               <tr><th className="text-left px-4 py-2">Concepto</th><th className="text-left">Observaciones</th><th className="text-right">Estimado</th><th className="text-right">Real</th><th className="text-right">Δ</th><th className="text-right pr-4 w-24">Acciones</th></tr>
@@ -2410,8 +2430,8 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
               {(!costos || costos.length === 0) && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Sin costos de producto registrados.</td></tr>}
             </tbody>
           </table>
-        </div>
-      </Section>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -2478,8 +2498,13 @@ function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; to
     onError: (e: any) => toast.error(e.message),
   });
   return (
-    <Section id="factura-ecf" className="border-primary/20" title="Factura e-CF (DGII) — requerida para Despachar">
-      <div className="md:col-span-2 lg:col-span-3">
+    <Card className="border-primary/20">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">
+          Factura e-CF (DGII) — requerida para Despachar
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
         <FacturaEcfSelector
           value={(exp as any)?.factura_ecf_id ?? null}
           onChange={(id: string | null) => link.mutate(id)}
@@ -2493,8 +2518,8 @@ function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; to
             Sin factura vinculada: el expediente no podrá pasar a estado "Despachado".
           </p>
         )}
-      </div>
-    </Section>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -2548,7 +2573,9 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
   const estadoBadge = (e: string) => e === "cobrada" ? "bg-[var(--success)]/15 text-[var(--success)]" : e === "anulada" ? "bg-muted text-muted-foreground" : "bg-amber-500/15 text-amber-700";
 
   return (
-      <Section id="facturas-cobros" title="Facturación (cobros)" action={
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-base">Facturación (cobros)</CardTitle>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); } }}>
           <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar factura</Button>
           <DialogContent>
@@ -2579,8 +2606,8 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
             <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
           </DialogContent>
         </Dialog>
-}>
-        <div className="p-0 overflow-auto max-h-[70vh] -m-5">
+      </CardHeader>
+      <CardContent className="p-0 overflow-auto max-h-[70vh]">
         <table className="w-full text-sm">
           <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
             <tr>
@@ -2620,8 +2647,8 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
             )}
           </tbody>
         </table>
-        </div>
-      </Section>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -2784,7 +2811,9 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
 
 
   return (
-      <Section id="gastos-operativos" title="Gastos operativos" action={
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-base">Gastos operativos</CardTitle>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); } }}>
           <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar gasto</Button>
           <DialogContent className="max-h-[85vh] overflow-y-auto">
@@ -2936,8 +2965,8 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
             <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
           </DialogContent>
         </Dialog>
-}>
-        <div className="p-0 overflow-auto max-h-[70vh] -m-5">
+      </CardHeader>
+      <CardContent className="p-0 overflow-auto max-h-[70vh]">
         <table className="w-full text-sm">
           <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
             <tr>
@@ -2975,8 +3004,8 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
             )}
           </tbody>
         </table>
-        </div>
-      </Section>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -2992,7 +3021,9 @@ function TabAuditoria({ expedienteId }: { expedienteId: string }) {
       .limit(100)).data ?? [],
   });
   return (
-      <Section id="auditoria" title="Bitácora">
+    <Card>
+      <CardHeader><CardTitle className="text-base">Bitácora</CardTitle></CardHeader>
+      <CardContent className="p-0 overflow-auto max-h-[70vh]">
         <table className="w-full text-sm">
           <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
             <tr><th className="text-left px-4 py-2">Fecha</th><th className="text-left">Entidad</th><th className="text-left">Acción</th></tr>
@@ -3008,7 +3039,8 @@ function TabAuditoria({ expedienteId }: { expedienteId: string }) {
             {(!data || data.length === 0) && <tr><td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">Sin registros aún.</td></tr>}
           </tbody>
         </table>
-      </Section>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -3020,7 +3052,12 @@ function TabPermisosExp({ expedienteId }: { expedienteId: string }) {
   const TIPOS: Record<string, string> = { sanitario:"Sanitario", fitosanitario:"Fitosanitario", zoosanitario:"Zoosanitario", indocal:"INDOCAL", ambiental:"Ambiental", agricola:"Agrícola", ministerio_salud:"Ministerio de Salud", otro:"Otro" };
   const ESTADOS: Record<string, string> = { solicitado:"Solicitado", en_tramite:"En trámite", aprobado:"Aprobado", rechazado:"Rechazado", vencido:"Vencido" };
   return (
-      <Section id="permisos-vuce" title="Permisos VUCE vinculados ({data?.length ?? 0})">
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-base">Permisos VUCE vinculados ({data?.length ?? 0})</CardTitle>
+        <Button asChild size="sm"><Link to="/permisos/nuevo" search={{ expediente: expedienteId }}><Plus className="h-4 w-4 mr-1" /> Agregar Permiso VUCE</Link></Button>
+      </CardHeader>
+      <CardContent className="p-0">
         {(!data || data.length === 0) ? (
           <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin permisos VUCE vinculados.</div>
         ) : (
@@ -3055,7 +3092,8 @@ function TabPermisosExp({ expedienteId }: { expedienteId: string }) {
             </tbody>
           </table>
         )}
-      </Section>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -3067,7 +3105,12 @@ function TabTransportesExp({ expedienteId }: { expedienteId: string }) {
   const TIPOS: Record<string, string> = { maritimo:"Marítimo", aereo:"Aéreo", terrestre:"Terrestre" };
   const ESTADOS: Record<string, string> = { programado:"Programado", en_transito:"En tránsito", entregado:"Entregado", retrasado:"Retrasado" };
   return (
-      <Section id="transportes" title="Transportes vinculados ({data?.length ?? 0})">
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-base">Transportes vinculados ({data?.length ?? 0})</CardTitle>
+        <Button asChild size="sm"><Link to="/transportes/nuevo" search={{ expediente: expedienteId }}><Plus className="h-4 w-4 mr-1" /> Agregar Transporte</Link></Button>
+      </CardHeader>
+      <CardContent className="p-0">
         {(!data || data.length === 0) ? (
           <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin transportes vinculados.</div>
         ) : (
@@ -3104,7 +3147,8 @@ function TabTransportesExp({ expedienteId }: { expedienteId: string }) {
             </tbody>
           </table>
         )}
-      </Section>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -4675,28 +4719,35 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
   });
 
   return (
-    <Section id="liquidacion-final" title="Liquidación Final" subtitle="Montos reales pagados a la DGA por producto, comparados contra el estimado. Da entrada formal a Almacén." action={
-      <div className="flex items-center gap-2">
-        {finalizado && <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">Finalizada</Badge>}
-        <LiquidacionFinalPdfButton
-          exp={exp}
-          list={list}
-          calcFila={calcFila}
-          gastosAdicionales={gastosAdicionales}
-          tasaCambio={tasaCambio}
-        />
-        {finalizado && isAdmin && !reabierto && (
-          <Button variant="outline" size="sm" onClick={() => setReabierto(true)}>Reabrir liquidación</Button>
-        )}
-        {editable && (
-          <Button size="sm" disabled={!completo || finalizar.isPending} onClick={() => finalizar.mutate()}>
-            <FileCheck className="h-4 w-4 mr-1" />
-            Finalizar Liquidación y Enviar a Almacén
-          </Button>
-        )}
-      </div>
-    }>
-        <div className="p-0 overflow-x-auto -m-5">
+    <Card>
+      <CardHeader className="pb-3 border-b flex-row items-center justify-between gap-3 flex-wrap">
+        <div>
+          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Liquidación Final</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Montos reales pagados a la DGA por producto, comparados contra el estimado. Da entrada formal a Almacén.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {finalizado && <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">Finalizada</Badge>}
+          <LiquidacionFinalPdfButton
+            exp={exp}
+            list={list}
+            calcFila={calcFila}
+            gastosAdicionales={gastosAdicionales}
+            tasaCambio={tasaCambio}
+          />
+          {finalizado && isAdmin && !reabierto && (
+            <Button variant="outline" size="sm" onClick={() => setReabierto(true)}>Reabrir liquidación</Button>
+          )}
+          {editable && (
+            <Button size="sm" disabled={!completo || finalizar.isPending} onClick={() => finalizar.mutate()}>
+              <FileCheck className="h-4 w-4 mr-1" />
+              Finalizar Liquidación y Enviar a Almacén
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="pt-4 overflow-x-auto">
         {list.length === 0 ? (
           <p className="text-sm text-muted-foreground">El expediente no tiene ítems de mercancía.</p>
         ) : (
@@ -4807,7 +4858,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
           El Costo Unitario Real incluye FOB + prorrateo de flete, seguro y otros + Gravamen e ISC reales + prorrateo de
           gastos adicionales. El ITBIS no se incluye por ser crédito fiscal recuperable.
         </p>
-        </div>
-      </Section>
+      </CardContent>
+    </Card>
   );
 }
