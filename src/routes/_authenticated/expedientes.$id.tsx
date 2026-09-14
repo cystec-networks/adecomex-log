@@ -802,7 +802,7 @@ function Section({ title, subtitle, children, id, className, action }: { title: 
             <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">{title}</CardTitle>
             {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
             {action}
             <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", abierto && "rotate-180")} />
           </div>
