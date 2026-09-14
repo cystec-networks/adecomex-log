@@ -3002,9 +3002,7 @@ function TabAuditoria({ expedienteId }: { expedienteId: string }) {
       .limit(100)).data ?? [],
   });
   return (
-    <Card>
-      <CardHeader><CardTitle className="text-base">Bitácora</CardTitle></CardHeader>
-      <CardContent className="p-0 overflow-auto max-h-[70vh]">
+      <Section id="auditoria" title="Bitácora">
         <table className="w-full text-sm">
           <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
             <tr><th className="text-left px-4 py-2">Fecha</th><th className="text-left">Entidad</th><th className="text-left">Acción</th></tr>
@@ -3020,8 +3018,7 @@ function TabAuditoria({ expedienteId }: { expedienteId: string }) {
             {(!data || data.length === 0) && <tr><td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">Sin registros aún.</td></tr>}
           </tbody>
         </table>
-      </CardContent>
-    </Card>
+      </Section>
   );
 }
 
@@ -3033,12 +3030,7 @@ function TabPermisosExp({ expedienteId }: { expedienteId: string }) {
   const TIPOS: Record<string, string> = { sanitario:"Sanitario", fitosanitario:"Fitosanitario", zoosanitario:"Zoosanitario", indocal:"INDOCAL", ambiental:"Ambiental", agricola:"Agrícola", ministerio_salud:"Ministerio de Salud", otro:"Otro" };
   const ESTADOS: Record<string, string> = { solicitado:"Solicitado", en_tramite:"En trámite", aprobado:"Aprobado", rechazado:"Rechazado", vencido:"Vencido" };
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="text-base">Permisos VUCE vinculados ({data?.length ?? 0})</CardTitle>
-        <Button asChild size="sm"><Link to="/permisos/nuevo" search={{ expediente: expedienteId }}><Plus className="h-4 w-4 mr-1" /> Agregar Permiso VUCE</Link></Button>
-      </CardHeader>
-      <CardContent className="p-0">
+      <Section id="permisos-vuce" title="Permisos VUCE vinculados ({data?.length ?? 0})">
         {(!data || data.length === 0) ? (
           <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin permisos VUCE vinculados.</div>
         ) : (
@@ -3073,8 +3065,7 @@ function TabPermisosExp({ expedienteId }: { expedienteId: string }) {
             </tbody>
           </table>
         )}
-      </CardContent>
-    </Card>
+      </Section>
   );
 }
 
@@ -3086,12 +3077,7 @@ function TabTransportesExp({ expedienteId }: { expedienteId: string }) {
   const TIPOS: Record<string, string> = { maritimo:"Marítimo", aereo:"Aéreo", terrestre:"Terrestre" };
   const ESTADOS: Record<string, string> = { programado:"Programado", en_transito:"En tránsito", entregado:"Entregado", retrasado:"Retrasado" };
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="text-base">Transportes vinculados ({data?.length ?? 0})</CardTitle>
-        <Button asChild size="sm"><Link to="/transportes/nuevo" search={{ expediente: expedienteId }}><Plus className="h-4 w-4 mr-1" /> Agregar Transporte</Link></Button>
-      </CardHeader>
-      <CardContent className="p-0">
+      <Section id="transportes" title="Transportes vinculados ({data?.length ?? 0})">
         {(!data || data.length === 0) ? (
           <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin transportes vinculados.</div>
         ) : (
@@ -3128,8 +3114,7 @@ function TabTransportesExp({ expedienteId }: { expedienteId: string }) {
             </tbody>
           </table>
         )}
-      </CardContent>
-    </Card>
+      </Section>
   );
 }
 
@@ -4700,11 +4685,8 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
   });
 
   return (
-    <Card>
-      <CardHeader className="pb-3 border-b flex-row items-center justify-between gap-3 flex-wrap">
+      <Section id="liquidacion-final" title="Liquidación Final" subtitle="Montos reales pagados a la DGA por producto, comparados contra el estimado. Da entrada formal a Almacén." action={
         <div>
-          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Liquidación Final</CardTitle>
-          <p className="text-xs text-muted-foreground">
             Montos reales pagados a la DGA por producto, comparados contra el estimado. Da entrada formal a Almacén.
           </p>
         </div>
@@ -4727,8 +4709,8 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             </Button>
           )}
         </div>
-      </CardHeader>
-      <CardContent className="pt-4 overflow-x-auto">
+}>
+        <div className="p-0 overflow-x-auto -m-5">
         {list.length === 0 ? (
           <p className="text-sm text-muted-foreground">El expediente no tiene ítems de mercancía.</p>
         ) : (
@@ -4839,7 +4821,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
           El Costo Unitario Real incluye FOB + prorrateo de flete, seguro y otros + Gravamen e ISC reales + prorrateo de
           gastos adicionales. El ITBIS no se incluye por ser crédito fiscal recuperable.
         </p>
-      </CardContent>
-    </Card>
+        </div>
+      </Section>
   );
 }
