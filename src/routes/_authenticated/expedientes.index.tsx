@@ -415,6 +415,16 @@ function Expedientes() {
         <Button
           variant="ghost"
           size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-primary"
+          disabled={duplicarMut.isPending}
+          onClick={() => duplicarMut.mutate(e.id)}
+          title="Duplicar expediente"
+        >
+          <Copy className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           className="h-8 w-8 text-muted-foreground hover:text-destructive"
           onClick={() => setToTrash({ id: e.id, numero: e.numero })}
           title="Mover a papelera"
