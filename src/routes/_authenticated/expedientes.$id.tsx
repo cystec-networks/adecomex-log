@@ -1461,12 +1461,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         </div>
       </Section>
 
-      <Card>
-        <CardHeader className="pb-3 border-b">
-          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">4. Descripción de mercancía</CardTitle>
-          <p className="text-xs text-muted-foreground">Detalle físico y clasificación de la carga</p>
-        </CardHeader>
-        <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <Section id="descripcion-mercancia" title="4. Descripción de mercancía" subtitle="Detalle físico y clasificación de la carga">
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
             <Label>Descripción</Label>
             <Textarea rows={3} value={form.descripcion_mercancia} onChange={(e) => set("descripcion_mercancia", e.target.value)} disabled={!editable} />
@@ -1800,8 +1795,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             <Label>Observaciones</Label>
             <Textarea rows={3} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} disabled={!editable} />
           </div>
-        </CardContent>
-      </Card>
+      </Section>
 
       <BotonesAccion />
     </div>
@@ -2554,9 +2548,7 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
   const estadoBadge = (e: string) => e === "cobrada" ? "bg-[var(--success)]/15 text-[var(--success)]" : e === "anulada" ? "bg-muted text-muted-foreground" : "bg-amber-500/15 text-amber-700";
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="text-base">Facturación (cobros)</CardTitle>
+      <Section id="facturas-cobros" title="Facturación (cobros)" action={
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); } }}>
           <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar factura</Button>
           <DialogContent>
@@ -2587,8 +2579,8 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
             <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
           </DialogContent>
         </Dialog>
-      </CardHeader>
-      <CardContent className="p-0 overflow-auto max-h-[70vh]">
+}>
+        <div className="p-0 overflow-auto max-h-[70vh] -m-5">
         <table className="w-full text-sm">
           <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
             <tr>
@@ -2628,8 +2620,8 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
             )}
           </tbody>
         </table>
-      </CardContent>
-    </Card>
+        </div>
+      </Section>
   );
 }
 
@@ -2792,9 +2784,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
 
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="text-base">Gastos operativos</CardTitle>
+      <Section id="gastos-operativos" title="Gastos operativos" action={
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); } }}>
           <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar gasto</Button>
           <DialogContent className="max-h-[85vh] overflow-y-auto">
@@ -2946,8 +2936,8 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
             <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
           </DialogContent>
         </Dialog>
-      </CardHeader>
-      <CardContent className="p-0 overflow-auto max-h-[70vh]">
+}>
+        <div className="p-0 overflow-auto max-h-[70vh] -m-5">
         <table className="w-full text-sm">
           <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
             <tr>
@@ -2985,8 +2975,8 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
             )}
           </tbody>
         </table>
-      </CardContent>
-    </Card>
+        </div>
+      </Section>
   );
 }
 
