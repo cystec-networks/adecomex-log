@@ -416,7 +416,7 @@ function Panel606({ periodo }: { periodo: string }) {
       ].join("|");
     });
 
-    const content = [header, ...detalle].join("\r\n") + "\r\n";
+    const content = [header, ...detalle].join("\r\n");
     const filename = `DGII_606_${empresaRnc}_${periodo}.txt`;
     download(filename, content);
 
@@ -761,7 +761,7 @@ function Panel608({ periodo }: { periodo: string }) {
       r.monto_total.toFixed(2),
       (r.motivo_anulacion ?? "").replace(/\|/g, " "),
     ].join("|"));
-    const content = lines.join("\r\n") + "\r\n";
+    const content = lines.join("\r\n");
     const filename = `608_${periodo}.txt`;
     download(filename, content);
 
