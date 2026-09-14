@@ -1427,12 +1427,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
       </Section>
 
-      <Card>
-        <CardHeader className="pb-3 border-b">
-          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">3. Declaración</CardTitle>
-          <p className="text-xs text-muted-foreground">Documentos oficiales ante DGA y VUCE</p>
-        </CardHeader>
-        <CardContent className="pt-5 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <Section id="declaracion" title="3. Declaración" subtitle="Documentos oficiales ante DGA y VUCE">
           <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} />
           <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} />
           <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} disabled={!editable} />
@@ -1461,8 +1456,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               disabled={!editable}
             />
           </div>
-        </CardContent>
-      </Card>
+      </Section>
 
       <Section id="descripcion-mercancia" title="4. Descripción de mercancía" subtitle="Detalle físico y clasificación de la carga">
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
