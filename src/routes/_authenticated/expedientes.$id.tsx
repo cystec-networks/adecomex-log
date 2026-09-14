@@ -2076,33 +2076,31 @@ function TabIncidencias({ expedienteId }: { expedienteId: string }) {
   };
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-4 w-4" />Incidencias</CardTitle>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />Nueva</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Registrar incidencia</DialogTitle></DialogHeader>
-            <div className="grid gap-3">
-              <div className="grid gap-1.5"><Label>Tipo</Label>
-                <Select value={f.tipo} onValueChange={(v) => setF({ ...f, tipo: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{TIPOS_INCIDENCIA.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-1.5"><Label>Severidad</Label>
-                <Select value={f.severidad} onValueChange={(v) => setF({ ...f, severidad: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{["baja","media","alta","critica"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-1.5"><Label>Descripción</Label><Textarea rows={3} value={f.descripcion} onChange={(e) => setF({ ...f, descripcion: e.target.value })} /></div>
+    <Section id="incidencias" title={<span className="flex items-center gap-2"><AlertTriangle className="h-4 w-4" />Incidencias</span>} action={
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />Nueva</Button></DialogTrigger>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Registrar incidencia</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid gap-1.5"><Label>Tipo</Label>
+              <Select value={f.tipo} onValueChange={(v) => setF({ ...f, tipo: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{TIPOS_INCIDENCIA.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+              </Select>
             </div>
-            <DialogFooter><Button onClick={() => add.mutate()} disabled={add.isPending}>Registrar</Button></DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </CardHeader>
-      <CardContent className="p-0 overflow-auto max-h-[70vh]">
+            <div className="grid gap-1.5"><Label>Severidad</Label>
+              <Select value={f.severidad} onValueChange={(v) => setF({ ...f, severidad: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{["baja","media","alta","critica"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5"><Label>Descripción</Label><Textarea rows={3} value={f.descripcion} onChange={(e) => setF({ ...f, descripcion: e.target.value })} /></div>
+          </div>
+          <DialogFooter><Button onClick={() => add.mutate()} disabled={add.isPending}>Registrar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    }>
+      <div className="p-0 overflow-auto max-h-[70vh] -m-5">
         <table className="w-full text-sm">
           <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
             <tr><th className="text-left px-4 py-2">Tipo</th><th className="text-left">Severidad</th><th className="text-left">Estado</th><th className="text-left">Apertura</th><th /></tr>
