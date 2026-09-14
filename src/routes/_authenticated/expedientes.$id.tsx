@@ -785,7 +785,7 @@ function AutoField({ label, value, onChange, suggestion, className = "", disable
   );
 }
 
-function Section({ title, subtitle, children, id, className }: { title: string; subtitle?: string; children: React.ReactNode; id: string; className?: string }) {
+function Section({ title, subtitle, children, id, className }: { title: React.ReactNode; subtitle?: string; children: React.ReactNode; id: string; className?: string }) {
   const [abierto, setAbierto] = useState(() => {
     try { return localStorage.getItem(`exp-section-${id}`) === "1"; } catch { return false; }
   });
