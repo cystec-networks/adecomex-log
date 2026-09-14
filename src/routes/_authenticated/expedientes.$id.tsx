@@ -2486,13 +2486,8 @@ function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; to
     onError: (e: any) => toast.error(e.message),
   });
   return (
-    <Card className="border-primary/20">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">
-          Factura e-CF (DGII) — requerida para Despachar
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Section id="factura-ecf" className="border-primary/20" title="Factura e-CF (DGII) — requerida para Despachar">
+      <div className="md:col-span-2 lg:col-span-3">
         <FacturaEcfSelector
           value={(exp as any)?.factura_ecf_id ?? null}
           onChange={(id: string | null) => link.mutate(id)}
@@ -2506,8 +2501,8 @@ function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; to
             Sin factura vinculada: el expediente no podrá pasar a estado "Despachado".
           </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </Section>
   );
 }
 
