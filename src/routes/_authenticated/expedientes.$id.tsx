@@ -2238,20 +2238,9 @@ function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Diferencia</div><div className={`text-2xl font-display font-bold mt-1 ${totalReal - totalEst > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(totalReal - totalEst)}</div></CardContent></Card>
       </div>
 
-      <Card className="border-primary/20 bg-primary/5">
-        <CardHeader className="flex-row items-center justify-between pb-3">
-          <div>
-            <CardTitle className="text-base flex items-center gap-2 text-primary">
-              <FileText className="h-4 w-4" />
-              Cotización / Pre-factura de servicios
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Genera una pre-factura desde este expediente y conviértela en la factura e-CF definitiva.
-            </p>
-          </div>
-          <CotizacionServiciosExpedienteButton exp={exp} />
-        </CardHeader>
-      </Card>
+      <Section id="cotizacion-prefactura" className="border-primary/20 bg-primary/5" title={<span className="flex items-center gap-2 text-primary"><FileText className="h-4 w-4" />Cotización / Pre-factura de servicios</span>} subtitle="Genera una pre-factura desde este expediente y conviértela en la factura e-CF definitiva." action={<CotizacionServiciosExpedienteButton exp={exp} />}>
+        <p className="text-sm text-muted-foreground md:col-span-2 lg:col-span-3">Usa el botón del encabezado para generar o gestionar la pre-factura de servicios de este expediente.</p>
+      </Section>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">
