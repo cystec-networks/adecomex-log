@@ -785,14 +785,27 @@ function AutoField({ label, value, onChange, suggestion, className = "", disable
   );
 }
 
-function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Section({ title, subtitle, children, id }: { title: string; subtitle?: string; children: React.ReactNode; id: string }) {
+  const [abierto, setAbierto] = useState(() => {
+    try { return localStorage.getItem(`exp-section-${id}`) === "1"; } catch { return false; }
+  });
+  const toggle = () => {
+    const next = !abierto;
+    setAbierto(next);
+    try { localStorage.setItem(`exp-section-${id}`, next ? "1" : "0"); } catch {}
+  };
   return (
     <Card>
-      <CardHeader className="pb-3 border-b">
-        <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">{title}</CardTitle>
-        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+      <CardHeader className="pb-3 border-b cursor-pointer select-none" onClick={toggle}>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">{title}</CardTitle>
+            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+          </div>
+          <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", abierto && "rotate-180")} />
+        </div>
       </CardHeader>
-      <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{children}</CardContent>
+      {abierto && <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{children}</CardContent>}
     </Card>
   );
 }
