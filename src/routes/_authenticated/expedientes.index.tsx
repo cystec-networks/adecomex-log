@@ -10,7 +10,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronRight, Trash2, AlarmClock, AlertTriangle, Clock, Plus } from "lucide-react";
+import { ChevronRight, Trash2, AlarmClock, AlertTriangle, Clock, Plus, Copy } from "lucide-react";
+import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { Toggle } from "@/components/ui/toggle";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
@@ -89,6 +90,16 @@ function Expedientes() {
       setToTrash(null);
     },
     onError: (e: any) => toast.error(e.message ?? "No se pudo mover a papelera"),
+  });
+
+  const duplicarMut = useMutation({
+    mutationFn: (id: string) => duplicarExpediente(id),
+    onSuccess: (nuevoId) => {
+      qc.invalidateQueries({ queryKey: ["expedientes"] });
+      toast.success("Expediente duplicado — completa los datos del nuevo embarque (BL, fechas, contenedores).");
+      navigate({ to: "/expedientes/$id", params: { id: nuevoId }, search: { nuevo: "1" } as any });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo duplicar el expediente"),
   });
 
   const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -411,6 +422,16 @@ function Expedientes() {
           variant="icon"
           className="h-8 w-8"
         />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-primary"
+          disabled={duplicarMut.isPending}
+          onClick={() => duplicarMut.mutate(e.id)}
+          title="Duplicar expediente"
+        >
+          <Copy className="h-4 w-4" />
+        </Button>
         <Button
           variant="ghost"
           size="icon"

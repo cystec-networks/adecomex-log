@@ -48,6 +48,7 @@ import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
 import { unitFob } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
+import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
@@ -285,6 +286,7 @@ function DetalleExpediente() {
   const { id } = Route.useParams();
   const { nuevo } = Route.useSearch();
   const isNuevo = id === "nuevo";
+  const navExp = useNavigate();
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const dragTab = useRef<string | null>(null);
@@ -445,6 +447,16 @@ function DetalleExpediente() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const duplicarMut = useMutation({
+    mutationFn: () => duplicarExpediente(id),
+    onSuccess: (nuevoId) => {
+      qc.invalidateQueries({ queryKey: ["expedientes"] });
+      toast.success("Expediente duplicado — completa los datos del nuevo embarque (BL, fechas, contenedores).");
+      navExp({ to: "/expedientes/$id", params: { id: nuevoId }, search: { nuevo: "1" } as any });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo duplicar el expediente"),
+  });
+
   if (!isNuevo && !exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
   const expData: any = isNuevo ? EXPEDIENTE_VACIO : exp;
@@ -533,6 +545,15 @@ function DetalleExpediente() {
             </div>
           ) : (
             <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={duplicarMut.isPending}
+                onClick={() => duplicarMut.mutate()}
+                title="Duplicar expediente"
+              >
+                <Copy className="h-4 w-4 mr-1" /> {duplicarMut.isPending ? "Duplicando…" : "Duplicar"}
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">
