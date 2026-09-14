@@ -2289,8 +2289,8 @@ function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
               {(!costos || costos.length === 0) && <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Sin costos registrados.</td></tr>}
             </tbody>
           </table>
-        </CardContent>
-      </Card>
+        </div>
+      </Section>
 
       <LiquidacionSection expedienteId={expedienteId} />
     </div>
