@@ -785,7 +785,7 @@ function AutoField({ label, value, onChange, suggestion, className = "", disable
   );
 }
 
-function Section({ title, subtitle, children, id, className }: { title: React.ReactNode; subtitle?: string; children: React.ReactNode; id: string; className?: string }) {
+function Section({ title, subtitle, children, id, className, action }: { title: React.ReactNode; subtitle?: string; children: React.ReactNode; id: string; className?: string; action?: React.ReactNode }) {
   const [abierto, setAbierto] = useState(() => {
     try { return localStorage.getItem(`exp-section-${id}`) === "1"; } catch { return false; }
   });
@@ -802,7 +802,10 @@ function Section({ title, subtitle, children, id, className }: { title: React.Re
             <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">{title}</CardTitle>
             {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
           </div>
-          <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", abierto && "rotate-180")} />
+          <div className="flex items-center gap-2">
+            {action}
+            <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", abierto && "rotate-180")} />
+          </div>
         </div>
       </CardHeader>
       {abierto && <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{children}</CardContent>}
