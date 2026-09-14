@@ -5533,7 +5533,10 @@ export type Database = {
           catalogo_viaje_id: string | null
           created_at: string
           descripcion: string | null
+          descuento_cxc: number | null
           estado: string
+          factura_costo_fecha: string | null
+          factura_costo_numero: string | null
           id: string
           moneda: string
           monto: number
@@ -5550,7 +5553,10 @@ export type Database = {
           catalogo_viaje_id?: string | null
           created_at?: string
           descripcion?: string | null
+          descuento_cxc?: number | null
           estado?: string
+          factura_costo_fecha?: string | null
+          factura_costo_numero?: string | null
           id?: string
           moneda?: string
           monto?: number
@@ -5567,7 +5573,10 @@ export type Database = {
           catalogo_viaje_id?: string | null
           created_at?: string
           descripcion?: string | null
+          descuento_cxc?: number | null
           estado?: string
+          factura_costo_fecha?: string | null
+          factura_costo_numero?: string | null
           id?: string
           moneda?: string
           monto?: number

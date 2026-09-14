@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { Copy, ExternalLink, Pencil, Printer, Trash2, Truck } from "lucide-react";
 import { fmtLocalDate } from "@/lib/dates";
 import { sanitizeSearchTerm } from "@/lib/search-filter";
+import { cn } from "@/lib/utils";
 import { SolicitudPagoPdfDialog } from "@/components/solicitud-pago-pdf-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/solicitudes-pago-transporte")({
@@ -51,6 +52,9 @@ type Row = {
   transportista_rnc: string | null;
   telefono: string | null;
   monto: number;
+  descuento_cxc: number | null;
+  factura_costo_numero: string | null;
+  factura_costo_fecha: string | null;
   cantidad_viajes: number | null;
   moneda: string;
   referencia_viaje: string | null;
@@ -137,7 +141,8 @@ function SolicitudesPagoTransportePage() {
   const [editing, setEditing] = useState<Row | null>(null);
   const [form, setForm] = useState({
     transportista_nombre: "", transportista_rnc: "", telefono: "",
-    monto: "", moneda: "DOP", referencia_viaje: "", descripcion: "",
+    monto: "", descuento_cxc: "", factura_costo_numero: "", factura_costo_fecha: "",
+    moneda: "DOP", referencia_viaje: "", descripcion: "",
   });
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [eliminando, setEliminando] = useState<Row | null>(null);
@@ -150,6 +155,9 @@ function SolicitudesPagoTransportePage() {
       transportista_rnc: r.transportista_rnc ?? "",
       telefono: r.telefono ?? "",
       monto: r.monto != null ? String(r.monto) : "",
+      descuento_cxc: r.descuento_cxc != null ? String(r.descuento_cxc) : "",
+      factura_costo_numero: r.factura_costo_numero ?? "",
+      factura_costo_fecha: r.factura_costo_fecha ?? "",
       moneda: r.moneda ?? "DOP",
       referencia_viaje: r.referencia_viaje ?? "",
       descripcion: r.descripcion ?? "",
@@ -160,8 +168,10 @@ function SolicitudesPagoTransportePage() {
     mutationFn: async () => {
       if (!editing) return;
       const monto = Number(form.monto);
+      const descuento_cxc = form.descuento_cxc === "" ? 0 : Number(form.descuento_cxc);
       if (!form.transportista_nombre.trim()) throw new Error("Indica el nombre del transportista");
       if (!Number.isFinite(monto) || monto <= 0) throw new Error("Indica un monto mayor a 0");
+      if (!Number.isFinite(descuento_cxc) || descuento_cxc < 0) throw new Error("El descuento por CxC no puede ser negativo");
       const { error } = await supabase
         .from("solicitudes_pago_transporte")
         .update({
@@ -169,6 +179,9 @@ function SolicitudesPagoTransportePage() {
           transportista_rnc: form.transportista_rnc.trim() || null,
           telefono: form.telefono.trim() || null,
           monto,
+          descuento_cxc,
+          factura_costo_numero: form.factura_costo_numero.trim() || null,
+          factura_costo_fecha: form.factura_costo_fecha || null,
           moneda: form.moneda,
           referencia_viaje: form.referencia_viaje.trim() || null,
           descripcion: form.descripcion.trim() || null,
@@ -373,7 +386,7 @@ function SolicitudesPagoTransportePage() {
               <Input value={form.telefono} maxLength={30} onChange={(e) => setF("telefono", e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label>Monto *</Label>
+              <Label>Costo del Viaje *</Label>
               <Input
                 inputMode="decimal"
                 value={form.monto}
@@ -392,6 +405,42 @@ function SolicitudesPagoTransportePage() {
                   <SelectItem value="USD">USD</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Descuento por CxC</Label>
+              <Input
+                inputMode="decimal"
+                value={form.descuento_cxc}
+                onChange={(e) => {
+                  const v = e.target.value.replace(",", ".");
+                  if (v === "" || /^\d*\.?\d*$/.test(v)) setF("descuento_cxc", v);
+                }}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>N° de Factura de Costo</Label>
+              <Input value={form.factura_costo_numero} maxLength={50} onChange={(e) => setF("factura_costo_numero", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Fecha de Factura de Costo</Label>
+              <Input type="date" value={form.factura_costo_fecha} onChange={(e) => setF("factura_costo_fecha", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5 sm:col-span-2">
+              <Label>Monto Neto a Pagar</Label>
+              <div className={cn(
+                "rounded-md border px-3 py-2 text-sm font-semibold",
+                (Number(form.monto) || 0) - (form.descuento_cxc === "" ? 0 : Number(form.descuento_cxc)) >= 0
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : "bg-destructive/10 text-destructive border-destructive/30"
+              )}>
+                {fmtMoney(
+                  (Number(form.monto) || 0) - (form.descuento_cxc === "" ? 0 : Number(form.descuento_cxc)),
+                  form.moneda,
+                )}
+              </div>
+              {(Number(form.descuento_cxc) || 0) > (Number(form.monto) || 0) && (
+                <p className="text-xs text-destructive">El descuento supera el costo del viaje. Revisa antes de aprobar.</p>
+              )}
             </div>
             <div className="grid gap-1.5 sm:col-span-2">
               <Label>Referencia del viaje</Label>
