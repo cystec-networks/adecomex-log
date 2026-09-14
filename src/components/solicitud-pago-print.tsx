@@ -9,6 +9,9 @@ export type SolicitudPagoPrintData = {
   placa_contenedor?: string | null;
   cantidad_viajes?: number | null;
   monto: number;
+  descuento_cxc?: number | null;
+  factura_costo_numero?: string | null;
+  factura_costo_fecha?: string | null;
   moneda: string;
   descripcion?: string | null;
   created_at?: string | null;
@@ -83,11 +86,37 @@ export function SolicitudPagoPrintView({ solicitud }: { solicitud: SolicitudPago
             </div>
             <Campo label="Cantidad de viajes" value={cant} />
             <div className="col-span-2">
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Monto total</div>
-              <div className="text-sm font-bold">{fmtMoney(Number(s.monto), s.moneda)}</div>
+              {(s.descuento_cxc ?? 0) > 0 ? (
+                <div className="space-y-1">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Desglose del pago</div>
+                  <div className="grid grid-cols-2 gap-x-2 text-xs">
+                    <span className="text-muted-foreground">Costo del Viaje</span>
+                    <span className="text-right font-medium">{fmtMoney(Number(s.monto), s.moneda)}</span>
+                    <span className="text-muted-foreground">Descuento por CxC</span>
+                    <span className="text-right font-medium text-destructive">-{fmtMoney(Number(s.descuento_cxc), s.moneda)}</span>
+                    <span className="font-semibold">Monto Neto a Pagar</span>
+                    <span className="text-right font-bold">{fmtMoney(Number(s.monto) - Number(s.descuento_cxc), s.moneda)}</span>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Monto total</div>
+                  <div className="text-sm font-bold">{fmtMoney(Number(s.monto), s.moneda)}</div>
+                </>
+              )}
             </div>
           </div>
         </div>
+
+        {s.factura_costo_numero?.trim() ? (
+          <div className="mt-2 rounded-md border p-2">
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Factura de Costo</div>
+            <div className="text-xs font-medium">
+              {s.factura_costo_numero}
+              {s.factura_costo_fecha ? ` — ${fmtLocalDate(s.factura_costo_fecha)}` : null}
+            </div>
+          </div>
+        ) : null}
 
         <div className="mt-2 rounded-md border-2 border-foreground/20 p-2">
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
