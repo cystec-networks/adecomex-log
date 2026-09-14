@@ -4675,31 +4675,27 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
   });
 
   return (
-      <Section id="liquidacion-final" title="Liquidación Final" subtitle="Montos reales pagados a la DGA por producto, comparados contra el estimado. Da entrada formal a Almacén." action={
-        <div>
-            Montos reales pagados a la DGA por producto, comparados contra el estimado. Da entrada formal a Almacén.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {finalizado && <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">Finalizada</Badge>}
-          <LiquidacionFinalPdfButton
-            exp={exp}
-            list={list}
-            calcFila={calcFila}
-            gastosAdicionales={gastosAdicionales}
-            tasaCambio={tasaCambio}
-          />
-          {finalizado && isAdmin && !reabierto && (
-            <Button variant="outline" size="sm" onClick={() => setReabierto(true)}>Reabrir liquidación</Button>
-          )}
-          {editable && (
-            <Button size="sm" disabled={!completo || finalizar.isPending} onClick={() => finalizar.mutate()}>
-              <FileCheck className="h-4 w-4 mr-1" />
-              Finalizar Liquidación y Enviar a Almacén
-            </Button>
-          )}
-        </div>
-}>
+    <Section id="liquidacion-final" title="Liquidación Final" subtitle="Montos reales pagados a la DGA por producto, comparados contra el estimado. Da entrada formal a Almacén." action={
+      <div className="flex items-center gap-2">
+        {finalizado && <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">Finalizada</Badge>}
+        <LiquidacionFinalPdfButton
+          exp={exp}
+          list={list}
+          calcFila={calcFila}
+          gastosAdicionales={gastosAdicionales}
+          tasaCambio={tasaCambio}
+        />
+        {finalizado && isAdmin && !reabierto && (
+          <Button variant="outline" size="sm" onClick={() => setReabierto(true)}>Reabrir liquidación</Button>
+        )}
+        {editable && (
+          <Button size="sm" disabled={!completo || finalizar.isPending} onClick={() => finalizar.mutate()}>
+            <FileCheck className="h-4 w-4 mr-1" />
+            Finalizar Liquidación y Enviar a Almacén
+          </Button>
+        )}
+      </div>
+    }>
         <div className="p-0 overflow-x-auto -m-5">
         {list.length === 0 ? (
           <p className="text-sm text-muted-foreground">El expediente no tiene ítems de mercancía.</p>
