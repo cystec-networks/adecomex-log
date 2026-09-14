@@ -48,6 +48,7 @@ import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
 import { unitFob } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
+import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
@@ -285,6 +286,7 @@ function DetalleExpediente() {
   const { id } = Route.useParams();
   const { nuevo } = Route.useSearch();
   const isNuevo = id === "nuevo";
+  const navExp = useNavigate();
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const dragTab = useRef<string | null>(null);
