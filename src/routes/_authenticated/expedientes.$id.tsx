@@ -1280,28 +1280,24 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     <div className="space-y-5">
       <BotonesAccion />
       {hasSolicitud && (
-        <Card className="bg-muted/30 border-dashed">
-          <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary flex items-center justify-between">
-              <span>Datos de la Solicitud Original</span>
-              {exp.solicitudes?.numero && exp.solicitud_id && (
-                <Link to="/solicitudes/$id" params={{ id: exp.solicitud_id }} className="text-xs font-normal text-primary underline">
-                  {exp.solicitudes.numero} ↗
-                </Link>
-              )}
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Referencia conservada al momento de la conversión. Tipo de operación, tipo de carga y contacto son editables con el botón "Editar".</p>
-          </CardHeader>
-          <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Field label="Tipo de operación" value={form.tipo_operacion} onChange={(v) => set("tipo_operacion", v)} disabled={!editable} />
-            {!editable
-              ? <ReadOnlyField label="Tipo de carga" value={form.tipo_carga} />
-              : <CatalogoAutocomplete tabla="catalogo_tipos_carga" label="Tipo de carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />}
-            <ReadOnlyField label="Origen" value={exp.pais_origen} />
-            <ReadOnlyField label="Incoterm" value={exp.incoterm} />
-            <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sug.contacto_solicitud ?? []} disabled={!editable} />
-          </CardContent>
-        </Card>
+        <Section id="datos-solicitud-original" className="bg-muted/30 border-dashed" title={
+          <span className="flex items-center justify-between">
+            <span>Datos de la Solicitud Original</span>
+            {exp.solicitudes?.numero && exp.solicitud_id && (
+              <Link to="/solicitudes/$id" params={{ id: exp.solicitud_id }} className="text-xs font-normal text-primary underline" onClick={(e) => e.stopPropagation()}>
+                {exp.solicitudes.numero} ↗
+              </Link>
+            )}
+          </span>
+        } subtitle="Referencia conservada al momento de la conversión. Tipo de operación, tipo de carga y contacto son editables con el botón 'Editar'.">
+          <Field label="Tipo de operación" value={form.tipo_operacion} onChange={(v) => set("tipo_operacion", v)} disabled={!editable} />
+          {!editable
+            ? <ReadOnlyField label="Tipo de carga" value={form.tipo_carga} />
+            : <CatalogoAutocomplete tabla="catalogo_tipos_carga" label="Tipo de carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />}
+          <ReadOnlyField label="Origen" value={exp.pais_origen} />
+          <ReadOnlyField label="Incoterm" value={exp.incoterm} />
+          <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sug.contacto_solicitud ?? []} disabled={!editable} />
+        </Section>
       )}
 
       <Section id="informacion-general" title="1. Información general" subtitle="Identificación y logística base del expediente">
