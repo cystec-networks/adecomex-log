@@ -7,7 +7,7 @@ const CAMPOS = [
   "pct_isc", "pct_itbis", "estado_producto_codigo", "pais_origen", "pais_origen_codigo",
 ] as const;
 
-type Origen = "cotizacion_productos" | "orden_productos" | "solicitud_productos";
+type Origen = "cotizacion_productos" | "orden_productos" | "solicitud_productos" | "mercancia_items";
 type Destino = "orden_productos" | "solicitud_productos" | "mercancia_items";
 
 /**
