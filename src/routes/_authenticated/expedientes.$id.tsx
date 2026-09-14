@@ -1367,7 +1367,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       </Section>
 
 
-      <Section title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
+      <Section id="datos-importacion" title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
         <div className={cn("grid gap-1.5", camposFaltantes.has("req-suplidor") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-suplidor">
           <div className="flex items-center justify-between gap-2">
             <Label><ReqMark />Exportador / Suplidor</Label>
