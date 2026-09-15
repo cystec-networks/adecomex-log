@@ -200,7 +200,7 @@ function SolicitudesPagoTransportePage() {
       cantidad_viajes: r.cantidad_viajes != null ? String(r.cantidad_viajes) : "",
       precio_viaje: r.precio_viaje != null ? String(r.precio_viaje) : "",
       porcentaje_margen: r.porcentaje_margen != null ? String(r.porcentaje_margen) : "",
-      moneda: "DOP",
+      moneda: r.moneda || "DOP",
       descripcion: r.descripcion ?? "",
       cliente_id: r.cliente_id ?? "",
       fecha_salida: r.fecha_salida ?? "",
@@ -235,7 +235,7 @@ function SolicitudesPagoTransportePage() {
         cantidad_viajes: cantidad_viajes ?? 1,
         precio_viaje,
         porcentaje_margen,
-        moneda: "DOP",
+        moneda: form.moneda || "DOP",
         descripcion: form.descripcion.trim() || null,
         cliente_id: form.cliente_id || null,
         fecha_salida: form.fecha_salida || null,
@@ -497,7 +497,13 @@ function SolicitudesPagoTransportePage() {
             </div>
             <div className="grid gap-1.5 md:col-span-2">
               <Label>Moneda</Label>
-              <div className="rounded-md border px-3 py-2 text-sm font-medium">DOP</div>
+              <Select value={form.moneda || "DOP"} onValueChange={(v) => setF("moneda", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DOP">DOP</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-1.5 md:col-span-4">
               <Label>Cliente Final</Label>
