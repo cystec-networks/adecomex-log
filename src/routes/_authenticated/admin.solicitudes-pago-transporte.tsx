@@ -473,6 +473,30 @@ function SolicitudesPagoTransportePage() {
                       </div>
                     </div>
                   )}
+                  <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+                    <div className="grid gap-1.5">
+                      <Label>Costo del Viaje *</Label>
+                      <Input
+                        inputMode="decimal"
+                        value={form.monto}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(",", ".");
+                          if (v === "" || /^\d*\.?\d*$/.test(v)) setF("monto", v);
+                        }}
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>Descuento por CxC</Label>
+                      <Input
+                        inputMode="decimal"
+                        value={form.descuento_cxc}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(",", ".");
+                          if (v === "" || /^\d*\.?\d*$/.test(v)) setF("descuento_cxc", v);
+                        }}
+                      />
+                    </div>
+                  </div>
                   <div className="grid gap-1.5 sm:col-span-2">
                     <Label>{costoViajeCalculado != null ? "Costo del Viaje (calculado)" : "Costo del Viaje (solicitado)"}</Label>
                     <div className="rounded-md border px-3 py-2 text-sm font-medium">
@@ -493,13 +517,19 @@ function SolicitudesPagoTransportePage() {
                       <p className="text-xs text-destructive">El descuento supera el costo del viaje. Revisa antes de aprobar.</p>
                     )}
                   </div>
+                  <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+                    <div className="grid gap-1.5">
+                      <Label>N° de Factura de Costo</Label>
+                      <Input value={form.factura_costo_numero} maxLength={50} onChange={(e) => setF("factura_costo_numero", e.target.value)} />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>Fecha de Factura de Costo</Label>
+                      <Input type="date" value={form.factura_costo_fecha} onChange={(e) => setF("factura_costo_fecha", e.target.value)} />
+                    </div>
+                  </div>
                 </>
               );
             })()}
-            <div className="grid gap-1.5 sm:col-span-2">
-              <Label>Referencia del viaje</Label>
-              <Input value={form.referencia_viaje} maxLength={120} onChange={(e) => setF("referencia_viaje", e.target.value)} />
-            </div>
             <div className="grid gap-1.5 sm:col-span-2">
               <Label>Descripción</Label>
               <Textarea rows={3} maxLength={1000} value={form.descripcion} onChange={(e) => setF("descripcion", e.target.value)} />
