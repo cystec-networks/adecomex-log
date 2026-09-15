@@ -15,6 +15,7 @@ export type SolicitudPagoPrintData = {
   factura_costo_numero?: string | null;
   factura_costo_fecha?: string | null;
   moneda: string;
+  cliente_nombre?: string | null;
   descripcion?: string | null;
   created_at?: string | null;
 };
@@ -77,6 +78,17 @@ export function SolicitudPagoPrintView({ solicitud }: { solicitud: SolicitudPago
             <Campo label="Teléfono" value={s.telefono} />
           </div>
         </div>
+
+        {s.cliente_nombre?.trim() ? (
+          <div className="mt-2">
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Cliente
+            </div>
+            <div className="rounded-md border p-2">
+              <div className="text-xs font-semibold">{s.cliente_nombre}</div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="mt-2">
           <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
