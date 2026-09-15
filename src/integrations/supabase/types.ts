@@ -6398,6 +6398,23 @@ export type Database = {
           },
         ]
       }
+      vista_registro_diario: {
+        Row: {
+          beneficiario: string | null
+          categoria: string | null
+          concepto: string | null
+          descuento_cxc: number | null
+          fecha: string | null
+          id: string | null
+          monto: number | null
+          neto: number | null
+          origen_tipo: string | null
+          referencia: string | null
+          secuencia: string | null
+          solicitud_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calc_itbis_periodo: { Args: { _periodo: string }; Returns: Json }
