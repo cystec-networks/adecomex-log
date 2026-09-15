@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Pencil, Printer, Trash2, Truck } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { fmtLocalDate } from "@/lib/dates";
 import { sanitizeSearchTerm } from "@/lib/search-filter";
 import { cn } from "@/lib/utils";
@@ -95,6 +96,18 @@ const netoDeSolicitud = (r: Row) => {
 
 const fmtMoney = (n: number, m: string) =>
   `${m === "USD" ? "US$" : m === "EUR" ? "€" : "RD$"} ${(n || 0).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// Agrupa transportes vinculados por número base (TR-001308-1, TR-001308-2 → TR-001308 ×2)
+const agruparTransportes = (list: { id: string; numero_viaje: string }[]) => {
+  const map = new Map<string, { id: string; numero_viaje: string }[]>();
+  for (const t of [...list].sort((a, b) => a.numero_viaje.localeCompare(b.numero_viaje))) {
+    const base = t.numero_viaje.replace(/-\d+$/, "");
+    const arr = map.get(base) ?? [];
+    arr.push(t);
+    map.set(base, arr);
+  }
+  return [...map.entries()];
+};
 
 function SolicitudesPagoTransportePage() {
   const nav = useNavigate();
