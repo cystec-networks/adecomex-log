@@ -63,9 +63,20 @@ type Row = {
   placa_contenedor: string | null;
   descripcion: string | null;
   transporte_id: string | null;
+  cliente_id: string | null;
+  fecha_salida: string | null;
+  eta: string | null;
+  estado_transporte: string | null;
   estado: string;
   created_at: string;
 };
+
+const ESTADOS_TRANSPORTE = [
+  { v: "programado", l: "Programado" },
+  { v: "en_transito", l: "En Tránsito" },
+  { v: "entregado", l: "Entregado" },
+  { v: "retrasado", l: "Retrasado" },
+];
 
 
 const fmtMoney = (n: number, m: string) =>
@@ -145,7 +156,8 @@ function SolicitudesPagoTransportePage() {
     transportista_nombre: "", transportista_rnc: "", telefono: "",
     monto: "", descuento_cxc: "", factura_costo_numero: "", factura_costo_fecha: "",
     cantidad_viajes: "", precio_viaje: "", porcentaje_margen: "",
-    moneda: "DOP", referencia_viaje: "", descripcion: "",
+    moneda: "DOP", descripcion: "",
+    cliente_id: "", fecha_salida: "", eta: "", estado_transporte: "programado",
   });
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [eliminando, setEliminando] = useState<Row | null>(null);
@@ -164,9 +176,12 @@ function SolicitudesPagoTransportePage() {
       cantidad_viajes: r.cantidad_viajes != null ? String(r.cantidad_viajes) : "",
       precio_viaje: r.precio_viaje != null ? String(r.precio_viaje) : "",
       porcentaje_margen: r.porcentaje_margen != null ? String(r.porcentaje_margen) : "",
-      moneda: r.moneda ?? "DOP",
-      referencia_viaje: r.referencia_viaje ?? "",
+      moneda: "DOP",
       descripcion: r.descripcion ?? "",
+      cliente_id: r.cliente_id ?? "",
+      fecha_salida: r.fecha_salida ?? "",
+      eta: r.eta ?? "",
+      estado_transporte: r.estado_transporte ?? "programado",
     });
   };
 
@@ -198,9 +213,12 @@ function SolicitudesPagoTransportePage() {
           cantidad_viajes: cantidad_viajes ?? undefined,
           precio_viaje,
           porcentaje_margen,
-          moneda: form.moneda,
-          referencia_viaje: form.referencia_viaje.trim() || null,
+          moneda: "DOP",
           descripcion: form.descripcion.trim() || null,
+          cliente_id: form.cliente_id || null,
+          fecha_salida: form.fecha_salida || null,
+          eta: form.eta || null,
+          estado_transporte: form.estado_transporte || "programado",
         })
         .eq("id", editing.id);
       if (error) throw error;
