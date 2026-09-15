@@ -228,34 +228,59 @@ function SolicitudesPagoTransportePage() {
       if (cantidad_viajes != null && (!Number.isFinite(cantidad_viajes) || cantidad_viajes <= 0)) throw new Error("La cantidad de viajes debe ser mayor a 0");
       if (precio_viaje != null && (!Number.isFinite(precio_viaje) || precio_viaje < 0)) throw new Error("El precio por viaje no puede ser negativo");
       if (porcentaje_margen != null && (!Number.isFinite(porcentaje_margen) || porcentaje_margen < 0 || porcentaje_margen > 100)) throw new Error("El % de margen debe estar entre 0 y 100");
-      const payload = {
-        transportista_nombre: form.transportista_nombre.trim(),
-        transportista_rnc: form.transportista_rnc.trim() || null,
-        telefono: form.telefono.trim() || null,
+      const trio = [cantidad_viajes, precio_viaje, porcentaje_margen];
+      const llenos = trio.filter((v) => v != null).length;
+      if (llenos > 0 && llenos < 3) {
+        throw new Error("Si vas a calcular por margen, completa Cantidad de Viajes, Precio por Viaje y % Margen juntos — o déjalos los 3 vacíos y usa el Costo del Viaje directo.");
+      }
+      const financiero = {
         monto,
         descuento_cxc,
         factura_costo_numero: form.factura_costo_numero.trim() || null,
         factura_costo_fecha: form.factura_costo_fecha || null,
-        cantidad_viajes: cantidad_viajes ?? 1,
+        cantidad_viajes,
         precio_viaje,
         porcentaje_margen,
-        moneda: form.moneda || "DOP",
-        descripcion: form.descripcion.trim() || null,
-        cliente_id: form.cliente_id || null,
-        fecha_salida: form.fecha_salida || null,
-        eta: form.eta || null,
-        estado_transporte: form.estado_transporte || "programado",
       };
+      const payload = soloFinanzas && editing !== "new"
+        ? financiero
+        : {
+            ...financiero,
+            cantidad_viajes: cantidad_viajes ?? 1,
+            transportista_nombre: form.transportista_nombre.trim(),
+            transportista_rnc: form.transportista_rnc.trim() || null,
+            telefono: form.telefono.trim() || null,
+            moneda: form.moneda || "DOP",
+            descripcion: form.descripcion.trim() || null,
+            cliente_id: form.cliente_id || null,
+            fecha_salida: form.fecha_salida || null,
+            eta: form.eta || null,
+            estado_transporte: form.estado_transporte || "programado",
+          };
       const query = editing === "new"
         ? supabase.from("solicitudes_pago_transporte").insert(payload)
         : supabase.from("solicitudes_pago_transporte").update(payload).eq("id", editing.id);
       const { error } = await query;
       if (error) throw error;
+
+      // Sincronizar el transporte vinculado con el nuevo neto
+      if (editing !== "new") {
+        const actualizada = { ...editing, ...payload } as Row;
+        const neto = netoDeSolicitud(actualizada);
+        const { error: errT } = await supabase
+          .from("transportes")
+          .update({ flete_monto: neto })
+          .eq("numero_control_pago", editing.numero_control);
+        if (errT) throw errT;
+      }
     },
     onSuccess: () => {
       toast.success(editing === "new" ? "Solicitud creada" : "Solicitud actualizada");
       setEditing(null);
+      setSoloFinanzas(false);
       qc.invalidateQueries({ queryKey: ["solicitudes-pago-transporte"] });
+      qc.invalidateQueries({ queryKey: ["transportes"] });
+      qc.invalidateQueries({ queryKey: ["registro-diario"] });
     },
     onError: (e: any) => toast.error(e.message ?? "No se pudo actualizar"),
   });
