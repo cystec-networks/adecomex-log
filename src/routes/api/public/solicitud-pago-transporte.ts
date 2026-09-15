@@ -43,6 +43,19 @@ export const Route = createFileRoute("/api/public/solicitud-pago-transporte")({
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+        let origen: string | null = null;
+        let destino: string | null = null;
+        if (parsed.data.catalogo_viaje_id) {
+          const { data: v } = await (supabaseAdmin as any)
+            .from("catalogo_viajes_transporte")
+            .select("origen, destino")
+            .eq("id", parsed.data.catalogo_viaje_id)
+            .maybeSingle();
+          origen = v?.origen ?? null;
+          destino = v?.destino ?? null;
+        }
+
         const { data, error } = await (supabaseAdmin as any)
           .from("solicitudes_pago_transporte")
           .insert({
