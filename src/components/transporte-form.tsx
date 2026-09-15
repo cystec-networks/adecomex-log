@@ -702,44 +702,6 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
         </CardContent>
       </Card>
 
-      {(() => {
-        const ventaVacia = !form.venta_monto && !form.venta_numero_factura;
-        const vinoDeConversion = !!(form.numero_control_pago ?? "").trim();
-        const pendiente = ventaVacia && vinoDeConversion;
-        return (
-          <Card className={pendiente ? "border-amber-400 border-2" : "border-emerald-300"}>
-            <CardHeader className="pb-3 border-b">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
-                Facturación al Cliente (Venta) · RD$
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Lo que se le cobra al cliente. Es distinto del costo pagado al transportista.
-              </p>
-              {pendiente && (
-                <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                  Pendiente por completar: este transporte proviene de la solicitud de pago {form.numero_control_pago}.
-                </p>
-              )}
-            </CardHeader>
-            <CardContent className="pt-5 grid gap-4 md:grid-cols-3">
-              <div className="grid gap-1.5">
-                <Label>Monto facturado al cliente</Label>
-                <MoneyDOP value={form.venta_monto} onChange={(v) => set("venta_monto", v)} />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Moneda</Label>
-                <div className="rounded-md border px-3 py-2 text-sm font-medium">DOP</div>
-              </div>
-              <div className="grid gap-1.5">
-                <Label>N° de Factura de Venta</Label>
-                <Input value={form.venta_numero_factura} maxLength={50} onChange={(e) => set("venta_numero_factura", e.target.value)} />
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })()}
-
-
       {isTerrestre && (
         <>
           {/* Bloque A · Pago al Transportista */}
@@ -806,11 +768,21 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
           </Card>
 
           {/* Bloque B · Facturación al Cliente */}
-          <Card className="border-emerald-500/30">
+          {(() => {
+            const facturaVacia = !form.ingreso_facturado && !form.factura_numero;
+            const vinoDeConversion = !!(form.numero_control_pago ?? "").trim();
+            const pendiente = facturaVacia && vinoDeConversion;
+            return (
+          <Card className={pendiente ? "border-amber-400 border-2" : "border-emerald-500/30"}>
             <CardHeader className="pb-3 border-b">
               <CardTitle className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
                 Facturación al Cliente (Venta) · RD$
               </CardTitle>
+              {pendiente && (
+                <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                  Pendiente por completar: este transporte proviene de la solicitud de pago {form.numero_control_pago}.
+                </p>
+              )}
             </CardHeader>
             <CardContent className="pt-5 space-y-5">
               <div className="grid gap-1.5">
@@ -885,6 +857,8 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
               </div>
             </CardContent>
           </Card>
+            );
+          })()}
 
           {/* Resumen */}
           <Card>
