@@ -126,11 +126,12 @@ export function SolicitudPagoPrintView({ solicitud }: { solicitud: SolicitudPago
                     </div>
                   </div>
                 ) : (
-                <>
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Monto total</div>
-                  <div className="text-sm font-bold">{fmtMoney(Number(s.monto), s.moneda)}</div>
-                </>
-              )}
+                  <>
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Monto total</div>
+                    <div className="text-sm font-bold">{fmtMoney(Number(s.monto), s.moneda)}</div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
