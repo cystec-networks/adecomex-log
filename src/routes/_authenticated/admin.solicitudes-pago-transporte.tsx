@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, Link } from "@tanstack/react-router";
+import { createFileRoute, redirect, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -95,6 +95,7 @@ const fmtMoney = (n: number, m: string) =>
   `${m === "USD" ? "US$" : m === "EUR" ? "€" : "RD$"} ${(n || 0).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 function SolicitudesPagoTransportePage() {
+  const nav = useNavigate();
   const [estado, setEstado] = useState<"todas" | "pendiente" | "vinculada">("todas");
   const [q, setQ] = useState("");
 
