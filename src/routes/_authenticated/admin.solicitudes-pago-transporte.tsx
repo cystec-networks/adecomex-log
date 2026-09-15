@@ -16,7 +16,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Pencil, Printer, Trash2, Truck } from "lucide-react";
+import { Pencil, Plus, Printer, Trash2, Truck } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { fmtLocalDate } from "@/lib/dates";
 import { sanitizeSearchTerm } from "@/lib/search-filter";
@@ -97,18 +97,6 @@ const netoDeSolicitud = (r: Row) => {
 const fmtMoney = (n: number, m: string) =>
   `${m === "USD" ? "US$" : m === "EUR" ? "€" : "RD$"} ${(n || 0).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-// Agrupa transportes vinculados por número base (TR-001308-1, TR-001308-2 → TR-001308 ×2)
-const agruparTransportes = (list: { id: string; numero_viaje: string }[]) => {
-  const map = new Map<string, { id: string; numero_viaje: string }[]>();
-  for (const t of [...list].sort((a, b) => a.numero_viaje.localeCompare(b.numero_viaje))) {
-    const base = t.numero_viaje.replace(/-\d+$/, "");
-    const arr = map.get(base) ?? [];
-    arr.push(t);
-    map.set(base, arr);
-  }
-  return [...map.entries()];
-};
-
 function SolicitudesPagoTransportePage() {
   const nav = useNavigate();
   const [estado, setEstado] = useState<"todas" | "pendiente" | "vinculada">("todas");
@@ -176,7 +164,7 @@ function SolicitudesPagoTransportePage() {
 
 
   const qc = useQueryClient();
-  const [editing, setEditing] = useState<Row | null>(null);
+  const [editing, setEditing] = useState<Row | "new" | null>(null);
   const [form, setForm] = useState({
     transportista_nombre: "", transportista_rnc: "", telefono: "",
     monto: "", descuento_cxc: "", factura_costo_numero: "", factura_costo_fecha: "",
@@ -187,6 +175,17 @@ function SolicitudesPagoTransportePage() {
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [eliminando, setEliminando] = useState<Row | null>(null);
   const [pdfId, setPdfId] = useState<string | null>(null);
+
+  const abrirNueva = () => {
+    setForm({
+      transportista_nombre: "", transportista_rnc: "", telefono: "",
+      monto: "", descuento_cxc: "", factura_costo_numero: "", factura_costo_fecha: "",
+      cantidad_viajes: "1", precio_viaje: "", porcentaje_margen: "",
+      moneda: "DOP", descripcion: "",
+      cliente_id: "", fecha_salida: "", eta: "", estado_transporte: "programado",
+    });
+    setEditing("new");
+  };
 
   const abrirEdicion = (r: Row) => {
     setEditing(r);
@@ -225,31 +224,32 @@ function SolicitudesPagoTransportePage() {
       if (cantidad_viajes != null && (!Number.isFinite(cantidad_viajes) || cantidad_viajes <= 0)) throw new Error("La cantidad de viajes debe ser mayor a 0");
       if (precio_viaje != null && (!Number.isFinite(precio_viaje) || precio_viaje < 0)) throw new Error("El precio por viaje no puede ser negativo");
       if (porcentaje_margen != null && (!Number.isFinite(porcentaje_margen) || porcentaje_margen < 0 || porcentaje_margen > 100)) throw new Error("El % de margen debe estar entre 0 y 100");
-      const { error } = await supabase
-        .from("solicitudes_pago_transporte")
-        .update({
-          transportista_nombre: form.transportista_nombre.trim(),
-          transportista_rnc: form.transportista_rnc.trim() || null,
-          telefono: form.telefono.trim() || null,
-          monto,
-          descuento_cxc,
-          factura_costo_numero: form.factura_costo_numero.trim() || null,
-          factura_costo_fecha: form.factura_costo_fecha || null,
-          cantidad_viajes: cantidad_viajes ?? undefined,
-          precio_viaje,
-          porcentaje_margen,
-          moneda: "DOP",
-          descripcion: form.descripcion.trim() || null,
-          cliente_id: form.cliente_id || null,
-          fecha_salida: form.fecha_salida || null,
-          eta: form.eta || null,
-          estado_transporte: form.estado_transporte || "programado",
-        })
-        .eq("id", editing.id);
+      const payload = {
+        transportista_nombre: form.transportista_nombre.trim(),
+        transportista_rnc: form.transportista_rnc.trim() || null,
+        telefono: form.telefono.trim() || null,
+        monto,
+        descuento_cxc,
+        factura_costo_numero: form.factura_costo_numero.trim() || null,
+        factura_costo_fecha: form.factura_costo_fecha || null,
+        cantidad_viajes: cantidad_viajes ?? 1,
+        precio_viaje,
+        porcentaje_margen,
+        moneda: "DOP",
+        descripcion: form.descripcion.trim() || null,
+        cliente_id: form.cliente_id || null,
+        fecha_salida: form.fecha_salida || null,
+        eta: form.eta || null,
+        estado_transporte: form.estado_transporte || "programado",
+      };
+      const query = editing === "new"
+        ? supabase.from("solicitudes_pago_transporte").insert(payload)
+        : supabase.from("solicitudes_pago_transporte").update(payload).eq("id", editing.id);
+      const { error } = await query;
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Solicitud actualizada");
+      toast.success(editing === "new" ? "Solicitud creada" : "Solicitud actualizada");
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["solicitudes-pago-transporte"] });
     },
@@ -310,11 +310,14 @@ function SolicitudesPagoTransportePage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-display font-bold">Solicitudes de Pago de Transporte</h1>
-        <p className="text-sm text-muted-foreground">
-          Solicitudes generadas por transportistas desde la página pública.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-display font-bold">Solicitudes de Pago de Transporte</h1>
+          <p className="text-sm text-muted-foreground">
+            Solicitudes generadas por transportistas desde la página pública.
+          </p>
+        </div>
+        <Button onClick={abrirNueva}><Plus className="h-4 w-4" /> Nueva solicitud</Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -375,25 +378,25 @@ function SolicitudesPagoTransportePage() {
           <table className="w-full text-sm">
             <thead className="sticky-table-header">
               <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                <th className="py-1.5 pr-3">Número de control</th>
+                 <th className="py-1.5 pr-3">Creada</th>
+                 <th className="py-1.5 pr-3">Número de control</th>
                 <th className="py-1.5 pr-3">Transportista</th>
                 <th className="py-1.5 pr-3">Ruta</th>
-                <th className="py-1.5 pr-3 text-right">Monto</th>
                 <th className="py-1.5 pr-3 text-right">Cantidad</th>
-                <th className="py-1.5 pr-3">Moneda</th>
-                <th className="py-1.5 pr-3">Creada</th>
+                 <th className="py-1.5 pr-3 text-right">Monto</th>
+                 <th className="py-1.5 pr-3">Acciones</th>
                 <th className="py-1.5 pr-3">Estado</th>
                 <th className="py-1.5 pr-3">Transportes</th>
-                <th className="py-1.5 pr-3">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={10} className="py-6 text-center text-muted-foreground">Cargando…</td></tr>
+                <tr><td colSpan={9} className="py-6 text-center text-muted-foreground">Cargando…</td></tr>
               ) : filtradas.length === 0 ? (
-                <tr><td colSpan={10} className="py-6 text-center text-muted-foreground">Sin solicitudes</td></tr>
+                <tr><td colSpan={9} className="py-6 text-center text-muted-foreground">Sin solicitudes</td></tr>
               ) : filtradas.map((r) => (
                 <tr key={r.id} className="border-b last:border-0">
+                  <td className="py-1.5 pr-3 whitespace-nowrap">{fmtLocalDate(r.created_at)}</td>
                   <td className="py-1.5 pr-3 font-mono whitespace-nowrap">{r.numero_control}</td>
                   <td className="py-1.5 pr-3"><span className="block max-w-[180px] truncate" title={r.transportista_nombre}>{r.transportista_nombre}</span></td>
                   <td className="py-1.5 pr-3">
@@ -403,10 +406,28 @@ function SolicitudesPagoTransportePage() {
                         : (r.referencia_viaje || "—")}
                     </span>
                   </td>
-                  <td className="py-1.5 pr-3 text-right whitespace-nowrap">{fmtMoney(Number(r.monto), r.moneda)}</td>
                   <td className="py-1.5 pr-3 text-right">{r.cantidad_viajes ?? 1}</td>
-                  <td className="py-1.5 pr-3">{r.moneda}</td>
-                  <td className="py-1.5 pr-3 whitespace-nowrap">{fmtLocalDate(r.created_at)}</td>
+                  <td className="py-1.5 pr-3 text-right whitespace-nowrap">{fmtMoney(Number(r.monto), r.moneda)}</td>
+                  <td className="py-1.5 pr-3">
+                    <div className="flex flex-nowrap items-center gap-1">
+                      {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => abrirEdicion(r)} title="Editar">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPdfId(r.id)} title="Ver comprobante PDF">
+                        <Printer className="h-3.5 w-3.5" />
+                      </Button>
+                      {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
+                        <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setEliminando(r)} title="Eliminar">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      <Button size="sm" disabled={convertir.isPending} onClick={() => convertir.mutate(r)}>
+                        <Truck className="h-3.5 w-3.5 mr-1" /> Convertir
+                      </Button>
+                    </div>
+                  </td>
                   <td className="py-1.5 pr-3">
                     {r.estado === "vinculada" ? (
                       <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Vinculada</Badge>
@@ -417,72 +438,31 @@ function SolicitudesPagoTransportePage() {
                   <td className="py-1.5 pr-3">
                     {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 ? (
                       <span className="text-muted-foreground">—</span>
-                    ) : (
-                      <div className="flex flex-nowrap items-center gap-1">
-                        {agruparTransportes(transportesPorSolicitud[r.id] ?? []).map(([base, items]) =>
-                          items.length === 1 ? (
-                            <Link
-                              key={base}
-                              to="/transportes/$id"
-                              params={{ id: items[0].id }}
-                              title={`Ir al transporte ${items[0].numero_viaje}`}
-                              className="rounded-md border bg-primary/10 px-1.5 py-0.5 font-mono text-xs font-medium text-primary hover:bg-primary/20 whitespace-nowrap"
-                            >
-                              {items[0].numero_viaje}
-                            </Link>
-                          ) : (
-                            <DropdownMenu key={base}>
-                              <DropdownMenuTrigger asChild>
-                                <button
-                                  type="button"
-                                  title={`Ver los ${items.length} transportes de ${base}`}
-                                  className="inline-flex items-center gap-1 rounded-md border bg-primary/10 px-1.5 py-0.5 font-mono text-xs font-medium text-primary hover:bg-primary/20 whitespace-nowrap"
-                                >
-                                  {base} <span className="rounded-full bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground">{items.length}</span>
-                                </button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="start">
-                                {items.map((t) => (
-                                  <DropdownMenuItem key={t.id} asChild>
-                                    <Link to="/transportes/$id" params={{ id: t.id }} className="font-mono">{t.numero_viaje}</Link>
-                                  </DropdownMenuItem>
-                                ))}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )
-                        )}
-                      </div>
-                    )}
-                  </td>
-                  <td className="py-1.5 pr-3">
-                    <div className="flex flex-nowrap items-center gap-1">
-                      {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
-                        <Button variant="outline" size="sm" onClick={() => abrirEdicion(r)} title="Editar">
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                      <Button variant="outline" size="sm" onClick={() => setPdfId(r.id)} title="Ver comprobante PDF">
-                        <Printer className="h-3.5 w-3.5" />
-                      </Button>
-                      {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => setEliminando(r)}
-                          title="Eliminar"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        disabled={convertir.isPending}
-                        onClick={() => convertir.mutate(r)}
+                    ) : (transportesPorSolicitud[r.id]?.length ?? 0) === 1 ? (
+                      <Link
+                        to="/transportes/$id"
+                        params={{ id: transportesPorSolicitud[r.id][0].id }}
+                        className="inline-flex whitespace-nowrap rounded-md border bg-primary/10 px-2 py-1 font-mono text-xs font-medium text-primary hover:bg-primary/20"
                       >
-                        <Truck className="h-3.5 w-3.5 mr-1" /> Convertir
-                      </Button>
-                    </div>
+                        {transportesPorSolicitud[r.id][0].numero_viaje}
+                      </Link>
+                    ) : (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-7 min-w-[118px] justify-between gap-2 font-mono text-xs">
+                            <span>{[...(transportesPorSolicitud[r.id] ?? [])].sort((a, b) => a.numero_viaje.localeCompare(b.numero_viaje))[0].numero_viaje}</span>
+                            <Badge variant="secondary" className="h-5 min-w-5 px-1">+{(transportesPorSolicitud[r.id]?.length ?? 1) - 1}</Badge>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="min-w-[180px]">
+                          {[...(transportesPorSolicitud[r.id] ?? [])].sort((a, b) => a.numero_viaje.localeCompare(b.numero_viaje)).map((t) => (
+                            <DropdownMenuItem key={t.id} asChild>
+                              <Link to="/transportes/$id" params={{ id: t.id }} className="font-mono">{t.numero_viaje}</Link>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -494,8 +474,8 @@ function SolicitudesPagoTransportePage() {
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-6xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar solicitud {editing?.numero_control}</DialogTitle>
-            <DialogDescription>Actualiza los datos enviados por el transportista.</DialogDescription>
+            <DialogTitle>{editing === "new" ? "Nueva solicitud de pago" : `Editar solicitud ${editing?.numero_control}`}</DialogTitle>
+            <DialogDescription>{editing === "new" ? "Registra manualmente una solicitud de pago de transporte." : "Actualiza los datos enviados por el transportista."}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 md:grid-cols-12">
             <div className="grid gap-1.5 md:col-span-5">
@@ -658,7 +638,7 @@ function SolicitudesPagoTransportePage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
             <Button onClick={() => guardar.mutate()} disabled={guardar.isPending}>
-              {guardar.isPending ? "Guardando…" : "Guardar cambios"}
+              {guardar.isPending ? "Guardando…" : editing === "new" ? "Crear solicitud" : "Guardar cambios"}
             </Button>
           </DialogFooter>
         </DialogContent>
