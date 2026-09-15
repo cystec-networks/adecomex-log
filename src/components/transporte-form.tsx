@@ -857,6 +857,8 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
               </div>
             </CardContent>
           </Card>
+            );
+          })()}
 
           {/* Resumen */}
           <Card>
