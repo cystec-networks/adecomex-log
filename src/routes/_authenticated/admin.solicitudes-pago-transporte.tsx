@@ -195,7 +195,7 @@ function SolicitudesPagoTransportePage() {
           descuento_cxc,
           factura_costo_numero: form.factura_costo_numero.trim() || null,
           factura_costo_fecha: form.factura_costo_fecha || null,
-          cantidad_viajes,
+          cantidad_viajes: cantidad_viajes ?? undefined,
           precio_viaje,
           porcentaje_margen,
           moneda: form.moneda,
