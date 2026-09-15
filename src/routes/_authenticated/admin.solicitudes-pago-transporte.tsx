@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Pencil, Printer, Trash2, Truck } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { fmtLocalDate } from "@/lib/dates";
 import { sanitizeSearchTerm } from "@/lib/search-filter";
 import { cn } from "@/lib/utils";
@@ -95,6 +96,18 @@ const netoDeSolicitud = (r: Row) => {
 
 const fmtMoney = (n: number, m: string) =>
   `${m === "USD" ? "US$" : m === "EUR" ? "€" : "RD$"} ${(n || 0).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// Agrupa transportes vinculados por número base (TR-001308-1, TR-001308-2 → TR-001308 ×2)
+const agruparTransportes = (list: { id: string; numero_viaje: string }[]) => {
+  const map = new Map<string, { id: string; numero_viaje: string }[]>();
+  for (const t of [...list].sort((a, b) => a.numero_viaje.localeCompare(b.numero_viaje))) {
+    const base = t.numero_viaje.replace(/-\d+$/, "");
+    const arr = map.get(base) ?? [];
+    arr.push(t);
+    map.set(base, arr);
+  }
+  return [...map.entries()];
+};
 
 function SolicitudesPagoTransportePage() {
   const nav = useNavigate();
@@ -362,16 +375,16 @@ function SolicitudesPagoTransportePage() {
           <table className="w-full text-sm">
             <thead className="sticky-table-header">
               <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                <th className="py-2 pr-3">Número de control</th>
-                <th className="py-2 pr-3">Transportista</th>
-                <th className="py-2 pr-3">Ruta</th>
-                <th className="py-2 pr-3 text-right">Monto</th>
-                <th className="py-2 pr-3 text-right">Cantidad</th>
-                <th className="py-2 pr-3">Moneda</th>
-                <th className="py-2 pr-3">Creada</th>
-                <th className="py-2 pr-3">Estado</th>
-                <th className="py-2 pr-3">Transportes</th>
-                <th className="py-2 pr-3">Acciones</th>
+                <th className="py-1.5 pr-3">Número de control</th>
+                <th className="py-1.5 pr-3">Transportista</th>
+                <th className="py-1.5 pr-3">Ruta</th>
+                <th className="py-1.5 pr-3 text-right">Monto</th>
+                <th className="py-1.5 pr-3 text-right">Cantidad</th>
+                <th className="py-1.5 pr-3">Moneda</th>
+                <th className="py-1.5 pr-3">Creada</th>
+                <th className="py-1.5 pr-3">Estado</th>
+                <th className="py-1.5 pr-3">Transportes</th>
+                <th className="py-1.5 pr-3">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -381,43 +394,67 @@ function SolicitudesPagoTransportePage() {
                 <tr><td colSpan={10} className="py-6 text-center text-muted-foreground">Sin solicitudes</td></tr>
               ) : filtradas.map((r) => (
                 <tr key={r.id} className="border-b last:border-0">
-                  <td className="py-2 pr-3 font-mono">{r.numero_control}</td>
-                  <td className="py-2 pr-3">{r.transportista_nombre}</td>
-                  <td className="py-2 pr-3">
-                    {r.origen || r.destino
-                      ? `${r.origen ?? "—"} → ${r.destino ?? "—"}`
-                      : (r.referencia_viaje || "—")}
+                  <td className="py-1.5 pr-3 font-mono whitespace-nowrap">{r.numero_control}</td>
+                  <td className="py-1.5 pr-3"><span className="block max-w-[180px] truncate" title={r.transportista_nombre}>{r.transportista_nombre}</span></td>
+                  <td className="py-1.5 pr-3">
+                    <span className="block max-w-[200px] truncate whitespace-nowrap" title={r.origen || r.destino ? `${r.origen ?? "—"} → ${r.destino ?? "—"}` : (r.referencia_viaje || "")}>
+                      {r.origen || r.destino
+                        ? `${r.origen ?? "—"} → ${r.destino ?? "—"}`
+                        : (r.referencia_viaje || "—")}
+                    </span>
                   </td>
-                  <td className="py-2 pr-3 text-right">{fmtMoney(Number(r.monto), r.moneda)}</td>
-                  <td className="py-2 pr-3 text-right">{r.cantidad_viajes ?? 1}</td>
-                  <td className="py-2 pr-3">{r.moneda}</td>
-                  <td className="py-2 pr-3">{fmtLocalDate(r.created_at)}</td>
-                  <td className="py-2 pr-3">
+                  <td className="py-1.5 pr-3 text-right whitespace-nowrap">{fmtMoney(Number(r.monto), r.moneda)}</td>
+                  <td className="py-1.5 pr-3 text-right">{r.cantidad_viajes ?? 1}</td>
+                  <td className="py-1.5 pr-3">{r.moneda}</td>
+                  <td className="py-1.5 pr-3 whitespace-nowrap">{fmtLocalDate(r.created_at)}</td>
+                  <td className="py-1.5 pr-3">
                     {r.estado === "vinculada" ? (
                       <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Vinculada</Badge>
                     ) : (
                       <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Pendiente</Badge>
                     )}
                   </td>
-                  <td className="py-2 pr-3">
-                    <div className="flex flex-wrap items-center gap-1">
-                      {(transportesPorSolicitud[r.id] ?? []).map((t) => (
-                        <Link
-                          key={t.id}
-                          to="/transportes/$id"
-                          params={{ id: t.id }}
-                          title={`Ir al transporte ${t.numero_viaje}`}
-                          className="rounded-md border bg-primary/10 px-1.5 py-0.5 font-mono text-xs font-medium text-primary hover:bg-primary/20"
-                        >
-                          {t.numero_viaje}
-                        </Link>
-                      ))}
-                      {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </div>
+                  <td className="py-1.5 pr-3">
+                    {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      <div className="flex flex-nowrap items-center gap-1">
+                        {agruparTransportes(transportesPorSolicitud[r.id] ?? []).map(([base, items]) =>
+                          items.length === 1 ? (
+                            <Link
+                              key={base}
+                              to="/transportes/$id"
+                              params={{ id: items[0].id }}
+                              title={`Ir al transporte ${items[0].numero_viaje}`}
+                              className="rounded-md border bg-primary/10 px-1.5 py-0.5 font-mono text-xs font-medium text-primary hover:bg-primary/20 whitespace-nowrap"
+                            >
+                              {items[0].numero_viaje}
+                            </Link>
+                          ) : (
+                            <DropdownMenu key={base}>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  title={`Ver los ${items.length} transportes de ${base}`}
+                                  className="inline-flex items-center gap-1 rounded-md border bg-primary/10 px-1.5 py-0.5 font-mono text-xs font-medium text-primary hover:bg-primary/20 whitespace-nowrap"
+                                >
+                                  {base} <span className="rounded-full bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground">{items.length}</span>
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start">
+                                {items.map((t) => (
+                                  <DropdownMenuItem key={t.id} asChild>
+                                    <Link to="/transportes/$id" params={{ id: t.id }} className="font-mono">{t.numero_viaje}</Link>
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )
+                        )}
+                      </div>
+                    )}
                   </td>
-                  <td className="py-2 pr-3">
+                  <td className="py-1.5 pr-3">
                     <div className="flex flex-nowrap items-center gap-1">
                       {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
                         <Button variant="outline" size="sm" onClick={() => abrirEdicion(r)} title="Editar">
