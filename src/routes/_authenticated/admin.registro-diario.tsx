@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -353,10 +353,10 @@ function VistaMes({ desde, hasta, filas }: { desde: Date; hasta: Date; filas: Fi
       <Encabezado />
       <tbody>
         {semanas.map((s) => (
-          <>
-            <FragmentoGrupo key={s.label} label={s.label} filas={s.filas} />
-            {s.filas.length > 0 && <FilaTotal key={`${s.label}-t`} label={`Total ${s.label.toLowerCase()}`} filas={s.filas} />}
-          </>
+          <Fragment key={s.label}>
+            <FragmentoGrupo label={s.label} filas={s.filas} />
+            {s.filas.length > 0 && <FilaTotal label={`Total ${s.label.toLowerCase()}`} filas={s.filas} />}
+          </Fragment>
         ))}
         <FilaTotal label="Total del mes" filas={filas} fuerte />
       </tbody>
@@ -373,10 +373,10 @@ function VistaAnio({ anio, filas }: { anio: number; filas: Fila[] }) {
           const pref = `${anio}-${String(i + 1).padStart(2, "0")}`;
           const delMes = filas.filter((f) => f.fecha.startsWith(pref));
           return (
-            <>
-              <FragmentoGrupo key={pref} label={`${m} ${anio}`} filas={delMes} />
-              {delMes.length > 0 && <FilaTotal key={`${pref}-t`} label={`Total ${m}`} filas={delMes} />}
-            </>
+            <Fragment key={pref}>
+              <FragmentoGrupo label={`${m} ${anio}`} filas={delMes} />
+              {delMes.length > 0 && <FilaTotal label={`Total ${m}`} filas={delMes} />}
+            </Fragment>
           );
         })}
         <FilaTotal label="Total del año" filas={filas} fuerte />
