@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck } from "lucide-react";
+import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ function KPI({ icon: Icon, label, value, tone = "primary", sub }: any) {
 }
 
 function Dashboard() {
+  const qc = useQueryClient();
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
@@ -86,9 +88,19 @@ function Dashboard() {
 
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
-      <div>
+      <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold">Panel de operaciones</h1>
-        <p className="text-sm text-muted-foreground">Estado general de cotizaciones, expedientes y alertas críticas.</p>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+            qc.invalidateQueries({ queryKey: ["reminders"] });
+            toast.success("Actualizado");
+          }}
+        >
+          <RefreshCw className="h-4 w-4 mr-1" /> Refrescar
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
