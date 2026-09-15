@@ -175,6 +175,7 @@ function SolicitudesPagoTransportePage() {
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [eliminando, setEliminando] = useState<Row | null>(null);
   const [pdfId, setPdfId] = useState<string | null>(null);
+  const [consultando, setConsultando] = useState<Row | null>(null);
 
   const abrirNueva = () => {
     setForm({
@@ -400,7 +401,16 @@ function SolicitudesPagoTransportePage() {
               ) : filtradas.map((r) => (
                 <tr key={r.id} className="border-b last:border-0">
                   <td className="py-1.5 pr-3 whitespace-nowrap">{fmtLocalDate(r.created_at)}</td>
-                  <td className="py-1.5 pr-3 font-mono whitespace-nowrap">{r.numero_control}</td>
+<td className="py-1.5 pr-3 font-mono whitespace-nowrap">
+                    <button
+                      type="button"
+                      className="underline decoration-dotted underline-offset-2 hover:text-primary"
+                      title="Ver solicitud (consulta)"
+                      onClick={() => setConsultando(r)}
+                    >
+                      {r.numero_control}
+                    </button>
+                  </td>
                   <td className="py-1.5 pr-3"><span className="block max-w-[180px] truncate" title={r.transportista_nombre}>{r.transportista_nombre}</span></td>
                   <td className="py-1.5 pr-3">
                     <span className="block max-w-[200px] truncate whitespace-nowrap" title={r.origen || r.destino ? `${r.origen ?? "—"} → ${r.destino ?? "—"}` : (r.referencia_viaje || "")}>
@@ -674,6 +684,104 @@ function SolicitudesPagoTransportePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!consultando} onOpenChange={(o) => !o && setConsultando(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Solicitud {consultando?.numero_control}</DialogTitle>
+            <DialogDescription>
+              Vista de consulta (solo lectura){consultando?.estado === "vinculada" ? " — solicitud ya vinculada a transporte" : ""}.
+            </DialogDescription>
+          </DialogHeader>
+          {consultando && (() => {
+            const r = consultando;
+            const cantidad = r.cantidad_viajes != null ? Number(r.cantidad_viajes) : null;
+            const precio = r.precio_viaje != null ? Number(r.precio_viaje) : null;
+            const margen = r.porcentaje_margen != null ? Number(r.porcentaje_margen) : null;
+            const facturar = cantidad != null && precio != null ? cantidad * precio : null;
+            const cliente = (clientes as any[]).find((c) => c.id === r.cliente_id);
+            const transportes = transportesPorSolicitud[r.id] ?? [];
+            const Item = ({ label, children }: { label: string; children: React.ReactNode }) => (
+              <div>
+                <div className="text-xs text-muted-foreground">{label}</div>
+                <div className="text-sm font-medium">{children}</div>
+              </div>
+            );
+            return (
+              <div className="grid gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <Item label="Fecha creada">{fmtLocalDate(r.created_at)}</Item>
+                  <Item label="Estado">{r.estado === "vinculada" ? "Vinculada" : r.estado === "anulada" ? "Anulada" : "Pendiente"}</Item>
+                  <Item label="Cliente">{cliente?.nombre ?? "—"}</Item>
+                  <Item label="Moneda">{r.moneda}</Item>
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <Item label="Transportista">{r.transportista_nombre}</Item>
+                  <Item label="RNC / Cédula">{r.transportista_rnc ?? "—"}</Item>
+                  <Item label="Teléfono">{r.telefono ?? "—"}</Item>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Item label="Ruta">{r.origen || r.destino ? `${r.origen ?? "—"} → ${r.destino ?? "—"}` : (r.referencia_viaje ?? "—")}</Item>
+                  <Item label="Contenedor(es)">{r.placa_contenedor ?? "—"}</Item>
+                </div>
+                <div className="rounded-md border bg-muted/40 p-3">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <Item label="Cantidad de viajes">{cantidad ?? 1}</Item>
+                    <Item label="Precio por viaje">{precio != null ? fmtMoney(precio, r.moneda) : "—"}</Item>
+                    <Item label="% Margen">{margen != null ? `${margen}%` : "—"}</Item>
+                    <Item label="Monto a facturar">{facturar != null ? fmtMoney(facturar, r.moneda) : "—"}</Item>
+                    <Item label="Costo del viaje">{fmtMoney(Number(r.monto), r.moneda)}</Item>
+                    <Item label="Descuento CxC">{fmtMoney(Number(r.descuento_cxc ?? 0), r.moneda)}</Item>
+                    <Item label="Neto a pagar"><span className="font-bold">{fmtMoney(netoDeSolicitud(r), r.moneda)}</span></Item>
+                    <Item label="Factura de costo">
+                      {r.factura_costo_numero ? `${r.factura_costo_numero}${r.factura_costo_fecha ? ` — ${fmtLocalDate(r.factura_costo_fecha)}` : ""}` : "—"}
+                    </Item>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <Item label="Fecha de salida">{r.fecha_salida ? fmtLocalDate(r.fecha_salida) : "—"}</Item>
+                  <Item label="Fecha de entrega (ETA)">{r.eta ? fmtLocalDate(r.eta) : "—"}</Item>
+                  <Item label="Estado del transporte">{ESTADOS_TRANSPORTE.find((e) => e.v === r.estado_transporte)?.l ?? "—"}</Item>
+                </div>
+                {transportes.length > 0 && (
+                  <div>
+                    <div className="text-xs text-muted-foreground">Transporte(s) vinculado(s)</div>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {transportes.map((t: any) => (
+                        <Link
+                          key={t.id}
+                          to="/transportes/$id"
+                          params={{ id: t.id }}
+                          className="rounded-md border px-2 py-1 font-mono text-xs hover:bg-accent"
+                        >
+                          {t.numero_viaje}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {r.descripcion && (
+                  <div>
+                    <div className="text-xs text-muted-foreground">Descripción</div>
+                    <div className="whitespace-pre-wrap text-sm">{r.descripcion}</div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (consultando) setPdfId(consultando.id);
+              }}
+            >
+              <Printer className="mr-1 h-4 w-4" /> Ver comprobante
+            </Button>
+            <Button variant="outline" onClick={() => setConsultando(null)}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <SolicitudPagoPdfDialog id={pdfId} open={!!pdfId} onOpenChange={(o) => !o && setPdfId(null)} />
 
