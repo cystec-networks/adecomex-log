@@ -375,16 +375,16 @@ function SolicitudesPagoTransportePage() {
           <table className="w-full text-sm">
             <thead className="sticky-table-header">
               <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                <th className="py-2 pr-3">Número de control</th>
-                <th className="py-2 pr-3">Transportista</th>
-                <th className="py-2 pr-3">Ruta</th>
-                <th className="py-2 pr-3 text-right">Monto</th>
-                <th className="py-2 pr-3 text-right">Cantidad</th>
-                <th className="py-2 pr-3">Moneda</th>
-                <th className="py-2 pr-3">Creada</th>
-                <th className="py-2 pr-3">Estado</th>
-                <th className="py-2 pr-3">Transportes</th>
-                <th className="py-2 pr-3">Acciones</th>
+                <th className="py-1.5 pr-3">Número de control</th>
+                <th className="py-1.5 pr-3">Transportista</th>
+                <th className="py-1.5 pr-3">Ruta</th>
+                <th className="py-1.5 pr-3 text-right">Monto</th>
+                <th className="py-1.5 pr-3 text-right">Cantidad</th>
+                <th className="py-1.5 pr-3">Moneda</th>
+                <th className="py-1.5 pr-3">Creada</th>
+                <th className="py-1.5 pr-3">Estado</th>
+                <th className="py-1.5 pr-3">Transportes</th>
+                <th className="py-1.5 pr-3">Acciones</th>
               </tr>
             </thead>
             <tbody>
