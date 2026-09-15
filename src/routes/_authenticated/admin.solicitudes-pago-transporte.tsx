@@ -364,13 +364,13 @@ function SolicitudesPagoTransportePage() {
               <tr className="border-b text-left text-xs uppercase text-muted-foreground">
                 <th className="py-2 pr-3">Número de control</th>
                 <th className="py-2 pr-3">Transportista</th>
-                <th className="py-2 pr-3">RNC</th>
-                <th className="py-2 pr-3">Teléfono</th>
+                <th className="py-2 pr-3">Ruta</th>
                 <th className="py-2 pr-3 text-right">Monto</th>
                 <th className="py-2 pr-3 text-right">Cantidad</th>
                 <th className="py-2 pr-3">Moneda</th>
                 <th className="py-2 pr-3">Creada</th>
                 <th className="py-2 pr-3">Estado</th>
+                <th className="py-2 pr-3">Transportes</th>
                 <th className="py-2 pr-3">Acciones</th>
               </tr>
             </thead>
@@ -383,12 +383,14 @@ function SolicitudesPagoTransportePage() {
                 <tr key={r.id} className="border-b last:border-0">
                   <td className="py-2 pr-3 font-mono">{r.numero_control}</td>
                   <td className="py-2 pr-3">{r.transportista_nombre}</td>
-                  <td className="py-2 pr-3">{r.transportista_rnc || "—"}</td>
-                  <td className="py-2 pr-3">{r.telefono || "—"}</td>
+                  <td className="py-2 pr-3">
+                    {r.origen || r.destino
+                      ? `${r.origen ?? "—"} → ${r.destino ?? "—"}`
+                      : (r.referencia_viaje || "—")}
+                  </td>
                   <td className="py-2 pr-3 text-right">{fmtMoney(Number(r.monto), r.moneda)}</td>
                   <td className="py-2 pr-3 text-right">{r.cantidad_viajes ?? 1}</td>
                   <td className="py-2 pr-3">{r.moneda}</td>
-                  
                   <td className="py-2 pr-3">{fmtLocalDate(r.created_at)}</td>
                   <td className="py-2 pr-3">
                     {r.estado === "vinculada" ? (
