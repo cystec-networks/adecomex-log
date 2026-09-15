@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { REMINDER_CONFIG } from "./reminder-config";
 
@@ -28,36 +28,77 @@ export type Reminder = {
 
 const DISMISSED_KEY = "adecomex:reminders:dismissed";
 
-function loadDismissed(): Set<string> {
-  if (typeof window === "undefined") return new Set();
-  try {
-    const raw = localStorage.getItem(DISMISSED_KEY);
-    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
-  } catch {
-    return new Set();
-  }
+const DISMISSED_QK = ["recordatorios-descartados"] as const;
+
+async function currentUserId(): Promise<string | null> {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? null;
 }
 
-function saveDismissed(set: Set<string>) {
+// Migra una sola vez lo descartado en localStorage hacia la tabla (por usuario).
+async function migrateLocalStorageDismissed(userId: string) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(DISMISSED_KEY, JSON.stringify([...set]));
+  const raw = localStorage.getItem(DISMISSED_KEY);
+  if (!raw) return;
+  try {
+    const ids = (JSON.parse(raw) as string[]).filter((s) => typeof s === "string" && s.length > 0);
+    if (ids.length > 0) {
+      await supabase
+        .from("recordatorios_descartados")
+        .upsert(ids.map((reminder_id) => ({ user_id: userId, reminder_id })), {
+          onConflict: "user_id,reminder_id",
+          ignoreDuplicates: true,
+        });
+    }
+  } catch {
+    // JSON corrupto: igual se limpia abajo.
+  }
+  localStorage.removeItem(DISMISSED_KEY);
 }
 
 export function useDismissedReminders() {
-  const [dismissed, setDismissed] = useState<Set<string>>(() => loadDismissed());
-  const dismiss = (id: string) => {
-    setDismissed((prev) => {
-      const next = new Set(prev);
-      next.add(id);
-      saveDismissed(next);
-      return next;
-    });
+  const qc = useQueryClient();
+  const migrated = useRef(false);
+
+  const { data: dismissedRows } = useQuery({
+    queryKey: DISMISSED_QK,
+    queryFn: async () => {
+      const userId = await currentUserId();
+      if (userId && !migrated.current) {
+        migrated.current = true;
+        await migrateLocalStorageDismissed(userId);
+      }
+      return (await supabase.from("recordatorios_descartados").select("reminder_id")).data ?? [];
+    },
+  });
+
+  const dismissed = new Set((dismissedRows ?? []).map((r) => r.reminder_id));
+
+  const dismissMut = useMutation({
+    mutationFn: async (id: string) => {
+      const userId = await currentUserId();
+      if (!userId) return;
+      await supabase
+        .from("recordatorios_descartados")
+        .upsert({ user_id: userId, reminder_id: id }, { onConflict: "user_id,reminder_id", ignoreDuplicates: true });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: DISMISSED_QK }),
+  });
+
+  const clearAllMut = useMutation({
+    mutationFn: async () => {
+      const userId = await currentUserId();
+      if (!userId) return;
+      await supabase.from("recordatorios_descartados").delete().eq("user_id", userId);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: DISMISSED_QK }),
+  });
+
+  return {
+    dismissed,
+    dismiss: (id: string) => dismissMut.mutate(id),
+    clearAll: () => clearAllMut.mutate(),
   };
-  const clearAll = () => {
-    setDismissed(new Set());
-    saveDismissed(new Set());
-  };
-  return { dismissed, dismiss, clearAll };
 }
 
 function daysBetween(a: Date, b: Date) {
@@ -357,17 +398,27 @@ export function useReminders() {
   const { dismissed, dismiss, clearAll } = useDismissedReminders();
   const visible = (query.data ?? []).filter((r) => !dismissed.has(r.id));
 
-  // Prune dismissed IDs that no longer exist (avoid unbounded growth)
+  // Limpia de la tabla los descartes de alertas que ya no existen (evita crecimiento sin límite)
+  const qc = useQueryClient();
+  const pruned = useRef(false);
   useEffect(() => {
-    if (!query.data) return;
+    if (!query.data || pruned.current) return;
     const alive = new Set(query.data.map((r) => r.id));
     const stale = [...dismissed].filter((id) => !alive.has(id));
-    if (stale.length > 0) {
-      const next = new Set([...dismissed].filter((id) => alive.has(id)));
-      saveDismissed(next);
-    }
+    if (stale.length === 0) return;
+    pruned.current = true;
+    void (async () => {
+      const userId = await currentUserId();
+      if (!userId) return;
+      await supabase
+        .from("recordatorios_descartados")
+        .delete()
+        .eq("user_id", userId)
+        .in("reminder_id", stale);
+      qc.invalidateQueries({ queryKey: DISMISSED_QK });
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query.data]);
+  }, [query.data, dismissed]);
 
   return { all: query.data ?? [], visible, dismiss, clearAll, isLoading: query.isLoading };
 }

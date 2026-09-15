@@ -5340,6 +5340,27 @@ export type Database = {
           },
         ]
       }
+      recordatorios_descartados: {
+        Row: {
+          created_at: string
+          id: string
+          reminder_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reminder_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reminder_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       solicitud_productos: {
         Row: {
           aplica_isc: boolean | null
