@@ -110,6 +110,11 @@ function SolicitudesPagoTransportePage() {
     },
   });
 
+  const { data: clientes = [] } = useQuery({
+    queryKey: ["clientes-lite"],
+    queryFn: async () => (await supabase.from("clientes").select("id,nombre").order("nombre")).data ?? [],
+  });
+
   const { data: vinculados = [] } = useQuery({
     queryKey: ["transportes-por-solicitud-pago", rows.map((r) => r.id).join(",")],
     enabled: rows.length > 0,
