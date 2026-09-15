@@ -399,6 +399,7 @@ export function useReminders() {
   const visible = (query.data ?? []).filter((r) => !dismissed.has(r.id));
 
   // Limpia de la tabla los descartes de alertas que ya no existen (evita crecimiento sin límite)
+  const qc = useQueryClient();
   const pruned = useRef(false);
   useEffect(() => {
     if (!query.data || pruned.current) return;
