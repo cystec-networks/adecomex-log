@@ -5548,6 +5548,62 @@ export type Database = {
           },
         ]
       }
+      solicitudes_pago_transferencia: {
+        Row: {
+          beneficiario: string
+          categoria: string
+          concepto: string
+          creado_por: string | null
+          created_at: string
+          descuento_cxc: number | null
+          eliminado_en: string | null
+          factura_compra: string | null
+          fecha: string
+          id: string
+          monto: number
+          secuencia: string
+          solicitud_transporte_id: string | null
+        }
+        Insert: {
+          beneficiario: string
+          categoria: string
+          concepto: string
+          creado_por?: string | null
+          created_at?: string
+          descuento_cxc?: number | null
+          eliminado_en?: string | null
+          factura_compra?: string | null
+          fecha?: string
+          id?: string
+          monto: number
+          secuencia?: string
+          solicitud_transporte_id?: string | null
+        }
+        Update: {
+          beneficiario?: string
+          categoria?: string
+          concepto?: string
+          creado_por?: string | null
+          created_at?: string
+          descuento_cxc?: number | null
+          eliminado_en?: string | null
+          factura_compra?: string | null
+          fecha?: string
+          id?: string
+          monto?: number
+          secuencia?: string
+          solicitud_transporte_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitudes_pago_transferencia_solicitud_transporte_id_fkey"
+            columns: ["solicitud_transporte_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes_pago_transporte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       solicitudes_pago_transporte: {
         Row: {
           cantidad_viajes: number
