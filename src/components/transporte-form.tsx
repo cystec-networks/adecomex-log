@@ -768,11 +768,21 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
           </Card>
 
           {/* Bloque B · Facturación al Cliente */}
-          <Card className="border-emerald-500/30">
+          {(() => {
+            const facturaVacia = !form.ingreso_facturado && !form.factura_numero;
+            const vinoDeConversion = !!(form.numero_control_pago ?? "").trim();
+            const pendiente = facturaVacia && vinoDeConversion;
+            return (
+          <Card className={pendiente ? "border-amber-400 border-2" : "border-emerald-500/30"}>
             <CardHeader className="pb-3 border-b">
               <CardTitle className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
                 Facturación al Cliente (Venta) · RD$
               </CardTitle>
+              {pendiente && (
+                <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                  Pendiente por completar: este transporte proviene de la solicitud de pago {form.numero_control_pago}.
+                </p>
+              )}
             </CardHeader>
             <CardContent className="pt-5 space-y-5">
               <div className="grid gap-1.5">

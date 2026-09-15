@@ -30,7 +30,11 @@ export const Route = createFileRoute("/api/public/solicitud-pago-transporte/$id"
           return Response.json({ error: "No encontrada" }, { status: 404, headers: CORS });
         }
 
-        return Response.json({ solicitud: data }, { headers: CORS });
+        const { clientes, ...rest } = data as any;
+        return Response.json(
+          { solicitud: { ...rest, cliente_nombre: clientes?.nombre ?? null } },
+          { headers: CORS },
+        );
       },
     },
   },
