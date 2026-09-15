@@ -364,13 +364,13 @@ function SolicitudesPagoTransportePage() {
               <tr className="border-b text-left text-xs uppercase text-muted-foreground">
                 <th className="py-2 pr-3">Número de control</th>
                 <th className="py-2 pr-3">Transportista</th>
-                <th className="py-2 pr-3">RNC</th>
-                <th className="py-2 pr-3">Teléfono</th>
+                <th className="py-2 pr-3">Ruta</th>
                 <th className="py-2 pr-3 text-right">Monto</th>
                 <th className="py-2 pr-3 text-right">Cantidad</th>
                 <th className="py-2 pr-3">Moneda</th>
                 <th className="py-2 pr-3">Creada</th>
                 <th className="py-2 pr-3">Estado</th>
+                <th className="py-2 pr-3">Transportes</th>
                 <th className="py-2 pr-3">Acciones</th>
               </tr>
             </thead>
@@ -383,12 +383,14 @@ function SolicitudesPagoTransportePage() {
                 <tr key={r.id} className="border-b last:border-0">
                   <td className="py-2 pr-3 font-mono">{r.numero_control}</td>
                   <td className="py-2 pr-3">{r.transportista_nombre}</td>
-                  <td className="py-2 pr-3">{r.transportista_rnc || "—"}</td>
-                  <td className="py-2 pr-3">{r.telefono || "—"}</td>
+                  <td className="py-2 pr-3">
+                    {r.origen || r.destino
+                      ? `${r.origen ?? "—"} → ${r.destino ?? "—"}`
+                      : (r.referencia_viaje || "—")}
+                  </td>
                   <td className="py-2 pr-3 text-right">{fmtMoney(Number(r.monto), r.moneda)}</td>
                   <td className="py-2 pr-3 text-right">{r.cantidad_viajes ?? 1}</td>
                   <td className="py-2 pr-3">{r.moneda}</td>
-                  
                   <td className="py-2 pr-3">{fmtLocalDate(r.created_at)}</td>
                   <td className="py-2 pr-3">
                     {r.estado === "vinculada" ? (
@@ -398,33 +400,23 @@ function SolicitudesPagoTransportePage() {
                     )}
                   </td>
                   <td className="py-2 pr-3">
-                    <div className="flex flex-nowrap items-center gap-1">
-                      {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
-                        <Button variant="outline" size="sm" onClick={() => abrirEdicion(r)} title="Editar">
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                      <Button variant="outline" size="sm" onClick={() => setPdfId(r.id)} title="Ver comprobante PDF">
-                        <Printer className="h-3.5 w-3.5" />
-                      </Button>
+                    <div className="flex flex-wrap items-center gap-1">
                       {(transportesPorSolicitud[r.id] ?? []).map((t) => (
-                        <Button key={t.id} variant="outline" size="sm" asChild title={t.numero_viaje}>
-                          <Link to="/transportes/$id" params={{ id: t.id }}>
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </Link>
-                        </Button>
+                        <Link
+                          key={t.id}
+                          to="/transportes/$id"
+                          params={{ id: t.id }}
+                          title={`Ir al transporte ${t.numero_viaje}`}
+                          className="rounded-md border bg-primary/10 px-1.5 py-0.5 font-mono text-xs font-medium text-primary hover:bg-primary/20"
+                        >
+                          {t.numero_viaje}
+                        </Link>
                       ))}
                       {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => setEliminando(r)}
-                          title="Eliminar"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <span className="text-muted-foreground">—</span>
                       )}
+                    </div>
+                  </td>
                       <Button
                         size="sm"
                         disabled={convertir.isPending}
