@@ -78,6 +78,18 @@ const ESTADOS_TRANSPORTE = [
   { v: "retrasado", l: "Retrasado" },
 ];
 
+const SIN_CLIENTE = "__none__";
+
+const netoDeSolicitud = (r: Row) => {
+  const cantidad = r.cantidad_viajes != null ? Number(r.cantidad_viajes) : null;
+  const precio = r.precio_viaje != null ? Number(r.precio_viaje) : null;
+  const margen = r.porcentaje_margen != null ? Number(r.porcentaje_margen) : null;
+  const facturar = cantidad != null && precio != null ? cantidad * precio : null;
+  const costoCalculado = facturar != null && margen != null ? facturar * (1 - margen / 100) : null;
+  const costoFinal = costoCalculado ?? Number(r.monto || 0);
+  return Number((costoFinal - Number(r.descuento_cxc || 0)).toFixed(2));
+};
+
 
 const fmtMoney = (n: number, m: string) =>
   `${m === "USD" ? "US$" : m === "EUR" ? "€" : "RD$"} ${(n || 0).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
