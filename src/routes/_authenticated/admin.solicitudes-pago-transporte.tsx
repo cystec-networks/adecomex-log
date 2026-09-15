@@ -173,6 +173,7 @@ function SolicitudesPagoTransportePage() {
     cliente_id: "", fecha_salida: "", eta: "", estado_transporte: "programado",
   });
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const [soloFinanzas, setSoloFinanzas] = useState(false);
   const [eliminando, setEliminando] = useState<Row | null>(null);
   const [pdfId, setPdfId] = useState<string | null>(null);
   const [consultando, setConsultando] = useState<Row | null>(null);
