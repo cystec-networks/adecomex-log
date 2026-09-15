@@ -398,17 +398,26 @@ export function useReminders() {
   const { dismissed, dismiss, clearAll } = useDismissedReminders();
   const visible = (query.data ?? []).filter((r) => !dismissed.has(r.id));
 
-  // Prune dismissed IDs that no longer exist (avoid unbounded growth)
+  // Limpia de la tabla los descartes de alertas que ya no existen (evita crecimiento sin límite)
+  const pruned = useRef(false);
   useEffect(() => {
-    if (!query.data) return;
+    if (!query.data || pruned.current) return;
     const alive = new Set(query.data.map((r) => r.id));
     const stale = [...dismissed].filter((id) => !alive.has(id));
-    if (stale.length > 0) {
-      const next = new Set([...dismissed].filter((id) => alive.has(id)));
-      saveDismissed(next);
-    }
+    if (stale.length === 0) return;
+    pruned.current = true;
+    void (async () => {
+      const userId = await currentUserId();
+      if (!userId) return;
+      await supabase
+        .from("recordatorios_descartados")
+        .delete()
+        .eq("user_id", userId)
+        .in("reminder_id", stale);
+      qc.invalidateQueries({ queryKey: DISMISSED_QK });
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query.data]);
+  }, [query.data, dismissed]);
 
   return { all: query.data ?? [], visible, dismiss, clearAll, isLoading: query.isLoading };
 }
