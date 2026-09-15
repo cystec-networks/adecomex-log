@@ -186,10 +186,12 @@ function SolicitudesPagoTransportePage() {
       moneda: "DOP", descripcion: "",
       cliente_id: "", fecha_salida: "", eta: "", estado_transporte: "programado",
     });
+    setSoloFinanzas(false);
     setEditing("new");
   };
 
-  const abrirEdicion = (r: Row) => {
+  const abrirEdicion = (r: Row, reducida = false) => {
+    setSoloFinanzas(reducida);
     setEditing(r);
     setForm({
       transportista_nombre: r.transportista_nombre ?? "",
