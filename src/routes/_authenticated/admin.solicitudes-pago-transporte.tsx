@@ -16,7 +16,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Copy, ExternalLink, MoreVertical, Pencil, Printer, Trash2, Truck } from "lucide-react";
+import { Copy, ExternalLink, Pencil, Printer, Trash2, Truck } from "lucide-react";
 import { fmtLocalDate } from "@/lib/dates";
 import { sanitizeSearchTerm } from "@/lib/search-filter";
 import { cn } from "@/lib/utils";
