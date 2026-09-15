@@ -8,6 +8,8 @@ export type SolicitudPagoPrintData = {
   referencia_viaje?: string | null;
   placa_contenedor?: string | null;
   cantidad_viajes?: number | null;
+  precio_viaje?: number | null;
+  porcentaje_margen?: number | null;
   monto: number;
   descuento_cxc?: number | null;
   factura_costo_numero?: string | null;
@@ -86,19 +88,44 @@ export function SolicitudPagoPrintView({ solicitud }: { solicitud: SolicitudPago
             </div>
             <Campo label="Cantidad de viajes" value={cant} />
             <div className="col-span-2">
-              {(s.descuento_cxc ?? 0) > 0 ? (
-                <div className="space-y-1">
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Desglose del pago</div>
-                  <div className="grid grid-cols-2 gap-x-2 text-xs">
-                    <span className="text-muted-foreground">Costo del Viaje</span>
-                    <span className="text-right font-medium">{fmtMoney(Number(s.monto), s.moneda)}</span>
-                    <span className="text-muted-foreground">Descuento por CxC</span>
-                    <span className="text-right font-medium text-destructive">-{fmtMoney(Number(s.descuento_cxc), s.moneda)}</span>
-                    <span className="font-semibold">Monto Neto a Pagar</span>
-                    <span className="text-right font-bold">{fmtMoney(Number(s.monto) - Number(s.descuento_cxc), s.moneda)}</span>
+              {(() => {
+                const hayMargen = s.cantidad_viajes != null && s.precio_viaje != null;
+                const montoFacturar = hayMargen ? Number(s.cantidad_viajes) * Number(s.precio_viaje) : null;
+                const costoCalc = montoFacturar != null && s.porcentaje_margen != null
+                  ? montoFacturar * (1 - Number(s.porcentaje_margen) / 100)
+                  : null;
+                const costoFinal = costoCalc ?? Number(s.monto);
+                const descuento = Number(s.descuento_cxc ?? 0);
+                const neto = costoFinal - descuento;
+                return hayMargen || descuento > 0 ? (
+                  <div className="space-y-1">
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Desglose del pago</div>
+                    <div className="grid grid-cols-2 gap-x-2 text-xs">
+                      {hayMargen ? (
+                        <>
+                          <span className="text-muted-foreground">Cantidad de Viajes</span>
+                          <span className="text-right font-medium">{Number(s.cantidad_viajes)}</span>
+                          <span className="text-muted-foreground">Precio por Viaje</span>
+                          <span className="text-right font-medium">{fmtMoney(Number(s.precio_viaje), s.moneda)}</span>
+                          <span className="text-muted-foreground">Monto a Facturar al Cliente</span>
+                          <span className="text-right font-medium">{fmtMoney(Number(montoFacturar), s.moneda)}</span>
+                          <span className="text-muted-foreground">% Margen de Ganancia</span>
+                          <span className="text-right font-medium">{Number(s.porcentaje_margen ?? 0)}%</span>
+                        </>
+                      ) : null}
+                      <span className="text-muted-foreground">Costo del Viaje</span>
+                      <span className="text-right font-medium">{fmtMoney(costoFinal, s.moneda)}</span>
+                      {descuento > 0 ? (
+                        <>
+                          <span className="text-muted-foreground">Descuento por CxC</span>
+                          <span className="text-right font-medium text-destructive">-{fmtMoney(descuento, s.moneda)}</span>
+                        </>
+                      ) : null}
+                      <span className="font-semibold">Monto Neto a Pagar</span>
+                      <span className="text-right font-bold">{fmtMoney(neto, s.moneda)}</span>
+                    </div>
                   </div>
-                </div>
-              ) : (
+                ) : (
                 <>
                   <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Monto total</div>
                   <div className="text-sm font-bold">{fmtMoney(Number(s.monto), s.moneda)}</div>
