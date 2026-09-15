@@ -56,6 +56,8 @@ type Row = {
   factura_costo_numero: string | null;
   factura_costo_fecha: string | null;
   cantidad_viajes: number | null;
+  precio_viaje: number | null;
+  porcentaje_margen: number | null;
   moneda: string;
   referencia_viaje: string | null;
   placa_contenedor: string | null;
@@ -142,6 +144,7 @@ function SolicitudesPagoTransportePage() {
   const [form, setForm] = useState({
     transportista_nombre: "", transportista_rnc: "", telefono: "",
     monto: "", descuento_cxc: "", factura_costo_numero: "", factura_costo_fecha: "",
+    cantidad_viajes: "", precio_viaje: "", porcentaje_margen: "",
     moneda: "DOP", referencia_viaje: "", descripcion: "",
   });
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -158,6 +161,9 @@ function SolicitudesPagoTransportePage() {
       descuento_cxc: r.descuento_cxc != null ? String(r.descuento_cxc) : "",
       factura_costo_numero: r.factura_costo_numero ?? "",
       factura_costo_fecha: r.factura_costo_fecha ?? "",
+      cantidad_viajes: r.cantidad_viajes != null ? String(r.cantidad_viajes) : "",
+      precio_viaje: r.precio_viaje != null ? String(r.precio_viaje) : "",
+      porcentaje_margen: r.porcentaje_margen != null ? String(r.porcentaje_margen) : "",
       moneda: r.moneda ?? "DOP",
       referencia_viaje: r.referencia_viaje ?? "",
       descripcion: r.descripcion ?? "",
@@ -172,6 +178,13 @@ function SolicitudesPagoTransportePage() {
       if (!form.transportista_nombre.trim()) throw new Error("Indica el nombre del transportista");
       if (!Number.isFinite(monto) || monto <= 0) throw new Error("Indica un monto mayor a 0");
       if (!Number.isFinite(descuento_cxc) || descuento_cxc < 0) throw new Error("El descuento por CxC no puede ser negativo");
+      const numOrNull = (v: string) => (v === "" ? null : Number(v));
+      const cantidad_viajes = numOrNull(form.cantidad_viajes);
+      const precio_viaje = numOrNull(form.precio_viaje);
+      const porcentaje_margen = numOrNull(form.porcentaje_margen);
+      if (cantidad_viajes != null && (!Number.isFinite(cantidad_viajes) || cantidad_viajes <= 0)) throw new Error("La cantidad de viajes debe ser mayor a 0");
+      if (precio_viaje != null && (!Number.isFinite(precio_viaje) || precio_viaje < 0)) throw new Error("El precio por viaje no puede ser negativo");
+      if (porcentaje_margen != null && (!Number.isFinite(porcentaje_margen) || porcentaje_margen < 0 || porcentaje_margen > 100)) throw new Error("El % de margen debe estar entre 0 y 100");
       const { error } = await supabase
         .from("solicitudes_pago_transporte")
         .update({
@@ -182,6 +195,9 @@ function SolicitudesPagoTransportePage() {
           descuento_cxc,
           factura_costo_numero: form.factura_costo_numero.trim() || null,
           factura_costo_fecha: form.factura_costo_fecha || null,
+          cantidad_viajes: cantidad_viajes ?? undefined,
+          precio_viaje,
+          porcentaje_margen,
           moneda: form.moneda,
           referencia_viaje: form.referencia_viaje.trim() || null,
           descripcion: form.descripcion.trim() || null,
@@ -425,23 +441,83 @@ function SolicitudesPagoTransportePage() {
               <Label>Fecha de Factura de Costo</Label>
               <Input type="date" value={form.factura_costo_fecha} onChange={(e) => setF("factura_costo_fecha", e.target.value)} />
             </div>
-            <div className="grid gap-1.5 sm:col-span-2">
-              <Label>Monto Neto a Pagar</Label>
-              <div className={cn(
-                "rounded-md border px-3 py-2 text-sm font-semibold",
-                (Number(form.monto) || 0) - (form.descuento_cxc === "" ? 0 : Number(form.descuento_cxc)) >= 0
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                  : "bg-destructive/10 text-destructive border-destructive/30"
-              )}>
-                {fmtMoney(
-                  (Number(form.monto) || 0) - (form.descuento_cxc === "" ? 0 : Number(form.descuento_cxc)),
-                  form.moneda,
-                )}
-              </div>
-              {(Number(form.descuento_cxc) || 0) > (Number(form.monto) || 0) && (
-                <p className="text-xs text-destructive">El descuento supera el costo del viaje. Revisa antes de aprobar.</p>
-              )}
+            <div className="grid gap-1.5">
+              <Label>Cantidad de Viajes</Label>
+              <Input
+                inputMode="decimal"
+                value={form.cantidad_viajes}
+                onChange={(e) => {
+                  const v = e.target.value.replace(",", ".");
+                  if (v === "" || /^\d*\.?\d*$/.test(v)) setF("cantidad_viajes", v);
+                }}
+              />
             </div>
+            <div className="grid gap-1.5">
+              <Label>Precio por Viaje</Label>
+              <Input
+                inputMode="decimal"
+                value={form.precio_viaje}
+                onChange={(e) => {
+                  const v = e.target.value.replace(",", ".");
+                  if (v === "" || /^\d*\.?\d*$/.test(v)) setF("precio_viaje", v);
+                }}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>% Margen de Ganancia</Label>
+              <Input
+                inputMode="decimal"
+                value={form.porcentaje_margen}
+                onChange={(e) => {
+                  const v = e.target.value.replace(",", ".");
+                  if (v === "" || /^\d*\.?\d*$/.test(v)) setF("porcentaje_margen", v);
+                }}
+              />
+            </div>
+            {(() => {
+              const cantidad = form.cantidad_viajes === "" ? null : Number(form.cantidad_viajes);
+              const precio = form.precio_viaje === "" ? null : Number(form.precio_viaje);
+              const margen = form.porcentaje_margen === "" ? null : Number(form.porcentaje_margen);
+              const montoFacturarCliente = cantidad != null && precio != null ? cantidad * precio : null;
+              const costoViajeCalculado = montoFacturarCliente != null && margen != null
+                ? montoFacturarCliente * (1 - margen / 100)
+                : null;
+              const costoViajeFinal = costoViajeCalculado ?? (Number(form.monto) || 0);
+              const descuento = form.descuento_cxc === "" ? 0 : Number(form.descuento_cxc);
+              const montoNeto = costoViajeFinal - descuento;
+              return (
+                <>
+                  {montoFacturarCliente != null && (
+                    <div className="grid gap-1.5 sm:col-span-2">
+                      <Label>Monto a Facturar al Cliente</Label>
+                      <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-semibold">
+                        {fmtMoney(montoFacturarCliente, form.moneda)}
+                      </div>
+                    </div>
+                  )}
+                  <div className="grid gap-1.5 sm:col-span-2">
+                    <Label>{costoViajeCalculado != null ? "Costo del Viaje (calculado)" : "Costo del Viaje (solicitado)"}</Label>
+                    <div className="rounded-md border px-3 py-2 text-sm font-medium">
+                      {fmtMoney(costoViajeFinal, form.moneda)}
+                    </div>
+                  </div>
+                  <div className="grid gap-1.5 sm:col-span-2">
+                    <Label>Monto Neto a Pagar</Label>
+                    <div className={cn(
+                      "rounded-md border px-3 py-2 text-sm font-semibold",
+                      montoNeto >= 0
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-destructive/10 text-destructive border-destructive/30"
+                    )}>
+                      {fmtMoney(montoNeto, form.moneda)}
+                    </div>
+                    {descuento > costoViajeFinal && (
+                      <p className="text-xs text-destructive">El descuento supera el costo del viaje. Revisa antes de aprobar.</p>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
             <div className="grid gap-1.5 sm:col-span-2">
               <Label>Referencia del viaje</Label>
               <Input value={form.referencia_viaje} maxLength={120} onChange={(e) => setF("referencia_viaje", e.target.value)} />

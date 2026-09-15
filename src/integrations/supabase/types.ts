@@ -5542,6 +5542,8 @@ export type Database = {
           monto: number
           numero_control: string | null
           placa_contenedor: string | null
+          porcentaje_margen: number | null
+          precio_viaje: number | null
           referencia_viaje: string | null
           telefono: string | null
           transporte_id: string | null
@@ -5562,6 +5564,8 @@ export type Database = {
           monto?: number
           numero_control?: string | null
           placa_contenedor?: string | null
+          porcentaje_margen?: number | null
+          precio_viaje?: number | null
           referencia_viaje?: string | null
           telefono?: string | null
           transporte_id?: string | null
@@ -5582,6 +5586,8 @@ export type Database = {
           monto?: number
           numero_control?: string | null
           placa_contenedor?: string | null
+          porcentaje_margen?: number | null
+          precio_viaje?: number | null
           referencia_viaje?: string | null
           telefono?: string | null
           transporte_id?: string | null

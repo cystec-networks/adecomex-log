@@ -21,7 +21,7 @@ export const Route = createFileRoute("/api/public/solicitud-pago-transporte/$id"
         const { data, error } = await (supabaseAdmin as any)
           .from("solicitudes_pago_transporte")
           .select(
-            "numero_control, transportista_nombre, transportista_rnc, telefono, referencia_viaje, placa_contenedor, cantidad_viajes, monto, descuento_cxc, factura_costo_numero, factura_costo_fecha, moneda, descripcion, created_at",
+            "numero_control, transportista_nombre, transportista_rnc, telefono, referencia_viaje, placa_contenedor, cantidad_viajes, precio_viaje, porcentaje_margen, monto, descuento_cxc, factura_costo_numero, factura_costo_fecha, moneda, descripcion, created_at",
           )
           .eq("id", parsed.data)
           .maybeSingle();
