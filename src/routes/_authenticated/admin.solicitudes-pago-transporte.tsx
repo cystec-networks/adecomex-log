@@ -16,7 +16,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Copy, ExternalLink, Pencil, Printer, Trash2, Truck } from "lucide-react";
+import { ExternalLink, Pencil, Printer, Trash2, Truck } from "lucide-react";
 import { fmtLocalDate } from "@/lib/dates";
 import { sanitizeSearchTerm } from "@/lib/search-filter";
 import { cn } from "@/lib/utils";
@@ -161,14 +161,6 @@ function SolicitudesPagoTransportePage() {
     return { pendientes: pendientes.length, vinculadas: vinculadas.length, porMoneda };
   }, [rows]);
 
-  const copiar = async (numero: string) => {
-    try {
-      await navigator.clipboard.writeText(numero);
-      toast.success(`Número ${numero} copiado`);
-    } catch {
-      toast.error("No se pudo copiar al portapapeles");
-    }
-  };
 
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Row | null>(null);
