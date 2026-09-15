@@ -699,6 +699,119 @@ function SolicitudesPagoTransportePage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!editing && soloFinanzas} onOpenChange={(o) => { if (!o) { setEditing(null); setSoloFinanzas(false); } }}>
+        <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Corregir cifras · {editing !== "new" ? editing?.numero_control : ""}</DialogTitle>
+            <DialogDescription>
+              Esta solicitud ya está vinculada a un transporte. Solo puedes corregir el cálculo financiero; el transporte vinculado se actualizará con el nuevo neto.
+            </DialogDescription>
+          </DialogHeader>
+          {editing && editing !== "new" && (
+            <div className="grid gap-4">
+              <div className="grid gap-2 rounded-md border bg-muted/40 p-3 text-sm sm:grid-cols-2">
+                <div><span className="text-muted-foreground">Transportista: </span><span className="font-medium">{editing.transportista_nombre}</span></div>
+                <div><span className="text-muted-foreground">Moneda: </span><span className="font-medium">{editing.moneda}</span></div>
+                <div><span className="text-muted-foreground">Ruta: </span><span className="font-medium">{[editing.origen, editing.destino].filter(Boolean).join(" → ") || "—"}</span></div>
+                <div><span className="text-muted-foreground">Cliente: </span><span className="font-medium">{clientes.find((c: any) => c.id === editing.cliente_id)?.nombre ?? "—"}</span></div>
+                <div><span className="text-muted-foreground">Salida: </span><span className="font-medium">{editing.fecha_salida ?? "—"}</span></div>
+                <div><span className="text-muted-foreground">ETA: </span><span className="font-medium">{editing.eta ?? "—"}</span></div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-1.5">
+                  <Label>Cantidad de Viajes</Label>
+                  <Input
+                    inputMode="numeric"
+                    value={form.cantidad_viajes}
+                    onChange={(e) => setF("cantidad_viajes", e.target.value.replace(/[^\d]/g, ""))}
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Precio por Viaje</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={form.precio_viaje}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(",", ".");
+                      if (v === "" || /^\d*\.?\d*$/.test(v)) setF("precio_viaje", v);
+                    }}
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>% Margen de Ganancia</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={form.porcentaje_margen}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(",", ".");
+                      if (v === "" || /^\d*\.?\d*$/.test(v)) setF("porcentaje_margen", v);
+                    }}
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Descuento por CxC</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={form.descuento_cxc}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(",", ".");
+                      if (v === "" || /^\d*\.?\d*$/.test(v)) setF("descuento_cxc", v);
+                    }}
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>N° de Factura de Costo</Label>
+                  <Input value={form.factura_costo_numero} maxLength={50} onChange={(e) => setF("factura_costo_numero", e.target.value)} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Fecha de Factura de Costo</Label>
+                  <Input type="date" value={form.factura_costo_fecha} onChange={(e) => setF("factura_costo_fecha", e.target.value)} />
+                </div>
+              </div>
+              {(() => {
+                const cantidad = form.cantidad_viajes === "" ? null : Number(form.cantidad_viajes);
+                const precio = form.precio_viaje === "" ? null : Number(form.precio_viaje);
+                const margen = form.porcentaje_margen === "" ? null : Number(form.porcentaje_margen);
+                const facturar = cantidad != null && precio != null ? cantidad * precio : null;
+                const costoCalc = facturar != null && margen != null ? facturar * (1 - margen / 100) : null;
+                const costoFinal = costoCalc ?? (Number(form.monto) || 0);
+                const descuento = form.descuento_cxc === "" ? 0 : Number(form.descuento_cxc);
+                const neto = costoFinal - descuento;
+                return (
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="grid gap-1.5">
+                      <Label>Monto a Facturar al Cliente</Label>
+                      <div className="rounded-md border px-3 py-2 text-sm font-medium">
+                        {facturar != null ? fmtMoney(facturar, editing.moneda) : "—"}
+                      </div>
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>Costo del Viaje</Label>
+                      <div className="rounded-md border px-3 py-2 text-sm font-medium">{fmtMoney(costoFinal, editing.moneda)}</div>
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>Monto Neto a Pagar</Label>
+                      <div className={cn(
+                        "rounded-md border px-3 py-2 text-sm font-semibold",
+                        neto >= 0 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-destructive/10 text-destructive border-destructive/30"
+                      )}>
+                        {fmtMoney(neto, editing.moneda)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setEditing(null); setSoloFinanzas(false); }}>Cancelar</Button>
+            <Button onClick={() => guardar.mutate()} disabled={guardar.isPending}>
+              {guardar.isPending ? "Guardando…" : "Guardar corrección"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={!!eliminando} onOpenChange={(o) => !o && setEliminando(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
