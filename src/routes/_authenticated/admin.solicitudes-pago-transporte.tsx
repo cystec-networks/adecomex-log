@@ -175,6 +175,7 @@ function SolicitudesPagoTransportePage() {
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [eliminando, setEliminando] = useState<Row | null>(null);
   const [pdfId, setPdfId] = useState<string | null>(null);
+  const [consultando, setConsultando] = useState<Row | null>(null);
 
   const abrirNueva = () => {
     setForm({
@@ -400,7 +401,16 @@ function SolicitudesPagoTransportePage() {
               ) : filtradas.map((r) => (
                 <tr key={r.id} className="border-b last:border-0">
                   <td className="py-1.5 pr-3 whitespace-nowrap">{fmtLocalDate(r.created_at)}</td>
-                  <td className="py-1.5 pr-3 font-mono whitespace-nowrap">{r.numero_control}</td>
+<td className="py-1.5 pr-3 font-mono whitespace-nowrap">
+                    <button
+                      type="button"
+                      className="underline decoration-dotted underline-offset-2 hover:text-primary"
+                      title="Ver solicitud (consulta)"
+                      onClick={() => setConsultando(r)}
+                    >
+                      {r.numero_control}
+                    </button>
+                  </td>
                   <td className="py-1.5 pr-3"><span className="block max-w-[180px] truncate" title={r.transportista_nombre}>{r.transportista_nombre}</span></td>
                   <td className="py-1.5 pr-3">
                     <span className="block max-w-[200px] truncate whitespace-nowrap" title={r.origen || r.destino ? `${r.origen ?? "—"} → ${r.destino ?? "—"}` : (r.referencia_viaje || "")}>
