@@ -271,6 +271,9 @@ function SolicitudesPagoTransportePage() {
 
   const convertir = useMutation({
     mutationFn: async (r: Row) => {
+      if (r.estado === "vinculada" || (transportesPorSolicitud[r.id]?.length ?? 0) > 0) {
+        throw new Error("Esta solicitud ya tiene un transporte vinculado — no se puede convertir de nuevo.");
+      }
       const { data: u } = await supabase.auth.getUser();
       const payload: any = {
         cliente_id: r.cliente_id ?? null,
@@ -423,9 +426,11 @@ function SolicitudesPagoTransportePage() {
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       )}
-                      <Button size="sm" disabled={convertir.isPending} onClick={() => convertir.mutate(r)}>
-                        <Truck className="h-3.5 w-3.5 mr-1" /> Convertir
-                      </Button>
+                      {r.estado !== "vinculada" && (transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
+                        <Button size="sm" disabled={convertir.isPending} onClick={() => convertir.mutate(r)}>
+                          <Truck className="h-3.5 w-3.5 mr-1" /> Convertir
+                        </Button>
+                      )}
                     </div>
                   </td>
                   <td className="py-1.5 pr-3">
