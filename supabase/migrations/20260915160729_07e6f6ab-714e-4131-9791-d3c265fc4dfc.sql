@@ -1,0 +1,1 @@
+SELECT setval('public.transportes_seq', 32, true);
