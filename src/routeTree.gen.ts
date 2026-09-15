@@ -60,6 +60,7 @@ import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminSolicitudesPagoTransporteRouteImport } from './routes/_authenticated/admin.solicitudes-pago-transporte'
 import { Route as AuthenticatedAdminSolicitudesPagoTransferenciaRouteImport } from './routes/_authenticated/admin.solicitudes-pago-transferencia'
 import { Route as AuthenticatedAdminReportesFiscalesRouteImport } from './routes/_authenticated/admin.reportes-fiscales'
+import { Route as AuthenticatedAdminRegistroDiarioRouteImport } from './routes/_authenticated/admin.registro-diario'
 import { Route as AuthenticatedAdminPlantillasDocumentosRouteImport } from './routes/_authenticated/admin.plantillas-documentos'
 import { Route as AuthenticatedAdminGastosOperativosRouteImport } from './routes/_authenticated/admin.gastos-operativos'
 import { Route as AuthenticatedAdminFacturacionRouteImport } from './routes/_authenticated/admin.facturacion'
@@ -375,6 +376,12 @@ const AuthenticatedAdminReportesFiscalesRoute =
     path: '/admin/reportes-fiscales',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminRegistroDiarioRoute =
+  AuthenticatedAdminRegistroDiarioRouteImport.update({
+    id: '/admin/registro-diario',
+    path: '/admin/registro-diario',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminPlantillasDocumentosRoute =
   AuthenticatedAdminPlantillasDocumentosRouteImport.update({
     id: '/admin/plantillas-documentos',
@@ -580,6 +587,7 @@ export interface FileRoutesByFullPath {
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
+  '/admin/registro-diario': typeof AuthenticatedAdminRegistroDiarioRoute
   '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/admin/solicitudes-pago-transferencia': typeof AuthenticatedAdminSolicitudesPagoTransferenciaRoute
   '/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
@@ -659,6 +667,7 @@ export interface FileRoutesByTo {
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
+  '/admin/registro-diario': typeof AuthenticatedAdminRegistroDiarioRoute
   '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/admin/solicitudes-pago-transferencia': typeof AuthenticatedAdminSolicitudesPagoTransferenciaRoute
   '/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
@@ -742,6 +751,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/_authenticated/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/_authenticated/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
+  '/_authenticated/admin/registro-diario': typeof AuthenticatedAdminRegistroDiarioRoute
   '/_authenticated/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/_authenticated/admin/solicitudes-pago-transferencia': typeof AuthenticatedAdminSolicitudesPagoTransferenciaRoute
   '/_authenticated/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
@@ -823,6 +833,7 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/gastos-operativos'
     | '/admin/plantillas-documentos'
+    | '/admin/registro-diario'
     | '/admin/reportes-fiscales'
     | '/admin/solicitudes-pago-transferencia'
     | '/admin/solicitudes-pago-transporte'
@@ -902,6 +913,7 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/gastos-operativos'
     | '/admin/plantillas-documentos'
+    | '/admin/registro-diario'
     | '/admin/reportes-fiscales'
     | '/admin/solicitudes-pago-transferencia'
     | '/admin/solicitudes-pago-transporte'
@@ -984,6 +996,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/facturacion'
     | '/_authenticated/admin/gastos-operativos'
     | '/_authenticated/admin/plantillas-documentos'
+    | '/_authenticated/admin/registro-diario'
     | '/_authenticated/admin/reportes-fiscales'
     | '/_authenticated/admin/solicitudes-pago-transferencia'
     | '/_authenticated/admin/solicitudes-pago-transporte'
@@ -1412,6 +1425,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminReportesFiscalesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/registro-diario': {
+      id: '/_authenticated/admin/registro-diario'
+      path: '/admin/registro-diario'
+      fullPath: '/admin/registro-diario'
+      preLoaderRoute: typeof AuthenticatedAdminRegistroDiarioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/plantillas-documentos': {
       id: '/_authenticated/admin/plantillas-documentos'
       path: '/admin/plantillas-documentos'
@@ -1641,6 +1661,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminFacturacionRoute: typeof AuthenticatedAdminFacturacionRoute
   AuthenticatedAdminGastosOperativosRoute: typeof AuthenticatedAdminGastosOperativosRoute
   AuthenticatedAdminPlantillasDocumentosRoute: typeof AuthenticatedAdminPlantillasDocumentosRoute
+  AuthenticatedAdminRegistroDiarioRoute: typeof AuthenticatedAdminRegistroDiarioRoute
   AuthenticatedAdminReportesFiscalesRoute: typeof AuthenticatedAdminReportesFiscalesRoute
   AuthenticatedAdminSolicitudesPagoTransferenciaRoute: typeof AuthenticatedAdminSolicitudesPagoTransferenciaRoute
   AuthenticatedAdminSolicitudesPagoTransporteRoute: typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
@@ -1711,6 +1732,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAdminGastosOperativosRoute,
   AuthenticatedAdminPlantillasDocumentosRoute:
     AuthenticatedAdminPlantillasDocumentosRoute,
+  AuthenticatedAdminRegistroDiarioRoute: AuthenticatedAdminRegistroDiarioRoute,
   AuthenticatedAdminReportesFiscalesRoute:
     AuthenticatedAdminReportesFiscalesRoute,
   AuthenticatedAdminSolicitudesPagoTransferenciaRoute:
