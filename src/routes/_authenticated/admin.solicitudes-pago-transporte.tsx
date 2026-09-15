@@ -441,23 +441,83 @@ function SolicitudesPagoTransportePage() {
               <Label>Fecha de Factura de Costo</Label>
               <Input type="date" value={form.factura_costo_fecha} onChange={(e) => setF("factura_costo_fecha", e.target.value)} />
             </div>
-            <div className="grid gap-1.5 sm:col-span-2">
-              <Label>Monto Neto a Pagar</Label>
-              <div className={cn(
-                "rounded-md border px-3 py-2 text-sm font-semibold",
-                (Number(form.monto) || 0) - (form.descuento_cxc === "" ? 0 : Number(form.descuento_cxc)) >= 0
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                  : "bg-destructive/10 text-destructive border-destructive/30"
-              )}>
-                {fmtMoney(
-                  (Number(form.monto) || 0) - (form.descuento_cxc === "" ? 0 : Number(form.descuento_cxc)),
-                  form.moneda,
-                )}
-              </div>
-              {(Number(form.descuento_cxc) || 0) > (Number(form.monto) || 0) && (
-                <p className="text-xs text-destructive">El descuento supera el costo del viaje. Revisa antes de aprobar.</p>
-              )}
+            <div className="grid gap-1.5">
+              <Label>Cantidad de Viajes</Label>
+              <Input
+                inputMode="decimal"
+                value={form.cantidad_viajes}
+                onChange={(e) => {
+                  const v = e.target.value.replace(",", ".");
+                  if (v === "" || /^\d*\.?\d*$/.test(v)) setF("cantidad_viajes", v);
+                }}
+              />
             </div>
+            <div className="grid gap-1.5">
+              <Label>Precio por Viaje</Label>
+              <Input
+                inputMode="decimal"
+                value={form.precio_viaje}
+                onChange={(e) => {
+                  const v = e.target.value.replace(",", ".");
+                  if (v === "" || /^\d*\.?\d*$/.test(v)) setF("precio_viaje", v);
+                }}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>% Margen de Ganancia</Label>
+              <Input
+                inputMode="decimal"
+                value={form.porcentaje_margen}
+                onChange={(e) => {
+                  const v = e.target.value.replace(",", ".");
+                  if (v === "" || /^\d*\.?\d*$/.test(v)) setF("porcentaje_margen", v);
+                }}
+              />
+            </div>
+            {(() => {
+              const cantidad = form.cantidad_viajes === "" ? null : Number(form.cantidad_viajes);
+              const precio = form.precio_viaje === "" ? null : Number(form.precio_viaje);
+              const margen = form.porcentaje_margen === "" ? null : Number(form.porcentaje_margen);
+              const montoFacturarCliente = cantidad != null && precio != null ? cantidad * precio : null;
+              const costoViajeCalculado = montoFacturarCliente != null && margen != null
+                ? montoFacturarCliente * (1 - margen / 100)
+                : null;
+              const costoViajeFinal = costoViajeCalculado ?? (Number(form.monto) || 0);
+              const descuento = form.descuento_cxc === "" ? 0 : Number(form.descuento_cxc);
+              const montoNeto = costoViajeFinal - descuento;
+              return (
+                <>
+                  {montoFacturarCliente != null && (
+                    <div className="grid gap-1.5 sm:col-span-2">
+                      <Label>Monto a Facturar al Cliente</Label>
+                      <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-semibold">
+                        {fmtMoney(montoFacturarCliente, form.moneda)}
+                      </div>
+                    </div>
+                  )}
+                  <div className="grid gap-1.5 sm:col-span-2">
+                    <Label>{costoViajeCalculado != null ? "Costo del Viaje (calculado)" : "Costo del Viaje (solicitado)"}</Label>
+                    <div className="rounded-md border px-3 py-2 text-sm font-medium">
+                      {fmtMoney(costoViajeFinal, form.moneda)}
+                    </div>
+                  </div>
+                  <div className="grid gap-1.5 sm:col-span-2">
+                    <Label>Monto Neto a Pagar</Label>
+                    <div className={cn(
+                      "rounded-md border px-3 py-2 text-sm font-semibold",
+                      montoNeto >= 0
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-destructive/10 text-destructive border-destructive/30"
+                    )}>
+                      {fmtMoney(montoNeto, form.moneda)}
+                    </div>
+                    {descuento > costoViajeFinal && (
+                      <p className="text-xs text-destructive">El descuento supera el costo del viaje. Revisa antes de aprobar.</p>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
             <div className="grid gap-1.5 sm:col-span-2">
               <Label>Referencia del viaje</Label>
               <Input value={form.referencia_viaje} maxLength={120} onChange={(e) => setF("referencia_viaje", e.target.value)} />
