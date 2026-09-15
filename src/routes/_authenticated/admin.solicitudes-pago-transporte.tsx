@@ -56,6 +56,8 @@ type Row = {
   factura_costo_numero: string | null;
   factura_costo_fecha: string | null;
   cantidad_viajes: number | null;
+  precio_viaje: number | null;
+  porcentaje_margen: number | null;
   moneda: string;
   referencia_viaje: string | null;
   placa_contenedor: string | null;
@@ -142,6 +144,7 @@ function SolicitudesPagoTransportePage() {
   const [form, setForm] = useState({
     transportista_nombre: "", transportista_rnc: "", telefono: "",
     monto: "", descuento_cxc: "", factura_costo_numero: "", factura_costo_fecha: "",
+    cantidad_viajes: "", precio_viaje: "", porcentaje_margen: "",
     moneda: "DOP", referencia_viaje: "", descripcion: "",
   });
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -158,6 +161,9 @@ function SolicitudesPagoTransportePage() {
       descuento_cxc: r.descuento_cxc != null ? String(r.descuento_cxc) : "",
       factura_costo_numero: r.factura_costo_numero ?? "",
       factura_costo_fecha: r.factura_costo_fecha ?? "",
+      cantidad_viajes: r.cantidad_viajes != null ? String(r.cantidad_viajes) : "",
+      precio_viaje: r.precio_viaje != null ? String(r.precio_viaje) : "",
+      porcentaje_margen: r.porcentaje_margen != null ? String(r.porcentaje_margen) : "",
       moneda: r.moneda ?? "DOP",
       referencia_viaje: r.referencia_viaje ?? "",
       descripcion: r.descripcion ?? "",
@@ -172,6 +178,13 @@ function SolicitudesPagoTransportePage() {
       if (!form.transportista_nombre.trim()) throw new Error("Indica el nombre del transportista");
       if (!Number.isFinite(monto) || monto <= 0) throw new Error("Indica un monto mayor a 0");
       if (!Number.isFinite(descuento_cxc) || descuento_cxc < 0) throw new Error("El descuento por CxC no puede ser negativo");
+      const numOrNull = (v: string) => (v === "" ? null : Number(v));
+      const cantidad_viajes = numOrNull(form.cantidad_viajes);
+      const precio_viaje = numOrNull(form.precio_viaje);
+      const porcentaje_margen = numOrNull(form.porcentaje_margen);
+      if (cantidad_viajes != null && (!Number.isFinite(cantidad_viajes) || cantidad_viajes <= 0)) throw new Error("La cantidad de viajes debe ser mayor a 0");
+      if (precio_viaje != null && (!Number.isFinite(precio_viaje) || precio_viaje < 0)) throw new Error("El precio por viaje no puede ser negativo");
+      if (porcentaje_margen != null && (!Number.isFinite(porcentaje_margen) || porcentaje_margen < 0 || porcentaje_margen > 100)) throw new Error("El % de margen debe estar entre 0 y 100");
       const { error } = await supabase
         .from("solicitudes_pago_transporte")
         .update({
@@ -182,6 +195,9 @@ function SolicitudesPagoTransportePage() {
           descuento_cxc,
           factura_costo_numero: form.factura_costo_numero.trim() || null,
           factura_costo_fecha: form.factura_costo_fecha || null,
+          cantidad_viajes,
+          precio_viaje,
+          porcentaje_margen,
           moneda: form.moneda,
           referencia_viaje: form.referencia_viaje.trim() || null,
           descripcion: form.descripcion.trim() || null,
