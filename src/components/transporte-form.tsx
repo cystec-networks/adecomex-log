@@ -116,6 +116,9 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
     costo_chofer: "",
     costo_otros: "",
     ingreso_facturado: "",
+    venta_monto: "",
+    venta_moneda: "DOP",
+    venta_numero_factura: "",
     factura_numero: "",
     factura_fecha: "",
     pago_estado: "pendiente",
@@ -155,6 +158,9 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
         costo_chofer: existing.costo_chofer?.toString() ?? "",
         costo_otros: existing.costo_otros?.toString() ?? "",
         ingreso_facturado: existing.ingreso_facturado?.toString() ?? "",
+        venta_monto: (existing as any).venta_monto?.toString() ?? "",
+        venta_moneda: (existing as any).venta_moneda ?? "DOP",
+        venta_numero_factura: (existing as any).venta_numero_factura ?? "",
         factura_numero: existing.factura_numero ?? "",
         factura_fecha: existing.factura_fecha ?? "",
         pago_estado: existing.pago_estado ?? "pendiente",
@@ -288,11 +294,12 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
         "expediente_id","cliente_id","tipo","transportista","placa_contenedor","origen","destino",
         "fecha_salida","eta","observaciones","factura_numero","factura_fecha","numero_viaje",
         "pago_referencia","factura_costo_numero","factura_costo_fecha","contenedores_detalle",
-        "factura_ecf_id","numero_control_pago",
+        "factura_ecf_id","numero_control_pago","venta_numero_factura",
 
       ];
       nullableStr.forEach((k) => { if (payload[k] === "") payload[k] = null; });
-      const nullableNum = ["flete_monto","costo_viaje","descuento_cxc","costo_combustible","costo_peajes","costo_chofer","costo_otros","ingreso_facturado","contenedores_cantidad"];
+      payload.venta_moneda = "DOP";
+      const nullableNum = ["flete_monto","costo_viaje","descuento_cxc","costo_combustible","costo_peajes","costo_chofer","costo_otros","ingreso_facturado","contenedores_cantidad","venta_monto"];
       nullableNum.forEach((k) => { payload[k] = payload[k] === "" || payload[k] == null ? null : Number(payload[k]); });
 
       // Clear terrestre-only fields when not terrestre
@@ -694,6 +701,44 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
           </div>
         </CardContent>
       </Card>
+
+      {(() => {
+        const ventaVacia = !form.venta_monto && !form.venta_numero_factura;
+        const vinoDeConversion = !!(form.numero_control_pago ?? "").trim();
+        const pendiente = ventaVacia && vinoDeConversion;
+        return (
+          <Card className={pendiente ? "border-amber-400 border-2" : "border-emerald-300"}>
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+                Facturación al Cliente (Venta) · RD$
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Lo que se le cobra al cliente. Es distinto del costo pagado al transportista.
+              </p>
+              {pendiente && (
+                <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                  Pendiente por completar: este transporte proviene de la solicitud de pago {form.numero_control_pago}.
+                </p>
+              )}
+            </CardHeader>
+            <CardContent className="pt-5 grid gap-4 md:grid-cols-3">
+              <div className="grid gap-1.5">
+                <Label>Monto facturado al cliente</Label>
+                <MoneyDOP value={form.venta_monto} onChange={(v) => set("venta_monto", v)} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Moneda</Label>
+                <div className="rounded-md border px-3 py-2 text-sm font-medium">DOP</div>
+              </div>
+              <div className="grid gap-1.5">
+                <Label>N° de Factura de Venta</Label>
+                <Input value={form.venta_numero_factura} maxLength={50} onChange={(e) => set("venta_numero_factura", e.target.value)} />
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
 
       {isTerrestre && (
         <>

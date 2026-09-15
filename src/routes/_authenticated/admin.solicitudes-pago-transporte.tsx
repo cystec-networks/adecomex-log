@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, Link } from "@tanstack/react-router";
+import { createFileRoute, redirect, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,8 +63,31 @@ type Row = {
   placa_contenedor: string | null;
   descripcion: string | null;
   transporte_id: string | null;
+  cliente_id: string | null;
+  fecha_salida: string | null;
+  eta: string | null;
+  estado_transporte: string | null;
   estado: string;
   created_at: string;
+};
+
+const ESTADOS_TRANSPORTE = [
+  { v: "programado", l: "Programado" },
+  { v: "en_transito", l: "En Tránsito" },
+  { v: "entregado", l: "Entregado" },
+  { v: "retrasado", l: "Retrasado" },
+];
+
+const SIN_CLIENTE = "__none__";
+
+const netoDeSolicitud = (r: Row) => {
+  const cantidad = r.cantidad_viajes != null ? Number(r.cantidad_viajes) : null;
+  const precio = r.precio_viaje != null ? Number(r.precio_viaje) : null;
+  const margen = r.porcentaje_margen != null ? Number(r.porcentaje_margen) : null;
+  const facturar = cantidad != null && precio != null ? cantidad * precio : null;
+  const costoCalculado = facturar != null && margen != null ? facturar * (1 - margen / 100) : null;
+  const costoFinal = costoCalculado ?? Number(r.monto || 0);
+  return Number((costoFinal - Number(r.descuento_cxc || 0)).toFixed(2));
 };
 
 
@@ -72,6 +95,7 @@ const fmtMoney = (n: number, m: string) =>
   `${m === "USD" ? "US$" : m === "EUR" ? "€" : "RD$"} ${(n || 0).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 function SolicitudesPagoTransportePage() {
+  const nav = useNavigate();
   const [estado, setEstado] = useState<"todas" | "pendiente" | "vinculada">("todas");
   const [q, setQ] = useState("");
 
@@ -85,6 +109,11 @@ function SolicitudesPagoTransportePage() {
       if (error) throw error;
       return (data ?? []) as Row[];
     },
+  });
+
+  const { data: clientes = [] } = useQuery({
+    queryKey: ["clientes-lite"],
+    queryFn: async () => (await supabase.from("clientes").select("id,nombre").order("nombre")).data ?? [],
   });
 
   const { data: vinculados = [] } = useQuery({
@@ -145,7 +174,8 @@ function SolicitudesPagoTransportePage() {
     transportista_nombre: "", transportista_rnc: "", telefono: "",
     monto: "", descuento_cxc: "", factura_costo_numero: "", factura_costo_fecha: "",
     cantidad_viajes: "", precio_viaje: "", porcentaje_margen: "",
-    moneda: "DOP", referencia_viaje: "", descripcion: "",
+    moneda: "DOP", descripcion: "",
+    cliente_id: "", fecha_salida: "", eta: "", estado_transporte: "programado",
   });
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [eliminando, setEliminando] = useState<Row | null>(null);
@@ -164,9 +194,12 @@ function SolicitudesPagoTransportePage() {
       cantidad_viajes: r.cantidad_viajes != null ? String(r.cantidad_viajes) : "",
       precio_viaje: r.precio_viaje != null ? String(r.precio_viaje) : "",
       porcentaje_margen: r.porcentaje_margen != null ? String(r.porcentaje_margen) : "",
-      moneda: r.moneda ?? "DOP",
-      referencia_viaje: r.referencia_viaje ?? "",
+      moneda: "DOP",
       descripcion: r.descripcion ?? "",
+      cliente_id: r.cliente_id ?? "",
+      fecha_salida: r.fecha_salida ?? "",
+      eta: r.eta ?? "",
+      estado_transporte: r.estado_transporte ?? "programado",
     });
   };
 
@@ -198,9 +231,12 @@ function SolicitudesPagoTransportePage() {
           cantidad_viajes: cantidad_viajes ?? undefined,
           precio_viaje,
           porcentaje_margen,
-          moneda: form.moneda,
-          referencia_viaje: form.referencia_viaje.trim() || null,
+          moneda: "DOP",
           descripcion: form.descripcion.trim() || null,
+          cliente_id: form.cliente_id || null,
+          fecha_salida: form.fecha_salida || null,
+          eta: form.eta || null,
+          estado_transporte: form.estado_transporte || "programado",
         })
         .eq("id", editing.id);
       if (error) throw error;
@@ -224,6 +260,42 @@ function SolicitudesPagoTransportePage() {
       qc.invalidateQueries({ queryKey: ["solicitudes-pago-transporte"] });
     },
     onError: (e: any) => toast.error(e.message ?? "No se pudo eliminar"),
+  });
+
+  const convertir = useMutation({
+    mutationFn: async (r: Row) => {
+      const { data: u } = await supabase.auth.getUser();
+      const payload: any = {
+        cliente_id: r.cliente_id ?? null,
+        tipo: "terrestre",
+        transportista: r.transportista_nombre,
+        fecha_salida: r.fecha_salida ?? null,
+        eta: r.eta ?? null,
+        estado: r.estado_transporte ?? "programado",
+        flete_monto: netoDeSolicitud(r),
+        flete_moneda: "DOP",
+        numero_control_pago: r.numero_control,
+        solicitud_pago_id: r.id,
+        observaciones: r.descripcion ?? null,
+        created_by: u.user?.id ?? null,
+      };
+      const { data, error } = await supabase.from("transportes").insert(payload).select("id, numero_viaje").single();
+      if (error) throw error;
+      if (r.estado === "pendiente") {
+        await supabase
+          .from("solicitudes_pago_transporte")
+          .update({ transporte_id: data.id, estado: "vinculada" })
+          .eq("id", r.id);
+      }
+      return data;
+    },
+    onSuccess: (t: any) => {
+      qc.invalidateQueries({ queryKey: ["solicitudes-pago-transporte"] });
+      qc.invalidateQueries({ queryKey: ["transportes"] });
+      toast.success(`Transporte ${t.numero_viaje} creado — completa la facturación al cliente`);
+      nav({ to: "/transportes/$id", params: { id: t.id } });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo convertir"),
   });
 
 
@@ -301,8 +373,6 @@ function SolicitudesPagoTransportePage() {
                 <th className="py-2 pr-3 text-right">Monto</th>
                 <th className="py-2 pr-3 text-right">Cantidad</th>
                 <th className="py-2 pr-3">Moneda</th>
-
-                <th className="py-2 pr-3">Referencia</th>
                 <th className="py-2 pr-3">Creada</th>
                 <th className="py-2 pr-3">Estado</th>
                 <th className="py-2 pr-3">Acciones</th>
@@ -310,9 +380,9 @@ function SolicitudesPagoTransportePage() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={11} className="py-6 text-center text-muted-foreground">Cargando…</td></tr>
+                <tr><td colSpan={10} className="py-6 text-center text-muted-foreground">Cargando…</td></tr>
               ) : filtradas.length === 0 ? (
-                <tr><td colSpan={11} className="py-6 text-center text-muted-foreground">Sin solicitudes</td></tr>
+                <tr><td colSpan={10} className="py-6 text-center text-muted-foreground">Sin solicitudes</td></tr>
               ) : filtradas.map((r) => (
                 <tr key={r.id} className="border-b last:border-0">
                   <td className="py-2 pr-3 font-mono">{r.numero_control}</td>
@@ -322,7 +392,7 @@ function SolicitudesPagoTransportePage() {
                   <td className="py-2 pr-3 text-right">{fmtMoney(Number(r.monto), r.moneda)}</td>
                   <td className="py-2 pr-3 text-right">{r.cantidad_viajes ?? 1}</td>
                   <td className="py-2 pr-3">{r.moneda}</td>
-                  <td className="py-2 pr-3">{r.referencia_viaje || "—"}</td>
+                  
                   <td className="py-2 pr-3">{fmtLocalDate(r.created_at)}</td>
                   <td className="py-2 pr-3">
                     {r.estado === "vinculada" ? (
@@ -356,10 +426,13 @@ function SolicitudesPagoTransportePage() {
                       <Button variant="outline" size="sm" onClick={() => copiar(r.numero_control)}>
                         <Copy className="h-3.5 w-3.5 mr-1" /> Copiar número
                       </Button>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to="/transportes/nuevo" search={{ control: r.numero_control }}>
-                          <Truck className="h-3.5 w-3.5 mr-1" /> Convertir en Transporte
-                        </Link>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={convertir.isPending}
+                        onClick={() => convertir.mutate(r)}
+                      >
+                        <Truck className="h-3.5 w-3.5 mr-1" /> Convertir en Transporte
                       </Button>
                       {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
                         <>
@@ -403,17 +476,36 @@ function SolicitudesPagoTransportePage() {
             </div>
             <div className="grid gap-1.5 md:col-span-2">
               <Label>Moneda</Label>
-              <Select value={form.moneda} onValueChange={(v) => setF("moneda", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <div className="rounded-md border px-3 py-2 text-sm font-medium">DOP</div>
+            </div>
+            <div className="grid gap-1.5 md:col-span-4">
+              <Label>Cliente Final</Label>
+              <Select value={form.cliente_id || SIN_CLIENTE} onValueChange={(v) => setF("cliente_id", v === SIN_CLIENTE ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="— Sin cliente —" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="DOP">DOP</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value={SIN_CLIENTE}>— Sin cliente —</SelectItem>
+                  {(clientes ?? []).map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid gap-1.5 md:col-span-4">
-              <Label>Referencia del viaje</Label>
-              <Input value={form.referencia_viaje} maxLength={120} onChange={(e) => setF("referencia_viaje", e.target.value)} />
+            <div className="grid gap-1.5 md:col-span-2">
+              <Label>Fecha de Salida</Label>
+              <Input type="date" value={form.fecha_salida} onChange={(e) => setF("fecha_salida", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5 md:col-span-2">
+              <Label>Fecha de Entrega (ETA)</Label>
+              <Input type="date" value={form.eta} onChange={(e) => setF("eta", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5 md:col-span-2">
+              <Label>Estado</Label>
+              <Select value={form.estado_transporte} onValueChange={(v) => setF("estado_transporte", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ESTADOS_TRANSPORTE.map((s) => <SelectItem key={s.v} value={s.v}>{s.l}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-1.5 md:col-span-2">
               <Label>Cantidad de Viajes</Label>

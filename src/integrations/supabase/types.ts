@@ -5531,12 +5531,16 @@ export type Database = {
         Row: {
           cantidad_viajes: number
           catalogo_viaje_id: string | null
+          cliente_id: string | null
           created_at: string
           descripcion: string | null
           descuento_cxc: number | null
           estado: string
+          estado_transporte: string | null
+          eta: string | null
           factura_costo_fecha: string | null
           factura_costo_numero: string | null
+          fecha_salida: string | null
           id: string
           moneda: string
           monto: number
@@ -5553,12 +5557,16 @@ export type Database = {
         Insert: {
           cantidad_viajes?: number
           catalogo_viaje_id?: string | null
+          cliente_id?: string | null
           created_at?: string
           descripcion?: string | null
           descuento_cxc?: number | null
           estado?: string
+          estado_transporte?: string | null
+          eta?: string | null
           factura_costo_fecha?: string | null
           factura_costo_numero?: string | null
+          fecha_salida?: string | null
           id?: string
           moneda?: string
           monto?: number
@@ -5575,12 +5583,16 @@ export type Database = {
         Update: {
           cantidad_viajes?: number
           catalogo_viaje_id?: string | null
+          cliente_id?: string | null
           created_at?: string
           descripcion?: string | null
           descuento_cxc?: number | null
           estado?: string
+          estado_transporte?: string | null
+          eta?: string | null
           factura_costo_fecha?: string | null
           factura_costo_numero?: string | null
+          fecha_salida?: string | null
           id?: string
           moneda?: string
           monto?: number
@@ -5600,6 +5612,13 @@ export type Database = {
             columns: ["catalogo_viaje_id"]
             isOneToOne: false
             referencedRelation: "catalogo_viajes_transporte"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitudes_pago_transporte_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
             referencedColumns: ["id"]
           },
           {
@@ -5677,6 +5696,9 @@ export type Database = {
           tipo: Database["public"]["Enums"]["transporte_tipo"] | null
           transportista: string | null
           updated_at: string
+          venta_moneda: string | null
+          venta_monto: number | null
+          venta_numero_factura: string | null
         }
         Insert: {
           cliente_id?: string | null
@@ -5719,6 +5741,9 @@ export type Database = {
           tipo?: Database["public"]["Enums"]["transporte_tipo"] | null
           transportista?: string | null
           updated_at?: string
+          venta_moneda?: string | null
+          venta_monto?: number | null
+          venta_numero_factura?: string | null
         }
         Update: {
           cliente_id?: string | null
@@ -5761,6 +5786,9 @@ export type Database = {
           tipo?: Database["public"]["Enums"]["transporte_tipo"] | null
           transportista?: string | null
           updated_at?: string
+          venta_moneda?: string | null
+          venta_monto?: number | null
+          venta_numero_factura?: string | null
         }
         Relationships: [
           {
