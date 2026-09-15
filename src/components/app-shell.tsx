@@ -118,14 +118,11 @@ const GROUPS: Group[] = [
     label: "TRANSPORTES",
     icon: Truck,
     items: [
-      { to: "/transportes", label: "Transportes", icon: Truck,
-        match: (p) => (p === "/transportes" || p.startsWith("/transportes/")) && p !== "/transportes/dashboard" },
       { to: "/admin/solicitudes-pago-transporte", label: "Solicitudes de Pago", icon: Receipt,
         roles: ["admin", "transporte"],
         match: (p) => p.startsWith("/admin/solicitudes-pago-transporte") },
-      { to: "/admin/catalogo-viajes-transporte", label: "Catálogo de Viajes", icon: Receipt,
-        roles: ["admin", "transporte"],
-        match: (p) => p.startsWith("/admin/catalogo-viajes-transporte") },
+      { to: "/transportes", label: "Transportes", icon: Truck,
+        match: (p) => (p === "/transportes" || p.startsWith("/transportes/")) && p !== "/transportes/dashboard" },
 
       { to: "/transportes/dashboard", label: "Dashboard", icon: LayoutDashboard,
         match: (p) => p === "/transportes/dashboard" },
@@ -149,6 +146,9 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/legal/documentos") },
       { to: "/admin/catalogos", label: "Catálogos DGA", icon: Library, adminOnly: true,
         match: (p) => p.startsWith("/admin/catalogos") && !p.startsWith("/admin/catalogo-productos-dga") },
+      { to: "/admin/catalogo-viajes-transporte", label: "Catálogo de Viajes", icon: Truck,
+        roles: ["admin", "transporte"],
+        match: (p) => p.startsWith("/admin/catalogo-viajes-transporte") },
       { to: "/admin/catalogo-productos-dga", label: "Productos DGA (histórico)", icon: Library, adminOnly: true,
         match: (p) => p.startsWith("/admin/catalogo-productos-dga") },
 
