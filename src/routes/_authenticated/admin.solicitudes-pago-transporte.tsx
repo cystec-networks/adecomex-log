@@ -419,36 +419,30 @@ function SolicitudesPagoTransportePage() {
                       >
                         <Truck className="h-3.5 w-3.5 mr-1" /> Convertir
                       </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" title="Más acciones">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onSelect={() => setPdfId(r.id)}>
-                            <Printer className="h-3.5 w-3.5 mr-2" /> Ver comprobante PDF
-                          </DropdownMenuItem>
-                          {(transportesPorSolicitud[r.id] ?? []).map((t) => (
-                            <DropdownMenuItem key={t.id} asChild>
-                              <Link to="/transportes/$id" params={{ id: t.id }}>
-                                <ExternalLink className="h-3.5 w-3.5 mr-2" /> {t.numero_viaje}
-                              </Link>
-                            </DropdownMenuItem>
-                          ))}
-                          <DropdownMenuItem onSelect={() => copiar(r.numero_control)}>
-                            <Copy className="h-3.5 w-3.5 mr-2" /> Copiar número de control
-                          </DropdownMenuItem>
-                          {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onSelect={() => setEliminando(r)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5 mr-2" /> Eliminar
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button variant="outline" size="sm" onClick={() => setPdfId(r.id)} title="Ver comprobante PDF">
+                        <Printer className="h-3.5 w-3.5" />
+                      </Button>
+                      {(transportesPorSolicitud[r.id] ?? []).map((t) => (
+                        <Button key={t.id} variant="outline" size="sm" asChild title={t.numero_viaje}>
+                          <Link to="/transportes/$id" params={{ id: t.id }}>
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Link>
+                        </Button>
+                      ))}
+                      <Button variant="outline" size="sm" onClick={() => copiar(r.numero_control)} title="Copiar número de control">
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                      {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setEliminando(r)}
+                          title="Eliminar"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </td>
 
