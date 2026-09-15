@@ -448,11 +448,20 @@ function SolicitudesPagoTransportePage() {
                   <td className="py-1.5 pr-3 text-right whitespace-nowrap">{fmtMoney(Number(r.monto), r.moneda)}</td>
                   <td className="py-1.5 pr-3">
                     <div className="flex flex-nowrap items-center gap-1">
-                      {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => abrirEdicion(r)} title="Editar">
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
+                      {(() => {
+                        const vinc = r.estado === "vinculada" || (transportesPorSolicitud[r.id]?.length ?? 0) > 0;
+                        return (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => abrirEdicion(r, vinc)}
+                            title={vinc ? "Corregir cifras (vinculada)" : "Editar"}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        );
+                      })()}
                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPdfId(r.id)} title="Ver comprobante PDF">
                         <Printer className="h-3.5 w-3.5" />
                       </Button>
