@@ -383,7 +383,7 @@ function SolicitudesPagoTransportePage() {
       </Card>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Editar solicitud {editing?.numero_control}</DialogTitle>
             <DialogDescription>Actualiza los datos enviados por el transportista.</DialogDescription>
