@@ -69,6 +69,8 @@ export const Route = createFileRoute("/api/public/solicitud-pago-transporte")({
             descripcion: parsed.data.descripcion || null,
             placa_contenedor: parsed.data.placa_contenedor || null,
             catalogo_viaje_id: parsed.data.catalogo_viaje_id || null,
+            origen,
+            destino,
 
           })
           .select("id, numero_control")
