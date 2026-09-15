@@ -238,29 +238,26 @@ function SolicitudesPagoTransportePage() {
         descuento_cxc,
         factura_costo_numero: form.factura_costo_numero.trim() || null,
         factura_costo_fecha: form.factura_costo_fecha || null,
-        cantidad_viajes,
+        cantidad_viajes: cantidad_viajes ?? 1,
         precio_viaje,
         porcentaje_margen,
       };
-      const payload = soloFinanzas && editing !== "new"
-        ? financiero
-        : {
-            ...financiero,
-            cantidad_viajes: cantidad_viajes ?? 1,
-            transportista_nombre: form.transportista_nombre.trim(),
-            transportista_rnc: form.transportista_rnc.trim() || null,
-            telefono: form.telefono.trim() || null,
-            moneda: form.moneda || "DOP",
-            descripcion: form.descripcion.trim() || null,
-            cliente_id: form.cliente_id || null,
-            fecha_salida: form.fecha_salida || null,
-            eta: form.eta || null,
-            estado_transporte: form.estado_transporte || "programado",
-          };
-      const query = editing === "new"
-        ? supabase.from("solicitudes_pago_transporte").insert(payload)
-        : supabase.from("solicitudes_pago_transporte").update(payload).eq("id", editing.id);
-      const { error } = await query;
+      const completo = {
+        ...financiero,
+        transportista_nombre: form.transportista_nombre.trim(),
+        transportista_rnc: form.transportista_rnc.trim() || null,
+        telefono: form.telefono.trim() || null,
+        moneda: form.moneda || "DOP",
+        descripcion: form.descripcion.trim() || null,
+        cliente_id: form.cliente_id || null,
+        fecha_salida: form.fecha_salida || null,
+        eta: form.eta || null,
+        estado_transporte: form.estado_transporte || "programado",
+      };
+      const payload = soloFinanzas && editing !== "new" ? financiero : completo;
+      const { error } = editing === "new"
+        ? await supabase.from("solicitudes_pago_transporte").insert(completo)
+        : await supabase.from("solicitudes_pago_transporte").update(payload).eq("id", editing.id);
       if (error) throw error;
 
       // Sincronizar el transporte vinculado con el nuevo neto
