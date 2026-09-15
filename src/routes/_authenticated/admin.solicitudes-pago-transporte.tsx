@@ -336,8 +336,6 @@ function SolicitudesPagoTransportePage() {
                 <th className="py-2 pr-3 text-right">Monto</th>
                 <th className="py-2 pr-3 text-right">Cantidad</th>
                 <th className="py-2 pr-3">Moneda</th>
-
-                <th className="py-2 pr-3">Referencia</th>
                 <th className="py-2 pr-3">Creada</th>
                 <th className="py-2 pr-3">Estado</th>
                 <th className="py-2 pr-3">Acciones</th>
@@ -345,9 +343,9 @@ function SolicitudesPagoTransportePage() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={11} className="py-6 text-center text-muted-foreground">Cargando…</td></tr>
+                <tr><td colSpan={10} className="py-6 text-center text-muted-foreground">Cargando…</td></tr>
               ) : filtradas.length === 0 ? (
-                <tr><td colSpan={11} className="py-6 text-center text-muted-foreground">Sin solicitudes</td></tr>
+                <tr><td colSpan={10} className="py-6 text-center text-muted-foreground">Sin solicitudes</td></tr>
               ) : filtradas.map((r) => (
                 <tr key={r.id} className="border-b last:border-0">
                   <td className="py-2 pr-3 font-mono">{r.numero_control}</td>
@@ -357,7 +355,7 @@ function SolicitudesPagoTransportePage() {
                   <td className="py-2 pr-3 text-right">{fmtMoney(Number(r.monto), r.moneda)}</td>
                   <td className="py-2 pr-3 text-right">{r.cantidad_viajes ?? 1}</td>
                   <td className="py-2 pr-3">{r.moneda}</td>
-                  <td className="py-2 pr-3">{r.referencia_viaje || "—"}</td>
+                  
                   <td className="py-2 pr-3">{fmtLocalDate(r.created_at)}</td>
                   <td className="py-2 pr-3">
                     {r.estado === "vinculada" ? (
@@ -391,10 +389,13 @@ function SolicitudesPagoTransportePage() {
                       <Button variant="outline" size="sm" onClick={() => copiar(r.numero_control)}>
                         <Copy className="h-3.5 w-3.5 mr-1" /> Copiar número
                       </Button>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to="/transportes/nuevo" search={{ control: r.numero_control }}>
-                          <Truck className="h-3.5 w-3.5 mr-1" /> Convertir en Transporte
-                        </Link>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={convertir.isPending}
+                        onClick={() => convertir.mutate(r)}
+                      >
+                        <Truck className="h-3.5 w-3.5 mr-1" /> Convertir en Transporte
                       </Button>
                       {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
                         <>
