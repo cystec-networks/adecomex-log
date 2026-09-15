@@ -261,6 +261,42 @@ function SolicitudesPagoTransportePage() {
     onError: (e: any) => toast.error(e.message ?? "No se pudo eliminar"),
   });
 
+  const convertir = useMutation({
+    mutationFn: async (r: Row) => {
+      const { data: u } = await supabase.auth.getUser();
+      const payload: any = {
+        cliente_id: r.cliente_id ?? null,
+        tipo: "terrestre",
+        transportista: r.transportista_nombre,
+        fecha_salida: r.fecha_salida ?? null,
+        eta: r.eta ?? null,
+        estado: r.estado_transporte ?? "programado",
+        flete_monto: netoDeSolicitud(r),
+        flete_moneda: "DOP",
+        numero_control_pago: r.numero_control,
+        solicitud_pago_id: r.id,
+        observaciones: r.descripcion ?? null,
+        created_by: u.user?.id ?? null,
+      };
+      const { data, error } = await supabase.from("transportes").insert(payload).select("id, numero_viaje").single();
+      if (error) throw error;
+      if (r.estado === "pendiente") {
+        await supabase
+          .from("solicitudes_pago_transporte")
+          .update({ transporte_id: data.id, estado: "vinculada" })
+          .eq("id", r.id);
+      }
+      return data;
+    },
+    onSuccess: (t: any) => {
+      qc.invalidateQueries({ queryKey: ["solicitudes-pago-transporte"] });
+      qc.invalidateQueries({ queryKey: ["transportes"] });
+      toast.success(`Transporte ${t.numero_viaje} creado — completa la facturación al cliente`);
+      nav({ to: "/transportes/$id", params: { id: t.id } });
+    },
+    onError: (e: any) => toast.error(e.message ?? "No se pudo convertir"),
+  });
+
 
   return (
     <div className="p-6 space-y-6">
