@@ -5535,6 +5535,7 @@ export type Database = {
           created_at: string
           descripcion: string | null
           descuento_cxc: number | null
+          destino: string | null
           estado: string
           estado_transporte: string | null
           eta: string | null
@@ -5545,6 +5546,7 @@ export type Database = {
           moneda: string
           monto: number
           numero_control: string | null
+          origen: string | null
           placa_contenedor: string | null
           porcentaje_margen: number | null
           precio_viaje: number | null
@@ -5561,6 +5563,7 @@ export type Database = {
           created_at?: string
           descripcion?: string | null
           descuento_cxc?: number | null
+          destino?: string | null
           estado?: string
           estado_transporte?: string | null
           eta?: string | null
@@ -5571,6 +5574,7 @@ export type Database = {
           moneda?: string
           monto?: number
           numero_control?: string | null
+          origen?: string | null
           placa_contenedor?: string | null
           porcentaje_margen?: number | null
           precio_viaje?: number | null
@@ -5587,6 +5591,7 @@ export type Database = {
           created_at?: string
           descripcion?: string | null
           descuento_cxc?: number | null
+          destino?: string | null
           estado?: string
           estado_transporte?: string | null
           eta?: string | null
@@ -5597,6 +5602,7 @@ export type Database = {
           moneda?: string
           monto?: number
           numero_control?: string | null
+          origen?: string | null
           placa_contenedor?: string | null
           porcentaje_margen?: number | null
           precio_viaje?: number | null
