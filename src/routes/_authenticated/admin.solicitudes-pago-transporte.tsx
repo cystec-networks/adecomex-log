@@ -394,43 +394,67 @@ function SolicitudesPagoTransportePage() {
                 <tr><td colSpan={10} className="py-6 text-center text-muted-foreground">Sin solicitudes</td></tr>
               ) : filtradas.map((r) => (
                 <tr key={r.id} className="border-b last:border-0">
-                  <td className="py-2 pr-3 font-mono">{r.numero_control}</td>
-                  <td className="py-2 pr-3">{r.transportista_nombre}</td>
-                  <td className="py-2 pr-3">
-                    {r.origen || r.destino
-                      ? `${r.origen ?? "—"} → ${r.destino ?? "—"}`
-                      : (r.referencia_viaje || "—")}
+                  <td className="py-1.5 pr-3 font-mono whitespace-nowrap">{r.numero_control}</td>
+                  <td className="py-1.5 pr-3"><span className="block max-w-[180px] truncate" title={r.transportista_nombre}>{r.transportista_nombre}</span></td>
+                  <td className="py-1.5 pr-3">
+                    <span className="block max-w-[200px] truncate whitespace-nowrap" title={r.origen || r.destino ? `${r.origen ?? "—"} → ${r.destino ?? "—"}` : (r.referencia_viaje || "")}>
+                      {r.origen || r.destino
+                        ? `${r.origen ?? "—"} → ${r.destino ?? "—"}`
+                        : (r.referencia_viaje || "—")}
+                    </span>
                   </td>
-                  <td className="py-2 pr-3 text-right">{fmtMoney(Number(r.monto), r.moneda)}</td>
-                  <td className="py-2 pr-3 text-right">{r.cantidad_viajes ?? 1}</td>
-                  <td className="py-2 pr-3">{r.moneda}</td>
-                  <td className="py-2 pr-3">{fmtLocalDate(r.created_at)}</td>
-                  <td className="py-2 pr-3">
+                  <td className="py-1.5 pr-3 text-right whitespace-nowrap">{fmtMoney(Number(r.monto), r.moneda)}</td>
+                  <td className="py-1.5 pr-3 text-right">{r.cantidad_viajes ?? 1}</td>
+                  <td className="py-1.5 pr-3">{r.moneda}</td>
+                  <td className="py-1.5 pr-3 whitespace-nowrap">{fmtLocalDate(r.created_at)}</td>
+                  <td className="py-1.5 pr-3">
                     {r.estado === "vinculada" ? (
                       <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Vinculada</Badge>
                     ) : (
                       <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Pendiente</Badge>
                     )}
                   </td>
-                  <td className="py-2 pr-3">
-                    <div className="flex flex-wrap items-center gap-1">
-                      {(transportesPorSolicitud[r.id] ?? []).map((t) => (
-                        <Link
-                          key={t.id}
-                          to="/transportes/$id"
-                          params={{ id: t.id }}
-                          title={`Ir al transporte ${t.numero_viaje}`}
-                          className="rounded-md border bg-primary/10 px-1.5 py-0.5 font-mono text-xs font-medium text-primary hover:bg-primary/20"
-                        >
-                          {t.numero_viaje}
-                        </Link>
-                      ))}
-                      {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </div>
+                  <td className="py-1.5 pr-3">
+                    {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      <div className="flex flex-nowrap items-center gap-1">
+                        {agruparTransportes(transportesPorSolicitud[r.id] ?? []).map(([base, items]) =>
+                          items.length === 1 ? (
+                            <Link
+                              key={base}
+                              to="/transportes/$id"
+                              params={{ id: items[0].id }}
+                              title={`Ir al transporte ${items[0].numero_viaje}`}
+                              className="rounded-md border bg-primary/10 px-1.5 py-0.5 font-mono text-xs font-medium text-primary hover:bg-primary/20 whitespace-nowrap"
+                            >
+                              {items[0].numero_viaje}
+                            </Link>
+                          ) : (
+                            <DropdownMenu key={base}>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  title={`Ver los ${items.length} transportes de ${base}`}
+                                  className="inline-flex items-center gap-1 rounded-md border bg-primary/10 px-1.5 py-0.5 font-mono text-xs font-medium text-primary hover:bg-primary/20 whitespace-nowrap"
+                                >
+                                  {base} <span className="rounded-full bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground">{items.length}</span>
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start">
+                                {items.map((t) => (
+                                  <DropdownMenuItem key={t.id} asChild>
+                                    <Link to="/transportes/$id" params={{ id: t.id }} className="font-mono">{t.numero_viaje}</Link>
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )
+                        )}
+                      </div>
+                    )}
                   </td>
-                  <td className="py-2 pr-3">
+                  <td className="py-1.5 pr-3">
                     <div className="flex flex-nowrap items-center gap-1">
                       {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
                         <Button variant="outline" size="sm" onClick={() => abrirEdicion(r)} title="Editar">
