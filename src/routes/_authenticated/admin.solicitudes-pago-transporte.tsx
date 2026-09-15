@@ -16,7 +16,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Copy, ExternalLink, Pencil, Printer, Trash2, Truck } from "lucide-react";
+import { Copy, ExternalLink, MoreVertical, Pencil, Printer, Trash2, Truck } from "lucide-react";
 import { fmtLocalDate } from "@/lib/dates";
 import { sanitizeSearchTerm } from "@/lib/search-filter";
 import { cn } from "@/lib/utils";
@@ -60,6 +60,8 @@ type Row = {
   porcentaje_margen: number | null;
   moneda: string;
   referencia_viaje: string | null;
+  origen: string | null;
+  destino: string | null;
   placa_contenedor: string | null;
   descripcion: string | null;
   transporte_id: string | null;
@@ -272,6 +274,8 @@ function SolicitudesPagoTransportePage() {
         fecha_salida: r.fecha_salida ?? null,
         eta: r.eta ?? null,
         estado: r.estado_transporte ?? "programado",
+        origen: r.origen ?? null,
+        destino: r.destino ?? null,
         flete_monto: netoDeSolicitud(r),
         flete_moneda: "DOP",
         numero_control_pago: r.numero_control,
