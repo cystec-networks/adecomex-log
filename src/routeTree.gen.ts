@@ -34,6 +34,7 @@ import { Route as AuthenticatedExpedientesIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedCotizacionesIndexRouteImport } from './routes/_authenticated/cotizaciones.index'
 import { Route as AuthenticatedAlmacenesIndexRouteImport } from './routes/_authenticated/almacenes.index'
 import { Route as AuthenticatedAlmacenIndexRouteImport } from './routes/_authenticated/almacen.index'
+import { Route as ImprimirSolicitudTransferenciaIdRouteImport } from './routes/imprimir/solicitud-transferencia.$id'
 import { Route as ImprimirSolicitudPagoIdRouteImport } from './routes/imprimir/solicitud-pago.$id'
 import { Route as ImprimirReciboPagoIdRouteImport } from './routes/imprimir/recibo-pago.$id'
 import { Route as ApiPublicSolicitudPagoTransporteRouteImport } from './routes/api/public/solicitud-pago-transporte'
@@ -57,6 +58,7 @@ import { Route as AuthenticatedCotizacionesCalculadoraRouteImport } from './rout
 import { Route as AuthenticatedCotizacionesIdRouteImport } from './routes/_authenticated/cotizaciones.$id'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as AuthenticatedAdminSolicitudesPagoTransporteRouteImport } from './routes/_authenticated/admin.solicitudes-pago-transporte'
+import { Route as AuthenticatedAdminSolicitudesPagoTransferenciaRouteImport } from './routes/_authenticated/admin.solicitudes-pago-transferencia'
 import { Route as AuthenticatedAdminReportesFiscalesRouteImport } from './routes/_authenticated/admin.reportes-fiscales'
 import { Route as AuthenticatedAdminPlantillasDocumentosRouteImport } from './routes/_authenticated/admin.plantillas-documentos'
 import { Route as AuthenticatedAdminGastosOperativosRouteImport } from './routes/_authenticated/admin.gastos-operativos'
@@ -221,6 +223,12 @@ const AuthenticatedAlmacenIndexRoute =
     path: '/almacen/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ImprimirSolicitudTransferenciaIdRoute =
+  ImprimirSolicitudTransferenciaIdRouteImport.update({
+    id: '/imprimir/solicitud-transferencia/$id',
+    path: '/imprimir/solicitud-transferencia/$id',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ImprimirSolicitudPagoIdRoute = ImprimirSolicitudPagoIdRouteImport.update({
   id: '/imprimir/solicitud-pago/$id',
   path: '/imprimir/solicitud-pago/$id',
@@ -353,6 +361,12 @@ const AuthenticatedAdminSolicitudesPagoTransporteRoute =
   AuthenticatedAdminSolicitudesPagoTransporteRouteImport.update({
     id: '/admin/solicitudes-pago-transporte',
     path: '/admin/solicitudes-pago-transporte',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminSolicitudesPagoTransferenciaRoute =
+  AuthenticatedAdminSolicitudesPagoTransferenciaRouteImport.update({
+    id: '/admin/solicitudes-pago-transferencia',
+    path: '/admin/solicitudes-pago-transferencia',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminReportesFiscalesRoute =
@@ -567,6 +581,7 @@ export interface FileRoutesByFullPath {
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
   '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
+  '/admin/solicitudes-pago-transferencia': typeof AuthenticatedAdminSolicitudesPagoTransferenciaRoute
   '/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/cotizaciones/$id': typeof AuthenticatedCotizacionesIdRoute
@@ -590,6 +605,7 @@ export interface FileRoutesByFullPath {
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/recibo-pago/$id': typeof ImprimirReciboPagoIdRoute
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
+  '/imprimir/solicitud-transferencia/$id': typeof ImprimirSolicitudTransferenciaIdRoute
   '/almacen/': typeof AuthenticatedAlmacenIndexRoute
   '/almacenes/': typeof AuthenticatedAlmacenesIndexRoute
   '/cotizaciones/': typeof AuthenticatedCotizacionesIndexRoute
@@ -644,6 +660,7 @@ export interface FileRoutesByTo {
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
   '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
+  '/admin/solicitudes-pago-transferencia': typeof AuthenticatedAdminSolicitudesPagoTransferenciaRoute
   '/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/cotizaciones/$id': typeof AuthenticatedCotizacionesIdRoute
@@ -667,6 +684,7 @@ export interface FileRoutesByTo {
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/recibo-pago/$id': typeof ImprimirReciboPagoIdRoute
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
+  '/imprimir/solicitud-transferencia/$id': typeof ImprimirSolicitudTransferenciaIdRoute
   '/almacen': typeof AuthenticatedAlmacenIndexRoute
   '/almacenes': typeof AuthenticatedAlmacenesIndexRoute
   '/cotizaciones': typeof AuthenticatedCotizacionesIndexRoute
@@ -725,6 +743,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/_authenticated/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
   '/_authenticated/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
+  '/_authenticated/admin/solicitudes-pago-transferencia': typeof AuthenticatedAdminSolicitudesPagoTransferenciaRoute
   '/_authenticated/admin/solicitudes-pago-transporte': typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/cotizaciones/$id': typeof AuthenticatedCotizacionesIdRoute
@@ -748,6 +767,7 @@ export interface FileRoutesById {
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/recibo-pago/$id': typeof ImprimirReciboPagoIdRoute
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
+  '/imprimir/solicitud-transferencia/$id': typeof ImprimirSolicitudTransferenciaIdRoute
   '/_authenticated/almacen/': typeof AuthenticatedAlmacenIndexRoute
   '/_authenticated/almacenes/': typeof AuthenticatedAlmacenesIndexRoute
   '/_authenticated/cotizaciones/': typeof AuthenticatedCotizacionesIndexRoute
@@ -804,6 +824,7 @@ export interface FileRouteTypes {
     | '/admin/gastos-operativos'
     | '/admin/plantillas-documentos'
     | '/admin/reportes-fiscales'
+    | '/admin/solicitudes-pago-transferencia'
     | '/admin/solicitudes-pago-transporte'
     | '/admin/usuarios'
     | '/cotizaciones/$id'
@@ -827,6 +848,7 @@ export interface FileRouteTypes {
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/recibo-pago/$id'
     | '/imprimir/solicitud-pago/$id'
+    | '/imprimir/solicitud-transferencia/$id'
     | '/almacen/'
     | '/almacenes/'
     | '/cotizaciones/'
@@ -881,6 +903,7 @@ export interface FileRouteTypes {
     | '/admin/gastos-operativos'
     | '/admin/plantillas-documentos'
     | '/admin/reportes-fiscales'
+    | '/admin/solicitudes-pago-transferencia'
     | '/admin/solicitudes-pago-transporte'
     | '/admin/usuarios'
     | '/cotizaciones/$id'
@@ -904,6 +927,7 @@ export interface FileRouteTypes {
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/recibo-pago/$id'
     | '/imprimir/solicitud-pago/$id'
+    | '/imprimir/solicitud-transferencia/$id'
     | '/almacen'
     | '/almacenes'
     | '/cotizaciones'
@@ -961,6 +985,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/gastos-operativos'
     | '/_authenticated/admin/plantillas-documentos'
     | '/_authenticated/admin/reportes-fiscales'
+    | '/_authenticated/admin/solicitudes-pago-transferencia'
     | '/_authenticated/admin/solicitudes-pago-transporte'
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/cotizaciones/$id'
@@ -984,6 +1009,7 @@ export interface FileRouteTypes {
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/recibo-pago/$id'
     | '/imprimir/solicitud-pago/$id'
+    | '/imprimir/solicitud-transferencia/$id'
     | '/_authenticated/almacen/'
     | '/_authenticated/almacenes/'
     | '/_authenticated/cotizaciones/'
@@ -1023,6 +1049,7 @@ export interface RootRouteChildren {
   ApiPublicSolicitudPagoTransporteRoute: typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   ImprimirReciboPagoIdRoute: typeof ImprimirReciboPagoIdRoute
   ImprimirSolicitudPagoIdRoute: typeof ImprimirSolicitudPagoIdRoute
+  ImprimirSolicitudTransferenciaIdRoute: typeof ImprimirSolicitudTransferenciaIdRoute
   ApiPublicReciboPagoIdRoute: typeof ApiPublicReciboPagoIdRoute
 }
 
@@ -1203,6 +1230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAlmacenIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/imprimir/solicitud-transferencia/$id': {
+      id: '/imprimir/solicitud-transferencia/$id'
+      path: '/imprimir/solicitud-transferencia/$id'
+      fullPath: '/imprimir/solicitud-transferencia/$id'
+      preLoaderRoute: typeof ImprimirSolicitudTransferenciaIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/imprimir/solicitud-pago/$id': {
       id: '/imprimir/solicitud-pago/$id'
       path: '/imprimir/solicitud-pago/$id'
@@ -1362,6 +1396,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/solicitudes-pago-transporte'
       fullPath: '/admin/solicitudes-pago-transporte'
       preLoaderRoute: typeof AuthenticatedAdminSolicitudesPagoTransporteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/solicitudes-pago-transferencia': {
+      id: '/_authenticated/admin/solicitudes-pago-transferencia'
+      path: '/admin/solicitudes-pago-transferencia'
+      fullPath: '/admin/solicitudes-pago-transferencia'
+      preLoaderRoute: typeof AuthenticatedAdminSolicitudesPagoTransferenciaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/reportes-fiscales': {
@@ -1601,6 +1642,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminGastosOperativosRoute: typeof AuthenticatedAdminGastosOperativosRoute
   AuthenticatedAdminPlantillasDocumentosRoute: typeof AuthenticatedAdminPlantillasDocumentosRoute
   AuthenticatedAdminReportesFiscalesRoute: typeof AuthenticatedAdminReportesFiscalesRoute
+  AuthenticatedAdminSolicitudesPagoTransferenciaRoute: typeof AuthenticatedAdminSolicitudesPagoTransferenciaRoute
   AuthenticatedAdminSolicitudesPagoTransporteRoute: typeof AuthenticatedAdminSolicitudesPagoTransporteRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedCotizacionesIdRoute: typeof AuthenticatedCotizacionesIdRoute
@@ -1671,6 +1713,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAdminPlantillasDocumentosRoute,
   AuthenticatedAdminReportesFiscalesRoute:
     AuthenticatedAdminReportesFiscalesRoute,
+  AuthenticatedAdminSolicitudesPagoTransferenciaRoute:
+    AuthenticatedAdminSolicitudesPagoTransferenciaRoute,
   AuthenticatedAdminSolicitudesPagoTransporteRoute:
     AuthenticatedAdminSolicitudesPagoTransporteRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
@@ -1785,6 +1829,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicSolicitudPagoTransporteRouteWithChildren,
   ImprimirReciboPagoIdRoute: ImprimirReciboPagoIdRoute,
   ImprimirSolicitudPagoIdRoute: ImprimirSolicitudPagoIdRoute,
+  ImprimirSolicitudTransferenciaIdRoute: ImprimirSolicitudTransferenciaIdRoute,
   ApiPublicReciboPagoIdRoute: ApiPublicReciboPagoIdRoute,
 }
 export const routeTree = rootRouteImport
