@@ -421,17 +421,36 @@ function SolicitudesPagoTransportePage() {
             </div>
             <div className="grid gap-1.5 md:col-span-2">
               <Label>Moneda</Label>
-              <Select value={form.moneda} onValueChange={(v) => setF("moneda", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <div className="rounded-md border px-3 py-2 text-sm font-medium">DOP</div>
+            </div>
+            <div className="grid gap-1.5 md:col-span-4">
+              <Label>Cliente Final</Label>
+              <Select value={form.cliente_id || SIN_CLIENTE} onValueChange={(v) => setF("cliente_id", v === SIN_CLIENTE ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="— Sin cliente —" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="DOP">DOP</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value={SIN_CLIENTE}>— Sin cliente —</SelectItem>
+                  {(clientes ?? []).map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid gap-1.5 md:col-span-4">
-              <Label>Referencia del viaje</Label>
-              <Input value={form.referencia_viaje} maxLength={120} onChange={(e) => setF("referencia_viaje", e.target.value)} />
+            <div className="grid gap-1.5 md:col-span-2">
+              <Label>Fecha de Salida</Label>
+              <Input type="date" value={form.fecha_salida} onChange={(e) => setF("fecha_salida", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5 md:col-span-2">
+              <Label>Fecha de Entrega (ETA)</Label>
+              <Input type="date" value={form.eta} onChange={(e) => setF("eta", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5 md:col-span-2">
+              <Label>Estado</Label>
+              <Select value={form.estado_transporte} onValueChange={(v) => setF("estado_transporte", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ESTADOS_TRANSPORTE.map((s) => <SelectItem key={s.v} value={s.v}>{s.l}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-1.5 md:col-span-2">
               <Label>Cantidad de Viajes</Label>
