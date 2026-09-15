@@ -417,6 +417,27 @@ function SolicitudesPagoTransportePage() {
                       )}
                     </div>
                   </td>
+                  <td className="py-2 pr-3">
+                    <div className="flex flex-nowrap items-center gap-1">
+                      {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
+                        <Button variant="outline" size="sm" onClick={() => abrirEdicion(r)} title="Editar">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" onClick={() => setPdfId(r.id)} title="Ver comprobante PDF">
+                        <Printer className="h-3.5 w-3.5" />
+                      </Button>
+                      {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setEliminando(r)}
+                          title="Eliminar"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         disabled={convertir.isPending}
@@ -426,7 +447,6 @@ function SolicitudesPagoTransportePage() {
                       </Button>
                     </div>
                   </td>
-
                 </tr>
               ))}
             </tbody>
