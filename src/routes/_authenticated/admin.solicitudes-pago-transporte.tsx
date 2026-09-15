@@ -16,7 +16,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Copy, ExternalLink, Pencil, Printer, Trash2, Truck } from "lucide-react";
+import { ExternalLink, Pencil, Printer, Trash2, Truck } from "lucide-react";
 import { fmtLocalDate } from "@/lib/dates";
 import { sanitizeSearchTerm } from "@/lib/search-filter";
 import { cn } from "@/lib/utils";
@@ -161,14 +161,6 @@ function SolicitudesPagoTransportePage() {
     return { pendientes: pendientes.length, vinculadas: vinculadas.length, porMoneda };
   }, [rows]);
 
-  const copiar = async (numero: string) => {
-    try {
-      await navigator.clipboard.writeText(numero);
-      toast.success(`Número ${numero} copiado`);
-    } catch {
-      toast.error("No se pudo copiar al portapapeles");
-    }
-  };
 
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Row | null>(null);
@@ -412,13 +404,6 @@ function SolicitudesPagoTransportePage() {
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        disabled={convertir.isPending}
-                        onClick={() => convertir.mutate(r)}
-                      >
-                        <Truck className="h-3.5 w-3.5 mr-1" /> Convertir
-                      </Button>
                       <Button variant="outline" size="sm" onClick={() => setPdfId(r.id)} title="Ver comprobante PDF">
                         <Printer className="h-3.5 w-3.5" />
                       </Button>
@@ -429,9 +414,6 @@ function SolicitudesPagoTransportePage() {
                           </Link>
                         </Button>
                       ))}
-                      <Button variant="outline" size="sm" onClick={() => copiar(r.numero_control)} title="Copiar número de control">
-                        <Copy className="h-3.5 w-3.5" />
-                      </Button>
                       {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
                         <Button
                           variant="outline"
@@ -443,6 +425,13 @@ function SolicitudesPagoTransportePage() {
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       )}
+                      <Button
+                        size="sm"
+                        disabled={convertir.isPending}
+                        onClick={() => convertir.mutate(r)}
+                      >
+                        <Truck className="h-3.5 w-3.5 mr-1" /> Convertir
+                      </Button>
                     </div>
                   </td>
 
