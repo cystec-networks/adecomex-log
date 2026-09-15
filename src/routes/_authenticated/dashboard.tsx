@@ -44,6 +44,7 @@ function KPI({ icon: Icon, label, value, tone = "primary", sub }: any) {
 }
 
 function Dashboard() {
+  const qc = useQueryClient();
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
