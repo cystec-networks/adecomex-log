@@ -407,18 +407,18 @@ function SolicitudesPagoTransportePage() {
                   </td>
                   <td className="py-2 pr-3">
                     <div className="flex flex-nowrap items-center gap-1">
-                      <Button
-                        size="sm"
-                        disabled={convertir.isPending}
-                        onClick={() => convertir.mutate(r)}
-                      >
-                        <Truck className="h-3.5 w-3.5 mr-1" /> Convertir en Transporte
-                      </Button>
                       {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
                         <Button variant="outline" size="sm" onClick={() => abrirEdicion(r)} title="Editar">
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
                       )}
+                      <Button
+                        size="sm"
+                        disabled={convertir.isPending}
+                        onClick={() => convertir.mutate(r)}
+                      >
+                        <Truck className="h-3.5 w-3.5 mr-1" /> Convertir
+                      </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" title="Más acciones">
