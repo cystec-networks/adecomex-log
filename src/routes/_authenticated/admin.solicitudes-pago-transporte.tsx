@@ -520,7 +520,7 @@ function SolicitudesPagoTransportePage() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+      <Dialog open={!!editing && !soloFinanzas} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-6xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing === "new" ? "Nueva solicitud de pago" : `Editar solicitud ${editing?.numero_control}`}</DialogTitle>
