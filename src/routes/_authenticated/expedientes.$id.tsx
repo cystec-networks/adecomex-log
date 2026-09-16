@@ -1137,6 +1137,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
       if (!payload.cliente_id) payload.cliente_id = null;
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
+      if (!payload.fecha_llegada_real) payload.fecha_llegada_real = null;
       if (!payload.fecha_cargado) payload.fecha_cargado = null;
       payload.peso_neto = payload.peso_neto === "" ? null : Number(payload.peso_neto);
       payload.peso_bruto = payload.peso_bruto === "" ? null : Number(payload.peso_bruto);
