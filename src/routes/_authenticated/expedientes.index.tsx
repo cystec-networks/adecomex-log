@@ -265,7 +265,18 @@ function Expedientes() {
     );
   };
 
-  const rowHighlight = (estadoRaw: string | null) => {
+  const rowHighlight = (e: any) => {
+    const estadoRaw = e.estado;
+
+    const cerrado = ["despachado", "entregado", "facturar"].includes(estadoRaw);
+
+    if (!cerrado && e.fecha_compromiso) {
+      const dias = daysFromToday(e.fecha_compromiso);
+      if (dias != null && !isNaN(dias) && dias < 7) {
+        return "bg-yellow-100 dark:bg-yellow-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-yellow-500 dark:[&>td:first-child]:border-l-yellow-400";
+      }
+    }
+
     switch (estadoRaw) {
       case "verificar":
         return "bg-red-100 dark:bg-red-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-red-500 dark:[&>td:first-child]:border-l-red-400";
@@ -323,7 +334,7 @@ function Expedientes() {
   };
 
   const ExpedienteRow = ({ e }: { e: any }) => (
-    <tr key={e.id} className={`hover:bg-muted/30 transition-colors ${rowHighlight(e.estado)}`}>
+    <tr key={e.id} className={`hover:bg-muted/30 transition-colors ${rowHighlight(e)}`}>
       <td className="px-2 py-2 align-middle whitespace-nowrap">
         <Link
           to="/expedientes/$id"
