@@ -65,7 +65,7 @@ function Dashboard() {
     },
   });
 
-  const { visible: reminders } = useReminders();
+  const { visible: reminders, isLoading: isLoadingReminders } = useReminders();
 
   const operacionesLogisticaActivas = stats?.operacionesLogistica.filter((o) => o.estado !== "arribo").length ?? 0;
   const expedientesEnTransito = stats?.expedientes.filter((e) => e.estado === "en_transito").length ?? 0;
@@ -109,7 +109,7 @@ function Dashboard() {
         <Link to="/expedientes" search={{ eta: 7 }} aria-label="Ver expedientes por llegar" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Clock} label="EXPEDIENTES POR LLEGAR" value={expedientesPorLlegar} tone="warning" sub="Próximos 7 días" /></Link>
         <Link to="/permisos" search={{ vencimiento: 15 }} aria-label="Ver permisos VUCE por vencer" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FileWarning} label="Permisos VUCE por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" /></Link>
         <Link to="/transportes" search={{ estado: "en_transito,programado" }} aria-label="Ver transportes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" /></Link>
-        <Link to="/dashboard" hash="atencion-requerida" aria-label="Ver alertas activas" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={AlertTriangle} label="Alertas activas" value={reminders.length} tone="danger" /></Link>
+        <Link to="/dashboard" hash="atencion-requerida" aria-label="Ver alertas activas" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={AlertTriangle} label="Alertas activas" value={isLoadingReminders ? null : reminders.length} tone="danger" /></Link>
       </div>
 
       <div id="atencion-requerida" className="scroll-mt-4"><RemindersPanel /></div>

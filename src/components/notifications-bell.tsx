@@ -27,16 +27,18 @@ const SEV_STYLE = {
 } as const;
 
 export function NotificationsBell() {
-  const { visible, dismiss, clearAll } = useReminders();
-  const count = visible.length;
-  const critical = visible.filter((r) => r.severity === "critica").length;
+  const { visible, dismiss, clearAll, isLoading } = useReminders();
+  // Mientras cargan las alertas o los descartes (BD), no pintar ningún número:
+  // evita el conteo transitorio incorrecto.
+  const count = isLoading ? null : visible.length;
+  const critical = isLoading ? 0 : visible.filter((r) => r.severity === "critica").length;
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
-          {count > 0 && (
+          {count !== null && count > 0 && (
             <span
               className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold grid place-items-center ${
                 critical > 0 ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"
@@ -51,8 +53,8 @@ export function NotificationsBell() {
         <div className="flex items-center justify-between p-3 border-b">
           <div className="text-sm font-semibold">Atención requerida</div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">{count} activos</Badge>
-            {count > 0 && (
+            {count !== null && <Badge variant="outline" className="text-xs">{count} activos</Badge>}
+            {count !== null && count > 0 && (
               <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => visible.forEach((r) => dismiss(r.id))}>
                 Marcar todo visto
               </Button>
@@ -60,7 +62,9 @@ export function NotificationsBell() {
           </div>
         </div>
         <ScrollArea className="max-h-[420px]">
-          {count === 0 ? (
+          {isLoading ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">Cargando alertas…</div>
+          ) : count === 0 ? (
             <div className="p-8 text-center text-sm text-muted-foreground">Sin alertas pendientes 🎉</div>
           ) : (
             <ul className="divide-y">
