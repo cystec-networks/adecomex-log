@@ -108,7 +108,7 @@ function daysBetween(a: Date, b: Date) {
 }
 
 // Parsea 'YYYY-MM-DD' como fecha local para evitar el desfase UTC de un día.
-import { diasHabilesRestantes, parseLocalDate } from "@/lib/dates";
+import { habilesRestantesPlazo, parseLocalDate } from "@/lib/dates";
 
 function isoDay(d: Date) {
   return d.toISOString().slice(0, 10);
@@ -386,8 +386,8 @@ export function useReminders() {
       // Plazo legal de presentación: 5 días hábiles desde la llegada real.
       for (const e of (pres.data ?? []) as any[]) {
         if (!e.fecha_llegada_real) continue;
-        const restantes = diasHabilesRestantes(e.fecha_llegada_real, 5);
-        if (!isFinite(restantes) || restantes > 5) continue;
+        const restantes = habilesRestantesPlazo(e.fecha_llegada_real, 5);
+        if (!isFinite(restantes)) continue;
         const critico = restantes <= 1;
         out.push({
           id: `plazo_presentacion:${e.id}`,
@@ -398,10 +398,10 @@ export function useReminders() {
             : `Plazo de presentación por vencer · Exp. ${e.numero}`,
           detail:
             restantes < 0
-              ? `${e.cliente?.nombre ?? ""} · vencido hace ${Math.abs(restantes)} días`
+              ? `${e.cliente?.nombre ?? ""} · vencido hace ${Math.abs(restantes)} días hábiles`
               : restantes === 0
                 ? `${e.cliente?.nombre ?? ""} · vence hoy (5 días hábiles desde la llegada real)`
-                : `${e.cliente?.nombre ?? ""} · quedan ${restantes} días (5 días hábiles desde la llegada real)`,
+                : `${e.cliente?.nombre ?? ""} · quedan ${restantes} días hábiles (plazo de 5 desde la llegada real)`,
           href: `/expedientes/${e.id}`,
           createdAt: e.fecha_llegada_real,
         });
