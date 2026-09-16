@@ -265,7 +265,18 @@ function Expedientes() {
     );
   };
 
-  const rowHighlight = (estadoRaw: string | null) => {
+  const rowHighlight = (e: any) => {
+    const estadoRaw = e.estado;
+
+    const cerrado = ["despachado", "entregado", "facturar"].includes(estadoRaw);
+
+    if (!cerrado && e.fecha_compromiso) {
+      const dias = daysFromToday(e.fecha_compromiso);
+      if (dias != null && !isNaN(dias) && dias < 7) {
+        return "bg-yellow-100 dark:bg-yellow-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-yellow-500 dark:[&>td:first-child]:border-l-yellow-400";
+      }
+    }
+
     switch (estadoRaw) {
       case "verificar":
         return "bg-red-100 dark:bg-red-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-red-500 dark:[&>td:first-child]:border-l-red-400";
