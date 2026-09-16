@@ -24,14 +24,14 @@ function diasHabilesEntre(desde: Date, hasta: Date): number {
 
 export function alertaDeclaracionTardia(exp: {
   estado?: string | null;
-  fecha_compromiso?: string | null;
+  fecha_llegada_real?: string | null;
   sla_dias?: number | null;
 }): AlertaDeclaracion | null {
   if (!exp) return null;
-  if (exp.estado !== "digitar" && exp.estado !== "en_transito") return null;
-  if (!exp.fecha_compromiso) return null;
+  if (exp.estado !== "digitar" && exp.estado !== "en_transito" && exp.estado !== "manifestado") return null;
+  if (!exp.fecha_llegada_real) return null;
 
-  const eta = parseLocalDate(exp.fecha_compromiso);
+  const eta = parseLocalDate(exp.fecha_llegada_real);
   if (isNaN(eta.getTime())) return null;
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);

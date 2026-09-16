@@ -252,6 +252,7 @@ function Expedientes() {
     const variants: Record<string, string> = {
       digitar: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
       en_transito: "bg-cyan-50 text-cyan-700 border-cyan-100 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-900",
+      manifestado: "bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900",
       presentar: "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900",
       verificar: "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900",
       despachado: "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900",
@@ -277,6 +278,7 @@ function Expedientes() {
     const porEstado: Record<string, string> = {
       digitar: "bg-sky-50 dark:bg-sky-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-sky-400",
       en_transito: "bg-purple-50 dark:bg-purple-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-purple-400",
+      manifestado: "bg-indigo-50 dark:bg-indigo-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-indigo-400",
       presentar: "bg-amber-100 dark:bg-amber-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-amber-500 dark:[&>td:first-child]:border-l-amber-400",
       verificar: "bg-red-100 dark:bg-red-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-red-500 dark:[&>td:first-child]:border-l-red-400",
       despachado: "bg-slate-200 dark:bg-slate-900/60 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-slate-600 dark:[&>td:first-child]:border-l-slate-500",
@@ -565,6 +567,7 @@ function Expedientes() {
                     {(() => {
                       const g1 = rows.filter((e: any) => ESTADO_GRUPO_1.includes(e.estado)).sort(cmp);
                       const transito = rows.filter((e: any) => e.estado === "en_transito").sort(cmp);
+                      const manifestado = rows.filter((e: any) => e.estado === "manifestado").sort(cmp);
                       const g3 = rows.filter((e: any) => ESTADO_GRUPO_3.includes(e.estado)).sort(cmp);
                       const facturar = rows.filter((e: any) => e.estado === "facturar").sort(cmp);
                       return (
@@ -573,6 +576,8 @@ function Expedientes() {
                         {!colapsados["digitar_g1"] && g1.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
                         {transito.length > 0 && <EstadoDivider label="En Tránsito" groupKey="en_transito" count={transito.length} />}
                         {!colapsados["en_transito"] && transito.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
+                        {manifestado.length > 0 && <EstadoDivider label="Manifestado" groupKey="manifestado" count={manifestado.length} />}
+                        {!colapsados["manifestado"] && manifestado.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
                         {g3.length > 0 && <EstadoDivider label="Despachado / Entregado" groupKey="despachado_g3" count={g3.length} />}
                         {!colapsados["despachado_g3"] && g3.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
                         {facturar.length > 0 && <EstadoDivider label="Facturados" groupKey="facturados" count={facturar.length} />}

@@ -187,7 +187,7 @@ export function useReminders() {
           .select("id,numero,estado,fecha_llegada_real, cliente:clientes(nombre)")
           .is("eliminado_en", null)
           .not("fecha_llegada_real", "is", null)
-          .in("estado", ["digitar", "en_transito"])
+          .in("estado", ["digitar", "en_transito", "manifestado"])
           .limit(300),
       ]);
 

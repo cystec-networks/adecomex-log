@@ -1,0 +1,1 @@
+ALTER TYPE public.expediente_estado ADD VALUE IF NOT EXISTS 'manifestado' AFTER 'en_transito';

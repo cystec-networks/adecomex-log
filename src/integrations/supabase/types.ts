@@ -6513,6 +6513,7 @@ export type Database = {
       expediente_estado:
         | "digitar"
         | "en_transito"
+        | "manifestado"
         | "presentar"
         | "verificar"
         | "facturar"
@@ -6770,6 +6771,7 @@ export const Constants = {
       expediente_estado: [
         "digitar",
         "en_transito",
+        "manifestado",
         "presentar",
         "verificar",
         "facturar",
