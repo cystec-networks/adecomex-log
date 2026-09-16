@@ -67,6 +67,7 @@ const neto = (r: { monto: number; descuento_cxc: number | null }) =>
   Number(r.monto || 0) - Number(r.descuento_cxc || 0);
 
 type FormState = {
+  secuencia: string;
   fecha: string;
   categoria: string;
   factura_compra: string;
@@ -78,6 +79,7 @@ type FormState = {
 };
 
 const EMPTY_FORM: FormState = {
+  secuencia: "",
   fecha: new Date().toISOString().slice(0, 10),
   categoria: "Gastos Menores",
   factura_compra: "",
