@@ -183,6 +183,12 @@ function Expedientes() {
     const aD = (a.estado === "despachado" || a.estado === "entregado" || a.estado === "facturar") ? 1 : 0;
     const bD = (b.estado === "despachado" || b.estado === "entregado" || b.estado === "facturar") ? 1 : 0;
     if (aD !== bD) return aD - bD;
+    if (soloUrgentes) {
+      const an = nivelUrgencia(a); const bn = nivelUrgencia(b);
+      const ar = an ? NIVEL_ORDEN[an] : 3;
+      const br = bn ? NIVEL_ORDEN[bn] : 3;
+      if (ar !== br) return ar - br;
+    }
     const av = getVal(a, activeSort.key);
     const bv = getVal(b, activeSort.key);
     const aEmpty = av === "" || av == null;
