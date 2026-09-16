@@ -382,7 +382,29 @@ export function useReminders() {
         });
       }
 
-
+      // Plazo legal de presentación: 5 días hábiles desde la llegada real.
+      for (const e of (pres.data ?? []) as any[]) {
+        if (!e.fecha_llegada_real) continue;
+        const restantes = diasHabilesRestantes(e.fecha_llegada_real, 5);
+        if (!isFinite(restantes) || restantes > 5) continue;
+        const critico = restantes <= 1;
+        out.push({
+          id: `plazo_presentacion:${e.id}`,
+          kind: "plazo_presentacion",
+          severity: critico ? "critica" : "alta",
+          title: critico
+            ? `⚠️ CRÍTICO · Plazo de presentación · Exp. ${e.numero}`
+            : `Plazo de presentación por vencer · Exp. ${e.numero}`,
+          detail:
+            restantes < 0
+              ? `${e.cliente?.nombre ?? ""} · vencido hace ${Math.abs(restantes)} días`
+              : restantes === 0
+                ? `${e.cliente?.nombre ?? ""} · vence hoy (5 días hábiles desde la llegada real)`
+                : `${e.cliente?.nombre ?? ""} · quedan ${restantes} días (5 días hábiles desde la llegada real)`,
+          href: `/expedientes/${e.id}`,
+          createdAt: e.fecha_llegada_real,
+        });
+      }
 
       const sevOrder: Record<ReminderSeverity, number> = { critica: 0, alta: 1, media: 2 };
       // Ordena por severidad; dentro de "crítica", el hito de Verificación va primero.
