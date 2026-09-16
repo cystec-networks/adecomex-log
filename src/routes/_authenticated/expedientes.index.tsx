@@ -135,15 +135,22 @@ function Expedientes() {
     return "otros";
   };
 
-  const esUrgente = (e: any) => {
-    if (e.estado === "despachado" || e.estado === "entregado" || e.estado === "facturar" || !e.fecha_compromiso) return false;
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const eta = parseLocalDate(e.fecha_compromiso);
-    if (!eta) return false;
-    eta.setHours(0, 0, 0, 0);
-    const diff = Math.round((eta.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return diff < 3;
+  type Nivel = "critico" | "urgente" | "atencion";
+  const nivelUrgencia = (e: any): Nivel | null => {
+    if (["despachado", "entregado", "facturar"].includes(e.estado)) return null;
+    if (e.fecha_llegada_real) {
+      const restantes = diasHabilesRestantes(e.fecha_llegada_real, 5);
+      if (restantes <= 1) return "critico";
+      if (restantes <= 5) return "atencion";
+    }
+    if (e.fecha_compromiso) {
+      const diff = daysFromToday(e.fecha_compromiso);
+      if (!isNaN(diff) && diff < 3) return "urgente";
+    }
+    return null;
   };
+  const NIVEL_ORDEN: Record<Nivel, number> = { critico: 0, urgente: 1, atencion: 2 };
+  const esUrgente = (e: any) => nivelUrgencia(e) !== null;
 
   const filtered = (data ?? []).filter((e: any) => {
     const estados = estado === "todos" ? [] : estado.split(",");
