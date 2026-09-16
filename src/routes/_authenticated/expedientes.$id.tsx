@@ -770,20 +770,6 @@ function Field({ label, value, onChange, type = "text", className = "", disabled
   );
 }
 
-function AutoField({ label, value, onChange, suggestion, className = "", disabled = false, req = false, fieldId, highlight = false }: { label: string; value: any; onChange: (v: string) => void; suggestion: string[]; className?: string; disabled?: boolean; req?: boolean; fieldId?: string; highlight?: boolean }) {
-  return (
-    <div className={cn("grid gap-1.5", highlight && "ring-2 ring-destructive rounded-md p-2 -m-2", className)} id={fieldId}>
-      <Label>{req && <ReqMark />}{label}</Label>
-      <AutocompleteInput
-        value={value ?? ""}
-        onChange={onChange}
-        suggestions={suggestion ?? []}
-        placeholder={`Escribe para buscar ${label.toLowerCase()}…`}
-        disabled={disabled}
-      />
-    </div>
-  );
-}
 
 function Section({ title, subtitle, children, id, className }: { title: React.ReactNode; subtitle?: string; children: React.ReactNode; id: string; className?: string }) {
   const [abierto, setAbierto] = useState(() => {
