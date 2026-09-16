@@ -21,7 +21,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { fmtLocalDate } from "@/lib/dates";
 import { sanitizeSearchTerm } from "@/lib/search-filter";
 import { cn } from "@/lib/utils";
-import { SolicitudPagoPdfDialog } from "@/components/solicitud-pago-pdf-dialog";
+
 
 export const Route = createFileRoute("/_authenticated/admin/solicitudes-pago-transporte")({
   ssr: false,
