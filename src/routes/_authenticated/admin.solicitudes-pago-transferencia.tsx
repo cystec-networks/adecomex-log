@@ -111,6 +111,16 @@ function SolicitudesPagoTransferenciaPage() {
     },
   });
 
+  const { data: histBeneficiarios = [] } = useQuery({
+    queryKey: ["beneficiarios-hist"],
+    queryFn: async () =>
+      (await supabase.from("solicitudes_pago_transferencia").select("beneficiario").limit(500)).data ?? [],
+  });
+  const sugerenciasBeneficiario = useMemo(
+    () => [...new Set(histBeneficiarios.map((r: any) => r.beneficiario).filter(Boolean))].sort(),
+    [histBeneficiarios]
+  );
+
   const { data: transportes = [] } = useQuery({
     queryKey: ["spt-lite"],
     queryFn: async () =>
@@ -342,10 +352,12 @@ function SolicitudesPagoTransferenciaPage() {
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <div>
-                <Label>Beneficiario</Label>
-                <Input value={form.beneficiario} onChange={(e) => setForm({ ...form, beneficiario: e.target.value })} />
-              </div>
+              <AutoField
+                label="Beneficiario"
+                value={form.beneficiario}
+                onChange={(v) => setForm({ ...form, beneficiario: v })}
+                suggestion={sugerenciasBeneficiario}
+              />
               <div>
                 <Label>Vincular a Solicitud de Transporte</Label>
                 <Select
