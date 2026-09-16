@@ -2898,6 +2898,7 @@ export type Database = {
           fecha_en_transito: string | null
           fecha_entregado: string | null
           fecha_facturado: string | null
+          fecha_llegada_real: string | null
           fecha_presentado: string | null
           fecha_recibido: string | null
           fecha_tasa_manual: string | null
@@ -2986,6 +2987,7 @@ export type Database = {
           fecha_en_transito?: string | null
           fecha_entregado?: string | null
           fecha_facturado?: string | null
+          fecha_llegada_real?: string | null
           fecha_presentado?: string | null
           fecha_recibido?: string | null
           fecha_tasa_manual?: string | null
@@ -3074,6 +3076,7 @@ export type Database = {
           fecha_en_transito?: string | null
           fecha_entregado?: string | null
           fecha_facturado?: string | null
+          fecha_llegada_real?: string | null
           fecha_presentado?: string | null
           fecha_recibido?: string | null
           fecha_tasa_manual?: string | null

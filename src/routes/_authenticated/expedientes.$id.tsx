@@ -905,6 +905,7 @@ function construirFormInicial(data: any, nuevo: boolean) {
     bl_awb: d.bl_awb ?? "",
     sla_dias: d.sla_dias ?? 15,
     fecha_compromiso: d.fecha_compromiso ?? "",
+    fecha_llegada_real: d.fecha_llegada_real ?? "",
     fecha_cargado: d.fecha_cargado ?? "",
     medio_transporte: d.medio_transporte ?? "",
     naviera: d.naviera ?? "",
@@ -1136,6 +1137,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
       if (!payload.cliente_id) payload.cliente_id = null;
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
+      if (!payload.fecha_llegada_real) payload.fecha_llegada_real = null;
       if (!payload.fecha_cargado) payload.fecha_cargado = null;
       payload.peso_neto = payload.peso_neto === "" ? null : Number(payload.peso_neto);
       payload.peso_bruto = payload.peso_bruto === "" ? null : Number(payload.peso_bruto);
@@ -1224,6 +1226,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       const contValidos = contenedores.filter((c) => c.numero.trim());
       if (!payload.numero) delete payload.numero; // numeración automática
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
+      if (!payload.fecha_llegada_real) payload.fecha_llegada_real = null;
       if (!payload.fecha_cargado) payload.fecha_cargado = null;
       if (!payload.cliente_id) payload.cliente_id = null;
       const toNum = (v: any) => (v === "" || v == null ? null : Number(v));
