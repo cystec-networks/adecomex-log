@@ -313,7 +313,7 @@ function Expedientes() {
     );
   };
 
-  const ESTADO_GRUPO_1 = ["digitar", "presentar", "verificar"];
+  const ESTADO_GRUPO_1 = ["digitar", "manifestado", "presentar", "verificar"];
   const ESTADO_GRUPO_3 = ["despachado", "entregado"];
 
   const EstadoDivider = ({ label, groupKey, count }: { label: string; groupKey: string; count: number }) => {
@@ -567,7 +567,6 @@ function Expedientes() {
                     {(() => {
                       const g1 = rows.filter((e: any) => ESTADO_GRUPO_1.includes(e.estado)).sort(cmp);
                       const transito = rows.filter((e: any) => e.estado === "en_transito").sort(cmp);
-                      const manifestado = rows.filter((e: any) => e.estado === "manifestado").sort(cmp);
                       const g3 = rows.filter((e: any) => ESTADO_GRUPO_3.includes(e.estado)).sort(cmp);
                       const facturar = rows.filter((e: any) => e.estado === "facturar").sort(cmp);
                       return (
@@ -576,8 +575,6 @@ function Expedientes() {
                         {!colapsados["digitar_g1"] && g1.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
                         {transito.length > 0 && <EstadoDivider label="En Tránsito" groupKey="en_transito" count={transito.length} />}
                         {!colapsados["en_transito"] && transito.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
-                        {manifestado.length > 0 && <EstadoDivider label="Manifestado" groupKey="manifestado" count={manifestado.length} />}
-                        {!colapsados["manifestado"] && manifestado.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
                         {g3.length > 0 && <EstadoDivider label="Despachado / Entregado" groupKey="despachado_g3" count={g3.length} />}
                         {!colapsados["despachado_g3"] && g3.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
                         {facturar.length > 0 && <EstadoDivider label="Facturados" groupKey="facturados" count={facturar.length} />}
