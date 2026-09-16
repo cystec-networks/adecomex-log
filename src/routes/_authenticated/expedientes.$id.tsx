@@ -1226,6 +1226,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       const contValidos = contenedores.filter((c) => c.numero.trim());
       if (!payload.numero) delete payload.numero; // numeración automática
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
+      if (!payload.fecha_llegada_real) payload.fecha_llegada_real = null;
       if (!payload.fecha_cargado) payload.fecha_cargado = null;
       if (!payload.cliente_id) payload.cliente_id = null;
       const toNum = (v: any) => (v === "" || v == null ? null : Number(v));
