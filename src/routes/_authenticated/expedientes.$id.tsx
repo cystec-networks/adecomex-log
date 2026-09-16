@@ -905,6 +905,7 @@ function construirFormInicial(data: any, nuevo: boolean) {
     bl_awb: d.bl_awb ?? "",
     sla_dias: d.sla_dias ?? 15,
     fecha_compromiso: d.fecha_compromiso ?? "",
+    fecha_llegada_real: d.fecha_llegada_real ?? "",
     fecha_cargado: d.fecha_cargado ?? "",
     medio_transporte: d.medio_transporte ?? "",
     naviera: d.naviera ?? "",
