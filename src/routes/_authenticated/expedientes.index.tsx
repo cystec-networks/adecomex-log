@@ -267,26 +267,29 @@ function Expedientes() {
 
   const rowHighlight = (e: any) => {
     const estadoRaw = e.estado;
-
+    const dias = e.fecha_compromiso ? daysFromToday(e.fecha_compromiso) : null;
     const cerrado = ["despachado", "entregado", "facturar"].includes(estadoRaw);
+    const urgente =
+      !cerrado && dias != null && !isNaN(dias) && dias < 7;
 
-    if (!cerrado && e.fecha_compromiso) {
-      const dias = daysFromToday(e.fecha_compromiso);
-      if (dias != null && !isNaN(dias) && dias < 7) {
-        return "bg-yellow-100 dark:bg-yellow-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-yellow-500 dark:[&>td:first-child]:border-l-yellow-400";
-      }
-    }
+    // Color de fondo por estado — cada estado con su propio tono:
+    const porEstado: Record<string, string> = {
+      digitar: "bg-sky-50 dark:bg-sky-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-sky-400",
+      en_transito: "bg-purple-50 dark:bg-purple-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-purple-400",
+      presentar: "bg-amber-100 dark:bg-amber-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-amber-500 dark:[&>td:first-child]:border-l-amber-400",
+      verificar: "bg-red-100 dark:bg-red-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-red-500 dark:[&>td:first-child]:border-l-red-400",
+      despachado: "bg-slate-200 dark:bg-slate-900/60 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-slate-600 dark:[&>td:first-child]:border-l-slate-500",
+      entregado: "bg-emerald-50 dark:bg-emerald-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-emerald-500",
+      facturar: "bg-teal-50 dark:bg-teal-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-teal-500",
+    };
 
-    switch (estadoRaw) {
-      case "verificar":
-        return "bg-red-100 dark:bg-red-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-red-500 dark:[&>td:first-child]:border-l-red-400";
-      case "presentar":
-        return "bg-amber-100 dark:bg-amber-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-amber-500 dark:[&>td:first-child]:border-l-amber-400";
-      case "despachado":
-        return "bg-slate-200 dark:bg-slate-900/60 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-slate-600 dark:[&>td:first-child]:border-l-slate-500";
-      default:
-        return "";
-    }
+    const base = porEstado[estadoRaw] ?? "";
+    // El acento de urgencia SOLO engruesa y cambia el borde izquierdo — nunca reemplaza el fondo:
+    const acentoUrgente = urgente
+      ? " [&>td:first-child]:border-l-[6px] [&>td:first-child]:border-l-yellow-500 dark:[&>td:first-child]:border-l-yellow-400"
+      : "";
+
+    return base + acentoUrgente;
   };
 
   const fechaVerificacion = (e: any) => {
