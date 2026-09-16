@@ -17,6 +17,7 @@ const KIND_ICON = {
   hito_atrasado: AlertTriangle,
   logistica_eta_vencida: Ship,
   logistica_sin_documentos: FileWarning,
+  plazo_presentacion: AlertTriangle,
 } as const;
 
 const SEV_STYLE = {

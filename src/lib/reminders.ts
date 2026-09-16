@@ -14,7 +14,8 @@ export type ReminderKind =
   | "hito_proximo"
   | "hito_atrasado"
   | "logistica_eta_vencida"
-  | "logistica_sin_documentos";
+  | "logistica_sin_documentos"
+  | "plazo_presentacion";
 
 export type Reminder = {
   id: string; // clave única `${kind}:${entidad_id}`
@@ -106,7 +107,7 @@ function daysBetween(a: Date, b: Date) {
 }
 
 // Parsea 'YYYY-MM-DD' como fecha local para evitar el desfase UTC de un día.
-import { parseLocalDate } from "@/lib/dates";
+import { diasHabilesRestantes, parseLocalDate } from "@/lib/dates";
 
 function isoDay(d: Date) {
   return d.toISOString().slice(0, 10);
@@ -127,7 +128,7 @@ export function useReminders() {
       const hitoLimite = new Date(today); hitoLimite.setDate(hitoLimite.getDate() + 3);
       const traLimite = new Date(today); traLimite.setDate(traLimite.getDate() - cfg.transporteRetrasadoDias);
 
-      const [sol, exp, per, tra, hit, logi, emb] = await Promise.all([
+      const [sol, exp, per, tra, hit, logi, emb, pres] = await Promise.all([
         supabase
           .from("solicitudes")
           .select("id,numero,estado,created_at, cliente:clientes(nombre)")
@@ -179,6 +180,13 @@ export function useReminders() {
           .select("operacion_logistica_id, operaciones_logistica!inner(id,numero,eliminado_en)")
           .eq("etapa_codigo", "embarque")
           .eq("estado", "completada")
+          .limit(300),
+        supabase
+          .from("expedientes")
+          .select("id,numero,estado,fecha_llegada_real, cliente:clientes(nombre)")
+          .is("eliminado_en", null)
+          .not("fecha_llegada_real", "is", null)
+          .not("estado", "in", "(despachado,entregado,facturar)")
           .limit(300),
       ]);
 
@@ -374,7 +382,29 @@ export function useReminders() {
         });
       }
 
-
+      // Plazo legal de presentación: 5 días hábiles desde la llegada real.
+      for (const e of (pres.data ?? []) as any[]) {
+        if (!e.fecha_llegada_real) continue;
+        const restantes = diasHabilesRestantes(e.fecha_llegada_real, 5);
+        if (!isFinite(restantes) || restantes > 5) continue;
+        const critico = restantes <= 1;
+        out.push({
+          id: `plazo_presentacion:${e.id}`,
+          kind: "plazo_presentacion",
+          severity: critico ? "critica" : "alta",
+          title: critico
+            ? `⚠️ CRÍTICO · Plazo de presentación · Exp. ${e.numero}`
+            : `Plazo de presentación por vencer · Exp. ${e.numero}`,
+          detail:
+            restantes < 0
+              ? `${e.cliente?.nombre ?? ""} · vencido hace ${Math.abs(restantes)} días`
+              : restantes === 0
+                ? `${e.cliente?.nombre ?? ""} · vence hoy (5 días hábiles desde la llegada real)`
+                : `${e.cliente?.nombre ?? ""} · quedan ${restantes} días (5 días hábiles desde la llegada real)`,
+          href: `/expedientes/${e.id}`,
+          createdAt: e.fecha_llegada_real,
+        });
+      }
 
       const sevOrder: Record<ReminderSeverity, number> = { critica: 0, alta: 1, media: 2 };
       // Ordena por severidad; dentro de "crítica", el hito de Verificación va primero.

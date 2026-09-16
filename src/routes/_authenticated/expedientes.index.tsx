@@ -20,7 +20,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
-import { daysFromToday } from "@/lib/dates";
+import { daysFromToday, diasHabilesRestantes } from "@/lib/dates";
 
 type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 
@@ -69,7 +69,7 @@ function Expedientes() {
     queryKey: ["expedientes"],
     queryFn: async () => (await supabase
       .from("expedientes")
-      .select("id,numero,estado,bl_awb,factura_comercial,fecha_compromiso,created_at,updated_at,medio_transporte,naviera,suplidor,pais_origen,pais_procedencia,incoterm,puerto_salida,puerto_arribo,numero_dua,numero_vuce,numero_igra,descripcion_mercancia,numeros_contenedores,numero_certificado_origen,tipo_operacion,tipo_carga,regimen_aduanero,observaciones,total_fob,total_cif,liq_siga_numero, clientes(nombre,telefono,email), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento), mercancia_items(item_no, detalle_producto, deleted_at)")
+      .select("id,numero,estado,bl_awb,factura_comercial,fecha_compromiso,fecha_llegada_real,created_at,updated_at,medio_transporte,naviera,suplidor,pais_origen,pais_procedencia,incoterm,puerto_salida,puerto_arribo,numero_dua,numero_vuce,numero_igra,descripcion_mercancia,numeros_contenedores,numero_certificado_origen,tipo_operacion,tipo_carga,regimen_aduanero,observaciones,total_fob,total_cif,liq_siga_numero, clientes(nombre,telefono,email), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento), mercancia_items(item_no, detalle_producto, deleted_at)")
       .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
   });
@@ -135,15 +135,22 @@ function Expedientes() {
     return "otros";
   };
 
-  const esUrgente = (e: any) => {
-    if (e.estado === "despachado" || e.estado === "entregado" || e.estado === "facturar" || !e.fecha_compromiso) return false;
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const eta = parseLocalDate(e.fecha_compromiso);
-    if (!eta) return false;
-    eta.setHours(0, 0, 0, 0);
-    const diff = Math.round((eta.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return diff < 3;
+  type Nivel = "critico" | "urgente" | "atencion";
+  const nivelUrgencia = (e: any): Nivel | null => {
+    if (["despachado", "entregado", "facturar"].includes(e.estado)) return null;
+    if (e.fecha_llegada_real) {
+      const restantes = diasHabilesRestantes(e.fecha_llegada_real, 5);
+      if (restantes <= 1) return "critico";
+      if (restantes <= 5) return "atencion";
+    }
+    if (e.fecha_compromiso) {
+      const diff = daysFromToday(e.fecha_compromiso);
+      if (!isNaN(diff) && diff < 3) return "urgente";
+    }
+    return null;
   };
+  const NIVEL_ORDEN: Record<Nivel, number> = { critico: 0, urgente: 1, atencion: 2 };
+  const esUrgente = (e: any) => nivelUrgencia(e) !== null;
 
   const filtered = (data ?? []).filter((e: any) => {
     const estados = estado === "todos" ? [] : estado.split(",");
@@ -176,6 +183,12 @@ function Expedientes() {
     const aD = (a.estado === "despachado" || a.estado === "entregado" || a.estado === "facturar") ? 1 : 0;
     const bD = (b.estado === "despachado" || b.estado === "entregado" || b.estado === "facturar") ? 1 : 0;
     if (aD !== bD) return aD - bD;
+    if (soloUrgentes) {
+      const an = nivelUrgencia(a); const bn = nivelUrgencia(b);
+      const ar = an ? NIVEL_ORDEN[an] : 3;
+      const br = bn ? NIVEL_ORDEN[bn] : 3;
+      if (ar !== br) return ar - br;
+    }
     const av = getVal(a, activeSort.key);
     const bv = getVal(b, activeSort.key);
     const aEmpty = av === "" || av == null;
@@ -347,12 +360,25 @@ function Expedientes() {
               : "text-destructive";
           return (
             <span title={d.full} className={`inline-flex items-center gap-1 text-xs font-medium tabular-nums ${toneClass}`}>
-              {esUrgente(e) && (
-                <AlarmClock
-                  className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400"
-                  aria-label="ETA urgente (menos de 3 días)"
-                />
-              )}
+              {(() => {
+                const n = nivelUrgencia(e);
+                if (!n) return null;
+                const cls = n === "critico"
+                  ? "text-red-600 dark:text-red-400"
+                  : n === "urgente"
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-yellow-500 dark:text-yellow-300";
+                const label = n === "critico"
+                  ? "Crítico: plazo legal de presentación vence hoy o mañana"
+                  : n === "urgente"
+                    ? "ETA urgente (menos de 3 días)"
+                    : "Atención: plazo legal de presentación en curso (5 días hábiles)";
+                return (
+                  <span title={label} aria-label={label}>
+                    <AlarmClock className={`h-3.5 w-3.5 ${cls}`} />
+                  </span>
+                );
+              })()}
               {d.text}
             </span>
           );
@@ -489,7 +515,7 @@ function Expedientes() {
             onPressedChange={setSoloUrgentes}
             size="sm"
             className="data-[state=on]:bg-orange-100 data-[state=on]:text-orange-700 dark:data-[state=on]:bg-orange-950/40 dark:data-[state=on]:text-orange-300 gap-1.5"
-            title="Filtrar expedientes con ETA a menos de 3 días"
+            title="Filtrar expedientes urgentes: plazo legal de presentación (5 días hábiles desde la llegada real) o ETA a menos de 3 días"
           >
             <AlarmClock className="h-3.5 w-3.5" />
             <span className="text-xs">Solo urgentes ETA</span>
