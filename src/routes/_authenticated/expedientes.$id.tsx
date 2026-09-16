@@ -23,7 +23,7 @@ import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
 import { calcImpuestosLinea } from "@/lib/impuestos";
 import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
 import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
-import { AutocompleteInput } from "@/components/autocomplete-input";
+import { AutoField } from "@/components/auto-field";
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { DgaCombobox } from "@/components/dga-combobox";
