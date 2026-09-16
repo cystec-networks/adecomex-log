@@ -111,6 +111,16 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_authenticated/expedientes/$id")({
+  head: () => ({
+    meta: [
+      { title: "Detalle de Expediente | ADECOMEX" },
+      { name: "description", content: "Consulta y gestión del expediente de importación en ADECOMEX." },
+      { property: "og:title", content: "Detalle de Expediente | ADECOMEX" },
+      { property: "og:description", content: "Consulta y gestión del expediente de importación en ADECOMEX." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   validateSearch: zodValidator(searchSchema),
   component: DetalleExpediente,
 });
@@ -490,9 +500,9 @@ function DetalleExpediente() {
                   {expData.clientes ? (
                     <Popover>
                       <PopoverTrigger asChild>
-                        <button type="button" className="min-w-0 truncate text-left underline decoration-dotted underline-offset-2" title={expData.clientes.nombre}>
+                        <Button type="button" variant="link" className="h-auto min-w-0 justify-start truncate p-0 text-left text-base font-bold text-foreground underline decoration-dotted underline-offset-2 md:text-xl" title={expData.clientes.nombre}>
                           {expData.clientes.nombre}
-                        </button>
+                        </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[min(22rem,calc(100vw-2rem))] p-0 border-none bg-transparent shadow-none z-50" side="bottom" align="start" sideOffset={8}>
                         <div className="rounded-md border bg-background shadow-lg px-3 py-2 text-xs space-y-0.5">
