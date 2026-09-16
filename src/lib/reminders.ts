@@ -181,6 +181,13 @@ export function useReminders() {
           .eq("etapa_codigo", "embarque")
           .eq("estado", "completada")
           .limit(300),
+        supabase
+          .from("expedientes")
+          .select("id,numero,estado,fecha_llegada_real, cliente:clientes(nombre)")
+          .is("eliminado_en", null)
+          .not("fecha_llegada_real", "is", null)
+          .not("estado", "in", "(despachado,entregado,facturar)")
+          .limit(300),
       ]);
 
       // Operaciones con etapa "Embarque" completada y sin documentos cargados.
