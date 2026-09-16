@@ -294,11 +294,12 @@ function SolicitudesPagoTransferenciaPage() {
                       </Button>
                       <Button
                         size="icon"
-                        variant="ghost"
-                        title="Comprobante"
+                        variant="outline"
+                        className="h-8 w-8"
+                        title="Ver comprobante PDF"
                         onClick={() => setPdfId(r.id)}
                       >
-                        <Printer className="h-4 w-4" />
+                        <Printer className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         size="icon" variant="ghost" title="Eliminar"
