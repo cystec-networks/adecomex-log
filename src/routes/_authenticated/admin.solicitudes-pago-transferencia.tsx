@@ -308,7 +308,16 @@ function SolicitudesPagoTransferenciaPage() {
           </DialogHeader>
 
           <div className="grid gap-3">
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-4">
+              <div>
+                <Label>Secuencia</Label>
+                <Input
+                  value={editing === "new" ? "Se genera automáticamente" : form.secuencia}
+                  disabled={editing === "new"}
+                  className="font-mono"
+                  onChange={(e) => setForm({ ...form, secuencia: e.target.value })}
+                />
+              </div>
               <div>
                 <Label>Fecha</Label>
                 <Input type="date" value={form.fecha} onChange={(e) => setForm({ ...form, fecha: e.target.value })} />
