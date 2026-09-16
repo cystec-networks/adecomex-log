@@ -61,7 +61,7 @@ export function useDismissedReminders() {
   const qc = useQueryClient();
   const migrated = useRef(false);
 
-  const { data: dismissedRows } = useQuery({
+  const { data: dismissedRows, isLoading: isLoadingDismissed } = useQuery({
     queryKey: DISMISSED_QK,
     queryFn: async () => {
       const userId = await currentUserId();
@@ -99,6 +99,7 @@ export function useDismissedReminders() {
     dismissed,
     dismiss: (id: string) => dismissMut.mutate(id),
     clearAll: () => clearAllMut.mutate(),
+    isLoading: isLoadingDismissed,
   };
 }
 
@@ -425,8 +426,11 @@ export function useReminders() {
 
   });
 
-  const { dismissed, dismiss, clearAll } = useDismissedReminders();
-  const visible = (query.data ?? []).filter((r) => !dismissed.has(r.id));
+  const { dismissed, dismiss, clearAll, isLoading: isLoadingDismissed } = useDismissedReminders();
+  // Evita el "flash" de alertas sin filtrar: no calcula `visible` hasta que
+  // tanto las alertas como los descartes (async, en BD) hayan resuelto.
+  const isLoading = query.isLoading || isLoadingDismissed;
+  const visible = isLoading ? [] : (query.data ?? []).filter((r) => !dismissed.has(r.id));
 
   // Limpia de la tabla los descartes de alertas que ya no existen (evita crecimiento sin límite)
   const qc = useQueryClient();
@@ -450,5 +454,5 @@ export function useReminders() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.data, dismissed]);
 
-  return { all: query.data ?? [], visible, dismiss, clearAll, isLoading: query.isLoading };
+  return { all: query.data ?? [], visible, dismiss, clearAll, isLoading };
 }
