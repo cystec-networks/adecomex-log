@@ -644,7 +644,7 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
               <Input
                 value={form.numero_control_pago}
                 onChange={(e) => set("numero_control_pago", e.target.value)}
-                placeholder="SPT-000001"
+                placeholder="TF-0000000"
               />
               <Button type="button" variant="outline" disabled={buscandoSpt} onClick={() => buscarSolicitudPago()}>
                 {buscandoSpt ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
