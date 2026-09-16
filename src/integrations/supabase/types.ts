@@ -4830,7 +4830,7 @@ export type Database = {
           fecha_vencimiento?: string | null
           id?: string
           institucion_emisora?: string | null
-          numero?: string
+          numero: string
           numero_resolucion?: string | null
           observaciones?: string | null
           orden_id?: string | null
