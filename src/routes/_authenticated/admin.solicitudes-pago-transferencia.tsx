@@ -132,6 +132,7 @@ function SolicitudesPagoTransferenciaPage() {
   const abrirNueva = () => { setForm(EMPTY_FORM); setEditing("new"); };
   const abrirEdicion = (r: Row) => {
     setForm({
+      secuencia: r.secuencia,
       fecha: r.fecha,
       categoria: r.categoria,
       factura_compra: r.factura_compra ?? "",
