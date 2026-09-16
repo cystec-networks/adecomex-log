@@ -920,20 +920,17 @@ function SolicitudesPagoTransportePage() {
             );
           })()}
           <DialogFooter>
-            <Button variant="outline" asChild>
-              <a
-                href={consultando ? `/imprimir/solicitud-pago/${consultando.id}` : "#"}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Printer className="mr-1 h-4 w-4" /> Ver comprobante
-              </a>
+            <Button variant="outline" onClick={() => consultando && setPdfId(consultando.id)}>
+              <Printer className="mr-1 h-4 w-4" /> Ver comprobante
             </Button>
             <Button variant="outline" onClick={() => setConsultando(null)}>Cerrar</Button>
           </DialogFooter>
 
         </DialogContent>
       </Dialog>
+
+      <SolicitudPagoPdfDialog id={pdfId} open={!!pdfId} onOpenChange={(o) => !o && setPdfId(null)} />
+
 
 
 
