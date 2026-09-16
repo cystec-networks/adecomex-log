@@ -15,8 +15,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
@@ -464,10 +467,10 @@ function DetalleExpediente() {
   return (
     <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
       <Tabs defaultValue="info">
-      <div className="sticky top-0 z-20 bg-background border-b pb-3 pt-2 px-6">
-        <div className="space-y-3">
-        <div className="flex items-center gap-3 flex-wrap">
-          <Button variant="ghost" size="sm" asChild><Link to="/expedientes"><ArrowLeft className="h-4 w-4 mr-1" />Volver</Link></Button>
+      <div className="sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6 md:pb-3">
+        <div className="space-y-2 md:space-y-3">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2 md:flex md:flex-wrap md:items-center md:gap-3">
+          <Button variant="ghost" size="sm" asChild className="shrink-0 px-2 md:px-3"><Link to="/expedientes"><ArrowLeft className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Volver</span></Link></Button>
           <div className="flex-1 min-w-0">
             {isNuevo ? (
               <>
@@ -478,62 +481,77 @@ function DetalleExpediente() {
               </>
             ) : (
               <>
-                <h1 className="font-display text-2xl font-bold flex items-center gap-3 flex-wrap">
-                  {expData.numero}
+                <h1 className="font-display flex min-w-0 items-center gap-2 text-xl font-bold md:flex-wrap md:gap-3 md:text-2xl">
+                  <span className="truncate">{expData.numero}</span>
                   <Badge className="bg-primary/10 text-primary border-transparent">{ESTADO_LABEL[expData.estado ?? ""] ?? expData.estado?.replace("_"," ")}</Badge>
-                  {expData.solicitudes?.numero && <Badge variant="outline">← {expData.solicitudes.numero}</Badge>}
+                  {expData.solicitudes?.numero && <Badge variant="outline" className="hidden md:inline-flex">← {expData.solicitudes.numero}</Badge>}
                 </h1>
-                <div className="flex items-center gap-2 flex-wrap text-xl font-bold text-foreground">
+                <div className="mt-0.5 flex min-w-0 items-center text-base font-bold text-foreground md:text-xl">
                   {expData.clientes ? (
                     <Popover>
                       <PopoverTrigger asChild>
-                        <span className="cursor-help underline decoration-dotted underline-offset-2">
+                        <button type="button" className="min-w-0 truncate text-left underline decoration-dotted underline-offset-2" title={expData.clientes.nombre}>
                           {expData.clientes.nombre}
-                        </span>
+                        </button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 border-none bg-transparent shadow-none z-50" side="bottom" align="start" sideOffset={8}>
-                        <div className="rounded-md border bg-background shadow-lg px-3 py-2 text-xs space-y-0.5 max-w-sm">
+                      <PopoverContent className="w-[min(22rem,calc(100vw-2rem))] p-0 border-none bg-transparent shadow-none z-50" side="bottom" align="start" sideOffset={8}>
+                        <div className="rounded-md border bg-background shadow-lg px-3 py-2 text-xs space-y-0.5">
                           <div><span className="text-muted-foreground">RNC:</span> {expData.clientes.rnc ?? "—"}</div>
                           <div><span className="text-muted-foreground">Contacto:</span> {expData.clientes.contacto ?? "—"}</div>
                           <div><span className="text-muted-foreground">Email:</span> {(expData.clientes as any).email ?? "—"}</div>
                           <div><span className="text-muted-foreground">Teléfono:</span> {expData.clientes.telefono ?? "—"}</div>
                           <div><span className="text-muted-foreground">Dirección:</span> {(expData.clientes as any).direccion ?? "—"}</div>
+                          <div className="mt-2 flex items-center gap-1 border-t pt-2">
+                            <WhatsAppButton
+                              phone={expData.clientes.telefono}
+                              clientName={expData.clientes.nombre}
+                              recordType="Expediente"
+                              recordNumber={expData.numero}
+                              variant="icon"
+                            />
+                            <EmailButton
+                              email={(expData.clientes as any).email}
+                              clientName={expData.clientes.nombre}
+                              recordType="Expediente"
+                              recordNumber={expData.numero}
+                              variant="icon"
+                            />
+                            <SearchEmailButton
+                              recordType="Expediente"
+                              recordNumber={expData.numero}
+                              variant="icon"
+                            />
+                          </div>
                         </div>
                       </PopoverContent>
                     </Popover>
                   ) : (
-                    <span>Sin cliente</span>
+                    <span className="truncate">Sin cliente</span>
                   )}
-                  {expData.clientes && (
+                </div>
+                <div className="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-xs font-normal text-muted-foreground md:text-sm">
+                  {expData.numeros_contenedores && (
                     <>
-                      <WhatsAppButton
-                        phone={expData.clientes.telefono}
-                        clientName={expData.clientes.nombre}
-                        recordType="Expediente"
-                        recordNumber={expData.numero}
-                        variant="icon"
-                      />
-                      <EmailButton
-                        email={(expData.clientes as any).email}
-                        clientName={expData.clientes.nombre}
-                        recordType="Expediente"
-                        recordNumber={expData.numero}
-                        variant="icon"
-                      />
-                      <SearchEmailButton
-                        recordType="Expediente"
-                        recordNumber={expData.numero}
-                        variant="icon"
-                      />
+                      <Badge variant="secondary" className="min-w-0 max-w-[52%] shrink font-mono text-xs" title={`Contenedor: ${expData.numeros_contenedores}`}>
+                        <span className="truncate">Contenedor: {expData.numeros_contenedores}</span>
+                      </Badge>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 shrink-0"
+                        onClick={() => {
+                          void navigator.clipboard.writeText(expData.numeros_contenedores);
+                          toast.success("Número de contenedor copiado");
+                        }}
+                        title="Copiar número de contenedor"
+                        aria-label="Copiar número de contenedor"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
                     </>
                   )}
-                  <RastrearEmbarqueButton
-                    containerNumber={expData.numeros_contenedores}
-                    blNumber={expData.bl_awb}
-                    expedienteNumber={expData.numero}
-                  />
-                  <span className="text-muted-foreground font-normal">·</span>
-                  <span>BL/AWB: {expData.bl_awb ?? "—"}</span>
+                  <span className="min-w-0 truncate" title={`BL/AWB: ${expData.bl_awb ?? "—"}`}>BL/AWB: {expData.bl_awb ?? "—"}</span>
                 </div>
               </>
             )}
@@ -544,7 +562,7 @@ function DetalleExpediente() {
               <EscanearFacturaExpButton onExtracted={(res) => { facRes.current = res; void aplicarCombinado(); toast.success("Factura procesada — revisa y ajusta los campos"); }} />
             </div>
           ) : (
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="hidden items-center gap-2 md:flex md:flex-wrap">
               <Button
                 variant="outline"
                 size="sm"
@@ -614,13 +632,85 @@ function DetalleExpediente() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <RastrearEmbarqueButton
+                containerNumber={expData.numeros_contenedores}
+                blNumber={expData.bl_awb}
+                expedienteNumber={expData.numero}
+                className="[&>div]:hidden"
+              />
             </div>
+          )}
+          {!isNuevo && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="flex shrink-0 md:hidden">
+                  <MoreVertical className="h-4 w-4" /> Más acciones
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuItem disabled={duplicarMut.isPending} onSelect={() => duplicarMut.mutate()}>
+                  <Copy className="h-4 w-4" /> {duplicarMut.isPending ? "Duplicando…" : "Duplicar"}
+                </DropdownMenuItem>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger><FileOutput className="h-4 w-4" /> Documentos y Reportes</DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-64 p-1">
+                    <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:text-sm [&_button:hover]:bg-accent">
+                      <GenerarXmlSigaButton expedienteId={id} />
+                      <GenerarXmlCertificadoOrigenButton expedienteId={id} />
+                      <PreLiquidacionPdfButton exp={expData} />
+                      <GenerarDocumentoButton exp={expData} />
+                    </div>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger><ShieldCheck className="h-4 w-4" /> Herramientas DGA/VUCE</DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-64">
+                    {DGA_VUCE_TOOLS.map((t) => {
+                      const Icon = t.icon;
+                      return (
+                        <DropdownMenuItem key={t.url} asChild>
+                          <a href={t.url} target="_blank" rel="noopener noreferrer" className="cursor-pointer"><Icon className="h-4 w-4 text-accent" />{t.label}</a>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger><Ship className="h-4 w-4" /> Rastreos de Envío</DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="max-h-80 w-64 overflow-y-auto">
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">Marítimos</DropdownMenuLabel>
+                    {RASTREO_ENVIO_TOOLS.maritimos.map((t) => (
+                      <DropdownMenuItem key={t.url} asChild><a href={t.url} target="_blank" rel="noopener noreferrer">{t.label}</a></DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">Aéreos</DropdownMenuLabel>
+                    {RASTREO_ENVIO_TOOLS.aereos.map((t) => (
+                      <DropdownMenuItem key={t.url} asChild><a href={t.url} target="_blank" rel="noopener noreferrer">{t.label}</a></DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <a
+                    href={expData.numeros_contenedores
+                      ? `https://e-tracking.net/tracking/container-tracking?container=${encodeURIComponent(expData.numeros_contenedores)}`
+                      : expData.bl_awb
+                        ? `https://e-tracking.net/tracking/bl-tracking?bl=${encodeURIComponent(expData.bl_awb)}`
+                        : "https://e-tracking.net/"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Ship className="h-4 w-4" /> Rastrear Embarque
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
 
         {!isNuevo && (
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3">
+          <div className="flex min-w-0 items-center gap-2">
             <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">Estado:</Label>
             <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
               <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
@@ -673,7 +763,7 @@ function DetalleExpediente() {
         </div>
         )}
       </div>
-        <TabsList className="flex flex-wrap h-auto mt-3">
+        <TabsList className="mt-2 flex h-auto max-w-full flex-nowrap justify-start overflow-x-auto md:mt-3 md:flex-wrap">
           {tabOrder.map((key) => {
             const label = TAB_LABELS[key];
             if (!label) return null;
