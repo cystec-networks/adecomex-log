@@ -1,6 +1,7 @@
 export const ESTADO_LABEL: Record<string, string> = {
   digitar: "Recibido",
   en_transito: "En Tránsito",
+  manifestado: "Manifestado",
   presentar: "Presentado",
   verificar: "Verificado",
   despachado: "Despachado",
@@ -11,6 +12,7 @@ export const ESTADO_LABEL: Record<string, string> = {
 export const ESTADO_ORDEN = [
   "digitar",
   "en_transito",
+  "manifestado",
   "presentar",
   "verificar",
   "despachado",
