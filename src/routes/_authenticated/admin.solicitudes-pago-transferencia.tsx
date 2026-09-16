@@ -171,9 +171,18 @@ function SolicitudesPagoTransferenciaPage() {
           .insert({ ...payload, creado_por: u.user?.id ?? null });
         if (error) throw error;
       } else if (editing) {
+        const secuencia = form.secuencia.trim();
+        if (!secuencia) throw new Error("La secuencia es obligatoria");
+        const { data: dup } = await supabase
+          .from("solicitudes_pago_transferencia")
+          .select("id")
+          .eq("secuencia", secuencia)
+          .neq("id", editing.id)
+          .maybeSingle();
+        if (dup) throw new Error(`Ya existe otra solicitud con la secuencia ${secuencia}`);
         const { error } = await supabase
           .from("solicitudes_pago_transferencia")
-          .update(payload)
+          .update({ ...payload, secuencia })
           .eq("id", editing.id);
         if (error) throw error;
       }
