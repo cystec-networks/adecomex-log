@@ -373,7 +373,11 @@ function Expedientes() {
                   : n === "urgente"
                     ? "ETA urgente (menos de 3 días)"
                     : "Atención: plazo legal de presentación en curso (5 días hábiles)";
-                return <AlarmClock className={`h-3.5 w-3.5 ${cls}`} aria-label={label} title={label} />;
+                return (
+                  <span title={label} aria-label={label}>
+                    <AlarmClock className={`h-3.5 w-3.5 ${cls}`} />
+                  </span>
+                );
               })()}
               {d.text}
             </span>
