@@ -313,7 +313,7 @@ function Expedientes() {
     );
   };
 
-  const ESTADO_GRUPO_1 = ["digitar", "presentar", "verificar"];
+  const ESTADO_GRUPO_1 = ["digitar", "manifestado", "presentar", "verificar"];
   const ESTADO_GRUPO_3 = ["despachado", "entregado"];
 
   const EstadoDivider = ({ label, groupKey, count }: { label: string; groupKey: string; count: number }) => {
