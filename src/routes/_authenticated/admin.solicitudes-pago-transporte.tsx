@@ -175,7 +175,7 @@ function SolicitudesPagoTransportePage() {
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [soloFinanzas, setSoloFinanzas] = useState(false);
   const [eliminando, setEliminando] = useState<Row | null>(null);
-  const [pdfId, setPdfId] = useState<string | null>(null);
+  
   const [consultando, setConsultando] = useState<Row | null>(null);
 
   const abrirNueva = () => {
@@ -462,9 +462,12 @@ function SolicitudesPagoTransportePage() {
                           </Button>
                         );
                       })()}
-                      <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPdfId(r.id)} title="Ver comprobante PDF">
-                        <Printer className="h-3.5 w-3.5" />
+                      <Button variant="outline" size="icon" className="h-8 w-8" asChild title="Ver comprobante PDF">
+                        <a href={`/imprimir/solicitud-pago/${r.id}`} target="_blank" rel="noreferrer">
+                          <Printer className="h-3.5 w-3.5" />
+                        </a>
                       </Button>
+
                       {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
                         <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setEliminando(r)} title="Eliminar">
                           <Trash2 className="h-3.5 w-3.5" />
@@ -917,20 +920,22 @@ function SolicitudesPagoTransportePage() {
             );
           })()}
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (consultando) setPdfId(consultando.id);
-              }}
-            >
-              <Printer className="mr-1 h-4 w-4" /> Ver comprobante
+            <Button variant="outline" asChild>
+              <a
+                href={consultando ? `/imprimir/solicitud-pago/${consultando.id}` : "#"}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Printer className="mr-1 h-4 w-4" /> Ver comprobante
+              </a>
             </Button>
             <Button variant="outline" onClick={() => setConsultando(null)}>Cerrar</Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 
-      <SolicitudPagoPdfDialog id={pdfId} open={!!pdfId} onOpenChange={(o) => !o && setPdfId(null)} />
+
 
     </div>
 
