@@ -14,7 +14,8 @@ export type ReminderKind =
   | "hito_proximo"
   | "hito_atrasado"
   | "logistica_eta_vencida"
-  | "logistica_sin_documentos";
+  | "logistica_sin_documentos"
+  | "plazo_presentacion";
 
 export type Reminder = {
   id: string; // clave única `${kind}:${entidad_id}`
