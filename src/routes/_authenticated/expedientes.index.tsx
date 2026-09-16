@@ -278,7 +278,7 @@ function Expedientes() {
     const porEstado: Record<string, string> = {
       digitar: "bg-sky-50 dark:bg-sky-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-sky-400",
       en_transito: "bg-purple-50 dark:bg-purple-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-purple-400",
-      manifestado: "bg-indigo-200 dark:bg-indigo-900/50 [&>td:first-child]:border-l-6 [&>td:first-child]:border-l-indigo-500 dark:[&>td:first-child]:border-l-indigo-300",
+      manifestado: "bg-indigo-200 dark:bg-indigo-900/50 [&>td:first-child]:border-l-[6px] [&>td:first-child]:border-l-indigo-500 dark:[&>td:first-child]:border-l-indigo-300",
       presentar: "bg-amber-100 dark:bg-amber-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-amber-500 dark:[&>td:first-child]:border-l-amber-400",
       verificar: "bg-red-100 dark:bg-red-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-red-500 dark:[&>td:first-child]:border-l-red-400",
       despachado: "bg-slate-200 dark:bg-slate-900/60 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-slate-600 dark:[&>td:first-child]:border-l-slate-500",
