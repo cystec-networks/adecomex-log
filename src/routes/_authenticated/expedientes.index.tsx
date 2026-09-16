@@ -266,11 +266,12 @@ function Expedientes() {
   };
 
   const rowHighlight = (e: any) => {
-    const estadoRaw = e.estado;
     const dias = e.fecha_compromiso ? daysFromToday(e.fecha_compromiso) : null;
-    const cerrado = ["despachado", "entregado", "facturar"].includes(estadoRaw);
-    const urgente =
-      !cerrado && dias != null && !isNaN(dias) && dias < 7;
+    const transitoUrgente = e.estado === "en_transito" && dias != null && !isNaN(dias) && dias < 7;
+
+    if (transitoUrgente) {
+      return "bg-orange-200 dark:bg-orange-900/60 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-orange-600 dark:[&>td:first-child]:border-l-orange-400";
+    }
 
     // Color de fondo por estado — cada estado con su propio tono:
     const porEstado: Record<string, string> = {
@@ -283,13 +284,7 @@ function Expedientes() {
       facturar: "bg-teal-50 dark:bg-teal-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-teal-500",
     };
 
-    const base = porEstado[estadoRaw] ?? "";
-    // El acento de urgencia SOLO engruesa y cambia el borde izquierdo — nunca reemplaza el fondo:
-    const acentoUrgente = urgente
-      ? " [&>td:first-child]:border-l-[6px] [&>td:first-child]:border-l-yellow-500 dark:[&>td:first-child]:border-l-yellow-400"
-      : "";
-
-    return base + acentoUrgente;
+    return porEstado[e.estado] ?? "";
   };
 
   const fechaVerificacion = (e: any) => {
