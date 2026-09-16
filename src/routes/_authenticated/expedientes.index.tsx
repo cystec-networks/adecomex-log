@@ -20,7 +20,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
-import { daysFromToday } from "@/lib/dates";
+import { daysFromToday, diasHabilesRestantes } from "@/lib/dates";
 
 type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 
