@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { Pencil, Plus, Printer, Trash2 } from "lucide-react";
 import { fmtLocalDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { AutoField } from "@/components/auto-field";
 
 export const Route = createFileRoute("/_authenticated/admin/solicitudes-pago-transferencia")({
   ssr: false,
