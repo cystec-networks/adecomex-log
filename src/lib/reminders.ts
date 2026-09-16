@@ -128,7 +128,7 @@ export function useReminders() {
       const hitoLimite = new Date(today); hitoLimite.setDate(hitoLimite.getDate() + 3);
       const traLimite = new Date(today); traLimite.setDate(traLimite.getDate() - cfg.transporteRetrasadoDias);
 
-      const [sol, exp, per, tra, hit, logi, emb] = await Promise.all([
+      const [sol, exp, per, tra, hit, logi, emb, pres] = await Promise.all([
         supabase
           .from("solicitudes")
           .select("id,numero,estado,created_at, cliente:clientes(nombre)")
