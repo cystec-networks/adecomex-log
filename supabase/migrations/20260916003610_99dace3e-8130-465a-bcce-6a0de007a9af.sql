@@ -1,0 +1,10 @@
+SELECT setval('public.expediente_seq', COALESCE((SELECT MAX(NULLIF(regexp_replace(numero, '\D', '', 'g'), '')::bigint) FROM public.expedientes), 1));
+SELECT setval('public.cotizaciones_seq', COALESCE((SELECT MAX(NULLIF(regexp_replace(numero, '\D', '', 'g'), '')::bigint) FROM public.cotizaciones), 1));
+SELECT setval('public.ordenes_seq', COALESCE((SELECT MAX(NULLIF(regexp_replace(numero, '\D', '', 'g'), '')::bigint) FROM public.ordenes), 1));
+SELECT setval('public.cotizaciones_servicios_seq', COALESCE((SELECT MAX(NULLIF(regexp_replace(numero, '\D', '', 'g'), '')::bigint) FROM public.cotizaciones_servicios), 1));
+SELECT setval('public.permisos_seq', COALESCE((SELECT MAX(NULLIF(regexp_replace(numero, '\D', '', 'g'), '')::bigint) FROM public.permisos), 1));
+SELECT setval('public.solicitud_seq', COALESCE((SELECT MAX(NULLIF(regexp_replace(numero, '\D', '', 'g'), '')::bigint) FROM public.solicitudes), 1));
+SELECT setval('public.transportes_seq', COALESCE((SELECT MAX(NULLIF(regexp_replace(numero_viaje, '\D', '', 'g'), '')::bigint) FROM public.transportes), 1));
+SELECT setval('public.solicitudes_pago_transporte_seq', COALESCE((SELECT MAX(NULLIF(regexp_replace(numero_control, '\D', '', 'g'), '')::bigint) FROM public.solicitudes_pago_transporte), 1));
+SELECT setval('public.operaciones_logistica_seq', COALESCE((SELECT MAX(NULLIF(regexp_replace(numero, '\D', '', 'g'), '')::bigint) FROM public.operaciones_logistica), 1));
+SELECT setval('public.bl_hijo_seq', COALESCE((SELECT MAX(NULLIF(regexp_replace(bl_hijo_numero, '\D', '', 'g'), '')::bigint) FROM public.operaciones_logistica WHERE bl_hijo_numero IS NOT NULL), 1));
