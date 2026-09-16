@@ -34,7 +34,7 @@ export function SolicitudPagoPdfDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl w-[95vw] h-[88vh] flex flex-col p-0 gap-0">
+      <DialogContent className="w-[92vw] max-w-2xl h-[72vh] max-h-[720px] flex flex-col p-0 gap-0 sm:w-[80vw]">
         <DialogHeader className="px-5 py-3 border-b">
           <DialogTitle className="text-base">Comprobante de solicitud de pago</DialogTitle>
         </DialogHeader>
