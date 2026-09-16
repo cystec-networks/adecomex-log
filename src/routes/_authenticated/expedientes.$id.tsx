@@ -1438,6 +1438,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         <Field label="SLA (días)" value={form.sla_dias} onChange={(v) => set("sla_dias", v)} type="number" disabled={!editable} />
         <Field label="Fecha de Cargado" value={form.fecha_cargado} onChange={(v) => set("fecha_cargado", v)} type="date" disabled={!editable} />
         <Field label="Fecha Estimada de Llegada (ETA)" value={form.fecha_compromiso} onChange={(v) => set("fecha_compromiso", v)} type="date" disabled={!editable} />
+        <div className="grid gap-1">
+          <Field label="Fecha de Llegada Real" value={form.fecha_llegada_real} onChange={(v) => set("fecha_llegada_real", v)} type="date" disabled={!editable} />
+          <p className="text-[11px] leading-tight text-muted-foreground">
+            Se llena cuando el embarque ya arribó de verdad — a partir de esta fecha corre el plazo legal de presentación (5 días hábiles).
+          </p>
+        </div>
         {form.fecha_cargado && form.fecha_compromiso && (() => {
           const dias = Math.round((new Date(form.fecha_compromiso).getTime() - new Date(form.fecha_cargado).getTime()) / 86400000);
           return (
