@@ -190,7 +190,6 @@ export function useReminders() {
           .not("estado", "in", `(${["despachado", "entregado", "facturar"].join(",")})`)
           .limit(300),
       ]);
-      console.log("[DEBUG plazo_presentacion] filas:", pres.data?.length, pres.data);
 
       // Operaciones con etapa "Embarque" completada y sin documentos cargados.
       const opsEmbarcadas = (emb.data ?? []).filter((r: any) => !r.operaciones_logistica?.eliminado_en);
