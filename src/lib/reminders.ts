@@ -108,7 +108,7 @@ function daysBetween(a: Date, b: Date) {
 }
 
 // Parsea 'YYYY-MM-DD' como fecha local para evitar el desfase UTC de un día.
-import { diasHabilesRestantes, habilesRestantesPlazo, parseLocalDate } from "@/lib/dates";
+import { habilesRestantesPlazo, parseLocalDate } from "@/lib/dates";
 
 function isoDay(d: Date) {
   return d.toISOString().slice(0, 10);
