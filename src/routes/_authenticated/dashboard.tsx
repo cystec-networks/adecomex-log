@@ -214,6 +214,7 @@ const REMINDER_GROUPS: GroupDef[] = [
   { key: "permisos", label: "Permisos VUCE por vencer", emoji: "🟠", kinds: ["permiso_vencido", "permiso_por_vencer"] },
   { key: "transportes", label: "Transportes retrasados", emoji: "🚚", kinds: ["transporte_retrasado"] },
   { key: "solicitudes", label: "Solicitudes sin convertir", emoji: "📥", kinds: ["solicitud_sin_convertir"] },
+  { key: "plazo", label: "Plazo de presentación en aduana", emoji: "⚠️", kinds: ["plazo_presentacion"] },
 ];
 
 function RemindersPanel() {

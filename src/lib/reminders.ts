@@ -187,9 +187,10 @@ export function useReminders() {
           .select("id,numero,estado,fecha_llegada_real, cliente:clientes(nombre)")
           .is("eliminado_en", null)
           .not("fecha_llegada_real", "is", null)
-          .not("estado", "in", "(despachado,entregado,facturar)")
+          .not("estado", "in", `(${["despachado", "entregado", "facturar"].join(",")})`)
           .limit(300),
       ]);
+      
 
       // Operaciones con etapa "Embarque" completada y sin documentos cargados.
       const opsEmbarcadas = (emb.data ?? []).filter((r: any) => !r.operaciones_logistica?.eliminado_en);
