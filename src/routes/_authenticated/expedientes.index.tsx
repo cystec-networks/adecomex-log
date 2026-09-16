@@ -334,7 +334,7 @@ function Expedientes() {
   };
 
   const ExpedienteRow = ({ e }: { e: any }) => (
-    <tr key={e.id} className={`hover:bg-muted/30 transition-colors ${rowHighlight(e.estado)}`}>
+    <tr key={e.id} className={`hover:bg-muted/30 transition-colors ${rowHighlight(e)}`}>
       <td className="px-2 py-2 align-middle whitespace-nowrap">
         <Link
           to="/expedientes/$id"
