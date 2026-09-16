@@ -20,7 +20,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
-import { daysFromToday, diasHabilesRestantes } from "@/lib/dates";
+import { daysFromToday, habilesRestantesPlazo } from "@/lib/dates";
 
 type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 
@@ -139,7 +139,7 @@ function Expedientes() {
   const nivelUrgencia = (e: any): Nivel | null => {
     if (["despachado", "entregado", "facturar"].includes(e.estado)) return null;
     if (e.fecha_llegada_real) {
-      const restantes = diasHabilesRestantes(e.fecha_llegada_real, 5);
+      const restantes = habilesRestantesPlazo(e.fecha_llegada_real, 5);
       if (restantes <= 1) return "critico";
       if (restantes <= 5) return "atencion";
     }
