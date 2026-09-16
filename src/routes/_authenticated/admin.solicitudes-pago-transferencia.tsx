@@ -20,6 +20,7 @@ import { Pencil, Plus, Printer, Trash2 } from "lucide-react";
 import { fmtLocalDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { AutoField } from "@/components/auto-field";
+import { SolicitudPagoPdfDialog } from "@/components/solicitud-pago-pdf-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/solicitudes-pago-transferencia")({
   ssr: false,
@@ -96,6 +97,7 @@ function SolicitudesPagoTransferenciaPage() {
   const [editing, setEditing] = useState<Row | "new" | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [borrar, setBorrar] = useState<Row | null>(null);
+  const [pdfId, setPdfId] = useState<string | null>(null);
   const [q, setQ] = useState("");
 
   const { data: rows = [], isLoading } = useQuery({
@@ -290,10 +292,13 @@ function SolicitudesPagoTransferenciaPage() {
                       <Button size="icon" variant="ghost" title="Editar" onClick={() => abrirEdicion(r)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" title="Comprobante" asChild>
-                        <a href={`/imprimir/solicitud-transferencia/${r.id}`} target="_blank" rel="noreferrer">
-                          <Printer className="h-4 w-4" />
-                        </a>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        title="Comprobante"
+                        onClick={() => setPdfId(r.id)}
+                      >
+                        <Printer className="h-4 w-4" />
                       </Button>
                       <Button
                         size="icon" variant="ghost" title="Eliminar"
@@ -428,6 +433,13 @@ function SolicitudesPagoTransferenciaPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SolicitudPagoPdfDialog
+        id={pdfId}
+        open={!!pdfId}
+        onOpenChange={(o) => !o && setPdfId(null)}
+        tipo="transferencia"
+      />
     </div>
   );
 }
