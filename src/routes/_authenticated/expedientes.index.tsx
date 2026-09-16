@@ -360,12 +360,21 @@ function Expedientes() {
               : "text-destructive";
           return (
             <span title={d.full} className={`inline-flex items-center gap-1 text-xs font-medium tabular-nums ${toneClass}`}>
-              {esUrgente(e) && (
-                <AlarmClock
-                  className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400"
-                  aria-label="ETA urgente (menos de 3 días)"
-                />
-              )}
+              {(() => {
+                const n = nivelUrgencia(e);
+                if (!n) return null;
+                const cls = n === "critico"
+                  ? "text-red-600 dark:text-red-400"
+                  : n === "urgente"
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-yellow-500 dark:text-yellow-300";
+                const label = n === "critico"
+                  ? "Crítico: plazo legal de presentación vence hoy o mañana"
+                  : n === "urgente"
+                    ? "ETA urgente (menos de 3 días)"
+                    : "Atención: plazo legal de presentación en curso (5 días hábiles)";
+                return <AlarmClock className={`h-3.5 w-3.5 ${cls}`} aria-label={label} title={label} />;
+              })()}
               {d.text}
             </span>
           );
