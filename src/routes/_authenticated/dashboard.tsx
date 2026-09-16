@@ -217,7 +217,7 @@ const REMINDER_GROUPS: GroupDef[] = [
 ];
 
 function RemindersPanel() {
-  const { visible: reminders, dismiss } = useReminders();
+  const { visible: reminders, dismiss, isLoading } = useReminders();
 
   const grouped = REMINDER_GROUPS
     .map((g) => ({ ...g, items: reminders.filter((r) => g.kinds.includes(r.kind)) }))
@@ -246,7 +246,9 @@ function RemindersPanel() {
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        {reminders.length === 0 ? (
+        {isLoading ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">Cargando alertas…</div>
+        ) : reminders.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Sin alertas pendientes 🎉</div>
         ) : (
           <div className="max-h-[460px] overflow-auto">
