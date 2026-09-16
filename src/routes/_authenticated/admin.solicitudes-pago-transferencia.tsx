@@ -67,6 +67,7 @@ const neto = (r: { monto: number; descuento_cxc: number | null }) =>
   Number(r.monto || 0) - Number(r.descuento_cxc || 0);
 
 type FormState = {
+  secuencia: string;
   fecha: string;
   categoria: string;
   factura_compra: string;
@@ -78,6 +79,7 @@ type FormState = {
 };
 
 const EMPTY_FORM: FormState = {
+  secuencia: "",
   fecha: new Date().toISOString().slice(0, 10),
   categoria: "Gastos Menores",
   factura_compra: "",
@@ -130,6 +132,7 @@ function SolicitudesPagoTransferenciaPage() {
   const abrirNueva = () => { setForm(EMPTY_FORM); setEditing("new"); };
   const abrirEdicion = (r: Row) => {
     setForm({
+      secuencia: r.secuencia,
       fecha: r.fecha,
       categoria: r.categoria,
       factura_compra: r.factura_compra ?? "",
@@ -168,9 +171,18 @@ function SolicitudesPagoTransferenciaPage() {
           .insert({ ...payload, creado_por: u.user?.id ?? null });
         if (error) throw error;
       } else if (editing) {
+        const secuencia = form.secuencia.trim();
+        if (!secuencia) throw new Error("La secuencia es obligatoria");
+        const { data: dup } = await supabase
+          .from("solicitudes_pago_transferencia")
+          .select("id")
+          .eq("secuencia", secuencia)
+          .neq("id", editing.id)
+          .maybeSingle();
+        if (dup) throw new Error(`Ya existe otra solicitud con la secuencia ${secuencia}`);
         const { error } = await supabase
           .from("solicitudes_pago_transferencia")
-          .update(payload)
+          .update({ ...payload, secuencia })
           .eq("id", editing.id);
         if (error) throw error;
       }
@@ -296,7 +308,16 @@ function SolicitudesPagoTransferenciaPage() {
           </DialogHeader>
 
           <div className="grid gap-3">
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-4">
+              <div>
+                <Label>Secuencia</Label>
+                <Input
+                  value={editing === "new" ? "Se genera automáticamente" : form.secuencia}
+                  disabled={editing === "new"}
+                  className="font-mono"
+                  onChange={(e) => setForm({ ...form, secuencia: e.target.value })}
+                />
+              </div>
               <div>
                 <Label>Fecha</Label>
                 <Input type="date" value={form.fecha} onChange={(e) => setForm({ ...form, fecha: e.target.value })} />
