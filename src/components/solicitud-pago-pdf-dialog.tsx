@@ -17,10 +17,12 @@ export function SolicitudPagoPdfDialog({
   id,
   open,
   onOpenChange,
+  tipo = "transporte",
 }: {
   id: string | null;
   open: boolean;
   onOpenChange: (o: boolean) => void;
+  tipo?: "transporte" | "transferencia";
 }) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -36,15 +38,23 @@ export function SolicitudPagoPdfDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[92vw] max-w-2xl h-[72vh] max-h-[720px] flex flex-col p-0 gap-0 sm:w-[80vw]">
         <DialogHeader className="px-5 py-3 border-b">
-          <DialogTitle className="text-base">Comprobante de solicitud de pago</DialogTitle>
+          <DialogTitle className="text-base">
+            {tipo === "transferencia"
+              ? "Comprobante de pago por transferencia"
+              : "Comprobante de solicitud de pago"}
+          </DialogTitle>
         </DialogHeader>
         <div className="flex-1 min-h-0 bg-muted/30">
           {id && (
             <iframe
               key={id}
               ref={iframeRef}
-              src={`/imprimir/solicitud-pago/${id}?embed=1`}
-              title="Comprobante de solicitud de pago"
+              src={tipo === "transferencia"
+                ? `/imprimir/solicitud-transferencia/${id}?embed=1`
+                : `/imprimir/solicitud-pago/${id}?embed=1`}
+              title={tipo === "transferencia"
+                ? "Comprobante de pago por transferencia"
+                : "Comprobante de solicitud de pago"}
               className="w-full h-full border-0 bg-white"
               onLoad={() => setCargando(false)}
             />
