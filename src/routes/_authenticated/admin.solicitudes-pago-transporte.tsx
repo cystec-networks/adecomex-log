@@ -21,6 +21,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { fmtLocalDate } from "@/lib/dates";
 import { sanitizeSearchTerm } from "@/lib/search-filter";
 import { cn } from "@/lib/utils";
+import { SolicitudPagoPdfDialog } from "@/components/solicitud-pago-pdf-dialog";
 
 
 export const Route = createFileRoute("/_authenticated/admin/solicitudes-pago-transporte")({
@@ -175,6 +176,7 @@ function SolicitudesPagoTransportePage() {
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [soloFinanzas, setSoloFinanzas] = useState(false);
   const [eliminando, setEliminando] = useState<Row | null>(null);
+  const [pdfId, setPdfId] = useState<string | null>(null);
   
   const [consultando, setConsultando] = useState<Row | null>(null);
 
@@ -462,10 +464,8 @@ function SolicitudesPagoTransportePage() {
                           </Button>
                         );
                       })()}
-                      <Button variant="outline" size="icon" className="h-8 w-8" asChild title="Ver comprobante PDF">
-                        <a href={`/imprimir/solicitud-pago/${r.id}`} target="_blank" rel="noreferrer">
-                          <Printer className="h-3.5 w-3.5" />
-                        </a>
+                      <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPdfId(r.id)} title="Ver comprobante PDF">
+                        <Printer className="h-3.5 w-3.5" />
                       </Button>
 
                       {(transportesPorSolicitud[r.id]?.length ?? 0) === 0 && (
