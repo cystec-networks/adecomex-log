@@ -1840,12 +1840,14 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                     />
                   </div>
                   <ServicioAduaneroFields
-                    tipoDespacho={form.tipo_despacho_aduanero || ""}
-                    cantidad={form.cantidad_despacho}
-                    onChange={(tipo, cant) =>
-                      setForm((f) => ({ ...f, tipo_despacho_aduanero: tipo, cantidad_despacho: cant }))
-                    }
+                    filas={filasServicioAduanero}
+                    onChange={setFilasServicioAduanero}
                     disabled={!editable}
+                    extraAction={
+                      <Button type="button" variant="outline" size="sm" onClick={autocompletarDesdeContenedores}>
+                        Autocompletar desde Contenedores
+                      </Button>
+                    }
                   />
                   <div className="grid gap-1.5">
                     <Label className="flex items-center gap-1.5">
@@ -1859,6 +1861,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                       Más Formulario DUA: RD$ {FORMULARIO_DUA_RD.toFixed(2)} (cargo fijo).
                     </p>
                   </div>
+
                 </div>
               </div>
             );
