@@ -11,6 +11,13 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calculator, Copy, X, FileDown, Plus, Trash2, Save } from "lucide-react";
 import { toast } from "sonner";
+import {
+  ServicioAduaneroFields,
+  totalServicioUsd,
+  subtotalFila,
+  type FilaServicio,
+} from "@/lib/servicio-aduanero";
+
 
 export const Route = createFileRoute("/_authenticated/cotizaciones/calculadora")({
   head: () => ({
