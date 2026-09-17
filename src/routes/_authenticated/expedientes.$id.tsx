@@ -1233,6 +1233,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       }
       qc.invalidateQueries({ queryKey: ["expediente", exp.id] });
       qc.invalidateQueries({ queryKey: ["expediente-contenedores", exp.id] });
+      qc.invalidateQueries({ queryKey: ["expediente-servicio-aduanero", exp.id] });
+
       qc.invalidateQueries({ queryKey: ["expedientes"] });
       qc.invalidateQueries({ queryKey: ["expedientes-hist"] });
     },
