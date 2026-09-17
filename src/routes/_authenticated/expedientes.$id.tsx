@@ -1213,6 +1213,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         payload.tasa_cambio_congelada = true;
         if (exp.tasa_cambio_usada != null) payload.tasa_cambio_usada = Number(exp.tasa_cambio_usada);
       }
+      // Tasa Oficial DGA obligatoria antes de guardar.
+      await exigirTasaOficial(payload);
       // Validar que el número VUCE no esté ya usado en otro expediente.
       const vuceChanged = form.numero_vuce && form.numero_vuce !== (exp.numero_vuce ?? "");
       if (vuceChanged) {
@@ -1261,6 +1263,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       qc.invalidateQueries({ queryKey: ["expedientes-hist"] });
     },
     onError: (e: any) => {
+      if (e?.message === "Tasa Oficial DGA requerida") return; // ya se notificó con scroll al campo
       if (e?.code === "23505") {
         const msg = String(e?.message || "");
         if (msg.includes("numero_vuce")) {
@@ -1305,6 +1308,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
       if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
 
+      // Tasa Oficial DGA obligatoria antes de crear.
+      await exigirTasaOficial(payload);
       if (payload.numero_vuce) {
         const { data: conflicto } = await supabase
           .from("expedientes")
@@ -1354,6 +1359,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       nav({ to: "/expedientes/$id", params: { id: row.id }, search: { nuevo: "1", solicitud: "" } });
     },
     onError: (e: any) => {
+      if (e?.message === "Tasa Oficial DGA requerida") return; // ya se notificó con scroll al campo
       if (e?.code === "23505") {
         toast.error("Ya existe un Expediente con ese mismo valor en un campo único — revisa los datos e intenta de nuevo.");
       } else {
@@ -3997,7 +4003,7 @@ function LiquidacionEstimadaBlock({
       )}
 
       {mostrarCaptura && (
-        <div className="rounded-lg border border-amber-400 bg-amber-50 p-4">
+        <div id="tasa-oficial-captura" className="rounded-lg border border-amber-400 bg-amber-50 p-4">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="h-4 w-4 text-amber-700" />
             <div className="font-semibold text-sm text-amber-900">
