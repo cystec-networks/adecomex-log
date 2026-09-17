@@ -1162,6 +1162,27 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   }, [sumFob]);
 
 
+  // Tasa efectiva del expediente: la ya guardada o la del catálogo para la fecha que rige.
+  const resolverTasaEfectiva = async (): Promise<number | null> => {
+    const directa = Number(exp?.tasa_cambio_usada);
+    if (directa > 0) return directa;
+    const fecha = form.fecha_tasa_manual
+      ? String(form.fecha_tasa_manual).slice(0, 10)
+      : (exp?.created_at ? String(exp.created_at).slice(0, 10) : new Date().toISOString().slice(0, 10));
+    const { data } = await supabase.from("catalogo_tasas_cambio").select("tasa").eq("fecha", fecha).maybeSingle();
+    return data?.tasa != null ? Number(data.tasa) : null;
+  };
+
+  const exigirTasaOficial = async (payload: any) => {
+    const tasaEfectiva = await resolverTasaEfectiva();
+    if (!tasaEfectiva || tasaEfectiva <= 0) {
+      toast.error("Debes asignar la Tasa Oficial DGA antes de guardar el Expediente.");
+      document.getElementById("tasa-oficial-captura")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      throw new Error("Tasa Oficial DGA requerida");
+    }
+    payload.tasa_cambio_usada = tasaEfectiva;
+  };
+
   const save = useMutation({
     mutationFn: async () => {
       const payload: any = { ...form };
