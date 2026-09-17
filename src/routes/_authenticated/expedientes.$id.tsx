@@ -1166,8 +1166,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const resolverTasaEfectiva = async (): Promise<number | null> => {
     const directa = Number(exp?.tasa_cambio_usada);
     if (directa > 0) return directa;
-    const fecha = form.fecha_tasa_manual
-      ? String(form.fecha_tasa_manual).slice(0, 10)
+    const fecha = (form as any).fecha_tasa_manual
+      ? String((form as any).fecha_tasa_manual).slice(0, 10)
       : (exp?.created_at ? String(exp.created_at).slice(0, 10) : new Date().toISOString().slice(0, 10));
     const { data } = await supabase.from("catalogo_tasas_cambio").select("tasa").eq("fecha", fecha).maybeSingle();
     return data?.tasa != null ? Number(data.tasa) : null;
