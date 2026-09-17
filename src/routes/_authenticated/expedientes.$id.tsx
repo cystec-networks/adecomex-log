@@ -1921,6 +1921,44 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                       disabled={!editable}
                     />
                   </div>
+                  {isNuevo && (
+                    <div id="tasa-oficial-nuevo" className="grid gap-1.5">
+                      <Label><ReqMark />Tasa Oficial DGA (RD$ por US$1)</Label>
+                      {tasaCatalogoFecha != null && !tasaNuevaInput ? (
+                        <>
+                          <div className="h-9 px-3 rounded-md border bg-muted/50 flex items-center text-sm font-semibold tabular-nums">
+                            {Number(tasaCatalogoFecha).toFixed(4)}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-tight">
+                            Tomada del catálogo para {fechaTasaVigente}.{" "}
+                            <button type="button" className="underline" onClick={() => setTasaNuevaInput(Number(tasaCatalogoFecha).toFixed(4))}>
+                              Cambiarla
+                            </button>
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <Input
+                            inputMode="decimal"
+                            placeholder="59.4100"
+                            className="font-mono tabular-nums"
+                            value={tasaNuevaInput}
+                            disabled={!editable}
+                            onChange={(e) => {
+                              const v = e.target.value.replace(/[$,\s]/g, "");
+                              if (v === "" || /^\d*\.?\d{0,4}$/.test(v)) setTasaNuevaInput(v);
+                            }}
+                          />
+                          <p className="text-[11px] text-muted-foreground leading-tight">
+                            No hay tasa en el catálogo para {fechaTasaVigente}. Ingrésala aquí; se guardará para todos los Expedientes de ese día.{" "}
+                            <a href="https://www.aduanas.gob.do/tasa-de-cambio/" target="_blank" rel="noopener noreferrer" className="underline">
+                              Ver tasa oficial
+                            </a>
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  )}
                   <ServicioAduaneroFields
                     filas={filasServicioAduanero}
                     onChange={setFilasServicioAduanero}
