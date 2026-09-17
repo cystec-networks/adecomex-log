@@ -518,8 +518,9 @@ function CalculadoraRapida() {
     try {
       const { data: userData } = await supabase.auth.getUser();
       const resultado = {
-        escenarioA: calcular(escA, tarifas.find((t) => t.id === escA.servicioId)),
-        escenarioB: escB ? calcular(escB, tarifas.find((t) => t.id === escB.servicioId)) : null,
+        escenarioA: calcular(escA, tarifas),
+        escenarioB: escB ? calcular(escB, tarifas) : null,
+
       };
       const { error } = await supabase.from("calculos_pre_liquidacion").insert({
         nombre_importador: importador.trim() || null,
