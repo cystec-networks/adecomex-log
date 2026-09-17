@@ -371,8 +371,8 @@ async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[], im
 
   let y = 122;
   escenarios.forEach((e, i) => {
-    const tarifa = tarifas.find((t) => t.id === e.servicioId);
-    const r = calcular(e, tarifa);
+    const r = calcular(e, tarifas);
+
     const tasa = num(e.tasa);
     const rd = (n: number) => (tasa > 0 ? nf(n * tasa) : "—");
     const fila = (label: string, usd: number) => [label, nf(usd), rd(usd)];
