@@ -44,8 +44,7 @@ type Escenario = {
   seguro: string;
   pctGravamen: string;
   pctItbis: string;
-  servicioId: string;
-  servicioCantidad: string;
+  servicioFilas: FilaServicio[];
   pctGastos: string;
 };
 
@@ -60,10 +59,10 @@ const VACIO: Escenario = {
   seguro: "",
   pctGravamen: "",
   pctItbis: "18",
-  servicioId: "",
-  servicioCantidad: "",
+  servicioFilas: [],
   pctGastos: "",
 };
+
 
 const num = (s: string) => {
   const n = Number(s);
