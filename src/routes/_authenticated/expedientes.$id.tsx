@@ -1162,14 +1162,28 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   }, [sumFob]);
 
 
+  // Fecha que rige la tasa del expediente (manual o la de creación / hoy para uno nuevo).
+  const fechaTasaVigente = (form as any).fecha_tasa_manual
+    ? String((form as any).fecha_tasa_manual).slice(0, 10)
+    : (!isNuevo && exp?.created_at ? String(exp.created_at).slice(0, 10) : new Date().toISOString().slice(0, 10));
+
+  // Tasa del catálogo para esa fecha (usada en la captura del Expediente nuevo).
+  const { data: tasaCatalogoFecha } = useQuery({
+    queryKey: ["catalogo_tasas_cambio", fechaTasaVigente],
+    enabled: isNuevo,
+    queryFn: async () => {
+      const { data } = await supabase.from("catalogo_tasas_cambio").select("tasa").eq("fecha", fechaTasaVigente).maybeSingle();
+      return data?.tasa != null ? Number(data.tasa) : null;
+    },
+  });
+  const [tasaNuevaInput, setTasaNuevaInput] = useState("");
+
   // Tasa efectiva del expediente: la ya guardada o la del catálogo para la fecha que rige.
   const resolverTasaEfectiva = async (): Promise<number | null> => {
     const directa = Number(exp?.tasa_cambio_usada);
-    if (directa > 0) return directa;
-    const fecha = (form as any).fecha_tasa_manual
-      ? String((form as any).fecha_tasa_manual).slice(0, 10)
-      : (exp?.created_at ? String(exp.created_at).slice(0, 10) : new Date().toISOString().slice(0, 10));
-    const { data } = await supabase.from("catalogo_tasas_cambio").select("tasa").eq("fecha", fecha).maybeSingle();
+    if (!isNuevo && directa > 0) return directa;
+    if (isNuevo && Number(tasaNuevaInput) > 0) return Number(tasaNuevaInput);
+    const { data } = await supabase.from("catalogo_tasas_cambio").select("tasa").eq("fecha", fechaTasaVigente).maybeSingle();
     return data?.tasa != null ? Number(data.tasa) : null;
   };
 
@@ -1177,10 +1191,17 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     const tasaEfectiva = await resolverTasaEfectiva();
     if (!tasaEfectiva || tasaEfectiva <= 0) {
       toast.error("Debes asignar la Tasa Oficial DGA antes de guardar el Expediente.");
-      document.getElementById("tasa-oficial-captura")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      document.getElementById(isNuevo ? "tasa-oficial-nuevo" : "tasa-oficial-captura")?.scrollIntoView({ behavior: "smooth", block: "center" });
       throw new Error("Tasa Oficial DGA requerida");
     }
     payload.tasa_cambio_usada = tasaEfectiva;
+    // Si el usuario la capturó aquí (Expediente nuevo), guárdala también en el catálogo del día.
+    if (isNuevo && Number(tasaNuevaInput) > 0 && Number(tasaCatalogoFecha) !== Number(tasaNuevaInput)) {
+      await supabase
+        .from("catalogo_tasas_cambio")
+        .upsert({ fecha: fechaTasaVigente, tasa: Number(tasaNuevaInput) }, { onConflict: "fecha" });
+      qc.invalidateQueries({ queryKey: ["catalogo_tasas_cambio"] });
+    }
   };
 
   const save = useMutation({
@@ -1900,6 +1921,44 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                       disabled={!editable}
                     />
                   </div>
+                  {isNuevo && (
+                    <div id="tasa-oficial-nuevo" className="grid gap-1.5">
+                      <Label><ReqMark />Tasa Oficial DGA (RD$ por US$1)</Label>
+                      {tasaCatalogoFecha != null && !tasaNuevaInput ? (
+                        <>
+                          <div className="h-9 px-3 rounded-md border bg-muted/50 flex items-center text-sm font-semibold tabular-nums">
+                            {Number(tasaCatalogoFecha).toFixed(4)}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-tight">
+                            Tomada del catálogo para {fechaTasaVigente}.{" "}
+                            <button type="button" className="underline" onClick={() => setTasaNuevaInput(Number(tasaCatalogoFecha).toFixed(4))}>
+                              Cambiarla
+                            </button>
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <Input
+                            inputMode="decimal"
+                            placeholder="59.4100"
+                            className="font-mono tabular-nums"
+                            value={tasaNuevaInput}
+                            disabled={!editable}
+                            onChange={(e) => {
+                              const v = e.target.value.replace(/[$,\s]/g, "");
+                              if (v === "" || /^\d*\.?\d{0,4}$/.test(v)) setTasaNuevaInput(v);
+                            }}
+                          />
+                          <p className="text-[11px] text-muted-foreground leading-tight">
+                            No hay tasa en el catálogo para {fechaTasaVigente}. Ingrésala aquí; se guardará para todos los Expedientes de ese día.{" "}
+                            <a href="https://www.aduanas.gob.do/tasa-de-cambio/" target="_blank" rel="noopener noreferrer" className="underline">
+                              Ver tasa oficial
+                            </a>
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  )}
                   <ServicioAduaneroFields
                     filas={filasServicioAduanero}
                     onChange={setFilasServicioAduanero}
