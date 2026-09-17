@@ -416,12 +416,19 @@ async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[], im
         fila(`Gravamen (${e.pctGravamen || 0}%)`, r.gravamen),
         fila(`ITBIS (${e.pctItbis || 18}%)`, r.itbis),
         fila(`Gastos (${e.pctGastos || 0}%)`, r.gastos),
-        fila(
-          tarifa
-            ? `Servicio Aduanero — ${tarifa.tipo_despacho} (${nf(num(e.servicioCantidad))} × US$ ${nf(Number(tarifa.tarifa_usd))})`
-            : "Servicio Aduanero (no seleccionado)",
-          r.servicio,
-        ),
+        ...(e.servicioFilas.length
+          ? e.servicioFilas.map((f) => {
+              const t = tarifas.find((x) => x.unidad === f.tipo_despacho);
+              return fila(
+                t
+                  ? `Servicio Aduanero — ${t.tipo_despacho} (${nf(num(String(f.cantidad)))} × US$ ${nf(Number(t.tarifa_usd))})`
+                  : "Servicio Aduanero (tipo no reconocido)",
+                subtotalFila(f, tarifas),
+              );
+            })
+          : [fila("Servicio Aduanero (no seleccionado)", 0)]),
+        ...(e.servicioFilas.length > 1 ? [fila("Total Servicio Aduanero", r.servicio)] : []),
+
         fila("Total Impuestos Estimados", r.totalImpuestos),
         fila("Costo Total", r.costoTotal),
       ],
