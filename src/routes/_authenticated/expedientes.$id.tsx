@@ -1508,8 +1508,15 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               )}
             </div>
             <div className="grid gap-1.5">
-              <Label>Tipo de operación</Label>
-              <Input value={form.tipo_operacion} onChange={(e) => set("tipo_operacion", e.target.value)} />
+              <Label><ReqMark />Tipo de operación</Label>
+              <Select value={form.tipo_operacion || "Importación"} onValueChange={(v) => set("tipo_operacion", v)} disabled={!editable}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Importación">Importación</SelectItem>
+                  <SelectItem value="Exportación">Exportación</SelectItem>
+                  <SelectItem value="Otros">Otros</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className={cn("grid gap-1.5", camposFaltantes.has("req-tipo_carga") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-tipo_carga">
               <Label><ReqMark />Tipo de carga</Label>
