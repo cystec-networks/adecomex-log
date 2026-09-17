@@ -1220,7 +1220,9 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         );
         if (eCont) throw eCont;
       }
+      await guardarFilasServicioAduanero(exp.id, filasServicioAduanero);
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
+
     },
     onSuccess: () => {
       ultimoGuardadoPropio.set(exp.id, Date.now());
