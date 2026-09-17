@@ -32,13 +32,6 @@ const DISCLAIMER =
 
 type TarifaServicio = { id: string; tipo_despacho: string; unidad: string; tarifa_usd: number };
 
-const ETIQUETA_CANTIDAD: Record<string, string> = {
-  kg: "Peso total (kg)",
-  contenedor20: "N° de contenedores de 20'",
-  contenedor4045: "N° de contenedores de 40-45'",
-  vehiculo: "N° de vehículos",
-  tm: "Toneladas métricas",
-};
 
 type Linea = { producto: string; fob: string; peso: string; pais?: string };
 
