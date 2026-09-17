@@ -103,12 +103,13 @@ type Resultado = {
   costoTotal: number;
 };
 
-function calcular(e: Escenario, tarifa?: TarifaServicio): Resultado {
+function calcular(e: Escenario, tarifas: TarifaServicio[] = []): Resultado {
   const totalFob = e.lineas.reduce((a, l) => a + num(l.fob), 0);
   const totalPeso = e.lineas.reduce((a, l) => a + num(l.peso), 0);
   const flete = e.fleteReal ? num(e.flete) : totalFob * (num(e.flete) / 100);
   const seguro = e.seguroReal ? num(e.seguro) : totalFob * (num(e.seguro) / 100);
-  const servicio = tarifa ? Number(tarifa.tarifa_usd) * num(e.servicioCantidad) : 0;
+  const servicio = totalServicioUsd(e.servicioFilas, tarifas);
+
 
   const lineas: LineaResultado[] = e.lineas.map((l) => {
     const fob = num(l.fob);
