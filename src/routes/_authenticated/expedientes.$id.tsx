@@ -964,11 +964,13 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState(() => construirFormInicial(isNuevo ? null : exp, isNuevo));
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
-  const servicioAd = useServicioAduaneroExpediente(
-    form.tipo_despacho_aduanero,
-    form.cantidad_despacho,
-    exp.tasa_cambio_usada,
-  );
+  const [filasServicioAduanero, setFilasServicioAduanero] = useState<FilaServicio[]>([]);
+  const { data: filasServicioDb } = useFilasServicioAduanero(exp?.id, !isNuevo);
+  useEffect(() => {
+    if (filasServicioDb) setFilasServicioAduanero(filasServicioDb);
+  }, [filasServicioDb]);
+  const servicioAd = useServicioAduaneroTotales(filasServicioAduanero, exp?.tasa_cambio_usada);
+
 
   // ---- Modo creación: clientes, OCR y contenedores extraídos ----
   const { data: clientesLite } = useQuery({
