@@ -62,8 +62,12 @@ import {
   FORMULARIO_DUA_RD,
   ServicioAduaneroFields,
   servicioAduaneroDeExpediente,
-  useServicioAduaneroExpediente,
+  useServicioAduaneroTotales,
+  useFilasServicioAduanero,
+  guardarFilasServicioAduanero,
+  type FilaServicio,
 } from "@/lib/servicio-aduanero";
+
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
