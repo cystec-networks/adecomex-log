@@ -1116,6 +1116,32 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const setCont = (i: number, k: string, v: string) =>
     setContenedores((rows) => rows.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)));
 
+  /** Cuenta los contenedores capturados y arma las líneas de Servicio Aduanero. */
+  const autocompletarDesdeContenedores = () => {
+    if (!contenedores.length) {
+      toast.error("No hay contenedores capturados en el Expediente.");
+      return;
+    }
+    const conteo: Record<string, number> = {};
+    const sinClasificar: string[] = [];
+    contenedores.forEach((c, i) => {
+      const t = (c.tipo || "").toLowerCase();
+      if (/40|45/.test(t)) conteo["contenedor4045"] = (conteo["contenedor4045"] ?? 0) + 1;
+      else if (/20/.test(t)) conteo["contenedor20"] = (conteo["contenedor20"] ?? 0) + 1;
+      else sinClasificar.push(c.numero?.trim() || `Contenedor #${i + 1}`);
+    });
+    const nuevasFilas = Object.entries(conteo).map(([tipo, cantidad]) => ({ tipo_despacho: tipo, cantidad }));
+    setFilasServicioAduanero(nuevasFilas);
+    toast.success(`Autocompletado desde ${contenedores.length} contenedor(es)`);
+    if (sinClasificar.length) {
+      toast.warning(
+        `No se pudo identificar el tamaño de: ${sinClasificar.join(", ")}. Agrégalos manualmente a la lista.`,
+        { duration: 8000 },
+      );
+    }
+  };
+
+
   const { data: mercItems } = useQuery({
     queryKey: ["mercancia-items", exp.id],
     enabled: !isNuevo,
