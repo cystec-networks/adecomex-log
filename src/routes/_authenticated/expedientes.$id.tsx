@@ -4061,14 +4061,14 @@ function LiquidacionEstimadaBlock({
           <span className="ml-auto text-right text-[11px] leading-tight">
             {tasa != null ? (
               <>
-                <div className="text-amber-900 font-semibold">Tasa Oficial: RD$ {tasa.toFixed(4)} / US$1</div>
+                <div className="text-amber-900 font-semibold"><span className="text-destructive">*</span> Tasa Oficial: RD$ {tasa.toFixed(4)} / US$1</div>
                 <div className="text-amber-800">
                   {tc.fechaLabel}
                   {tc.origen === "congelada" && <span className="ml-1 inline-flex items-center gap-1 text-emerald-700"><ShieldCheck className="h-3 w-3" />congelada</span>}
                 </div>
               </>
             ) : (
-              <span className="text-amber-800">Tasa Oficial DGA no capturada</span>
+              <span className="text-amber-800"><span className="text-destructive">*</span> Tasa Oficial DGA no capturada</span>
             )}
           </span>
         </div>
