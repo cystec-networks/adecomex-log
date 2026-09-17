@@ -223,8 +223,8 @@ function ColumnaEscenario({
   onChange: (e: Escenario) => void;
   onQuitar?: () => void;
 }) {
-  const tarifa = tarifas.find((t) => t.id === esc.servicioId);
-  const r = calcular(esc, tarifa);
+  const r = calcular(esc, tarifas);
+
   const tasa = num(esc.tasa);
   const rd = (n: number) => (tasa > 0 ? nf(n * tasa) : "—");
   const set = (k: keyof Escenario, v: any) => onChange({ ...esc, [k]: v });
