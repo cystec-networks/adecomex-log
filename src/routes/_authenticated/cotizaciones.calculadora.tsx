@@ -327,32 +327,12 @@ function ColumnaEscenario({
 
         {/* Servicio aduanero */}
         <div className="grid gap-2">
-          <div className="grid gap-1">
-            <Label className="text-xs">Tipo de despacho (Servicio Aduanero)</Label>
-            <Select value={esc.servicioId} onValueChange={(v) => set("servicioId", v)}>
-              <SelectTrigger><SelectValue placeholder="Seleccionar tipo de despacho" /></SelectTrigger>
-              <SelectContent>
-                {tarifas.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.tipo_despacho} — US$ {nf(Number(t.tarifa_usd))}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {tarifa && (
-            <div className="grid gap-1">
-              <Label className="text-xs">{ETIQUETA_CANTIDAD[tarifa.unidad] ?? "Cantidad"}</Label>
-              <Input
-                type="number"
-                step={tarifa.unidad === "kg" || tarifa.unidad === "tm" ? "0.01" : "1"}
-                min="0"
-                value={esc.servicioCantidad}
-                onChange={(ev) => set("servicioCantidad", ev.target.value)}
-              />
-            </div>
-          )}
+          <ServicioAduaneroFields
+            filas={esc.servicioFilas}
+            onChange={(filas) => set("servicioFilas", filas)}
+          />
         </div>
+
 
         {/* Resultados */}
         <div className="rounded-md border bg-muted/30 p-3">
