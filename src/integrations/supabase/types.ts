@@ -2863,6 +2863,66 @@ export type Database = {
           },
         ]
       }
+      expediente_servicio_aduanero: {
+        Row: {
+          cantidad: number
+          created_at: string
+          expediente_id: string
+          id: string
+          tipo_despacho: string
+        }
+        Insert: {
+          cantidad: number
+          created_at?: string
+          expediente_id: string
+          id?: string
+          tipo_despacho: string
+        }
+        Update: {
+          cantidad?: number
+          created_at?: string
+          expediente_id?: string
+          id?: string
+          tipo_despacho?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expediente_servicio_aduanero_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_servicio_aduanero_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_servicio_aduanero_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "expediente_servicio_aduanero_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "expediente_servicio_aduanero_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+        ]
+      }
       expedientes: {
         Row: {
           acuerdo_codigo: string | null

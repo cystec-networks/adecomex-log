@@ -11,6 +11,13 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calculator, Copy, X, FileDown, Plus, Trash2, Save } from "lucide-react";
 import { toast } from "sonner";
+import {
+  ServicioAduaneroFields,
+  totalServicioUsd,
+  subtotalFila,
+  type FilaServicio,
+} from "@/lib/servicio-aduanero";
+
 
 export const Route = createFileRoute("/_authenticated/cotizaciones/calculadora")({
   head: () => ({
@@ -32,13 +39,6 @@ const DISCLAIMER =
 
 type TarifaServicio = { id: string; tipo_despacho: string; unidad: string; tarifa_usd: number };
 
-const ETIQUETA_CANTIDAD: Record<string, string> = {
-  kg: "Peso total (kg)",
-  contenedor20: "N° de contenedores de 20'",
-  contenedor4045: "N° de contenedores de 40-45'",
-  vehiculo: "N° de vehículos",
-  tm: "Toneladas métricas",
-};
 
 type Linea = { producto: string; fob: string; peso: string; pais?: string };
 
@@ -51,8 +51,7 @@ type Escenario = {
   seguro: string;
   pctGravamen: string;
   pctItbis: string;
-  servicioId: string;
-  servicioCantidad: string;
+  servicioFilas: FilaServicio[];
   pctGastos: string;
 };
 
@@ -67,10 +66,10 @@ const VACIO: Escenario = {
   seguro: "",
   pctGravamen: "",
   pctItbis: "18",
-  servicioId: "",
-  servicioCantidad: "",
+  servicioFilas: [],
   pctGastos: "",
 };
+
 
 const num = (s: string) => {
   const n = Number(s);
@@ -104,12 +103,13 @@ type Resultado = {
   costoTotal: number;
 };
 
-function calcular(e: Escenario, tarifa?: TarifaServicio): Resultado {
+function calcular(e: Escenario, tarifas: TarifaServicio[] = []): Resultado {
   const totalFob = e.lineas.reduce((a, l) => a + num(l.fob), 0);
   const totalPeso = e.lineas.reduce((a, l) => a + num(l.peso), 0);
   const flete = e.fleteReal ? num(e.flete) : totalFob * (num(e.flete) / 100);
   const seguro = e.seguroReal ? num(e.seguro) : totalFob * (num(e.seguro) / 100);
-  const servicio = tarifa ? Number(tarifa.tarifa_usd) * num(e.servicioCantidad) : 0;
+  const servicio = totalServicioUsd(e.servicioFilas, tarifas);
+
 
   const lineas: LineaResultado[] = e.lineas.map((l) => {
     const fob = num(l.fob);
@@ -223,8 +223,8 @@ function ColumnaEscenario({
   onChange: (e: Escenario) => void;
   onQuitar?: () => void;
 }) {
-  const tarifa = tarifas.find((t) => t.id === esc.servicioId);
-  const r = calcular(esc, tarifa);
+  const r = calcular(esc, tarifas);
+
   const tasa = num(esc.tasa);
   const rd = (n: number) => (tasa > 0 ? nf(n * tasa) : "—");
   const set = (k: keyof Escenario, v: any) => onChange({ ...esc, [k]: v });
@@ -327,32 +327,12 @@ function ColumnaEscenario({
 
         {/* Servicio aduanero */}
         <div className="grid gap-2">
-          <div className="grid gap-1">
-            <Label className="text-xs">Tipo de despacho (Servicio Aduanero)</Label>
-            <Select value={esc.servicioId} onValueChange={(v) => set("servicioId", v)}>
-              <SelectTrigger><SelectValue placeholder="Seleccionar tipo de despacho" /></SelectTrigger>
-              <SelectContent>
-                {tarifas.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.tipo_despacho} — US$ {nf(Number(t.tarifa_usd))}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {tarifa && (
-            <div className="grid gap-1">
-              <Label className="text-xs">{ETIQUETA_CANTIDAD[tarifa.unidad] ?? "Cantidad"}</Label>
-              <Input
-                type="number"
-                step={tarifa.unidad === "kg" || tarifa.unidad === "tm" ? "0.01" : "1"}
-                min="0"
-                value={esc.servicioCantidad}
-                onChange={(ev) => set("servicioCantidad", ev.target.value)}
-              />
-            </div>
-          )}
+          <ServicioAduaneroFields
+            filas={esc.servicioFilas}
+            onChange={(filas) => set("servicioFilas", filas)}
+          />
         </div>
+
 
         {/* Resultados */}
         <div className="rounded-md border bg-muted/30 p-3">
@@ -391,8 +371,8 @@ async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[], im
 
   let y = 122;
   escenarios.forEach((e, i) => {
-    const tarifa = tarifas.find((t) => t.id === e.servicioId);
-    const r = calcular(e, tarifa);
+    const r = calcular(e, tarifas);
+
     const tasa = num(e.tasa);
     const rd = (n: number) => (tasa > 0 ? nf(n * tasa) : "—");
     const fila = (label: string, usd: number) => [label, nf(usd), rd(usd)];
@@ -436,12 +416,19 @@ async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[], im
         fila(`Gravamen (${e.pctGravamen || 0}%)`, r.gravamen),
         fila(`ITBIS (${e.pctItbis || 18}%)`, r.itbis),
         fila(`Gastos (${e.pctGastos || 0}%)`, r.gastos),
-        fila(
-          tarifa
-            ? `Servicio Aduanero — ${tarifa.tipo_despacho} (${nf(num(e.servicioCantidad))} × US$ ${nf(Number(tarifa.tarifa_usd))})`
-            : "Servicio Aduanero (no seleccionado)",
-          r.servicio,
-        ),
+        ...(e.servicioFilas.length
+          ? e.servicioFilas.map((f) => {
+              const t = tarifas.find((x) => x.unidad === f.tipo_despacho);
+              return fila(
+                t
+                  ? `Servicio Aduanero — ${t.tipo_despacho} (${nf(num(String(f.cantidad)))} × US$ ${nf(Number(t.tarifa_usd))})`
+                  : "Servicio Aduanero (tipo no reconocido)",
+                subtotalFila(f, tarifas),
+              );
+            })
+          : [fila("Servicio Aduanero (no seleccionado)", 0)]),
+        ...(e.servicioFilas.length > 1 ? [fila("Total Servicio Aduanero", r.servicio)] : []),
+
         fila("Total Impuestos Estimados", r.totalImpuestos),
         fila("Costo Total", r.costoTotal),
       ],
@@ -531,8 +518,9 @@ function CalculadoraRapida() {
     try {
       const { data: userData } = await supabase.auth.getUser();
       const resultado = {
-        escenarioA: calcular(escA, tarifas.find((t) => t.id === escA.servicioId)),
-        escenarioB: escB ? calcular(escB, tarifas.find((t) => t.id === escB.servicioId)) : null,
+        escenarioA: calcular(escA, tarifas),
+        escenarioB: escB ? calcular(escB, tarifas) : null,
+
       };
       const { error } = await supabase.from("calculos_pre_liquidacion").insert({
         nombre_importador: importador.trim() || null,

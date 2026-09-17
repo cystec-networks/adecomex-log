@@ -62,8 +62,12 @@ import {
   FORMULARIO_DUA_RD,
   ServicioAduaneroFields,
   servicioAduaneroDeExpediente,
-  useServicioAduaneroExpediente,
+  useServicioAduaneroTotales,
+  useFilasServicioAduanero,
+  guardarFilasServicioAduanero,
+  type FilaServicio,
 } from "@/lib/servicio-aduanero";
+
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
@@ -960,11 +964,13 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState(() => construirFormInicial(isNuevo ? null : exp, isNuevo));
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
-  const servicioAd = useServicioAduaneroExpediente(
-    form.tipo_despacho_aduanero,
-    form.cantidad_despacho,
-    exp.tasa_cambio_usada,
-  );
+  const [filasServicioAduanero, setFilasServicioAduanero] = useState<FilaServicio[]>([]);
+  const { data: filasServicioDb } = useFilasServicioAduanero(exp?.id, !isNuevo);
+  useEffect(() => {
+    if (filasServicioDb) setFilasServicioAduanero(filasServicioDb);
+  }, [filasServicioDb]);
+  const servicioAd = useServicioAduaneroTotales(filasServicioAduanero, exp?.tasa_cambio_usada);
+
 
   // ---- Modo creación: clientes, OCR y contenedores extraídos ----
   const { data: clientesLite } = useQuery({
@@ -1110,6 +1116,32 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const setCont = (i: number, k: string, v: string) =>
     setContenedores((rows) => rows.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)));
 
+  /** Cuenta los contenedores capturados y arma las líneas de Servicio Aduanero. */
+  const autocompletarDesdeContenedores = () => {
+    if (!contenedores.length) {
+      toast.error("No hay contenedores capturados en el Expediente.");
+      return;
+    }
+    const conteo: Record<string, number> = {};
+    const sinClasificar: string[] = [];
+    contenedores.forEach((c, i) => {
+      const t = (c.tipo || "").toLowerCase();
+      if (/40|45/.test(t)) conteo["contenedor4045"] = (conteo["contenedor4045"] ?? 0) + 1;
+      else if (/20/.test(t)) conteo["contenedor20"] = (conteo["contenedor20"] ?? 0) + 1;
+      else sinClasificar.push(c.numero?.trim() || `Contenedor #${i + 1}`);
+    });
+    const nuevasFilas = Object.entries(conteo).map(([tipo, cantidad]) => ({ tipo_despacho: tipo, cantidad }));
+    setFilasServicioAduanero(nuevasFilas);
+    toast.success(`Autocompletado desde ${contenedores.length} contenedor(es)`);
+    if (sinClasificar.length) {
+      toast.warning(
+        `No se pudo identificar el tamaño de: ${sinClasificar.join(", ")}. Agrégalos manualmente a la lista.`,
+        { duration: 8000 },
+      );
+    }
+  };
+
+
   const { data: mercItems } = useQuery({
     queryKey: ["mercancia-items", exp.id],
     enabled: !isNuevo,
@@ -1188,7 +1220,9 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         );
         if (eCont) throw eCont;
       }
+      await guardarFilasServicioAduanero(exp.id, filasServicioAduanero);
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
+
     },
     onSuccess: () => {
       ultimoGuardadoPropio.set(exp.id, Date.now());
@@ -1199,6 +1233,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       }
       qc.invalidateQueries({ queryKey: ["expediente", exp.id] });
       qc.invalidateQueries({ queryKey: ["expediente-contenedores", exp.id] });
+      qc.invalidateQueries({ queryKey: ["expediente-servicio-aduanero", exp.id] });
+
       qc.invalidateQueries({ queryKey: ["expedientes"] });
       qc.invalidateQueries({ queryKey: ["expedientes-hist"] });
     },
@@ -1283,8 +1319,10 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           })),
         );
       }
+      await guardarFilasServicioAduanero(data.id, filasServicioAduanero);
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: data.id, accion: "creado" });
       return data;
+
     },
     onSuccess: (row: any) => {
       qc.invalidateQueries({ queryKey: ["expedientes"] });
@@ -1834,12 +1872,14 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                     />
                   </div>
                   <ServicioAduaneroFields
-                    tipoDespacho={form.tipo_despacho_aduanero || ""}
-                    cantidad={form.cantidad_despacho}
-                    onChange={(tipo, cant) =>
-                      setForm((f) => ({ ...f, tipo_despacho_aduanero: tipo, cantidad_despacho: cant }))
-                    }
+                    filas={filasServicioAduanero}
+                    onChange={setFilasServicioAduanero}
                     disabled={!editable}
+                    extraAction={
+                      <Button type="button" variant="outline" size="sm" onClick={autocompletarDesdeContenedores}>
+                        Autocompletar desde Contenedores
+                      </Button>
+                    }
                   />
                   <div className="grid gap-1.5">
                     <Label className="flex items-center gap-1.5">
@@ -1853,6 +1893,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                       Más Formulario DUA: RD$ {FORMULARIO_DUA_RD.toFixed(2)} (cargo fijo).
                     </p>
                   </div>
+
                 </div>
               </div>
             );
