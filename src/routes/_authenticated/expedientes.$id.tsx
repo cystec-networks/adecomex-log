@@ -1319,8 +1319,10 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           })),
         );
       }
+      await guardarFilasServicioAduanero(data.id, filasServicioAduanero);
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: data.id, accion: "creado" });
       return data;
+
     },
     onSuccess: (row: any) => {
       qc.invalidateQueries({ queryKey: ["expedientes"] });
