@@ -1168,6 +1168,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       const contValidos = contenedores.filter((c) => c.numero.trim());
       if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
       if (!payload.cliente_id) payload.cliente_id = null;
+      if (!payload.tipo_operacion || !payload.tipo_operacion.trim()) payload.tipo_operacion = "Importación";
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
       if (!payload.fecha_llegada_real) payload.fecha_llegada_real = null;
       if (!payload.fecha_cargado) payload.fecha_cargado = null;
@@ -1261,7 +1262,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       const payload: any = { ...form };
       const contValidos = contenedores.filter((c) => c.numero.trim());
       if (!payload.numero) delete payload.numero; // numeración automática
-      if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
+      if (!payload.tipo_operacion || !payload.tipo_operacion.trim()) payload.tipo_operacion = "Importación";
       if (!payload.fecha_llegada_real) payload.fecha_llegada_real = null;
       if (!payload.fecha_cargado) payload.fecha_cargado = null;
       if (!payload.cliente_id) payload.cliente_id = null;
