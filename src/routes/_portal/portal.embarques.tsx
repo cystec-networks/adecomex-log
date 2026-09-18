@@ -217,9 +217,8 @@ function PortalListado() {
             <TableBody>
               {grupos.map((g) =>
                 g.rows.length === 0 ? null : (
-                  <>
+                  <Fragment key={g.key}>
                     <EstadoDivider
-                      key={g.key}
                       label={g.label}
                       count={g.rows.length}
                       colapsado={esColapsado(g.key)}
@@ -227,7 +226,7 @@ function PortalListado() {
                       colSpan={7}
                     />
                     {!esColapsado(g.key) && g.rows.map(renderFila)}
-                  </>
+                  </Fragment>
                 ),
               )}
             </TableBody>
