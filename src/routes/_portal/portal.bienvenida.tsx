@@ -26,8 +26,8 @@ function PortalBienvenida() {
         className="absolute inset-0 h-full w-full object-contain"
       />
       <div className="absolute bottom-6 left-0 right-0 flex justify-center px-4">
-        <Link
-          to="/portal"
+          <Link
+            to="/portal/embarques"
           className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-transform hover:scale-105"
         >
           Ver Mis Embarques

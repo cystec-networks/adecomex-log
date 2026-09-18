@@ -9,7 +9,7 @@ import { fmtLocalDate } from "@/lib/dates";
 import { FolderKanban, PackageOpen, ChevronRight, Search } from "lucide-react";
 import { useState } from "react";
 
-export const Route = createFileRoute("/_portal/portal/")({
+export const Route = createFileRoute("/_portal/portal/embarques")({
   component: PortalListado,
 });
 

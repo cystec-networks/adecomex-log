@@ -127,7 +127,7 @@ function PortalExpedienteDetalle() {
           Embarque no encontrado o sin acceso.
           <div className="mt-3">
             <Button asChild variant="outline" size="sm">
-              <Link to="/portal"><ArrowLeft className="h-4 w-4 mr-1" /> Volver</Link>
+              <Link to="/portal/embarques"><ArrowLeft className="h-4 w-4 mr-1" /> Volver</Link>
             </Button>
           </div>
         </CardContent>
@@ -140,7 +140,7 @@ function PortalExpedienteDetalle() {
   return (
     <div className="space-y-5">
       <Button asChild variant="ghost" size="sm" className="-ml-2">
-        <Link to="/portal"><ArrowLeft className="h-4 w-4 mr-1" /> Mis Embarques</Link>
+        <Link to="/portal/embarques"><ArrowLeft className="h-4 w-4 mr-1" /> Mis Embarques</Link>
       </Button>
 
       <Card>
