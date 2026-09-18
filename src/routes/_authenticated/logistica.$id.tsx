@@ -126,6 +126,8 @@ const formFrom = (o: any): FormState => ({
   hazmat_punto_inflamacion: o.hazmat_punto_inflamacion ?? "", hazmat_contaminante_marino: String(o.hazmat_contaminante_marino ?? false),
   hazmat_nombre_tecnico: o.hazmat_nombre_tecnico ?? "",
   hazmat_recargo: o.hazmat_recargo == null ? "" : String(o.hazmat_recargo),
+  empty_yn: String(o.empty_yn ?? false),
+  ...(Object.fromEntries(MANIFIESTO_TEXT_KEYS.map((k) => [k, o[k] ?? ""])) as Record<(typeof MANIFIESTO_TEXT_KEYS)[number], string>),
 });
 
 const normalizarCliente = (s: string) =>
