@@ -289,7 +289,7 @@ function AppSidebarInner() {
           {!collapsed && (
             <div className="min-w-0">
               <div className="font-display font-bold text-lg text-sidebar-accent-foreground leading-tight whitespace-nowrap">ADECOMEX FLOW</div>
-              <div className="text-[10px] uppercase tracking-wider text-sidebar-accent-foreground/90 leading-snug">Plataforma inteligente de gestión<br />y logística de cargas</div>
+              <div className="text-[9.5px] uppercase tracking-normal text-sidebar-accent-foreground/90 leading-snug"><span className="whitespace-nowrap">Plataforma inteligente de gestión</span><br />y logística de cargas</div>
             </div>
           )}
         </div>
