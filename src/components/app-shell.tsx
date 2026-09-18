@@ -98,7 +98,7 @@ const GROUPS: Group[] = [
   },
   {
     id: "expedientes",
-    label: "EXPEDIENTES",
+    label: "EMBARQUES",
     icon: FolderKanban,
     items: [
       { to: "/expedientes/nuevo", label: "Nuevo Expediente", icon: FileText,
@@ -284,12 +284,12 @@ function AppSidebarInner() {
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-3 py-3">
           <div className="h-14 w-14 grid shrink-0 place-items-center overflow-hidden rounded-2xl bg-sidebar-accent border-2 border-sidebar-accent-foreground/30 shadow-sm">
-            <img src={logoAAsset.url} alt="A de ADECOMEX SRL" className="h-full w-full object-cover" />
+            <img src={logoAAsset.url} alt="A de ADECOMEX FLOW" className="h-full w-full object-cover" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <div className="font-display font-bold text-lg text-sidebar-accent-foreground leading-tight">ADECOMEX SRL</div>
-              <div className="text-xs uppercase tracking-wider text-sidebar-accent-foreground/90">GESTION Y LOGISTICA</div>
+              <div className="font-display font-bold text-lg text-sidebar-accent-foreground leading-tight">ADECOMEX FLOW</div>
+              <div className="text-[10px] uppercase tracking-wider text-sidebar-accent-foreground/90 leading-tight">Plataforma inteligente de gestión de importaciones</div>
             </div>
           )}
         </div>
@@ -309,7 +309,7 @@ function AppSidebarInner() {
           match: (p) => p === "/bienvenida" })}
 
         {/* Dashboard (item simple, primero) */}
-        {renderSimpleItem({ id: "dashboard", to: "/dashboard", label: "Panel de Operaciones", icon: LayoutDashboard,
+        {renderSimpleItem({ id: "dashboard", to: "/dashboard", label: "Panel de Control", icon: LayoutDashboard,
           match: (p) => p === "/dashboard" })}
 
         {/* Comercial group (Cotizaciones → Órdenes) */}
