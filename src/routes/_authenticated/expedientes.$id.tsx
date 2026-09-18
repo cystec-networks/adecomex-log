@@ -989,6 +989,16 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState(() => construirFormInicial(isNuevo ? null : exp, isNuevo));
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
+  const esExportacion = (form.tipo_operacion || "").toLowerCase().startsWith("export");
+  // Exportación: precarga los datos del agente despachante de ADECOMEX si están vacíos.
+  useEffect(() => {
+    if (!esExportacion) return;
+    setForm((f) => {
+      if (f.declarante_codigo || f.declarante_nombre) return f;
+      const b = loadBrokerConfig();
+      return { ...f, declarante_codigo: b.declarantCode ?? "", declarante_nombre: b.declarantName ?? "", declarante_nacionalidad: f.declarante_nacionalidad || b.declarantNationality || "" };
+    });
+  }, [esExportacion]);
   const [filasServicioAduanero, setFilasServicioAduanero] = useState<FilaServicio[]>([]);
   const { data: filasServicioDb } = useFilasServicioAduanero(exp?.id, !isNuevo);
   useEffect(() => {
