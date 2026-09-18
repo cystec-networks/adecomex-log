@@ -49,7 +49,7 @@ import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
-import { unitFob } from "@/lib/siga-xml";
+import { unitFob, loadBrokerConfig } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
@@ -954,7 +954,32 @@ function construirFormInicial(data: any, nuevo: boolean) {
     tipo_operacion: d.tipo_operacion ?? "",
     tipo_carga: d.tipo_carga ?? "",
     contacto_solicitud: d.contacto_solicitud ?? "",
+    // --- Exportación (SIGA) ---
+    buyer_codigo: d.buyer_codigo ?? "",
+    buyer_nombre: d.buyer_nombre ?? "",
+    buyer_nacionalidad: d.buyer_nacionalidad ?? "",
+    declarante_codigo: d.declarante_codigo ?? "",
+    declarante_nombre: d.declarante_nombre ?? "",
+    declarante_nacionalidad: d.declarante_nacionalidad ?? "",
+    zf_aplica: !!d.zf_aplica,
+    zf_valor_cif: d.zf_valor_cif ?? "",
+    zf_valor_materiales: d.zf_valor_materiales ?? "",
+    zf_valor_salario: d.zf_valor_salario ?? "",
+    zf_valor_servicio: d.zf_valor_servicio ?? "",
+    zf_otros_valores: d.zf_otros_valores ?? "",
   };
+}
+
+/** Campos numéricos de Zona Franca: "" → null antes de guardar. */
+function normalizarCamposExportacion(payload: any) {
+  const toNum = (v: any) => (v === "" || v == null ? null : Number(v));
+  ["zf_valor_cif", "zf_valor_materiales", "zf_valor_salario", "zf_valor_servicio", "zf_otros_valores"].forEach((k) => {
+    payload[k] = toNum(payload[k]);
+  });
+  payload.zf_aplica = !!payload.zf_aplica;
+  ["buyer_codigo", "buyer_nombre", "buyer_nacionalidad", "declarante_codigo", "declarante_nombre", "declarante_nacionalidad"].forEach((k) => {
+    payload[k] = (payload[k] ?? "").trim() || null;
+  });
 }
 
 function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null }) {
