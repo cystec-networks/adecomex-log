@@ -389,6 +389,8 @@ function DetalleLogistica() {
     hazmat_grupo_empaque: nullable(f.hazmat_grupo_empaque), hazmat_punto_inflamacion: nullable(f.hazmat_punto_inflamacion),
     hazmat_contaminante_marino: f.hazmat_contaminante_marino === "true", hazmat_nombre_tecnico: nullable(f.hazmat_nombre_tecnico),
     hazmat_recargo: numeric(f.hazmat_recargo),
+    empty_yn: f.empty_yn === "true",
+    ...Object.fromEntries(MANIFIESTO_TEXT_KEYS.map((k) => [k, nullable(f[k])])),
   });
 
   const saveMut = useMutation({ mutationFn: async () => {
