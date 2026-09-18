@@ -3,7 +3,7 @@ import { supabasePortal as supabase } from "@/integrations/supabase/portal-clien
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, Ship } from "lucide-react";
+import { LogOut, Ship, Home } from "lucide-react";
 import { toast } from "sonner";
 import logoAsset from "@/assets/logo-adecomex-horizontal.png.asset.json";
 
