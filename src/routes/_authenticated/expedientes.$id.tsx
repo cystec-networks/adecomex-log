@@ -980,7 +980,7 @@ function normalizarCamposExportacion(payload: any) {
     payload[k] = toNum(payload[k]);
   });
   payload.zf_aplica = !!payload.zf_aplica;
-  ["buyer_codigo", "buyer_nombre", "buyer_nacionalidad", "declarante_codigo", "declarante_nombre", "declarante_nacionalidad"].forEach((k) => {
+  ["buyer_codigo", "buyer_nombre", "buyer_nacionalidad", "declarante_codigo", "declarante_nombre", "declarante_nacionalidad", "regimen_codigo_exportacion"].forEach((k) => {
     payload[k] = (payload[k] ?? "").trim() || null;
   });
 }
@@ -1215,6 +1215,20 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     },
   });
   const [tasaNuevaInput, setTasaNuevaInput] = useState("");
+
+  // Catálogo de regímenes de Exportación (SIGA), separado del de Importación.
+  const { data: regimenesExportacion } = useQuery({
+    queryKey: ["catalogo_regimenes", "exportacion"],
+    enabled: esExportacion,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("catalogo_regimenes")
+        .select("codigo, nombre")
+        .eq("tipo_operacion", "exportacion")
+        .order("nombre");
+      return data ?? [];
+    },
+  });
 
   // Tasa efectiva del expediente: la ya guardada o la del catálogo para la fecha que rige.
   const resolverTasaEfectiva = async (): Promise<number | null> => {
