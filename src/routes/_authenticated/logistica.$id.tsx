@@ -31,6 +31,8 @@ import { ConstanciaLogisticaButton, type ConstanciaLogisticaButtonHandle } from 
 import { BlHijoPdfButton, type BlHijoPdfButtonHandle } from "@/components/bl-hijo-pdf-button";
 import { SolicitudBookingPdfButton, type SolicitudBookingPdfButtonHandle } from "@/components/solicitud-booking-pdf-button";
 import { CotizacionLogisticaPdfButton, type CotizacionLogisticaPdfButtonHandle } from "@/components/cotizacion-logistica-pdf-button";
+import { ManifiestoXmlDialog } from "@/components/generar-xml-manifiesto";
+import { useQuery as useCatalogoQuery } from "@tanstack/react-query";
 
 /** Registro de auditoría de la operación logística (mismo patrón que Expedientes). */
 const logAuditoria = async (operacionId: string, accion: string, cambios?: Record<string, unknown>) => {
@@ -130,6 +132,31 @@ const formFrom = (o: any): FormState => ({
   ...(Object.fromEntries(MANIFIESTO_TEXT_KEYS.map((k) => [k, o[k] ?? ""])) as Record<(typeof MANIFIESTO_TEXT_KEYS)[number], string>),
 });
 
+/** Selector contra un catálogo DGA (código + nombre) del Manifiesto SIGA. */
+function SigaSelect({ label, tabla, value, onChange, readOnly }: {
+  label: string; tabla: string; value: string; onChange: (v: string) => void; readOnly: boolean;
+}) {
+  const { data: filas = [] } = useCatalogoQuery({
+    queryKey: ["catalogo-siga", tabla],
+    queryFn: async () => {
+      const { data } = await supabase.from(tabla as any).select("codigo, nombre").eq("activo", true).order("nombre");
+      return (data ?? []) as { codigo: string; nombre: string }[];
+    },
+  });
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <Select disabled={readOnly} value={value || "none"} onValueChange={(v) => onChange(v === "none" ? "" : v)}>
+        <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="none">—</SelectItem>
+          {filas.map((f) => <SelectItem key={f.codigo} value={f.codigo}>{f.nombre} ({f.codigo})</SelectItem>)}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 const normalizarCliente = (s: string) =>
   s.toLowerCase().replace(/[.,]/g, "").replace(/\bs\.?r\.?l\.?\b/g, "srl").replace(/\s+/g, " ").trim();
 const EMPTY_FORM: FormState = formFrom({});
@@ -211,6 +238,7 @@ function DetalleLogistica() {
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
   const [contenedores, setContenedores] = useState<ContenedorFila[]>([]);
   const [hazmatFaltantes, setHazmatFaltantes] = useState<string[]>([]);
+  const [manifiestoOpen, setManifiestoOpen] = useState(false);
 
   const constanciaRef = useRef<ConstanciaLogisticaButtonHandle>(null);
   const blHijoRef = useRef<BlHijoPdfButtonHandle>(null);
@@ -723,12 +751,16 @@ function DetalleLogistica() {
                 <DropdownMenuItem onSelect={() => cotizacionRef.current?.generar()} className="cursor-pointer">
                   Generar Cotización (PDF)
                 </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setManifiestoOpen(true)} className="cursor-pointer">
+                  Generar Manifiesto XML (SIGA)
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <ConstanciaLogisticaButton ref={constanciaRef} datos={datosConstancia} showTrigger={false} />
             <BlHijoPdfButton ref={blHijoRef} datos={datosBlHijo} showTrigger={false} />
             <SolicitudBookingPdfButton ref={bookingRef} datos={datosSolicitudBooking} showTrigger={false} />
             <CotizacionLogisticaPdfButton ref={cotizacionRef} datos={datosCotizacionLogistica} showTrigger={false} />
+            <ManifiestoXmlDialog operacionId={id} open={manifiestoOpen} onOpenChange={setManifiestoOpen} />
             {modoEdicion && <Button disabled={saveMut.isPending} onClick={() => saveMut.mutate()} className="shadow-lg"><Save className="h-4 w-4 mr-2" />Guardar cambios</Button>}
           </>
         )}
@@ -872,6 +904,50 @@ function DetalleLogistica() {
         <div className="space-y-1.5"><Label>Términos de flete</Label><Select disabled={readOnly} value={form.terminos_flete || "none"} onValueChange={(v) => set("terminos_flete", v === "none" ? "" : v)}><SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger><SelectContent><SelectItem value="none">—</SelectItem><SelectItem value="prepaid">Prepaid</SelectItem><SelectItem value="collect">Collect</SelectItem></SelectContent></Select></div>
         <Field form={form} set={set} readOnly={readOnly} label="Peso bruto (kg)" name="peso_bruto_kg" type="number" /><Field form={form} set={set} readOnly={readOnly} label="Volumen (m³)" name="volumen_m3" type="number" />
         <Field form={form} set={set} readOnly={readOnly} label="Incoterm" name="incoterm" />
+      </CardContent></Card>
+
+      <Card><CardHeader><CardTitle className="text-base">Datos del Manifiesto SIGA</CardTitle></CardHeader><CardContent className="space-y-5">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Field form={form} set={set} readOnly={readOnly} label="Administración aduanera (AreaCode)" name="area_code" />
+          <Field form={form} set={set} readOnly={readOnly} label="Código SIGA naviera/consolidador" name="biz_company_code" />
+          <Field form={form} set={set} readOnly={readOnly} label="Depósito de salida (LoadingLocation)" name="loading_location_code" />
+          <Field form={form} set={set} readOnly={readOnly} label="Depósito de llegada (UnloadingLocation)" name="unloading_location_code" />
+          <Field form={form} set={set} readOnly={readOnly} label="Último puerto de escala (ViaEntrance)" name="via_entrance" />
+          <Field form={form} set={set} readOnly={readOnly} label="País de la ruta (CountryCode)" name="country_code" />
+          <SigaSelect label="Tipo de BL" tabla="catalogo_tipo_bl" value={form.bl_type} onChange={(v) => set("bl_type", v)} readOnly={readOnly} />
+          <SigaSelect label="Tipo de tránsito" tabla="catalogo_tipo_transito" value={form.transit_type} onChange={(v) => set("transit_type", v)} readOnly={readOnly} />
+          <SigaSelect label="Tipo courier" tabla="catalogo_tipo_courier" value={form.express_type} onChange={(v) => set("express_type", v)} readOnly={readOnly} />
+          <div className="flex items-center gap-2 pt-6">
+            <Switch id="empty_yn" disabled={readOnly} checked={form.empty_yn === "true"} onCheckedChange={(c) => set("empty_yn", c ? "true" : "false")} />
+            <Label htmlFor="empty_yn" className="cursor-pointer text-sm">Llega vacío</Label>
+          </div>
+        </div>
+
+        {([
+          { pre: "consignor", titulo: "Consignador (Shipper)" },
+          { pre: "consignee", titulo: "Consignatario" },
+          { pre: "notify", titulo: "A notificar (Notify)" },
+        ] as const).map(({ pre, titulo }) => (
+          <div key={pre} className="rounded-md border p-3 space-y-3">
+            <div className="text-sm font-semibold">{titulo}</div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {pre === "notify" && <>
+                <Field form={form} set={set} readOnly={readOnly} label="Nombre" name="notify_nombre" />
+                <Field form={form} set={set} readOnly={readOnly} label="Teléfono" name="notify_telefono" />
+                <Field form={form} set={set} readOnly={readOnly} label="Email" name="notify_email" type="email" />
+              </>}
+              <SigaSelect label="Tipo" tabla="catalogo_tipo_consignatario" value={form[`${pre}_tipo`]} onChange={(v) => set(`${pre}_tipo`, v)} readOnly={readOnly} />
+              <SigaSelect label="Tipo de documento" tabla="catalogo_tipo_documento_siga" value={form[`${pre}_doc_tipo`]} onChange={(v) => set(`${pre}_doc_tipo`, v)} readOnly={readOnly} />
+              <Field form={form} set={set} readOnly={readOnly} label="N° de documento" name={`${pre}_doc_numero`} />
+              <Field form={form} set={set} readOnly={readOnly} label="País" name={`${pre}_pais`} />
+              <Field form={form} set={set} readOnly={readOnly} label="Fax" name={`${pre}_fax`} />
+              <Field form={form} set={set} readOnly={readOnly} label="Código postal" name={`${pre}_zip`} />
+              <Field form={form} set={set} readOnly={readOnly} label="Zona" name={`${pre}_zona`} />
+              <Field form={form} set={set} readOnly={readOnly} label="Ciudad" name={`${pre}_ciudad`} />
+              <Field form={form} set={set} readOnly={readOnly} label="Calle / dirección" name={`${pre}_calle`} />
+            </div>
+          </div>
+        ))}
       </CardContent></Card>
 
       {!isNuevo && (
