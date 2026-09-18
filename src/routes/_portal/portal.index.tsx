@@ -80,7 +80,7 @@ function PortalListado() {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-display font-bold flex items-center gap-2">
-          <FolderKanban className="h-6 w-6 text-primary" /> Mis expedientes
+          <FolderKanban className="h-6 w-6 text-primary" /> Mis Embarques
         </h1>
         <p className="text-sm text-muted-foreground">Consulta el estado y documentos de tus operaciones.</p>
       </div>
@@ -91,9 +91,9 @@ function PortalListado() {
           type="text"
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
-          placeholder="Busca por número de expediente o BL/AWB..."
+          placeholder="Busca por número de embarque o BL/AWB..."
           className="pl-12 pr-4 py-5 text-lg w-full"
-          aria-label="Buscar expediente por número o BL/AWB"
+          aria-label="Buscar embarque por número o BL/AWB"
         />
       </div>
 
@@ -103,7 +103,7 @@ function PortalListado() {
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground flex flex-col items-center gap-2">
             <PackageOpen className="h-10 w-10 opacity-40" />
-            <div className="font-medium text-foreground">Aún no tienes expedientes activos</div>
+            <div className="font-medium text-foreground">Aún no tienes embarques activos</div>
             <div className="text-sm">Cuando ADECOMEX inicie una operación para ti, aparecerá aquí.</div>
           </CardContent>
         </Card>
@@ -112,7 +112,7 @@ function PortalListado() {
       {!isLoading && query && filtered.length === 0 && (expedientes?.length ?? 0) > 0 && (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            <div className="font-medium text-foreground">No se encontró ningún expediente con ese número o BL/AWB</div>
+            <div className="font-medium text-foreground">No se encontró ningún embarque con ese número o BL/AWB</div>
           </CardContent>
         </Card>
       )}
