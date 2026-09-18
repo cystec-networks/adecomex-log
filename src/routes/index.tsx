@@ -25,7 +25,7 @@ export const Route = createFileRoute("/")({
       .eq("activo", true)
       .limit(1)
       .maybeSingle();
-    if (link) throw redirect({ to: "/portal" });
+    if (link) throw redirect({ to: "/portal/bienvenida" });
 
     // Estudiante vinculado y activo → portal estudiante
     const { data: estLink } = await (supabase as any)

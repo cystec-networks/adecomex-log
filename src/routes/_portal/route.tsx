@@ -3,7 +3,7 @@ import { supabasePortal as supabase } from "@/integrations/supabase/portal-clien
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, Ship } from "lucide-react";
+import { LogOut, Ship, Home } from "lucide-react";
 import { toast } from "sonner";
 import logoAsset from "@/assets/logo-adecomex-horizontal.png.asset.json";
 
@@ -102,6 +102,11 @@ function PortalLayout() {
               {cliente.rnc && <div className="text-xs text-muted-foreground">RNC {cliente.rnc}</div>}
             </div>
           )}
+          <Button variant="ghost" size="sm" asChild title="Inicio">
+            <Link to="/portal/bienvenida">
+              <Home className="h-4 w-4 mr-1" /> Inicio
+            </Link>
+          </Button>
           <Button variant="ghost" size="sm" onClick={signOut}>
             <LogOut className="h-4 w-4 mr-1" /> Salir
           </Button>
