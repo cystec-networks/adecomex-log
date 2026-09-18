@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
-import bienvenidaAsset from "@/assets/bienvenida-adecomex-flow-hd.png";
+import bienvenidaAsset from "@/assets/bienvenida-adecomex-flow-hd.webp";
 
 export const Route = createFileRoute("/_portal/portal/bienvenida")({
   head: () => ({
