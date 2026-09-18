@@ -140,7 +140,7 @@ function SigaSelect({ label, tabla, value, onChange, readOnly }: {
     queryKey: ["catalogo-siga", tabla],
     queryFn: async () => {
       const { data } = await supabase.from(tabla as any).select("codigo, nombre").eq("activo", true).order("nombre");
-      return (data ?? []) as { codigo: string; nombre: string }[];
+      return (data ?? []) as unknown as { codigo: string; nombre: string }[];
     },
   });
   return (
