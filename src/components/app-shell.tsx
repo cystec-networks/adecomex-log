@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  FolderKanban, Users, UserCog, LogOut,
+  FolderKanban, Users, UserCog, LogOut, Home,
   PackageOpen, PackageCheck, Sparkles, Trash2, FileCheck2, Truck,
   ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3, Library, Settings,
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
@@ -303,6 +303,10 @@ function AppSidebarInner() {
             </SidebarGroupLabel>
           </SidebarGroup>
         )}
+
+        {/* Inicio / Bienvenida (siempre visible, antes del Panel) */}
+        {renderSimpleItem({ id: "inicio", to: "/bienvenida", label: "Inicio", icon: Home,
+          match: (p) => p === "/bienvenida" })}
 
         {/* Dashboard (item simple, primero) */}
         {renderSimpleItem({ id: "dashboard", to: "/dashboard", label: "Panel de Operaciones", icon: LayoutDashboard,
