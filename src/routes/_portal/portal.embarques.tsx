@@ -1,12 +1,17 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { Fragment } from "react";
 import { supabasePortal as supabase } from "@/integrations/supabase/portal-client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
 import { estadoLabel } from "@/lib/estados-expediente";
-import { fmtLocalDate } from "@/lib/dates";
-import { FolderKanban, PackageOpen, ChevronRight, Search } from "lucide-react";
+import { fmtLocalDate, daysFromToday } from "@/lib/dates";
+import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
+import { FolderKanban, PackageOpen, Search, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/_portal/portal/embarques")({
@@ -16,12 +21,16 @@ export const Route = createFileRoute("/_portal/portal/embarques")({
 const ESTADO_COLOR: Record<string, string> = {
   digitar: "bg-slate-500/15 text-slate-700 border-slate-500/30",
   en_transito: "bg-cyan-500/15 text-cyan-700 border-cyan-500/30",
+  manifestado: "bg-indigo-500/15 text-indigo-700 border-indigo-500/30",
   presentar: "bg-blue-500/15 text-blue-700 border-blue-500/30",
   verificar: "bg-amber-500/15 text-amber-700 border-amber-500/30",
   facturar: "bg-purple-500/15 text-purple-700 border-purple-500/30",
   despachado: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
   entregado: "bg-teal-500/15 text-teal-700 border-teal-500/30",
 };
+
+const ESTADO_GRUPO_1 = ["digitar", "manifestado", "presentar", "verificar"];
+const ESTADO_GRUPO_3 = ["despachado", "entregado"];
 
 function normalizeSearch(text: string | null | undefined): string {
   return (text ?? "")
@@ -31,16 +40,39 @@ function normalizeSearch(text: string | null | undefined): string {
     .trim();
 }
 
+function rowHighlight(e: any): string {
+  const dias = e.fecha_compromiso ? daysFromToday(e.fecha_compromiso) : null;
+  const transitoUrgente = e.estado === "en_transito" && dias != null && !isNaN(dias) && dias < 7;
+
+  if (transitoUrgente) {
+    return "bg-orange-200 dark:bg-orange-900/60 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-orange-600 dark:[&>td:first-child]:border-l-orange-400";
+  }
+
+  const porEstado: Record<string, string> = {
+    digitar: "bg-sky-50 dark:bg-sky-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-sky-400",
+    en_transito: "bg-purple-50 dark:bg-purple-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-purple-400",
+    manifestado: "bg-indigo-200 dark:bg-indigo-900/50 [&>td:first-child]:border-l-[6px] [&>td:first-child]:border-l-indigo-500 dark:[&>td:first-child]:border-l-indigo-300",
+    presentar: "bg-amber-100 dark:bg-amber-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-amber-500 dark:[&>td:first-child]:border-l-amber-400",
+    verificar: "bg-red-100 dark:bg-red-950/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-red-500 dark:[&>td:first-child]:border-l-red-400",
+    despachado: "bg-slate-200 dark:bg-slate-900/60 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-slate-600 dark:[&>td:first-child]:border-l-slate-500",
+    entregado: "bg-emerald-50 dark:bg-emerald-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-emerald-500",
+    facturar: "bg-teal-50 dark:bg-teal-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-teal-500",
+  };
+
+  return porEstado[e.estado] ?? "";
+}
+
 function PortalListado() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const { esColapsado, toggleGrupo } = useGruposColapsados("portal-embarques-grupos");
 
   const { data: expedientes, isLoading } = useQuery({
     queryKey: ["portal-expedientes"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("v_expedientes_cliente")
-        .select("id, numero, bl_awb, estado, created_at, fecha_compromiso")
+        .select("id, numero, bl_awb, estado, created_at, fecha_compromiso, descripcion_mercancia, puerto_arribo")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -75,6 +107,57 @@ function PortalListado() {
       });
     }
   };
+
+  const irAlDetalle = (id: string) =>
+    navigate({ to: "/portal/expedientes/$id", params: { id } });
+
+  const g1 = filtered.filter((e) => ESTADO_GRUPO_1.includes(e.estado ?? ""));
+  const transito = filtered.filter((e) => e.estado === "en_transito");
+  const g3 = filtered.filter((e) => ESTADO_GRUPO_3.includes(e.estado ?? ""));
+  const facturados = filtered.filter((e) => e.estado === "facturar");
+
+  const renderFila = (exp: any) => {
+    const dias = exp.fecha_compromiso ? daysFromToday(exp.fecha_compromiso) : null;
+    return (
+      <TableRow
+        key={exp.id}
+        className={`cursor-pointer hover:brightness-95 transition-colors ${rowHighlight(exp)}`}
+        onClick={() => irAlDetalle(exp.id)}
+      >
+        <TableCell className="font-mono text-xs font-semibold whitespace-nowrap">{exp.numero ?? "—"}</TableCell>
+        <TableCell className="max-w-[220px]">
+          <span className="block truncate" title={exp.descripcion_mercancia ?? undefined}>
+            {exp.descripcion_mercancia ?? "—"}
+          </span>
+        </TableCell>
+        <TableCell className="whitespace-nowrap">{exp.bl_awb ?? "—"}</TableCell>
+        <TableCell className="whitespace-nowrap">{fmtLocalDate(exp.fecha_compromiso)}</TableCell>
+        <TableCell className="whitespace-nowrap">
+          {dias == null || isNaN(dias) ? "—" : dias >= 0 ? `${dias}d` : `${dias}d`}
+        </TableCell>
+        <TableCell className="max-w-[140px]">
+          <span className="block truncate" title={exp.puerto_arribo ?? undefined}>
+            {exp.puerto_arribo ?? "—"}
+          </span>
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center justify-between gap-2">
+            <Badge variant="outline" className={ESTADO_COLOR[exp.estado ?? ""] ?? ""}>
+              {estadoLabel(exp.estado)}
+            </Badge>
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
+  const grupos: { key: string; label: string; rows: any[] }[] = [
+    { key: "por_procesar", label: "Por Procesar", rows: g1 },
+    { key: "en_transito", label: "En Tránsito", rows: transito },
+    { key: "completados", label: "Completados", rows: g3 },
+    { key: "facturados", label: "Facturados", rows: facturados },
+  ];
 
   return (
     <div className="space-y-4">
@@ -117,38 +200,39 @@ function PortalListado() {
         </Card>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((exp) => (
-          <Link
-            key={exp.id!}
-            to="/portal/expedientes/$id"
-            params={{ id: exp.id! }}
-            className="block"
-          >
-            <Card className="hover:border-primary/50 hover:shadow-sm transition-all h-full">
-              <CardContent className="p-4 flex flex-col gap-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="font-mono text-sm font-semibold truncate">{exp.numero ?? "—"}</div>
-                    {exp.bl_awb && (
-                      <div className="text-xs text-muted-foreground truncate">BL/AWB: {exp.bl_awb}</div>
-                    )}
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                </div>
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <Badge variant="outline" className={ESTADO_COLOR[exp.estado ?? ""] ?? ""}>
-                    {estadoLabel(exp.estado)}
-                  </Badge>
-                  <div className="text-[11px] text-muted-foreground">
-                    {fmtLocalDate(exp.created_at)}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
+      {!isLoading && filtered.length > 0 && (
+        <div className="rounded-md border overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Embarque</TableHead>
+                <TableHead>Mercancía</TableHead>
+                <TableHead>BL/AWB</TableHead>
+                <TableHead>ETA</TableHead>
+                <TableHead>Días</TableHead>
+                <TableHead>Puerto</TableHead>
+                <TableHead>Estado</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {grupos.map((g) =>
+                g.rows.length === 0 ? null : (
+                  <Fragment key={g.key}>
+                    <EstadoDivider
+                      label={g.label}
+                      count={g.rows.length}
+                      colapsado={esColapsado(g.key)}
+                      onToggle={() => toggleGrupo(g.key)}
+                      colSpan={7}
+                    />
+                    {!esColapsado(g.key) && g.rows.map(renderFila)}
+                  </Fragment>
+                ),
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }
