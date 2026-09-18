@@ -940,6 +940,7 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     flete: d.flete ?? "",
     otros: d.otros ?? "",
     regimen_aduanero: d.regimen_aduanero ?? "",
+    regimen_codigo_exportacion: d.regimen_codigo_exportacion ?? "",
     acuerdo_comercial: d.acuerdo_comercial ?? "",
     observaciones: d.observaciones ?? "",
     pais_origen_codigo: d.pais_origen_codigo ?? "",
@@ -979,7 +980,7 @@ function normalizarCamposExportacion(payload: any) {
     payload[k] = toNum(payload[k]);
   });
   payload.zf_aplica = !!payload.zf_aplica;
-  ["buyer_codigo", "buyer_nombre", "buyer_nacionalidad", "declarante_codigo", "declarante_nombre", "declarante_nacionalidad"].forEach((k) => {
+  ["buyer_codigo", "buyer_nombre", "buyer_nacionalidad", "declarante_codigo", "declarante_nombre", "declarante_nacionalidad", "regimen_codigo_exportacion"].forEach((k) => {
     payload[k] = (payload[k] ?? "").trim() || null;
   });
 }
@@ -1214,6 +1215,20 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     },
   });
   const [tasaNuevaInput, setTasaNuevaInput] = useState("");
+
+  // Catálogo de regímenes de Exportación (SIGA), separado del de Importación.
+  const { data: regimenesExportacion } = useQuery({
+    queryKey: ["catalogo_regimenes", "exportacion"],
+    enabled: esExportacion,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("catalogo_regimenes")
+        .select("codigo, nombre")
+        .eq("tipo_operacion", "exportacion")
+        .order("nombre");
+      return data ?? [];
+    },
+  });
 
   // Tasa efectiva del expediente: la ya guardada o la del catálogo para la fecha que rige.
   const resolverTasaEfectiva = async (): Promise<number | null> => {
@@ -1991,6 +2006,23 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                       </SelectContent>
                     </Select>
                   </div>
+                  {esExportacion && (
+                    <div className="grid gap-1.5 md:col-span-2">
+                      <Label>Régimen (Exportación)</Label>
+                      <Select
+                        value={form.regimen_codigo_exportacion || undefined}
+                        onValueChange={(v) => set("regimen_codigo_exportacion", v)}
+                        disabled={!editable}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Selecciona régimen de exportación" /></SelectTrigger>
+                        <SelectContent>
+                          {(regimenesExportacion ?? []).map((r: any) => (
+                            <SelectItem key={r.codigo} value={r.codigo}>{r.codigo} · {r.nombre}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="grid gap-1.5 md:col-span-2">
                     <Label>Acuerdo Comercial <span className="text-muted-foreground font-normal">(opcional)</span></Label>
                     <CatalogCombobox

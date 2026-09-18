@@ -160,7 +160,10 @@ const FIELDS: Record<TableKey, Array<{ k: string; label: string; required?: bool
     { k: "nombre_eng", label: "Nombre (Eng)" },
     { k: "estado", label: "Estado", type: "select", options: ["confirmado", "pendiente_validar"] },
   ],
-  catalogo_regimenes: BASIC_WITH_ESTADO,
+  catalogo_regimenes: [
+    ...BASIC_WITH_ESTADO,
+    { k: "tipo_operacion", label: "Tipo de operación", type: "select" as const, options: ["importacion", "exportacion"] },
+  ],
   catalogo_acuerdos: BASIC_WITH_ESTADO,
   catalogo_tipos_despacho: BASIC_WITH_ESTADO,
   catalogo_estados_producto: BASIC_WITH_ESTADO,
