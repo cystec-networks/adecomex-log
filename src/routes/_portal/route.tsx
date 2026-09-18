@@ -102,6 +102,11 @@ function PortalLayout() {
               {cliente.rnc && <div className="text-xs text-muted-foreground">RNC {cliente.rnc}</div>}
             </div>
           )}
+          <Button variant="ghost" size="sm" asChild title="Inicio">
+            <Link to="/portal/bienvenida">
+              <Home className="h-4 w-4 mr-1" /> Inicio
+            </Link>
+          </Button>
           <Button variant="ghost" size="sm" onClick={signOut}>
             <LogOut className="h-4 w-4 mr-1" /> Salir
           </Button>
