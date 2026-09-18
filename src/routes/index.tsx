@@ -15,7 +15,7 @@ export const Route = createFileRoute("/")({
       .select("role")
       .eq("user_id", userId)
       .limit(1);
-    if (roles && roles.length > 0) throw redirect({ to: "/dashboard" });
+    if (roles && roles.length > 0) throw redirect({ to: "/bienvenida" });
 
     // Cliente vinculado y activo → portal (prioridad sobre estudiante)
     const { data: link } = await supabase
