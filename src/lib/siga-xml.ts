@@ -423,6 +423,154 @@ ${productos}${documentos ? "\n" + documentos : ""}
 }
 
 
+// ===== Declaración de Exportación (ExportDUA) =====
+// Reutiliza los mismos helpers del generador de Importación.
+// Campos aún sin origen en el Expediente: BondedArea, DestinationCountry,
+// VoyageNo y ContainerPlate → se emiten vacíos hasta definir su captura.
+export function buildExportDUAXml(
+  exp: any,
+  items: any[],
+  broker: BrokerConfig,
+  maps?: SigaMaps,
+): string {
+  // En una Exportación el Cliente es el Exportador
+  const cliente = exp.clientes ?? {};
+  const nat = broker.defaultNationality || "214";
+  const exporterCode = personCode(cliente.rnc, nat);
+  const origen = exp.pais_origen_codigo ?? "";
+
+  const T = (name: string, value: unknown, indent = "  ") =>
+    `${indent}<${name}>${value === null || value === undefined ? "" : esc(value)}</${name}>`;
+
+  const cabecera = [
+    T("DeclarationDate", fmtDate(exp.fecha_recibido)),
+    T("ClearanceType", broker.clearanceType),
+    T("AreaCode", exp.area_aduanera_codigo),
+    T("FormNo", ""),
+    T("BLNo", exp.bl_awb),
+    T("BondedArea", ""),
+    T("TransportCompany", broker.transportCompanyCode),
+    T("TransportCompanynationality", broker.transportNationality || nat),
+    T("TransportMethod", resolveTransportMethodCode(exp, maps?.transporte)),
+    T("DeparturePort", exp.puerto_salida_codigo),
+    T("DestinationCountry", ""),
+    T("VoyageNo", ""),
+    T("ExporterCode", exporterCode),
+    T("ExporterName", cliente.nombre),
+    T("ExporterNationality", nat),
+    T("BuyerCode", exp.buyer_codigo),
+    T("BuyerName", exp.buyer_nombre),
+    T("BuyerNationality", exp.buyer_nacionalidad || nat),
+    T("BrokerCompanyCode", personCode(broker.brokerCompanyCode, nat)),
+    T("BrokerEmployeeCode", broker.brokerEmployeeCode),
+    T("DeclarantCode", cleanId(exp.declarante_codigo || broker.declarantCode)),
+    T("DeclarantName", exp.declarante_nombre || broker.declarantName),
+    T("DeclarantNationality", migrarNat(exp.declarante_nacionalidad || broker.declarantNationality, nat)),
+    T("InsuranceValue", num(exp.seguro)),
+    T("RegimenCode", resolveRegimenCode(exp, maps?.regimen)),
+    T("AgreementCode", resolveAgreementCode(exp, maps?.acuerdo)),
+    T("TotalFOB", num(exp.total_fob)),
+    T("NetWeight", num(exp.peso_neto ?? exp.peso_bruto)),
+    T("FreightValue", num(exp.flete)),
+    T("OtherValue", num(exp.otros)),
+    T("TotalCIF", num(exp.total_cif)),
+    T("TotalWeight", num(exp.peso_bruto)),
+    T("Remark", exp.observaciones),
+    T("SZCIFValue", num(exp.zf_valor_cif)),
+    T("SZMaterialsValue", num(exp.zf_valor_materiales)),
+    T("SZSalaryValue", num(exp.zf_valor_salario)),
+    T("SZServiceValue", num(exp.zf_valor_servicio)),
+    T("SZOthersValue", num(exp.zf_otros_valores)),
+  ].join("\n");
+
+  const productos = (items ?? []).map((it) => `  <ExpDeclarationProduct>
+${T("HSCode", String(it.codigo_arancelario ?? "").replace(/\D/g, ""), "   ")}
+${T("ProductCode", it.product_code, "   ")}
+${T("BrandCode", it.brand_code || it.cod_marca || "NA", "   ")}
+${T("BrandName", it.brand_name || it.marca || "N/A", "   ")}
+${T("ModelCode", it.model_code || it.cod_modelo || "NA", "   ")}
+${T("ModelName", it.model_name || it.modelo || "N/A", "   ")}
+${T("ProductStatusCode", it.product_status_code || it.estado_producto_codigo || ESTADO_PRODUCTO_NUEVO, "   ")}
+${T("ProductYear", it.product_year ?? "", "   ")}
+${T("FOBValue", unitFob(it.valor_fob, it.cantidad), "   ")}
+${T("UnitCode", it.unidad_codigo, "   ")}
+${T("Qty", num(it.cantidad), "   ")}
+${T("Weight", num(it.peso), "   ")}
+${T("ProductSpecification", it.especificaciones || it.detalle_producto, "   ")}
+${T("TempProductYN", "false", "   ")}
+${T("CertificateOrignYN", it.tiene_certificado_origen ? "true" : "false", "   ")}
+${T("CertificateOriginNo", it.certificado_origen_numero, "   ")}
+${T("OriginCountry", it.pais_origen_codigo || origen, "   ")}
+${T("OrganicYN", it.es_organico ? "true" : "false", "   ")}
+${T("GradeAlcohol", num(it.grado_alcohol) || "0", "   ")}
+${T("ProductDescription", it.detalle_producto, "   ")}
+${T("Remark", it.detalle_producto, "   ")}
+  </ExpDeclarationProduct>`).join("\n");
+
+  // Documentos: misma lógica que en Importación (BL, Factura, VUCE)
+  const cli = exp.clientes ?? {};
+  const tel = (broker.brokerTel ?? "").trim();
+  const mail = (broker.brokerEmail ?? "").trim();
+  const nombreSuplidor = (exp.suplidor || "").trim();
+  const nombreNaviera = (exp.naviera || "").trim();
+
+  const docs: Array<{ code: string; num: string; issuer: string }> = [];
+  if (exp.bl_awb) {
+    docs.push({
+      code: RDOC.BL_MANIFIESTO,
+      num: exp.bl_awb,
+      issuer: nombreNaviera || nombreSuplidor || cli.nombre || broker.brokerName,
+    });
+  }
+  if (exp.factura_comercial) {
+    docs.push({
+      code: RDOC.FACTURA_COMERCIAL,
+      num: exp.factura_comercial,
+      issuer: nombreSuplidor || cli.nombre || broker.brokerName,
+    });
+  }
+  if (exp.numero_vuce && maps?.vuceDocCode) {
+    docs.push({
+      code: maps.vuceDocCode,
+      num: exp.numero_vuce,
+      issuer: "VENTANILLA UNICA DE COMERCIO EXTERIOR",
+    });
+  }
+
+  const documentos = docs.filter((d) => d.code).map((d) => {
+    const issuer = d.issuer || broker.brokerName;
+    const esAgencia = normNombre(issuer) === normNombre(broker.brokerName);
+    return `  <ExpDeclarationDocument>
+${T("RequiredDocumentCode", d.code, "   ")}
+${T("OtherDocTypeDesc", "", "   ")}
+${T("RequiredDocumentNo", d.num, "   ")}
+${T("BizDocIssuerName", issuer, "   ")}
+${T("BizDocIssuerEmail", esAgencia ? mail : "", "   ")}
+${T("BizDocIssuerTel", esAgencia ? tel : "", "   ")}
+  </ExpDeclarationDocument>`;
+  }).join("\n");
+
+  const listaContenedores: any[] = exp.contenedoresData ?? exp.contenedores ?? [];
+  const contenedores = listaContenedores
+    .filter((c: any) => (c?.numero_contenedor ?? c?.numero ?? "").toString().trim())
+    .map((c: any) => `  <ExpDeclarationContainer>
+${T("ContainerType", c.tipo_contenedor ?? c.tipo, "   ")}
+${T("ContainerNo", c.numero_contenedor ?? c.numero, "   ")}
+${T("SealNo1", c.sello1, "   ")}
+${T("SealNo2", c.sello2, "   ")}
+${T("ContainerPlate", "", "   ")}
+  </ExpDeclarationContainer>`).join("\n");
+
+  return `<ExportDUA xmlns="http://aduanas.gob.do/XSD/ExportClearance/ExportDUA.xsd">
+ <ExpDeclaration xmlns="">
+${cabecera}
+${productos}${documentos ? "\n" + documentos : ""}${contenedores ? "\n" + contenedores : ""}
+</ExpDeclaration>
+</ExportDUA>
+`;
+}
+
+
 export function downloadXml(filename: string, xml: string) {
   const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
