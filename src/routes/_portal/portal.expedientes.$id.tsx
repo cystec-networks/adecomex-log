@@ -124,7 +124,7 @@ function PortalExpedienteDetalle() {
     return (
       <Card>
         <CardContent className="py-10 text-center text-muted-foreground">
-          Expediente no encontrado o sin acceso.
+          Embarque no encontrado o sin acceso.
           <div className="mt-3">
             <Button asChild variant="outline" size="sm">
               <Link to="/portal"><ArrowLeft className="h-4 w-4 mr-1" /> Volver</Link>
@@ -140,14 +140,14 @@ function PortalExpedienteDetalle() {
   return (
     <div className="space-y-5">
       <Button asChild variant="ghost" size="sm" className="-ml-2">
-        <Link to="/portal"><ArrowLeft className="h-4 w-4 mr-1" /> Mis expedientes</Link>
+        <Link to="/portal"><ArrowLeft className="h-4 w-4 mr-1" /> Mis Embarques</Link>
       </Button>
 
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="space-y-2">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Expediente</div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">Mi Embarque</div>
               <CardTitle className="font-mono">{expediente.numero ?? "—"}</CardTitle>
               {expediente.bl_awb && (
                 <div className="text-sm text-muted-foreground">BL/AWB: <span className="font-mono">{expediente.bl_awb}</span></div>
