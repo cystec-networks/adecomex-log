@@ -1260,6 +1260,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         if (exp.tasa_cambio_usada != null) payload.tasa_cambio_usada = Number(exp.tasa_cambio_usada);
       }
       // Tasa Oficial DGA obligatoria antes de guardar.
+      normalizarCamposExportacion(payload);
       await exigirTasaOficial(payload);
       // Validar que el número VUCE no esté ya usado en otro expediente.
       const vuceChanged = form.numero_vuce && form.numero_vuce !== (exp.numero_vuce ?? "");
@@ -1355,6 +1356,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
 
       // Tasa Oficial DGA obligatoria antes de crear.
+      normalizarCamposExportacion(payload);
       await exigirTasaOficial(payload);
       if (payload.numero_vuce) {
         const { data: conflicto } = await supabase
