@@ -1880,6 +1880,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               paisOrigen={form.pais_origen || ""}
               paisOrigenCodigo={form.pais_origen_codigo || ""}
               disabled={!editable}
+              esExportacion={esExportacion}
               {...(isNuevo ? { localItems: productosNuevos, onLocalItemsChange: setProductosNuevos } : {})}
             />
           </div>
