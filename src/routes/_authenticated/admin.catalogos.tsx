@@ -36,7 +36,13 @@ type TableKey =
   | "catalogo_tipo_emisor"
   | "catalogo_tratamientos_certificado"
   | "catalogo_criterio_origen"
-  | "catalogo_metodo_calificacion";
+  | "catalogo_metodo_calificacion"
+  | "catalogo_tipo_transporte_manifiesto"
+  | "catalogo_tipo_bl"
+  | "catalogo_tipo_transito"
+  | "catalogo_tipo_courier"
+  | "catalogo_tipo_consignatario"
+  | "catalogo_tipo_documento_siga";
 
 const TABLE_LABELS: Record<TableKey, string> = {
   catalogo_paises: "Países",
@@ -55,6 +61,12 @@ const TABLE_LABELS: Record<TableKey, string> = {
   catalogo_tratamientos_certificado: "Tratamientos Certificado",
   catalogo_criterio_origen: "Criterio de Origen",
   catalogo_metodo_calificacion: "Método de Calificación",
+  catalogo_tipo_transporte_manifiesto: "Manifiesto · Tipo de Transporte",
+  catalogo_tipo_bl: "Manifiesto · Tipo de BL",
+  catalogo_tipo_transito: "Manifiesto · Tipo de Tránsito",
+  catalogo_tipo_courier: "Manifiesto · Tipo Courier",
+  catalogo_tipo_consignatario: "Manifiesto · Tipo de Consignatario",
+  catalogo_tipo_documento_siga: "Manifiesto · Tipo de Documento",
 };
 
 const PENDING_TABLES: TableKey[] = [
@@ -80,6 +92,8 @@ function CatalogosAdmin() {
     "catalogo_acuerdos","catalogo_tipos_despacho","catalogo_estados_producto","catalogo_documentos_requeridos",
     "catalogo_uso_certificado","catalogo_tipo_emisor","catalogo_tratamientos_certificado",
     "catalogo_criterio_origen","catalogo_metodo_calificacion",
+    "catalogo_tipo_transporte_manifiesto","catalogo_tipo_bl","catalogo_tipo_transito",
+    "catalogo_tipo_courier","catalogo_tipo_consignatario","catalogo_tipo_documento_siga",
   ];
 
   return (
@@ -173,6 +187,12 @@ const FIELDS: Record<TableKey, Array<{ k: string; label: string; required?: bool
   catalogo_tratamientos_certificado: BASIC_WITH_ESTADO,
   catalogo_criterio_origen: BASIC_WITH_ESTADO,
   catalogo_metodo_calificacion: BASIC_WITH_ESTADO,
+  catalogo_tipo_transporte_manifiesto: BASIC_FIELDS,
+  catalogo_tipo_bl: BASIC_FIELDS,
+  catalogo_tipo_transito: BASIC_FIELDS,
+  catalogo_tipo_courier: BASIC_FIELDS,
+  catalogo_tipo_consignatario: BASIC_FIELDS,
+  catalogo_tipo_documento_siga: BASIC_FIELDS,
 };
 
 
