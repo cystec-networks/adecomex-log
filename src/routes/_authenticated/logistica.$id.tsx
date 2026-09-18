@@ -31,6 +31,8 @@ import { ConstanciaLogisticaButton, type ConstanciaLogisticaButtonHandle } from 
 import { BlHijoPdfButton, type BlHijoPdfButtonHandle } from "@/components/bl-hijo-pdf-button";
 import { SolicitudBookingPdfButton, type SolicitudBookingPdfButtonHandle } from "@/components/solicitud-booking-pdf-button";
 import { CotizacionLogisticaPdfButton, type CotizacionLogisticaPdfButtonHandle } from "@/components/cotizacion-logistica-pdf-button";
+import { ManifiestoXmlDialog } from "@/components/generar-xml-manifiesto";
+import { useQuery as useCatalogoQuery } from "@tanstack/react-query";
 
 /** Registro de auditoría de la operación logística (mismo patrón que Expedientes). */
 const logAuditoria = async (operacionId: string, accion: string, cambios?: Record<string, unknown>) => {
@@ -80,7 +82,26 @@ type FormState = {
   es_mercancia_peligrosa: string;
   hazmat_un_numero: string; hazmat_clase: string; hazmat_grupo_empaque: string; hazmat_punto_inflamacion: string;
   hazmat_contaminante_marino: string; hazmat_nombre_tecnico: string; hazmat_recargo: string;
+  area_code: string; biz_company_code: string; empty_yn: string; loading_location_code: string; unloading_location_code: string;
+  via_entrance: string; country_code: string; bl_type: string; transit_type: string; express_type: string;
+  consignor_tipo: string; consignor_doc_tipo: string; consignor_doc_numero: string; consignor_pais: string; consignor_fax: string;
+  consignor_zip: string; consignor_zona: string; consignor_ciudad: string; consignor_calle: string;
+  consignee_tipo: string; consignee_doc_tipo: string; consignee_doc_numero: string; consignee_pais: string; consignee_fax: string;
+  consignee_zip: string; consignee_zona: string; consignee_ciudad: string; consignee_calle: string;
+  notify_nombre: string; notify_tipo: string; notify_doc_tipo: string; notify_doc_numero: string; notify_pais: string;
+  notify_telefono: string; notify_email: string; notify_fax: string; notify_zip: string; notify_zona: string;
+  notify_ciudad: string; notify_calle: string;
 };
+const MANIFIESTO_TEXT_KEYS = [
+  "area_code", "biz_company_code", "loading_location_code", "unloading_location_code", "via_entrance", "country_code",
+  "bl_type", "transit_type", "express_type",
+  "consignor_tipo", "consignor_doc_tipo", "consignor_doc_numero", "consignor_pais", "consignor_fax", "consignor_zip",
+  "consignor_zona", "consignor_ciudad", "consignor_calle",
+  "consignee_tipo", "consignee_doc_tipo", "consignee_doc_numero", "consignee_pais", "consignee_fax", "consignee_zip",
+  "consignee_zona", "consignee_ciudad", "consignee_calle",
+  "notify_nombre", "notify_tipo", "notify_doc_tipo", "notify_doc_numero", "notify_pais", "notify_telefono", "notify_email",
+  "notify_fax", "notify_zip", "notify_zona", "notify_ciudad", "notify_calle",
+] as const;
 const cleanDate = (v: string | null) => v?.slice(0, 10) ?? "";
 const formFrom = (o: any): FormState => ({
   numero: o.numero ?? "",
@@ -107,7 +128,34 @@ const formFrom = (o: any): FormState => ({
   hazmat_punto_inflamacion: o.hazmat_punto_inflamacion ?? "", hazmat_contaminante_marino: String(o.hazmat_contaminante_marino ?? false),
   hazmat_nombre_tecnico: o.hazmat_nombre_tecnico ?? "",
   hazmat_recargo: o.hazmat_recargo == null ? "" : String(o.hazmat_recargo),
+  empty_yn: String(o.empty_yn ?? false),
+  ...(Object.fromEntries(MANIFIESTO_TEXT_KEYS.map((k) => [k, o[k] ?? ""])) as Record<(typeof MANIFIESTO_TEXT_KEYS)[number], string>),
 });
+
+/** Selector contra un catálogo DGA (código + nombre) del Manifiesto SIGA. */
+function SigaSelect({ label, tabla, value, onChange, readOnly }: {
+  label: string; tabla: string; value: string; onChange: (v: string) => void; readOnly: boolean;
+}) {
+  const { data: filas = [] } = useCatalogoQuery({
+    queryKey: ["catalogo-siga", tabla],
+    queryFn: async () => {
+      const { data } = await supabase.from(tabla as any).select("codigo, nombre").eq("activo", true).order("nombre");
+      return (data ?? []) as unknown as { codigo: string; nombre: string }[];
+    },
+  });
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <Select disabled={readOnly} value={value || "none"} onValueChange={(v) => onChange(v === "none" ? "" : v)}>
+        <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="none">—</SelectItem>
+          {filas.map((f) => <SelectItem key={f.codigo} value={f.codigo}>{f.nombre} ({f.codigo})</SelectItem>)}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
 
 const normalizarCliente = (s: string) =>
   s.toLowerCase().replace(/[.,]/g, "").replace(/\bs\.?r\.?l\.?\b/g, "srl").replace(/\s+/g, " ").trim();
@@ -190,6 +238,7 @@ function DetalleLogistica() {
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
   const [contenedores, setContenedores] = useState<ContenedorFila[]>([]);
   const [hazmatFaltantes, setHazmatFaltantes] = useState<string[]>([]);
+  const [manifiestoOpen, setManifiestoOpen] = useState(false);
 
   const constanciaRef = useRef<ConstanciaLogisticaButtonHandle>(null);
   const blHijoRef = useRef<BlHijoPdfButtonHandle>(null);
@@ -368,6 +417,8 @@ function DetalleLogistica() {
     hazmat_grupo_empaque: nullable(f.hazmat_grupo_empaque), hazmat_punto_inflamacion: nullable(f.hazmat_punto_inflamacion),
     hazmat_contaminante_marino: f.hazmat_contaminante_marino === "true", hazmat_nombre_tecnico: nullable(f.hazmat_nombre_tecnico),
     hazmat_recargo: numeric(f.hazmat_recargo),
+    empty_yn: f.empty_yn === "true",
+    ...Object.fromEntries(MANIFIESTO_TEXT_KEYS.map((k) => [k, nullable(f[k])])),
   });
 
   const saveMut = useMutation({ mutationFn: async () => {
@@ -700,12 +751,16 @@ function DetalleLogistica() {
                 <DropdownMenuItem onSelect={() => cotizacionRef.current?.generar()} className="cursor-pointer">
                   Generar Cotización (PDF)
                 </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setManifiestoOpen(true)} className="cursor-pointer">
+                  Generar Manifiesto XML (SIGA)
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <ConstanciaLogisticaButton ref={constanciaRef} datos={datosConstancia} showTrigger={false} />
             <BlHijoPdfButton ref={blHijoRef} datos={datosBlHijo} showTrigger={false} />
             <SolicitudBookingPdfButton ref={bookingRef} datos={datosSolicitudBooking} showTrigger={false} />
             <CotizacionLogisticaPdfButton ref={cotizacionRef} datos={datosCotizacionLogistica} showTrigger={false} />
+            <ManifiestoXmlDialog operacionId={id} open={manifiestoOpen} onOpenChange={setManifiestoOpen} />
             {modoEdicion && <Button disabled={saveMut.isPending} onClick={() => saveMut.mutate()} className="shadow-lg"><Save className="h-4 w-4 mr-2" />Guardar cambios</Button>}
           </>
         )}
@@ -849,6 +904,50 @@ function DetalleLogistica() {
         <div className="space-y-1.5"><Label>Términos de flete</Label><Select disabled={readOnly} value={form.terminos_flete || "none"} onValueChange={(v) => set("terminos_flete", v === "none" ? "" : v)}><SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger><SelectContent><SelectItem value="none">—</SelectItem><SelectItem value="prepaid">Prepaid</SelectItem><SelectItem value="collect">Collect</SelectItem></SelectContent></Select></div>
         <Field form={form} set={set} readOnly={readOnly} label="Peso bruto (kg)" name="peso_bruto_kg" type="number" /><Field form={form} set={set} readOnly={readOnly} label="Volumen (m³)" name="volumen_m3" type="number" />
         <Field form={form} set={set} readOnly={readOnly} label="Incoterm" name="incoterm" />
+      </CardContent></Card>
+
+      <Card><CardHeader><CardTitle className="text-base">Datos del Manifiesto SIGA</CardTitle></CardHeader><CardContent className="space-y-5">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Field form={form} set={set} readOnly={readOnly} label="Administración aduanera (AreaCode)" name="area_code" />
+          <Field form={form} set={set} readOnly={readOnly} label="Código SIGA naviera/consolidador" name="biz_company_code" />
+          <Field form={form} set={set} readOnly={readOnly} label="Depósito de salida (LoadingLocation)" name="loading_location_code" />
+          <Field form={form} set={set} readOnly={readOnly} label="Depósito de llegada (UnloadingLocation)" name="unloading_location_code" />
+          <Field form={form} set={set} readOnly={readOnly} label="Último puerto de escala (ViaEntrance)" name="via_entrance" />
+          <Field form={form} set={set} readOnly={readOnly} label="País de la ruta (CountryCode)" name="country_code" />
+          <SigaSelect label="Tipo de BL" tabla="catalogo_tipo_bl" value={form.bl_type} onChange={(v) => set("bl_type", v)} readOnly={readOnly} />
+          <SigaSelect label="Tipo de tránsito" tabla="catalogo_tipo_transito" value={form.transit_type} onChange={(v) => set("transit_type", v)} readOnly={readOnly} />
+          <SigaSelect label="Tipo courier" tabla="catalogo_tipo_courier" value={form.express_type} onChange={(v) => set("express_type", v)} readOnly={readOnly} />
+          <div className="flex items-center gap-2 pt-6">
+            <Switch id="empty_yn" disabled={readOnly} checked={form.empty_yn === "true"} onCheckedChange={(c) => set("empty_yn", c ? "true" : "false")} />
+            <Label htmlFor="empty_yn" className="cursor-pointer text-sm">Llega vacío</Label>
+          </div>
+        </div>
+
+        {([
+          { pre: "consignor", titulo: "Consignador (Shipper)" },
+          { pre: "consignee", titulo: "Consignatario" },
+          { pre: "notify", titulo: "A notificar (Notify)" },
+        ] as const).map(({ pre, titulo }) => (
+          <div key={pre} className="rounded-md border p-3 space-y-3">
+            <div className="text-sm font-semibold">{titulo}</div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {pre === "notify" && <>
+                <Field form={form} set={set} readOnly={readOnly} label="Nombre" name="notify_nombre" />
+                <Field form={form} set={set} readOnly={readOnly} label="Teléfono" name="notify_telefono" />
+                <Field form={form} set={set} readOnly={readOnly} label="Email" name="notify_email" type="email" />
+              </>}
+              <SigaSelect label="Tipo" tabla="catalogo_tipo_consignatario" value={form[`${pre}_tipo`]} onChange={(v) => set(`${pre}_tipo`, v)} readOnly={readOnly} />
+              <SigaSelect label="Tipo de documento" tabla="catalogo_tipo_documento_siga" value={form[`${pre}_doc_tipo`]} onChange={(v) => set(`${pre}_doc_tipo`, v)} readOnly={readOnly} />
+              <Field form={form} set={set} readOnly={readOnly} label="N° de documento" name={`${pre}_doc_numero`} />
+              <Field form={form} set={set} readOnly={readOnly} label="País" name={`${pre}_pais`} />
+              <Field form={form} set={set} readOnly={readOnly} label="Fax" name={`${pre}_fax`} />
+              <Field form={form} set={set} readOnly={readOnly} label="Código postal" name={`${pre}_zip`} />
+              <Field form={form} set={set} readOnly={readOnly} label="Zona" name={`${pre}_zona`} />
+              <Field form={form} set={set} readOnly={readOnly} label="Ciudad" name={`${pre}_ciudad`} />
+              <Field form={form} set={set} readOnly={readOnly} label="Calle / dirección" name={`${pre}_calle`} />
+            </div>
+          </div>
+        ))}
       </CardContent></Card>
 
       {!isNuevo && (

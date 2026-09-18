@@ -967,6 +967,102 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_tipo_bl: {
+        Row: {
+          activo: boolean
+          codigo: string
+          created_at: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          created_at?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          created_at?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_tipo_consignatario: {
+        Row: {
+          activo: boolean
+          codigo: string
+          created_at: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          created_at?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          created_at?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_tipo_courier: {
+        Row: {
+          activo: boolean
+          codigo: string
+          created_at: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          created_at?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          created_at?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_tipo_documento_siga: {
+        Row: {
+          activo: boolean
+          codigo: string
+          created_at: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          created_at?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          created_at?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       catalogo_tipo_emisor: {
         Row: {
           codigo: string
@@ -988,6 +1084,54 @@ export type Database = {
           estado?: string
           id?: string
           nombre?: string
+        }
+        Relationships: []
+      }
+      catalogo_tipo_transito: {
+        Row: {
+          activo: boolean
+          codigo: string
+          created_at: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          created_at?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          created_at?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_tipo_transporte_manifiesto: {
+        Row: {
+          activo: boolean
+          codigo: string
+          created_at: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          created_at?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          created_at?: string
+          nombre?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -4420,8 +4564,11 @@ export type Database = {
         Row: {
           agente_entrega: string | null
           agente_entrega_contacto: string | null
+          area_code: string | null
+          biz_company_code: string | null
           bl_awb: string | null
           bl_hijo_numero: string | null
+          bl_type: string | null
           booking: string | null
           buque: string | null
           cantidad_bultos: number | null
@@ -4431,18 +4578,39 @@ export type Database = {
           comprador_nombre: string | null
           comprador_tax_id: string | null
           comprador_telefono: string | null
+          consignee_calle: string | null
+          consignee_ciudad: string | null
+          consignee_doc_numero: string | null
+          consignee_doc_tipo: string | null
+          consignee_fax: string | null
+          consignee_pais: string | null
+          consignee_tipo: string | null
+          consignee_zip: string | null
+          consignee_zona: string | null
+          consignor_calle: string | null
+          consignor_ciudad: string | null
+          consignor_doc_numero: string | null
+          consignor_doc_tipo: string | null
+          consignor_fax: string | null
+          consignor_pais: string | null
+          consignor_tipo: string | null
+          consignor_zip: string | null
+          consignor_zona: string | null
           contenedor: string | null
           costo_interno_total: number | null
           cotizacion_id: string | null
+          country_code: string | null
           creado_por: string | null
           created_at: string
           destino: string | null
           eliminado_en: string | null
           eliminado_por: string | null
+          empty_yn: boolean
           es_mercancia_peligrosa: boolean
           estado: string
           eta: string | null
           expediente_id: string | null
+          express_type: string | null
           fecha_arribo: string | null
           fecha_embarque: string | null
           fecha_recogida: string | null
@@ -4459,9 +4627,22 @@ export type Database = {
           hazmat_un_numero: string | null
           id: string
           incoterm: string | null
+          loading_location_code: string | null
           lugar_recepcion: string | null
           naviera: string | null
+          notify_calle: string | null
+          notify_ciudad: string | null
+          notify_doc_numero: string | null
+          notify_doc_tipo: string | null
+          notify_email: string | null
+          notify_fax: string | null
+          notify_nombre: string | null
+          notify_pais: string | null
           notify_party: string | null
+          notify_telefono: string | null
+          notify_tipo: string | null
+          notify_zip: string | null
+          notify_zona: string | null
           numero: string
           observaciones: string | null
           orden_id: string | null
@@ -4486,15 +4667,21 @@ export type Database = {
           tipo: string
           tipo_bultos: string | null
           tipo_operacion: string | null
+          transit_type: string | null
+          unloading_location_code: string | null
           updated_at: string
+          via_entrance: string | null
           volumen_m3: number | null
           voyage: string | null
         }
         Insert: {
           agente_entrega?: string | null
           agente_entrega_contacto?: string | null
+          area_code?: string | null
+          biz_company_code?: string | null
           bl_awb?: string | null
           bl_hijo_numero?: string | null
+          bl_type?: string | null
           booking?: string | null
           buque?: string | null
           cantidad_bultos?: number | null
@@ -4504,18 +4691,39 @@ export type Database = {
           comprador_nombre?: string | null
           comprador_tax_id?: string | null
           comprador_telefono?: string | null
+          consignee_calle?: string | null
+          consignee_ciudad?: string | null
+          consignee_doc_numero?: string | null
+          consignee_doc_tipo?: string | null
+          consignee_fax?: string | null
+          consignee_pais?: string | null
+          consignee_tipo?: string | null
+          consignee_zip?: string | null
+          consignee_zona?: string | null
+          consignor_calle?: string | null
+          consignor_ciudad?: string | null
+          consignor_doc_numero?: string | null
+          consignor_doc_tipo?: string | null
+          consignor_fax?: string | null
+          consignor_pais?: string | null
+          consignor_tipo?: string | null
+          consignor_zip?: string | null
+          consignor_zona?: string | null
           contenedor?: string | null
           costo_interno_total?: number | null
           cotizacion_id?: string | null
+          country_code?: string | null
           creado_por?: string | null
           created_at?: string
           destino?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
+          empty_yn?: boolean
           es_mercancia_peligrosa?: boolean
           estado?: string
           eta?: string | null
           expediente_id?: string | null
+          express_type?: string | null
           fecha_arribo?: string | null
           fecha_embarque?: string | null
           fecha_recogida?: string | null
@@ -4532,9 +4740,22 @@ export type Database = {
           hazmat_un_numero?: string | null
           id?: string
           incoterm?: string | null
+          loading_location_code?: string | null
           lugar_recepcion?: string | null
           naviera?: string | null
+          notify_calle?: string | null
+          notify_ciudad?: string | null
+          notify_doc_numero?: string | null
+          notify_doc_tipo?: string | null
+          notify_email?: string | null
+          notify_fax?: string | null
+          notify_nombre?: string | null
+          notify_pais?: string | null
           notify_party?: string | null
+          notify_telefono?: string | null
+          notify_tipo?: string | null
+          notify_zip?: string | null
+          notify_zona?: string | null
           numero: string
           observaciones?: string | null
           orden_id?: string | null
@@ -4559,15 +4780,21 @@ export type Database = {
           tipo?: string
           tipo_bultos?: string | null
           tipo_operacion?: string | null
+          transit_type?: string | null
+          unloading_location_code?: string | null
           updated_at?: string
+          via_entrance?: string | null
           volumen_m3?: number | null
           voyage?: string | null
         }
         Update: {
           agente_entrega?: string | null
           agente_entrega_contacto?: string | null
+          area_code?: string | null
+          biz_company_code?: string | null
           bl_awb?: string | null
           bl_hijo_numero?: string | null
+          bl_type?: string | null
           booking?: string | null
           buque?: string | null
           cantidad_bultos?: number | null
@@ -4577,18 +4804,39 @@ export type Database = {
           comprador_nombre?: string | null
           comprador_tax_id?: string | null
           comprador_telefono?: string | null
+          consignee_calle?: string | null
+          consignee_ciudad?: string | null
+          consignee_doc_numero?: string | null
+          consignee_doc_tipo?: string | null
+          consignee_fax?: string | null
+          consignee_pais?: string | null
+          consignee_tipo?: string | null
+          consignee_zip?: string | null
+          consignee_zona?: string | null
+          consignor_calle?: string | null
+          consignor_ciudad?: string | null
+          consignor_doc_numero?: string | null
+          consignor_doc_tipo?: string | null
+          consignor_fax?: string | null
+          consignor_pais?: string | null
+          consignor_tipo?: string | null
+          consignor_zip?: string | null
+          consignor_zona?: string | null
           contenedor?: string | null
           costo_interno_total?: number | null
           cotizacion_id?: string | null
+          country_code?: string | null
           creado_por?: string | null
           created_at?: string
           destino?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
+          empty_yn?: boolean
           es_mercancia_peligrosa?: boolean
           estado?: string
           eta?: string | null
           expediente_id?: string | null
+          express_type?: string | null
           fecha_arribo?: string | null
           fecha_embarque?: string | null
           fecha_recogida?: string | null
@@ -4605,9 +4853,22 @@ export type Database = {
           hazmat_un_numero?: string | null
           id?: string
           incoterm?: string | null
+          loading_location_code?: string | null
           lugar_recepcion?: string | null
           naviera?: string | null
+          notify_calle?: string | null
+          notify_ciudad?: string | null
+          notify_doc_numero?: string | null
+          notify_doc_tipo?: string | null
+          notify_email?: string | null
+          notify_fax?: string | null
+          notify_nombre?: string | null
+          notify_pais?: string | null
           notify_party?: string | null
+          notify_telefono?: string | null
+          notify_tipo?: string | null
+          notify_zip?: string | null
+          notify_zona?: string | null
           numero?: string
           observaciones?: string | null
           orden_id?: string | null
@@ -4632,7 +4893,10 @@ export type Database = {
           tipo?: string
           tipo_bultos?: string | null
           tipo_operacion?: string | null
+          transit_type?: string | null
+          unloading_location_code?: string | null
           updated_at?: string
+          via_entrance?: string | null
           volumen_m3?: number | null
           voyage?: string | null
         }

@@ -582,3 +582,186 @@ export function downloadXml(filename: string, xml: string) {
   a.remove();
   URL.revokeObjectURL(url);
 }
+
+// ===== Manifiesto de Importación (ImportManifest-01-2023.xsd) =====
+// Documento de carga del buque/vuelo presentado por la naviera/consolidador.
+// Distinto del ImportDUA (declaración de nacionalización).
+// Se omite por completo la sección ManifestVehicle (no aplica al negocio).
+
+export type ManifiestoOperacion = any;
+export type ManifiestoContenedor = {
+  operacion_logistica_id?: string | null;
+  numero_contenedor?: string | null;
+  sello1?: string | null;
+  sello2?: string | null;
+  tipo_contenedor?: string | null;
+  placa?: string | null;
+  cantidad?: number | null;
+  peso_bruto?: number | null;
+  peso_neto?: number | null;
+};
+
+const TIPO_TRANSPORTE_MANIFIESTO: Record<string, string> = {
+  maritimo: "IG1007-S",
+  aereo: "IG1007-A",
+  terrestre: "IG1007-T",
+};
+
+/** Código SIGA de tipo de transporte de una operación logística */
+export function resolveManifestTransportType(op: any): string {
+  if (op?.transport_type_code) return String(op.transport_type_code);
+  const t = normNombre(op?.tipo);
+  return TIPO_TRANSPORTE_MANIFIESTO[t] ?? "";
+}
+
+function blNoDe(op: any): string {
+  return op?.bl_hijo_numero || op?.bl_awb || "";
+}
+
+/** Campos obligatorios del manifiesto SIGA: advierten, no bloquean. */
+export function validarManifiesto(ops: ManifiestoOperacion[]): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const need = (cond: any, field: string, label: string) => { if (!cond) issues.push({ field, label }); };
+  const head = ops[0] ?? {};
+  need(ops.length > 0, "ops", "Al menos una operación logística");
+  need(head.area_code, "area_code", "Código de Administración (AreaCode)");
+  need(resolveManifestTransportType(head), "transport_type", "Tipo de transporte (TransportType)");
+  need(head.biz_company_code, "biz_company_code", "Código SIGA de la naviera/consolidador (BizCompanyCode)");
+  need(head.buque, "buque", "Buque / Vuelo (VesselCode)");
+  need(head.voyage, "voyage", "Número de viaje (VoyageNo)");
+  need(head.origen, "origen", "Puerto/lugar de carga (LoadingLocationCode)");
+  need(head.puerto_descarga || head.puerto_destino, "puerto_descarga", "Puerto de descarga (UnloadingLocationCode)");
+  need(head.fecha_salida, "fecha_salida", "Fecha de salida (DepartureDate)");
+  need(head.eta || head.fecha_arribo, "eta", "Fecha de arribo (ArrivalDate)");
+  ops.forEach((op, i) => {
+    const et = `Operación ${op?.numero ?? i + 1}`;
+    need(blNoDe(op), `bl[${i}].no`, `${et}: número de BL`);
+    need(op?.bl_type, `bl[${i}].type`, `${et}: tipo de BL (BLType)`);
+    need(op?.transit_type, `bl[${i}].transit`, `${et}: tipo de tránsito (TransitType)`);
+    need(op?.producto, `bl[${i}].goods`, `${et}: descripción de la mercancía`);
+    need(op?.cantidad_bultos != null, `bl[${i}].qty`, `${et}: cantidad de bultos`);
+    need(op?.peso_bruto_kg != null, `bl[${i}].weight`, `${et}: peso bruto`);
+    need(op?.shipper_nombre, `bl[${i}].consignor`, `${et}: nombre del consignador`);
+    need(op?.comprador_nombre, `bl[${i}].consignee`, `${et}: nombre del consignatario`);
+  });
+  return issues;
+}
+
+export function buildImportManifestXml(
+  ops: ManifiestoOperacion[],
+  contenedores: ManifiestoContenedor[],
+  broker: BrokerConfig,
+): string {
+  const head = ops[0] ?? {};
+  const nat = broker.defaultNationality || "214";
+  const T = (name: string, value: unknown, indent = "  ") =>
+    `${indent}<${name}>${value === null || value === undefined ? "" : esc(value)}</${name}>`;
+
+  const cabecera = [
+    T("AreaCode", head.area_code),
+    T("TransportType", resolveManifestTransportType(head)),
+    T("BizCompanyCode", head.biz_company_code),
+    T("VesselCode", head.buque),
+    T("VoyageNo", head.voyage),
+    T("EmptyYN", head.empty_yn ? "true" : "false"),
+    T("LoadingLocationCode", head.loading_location_code || head.origen),
+    T("UnloadingLocationCode", head.unloading_location_code || head.puerto_descarga || head.puerto_destino),
+    T("ViaEntrance", head.via_entrance),
+    T("DepartureDate", fmtDate(head.fecha_salida)),
+    T("ArrivalDate", fmtDate(head.eta || head.fecha_arribo)),
+    T("CountryCode", head.country_code),
+  ].join("\n");
+
+  const parte = (op: any, pre: "Consignor" | "Consignee" | "Notify") => {
+    const g = (k: string) => op?.[`${pre.toLowerCase()}_${k}`];
+    const base =
+      pre === "Consignor"
+        ? { nombre: op?.shipper_nombre, tel: op?.shipper_telefono, email: op?.shipper_email, calle: op?.shipper_direccion, doc: op?.shipper_tax_id }
+        : pre === "Consignee"
+          ? { nombre: op?.comprador_nombre, tel: op?.comprador_telefono, email: op?.comprador_email, calle: op?.comprador_direccion, doc: op?.comprador_tax_id }
+          : { nombre: op?.notify_nombre || op?.notify_party, tel: op?.notify_telefono, email: op?.notify_email, calle: op?.notify_calle, doc: op?.notify_doc_numero };
+    return [
+      T(`${pre}Type`, g("tipo"), "      "),
+      T(`${pre}Code`, personCode(g("doc_numero") || base.doc, g("pais") || nat), "      "),
+      T(`${pre}Tel`, base.tel, "      "),
+      T(`${pre}CountryCode`, g("pais"), "      "),
+      T(`${pre}Name`, base.nombre, "      "),
+      T(`${pre}DocumentType`, g("doc_tipo"), "      "),
+      T(`${pre}DocumentNo`, cleanId(g("doc_numero") || base.doc), "      "),
+      T(`${pre}Email`, base.email, "      "),
+      T(`${pre}Fax`, g("fax"), "      "),
+      T(`${pre}ZipCode`, g("zip"), "      "),
+      T(`${pre}Street`, g("calle") || base.calle, "      "),
+      T(`${pre}ZoneName`, g("zona"), "      "),
+      T(`${pre}City`, g("ciudad"), "      "),
+    ].join("\n");
+  };
+
+  const bls = ops
+    .map((op) =>
+      [
+        "    <ManifestBL>",
+        T("BLNo", blNoDe(op), "      "),
+        T("BLType", op.bl_type, "      "),
+        T("TransitType", op.transit_type, "      "),
+        T("LastPortCode", op.via_entrance || op.origen, "      "),
+        T("LoadingPortCode", op.loading_location_code || op.origen, "      "),
+        T("GoodsName", op.producto, "      "),
+        T("PackageUnitCode", op.tipo_bultos, "      "),
+        T("PackageQty", num(op.cantidad_bultos), "      "),
+        T("GrossWeight", num(op.peso_bruto_kg), "      "),
+        T("Value", num(op.flete_monto), "      "),
+        T("FlightCharge", num(op.flete_monto), "      "),
+        T("Volume", num(op.volumen_m3), "      "),
+        T("ExpressType", op.express_type, "      "),
+        T("DangerousGoodsType", op.es_mercancia_peligrosa ? "true" : "false", "      "),
+        parte(op, "Consignor"),
+        parte(op, "Consignee"),
+        parte(op, "Notify"),
+        "    </ManifestBL>",
+      ].join("\n"),
+    )
+    .join("\n");
+
+  const conts = contenedores.filter((c) => (c.numero_contenedor ?? "").toString().trim());
+  const contenedoresXml = conts
+    .map((c) =>
+      [
+        "    <ManifestContainer>",
+        T("ContainerNo", c.numero_contenedor, "      "),
+        T("PlacaNo", c.placa ?? "", "      "),
+        T("ContainerType", c.tipo_contenedor, "      "),
+        T("PackageCode", "", "      "),
+        T("Amount", num(c.cantidad ?? 0), "      "),
+        T("GrossWeight", num(c.peso_bruto ?? 0), "      "),
+        T("NetWeight", num(c.peso_neto ?? 0), "      "),
+        T("SealNo1", c.sello1, "      "),
+        T("SealNo2", c.sello2, "      "),
+        "    </ManifestContainer>",
+      ].join("\n"),
+    )
+    .join("\n");
+
+  const contenedorBl = conts
+    .map((c) => {
+      const op = ops.find((o) => o.id === c.operacion_logistica_id) ?? head;
+      return [
+        "    <ContainerBL>",
+        T("ContainerNo", c.numero_contenedor, "      "),
+        T("BLNo", blNoDe(op), "      "),
+        "    </ContainerBL>",
+      ].join("\n");
+    })
+    .join("\n");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<ImportManifest xmlns="http://aduanas.gob.do/XSD/ImportManifest/ImportManifest-01-2023.xsd">
+  <Manifest>
+${cabecera}
+${bls}
+${contenedoresXml}
+${contenedorBl}
+  </Manifest>
+</ImportManifest>
+`;
+}
