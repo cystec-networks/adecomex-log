@@ -112,6 +112,7 @@ const RASTREO_ENVIO_TOOLS = {
 const searchSchema = z.object({
   nuevo: fallback(z.string(), "").default(""),
   solicitud: fallback(z.string(), "").default(""),
+  tipo: fallback(z.string(), "").default(""),
 });
 
 export const Route = createFileRoute("/_authenticated/expedientes/$id")({
@@ -301,7 +302,7 @@ export type OcrAplicado = {
 
 function DetalleExpediente() {
   const { id } = Route.useParams();
-  const { nuevo } = Route.useSearch();
+  const { nuevo, tipo: tipoParam } = Route.useSearch();
   const isNuevo = id === "nuevo";
   const navExp = useNavigate();
   const qc = useQueryClient();
@@ -828,6 +829,7 @@ function DetalleExpediente() {
             nuevo={!!nuevo}
             isNuevo={isNuevo}
             ocrAplicado={ocrAplicado}
+            tipoParam={tipoParam}
           />
         </TabsContent>
         {!isNuevo && (
@@ -901,7 +903,7 @@ function Section({ title, subtitle, children, id, className }: { title: React.Re
 }
 
 
-function construirFormInicial(data: any, nuevo: boolean) {
+function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
   const d = nuevo ? {} : (data || {});
   return {
     numero: d.numero ?? "",
@@ -951,7 +953,7 @@ function construirFormInicial(data: any, nuevo: boolean) {
     liq_oficial_total: d.liq_oficial_total ?? "",
     tipo_despacho_aduanero: d.tipo_despacho_aduanero ?? "",
     cantidad_despacho: d.cantidad_despacho ?? "",
-    tipo_operacion: d.tipo_operacion ?? "",
+    tipo_operacion: d.tipo_operacion ?? (tipoDefault === "exportacion" ? "Exportación" : ""),
     tipo_carga: d.tipo_carga ?? "",
     contacto_solicitud: d.contacto_solicitud ?? "",
     // --- Exportación (SIGA) ---
@@ -982,12 +984,12 @@ function normalizarCamposExportacion(payload: any) {
   });
 }
 
-function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null }) {
+function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null, tipoParam = "" }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null; tipoParam?: string }) {
   const qc = useQueryClient();
   const nav = useNavigate();
   const editable = (canEdit && modoEdicion) || isNuevo;
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
-  const [form, setForm] = useState(() => construirFormInicial(isNuevo ? null : exp, isNuevo));
+  const [form, setForm] = useState(() => construirFormInicial(isNuevo ? null : exp, isNuevo, isNuevo ? tipoParam : ""));
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
   const esExportacion = (form.tipo_operacion || "").toLowerCase().startsWith("export");
   // Exportación: precarga los datos del agente despachante de ADECOMEX si están vacíos.
@@ -1433,7 +1435,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const OBLIGATORIOS: Array<{ id: string; ok: boolean }> = [
     { id: "req-tipo_carga", ok: lleno(form.tipo_carga) },
     { id: "req-cliente_id", ok: lleno(form.cliente_id) },
-    { id: "req-suplidor", ok: lleno(form.suplidor) },
+    { id: "req-suplidor", ok: esExportacion || lleno(form.suplidor) },
     { id: "req-bl_awb", ok: lleno(form.bl_awb) },
     { id: "req-factura_comercial", ok: lleno(form.factura_comercial) },
     { id: "req-puerto_arribo", ok: lleno(form.puerto_arribo) },
@@ -1590,22 +1592,26 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       </Section>
 
 
-      <Section id="datos-importacion" title="2. Datos de importación" subtitle="Origen, proveedor y términos comerciales">
-        <div className={cn("grid gap-1.5", camposFaltantes.has("req-suplidor") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-suplidor">
-          <div className="flex items-center justify-between gap-2">
-            <Label><ReqMark />Exportador / Suplidor</Label>
-            {editable && (
-              <TerceroExtranjeroPicker
-                onSelect={(t) => { setForm((f) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid })); limpiarFaltante("req-suplidor"); }}
-              />
-            )}
-          </div>
-          <Input value={form.suplidor} onChange={(e) => { set("suplidor", e.target.value); limpiarFaltante("req-suplidor"); }} placeholder="Nombre del exportador/suplidor" disabled={!editable} />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>TID del exportador/suplidor</Label>
-          <Input value={form.suplidor_rnc ?? ""} onChange={(e) => set("suplidor_rnc", e.target.value)} placeholder="TID del exportador/suplidor" disabled={!editable} />
-        </div>
+      <Section id="datos-importacion" title={esExportacion ? "2. Datos de la operación" : "2. Datos de importación"} subtitle={esExportacion ? "Origen de la mercancía y términos comerciales" : "Origen, proveedor y términos comerciales"}>
+        {!esExportacion && (
+          <>
+            <div className={cn("grid gap-1.5", camposFaltantes.has("req-suplidor") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-suplidor">
+              <div className="flex items-center justify-between gap-2">
+                <Label><ReqMark />Exportador / Suplidor</Label>
+                {editable && (
+                  <TerceroExtranjeroPicker
+                    onSelect={(t) => { setForm((f) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid })); limpiarFaltante("req-suplidor"); }}
+                  />
+                )}
+              </div>
+              <Input value={form.suplidor} onChange={(e) => { set("suplidor", e.target.value); limpiarFaltante("req-suplidor"); }} placeholder="Nombre del exportador/suplidor" disabled={!editable} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>TID del exportador/suplidor</Label>
+              <Input value={form.suplidor_rnc ?? ""} onChange={(e) => set("suplidor_rnc", e.target.value)} placeholder="TID del exportador/suplidor" disabled={!editable} />
+            </div>
+          </>
+        )}
         <div className="grid gap-1.5">
           <Label>País de origen</Label>
           <DgaCombobox
