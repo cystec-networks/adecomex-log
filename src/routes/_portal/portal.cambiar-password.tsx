@@ -34,7 +34,7 @@ function CambiarPasswordCliente() {
     setLoading(false);
     if (rpcErr) return toast.error(rpcErr.message);
     toast.success("Contraseña actualizada");
-    navigate({ to: "/portal", replace: true });
+    navigate({ to: "/portal/embarques", replace: true });
   };
 
   return (
