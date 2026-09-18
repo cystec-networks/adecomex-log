@@ -940,6 +940,7 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     flete: d.flete ?? "",
     otros: d.otros ?? "",
     regimen_aduanero: d.regimen_aduanero ?? "",
+    regimen_codigo_exportacion: d.regimen_codigo_exportacion ?? "",
     acuerdo_comercial: d.acuerdo_comercial ?? "",
     observaciones: d.observaciones ?? "",
     pais_origen_codigo: d.pais_origen_codigo ?? "",
