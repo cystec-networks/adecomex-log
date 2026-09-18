@@ -6,7 +6,7 @@ import {
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
   GraduationCap, BookOpen, UserPlus, ClipboardCheck,
   Briefcase, IdCard, HandCoins,
-  Scale, FileSpreadsheet, Warehouse, Boxes, Landmark, Calculator, Ship, Plus,
+  Scale, FileSpreadsheet, Warehouse, Boxes, Landmark, Calculator, Ship, Plus, DatabaseBackup,
 
 
 } from "lucide-react";
@@ -159,6 +159,8 @@ const GROUPS: Group[] = [
         match: (p) => p === "/reportes" || p.startsWith("/reportes/") },
       { to: "/admin/configuracion", label: "Configuración", icon: Settings, adminOnly: true,
         match: (p) => p.startsWith("/admin/configuracion") },
+      { to: "/admin/respaldo-datos", label: "Respaldo de Datos", icon: DatabaseBackup, adminOnly: true,
+        match: (p) => p.startsWith("/admin/respaldo-datos") },
       { to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
         match: (p) => p === "/expedientes/papelera" },
     ],
