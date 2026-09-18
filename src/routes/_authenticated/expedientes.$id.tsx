@@ -2006,6 +2006,23 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                       </SelectContent>
                     </Select>
                   </div>
+                  {esExportacion && (
+                    <div className="grid gap-1.5 md:col-span-2">
+                      <Label>Régimen (Exportación)</Label>
+                      <Select
+                        value={form.regimen_codigo_exportacion || undefined}
+                        onValueChange={(v) => set("regimen_codigo_exportacion", v)}
+                        disabled={!editable}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Selecciona régimen de exportación" /></SelectTrigger>
+                        <SelectContent>
+                          {(regimenesExportacion ?? []).map((r: any) => (
+                            <SelectItem key={r.codigo} value={r.codigo}>{r.codigo} · {r.nombre}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="grid gap-1.5 md:col-span-2">
                     <Label>Acuerdo Comercial <span className="text-muted-foreground font-normal">(opcional)</span></Label>
                     <CatalogCombobox
