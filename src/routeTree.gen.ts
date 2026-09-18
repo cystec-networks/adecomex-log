@@ -25,6 +25,7 @@ import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedBienvenidaRouteImport } from './routes/_authenticated/bienvenida'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as PortalPortalIndexRouteImport } from './routes/_portal/portal.index'
 import { Route as PortalEstudiantePortalEstudianteIndexRouteImport } from './routes/_portal-estudiante/portal-estudiante.index'
 import { Route as AuthenticatedTransportesIndexRouteImport } from './routes/_authenticated/transportes.index'
 import { Route as AuthenticatedPermisosIndexRouteImport } from './routes/_authenticated/permisos.index'
@@ -172,6 +173,11 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
+const PortalPortalIndexRoute = PortalPortalIndexRouteImport.update({
+  id: '/portal/',
+  path: '/portal/',
+  getParentRoute: () => PortalRouteRoute,
+} as any)
 const PortalEstudiantePortalEstudianteIndexRoute =
   PortalEstudiantePortalEstudianteIndexRouteImport.update({
     id: '/portal-estudiante/',
@@ -638,6 +644,7 @@ export interface FileRoutesByFullPath {
   '/permisos/': typeof AuthenticatedPermisosIndexRoute
   '/transportes/': typeof AuthenticatedTransportesIndexRoute
   '/portal-estudiante/': typeof PortalEstudiantePortalEstudianteIndexRoute
+  '/portal/': typeof PortalPortalIndexRoute
   '/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
   '/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
@@ -720,6 +727,7 @@ export interface FileRoutesByTo {
   '/permisos': typeof AuthenticatedPermisosIndexRoute
   '/transportes': typeof AuthenticatedTransportesIndexRoute
   '/portal-estudiante': typeof PortalEstudiantePortalEstudianteIndexRoute
+  '/portal': typeof PortalPortalIndexRoute
   '/admin/facturacion/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
   '/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
@@ -806,6 +814,7 @@ export interface FileRoutesById {
   '/_authenticated/permisos/': typeof AuthenticatedPermisosIndexRoute
   '/_authenticated/transportes/': typeof AuthenticatedTransportesIndexRoute
   '/_portal-estudiante/portal-estudiante/': typeof PortalEstudiantePortalEstudianteIndexRoute
+  '/_portal/portal/': typeof PortalPortalIndexRoute
   '/_authenticated/admin/facturacion_/pendientes': typeof AuthenticatedAdminFacturacionPendientesRoute
   '/_authenticated/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/_portal-estudiante/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
@@ -890,6 +899,7 @@ export interface FileRouteTypes {
     | '/permisos/'
     | '/transportes/'
     | '/portal-estudiante/'
+    | '/portal/'
     | '/admin/facturacion/pendientes'
     | '/rrhh/empleados/$id'
     | '/portal-estudiante/programas/$id'
@@ -972,6 +982,7 @@ export interface FileRouteTypes {
     | '/permisos'
     | '/transportes'
     | '/portal-estudiante'
+    | '/portal'
     | '/admin/facturacion/pendientes'
     | '/rrhh/empleados/$id'
     | '/portal-estudiante/programas/$id'
@@ -1057,6 +1068,7 @@ export interface FileRouteTypes {
     | '/_authenticated/permisos/'
     | '/_authenticated/transportes/'
     | '/_portal-estudiante/portal-estudiante/'
+    | '/_portal/portal/'
     | '/_authenticated/admin/facturacion_/pendientes'
     | '/_authenticated/rrhh/empleados/$id'
     | '/_portal-estudiante/portal-estudiante/programas/$id'
@@ -1203,6 +1215,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/.mcp/list-tools'
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_portal/portal/': {
+      id: '/_portal/portal/'
+      path: '/portal'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalPortalIndexRouteImport
+      parentRoute: typeof PortalRouteRoute
     }
     '/_portal-estudiante/portal-estudiante/': {
       id: '/_portal-estudiante/portal-estudiante/'
@@ -1824,6 +1843,7 @@ interface PortalRouteRouteChildren {
   PortalPortalBienvenidaRoute: typeof PortalPortalBienvenidaRoute
   PortalPortalCambiarPasswordRoute: typeof PortalPortalCambiarPasswordRoute
   PortalPortalEmbarquesRoute: typeof PortalPortalEmbarquesRoute
+  PortalPortalIndexRoute: typeof PortalPortalIndexRoute
   PortalPortalExpedientesIdRoute: typeof PortalPortalExpedientesIdRoute
 }
 
@@ -1831,6 +1851,7 @@ const PortalRouteRouteChildren: PortalRouteRouteChildren = {
   PortalPortalBienvenidaRoute: PortalPortalBienvenidaRoute,
   PortalPortalCambiarPasswordRoute: PortalPortalCambiarPasswordRoute,
   PortalPortalEmbarquesRoute: PortalPortalEmbarquesRoute,
+  PortalPortalIndexRoute: PortalPortalIndexRoute,
   PortalPortalExpedientesIdRoute: PortalPortalExpedientesIdRoute,
 }
 
