@@ -305,7 +305,7 @@ function AppSidebarInner() {
         )}
 
         {/* Dashboard (item simple, primero) */}
-        {renderSimpleItem({ id: "dashboard", to: "/dashboard", label: "Dashboard", icon: LayoutDashboard,
+        {renderSimpleItem({ id: "dashboard", to: "/dashboard", label: "Panel de Operaciones", icon: LayoutDashboard,
           match: (p) => p === "/dashboard" })}
 
         {/* Comercial group (Cotizaciones → Órdenes) */}
