@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
-import bienvenidaAsset from "@/assets/bienvenida-adecomex-flow.png.asset.json";
+import bienvenidaAsset from "@/assets/bienvenida-adecomex-flow-hd.webp";
 
 export const Route = createFileRoute("/_authenticated/bienvenida")({
   head: () => ({
@@ -21,7 +21,7 @@ function Bienvenida() {
   return (
     <div className="relative min-h-full w-full bg-background">
       <img
-        src={bienvenidaAsset.url}
+        src={bienvenidaAsset}
         alt="Bienvenido — ADECOMEX FLOW, tu aliado en importaciones"
         className="absolute inset-0 h-full w-full object-contain"
       />
