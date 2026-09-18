@@ -3522,6 +3522,7 @@ function MercanciaItemsBlock({
   }, [tasas]);
 
   const [open, setOpen] = useState(false);
+  const [verExport, setVerExport] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const emptyForm = {
     codigo_arancelario: "", detalle_producto: "", unidad_medida: "", unidad_codigo: "",
@@ -4075,6 +4076,38 @@ function MercanciaItemsBlock({
                 </div>
               </div>
             </div>
+
+            {esExportacion && (
+              <div className="md:col-span-2 border-t pt-3 mt-1">
+                <Button type="button" variant="outline" size="sm" onClick={() => setVerExport((v) => !v)}>
+                  {verExport ? "Ocultar detalles de exportación" : "Más detalles de exportación"}
+                </Button>
+                {verExport && (
+                  <div className="grid gap-3 md:grid-cols-2 mt-3">
+                    <div className="grid gap-1.5">
+                      <Label>Año del producto</Label>
+                      <Input type="number" value={f.product_year} onChange={(e) => setF({ ...f, product_year: e.target.value })} />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>Grado de alcohol (%)</Label>
+                      <Input type="number" step="0.01" value={f.grado_alcohol} onChange={(e) => setF({ ...f, grado_alcohol: e.target.value })} />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Switch checked={f.tiene_certificado_origen} onCheckedChange={(v) => setF({ ...f, tiene_certificado_origen: v, certificado_origen_numero: v ? f.certificado_origen_numero : "" })} />
+                      <Label>¿Tiene certificado de origen?</Label>
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>N° de certificado de origen</Label>
+                      <Input value={f.certificado_origen_numero} onChange={(e) => setF({ ...f, certificado_origen_numero: e.target.value })} disabled={!f.tiene_certificado_origen} />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Switch checked={f.es_organico} onCheckedChange={(v) => setF({ ...f, es_organico: v })} />
+                      <Label>¿Es orgánico?</Label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <DialogFooter>
