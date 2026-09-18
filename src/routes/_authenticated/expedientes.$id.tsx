@@ -1654,6 +1654,35 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
       </Section>
 
+      {esExportacion && (
+        <Section id="comprador-exportacion" title="Comprador (Exportación)" subtitle="Datos del comprador y del declarante para la Declaración de Exportación">
+          <Field label="Código del comprador" value={form.buyer_codigo} onChange={(v) => set("buyer_codigo", v)} disabled={!editable} />
+          <Field label="Nombre del comprador" value={form.buyer_nombre} onChange={(v) => set("buyer_nombre", v)} disabled={!editable} />
+          <Field label="Nacionalidad del comprador (ISO 3 letras)" value={form.buyer_nacionalidad} onChange={(v) => set("buyer_nacionalidad", v.toUpperCase())} disabled={!editable} />
+          <Field label="Código del declarante" value={form.declarante_codigo} onChange={(v) => set("declarante_codigo", v)} disabled={!editable} />
+          <Field label="Nombre del declarante" value={form.declarante_nombre} onChange={(v) => set("declarante_nombre", v)} disabled={!editable} />
+          <Field label="Nacionalidad del declarante" value={form.declarante_nacionalidad} onChange={(v) => set("declarante_nacionalidad", v)} disabled={!editable} />
+        </Section>
+      )}
+
+      {esExportacion && (
+        <Section id="zona-franca" title="Zona Franca" subtitle="Valores del régimen de Zona Franca (solo si aplica)">
+          <div className="flex items-center gap-3 md:col-span-2 lg:col-span-3">
+            <Switch checked={!!form.zf_aplica} onCheckedChange={(v) => set("zf_aplica", v)} disabled={!editable} />
+            <Label>¿Aplica Zona Franca?</Label>
+          </div>
+          {form.zf_aplica && (
+            <>
+              <Field label="Valor CIF" type="number" value={form.zf_valor_cif} onChange={(v) => set("zf_valor_cif", v)} disabled={!editable} />
+              <Field label="Valor de materiales" type="number" value={form.zf_valor_materiales} onChange={(v) => set("zf_valor_materiales", v)} disabled={!editable} />
+              <Field label="Valor de salarios" type="number" value={form.zf_valor_salario} onChange={(v) => set("zf_valor_salario", v)} disabled={!editable} />
+              <Field label="Valor de servicios" type="number" value={form.zf_valor_servicio} onChange={(v) => set("zf_valor_servicio", v)} disabled={!editable} />
+              <Field label="Otros valores" type="number" value={form.zf_otros_valores} onChange={(v) => set("zf_otros_valores", v)} disabled={!editable} />
+            </>
+          )}
+        </Section>
+      )}
+
       <Section id="declaracion" title="3. Declaración" subtitle="Documentos oficiales ante DGA y VUCE">
           <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} />
           <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} />
