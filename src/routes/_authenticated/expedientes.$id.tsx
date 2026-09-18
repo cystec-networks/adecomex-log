@@ -3475,6 +3475,7 @@ function MercanciaItemsBlock({
   paisOrigen,
   paisOrigenCodigo,
   servicioAduaneroUsd = 0,
+  esExportacion = false,
   disabled = false,
   localItems,
   onLocalItemsChange,
@@ -3488,6 +3489,8 @@ function MercanciaItemsBlock({
   paisOrigen?: string;
   paisOrigenCodigo?: string;
   servicioAduaneroUsd?: number;
+  /** Exportación: habilita los campos extra de producto para la Declaración de Exportación. */
+  esExportacion?: boolean;
   disabled?: boolean;
   /** Modo creación: líneas en memoria (aún sin Expediente en la base). */
   localItems?: any[];
@@ -3526,6 +3529,8 @@ function MercanciaItemsBlock({
     pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "18",
     product_code: "", cod_marca: "", marca: "", cod_modelo: "", modelo: "", especificaciones: "",
     estado_producto_codigo: "",
+    product_year: "", tiene_certificado_origen: false as boolean, certificado_origen_numero: "",
+    es_organico: false as boolean, grado_alcohol: "",
     pais_origen: "", pais_origen_codigo: "",
   };
 
@@ -3604,6 +3609,11 @@ function MercanciaItemsBlock({
         modelo: f.modelo?.trim() || null,
         especificaciones: f.especificaciones?.trim() || null,
         estado_producto_codigo: f.estado_producto_codigo?.trim() || null,
+        product_year: f.product_year === "" ? null : Number(f.product_year),
+        tiene_certificado_origen: !!f.tiene_certificado_origen,
+        certificado_origen_numero: f.certificado_origen_numero?.trim() || null,
+        es_organico: !!f.es_organico,
+        grado_alcohol: f.grado_alcohol === "" ? null : Number(f.grado_alcohol),
         pais_origen: f.pais_origen?.trim() || null,
         pais_origen_codigo: f.pais_origen_codigo?.trim() || null,
       };
@@ -3691,6 +3701,11 @@ function MercanciaItemsBlock({
       estado_producto_codigo: it.estado_producto_codigo ?? "",
       pais_origen: it.pais_origen ?? "",
       pais_origen_codigo: it.pais_origen_codigo ?? "",
+      product_year: it.product_year != null ? String(it.product_year) : "",
+      tiene_certificado_origen: !!it.tiene_certificado_origen,
+      certificado_origen_numero: it.certificado_origen_numero ?? "",
+      es_organico: !!it.es_organico,
+      grado_alcohol: it.grado_alcohol != null ? String(it.grado_alcohol) : "",
     });
     const vu = unitFob(it.valor_fob, it.cantidad);
     setValorUnitario(isFinite(Number(vu)) ? Number(vu).toFixed(4) : "");
