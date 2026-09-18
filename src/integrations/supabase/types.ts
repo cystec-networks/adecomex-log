@@ -719,6 +719,7 @@ export type Database = {
           estado: string
           id: string
           nombre: string
+          tipo_operacion: string
           updated_at: string
         }
         Insert: {
@@ -727,6 +728,7 @@ export type Database = {
           estado?: string
           id?: string
           nombre: string
+          tipo_operacion?: string
           updated_at?: string
         }
         Update: {
@@ -735,6 +737,7 @@ export type Database = {
           estado?: string
           id?: string
           nombre?: string
+          tipo_operacion?: string
           updated_at?: string
         }
         Relationships: []
@@ -3002,6 +3005,7 @@ export type Database = {
           rectificacion_tecnica: boolean
           regimen_aduanero: string | null
           regimen_codigo: string | null
+          regimen_codigo_exportacion: string | null
           responsable_id: string | null
           seguro: number | null
           sin_codigo_dga: boolean
@@ -3103,6 +3107,7 @@ export type Database = {
           rectificacion_tecnica?: boolean
           regimen_aduanero?: string | null
           regimen_codigo?: string | null
+          regimen_codigo_exportacion?: string | null
           responsable_id?: string | null
           seguro?: number | null
           sin_codigo_dga?: boolean
@@ -3204,6 +3209,7 @@ export type Database = {
           rectificacion_tecnica?: boolean
           regimen_aduanero?: string | null
           regimen_codigo?: string | null
+          regimen_codigo_exportacion?: string | null
           responsable_id?: string | null
           seguro?: number | null
           sin_codigo_dga?: boolean
