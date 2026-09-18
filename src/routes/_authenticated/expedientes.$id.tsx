@@ -49,7 +49,7 @@ import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
-import { unitFob } from "@/lib/siga-xml";
+import { unitFob, loadBrokerConfig } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
@@ -954,7 +954,32 @@ function construirFormInicial(data: any, nuevo: boolean) {
     tipo_operacion: d.tipo_operacion ?? "",
     tipo_carga: d.tipo_carga ?? "",
     contacto_solicitud: d.contacto_solicitud ?? "",
+    // --- Exportación (SIGA) ---
+    buyer_codigo: d.buyer_codigo ?? "",
+    buyer_nombre: d.buyer_nombre ?? "",
+    buyer_nacionalidad: d.buyer_nacionalidad ?? "",
+    declarante_codigo: d.declarante_codigo ?? "",
+    declarante_nombre: d.declarante_nombre ?? "",
+    declarante_nacionalidad: d.declarante_nacionalidad ?? "",
+    zf_aplica: !!d.zf_aplica,
+    zf_valor_cif: d.zf_valor_cif ?? "",
+    zf_valor_materiales: d.zf_valor_materiales ?? "",
+    zf_valor_salario: d.zf_valor_salario ?? "",
+    zf_valor_servicio: d.zf_valor_servicio ?? "",
+    zf_otros_valores: d.zf_otros_valores ?? "",
   };
+}
+
+/** Campos numéricos de Zona Franca: "" → null antes de guardar. */
+function normalizarCamposExportacion(payload: any) {
+  const toNum = (v: any) => (v === "" || v == null ? null : Number(v));
+  ["zf_valor_cif", "zf_valor_materiales", "zf_valor_salario", "zf_valor_servicio", "zf_otros_valores"].forEach((k) => {
+    payload[k] = toNum(payload[k]);
+  });
+  payload.zf_aplica = !!payload.zf_aplica;
+  ["buyer_codigo", "buyer_nombre", "buyer_nacionalidad", "declarante_codigo", "declarante_nombre", "declarante_nacionalidad"].forEach((k) => {
+    payload[k] = (payload[k] ?? "").trim() || null;
+  });
 }
 
 function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null }) {
@@ -964,6 +989,16 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState(() => construirFormInicial(isNuevo ? null : exp, isNuevo));
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
+  const esExportacion = (form.tipo_operacion || "").toLowerCase().startsWith("export");
+  // Exportación: precarga los datos del agente despachante de ADECOMEX si están vacíos.
+  useEffect(() => {
+    if (!esExportacion) return;
+    setForm((f) => {
+      if (f.declarante_codigo || f.declarante_nombre) return f;
+      const b = loadBrokerConfig();
+      return { ...f, declarante_codigo: b.declarantCode ?? "", declarante_nombre: b.declarantName ?? "", declarante_nacionalidad: f.declarante_nacionalidad || b.declarantNationality || "" };
+    });
+  }, [esExportacion]);
   const [filasServicioAduanero, setFilasServicioAduanero] = useState<FilaServicio[]>([]);
   const { data: filasServicioDb } = useFilasServicioAduanero(exp?.id, !isNuevo);
   useEffect(() => {
@@ -1235,6 +1270,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         if (exp.tasa_cambio_usada != null) payload.tasa_cambio_usada = Number(exp.tasa_cambio_usada);
       }
       // Tasa Oficial DGA obligatoria antes de guardar.
+      normalizarCamposExportacion(payload);
       await exigirTasaOficial(payload);
       // Validar que el número VUCE no esté ya usado en otro expediente.
       const vuceChanged = form.numero_vuce && form.numero_vuce !== (exp.numero_vuce ?? "");
@@ -1330,6 +1366,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
 
       // Tasa Oficial DGA obligatoria antes de crear.
+      normalizarCamposExportacion(payload);
       await exigirTasaOficial(payload);
       if (payload.numero_vuce) {
         const { data: conflicto } = await supabase
@@ -1617,6 +1654,35 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
       </Section>
 
+      {esExportacion && (
+        <Section id="comprador-exportacion" title="Comprador (Exportación)" subtitle="Datos del comprador y del declarante para la Declaración de Exportación">
+          <Field label="Código del comprador" value={form.buyer_codigo} onChange={(v) => set("buyer_codigo", v)} disabled={!editable} />
+          <Field label="Nombre del comprador" value={form.buyer_nombre} onChange={(v) => set("buyer_nombre", v)} disabled={!editable} />
+          <Field label="Nacionalidad del comprador (ISO 3 letras)" value={form.buyer_nacionalidad} onChange={(v) => set("buyer_nacionalidad", v.toUpperCase())} disabled={!editable} />
+          <Field label="Código del declarante" value={form.declarante_codigo} onChange={(v) => set("declarante_codigo", v)} disabled={!editable} />
+          <Field label="Nombre del declarante" value={form.declarante_nombre} onChange={(v) => set("declarante_nombre", v)} disabled={!editable} />
+          <Field label="Nacionalidad del declarante" value={form.declarante_nacionalidad} onChange={(v) => set("declarante_nacionalidad", v)} disabled={!editable} />
+        </Section>
+      )}
+
+      {esExportacion && (
+        <Section id="zona-franca" title="Zona Franca" subtitle="Valores del régimen de Zona Franca (solo si aplica)">
+          <div className="flex items-center gap-3 md:col-span-2 lg:col-span-3">
+            <Switch checked={!!form.zf_aplica} onCheckedChange={(v) => set("zf_aplica", v)} disabled={!editable} />
+            <Label>¿Aplica Zona Franca?</Label>
+          </div>
+          {form.zf_aplica && (
+            <>
+              <Field label="Valor CIF" type="number" value={form.zf_valor_cif} onChange={(v) => set("zf_valor_cif", v)} disabled={!editable} />
+              <Field label="Valor de materiales" type="number" value={form.zf_valor_materiales} onChange={(v) => set("zf_valor_materiales", v)} disabled={!editable} />
+              <Field label="Valor de salarios" type="number" value={form.zf_valor_salario} onChange={(v) => set("zf_valor_salario", v)} disabled={!editable} />
+              <Field label="Valor de servicios" type="number" value={form.zf_valor_servicio} onChange={(v) => set("zf_valor_servicio", v)} disabled={!editable} />
+              <Field label="Otros valores" type="number" value={form.zf_otros_valores} onChange={(v) => set("zf_otros_valores", v)} disabled={!editable} />
+            </>
+          )}
+        </Section>
+      )}
+
       <Section id="declaracion" title="3. Declaración" subtitle="Documentos oficiales ante DGA y VUCE">
           <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} />
           <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} />
@@ -1814,6 +1880,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               paisOrigen={form.pais_origen || ""}
               paisOrigenCodigo={form.pais_origen_codigo || ""}
               disabled={!editable}
+              esExportacion={esExportacion}
               {...(isNuevo ? { localItems: productosNuevos, onLocalItemsChange: setProductosNuevos } : {})}
             />
           </div>
@@ -3408,6 +3475,7 @@ function MercanciaItemsBlock({
   paisOrigen,
   paisOrigenCodigo,
   servicioAduaneroUsd = 0,
+  esExportacion = false,
   disabled = false,
   localItems,
   onLocalItemsChange,
@@ -3421,6 +3489,8 @@ function MercanciaItemsBlock({
   paisOrigen?: string;
   paisOrigenCodigo?: string;
   servicioAduaneroUsd?: number;
+  /** Exportación: habilita los campos extra de producto para la Declaración de Exportación. */
+  esExportacion?: boolean;
   disabled?: boolean;
   /** Modo creación: líneas en memoria (aún sin Expediente en la base). */
   localItems?: any[];
@@ -3452,6 +3522,7 @@ function MercanciaItemsBlock({
   }, [tasas]);
 
   const [open, setOpen] = useState(false);
+  const [verExport, setVerExport] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const emptyForm = {
     codigo_arancelario: "", detalle_producto: "", unidad_medida: "", unidad_codigo: "",
@@ -3459,6 +3530,8 @@ function MercanciaItemsBlock({
     pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "18",
     product_code: "", cod_marca: "", marca: "", cod_modelo: "", modelo: "", especificaciones: "",
     estado_producto_codigo: "",
+    product_year: "", tiene_certificado_origen: false as boolean, certificado_origen_numero: "",
+    es_organico: false as boolean, grado_alcohol: "",
     pais_origen: "", pais_origen_codigo: "",
   };
 
@@ -3537,6 +3610,11 @@ function MercanciaItemsBlock({
         modelo: f.modelo?.trim() || null,
         especificaciones: f.especificaciones?.trim() || null,
         estado_producto_codigo: f.estado_producto_codigo?.trim() || null,
+        product_year: f.product_year === "" ? null : Number(f.product_year),
+        tiene_certificado_origen: !!f.tiene_certificado_origen,
+        certificado_origen_numero: f.certificado_origen_numero?.trim() || null,
+        es_organico: !!f.es_organico,
+        grado_alcohol: f.grado_alcohol === "" ? null : Number(f.grado_alcohol),
         pais_origen: f.pais_origen?.trim() || null,
         pais_origen_codigo: f.pais_origen_codigo?.trim() || null,
       };
@@ -3624,6 +3702,11 @@ function MercanciaItemsBlock({
       estado_producto_codigo: it.estado_producto_codigo ?? "",
       pais_origen: it.pais_origen ?? "",
       pais_origen_codigo: it.pais_origen_codigo ?? "",
+      product_year: it.product_year != null ? String(it.product_year) : "",
+      tiene_certificado_origen: !!it.tiene_certificado_origen,
+      certificado_origen_numero: it.certificado_origen_numero ?? "",
+      es_organico: !!it.es_organico,
+      grado_alcohol: it.grado_alcohol != null ? String(it.grado_alcohol) : "",
     });
     const vu = unitFob(it.valor_fob, it.cantidad);
     setValorUnitario(isFinite(Number(vu)) ? Number(vu).toFixed(4) : "");
@@ -3993,6 +4076,38 @@ function MercanciaItemsBlock({
                 </div>
               </div>
             </div>
+
+            {esExportacion && (
+              <div className="md:col-span-2 border-t pt-3 mt-1">
+                <Button type="button" variant="outline" size="sm" onClick={() => setVerExport((v) => !v)}>
+                  {verExport ? "Ocultar detalles de exportación" : "Más detalles de exportación"}
+                </Button>
+                {verExport && (
+                  <div className="grid gap-3 md:grid-cols-2 mt-3">
+                    <div className="grid gap-1.5">
+                      <Label>Año del producto</Label>
+                      <Input type="number" value={f.product_year} onChange={(e) => setF({ ...f, product_year: e.target.value })} />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>Grado de alcohol (%)</Label>
+                      <Input type="number" step="0.01" value={f.grado_alcohol} onChange={(e) => setF({ ...f, grado_alcohol: e.target.value })} />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Switch checked={f.tiene_certificado_origen} onCheckedChange={(v) => setF({ ...f, tiene_certificado_origen: v, certificado_origen_numero: v ? f.certificado_origen_numero : "" })} />
+                      <Label>¿Tiene certificado de origen?</Label>
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>N° de certificado de origen</Label>
+                      <Input value={f.certificado_origen_numero} onChange={(e) => setF({ ...f, certificado_origen_numero: e.target.value })} disabled={!f.tiene_certificado_origen} />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Switch checked={f.es_organico} onCheckedChange={(v) => setF({ ...f, es_organico: v })} />
+                      <Label>¿Es orgánico?</Label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <DialogFooter>

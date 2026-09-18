@@ -15,6 +15,13 @@
       "when": 1789745522273,
       "tag": "0001_ampliar_v_expedientes_cliente",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789765962924,
+      "tag": "0002_exportacion_siga_campos",
+      "breakpoints": true
     }
   ]
 }

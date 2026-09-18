@@ -2930,6 +2930,9 @@ export type Database = {
           area_aduanera: string | null
           area_aduanera_codigo: string | null
           bl_awb: string | null
+          buyer_codigo: string | null
+          buyer_nacionalidad: string | null
+          buyer_nombre: string | null
           canal_riesgo: string | null
           cantidad_despacho: number | null
           certificado_emisor_codigo: string | null
@@ -2944,6 +2947,9 @@ export type Database = {
           contacto_solicitud: string | null
           created_at: string
           created_by: string | null
+          declarante_codigo: string | null
+          declarante_nacionalidad: string | null
+          declarante_nombre: string | null
           descripcion_mercancia: string | null
           eliminado_en: string | null
           eliminado_por: string | null
@@ -3012,6 +3018,12 @@ export type Database = {
           total_cif: number | null
           total_fob: number | null
           updated_at: string
+          zf_aplica: boolean | null
+          zf_otros_valores: number | null
+          zf_valor_cif: number | null
+          zf_valor_materiales: number | null
+          zf_valor_salario: number | null
+          zf_valor_servicio: number | null
         }
         Insert: {
           acuerdo_codigo?: string | null
@@ -3019,6 +3031,9 @@ export type Database = {
           area_aduanera?: string | null
           area_aduanera_codigo?: string | null
           bl_awb?: string | null
+          buyer_codigo?: string | null
+          buyer_nacionalidad?: string | null
+          buyer_nombre?: string | null
           canal_riesgo?: string | null
           cantidad_despacho?: number | null
           certificado_emisor_codigo?: string | null
@@ -3033,6 +3048,9 @@ export type Database = {
           contacto_solicitud?: string | null
           created_at?: string
           created_by?: string | null
+          declarante_codigo?: string | null
+          declarante_nacionalidad?: string | null
+          declarante_nombre?: string | null
           descripcion_mercancia?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
@@ -3101,6 +3119,12 @@ export type Database = {
           total_cif?: number | null
           total_fob?: number | null
           updated_at?: string
+          zf_aplica?: boolean | null
+          zf_otros_valores?: number | null
+          zf_valor_cif?: number | null
+          zf_valor_materiales?: number | null
+          zf_valor_salario?: number | null
+          zf_valor_servicio?: number | null
         }
         Update: {
           acuerdo_codigo?: string | null
@@ -3108,6 +3132,9 @@ export type Database = {
           area_aduanera?: string | null
           area_aduanera_codigo?: string | null
           bl_awb?: string | null
+          buyer_codigo?: string | null
+          buyer_nacionalidad?: string | null
+          buyer_nombre?: string | null
           canal_riesgo?: string | null
           cantidad_despacho?: number | null
           certificado_emisor_codigo?: string | null
@@ -3122,6 +3149,9 @@ export type Database = {
           contacto_solicitud?: string | null
           created_at?: string
           created_by?: string | null
+          declarante_codigo?: string | null
+          declarante_nacionalidad?: string | null
+          declarante_nombre?: string | null
           descripcion_mercancia?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
@@ -3190,6 +3220,12 @@ export type Database = {
           total_cif?: number | null
           total_fob?: number | null
           updated_at?: string
+          zf_aplica?: boolean | null
+          zf_otros_valores?: number | null
+          zf_valor_cif?: number | null
+          zf_valor_materiales?: number | null
+          zf_valor_salario?: number | null
+          zf_valor_servicio?: number | null
         }
         Relationships: [
           {
@@ -4168,6 +4204,7 @@ export type Database = {
         Row: {
           aplica_isc: boolean | null
           cantidad: number | null
+          certificado_origen_numero: string | null
           cod_marca: string | null
           cod_modelo: string | null
           codigo_arancelario: string | null
@@ -4177,9 +4214,11 @@ export type Database = {
           deleted_at: string | null
           deleted_by: string | null
           detalle_producto: string | null
+          es_organico: boolean | null
           especificaciones: string | null
           estado_producto_codigo: string | null
           expediente_id: string
+          grado_alcohol: number | null
           gravamen_real: number | null
           id: string
           isc_real: number | null
@@ -4197,6 +4236,8 @@ export type Database = {
           pct_itbis: number | null
           peso: number | null
           product_code: string | null
+          product_year: number | null
+          tiene_certificado_origen: boolean | null
           unidad_codigo: string | null
           unidad_medida: string | null
           updated_at: string
@@ -4205,6 +4246,7 @@ export type Database = {
         Insert: {
           aplica_isc?: boolean | null
           cantidad?: number | null
+          certificado_origen_numero?: string | null
           cod_marca?: string | null
           cod_modelo?: string | null
           codigo_arancelario?: string | null
@@ -4214,9 +4256,11 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           detalle_producto?: string | null
+          es_organico?: boolean | null
           especificaciones?: string | null
           estado_producto_codigo?: string | null
           expediente_id: string
+          grado_alcohol?: number | null
           gravamen_real?: number | null
           id?: string
           isc_real?: number | null
@@ -4234,6 +4278,8 @@ export type Database = {
           pct_itbis?: number | null
           peso?: number | null
           product_code?: string | null
+          product_year?: number | null
+          tiene_certificado_origen?: boolean | null
           unidad_codigo?: string | null
           unidad_medida?: string | null
           updated_at?: string
@@ -4242,6 +4288,7 @@ export type Database = {
         Update: {
           aplica_isc?: boolean | null
           cantidad?: number | null
+          certificado_origen_numero?: string | null
           cod_marca?: string | null
           cod_modelo?: string | null
           codigo_arancelario?: string | null
@@ -4251,9 +4298,11 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           detalle_producto?: string | null
+          es_organico?: boolean | null
           especificaciones?: string | null
           estado_producto_codigo?: string | null
           expediente_id?: string
+          grado_alcohol?: number | null
           gravamen_real?: number | null
           id?: string
           isc_real?: number | null
@@ -4271,6 +4320,8 @@ export type Database = {
           pct_itbis?: number | null
           peso?: number | null
           product_code?: string | null
+          product_year?: number | null
+          tiene_certificado_origen?: boolean | null
           unidad_codigo?: string | null
           unidad_medida?: string | null
           updated_at?: string
