@@ -80,7 +80,26 @@ type FormState = {
   es_mercancia_peligrosa: string;
   hazmat_un_numero: string; hazmat_clase: string; hazmat_grupo_empaque: string; hazmat_punto_inflamacion: string;
   hazmat_contaminante_marino: string; hazmat_nombre_tecnico: string; hazmat_recargo: string;
+  area_code: string; biz_company_code: string; empty_yn: string; loading_location_code: string; unloading_location_code: string;
+  via_entrance: string; country_code: string; bl_type: string; transit_type: string; express_type: string;
+  consignor_tipo: string; consignor_doc_tipo: string; consignor_doc_numero: string; consignor_pais: string; consignor_fax: string;
+  consignor_zip: string; consignor_zona: string; consignor_ciudad: string; consignor_calle: string;
+  consignee_tipo: string; consignee_doc_tipo: string; consignee_doc_numero: string; consignee_pais: string; consignee_fax: string;
+  consignee_zip: string; consignee_zona: string; consignee_ciudad: string; consignee_calle: string;
+  notify_nombre: string; notify_tipo: string; notify_doc_tipo: string; notify_doc_numero: string; notify_pais: string;
+  notify_telefono: string; notify_email: string; notify_fax: string; notify_zip: string; notify_zona: string;
+  notify_ciudad: string; notify_calle: string;
 };
+const MANIFIESTO_TEXT_KEYS = [
+  "area_code", "biz_company_code", "loading_location_code", "unloading_location_code", "via_entrance", "country_code",
+  "bl_type", "transit_type", "express_type",
+  "consignor_tipo", "consignor_doc_tipo", "consignor_doc_numero", "consignor_pais", "consignor_fax", "consignor_zip",
+  "consignor_zona", "consignor_ciudad", "consignor_calle",
+  "consignee_tipo", "consignee_doc_tipo", "consignee_doc_numero", "consignee_pais", "consignee_fax", "consignee_zip",
+  "consignee_zona", "consignee_ciudad", "consignee_calle",
+  "notify_nombre", "notify_tipo", "notify_doc_tipo", "notify_doc_numero", "notify_pais", "notify_telefono", "notify_email",
+  "notify_fax", "notify_zip", "notify_zona", "notify_ciudad", "notify_calle",
+] as const;
 const cleanDate = (v: string | null) => v?.slice(0, 10) ?? "";
 const formFrom = (o: any): FormState => ({
   numero: o.numero ?? "",
