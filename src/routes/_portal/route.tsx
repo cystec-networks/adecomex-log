@@ -83,7 +83,7 @@ function PortalLayout() {
 
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <header className="h-16 border-b bg-card/60 backdrop-blur sticky top-0 z-30">
         <div className="max-w-6xl mx-auto h-full px-4 flex items-center gap-3">
           <Link to="/portal/embarques" className="flex items-center gap-2 min-w-0">

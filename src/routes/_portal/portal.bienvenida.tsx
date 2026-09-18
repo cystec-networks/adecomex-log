@@ -19,15 +19,15 @@ export const Route = createFileRoute("/_portal/portal/bienvenida")({
 
 function PortalBienvenida() {
   return (
-    <div className="relative min-h-[calc(100vh-8rem)] w-full rounded-lg overflow-hidden bg-background">
+    <div className="relative h-[calc(100dvh-11rem)] min-h-[340px] w-full rounded-lg overflow-hidden bg-background">
       <img
         src={bienvenidaAsset}
         alt="Bienvenido — ADECOMEX FLOW, tu aliado en importaciones"
         className="absolute inset-0 h-full w-full object-contain"
       />
-      <div className="absolute bottom-6 left-0 right-0 flex justify-center px-4">
-          <Link
-            to="/portal/embarques"
+      <div className="absolute top-5 left-0 right-0 flex justify-center px-4">
+        <Link
+          to="/portal/embarques"
           className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-transform hover:scale-105"
         >
           Ver Mis Embarques
