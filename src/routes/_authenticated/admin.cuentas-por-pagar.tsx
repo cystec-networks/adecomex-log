@@ -674,6 +674,7 @@ function CuentasPorPagarPage() {
                     ncf_proveedor: d.ncf_proveedor ?? f.ncf_proveedor,
                     fecha_factura: d.fecha_factura ?? f.fecha_factura,
                     monto_total: d.monto_total !== null ? String(d.monto_total) : f.monto_total,
+                    categoria: "transportes" as CategoriaCxp,
                   }))
                 }
               />
