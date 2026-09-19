@@ -103,7 +103,7 @@ export function HerramientasDgaVuceMenu({ variant = "button", className }: { var
             className={`h-8 w-8 text-muted-foreground hover:text-primary ${className ?? ""}`}
             title="Herramientas DGA/VUCE"
             aria-label="Herramientas DGA/VUCE"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            onClick={(e) => e.stopPropagation()}
           >
             <ShieldCheck className="h-4 w-4" />
           </Button>
@@ -132,7 +132,7 @@ export function RastreosEnvioMenu({ variant = "button", className }: { variant?:
             className={`h-8 w-8 text-muted-foreground hover:text-primary ${className ?? ""}`}
             title="Rastreos de Envío"
             aria-label="Rastreos de Envío"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            onClick={(e) => e.stopPropagation()}
           >
             <Ship className="h-4 w-4" />
           </Button>
