@@ -30,7 +30,7 @@ import type { ReactNode, ComponentType } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
-import logoAAsset from "@/assets/logo-a-adecomex.png.asset.json";
+import { AdecomexFlowLogo } from "@/components/adecomex-flow-logo";
 
 type SubItem = {
   to: string;
@@ -284,16 +284,12 @@ function AppSidebarInner() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-3 px-3 py-3">
-          <div className="h-14 w-14 grid shrink-0 place-items-center overflow-hidden rounded-2xl bg-sidebar-accent border-2 border-sidebar-accent-foreground/30 shadow-sm">
-            <img src={logoAAsset.url} alt="A de ADECOMEX FLOW" className="h-full w-full object-cover" />
-          </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <div className="font-display font-bold text-lg text-sidebar-accent-foreground leading-tight whitespace-nowrap">ADECOMEX FLOW</div>
-              <div className="text-[9.5px] uppercase tracking-normal text-sidebar-accent-foreground/90 leading-snug"><span className="whitespace-nowrap">Plataforma inteligente de gestión</span><br />y logística de cargas</div>
-            </div>
-          )}
+        <div className={collapsed ? "flex justify-center px-1 py-3" : "px-3 py-3"}>
+          <AdecomexFlowLogo
+            compact={collapsed}
+            className={collapsed ? "h-10 w-10" : "w-full"}
+            markClassName={collapsed ? "h-8 w-8" : undefined}
+          />
         </div>
       </SidebarHeader>
 

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Ship, GraduationCap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { AdecomexFlowLogo } from "@/components/adecomex-flow-logo";
 
 type PortalVariant = "cliente" | "estudiante" | null;
 
@@ -219,19 +220,7 @@ function AuthPage() {
     <div className="min-h-screen grid lg:grid-cols-2">
       <div className="hidden lg:flex flex-col justify-between p-12 bg-[var(--primary-deep)] text-primary-foreground">
         <div className="flex items-center gap-3">
-          <div className="h-11 w-11 grid place-items-center rounded-lg bg-accent text-accent-foreground">
-            {variant === "estudiante" ? <GraduationCap className="h-6 w-6" /> : <Ship className="h-6 w-6" />}
-          </div>
-          <div>
-            <div className="font-display font-bold text-xl leading-tight">ADECOMEX SRL</div>
-            <div className="text-xs opacity-70">
-              {variant === "cliente"
-                ? "PORTAL DE CLIENTES"
-                : variant === "estudiante"
-                  ? "PORTAL DE ESTUDIANTES"
-                  : "GESTION Y LOGISTICA"}
-            </div>
-          </div>
+          <AdecomexFlowLogo className="w-full max-w-sm" />
         </div>
         <div>
           <h1 className="font-display text-4xl font-bold leading-tight">

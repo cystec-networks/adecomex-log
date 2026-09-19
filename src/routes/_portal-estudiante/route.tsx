@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { LogOut, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
-import logoAsset from "@/assets/logo-adecomex-horizontal.png.asset.json";
+import { AdecomexFlowLogo } from "@/components/adecomex-flow-logo";
 
 export const Route = createFileRoute("/_portal-estudiante")({
   ssr: false,
@@ -88,13 +88,7 @@ function PortalEstudianteLayout() {
       <header className="h-16 border-b bg-card/60 backdrop-blur sticky top-0 z-30">
         <div className="max-w-6xl mx-auto h-full px-4 flex items-center gap-3">
           <Link to="/portal-estudiante" className="flex items-center gap-2 min-w-0">
-            <div className="h-10 px-1.5 rounded-md bg-white overflow-hidden grid place-items-center shrink-0">
-              <img src={logoAsset.url} alt="ADECOMEX SRL" className="h-full w-auto object-contain" />
-            </div>
-            <div className="min-w-0">
-              <div className="font-display font-bold leading-tight">ADECOMEX SRL</div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Portal de estudiantes</div>
-            </div>
+            <AdecomexFlowLogo className="h-12 max-w-[310px]" markClassName="h-9 w-9" />
           </Link>
           <div className="flex-1" />
           {estudiante && (
