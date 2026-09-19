@@ -10,7 +10,7 @@ type AdecomexFlowLogoProps = {
 export function AdecomexFlowLogo({ compact = false, className, markClassName }: AdecomexFlowLogoProps) {
   return (
     <div
-      aria-label="ADECOMEX Flow — Plataforma inteligente de gestión de importación"
+      aria-label="ADECOMEX Flow — Plataforma inteligente de gestión y logística de cargas"
       className={cn(
         "flex items-center overflow-hidden rounded-md bg-brand-surface text-primary shadow-sm ring-1 ring-border/60",
         compact ? "aspect-square justify-center p-1" : "gap-2 px-2.5 py-1.5",
