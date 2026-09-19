@@ -82,6 +82,7 @@ type FormState = {
   es_mercancia_peligrosa: string;
   hazmat_un_numero: string; hazmat_clase: string; hazmat_grupo_empaque: string; hazmat_punto_inflamacion: string;
   hazmat_contaminante_marino: string; hazmat_nombre_tecnico: string; hazmat_recargo: string;
+  manifiesto_no: string;
   area_code: string; biz_company_code: string; empty_yn: string; loading_location_code: string; unloading_location_code: string;
   via_entrance: string; country_code: string; bl_type: string; transit_type: string; express_type: string;
   consignor_tipo: string; consignor_doc_tipo: string; consignor_doc_numero: string; consignor_pais: string; consignor_fax: string;
