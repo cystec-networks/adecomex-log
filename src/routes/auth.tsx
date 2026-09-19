@@ -220,7 +220,7 @@ function AuthPage() {
     <div className="min-h-screen grid lg:grid-cols-2">
       <div className="hidden lg:flex flex-col justify-between p-12 bg-[var(--primary-deep)] text-primary-foreground">
         <div className="flex items-center gap-3">
-          <AdecomexFlowLogo className="w-full max-w-sm" />
+          <AdecomexFlowLogo className="w-fit max-w-sm" markClassName="h-16 w-auto" />
         </div>
         <div>
           <h1 className="font-display text-4xl font-bold leading-tight">
