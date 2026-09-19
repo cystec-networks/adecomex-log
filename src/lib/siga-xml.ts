@@ -742,3 +742,121 @@ ${contenedorBl}
 </ImportManifest>
 `;
 }
+
+/** Bloque Consignador/Consignatario/Notify compartido por los manifiestos SIGA. */
+function parteManifiesto(op: any, pre: "Consignor" | "Consignee" | "Notify", nat: string): string {
+  const T = (name: string, value: unknown, indent = "      ") =>
+    `${indent}<${name}>${value === null || value === undefined ? "" : esc(value)}</${name}>`;
+  const g = (k: string) => op?.[`${pre.toLowerCase()}_${k}`];
+  const base =
+    pre === "Consignor"
+      ? { nombre: op?.shipper_nombre, tel: op?.shipper_telefono, email: op?.shipper_email, calle: op?.shipper_direccion, doc: op?.shipper_tax_id }
+      : pre === "Consignee"
+        ? { nombre: op?.comprador_nombre, tel: op?.comprador_telefono, email: op?.comprador_email, calle: op?.comprador_direccion, doc: op?.comprador_tax_id }
+        : { nombre: op?.notify_nombre || op?.notify_party, tel: op?.notify_telefono, email: op?.notify_email, calle: op?.notify_calle, doc: op?.notify_doc_numero };
+  return [
+    T(`${pre}Type`, g("tipo")),
+    T(`${pre}Code`, personCode(g("doc_numero") || base.doc, g("pais") || nat)),
+    T(`${pre}Tel`, base.tel),
+    T(`${pre}CountryCode`, g("pais")),
+    T(`${pre}Name`, base.nombre),
+    T(`${pre}DocumentType`, g("doc_tipo")),
+    T(`${pre}DocumentNo`, cleanId(g("doc_numero") || base.doc)),
+    T(`${pre}Email`, base.email),
+    T(`${pre}Fax`, g("fax")),
+    T(`${pre}ZipCode`, g("zip")),
+    T(`${pre}Street`, g("calle") || base.calle),
+    T(`${pre}ZoneName`, g("zona")),
+    T(`${pre}City`, g("ciudad")),
+  ].join("\n");
+}
+
+// ===== Manifiesto Consolidado de Importación (ImportConsolidatedMaster.xsd) =====
+// BL Madre del consolidador/NVOCC + los BL Hijos emitidos por ADECOMEX.
+// Se omite por completo ManifestVehicle (no aplica al negocio).
+
+/** Número de BL Hijo (HouseBLNo) de una operación logística. */
+export function houseBlNoDe(op: any): string {
+  return op?.bl_hijo_numero || "";
+}
+
+/** Campos obligatorios del manifiesto consolidado: advierten, no bloquean. */
+export function validarManifiestoConsolidado(ops: ManifiestoOperacion[]): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const need = (cond: any, field: string, label: string) => { if (!cond) issues.push({ field, label }); };
+  const head = ops[0] ?? {};
+  need(ops.length > 0, "ops", "Al menos una operación logística");
+  need(head.manifiesto_no, "manifiesto_no", "Número de manifiesto SIGA (ManifestNo)");
+  need(head.bl_awb, "bl_awb", "BL Madre del consolidador (BLNo)");
+  ops.forEach((op, i) => {
+    const et = `Operación ${op?.numero ?? i + 1}`;
+    need(houseBlNoDe(op), `hbl[${i}].no`, `${et}: número de BL Hijo (HouseBLNo)`);
+    need(op?.transit_type, `hbl[${i}].transit`, `${et}: tipo de tránsito (TransitType)`);
+    need(op?.loading_location_code || op?.origen, `hbl[${i}].port`, `${et}: puerto de carga (LoadingPortCode)`);
+    need(op?.producto, `hbl[${i}].goods`, `${et}: descripción de la mercancía`);
+    need(op?.cantidad_bultos != null, `hbl[${i}].qty`, `${et}: cantidad de bultos`);
+    need(op?.peso_bruto_kg != null, `hbl[${i}].weight`, `${et}: peso bruto`);
+    need(op?.shipper_nombre, `hbl[${i}].consignor`, `${et}: nombre del consignador`);
+    need(op?.comprador_nombre, `hbl[${i}].consignee`, `${et}: nombre del consignatario`);
+  });
+  return issues;
+}
+
+export function buildImportConsolidatedMasterXml(
+  ops: ManifiestoOperacion[],
+  contenedores: ManifiestoContenedor[],
+  broker: BrokerConfig,
+): string {
+  const head = ops[0] ?? {};
+  const nat = broker.defaultNationality || "214";
+  const T = (name: string, value: unknown, indent = "    ") =>
+    `${indent}<${name}>${value === null || value === undefined ? "" : esc(value)}</${name}>`;
+
+  const bls = ops
+    .map((op) =>
+      [
+        "    <ManifestBL>",
+        T("HouseBLNo", houseBlNoDe(op), "      "),
+        T("TransitType", op.transit_type, "      "),
+        T("LastPortCode", op.via_entrance || "", "      "),
+        T("LoadingPortCode", op.loading_location_code || op.origen, "      "),
+        T("GoodsName", op.producto, "      "),
+        T("PackageUnitCode", op.tipo_bultos, "      "),
+        T("PackageQty", num(op.cantidad_bultos), "      "),
+        T("GrossWeight", num(op.peso_bruto_kg), "      "),
+        T("Value", num(op.flete_monto), "      "),
+        T("FlightCharge", num(op.flete_monto), "      "),
+        T("Volume", num(op.volumen_m3), "      "),
+        T("ExpressType", op.express_type, "      "),
+        parteManifiesto(op, "Consignor", nat),
+        parteManifiesto(op, "Consignee", nat),
+        parteManifiesto(op, "Notify", nat),
+        "    </ManifestBL>",
+      ].join("\n"),
+    )
+    .join("\n");
+
+  const conts = contenedores.filter((c) => (c.numero_contenedor ?? "").toString().trim());
+  const contenedorBl = conts
+    .map((c) => {
+      const op = ops.find((o) => o.id === c.operacion_logistica_id) ?? head;
+      return [
+        "    <ContainerBL>",
+        T("HouseBLNo", houseBlNoDe(op), "      "),
+        T("ContainerNo", c.numero_contenedor, "      "),
+        "    </ContainerBL>",
+      ].join("\n");
+    })
+    .join("\n");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<ImportConsolidateMaster xmlns="http://aduanas.gob.do/XSD/ImportConsolidatedMaster/ImportConsolidatedMaster.xsd">
+  <ConsolidatedBL>
+${T("ManifestNo", head.manifiesto_no)}
+${T("BLNo", head.bl_awb)}
+${bls}
+${contenedorBl}
+  </ConsolidatedBL>
+</ImportConsolidateMaster>
+`;
+}
