@@ -815,6 +815,7 @@ function DetalleLogistica() {
                       <td className="px-2 py-1"><Input value={c.sello1} onChange={(e) => setCont(i, "sello1", e.target.value)} disabled={readOnly} /></td>
                       <td className="px-2 py-1"><Input value={c.sello2} onChange={(e) => setCont(i, "sello2", e.target.value)} disabled={readOnly} /></td>
                       <td className="px-2 py-1"><Input value={c.tipo} onChange={(e) => setCont(i, "tipo", e.target.value)} disabled={readOnly} placeholder="40HC" /></td>
+                      <td className="px-2 py-1"><Input value={c.placa} onChange={(e) => setCont(i, "placa", e.target.value)} disabled={readOnly} /></td>
                       {!readOnly && (
                         <td className="px-2 py-1 text-right">
                           <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive"
