@@ -1,0 +1,1 @@
+ALTER TABLE public.operaciones_logistica ADD COLUMN IF NOT EXISTS manifiesto_no TEXT;

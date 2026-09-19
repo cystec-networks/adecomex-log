@@ -4632,6 +4632,7 @@ export type Database = {
           incoterm: string | null
           loading_location_code: string | null
           lugar_recepcion: string | null
+          manifiesto_no: string | null
           naviera: string | null
           notify_calle: string | null
           notify_ciudad: string | null
@@ -4745,6 +4746,7 @@ export type Database = {
           incoterm?: string | null
           loading_location_code?: string | null
           lugar_recepcion?: string | null
+          manifiesto_no?: string | null
           naviera?: string | null
           notify_calle?: string | null
           notify_ciudad?: string | null
@@ -4858,6 +4860,7 @@ export type Database = {
           incoterm?: string | null
           loading_location_code?: string | null
           lugar_recepcion?: string | null
+          manifiesto_no?: string | null
           naviera?: string | null
           notify_calle?: string | null
           notify_ciudad?: string | null
