@@ -162,7 +162,7 @@ function SolicitudPagoTransportePage() {
     <div className="min-h-screen bg-muted/30 px-4 py-10">
       <div className="mx-auto w-full max-w-2xl space-y-6">
         <header className="flex items-center gap-3">
-          <AdecomexFlowLogo className="w-full max-w-sm" />
+          <AdecomexFlowLogo className="w-fit max-w-sm" markClassName="h-14 w-auto" />
         </header>
 
         <h1 className="font-display text-2xl font-bold">Solicitud de pago de transporte</h1>
