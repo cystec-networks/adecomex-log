@@ -287,8 +287,9 @@ function AppSidebarInner() {
         <div className={collapsed ? "flex justify-center px-1 py-3" : "px-3 py-3"}>
           <AdecomexFlowLogo
             compact={collapsed}
-            className={collapsed ? "h-10 w-10" : "w-full"}
-            markClassName={collapsed ? "h-8 w-8" : undefined}
+            wordmarkOnly={!collapsed}
+            className={collapsed ? "h-10 w-10" : "h-16 w-full p-2"}
+            markClassName={collapsed ? "h-8 w-8" : "h-full w-full"}
           />
         </div>
       </SidebarHeader>
