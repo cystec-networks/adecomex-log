@@ -606,28 +606,13 @@ function DetalleExpediente() {
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger><ShieldCheck className="h-4 w-4" /> Herramientas DGA/VUCE</DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="w-64">
-                    {DGA_VUCE_TOOLS.map((t) => {
-                      const Icon = t.icon;
-                      return (
-                        <DropdownMenuItem key={t.url} asChild>
-                          <a href={t.url} target="_blank" rel="noopener noreferrer" className="cursor-pointer"><Icon className="h-4 w-4 text-accent" />{t.label}</a>
-                        </DropdownMenuItem>
-                      );
-                    })}
+                    <HerramientasDgaVuceItems />
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger><Ship className="h-4 w-4" /> Rastreos de Envío</DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="max-h-80 w-64 overflow-y-auto">
-                    <DropdownMenuLabel className="text-xs text-muted-foreground">Marítimos</DropdownMenuLabel>
-                    {RASTREO_ENVIO_TOOLS.maritimos.map((t) => (
-                      <DropdownMenuItem key={t.url} asChild><a href={t.url} target="_blank" rel="noopener noreferrer">{t.label}</a></DropdownMenuItem>
-                    ))}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="text-xs text-muted-foreground">Aéreos</DropdownMenuLabel>
-                    {RASTREO_ENVIO_TOOLS.aereos.map((t) => (
-                      <DropdownMenuItem key={t.url} asChild><a href={t.url} target="_blank" rel="noopener noreferrer">{t.label}</a></DropdownMenuItem>
-                    ))}
+                    <RastreosEnvioItems />
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 <DropdownMenuSeparator />
