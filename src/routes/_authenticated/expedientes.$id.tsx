@@ -59,6 +59,12 @@ import { TabRecepcion } from "@/components/tab-recepcion";
 import { EscanearBlButton, EscanearFacturaButton as EscanearFacturaExpButton } from "@/components/escanear-documento-expediente-buttons";
 import { type OcrExtraction } from "@/lib/ai-ocr.functions";
 import {
+  HerramientasDgaVuceItems,
+  HerramientasDgaVuceMenu,
+  RastreosEnvioItems,
+  RastreosEnvioMenu,
+} from "@/components/accesos-rapidos-expediente";
+import {
   FORMULARIO_DUA_RD,
   ServicioAduaneroFields,
   servicioAduaneroDeExpediente,
@@ -76,38 +82,6 @@ const SUG_INCOTERM = ["EXW", "FCA", "FAS", "FOB", "CFR", "CIF", "CPT", "CIP", "D
 const SUG_PUERTO_SALIDA = ["Shanghai", "Ningbo", "Shenzhen", "Hong Kong", "Busan", "Kaohsiung", "Miami", "Port Everglades", "Jacksonville", "Houston", "New York", "Valencia", "Barcelona", "Algeciras", "Rotterdam", "Hamburgo", "Amberes", "Cartagena", "Manzanillo (PA)", "Balboa"];
 const SUG_PUERTO_ARRIBO = ["Puerto Multimodal Caucedo", "Puerto de Haina Oriental", "Puerto de Haina Occidental", "Puerto de Río Haina", "Puerto de Boca Chica", "Puerto de Manzanillo", "Puerto Plata", "AILA (Las Américas)", "AIC (Cibao)", "AIP (Punta Cana)", "Aeropuerto La Isabela"];
 const SUG_PREFERENCIA = ["DR-CAFTA", "EPA (Unión Europea)", "ALADI", "SGP", "Ninguna"];
-
-const DGA_VUCE_TOOLS = [
-  { label: "Buscador de Productos", url: "https://www.aduanas.gob.do/consultas/buscador-de-productos/", icon: Search },
-  { label: "Consulta Aranceles VUCE", url: "https://sirevuce.aduanas.gob.do/", icon: FileText },
-  { label: "Arancel de Aduanas 7ma Enmienda 2022", url: "https://www.aduanas.gob.do/consultas/arancel-de-aduanas-7ma-enmienda-2022/", icon: Scale },
-  { label: "Portal VUCE-RD", url: "https://vucerd.gob.do/", icon: ShieldCheck },
-  { label: "Portal SIGA", url: "https://siga.aduanas.gob.do/", icon: LayoutGrid },
-  { label: "VUCE - Gestión de Trámites", url: "https://app.vucerd.gob.do/auth", icon: FileCheck },
-  { label: "DPH", url: "https://www.dph.net.do/Account/Login?ReturnUrl=%2F", icon: Globe },
-  { label: "DPW - Caucedo", url: "https://webapp.caucedo.com/#/home", icon: Ship },
-  { label: "HIT - Estatus de Contenedores", url: "https://hit.com.do/estatus-de-contenedores/", icon: Container },
-];
-
-const RASTREO_ENVIO_TOOLS = {
-  maritimos: [
-    { label: "CMA-CGM", url: "http://www.cma-cgm.com/eBusiness/Tracking/Default.aspx" },
-    { label: "COSCO SHIPPING", url: "https://elines.coscoshipping.com/ebusiness/cargoTracking?trackingType=BILLOFLADING&number" },
-    { label: "EVERGREEN", url: "http://www.shipmentlink.com/servlet/TDB1_CargoTracking.do" },
-    { label: "HAPAG LLOYD", url: "https://www.hapag-lloyd.com/en/online-business/track/track-by-booking-solution.html" },
-    { label: "MAERSK S (Hamburg Süd)", url: "https://www.hamburgsud.com/tracking/" },
-    { label: "MAERSK L", url: "http://www.maerskline.com/appmanager/maerskline/public?_nfpb=true&_nfls=false&_pageLabel=page_tracking3_trackSimple" },
-    { label: "MSC", url: "https://www.msc.com/es/track-a-shipment" },
-    { label: "OOCL", url: "https://www.oocl.com/eng/ourservices/eservices/cargotracking/Pages/cargotracking.aspx" },
-    { label: "ONE", url: "https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking" },
-    { label: "ZIM", url: "https://www.zim.com/es/tools/track-a-shipment" },
-  ],
-  aereos: [
-    { label: "DHL", url: "https://www.dhl.com/do-es/home/rastreo.html" },
-    { label: "FEDEX", url: "http://www.fedex.com/us_espanol/" },
-    { label: "UPS", url: "http://www.ups.com/WebTracking/track?loc=es_ES&WT.svl=PriNav" },
-  ],
-};
 
 const searchSchema = z.object({
   nuevo: fallback(z.string(), "").default(""),
@@ -603,50 +577,8 @@ function DetalleExpediente() {
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <ShieldCheck className="h-4 w-4 mr-1" /> Herramientas DGA/VUCE
-                    <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 p-1">
-                  {DGA_VUCE_TOOLS.map((t) => {
-                    const Icon = t.icon;
-                    return (
-                      <DropdownMenuItem key={t.url} asChild>
-                        <a href={t.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
-                          <Icon className="h-4 w-4 shrink-0 text-accent" />
-                          <span>{t.label}</span>
-                        </a>
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Ship className="h-4 w-4 mr-1" /> Rastreos de Envío
-                    <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 p-1 max-h-96 overflow-y-auto">
-                  <DropdownMenuLabel className="text-xs text-muted-foreground">Marítimos</DropdownMenuLabel>
-                  {RASTREO_ENVIO_TOOLS.maritimos.map((t) => (
-                    <DropdownMenuItem key={t.url} asChild>
-                      <a href={t.url} target="_blank" rel="noopener noreferrer" className="cursor-pointer">{t.label}</a>
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs text-muted-foreground">Aéreos</DropdownMenuLabel>
-                  {RASTREO_ENVIO_TOOLS.aereos.map((t) => (
-                    <DropdownMenuItem key={t.url} asChild>
-                      <a href={t.url} target="_blank" rel="noopener noreferrer" className="cursor-pointer">{t.label}</a>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <HerramientasDgaVuceMenu />
+              <RastreosEnvioMenu />
               <RastrearEmbarqueButton
                 containerNumber={expData.numeros_contenedores}
                 blNumber={expData.bl_awb}
@@ -680,28 +612,13 @@ function DetalleExpediente() {
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger><ShieldCheck className="h-4 w-4" /> Herramientas DGA/VUCE</DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="w-64">
-                    {DGA_VUCE_TOOLS.map((t) => {
-                      const Icon = t.icon;
-                      return (
-                        <DropdownMenuItem key={t.url} asChild>
-                          <a href={t.url} target="_blank" rel="noopener noreferrer" className="cursor-pointer"><Icon className="h-4 w-4 text-accent" />{t.label}</a>
-                        </DropdownMenuItem>
-                      );
-                    })}
+                    <HerramientasDgaVuceItems />
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger><Ship className="h-4 w-4" /> Rastreos de Envío</DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="max-h-80 w-64 overflow-y-auto">
-                    <DropdownMenuLabel className="text-xs text-muted-foreground">Marítimos</DropdownMenuLabel>
-                    {RASTREO_ENVIO_TOOLS.maritimos.map((t) => (
-                      <DropdownMenuItem key={t.url} asChild><a href={t.url} target="_blank" rel="noopener noreferrer">{t.label}</a></DropdownMenuItem>
-                    ))}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="text-xs text-muted-foreground">Aéreos</DropdownMenuLabel>
-                    {RASTREO_ENVIO_TOOLS.aereos.map((t) => (
-                      <DropdownMenuItem key={t.url} asChild><a href={t.url} target="_blank" rel="noopener noreferrer">{t.label}</a></DropdownMenuItem>
-                    ))}
+                    <RastreosEnvioItems />
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 <DropdownMenuSeparator />
