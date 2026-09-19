@@ -180,7 +180,7 @@ export function SolicitudPagoPrintView({ solicitud }: { solicitud: SolicitudPago
         ) : null}
 
         <div className="mt-3 border-t pt-1.5 text-center text-[10px] text-muted-foreground">
-          ADECOMEX SRL · Documento generado electrónicamente · {s.numero_control}
+          ADECOMEX SRL · Documento generado electrónicamente · {s.numero_viaje?.trim() || s.numero_control}
         </div>
       </div>
     </>
