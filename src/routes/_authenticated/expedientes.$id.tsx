@@ -77,38 +77,6 @@ const SUG_PUERTO_SALIDA = ["Shanghai", "Ningbo", "Shenzhen", "Hong Kong", "Busan
 const SUG_PUERTO_ARRIBO = ["Puerto Multimodal Caucedo", "Puerto de Haina Oriental", "Puerto de Haina Occidental", "Puerto de Río Haina", "Puerto de Boca Chica", "Puerto de Manzanillo", "Puerto Plata", "AILA (Las Américas)", "AIC (Cibao)", "AIP (Punta Cana)", "Aeropuerto La Isabela"];
 const SUG_PREFERENCIA = ["DR-CAFTA", "EPA (Unión Europea)", "ALADI", "SGP", "Ninguna"];
 
-const DGA_VUCE_TOOLS = [
-  { label: "Buscador de Productos", url: "https://www.aduanas.gob.do/consultas/buscador-de-productos/", icon: Search },
-  { label: "Consulta Aranceles VUCE", url: "https://sirevuce.aduanas.gob.do/", icon: FileText },
-  { label: "Arancel de Aduanas 7ma Enmienda 2022", url: "https://www.aduanas.gob.do/consultas/arancel-de-aduanas-7ma-enmienda-2022/", icon: Scale },
-  { label: "Portal VUCE-RD", url: "https://vucerd.gob.do/", icon: ShieldCheck },
-  { label: "Portal SIGA", url: "https://siga.aduanas.gob.do/", icon: LayoutGrid },
-  { label: "VUCE - Gestión de Trámites", url: "https://app.vucerd.gob.do/auth", icon: FileCheck },
-  { label: "DPH", url: "https://www.dph.net.do/Account/Login?ReturnUrl=%2F", icon: Globe },
-  { label: "DPW - Caucedo", url: "https://webapp.caucedo.com/#/home", icon: Ship },
-  { label: "HIT - Estatus de Contenedores", url: "https://hit.com.do/estatus-de-contenedores/", icon: Container },
-];
-
-const RASTREO_ENVIO_TOOLS = {
-  maritimos: [
-    { label: "CMA-CGM", url: "http://www.cma-cgm.com/eBusiness/Tracking/Default.aspx" },
-    { label: "COSCO SHIPPING", url: "https://elines.coscoshipping.com/ebusiness/cargoTracking?trackingType=BILLOFLADING&number" },
-    { label: "EVERGREEN", url: "http://www.shipmentlink.com/servlet/TDB1_CargoTracking.do" },
-    { label: "HAPAG LLOYD", url: "https://www.hapag-lloyd.com/en/online-business/track/track-by-booking-solution.html" },
-    { label: "MAERSK S (Hamburg Süd)", url: "https://www.hamburgsud.com/tracking/" },
-    { label: "MAERSK L", url: "http://www.maerskline.com/appmanager/maerskline/public?_nfpb=true&_nfls=false&_pageLabel=page_tracking3_trackSimple" },
-    { label: "MSC", url: "https://www.msc.com/es/track-a-shipment" },
-    { label: "OOCL", url: "https://www.oocl.com/eng/ourservices/eservices/cargotracking/Pages/cargotracking.aspx" },
-    { label: "ONE", url: "https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking" },
-    { label: "ZIM", url: "https://www.zim.com/es/tools/track-a-shipment" },
-  ],
-  aereos: [
-    { label: "DHL", url: "https://www.dhl.com/do-es/home/rastreo.html" },
-    { label: "FEDEX", url: "http://www.fedex.com/us_espanol/" },
-    { label: "UPS", url: "http://www.ups.com/WebTracking/track?loc=es_ES&WT.svl=PriNav" },
-  ],
-};
-
 const searchSchema = z.object({
   nuevo: fallback(z.string(), "").default(""),
   solicitud: fallback(z.string(), "").default(""),
