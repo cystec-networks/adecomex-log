@@ -226,12 +226,21 @@ function CatalogTable({ table, isAdmin }: { table: TableKey; isAdmin: boolean })
   const fields = FIELDS[table];
   const [dialog, setDialog] = useState<{ mode: "new" | "edit"; row?: any } | null>(null);
 
+  // Identifica una fila de forma única: por id cuando la tabla lo tiene,
+  // si no por código (algunos catálogos comparten código entre importación/exportación).
+  const filtroFila = (query: any, row: any) => {
+    if (row?.id) return query.eq("id", row.id);
+    let q2 = query.eq("codigo", row.codigo);
+    if (row?.tipo_operacion) q2 = q2.eq("tipo_operacion", row.tipo_operacion);
+    return q2;
+  };
+
   const upsert = useMutation({
     mutationFn: async (payload: any) => {
       const cleaned: any = {};
       fields.forEach((f) => { cleaned[f.k] = payload[f.k] || null; });
       if (dialog?.mode === "edit") {
-        const { error } = await supabase.from(table).update(cleaned).eq("codigo", dialog.row.codigo);
+        const { error } = await filtroFila(supabase.from(table).update(cleaned), dialog.row);
         if (error) throw error;
       } else {
         const { error } = await supabase.from(table).insert(cleaned);
@@ -247,8 +256,8 @@ function CatalogTable({ table, isAdmin }: { table: TableKey; isAdmin: boolean })
   });
 
   const eliminar = useMutation({
-    mutationFn: async (codigo: string) => {
-      const { error } = await supabase.from(table).delete().eq("codigo", codigo);
+    mutationFn: async (row: any) => {
+      const { error } = await filtroFila(supabase.from(table).delete(), row);
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Eliminado"); qc.invalidateQueries({ queryKey: [table] }); },
