@@ -32,6 +32,7 @@ import { BlHijoPdfButton, type BlHijoPdfButtonHandle } from "@/components/bl-hij
 import { SolicitudBookingPdfButton, type SolicitudBookingPdfButtonHandle } from "@/components/solicitud-booking-pdf-button";
 import { CotizacionLogisticaPdfButton, type CotizacionLogisticaPdfButtonHandle } from "@/components/cotizacion-logistica-pdf-button";
 import { ManifiestoXmlDialog } from "@/components/generar-xml-manifiesto";
+import { ManifiestoConsolidadoXmlDialog } from "@/components/generar-xml-manifiesto-consolidado";
 import { useQuery as useCatalogoQuery } from "@tanstack/react-query";
 
 /** Registro de auditoría de la operación logística (mismo patrón que Expedientes). */
@@ -240,6 +241,7 @@ function DetalleLogistica() {
   const [contenedores, setContenedores] = useState<ContenedorFila[]>([]);
   const [hazmatFaltantes, setHazmatFaltantes] = useState<string[]>([]);
   const [manifiestoOpen, setManifiestoOpen] = useState(false);
+  const [manifiestoConsOpen, setManifiestoConsOpen] = useState(false);
 
   const constanciaRef = useRef<ConstanciaLogisticaButtonHandle>(null);
   const blHijoRef = useRef<BlHijoPdfButtonHandle>(null);
@@ -756,6 +758,9 @@ function DetalleLogistica() {
                 <DropdownMenuItem onSelect={() => setManifiestoOpen(true)} className="cursor-pointer">
                   Generar Manifiesto XML (SIGA)
                 </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setManifiestoConsOpen(true)} className="cursor-pointer">
+                  Generar Manifiesto Consolidado XML (SIGA)
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <ConstanciaLogisticaButton ref={constanciaRef} datos={datosConstancia} showTrigger={false} />
@@ -763,6 +768,7 @@ function DetalleLogistica() {
             <SolicitudBookingPdfButton ref={bookingRef} datos={datosSolicitudBooking} showTrigger={false} />
             <CotizacionLogisticaPdfButton ref={cotizacionRef} datos={datosCotizacionLogistica} showTrigger={false} />
             <ManifiestoXmlDialog operacionId={id} open={manifiestoOpen} onOpenChange={setManifiestoOpen} />
+            <ManifiestoConsolidadoXmlDialog operacionId={id} open={manifiestoConsOpen} onOpenChange={setManifiestoConsOpen} />
             {modoEdicion && <Button disabled={saveMut.isPending} onClick={() => saveMut.mutate()} className="shadow-lg"><Save className="h-4 w-4 mr-2" />Guardar cambios</Button>}
           </>
         )}
