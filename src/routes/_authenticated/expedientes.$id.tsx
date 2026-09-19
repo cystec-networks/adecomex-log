@@ -59,6 +59,12 @@ import { TabRecepcion } from "@/components/tab-recepcion";
 import { EscanearBlButton, EscanearFacturaButton as EscanearFacturaExpButton } from "@/components/escanear-documento-expediente-buttons";
 import { type OcrExtraction } from "@/lib/ai-ocr.functions";
 import {
+  HerramientasDgaVuceItems,
+  HerramientasDgaVuceMenu,
+  RastreosEnvioItems,
+  RastreosEnvioMenu,
+} from "@/components/accesos-rapidos-expediente";
+import {
   FORMULARIO_DUA_RD,
   ServicioAduaneroFields,
   servicioAduaneroDeExpediente,
