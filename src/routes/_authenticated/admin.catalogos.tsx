@@ -310,7 +310,7 @@ function CatalogTable({ table, isAdmin }: { table: TableKey; isAdmin: boolean })
                 <tr><td colSpan={fields.length + 1} className="px-3 py-8 text-center text-muted-foreground">Sin resultados.</td></tr>
               )}
               {(data?.rows ?? []).map((r: any) => (
-                <tr key={r.codigo} className="border-t">
+                <tr key={r.id ?? r.codigo} className="border-t">
                   {fields.map((f) => (
                     <td key={f.k} className="px-3 py-2 tabular-nums">{r[f.k] ?? "—"}</td>
                   ))}
@@ -321,7 +321,7 @@ function CatalogTable({ table, isAdmin }: { table: TableKey; isAdmin: boolean })
                       </Button>
                       <Button
                         variant="ghost" size="icon" className="h-7 w-7 text-destructive"
-                        onClick={() => { if (confirm(`Eliminar ${r.codigo}?`)) eliminar.mutate(r.codigo); }}
+                        onClick={() => { if (confirm(`Eliminar ${r.codigo}?`)) eliminar.mutate(r); }}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
