@@ -672,30 +672,7 @@ export function buildImportManifestXml(
     T("CountryCode", head.country_code),
   ].join("\n");
 
-  const parte = (op: any, pre: "Consignor" | "Consignee" | "Notify") => {
-    const g = (k: string) => op?.[`${pre.toLowerCase()}_${k}`];
-    const base =
-      pre === "Consignor"
-        ? { nombre: op?.shipper_nombre, tel: op?.shipper_telefono, email: op?.shipper_email, calle: op?.shipper_direccion, doc: op?.shipper_tax_id }
-        : pre === "Consignee"
-          ? { nombre: op?.comprador_nombre, tel: op?.comprador_telefono, email: op?.comprador_email, calle: op?.comprador_direccion, doc: op?.comprador_tax_id }
-          : { nombre: op?.notify_nombre || op?.notify_party, tel: op?.notify_telefono, email: op?.notify_email, calle: op?.notify_calle, doc: op?.notify_doc_numero };
-    return [
-      T(`${pre}Type`, g("tipo"), "      "),
-      T(`${pre}Code`, personCode(g("doc_numero") || base.doc, g("pais") || nat), "      "),
-      T(`${pre}Tel`, base.tel, "      "),
-      T(`${pre}CountryCode`, g("pais"), "      "),
-      T(`${pre}Name`, base.nombre, "      "),
-      T(`${pre}DocumentType`, g("doc_tipo"), "      "),
-      T(`${pre}DocumentNo`, cleanId(g("doc_numero") || base.doc), "      "),
-      T(`${pre}Email`, base.email, "      "),
-      T(`${pre}Fax`, g("fax"), "      "),
-      T(`${pre}ZipCode`, g("zip"), "      "),
-      T(`${pre}Street`, g("calle") || base.calle, "      "),
-      T(`${pre}ZoneName`, g("zona"), "      "),
-      T(`${pre}City`, g("ciudad"), "      "),
-    ].join("\n");
-  };
+  const parte = (op: any, pre: "Consignor" | "Consignee" | "Notify") => parteManifiesto(op, pre, nat);
 
   const bls = ops
     .map((op) =>
