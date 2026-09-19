@@ -1,0 +1,1 @@
+ALTER TABLE public.logistica_contenedores ADD COLUMN IF NOT EXISTS placa TEXT;

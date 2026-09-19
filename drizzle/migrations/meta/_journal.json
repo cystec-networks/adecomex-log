@@ -36,6 +36,13 @@
       "when": 1789771688943,
       "tag": "0004_manifiesto_siga_logistica",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789822938945,
+      "tag": "0005_add_placa_contenedores",
+      "breakpoints": true
     }
   ]
 }

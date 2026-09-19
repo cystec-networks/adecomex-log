@@ -4278,6 +4278,7 @@ export type Database = {
           item_no: number | null
           numero_contenedor: string
           operacion_logistica_id: string
+          placa: string | null
           sello1: string | null
           sello2: string | null
           tipo_contenedor: string | null
@@ -4288,6 +4289,7 @@ export type Database = {
           item_no?: number | null
           numero_contenedor: string
           operacion_logistica_id: string
+          placa?: string | null
           sello1?: string | null
           sello2?: string | null
           tipo_contenedor?: string | null
@@ -4298,6 +4300,7 @@ export type Database = {
           item_no?: number | null
           numero_contenedor?: string
           operacion_logistica_id?: string
+          placa?: string | null
           sello1?: string | null
           sello2?: string | null
           tipo_contenedor?: string | null
