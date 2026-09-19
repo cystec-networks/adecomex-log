@@ -30,9 +30,23 @@ export const Route = createFileRoute("/api/public/solicitud-pago-transporte/$id"
           return Response.json({ error: "No encontrada" }, { status: 404, headers: CORS });
         }
 
+        const { data: t } = await (supabaseAdmin as any)
+          .from("transportes")
+          .select("numero_viaje")
+          .eq("solicitud_pago_id", parsed.data)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
         const { clientes, ...rest } = data as any;
         return Response.json(
-          { solicitud: { ...rest, cliente_nombre: clientes?.nombre ?? null } },
+          {
+            solicitud: {
+              ...rest,
+              cliente_nombre: clientes?.nombre ?? null,
+              numero_viaje: t?.numero_viaje ?? null,
+            },
+          },
           { headers: CORS },
         );
       },

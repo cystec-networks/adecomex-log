@@ -303,20 +303,48 @@ function SolicitudesPagoTransportePage() {
         throw new Error("Esta solicitud ya tiene un transporte vinculado — no se puede convertir de nuevo.");
       }
       const { data: u } = await supabase.auth.getUser();
+      // Leer siempre los valores actuales de la solicitud (pudo editarse antes de convertir)
+      const { data: fresca, error: errF } = await supabase
+        .from("solicitudes_pago_transporte")
+        .select("*")
+        .eq("id", r.id)
+        .single();
+      if (errF) throw errF;
+      const s = (fresca ?? r) as Row;
+
+      const cantidad = s.cantidad_viajes != null ? Number(s.cantidad_viajes) : null;
+      const precio = s.precio_viaje != null ? Number(s.precio_viaje) : null;
+      const margen = s.porcentaje_margen != null ? Number(s.porcentaje_margen) : null;
+      const facturar = cantidad != null && precio != null ? Number((cantidad * precio).toFixed(2)) : null;
+      const costoViaje = facturar != null && margen != null
+        ? Number((facturar * (1 - margen / 100)).toFixed(2))
+        : Number(s.monto || 0);
+
       const payload: any = {
-        cliente_id: r.cliente_id ?? null,
+        cliente_id: s.cliente_id ?? null,
         tipo: "terrestre",
-        transportista: r.transportista_nombre,
-        fecha_salida: r.fecha_salida ?? null,
-        eta: r.eta ?? null,
-        estado: r.estado_transporte ?? "programado",
-        origen: r.origen ?? null,
-        destino: r.destino ?? null,
-        flete_monto: netoDeSolicitud(r),
-        flete_moneda: "DOP",
-        numero_control_pago: r.numero_control,
-        solicitud_pago_id: r.id,
-        observaciones: r.descripcion ?? null,
+        transportista: s.transportista_nombre,
+        transportista_rnc: s.transportista_rnc ?? null,
+        transportista_telefono: s.telefono ?? null,
+        fecha_salida: s.fecha_salida ?? null,
+        eta: s.eta ?? null,
+        estado: s.estado_transporte ?? "programado",
+        origen: s.origen ?? null,
+        destino: s.destino ?? null,
+        placa_contenedor: s.placa_contenedor ?? null,
+        cantidad_viajes: cantidad,
+        precio_viaje: precio,
+        porcentaje_margen: margen,
+        costo_viaje: costoViaje,
+        descuento_cxc: Number(s.descuento_cxc ?? 0),
+        ingreso_facturado: facturar,
+        factura_costo_numero: s.factura_costo_numero ?? null,
+        factura_costo_fecha: s.factura_costo_fecha ?? null,
+        flete_monto: netoDeSolicitud(s),
+        flete_moneda: s.moneda || "DOP",
+        numero_control_pago: s.numero_control,
+        solicitud_pago_id: s.id,
+        observaciones: s.descripcion ?? null,
         created_by: u.user?.id ?? null,
       };
       const { data, error } = await supabase.from("transportes").insert(payload).select("id, numero_viaje").single();

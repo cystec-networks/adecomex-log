@@ -50,6 +50,13 @@
       "when": 1789823401153,
       "tag": "0006_add_manifiesto_no_logistica",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789835618155,
+      "tag": "0007_transportes_campos_solicitud_pago",
+      "breakpoints": true
     }
   ]
 }

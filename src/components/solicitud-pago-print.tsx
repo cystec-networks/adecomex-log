@@ -18,6 +18,7 @@ export type SolicitudPagoPrintData = {
   cliente_nombre?: string | null;
   descripcion?: string | null;
   created_at?: string | null;
+  numero_viaje?: string | null;
 };
 
 const fmtMoney = (n: number, m: string) =>
@@ -64,8 +65,12 @@ export function SolicitudPagoPrintView({ solicitud }: { solicitud: SolicitudPago
         </div>
 
         <div className="mt-2 rounded-md border border-primary/40 bg-primary/5 px-2 py-1.5 text-center">
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Número de control</div>
-          <div className="font-mono text-xl font-bold leading-tight text-primary">{s.numero_control}</div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            {s.numero_viaje?.trim() ? "N° Viaje / Ref." : "Número de control"}
+          </div>
+          <div className="font-mono text-xl font-bold leading-tight text-primary">
+            {s.numero_viaje?.trim() || s.numero_control}
+          </div>
         </div>
 
         <div className="mt-2">
@@ -175,7 +180,7 @@ export function SolicitudPagoPrintView({ solicitud }: { solicitud: SolicitudPago
         ) : null}
 
         <div className="mt-3 border-t pt-1.5 text-center text-[10px] text-muted-foreground">
-          ADECOMEX SRL · Documento generado electrónicamente · {s.numero_control}
+          ADECOMEX SRL · Documento generado electrónicamente · {s.numero_viaje?.trim() || s.numero_control}
         </div>
       </div>
     </>

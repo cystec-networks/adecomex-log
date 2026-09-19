@@ -6129,6 +6129,7 @@ export type Database = {
       }
       transportes: {
         Row: {
+          cantidad_viajes: number | null
           cliente_id: string | null
           contenedores_cantidad: number | null
           contenedores_detalle: string | null
@@ -6165,15 +6166,20 @@ export type Database = {
             | null
           pago_referencia: string | null
           placa_contenedor: string | null
+          porcentaje_margen: number | null
+          precio_viaje: number | null
           solicitud_pago_id: string | null
           tipo: Database["public"]["Enums"]["transporte_tipo"] | null
           transportista: string | null
+          transportista_rnc: string | null
+          transportista_telefono: string | null
           updated_at: string
           venta_moneda: string | null
           venta_monto: number | null
           venta_numero_factura: string | null
         }
         Insert: {
+          cantidad_viajes?: number | null
           cliente_id?: string | null
           contenedores_cantidad?: number | null
           contenedores_detalle?: string | null
@@ -6210,15 +6216,20 @@ export type Database = {
             | null
           pago_referencia?: string | null
           placa_contenedor?: string | null
+          porcentaje_margen?: number | null
+          precio_viaje?: number | null
           solicitud_pago_id?: string | null
           tipo?: Database["public"]["Enums"]["transporte_tipo"] | null
           transportista?: string | null
+          transportista_rnc?: string | null
+          transportista_telefono?: string | null
           updated_at?: string
           venta_moneda?: string | null
           venta_monto?: number | null
           venta_numero_factura?: string | null
         }
         Update: {
+          cantidad_viajes?: number | null
           cliente_id?: string | null
           contenedores_cantidad?: number | null
           contenedores_detalle?: string | null
@@ -6255,9 +6266,13 @@ export type Database = {
             | null
           pago_referencia?: string | null
           placa_contenedor?: string | null
+          porcentaje_margen?: number | null
+          precio_viaje?: number | null
           solicitud_pago_id?: string | null
           tipo?: Database["public"]["Enums"]["transporte_tipo"] | null
           transportista?: string | null
+          transportista_rnc?: string | null
+          transportista_telefono?: string | null
           updated_at?: string
           venta_moneda?: string | null
           venta_monto?: number | null
