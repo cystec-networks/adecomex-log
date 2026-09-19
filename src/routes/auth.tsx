@@ -178,7 +178,7 @@ function AuthPage() {
       ? "Consulta el estado de tus expedientes y gestiones aduanales en tiempo real."
       : variant === "estudiante"
         ? "Accede a tus programas, materiales y progreso académico."
-        : "Gestión integral de importaciones y trámites aduanales.";
+        : "Plataforma inteligente de gestión y logística de cargas.";
 
   const heroSubtitle =
     variant === "cliente"
@@ -219,8 +219,8 @@ function AuthPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       <div className="hidden lg:flex flex-col justify-between p-12 bg-[var(--primary-deep)] text-primary-foreground">
-        <div className="flex items-center gap-3">
-          <AdecomexFlowLogo className="w-fit max-w-sm" markClassName="h-16 w-auto" />
+        <div className="flex justify-center">
+          <AdecomexFlowLogo wordmarkOnly className="h-24 w-[26rem] max-w-full" />
         </div>
         <div>
           <h1 className="font-display text-4xl font-bold leading-tight">
