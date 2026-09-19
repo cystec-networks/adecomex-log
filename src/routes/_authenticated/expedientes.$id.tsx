@@ -571,50 +571,8 @@ function DetalleExpediente() {
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <ShieldCheck className="h-4 w-4 mr-1" /> Herramientas DGA/VUCE
-                    <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 p-1">
-                  {DGA_VUCE_TOOLS.map((t) => {
-                    const Icon = t.icon;
-                    return (
-                      <DropdownMenuItem key={t.url} asChild>
-                        <a href={t.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer">
-                          <Icon className="h-4 w-4 shrink-0 text-accent" />
-                          <span>{t.label}</span>
-                        </a>
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Ship className="h-4 w-4 mr-1" /> Rastreos de Envío
-                    <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 p-1 max-h-96 overflow-y-auto">
-                  <DropdownMenuLabel className="text-xs text-muted-foreground">Marítimos</DropdownMenuLabel>
-                  {RASTREO_ENVIO_TOOLS.maritimos.map((t) => (
-                    <DropdownMenuItem key={t.url} asChild>
-                      <a href={t.url} target="_blank" rel="noopener noreferrer" className="cursor-pointer">{t.label}</a>
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs text-muted-foreground">Aéreos</DropdownMenuLabel>
-                  {RASTREO_ENVIO_TOOLS.aereos.map((t) => (
-                    <DropdownMenuItem key={t.url} asChild>
-                      <a href={t.url} target="_blank" rel="noopener noreferrer" className="cursor-pointer">{t.label}</a>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <HerramientasDgaVuceMenu />
+              <RastreosEnvioMenu />
               <RastrearEmbarqueButton
                 containerNumber={expData.numeros_contenedores}
                 blNumber={expData.bl_awb}
