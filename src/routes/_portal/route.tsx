@@ -87,7 +87,7 @@ function PortalLayout() {
       <header className="h-16 border-b bg-card/60 backdrop-blur sticky top-0 z-30">
         <div className="max-w-6xl mx-auto h-full px-4 flex items-center gap-3">
           <Link to="/portal/embarques" className="flex items-center gap-2 min-w-0">
-            <AdecomexFlowLogo className="h-12 max-w-[310px]" markClassName="h-9 w-auto" />
+            <AdecomexFlowLogo wordmarkOnly className="h-12 w-44 px-2.5" />
           </Link>
           <div className="flex-1" />
           {cliente && (
