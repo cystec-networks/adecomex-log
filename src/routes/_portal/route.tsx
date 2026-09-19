@@ -78,7 +78,10 @@ function PortalLayout() {
     qc.clear();
     await supabase.auth.signOut();
     toast.success("Sesión cerrada");
-    navigate({ to: "/auth", replace: true });
+    // Redirigir al login en modo Portal (?next=/portal) para que /auth use el
+    // cliente del portal y no redirija automáticamente a la sesión de staff
+    // que persiste en el cliente principal (localStorage).
+    navigate({ to: "/auth", search: { next: "/portal" }, replace: true });
   };
 
 
