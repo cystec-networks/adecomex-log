@@ -14,6 +14,7 @@ import { ChevronRight, Trash2, AlarmClock, AlertTriangle, Clock, Plus, Copy } fr
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { Toggle } from "@/components/ui/toggle";
 import { WhatsAppButton } from "@/components/whatsapp-button";
+import { HerramientasDgaVuceMenu, RastreosEnvioMenu } from "@/components/accesos-rapidos-expediente";
 import { EmailButton } from "@/components/email-button";
 import { TruncatedCell } from "@/components/truncated-cell";
 import { useEffect, useState } from "react";
@@ -443,6 +444,7 @@ function Expedientes() {
       </td>
 
       <td className="px-1 py-2 align-middle text-right whitespace-nowrap">
+        <RastreosEnvioMenu variant="icon" />
         <WhatsAppButton
           phone={e.clientes?.telefono}
           clientName={e.clientes?.nombre}
@@ -495,6 +497,8 @@ function Expedientes() {
           <Link to="/expedientes" search={{ tipo: "exportacion", estado: estadoParam, eta: etaParam }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
           <Link to="/expedientes" search={{ tipo: "facturados", estado: estadoParam, eta: etaParam }} className={`px-3 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
         </div>
+        <HerramientasDgaVuceMenu />
+        <RastreosEnvioMenu />
         <Button size="sm" asChild>
           <Link to="/expedientes/$id" params={{ id: "nuevo" }} search={{ nuevo: "", solicitud: "", tipo: tipo === "exportacion" ? "exportacion" : "" }}><Plus className="h-4 w-4 mr-1" />{tipo === "exportacion" ? "Nuevo Expediente de Exportación" : "Nuevo Expediente"}</Link>
         </Button>
