@@ -32,6 +32,7 @@ import { BlHijoPdfButton, type BlHijoPdfButtonHandle } from "@/components/bl-hij
 import { SolicitudBookingPdfButton, type SolicitudBookingPdfButtonHandle } from "@/components/solicitud-booking-pdf-button";
 import { CotizacionLogisticaPdfButton, type CotizacionLogisticaPdfButtonHandle } from "@/components/cotizacion-logistica-pdf-button";
 import { ManifiestoXmlDialog } from "@/components/generar-xml-manifiesto";
+import { ManifiestoConsolidadoXmlDialog } from "@/components/generar-xml-manifiesto-consolidado";
 import { useQuery as useCatalogoQuery } from "@tanstack/react-query";
 
 /** Registro de auditoría de la operación logística (mismo patrón que Expedientes). */
@@ -82,6 +83,7 @@ type FormState = {
   es_mercancia_peligrosa: string;
   hazmat_un_numero: string; hazmat_clase: string; hazmat_grupo_empaque: string; hazmat_punto_inflamacion: string;
   hazmat_contaminante_marino: string; hazmat_nombre_tecnico: string; hazmat_recargo: string;
+  manifiesto_no: string;
   area_code: string; biz_company_code: string; empty_yn: string; loading_location_code: string; unloading_location_code: string;
   via_entrance: string; country_code: string; bl_type: string; transit_type: string; express_type: string;
   consignor_tipo: string; consignor_doc_tipo: string; consignor_doc_numero: string; consignor_pais: string; consignor_fax: string;
@@ -93,7 +95,7 @@ type FormState = {
   notify_ciudad: string; notify_calle: string;
 };
 const MANIFIESTO_TEXT_KEYS = [
-  "area_code", "biz_company_code", "loading_location_code", "unloading_location_code", "via_entrance", "country_code",
+  "manifiesto_no", "area_code", "biz_company_code", "loading_location_code", "unloading_location_code", "via_entrance", "country_code",
   "bl_type", "transit_type", "express_type",
   "consignor_tipo", "consignor_doc_tipo", "consignor_doc_numero", "consignor_pais", "consignor_fax", "consignor_zip",
   "consignor_zona", "consignor_ciudad", "consignor_calle",
@@ -239,6 +241,7 @@ function DetalleLogistica() {
   const [contenedores, setContenedores] = useState<ContenedorFila[]>([]);
   const [hazmatFaltantes, setHazmatFaltantes] = useState<string[]>([]);
   const [manifiestoOpen, setManifiestoOpen] = useState(false);
+  const [manifiestoConsOpen, setManifiestoConsOpen] = useState(false);
 
   const constanciaRef = useRef<ConstanciaLogisticaButtonHandle>(null);
   const blHijoRef = useRef<BlHijoPdfButtonHandle>(null);
@@ -755,6 +758,9 @@ function DetalleLogistica() {
                 <DropdownMenuItem onSelect={() => setManifiestoOpen(true)} className="cursor-pointer">
                   Generar Manifiesto XML (SIGA)
                 </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setManifiestoConsOpen(true)} className="cursor-pointer">
+                  Generar Manifiesto Consolidado XML (SIGA)
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <ConstanciaLogisticaButton ref={constanciaRef} datos={datosConstancia} showTrigger={false} />
@@ -762,6 +768,7 @@ function DetalleLogistica() {
             <SolicitudBookingPdfButton ref={bookingRef} datos={datosSolicitudBooking} showTrigger={false} />
             <CotizacionLogisticaPdfButton ref={cotizacionRef} datos={datosCotizacionLogistica} showTrigger={false} />
             <ManifiestoXmlDialog operacionId={id} open={manifiestoOpen} onOpenChange={setManifiestoOpen} />
+            <ManifiestoConsolidadoXmlDialog operacionId={id} open={manifiestoConsOpen} onOpenChange={setManifiestoConsOpen} />
             {modoEdicion && <Button disabled={saveMut.isPending} onClick={() => saveMut.mutate()} className="shadow-lg"><Save className="h-4 w-4 mr-2" />Guardar cambios</Button>}
           </>
         )}
@@ -911,6 +918,7 @@ function DetalleLogistica() {
 
       <Card><CardHeader><CardTitle className="text-base">Datos del Manifiesto SIGA</CardTitle></CardHeader><CardContent className="space-y-5">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Field form={form} set={set} readOnly={readOnly} label="N° de Manifiesto (SIGA)" name="manifiesto_no" />
           <Field form={form} set={set} readOnly={readOnly} label="Administración aduanera (AreaCode)" name="area_code" />
           <Field form={form} set={set} readOnly={readOnly} label="Código SIGA naviera/consolidador" name="biz_company_code" />
           <Field form={form} set={set} readOnly={readOnly} label="Depósito de salida (LoadingLocation)" name="loading_location_code" />
