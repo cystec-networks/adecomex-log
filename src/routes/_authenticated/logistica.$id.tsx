@@ -93,7 +93,7 @@ type FormState = {
   notify_ciudad: string; notify_calle: string;
 };
 const MANIFIESTO_TEXT_KEYS = [
-  "area_code", "biz_company_code", "loading_location_code", "unloading_location_code", "via_entrance", "country_code",
+  "manifiesto_no", "area_code", "biz_company_code", "loading_location_code", "unloading_location_code", "via_entrance", "country_code",
   "bl_type", "transit_type", "express_type",
   "consignor_tipo", "consignor_doc_tipo", "consignor_doc_numero", "consignor_pais", "consignor_fax", "consignor_zip",
   "consignor_zona", "consignor_ciudad", "consignor_calle",
