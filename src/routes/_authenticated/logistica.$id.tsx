@@ -911,6 +911,7 @@ function DetalleLogistica() {
 
       <Card><CardHeader><CardTitle className="text-base">Datos del Manifiesto SIGA</CardTitle></CardHeader><CardContent className="space-y-5">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Field form={form} set={set} readOnly={readOnly} label="N° de Manifiesto (SIGA)" name="manifiesto_no" />
           <Field form={form} set={set} readOnly={readOnly} label="Administración aduanera (AreaCode)" name="area_code" />
           <Field form={form} set={set} readOnly={readOnly} label="Código SIGA naviera/consolidador" name="biz_company_code" />
           <Field form={form} set={set} readOnly={readOnly} label="Depósito de salida (LoadingLocation)" name="loading_location_code" />
