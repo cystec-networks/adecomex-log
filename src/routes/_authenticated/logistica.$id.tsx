@@ -220,7 +220,7 @@ function LinkSelect({ label, name, rows, form, set, readOnly, isNuevo, prefill }
 export type DocumentoNuevo = { tipo: string; nombre_archivo: string; file: File };
 export type IncidenciaNueva = { tipo: string; severidad: string; descripcion: string };
 /** Contenedor estructurado de la operación (mismo patrón que Expedientes). */
-type ContenedorFila = { numero: string; sello1: string; sello2: string; tipo: string };
+type ContenedorFila = { numero: string; sello1: string; sello2: string; tipo: string; placa: string };
 
 function DetalleLogistica() {
   const { id } = Route.useParams();
@@ -290,7 +290,7 @@ function DetalleLogistica() {
   if (!isNuevo && contenedoresDb && contenedoresCargadoId !== id) {
     setContenedoresCargadoId(id);
     setContenedores(contenedoresDb.map((c) => ({
-      numero: c.numero_contenedor ?? "", sello1: c.sello1 ?? "", sello2: c.sello2 ?? "", tipo: c.tipo_contenedor ?? "",
+      numero: c.numero_contenedor ?? "", sello1: c.sello1 ?? "", sello2: c.sello2 ?? "", tipo: c.tipo_contenedor ?? "", placa: c.placa ?? "",
     })));
   }
   const set = (key: keyof FormState, value: string) => {
@@ -368,7 +368,7 @@ function DetalleLogistica() {
     }));
     if (res.contenedores?.length) {
       setContenedores((prev) => prev.length ? prev : res.contenedores!.map((c: any) => ({
-        numero: c.numero ?? "", sello1: c.sello1 ?? "", sello2: c.sello2 ?? "", tipo: c.tipo ?? "",
+        numero: c.numero ?? "", sello1: c.sello1 ?? "", sello2: c.sello2 ?? "", tipo: c.tipo ?? "", placa: c.placa ?? "",
       })));
     }
     toast.success("Datos extraídos — revisa y ajusta los campos");
@@ -387,6 +387,7 @@ function DetalleLogistica() {
       contenedoresValidos.map((c, i) => ({
         operacion_logistica_id: operacionId, item_no: i + 1, numero_contenedor: c.numero.trim(),
         sello1: c.sello1.trim() || null, sello2: c.sello2.trim() || null, tipo_contenedor: c.tipo.trim() || null,
+        placa: c.placa.trim() || null,
       })),
     );
     if (error) throw error;
@@ -541,7 +542,7 @@ function DetalleLogistica() {
       };
     }
     const contenedoresBl = contenedoresValidos.map((c) => ({
-      numero: c.numero.trim(), sello1: c.sello1.trim() || null, sello2: c.sello2.trim() || null, tipo: c.tipo.trim() || null,
+      numero: c.numero.trim(), sello1: c.sello1.trim() || null, sello2: c.sello2.trim() || null, tipo: c.tipo.trim() || null, placa: c.placa.trim() || null,
     }));
     const esExportacion = form.tipo_operacion === "Exportación";
     const shipper = esExportacion
@@ -785,7 +786,7 @@ function DetalleLogistica() {
             <Label>Contenedores</Label>
             {!readOnly && (
               <Button type="button" variant="outline" size="sm"
-                onClick={() => setContenedores((r) => [...r, { numero: "", sello1: "", sello2: "", tipo: "" }])}>
+                onClick={() => setContenedores((r) => [...r, { numero: "", sello1: "", sello2: "", tipo: "", placa: "" }])}>
                 Agregar contenedor
               </Button>
             )}
@@ -802,6 +803,7 @@ function DetalleLogistica() {
                     <th className="px-2 py-2 text-left">Sello 1</th>
                     <th className="px-2 py-2 text-left">Sello 2</th>
                     <th className="px-2 py-2 text-left">Tipo</th>
+                    <th className="px-2 py-2 text-left">Placa</th>
                     {!readOnly && <th className="px-2 py-2 w-10"></th>}
                   </tr>
                 </thead>
