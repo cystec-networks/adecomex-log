@@ -938,6 +938,9 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     liq_siga_numero: d.liq_siga_numero ?? "",
     liq_siga_estado: d.liq_siga_estado ?? "",
     liq_oficial_total: d.liq_oficial_total ?? "",
+    liq_siga_pin_pago: d.liq_siga_pin_pago ?? "",
+    liq_siga_fecha_registro: d.liq_siga_fecha_registro ?? "",
+    liq_siga_fecha_pago: d.liq_siga_fecha_pago ?? "",
     tipo_despacho_aduanero: d.tipo_despacho_aduanero ?? "",
     cantidad_despacho: d.cantidad_despacho ?? "",
     tipo_operacion: d.tipo_operacion ?? (tipoDefault === "exportacion" ? "Exportación" : ""),
@@ -1265,6 +1268,9 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (!payload.tipo_despacho_aduanero) payload.tipo_despacho_aduanero = null;
       if (!payload.liq_siga_numero) payload.liq_siga_numero = null;
       if (!payload.liq_siga_estado) payload.liq_siga_estado = null;
+      if (!payload.liq_siga_pin_pago) payload.liq_siga_pin_pago = null;
+      if (!payload.liq_siga_fecha_registro) payload.liq_siga_fecha_registro = null;
+      if (!payload.liq_siga_fecha_pago) payload.liq_siga_fecha_pago = null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
       // Congelar la tasa cuando el expediente pasa a despachado o registra resultado oficial DGA.
@@ -1364,6 +1370,9 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (!payload.tipo_despacho_aduanero) payload.tipo_despacho_aduanero = null;
       if (!payload.liq_siga_numero) payload.liq_siga_numero = null;
       if (!payload.liq_siga_estado) payload.liq_siga_estado = null;
+      if (!payload.liq_siga_pin_pago) payload.liq_siga_pin_pago = null;
+      if (!payload.liq_siga_fecha_registro) payload.liq_siga_fecha_registro = null;
+      if (!payload.liq_siga_fecha_pago) payload.liq_siga_fecha_pago = null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
       if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
@@ -4360,6 +4369,20 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
           <Input type="text" inputMode="decimal" value={form.liq_oficial_total ?? ""}
             onChange={(e) => { if (disabled) return; const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("liq_oficial_total", v); }}
             placeholder="0.00" className="tabular-nums" disabled={disabled} />
+        </div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-3 mt-3">
+        <div className="grid gap-1.5">
+          <Label>PIN pago DGA</Label>
+          <Input value={form.liq_siga_pin_pago || ""} onChange={(e) => set("liq_siga_pin_pago", e.target.value)} placeholder="PIN de pago" disabled={disabled} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Fecha de registro</Label>
+          <Input type="date" value={form.liq_siga_fecha_registro || ""} onChange={(e) => set("liq_siga_fecha_registro", e.target.value)} disabled={disabled} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Fecha de pago</Label>
+          <Input type="date" value={form.liq_siga_fecha_pago || ""} onChange={(e) => set("liq_siga_fecha_pago", e.target.value)} disabled={disabled} />
         </div>
       </div>
       <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
