@@ -47,7 +47,7 @@ import { ChecklistHitos } from "@/components/checklist-hitos";
 import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
-import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
+import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
 import { unitFob, loadBrokerConfig } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
@@ -426,16 +426,46 @@ function DetalleExpediente() {
   const hitosTotal = hitosHeader?.length ?? 0;
 
 
+  const puedeForzarRegreso = (roles ?? []).some((r) => ["admin", "operaciones"].includes(r));
+
   const updateEstado = useMutation({
     mutationFn: async (estado: string) => {
-      if (estado === "despachado" && !(exp as any)?.factura_ecf_id) {
-        throw new Error("Para cambiar a Despachado debes vincular una Factura e-CF real (pestaña Finanzas).");
+      const actual = (exp as any)?.estado as string;
+      if (estadoIndex(estado) < estadoIndex(actual)) {
+        throw new Error(
+          puedeForzarRegreso
+            ? "Para regresar a un estado anterior usa el botón \"Corregir estado\"."
+            : "No se puede regresar el expediente a un estado anterior.",
+        );
       }
+      const { count: gastos } = await supabase
+        .from("gastos")
+        .select("id", { count: "exact", head: true })
+        .eq("expediente_id", id)
+        .is("deleted_at", null);
+      const msg = validarAvanceEstado(actual, estado, {
+        exp,
+        tieneGastos: (gastos ?? 0) > 0,
+        tieneFactura: !!(exp as any)?.factura_ecf_id,
+      });
+      if (msg) throw new Error(msg);
       const { error } = await supabase.from("expedientes").update({ estado: estado as any }).eq("id", id);
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: id, accion: `cambio_estado:${estado}` });
     },
     onSuccess: () => { toast.success("Estado actualizado"); qc.invalidateQueries({ queryKey: ["expediente", id] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const forzarRegreso = useMutation({
+    mutationFn: async ({ estado, motivo }: { estado: string; motivo: string }) => {
+      const { error } = await supabase
+        .from("expedientes")
+        .update({ estado: estado as any, forzar_regreso_estado: true, motivo_regreso_estado: motivo } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Estado corregido"); qc.invalidateQueries({ queryKey: ["expediente", id] }); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -647,9 +677,20 @@ function DetalleExpediente() {
             <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
               <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {ESTADO_ORDEN.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
+                {ESTADO_ORDEN.map((e) => (
+                  <SelectItem key={e} value={e} disabled={estadoIndex(e) < estadoIndex(expData.estado)}>
+                    {ESTADO_LABEL[e]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            {puedeForzarRegreso && estadoIndex(expData.estado) > 0 && (
+              <ForzarRegresoEstadoDialog
+                estadoActual={expData.estado}
+                pendiente={forzarRegreso.isPending}
+                onConfirm={(estado, motivo) => forzarRegreso.mutate({ estado, motivo })}
+              />
+            )}
             {expData.estado && (
               <span className="text-sm text-muted-foreground whitespace-nowrap">
                 {(() => {
@@ -5158,5 +5199,71 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
         </p>
       </CardContent>
     </Card>
+  );
+}
+
+function ForzarRegresoEstadoDialog({
+  estadoActual,
+  pendiente,
+  onConfirm,
+}: {
+  estadoActual: string;
+  pendiente: boolean;
+  onConfirm: (estado: string, motivo: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [destino, setDestino] = useState<string>("");
+  const [motivo, setMotivo] = useState("");
+  const anteriores = ESTADO_ORDEN.filter((e) => estadoIndex(e) < estadoIndex(estadoActual));
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) { setDestino(""); setMotivo(""); }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="text-muted-foreground">Corregir estado</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Corregir estado del expediente</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Acción excepcional: regresa el expediente a un estado anterior sin validar requisitos.
+            Quedará registrada en la auditoría con tu usuario.
+          </p>
+          <div className="grid gap-1.5">
+            <Label>Estado actual</Label>
+            <div className="text-sm font-medium">{ESTADO_LABEL[estadoActual] ?? estadoActual}</div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Regresar a</Label>
+            <Select value={destino || undefined} onValueChange={setDestino}>
+              <SelectTrigger><SelectValue placeholder="Selecciona el estado" /></SelectTrigger>
+              <SelectContent>
+                {anteriores.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Motivo</Label>
+            <Textarea rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ej.: se avanzó por error de captura" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button
+            disabled={!destino || !motivo.trim() || pendiente}
+            onClick={() => { onConfirm(destino, motivo.trim()); setOpen(false); }}
+          >
+            Confirmar regreso
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
