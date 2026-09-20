@@ -677,9 +677,20 @@ function DetalleExpediente() {
             <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
               <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {ESTADO_ORDEN.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
+                {ESTADO_ORDEN.map((e) => (
+                  <SelectItem key={e} value={e} disabled={estadoIndex(e) < estadoIndex(expData.estado)}>
+                    {ESTADO_LABEL[e]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            {puedeForzarRegreso && estadoIndex(expData.estado) > 0 && (
+              <ForzarRegresoEstadoDialog
+                estadoActual={expData.estado}
+                pendiente={forzarRegreso.isPending}
+                onConfirm={(estado, motivo) => forzarRegreso.mutate({ estado, motivo })}
+              />
+            )}
             {expData.estado && (
               <span className="text-sm text-muted-foreground whitespace-nowrap">
                 {(() => {
