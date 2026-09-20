@@ -64,6 +64,13 @@
       "when": 1789863427856,
       "tag": "0008_validar_transiciones_expediente",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789863522050,
+      "tag": "0009_fix_requisitos_transicion_expediente",
+      "breakpoints": true
     }
   ]
 }
