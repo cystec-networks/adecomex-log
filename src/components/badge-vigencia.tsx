@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { daysFromToday, fmtLocalDate } from "@/lib/dates";
+import { daysFromToday, fmtLocalDate, parseLocalDate } from "@/lib/dates";
 
 /**
  * Indicador de countdown por color, con el mismo esquema visual usado
