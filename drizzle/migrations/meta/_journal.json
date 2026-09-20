@@ -71,6 +71,13 @@
       "when": 1789863522050,
       "tag": "0009_fix_requisitos_transicion_expediente",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789946749921,
+      "tag": "0010_campos_pago_liquidacion_dga",
+      "breakpoints": true
     }
   ]
 }

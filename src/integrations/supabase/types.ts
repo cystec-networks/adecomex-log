@@ -3122,7 +3122,10 @@ export type Database = {
           incoterm: string | null
           liq_oficial_total: number | null
           liq_siga_estado: string | null
+          liq_siga_fecha_pago: string | null
+          liq_siga_fecha_registro: string | null
           liq_siga_numero: string | null
+          liq_siga_pin_pago: string | null
           medio_transporte: string | null
           metodo_transporte_codigo: string | null
           motivo_regreso_estado: string | null
@@ -3226,7 +3229,10 @@ export type Database = {
           incoterm?: string | null
           liq_oficial_total?: number | null
           liq_siga_estado?: string | null
+          liq_siga_fecha_pago?: string | null
+          liq_siga_fecha_registro?: string | null
           liq_siga_numero?: string | null
+          liq_siga_pin_pago?: string | null
           medio_transporte?: string | null
           metodo_transporte_codigo?: string | null
           motivo_regreso_estado?: string | null
@@ -3330,7 +3336,10 @@ export type Database = {
           incoterm?: string | null
           liq_oficial_total?: number | null
           liq_siga_estado?: string | null
+          liq_siga_fecha_pago?: string | null
+          liq_siga_fecha_registro?: string | null
           liq_siga_numero?: string | null
+          liq_siga_pin_pago?: string | null
           medio_transporte?: string | null
           metodo_transporte_codigo?: string | null
           motivo_regreso_estado?: string | null
