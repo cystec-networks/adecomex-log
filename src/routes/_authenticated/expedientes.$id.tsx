@@ -422,8 +422,15 @@ function DetalleExpediente() {
     queryFn: async () => (await supabase.from("expediente_hitos").select("estado").eq("expediente_id", id)).data ?? [],
   });
 
+  const { data: permisosHeader } = useQuery({
+    queryKey: ["expediente-permisos-header", id],
+    enabled: !isNuevo,
+    queryFn: async () => (await supabase.from("permisos").select("numero").eq("expediente_id", id).is("eliminado_en", null)).data ?? [],
+  });
+
   const hitosDone = (hitosHeader ?? []).filter((h) => h.estado === "completado" || h.estado === "no_aplica").length;
   const hitosTotal = hitosHeader?.length ?? 0;
+  const permisosNumeros = (permisosHeader ?? []).map((p: any) => p.numero).filter(Boolean).join(", ");
 
 
   const puedeForzarRegreso = (roles ?? []).some((r) => ["admin", "operaciones"].includes(r));
@@ -714,6 +721,25 @@ function DetalleExpediente() {
             <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">Despacho:</Label>
             <span className="text-sm font-medium">{hitosDone} de {hitosTotal}</span>
           </div>
+
+          {expData.numero_dua && (
+            <div className="flex min-w-0 items-center gap-1.5">
+              <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">Declaración DUA:</Label>
+              <span className="truncate text-sm font-medium" title={expData.numero_dua}>{expData.numero_dua}</span>
+            </div>
+          )}
+          {expData.numero_igra && (
+            <div className="flex min-w-0 items-center gap-1.5">
+              <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">N.º de despacho:</Label>
+              <span className="truncate text-sm font-medium" title={expData.numero_igra}>{expData.numero_igra}</span>
+            </div>
+          )}
+          {permisosNumeros && (
+            <div className="flex min-w-0 items-center gap-1.5">
+              <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">N.º de permiso:</Label>
+              <span className="truncate text-sm font-medium" title={permisosNumeros}>{permisosNumeros}</span>
+            </div>
+          )}
 
           {(() => {
             const a = alertaDeclaracionTardia(expData);
