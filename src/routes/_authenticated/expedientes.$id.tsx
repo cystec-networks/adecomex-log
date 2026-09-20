@@ -941,6 +941,8 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     liq_siga_pin_pago: d.liq_siga_pin_pago ?? "",
     liq_siga_fecha_registro: d.liq_siga_fecha_registro ?? "",
     liq_siga_fecha_pago: d.liq_siga_fecha_pago ?? "",
+    liq_siga_registro_at: isoToLocalInput(d.liq_siga_registro_at),
+    liq_siga_termino_at: isoToLocalInput(d.liq_siga_termino_at),
     tipo_despacho_aduanero: d.tipo_despacho_aduanero ?? "",
     cantidad_despacho: d.cantidad_despacho ?? "",
     tipo_operacion: d.tipo_operacion ?? (tipoDefault === "exportacion" ? "Exportación" : ""),
