@@ -104,6 +104,26 @@ export const Route = createFileRoute("/_authenticated/expedientes/$id")({
   component: DetalleExpediente,
 });
 
+// Helpers para inputs `datetime-local` (vigencia del PIN de pago DGA).
+function isoToLocalInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function localInputToIso(v: string | null | undefined): string | null {
+  if (!v) return null;
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+// Fecha de Término = Fecha de registro + 96 horas exactas.
+function terminoPin(registroLocal: string): string {
+  const d = new Date(registroLocal);
+  if (isNaN(d.getTime())) return "";
+  return isoToLocalInput(new Date(d.getTime() + 96 * 3600000).toISOString());
+}
+
 const TIPOS_DOC = [
   "Factura proforma","Factura comercial","Bill of Lading","Guía aérea","Lista de empaque",
   "Certificado de origen","Certificado sanitario","Certificado fitosanitario","Certificado de análisis",
