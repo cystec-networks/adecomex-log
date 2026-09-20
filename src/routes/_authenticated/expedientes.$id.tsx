@@ -895,7 +895,7 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     numero: d.numero ?? "",
     cliente_id: d.cliente_id ?? "",
     bl_awb: d.bl_awb ?? "",
-    sla_dias: d.sla_dias ?? 15,
+    sla_dias: d.sla_dias ?? 5,
     fecha_compromiso: d.fecha_compromiso ?? "",
     fecha_llegada_real: d.fecha_llegada_real ?? "",
     fecha_cargado: d.fecha_cargado ?? "",
