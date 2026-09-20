@@ -3126,6 +3126,8 @@ export type Database = {
           liq_siga_fecha_registro: string | null
           liq_siga_numero: string | null
           liq_siga_pin_pago: string | null
+          liq_siga_registro_at: string | null
+          liq_siga_termino_at: string | null
           medio_transporte: string | null
           metodo_transporte_codigo: string | null
           motivo_regreso_estado: string | null
@@ -3233,6 +3235,8 @@ export type Database = {
           liq_siga_fecha_registro?: string | null
           liq_siga_numero?: string | null
           liq_siga_pin_pago?: string | null
+          liq_siga_registro_at?: string | null
+          liq_siga_termino_at?: string | null
           medio_transporte?: string | null
           metodo_transporte_codigo?: string | null
           motivo_regreso_estado?: string | null
@@ -3340,6 +3344,8 @@ export type Database = {
           liq_siga_fecha_registro?: string | null
           liq_siga_numero?: string | null
           liq_siga_pin_pago?: string | null
+          liq_siga_registro_at?: string | null
+          liq_siga_termino_at?: string | null
           medio_transporte?: string | null
           metodo_transporte_codigo?: string | null
           motivo_regreso_estado?: string | null
