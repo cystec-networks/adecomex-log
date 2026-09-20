@@ -17,6 +17,7 @@ import { WhatsAppButton } from "@/components/whatsapp-button";
 import { HerramientasDgaVuceMenu, RastreosEnvioMenu } from "@/components/accesos-rapidos-expediente";
 import { EmailButton } from "@/components/email-button";
 import { TruncatedCell } from "@/components/truncated-cell";
+import { BadgeVigenciaPinDga } from "@/components/badge-vigencia";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
@@ -70,7 +71,7 @@ function Expedientes() {
     queryKey: ["expedientes"],
     queryFn: async () => (await supabase
       .from("expedientes")
-      .select("id,numero,estado,bl_awb,factura_comercial,fecha_compromiso,fecha_llegada_real,created_at,updated_at,medio_transporte,naviera,suplidor,pais_origen,pais_procedencia,incoterm,puerto_salida,puerto_arribo,numero_dua,numero_vuce,numero_igra,descripcion_mercancia,numeros_contenedores,numero_certificado_origen,tipo_operacion,tipo_carga,regimen_aduanero,observaciones,total_fob,total_cif,liq_siga_numero, clientes(nombre,telefono,email), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento), mercancia_items(item_no, detalle_producto, deleted_at)")
+      .select("id,numero,estado,bl_awb,factura_comercial,fecha_compromiso,fecha_llegada_real,created_at,updated_at,medio_transporte,naviera,suplidor,pais_origen,pais_procedencia,incoterm,puerto_salida,puerto_arribo,numero_dua,numero_vuce,numero_igra,descripcion_mercancia,numeros_contenedores,numero_certificado_origen,tipo_operacion,tipo_carga,regimen_aduanero,observaciones,total_fob,total_cif,liq_siga_numero,liq_siga_termino_at,liq_siga_fecha_pago, clientes(nombre,telefono,email), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento), mercancia_items(item_no, detalle_producto, deleted_at)")
       .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
   });
@@ -405,6 +406,11 @@ function Expedientes() {
       <td className="px-2 py-2 align-middle text-center whitespace-nowrap">
         <div className="flex flex-col items-center gap-0.5">
           {estadoBadge(e.estado)}
+          {(e.liq_siga_termino_at || e.liq_siga_fecha_pago) && (
+            <div className="scale-90 origin-top">
+              <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} />
+            </div>
+          )}
           {e.estado === "verificar" && (() => {
             const fv = fechaVerificacion(e);
             if (!fv) return null;

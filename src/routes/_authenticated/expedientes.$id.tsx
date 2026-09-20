@@ -27,6 +27,7 @@ import { calcImpuestosLinea } from "@/lib/impuestos";
 import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
 import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
 import { AutoField } from "@/components/auto-field";
+import { BadgeVigenciaPinDga } from "@/components/badge-vigencia";
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { DgaCombobox } from "@/components/dga-combobox";
@@ -103,6 +104,26 @@ export const Route = createFileRoute("/_authenticated/expedientes/$id")({
   validateSearch: zodValidator(searchSchema),
   component: DetalleExpediente,
 });
+
+// Helpers para inputs `datetime-local` (vigencia del PIN de pago DGA).
+function isoToLocalInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function localInputToIso(v: string | null | undefined): string | null {
+  if (!v) return null;
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+// Fecha de Término = Fecha de registro + 96 horas exactas.
+function terminoPin(registroLocal: string): string {
+  const d = new Date(registroLocal);
+  if (isNaN(d.getTime())) return "";
+  return isoToLocalInput(new Date(d.getTime() + 96 * 3600000).toISOString());
+}
 
 const TIPOS_DOC = [
   "Factura proforma","Factura comercial","Bill of Lading","Guía aérea","Lista de empaque",
@@ -941,6 +962,8 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     liq_siga_pin_pago: d.liq_siga_pin_pago ?? "",
     liq_siga_fecha_registro: d.liq_siga_fecha_registro ?? "",
     liq_siga_fecha_pago: d.liq_siga_fecha_pago ?? "",
+    liq_siga_registro_at: isoToLocalInput(d.liq_siga_registro_at),
+    liq_siga_termino_at: isoToLocalInput(d.liq_siga_termino_at),
     tipo_despacho_aduanero: d.tipo_despacho_aduanero ?? "",
     cantidad_despacho: d.cantidad_despacho ?? "",
     tipo_operacion: d.tipo_operacion ?? (tipoDefault === "exportacion" ? "Exportación" : ""),
@@ -1269,8 +1292,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (!payload.liq_siga_numero) payload.liq_siga_numero = null;
       if (!payload.liq_siga_estado) payload.liq_siga_estado = null;
       if (!payload.liq_siga_pin_pago) payload.liq_siga_pin_pago = null;
-      if (!payload.liq_siga_fecha_registro) payload.liq_siga_fecha_registro = null;
       if (!payload.liq_siga_fecha_pago) payload.liq_siga_fecha_pago = null;
+      payload.liq_siga_registro_at = localInputToIso(payload.liq_siga_registro_at);
+      payload.liq_siga_termino_at = localInputToIso(payload.liq_siga_termino_at);
+      payload.liq_siga_fecha_registro = payload.liq_siga_registro_at
+        ? isoToLocalInput(payload.liq_siga_registro_at).slice(0, 10)
+        : null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
       // Congelar la tasa cuando el expediente pasa a despachado o registra resultado oficial DGA.
@@ -1371,8 +1398,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (!payload.liq_siga_numero) payload.liq_siga_numero = null;
       if (!payload.liq_siga_estado) payload.liq_siga_estado = null;
       if (!payload.liq_siga_pin_pago) payload.liq_siga_pin_pago = null;
-      if (!payload.liq_siga_fecha_registro) payload.liq_siga_fecha_registro = null;
       if (!payload.liq_siga_fecha_pago) payload.liq_siga_fecha_pago = null;
+      payload.liq_siga_registro_at = localInputToIso(payload.liq_siga_registro_at);
+      payload.liq_siga_termino_at = localInputToIso(payload.liq_siga_termino_at);
+      payload.liq_siga_fecha_registro = payload.liq_siga_registro_at
+        ? isoToLocalInput(payload.liq_siga_registro_at).slice(0, 10)
+        : null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
       if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
@@ -4378,7 +4409,25 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
         </div>
         <div className="grid gap-1.5">
           <Label>Fecha de registro</Label>
-          <Input type="date" value={form.liq_siga_fecha_registro || ""} onChange={(e) => set("liq_siga_fecha_registro", e.target.value)} disabled={disabled} />
+          <Input
+            type="datetime-local"
+            value={form.liq_siga_registro_at || ""}
+            onChange={(e) => {
+              const v = e.target.value;
+              set("liq_siga_registro_at", v);
+              // Autocompleta la vigencia (registro + 96 h) solo si está vacía.
+              if (v && !form.liq_siga_termino_at) set("liq_siga_termino_at", terminoPin(v));
+            }}
+            disabled={disabled}
+          />
+        </div>
+        <div className="grid gap-1.5">
+          <div className="flex items-center gap-2">
+            <Label>Fecha de Término (vigencia del PIN)</Label>
+            <BadgeVigenciaPinDga terminoAt={localInputToIso(form.liq_siga_termino_at)} fechaPago={form.liq_siga_fecha_pago || null} />
+          </div>
+          <Input type="datetime-local" value={form.liq_siga_termino_at || ""} onChange={(e) => set("liq_siga_termino_at", e.target.value)} disabled={disabled} />
+          <div className="text-[11px] text-muted-foreground">96 horas exactas desde la fecha de registro. Editable.</div>
         </div>
         <div className="grid gap-1.5">
           <Label>Fecha de pago</Label>
