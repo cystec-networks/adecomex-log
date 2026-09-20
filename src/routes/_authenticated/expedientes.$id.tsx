@@ -548,30 +548,6 @@ function DetalleExpediente() {
                     <span className="truncate">Sin cliente</span>
                   )}
                 </div>
-                <div className="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-xs font-normal text-muted-foreground md:overflow-visible md:flex-wrap md:whitespace-normal md:text-sm">
-                  {expData.numeros_contenedores && (
-                    <>
-                      <Badge variant="secondary" className="min-w-0 max-w-[52%] shrink font-mono text-xs md:max-w-none md:shrink-0" title={`Contenedor: ${expData.numeros_contenedores}`}>
-                        <span className="truncate md:overflow-visible md:text-clip md:whitespace-normal md:break-words">Contenedor: {expData.numeros_contenedores}</span>
-                      </Badge>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 shrink-0"
-                        onClick={() => {
-                          void navigator.clipboard.writeText(expData.numeros_contenedores);
-                          toast.success("Número de contenedor copiado");
-                        }}
-                        title="Copiar número de contenedor"
-                        aria-label="Copiar número de contenedor"
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </>
-                  )}
-                  <span className="min-w-0 truncate md:overflow-visible md:text-clip md:whitespace-normal md:break-words" title={`BL/AWB: ${expData.bl_awb ?? "—"}`}>BL/AWB: {expData.bl_awb ?? "—"}</span>
-                </div>
               </>
             )}
           </div>
@@ -667,6 +643,32 @@ function DetalleExpediente() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+          )}
+          {!isNuevo && (
+            <div className="col-start-2 col-end-4 flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-xs font-normal text-muted-foreground md:col-start-2 md:col-end-4 md:text-sm">
+              {expData.numeros_contenedores && (
+                <>
+                  <Badge variant="secondary" className="min-w-0 max-w-[65%] shrink font-mono text-xs" title={`Contenedor: ${expData.numeros_contenedores}`}>
+                    <span className="truncate">Contenedor: {expData.numeros_contenedores}</span>
+                  </Badge>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(expData.numeros_contenedores);
+                      toast.success("Número de contenedor copiado");
+                    }}
+                    title="Copiar número de contenedor"
+                    aria-label="Copiar número de contenedor"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </>
+              )}
+              <span className="min-w-0 truncate" title={`BL/AWB: ${expData.bl_awb ?? "—"}`}>BL/AWB: {expData.bl_awb ?? "—"}</span>
+            </div>
           )}
         </div>
 
