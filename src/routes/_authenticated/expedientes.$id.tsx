@@ -422,8 +422,15 @@ function DetalleExpediente() {
     queryFn: async () => (await supabase.from("expediente_hitos").select("estado").eq("expediente_id", id)).data ?? [],
   });
 
+  const { data: permisosHeader } = useQuery({
+    queryKey: ["expediente-permisos-header", id],
+    enabled: !isNuevo,
+    queryFn: async () => (await supabase.from("permisos").select("numero").eq("expediente_id", id).is("eliminado_en", null)).data ?? [],
+  });
+
   const hitosDone = (hitosHeader ?? []).filter((h) => h.estado === "completado" || h.estado === "no_aplica").length;
   const hitosTotal = hitosHeader?.length ?? 0;
+  const permisosNumeros = (permisosHeader ?? []).map((p: any) => p.numero).filter(Boolean).join(", ");
 
 
   const puedeForzarRegreso = (roles ?? []).some((r) => ["admin", "operaciones"].includes(r));
