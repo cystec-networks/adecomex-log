@@ -27,6 +27,7 @@ import { calcImpuestosLinea } from "@/lib/impuestos";
 import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
 import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
 import { AutoField } from "@/components/auto-field";
+import { BadgeVigenciaPinDga } from "@/components/badge-vigencia";
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { DgaCombobox } from "@/components/dga-combobox";
@@ -4408,7 +4409,25 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
         </div>
         <div className="grid gap-1.5">
           <Label>Fecha de registro</Label>
-          <Input type="date" value={form.liq_siga_fecha_registro || ""} onChange={(e) => set("liq_siga_fecha_registro", e.target.value)} disabled={disabled} />
+          <Input
+            type="datetime-local"
+            value={form.liq_siga_registro_at || ""}
+            onChange={(e) => {
+              const v = e.target.value;
+              set("liq_siga_registro_at", v);
+              // Autocompleta la vigencia (registro + 96 h) solo si está vacía.
+              if (v && !form.liq_siga_termino_at) set("liq_siga_termino_at", terminoPin(v));
+            }}
+            disabled={disabled}
+          />
+        </div>
+        <div className="grid gap-1.5">
+          <div className="flex items-center gap-2">
+            <Label>Fecha de Término (vigencia del PIN)</Label>
+            <BadgeVigenciaPinDga terminoAt={localInputToIso(form.liq_siga_termino_at)} fechaPago={form.liq_siga_fecha_pago || null} />
+          </div>
+          <Input type="datetime-local" value={form.liq_siga_termino_at || ""} onChange={(e) => set("liq_siga_termino_at", e.target.value)} disabled={disabled} />
+          <div className="text-[11px] text-muted-foreground">96 horas exactas desde la fecha de registro. Editable.</div>
         </div>
         <div className="grid gap-1.5">
           <Label>Fecha de pago</Label>
