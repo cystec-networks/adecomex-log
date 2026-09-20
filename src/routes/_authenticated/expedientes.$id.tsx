@@ -5201,3 +5201,69 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
     </Card>
   );
 }
+
+function ForzarRegresoEstadoDialog({
+  estadoActual,
+  pendiente,
+  onConfirm,
+}: {
+  estadoActual: string;
+  pendiente: boolean;
+  onConfirm: (estado: string, motivo: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [destino, setDestino] = useState<string>("");
+  const [motivo, setMotivo] = useState("");
+  const anteriores = ESTADO_ORDEN.filter((e) => estadoIndex(e) < estadoIndex(estadoActual));
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) { setDestino(""); setMotivo(""); }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="text-muted-foreground">Corregir estado</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Corregir estado del expediente</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Acción excepcional: regresa el expediente a un estado anterior sin validar requisitos.
+            Quedará registrada en la auditoría con tu usuario.
+          </p>
+          <div className="grid gap-1.5">
+            <Label>Estado actual</Label>
+            <div className="text-sm font-medium">{ESTADO_LABEL[estadoActual] ?? estadoActual}</div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Regresar a</Label>
+            <Select value={destino || undefined} onValueChange={setDestino}>
+              <SelectTrigger><SelectValue placeholder="Selecciona el estado" /></SelectTrigger>
+              <SelectContent>
+                {anteriores.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Motivo</Label>
+            <Textarea rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ej.: se avanzó por error de captura" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button
+            disabled={!destino || !motivo.trim() || pendiente}
+            onClick={() => { onConfirm(destino, motivo.trim()); setOpen(false); }}
+          >
+            Confirmar regreso
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
