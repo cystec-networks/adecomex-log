@@ -646,6 +646,7 @@ function DetalleExpediente() {
           )}
           {!isNuevo && (
             <div className="col-start-2 col-end-4 flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-xs font-normal text-muted-foreground md:col-start-2 md:col-end-4 md:text-sm">
+              <span className="min-w-0 truncate" title={`BL/AWB: ${expData.bl_awb ?? "—"}`}>BL/AWB: {expData.bl_awb ?? "—"}</span>
               {expData.numeros_contenedores && (
                 <>
                   <Badge variant="secondary" className="min-w-0 max-w-[65%] shrink font-mono text-xs" title={`Contenedor: ${expData.numeros_contenedores}`}>
@@ -667,7 +668,6 @@ function DetalleExpediente() {
                   </Button>
                 </>
               )}
-              <span className="min-w-0 truncate" title={`BL/AWB: ${expData.bl_awb ?? "—"}`}>BL/AWB: {expData.bl_awb ?? "—"}</span>
             </div>
           )}
         </div>
