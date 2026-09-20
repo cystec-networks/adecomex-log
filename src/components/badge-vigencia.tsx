@@ -85,7 +85,10 @@ export function BadgeVigenciaPinDga({
   fechaPago?: string | null;
 }) {
   if (fechaPago) {
-    const pago = new Date(fechaPago);
+    // Fecha de pago es solo fecha: se compara contra el fin de ese día local.
+    const soloFecha = /^\d{4}-\d{2}-\d{2}$/.test(String(fechaPago));
+    const pago = soloFecha ? parseLocalDate(fechaPago) : new Date(fechaPago);
+    if (soloFecha) pago.setHours(23, 59, 59, 999);
     const limite = terminoAt ? new Date(terminoAt) : null;
     const tarde = limite && !isNaN(limite.getTime()) && !isNaN(pago.getTime()) && pago.getTime() > limite.getTime();
     return tarde ? (
