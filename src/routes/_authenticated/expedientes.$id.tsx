@@ -1291,8 +1291,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (!payload.liq_siga_numero) payload.liq_siga_numero = null;
       if (!payload.liq_siga_estado) payload.liq_siga_estado = null;
       if (!payload.liq_siga_pin_pago) payload.liq_siga_pin_pago = null;
-      if (!payload.liq_siga_fecha_registro) payload.liq_siga_fecha_registro = null;
       if (!payload.liq_siga_fecha_pago) payload.liq_siga_fecha_pago = null;
+      payload.liq_siga_registro_at = localInputToIso(payload.liq_siga_registro_at);
+      payload.liq_siga_termino_at = localInputToIso(payload.liq_siga_termino_at);
+      payload.liq_siga_fecha_registro = payload.liq_siga_registro_at
+        ? isoToLocalInput(payload.liq_siga_registro_at).slice(0, 10)
+        : null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
       // Congelar la tasa cuando el expediente pasa a despachado o registra resultado oficial DGA.
@@ -1393,8 +1397,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (!payload.liq_siga_numero) payload.liq_siga_numero = null;
       if (!payload.liq_siga_estado) payload.liq_siga_estado = null;
       if (!payload.liq_siga_pin_pago) payload.liq_siga_pin_pago = null;
-      if (!payload.liq_siga_fecha_registro) payload.liq_siga_fecha_registro = null;
       if (!payload.liq_siga_fecha_pago) payload.liq_siga_fecha_pago = null;
+      payload.liq_siga_registro_at = localInputToIso(payload.liq_siga_registro_at);
+      payload.liq_siga_termino_at = localInputToIso(payload.liq_siga_termino_at);
+      payload.liq_siga_fecha_registro = payload.liq_siga_registro_at
+        ? isoToLocalInput(payload.liq_siga_registro_at).slice(0, 10)
+        : null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
       if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
