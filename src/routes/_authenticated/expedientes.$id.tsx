@@ -438,14 +438,15 @@ function DetalleExpediente() {
             : "No se puede regresar el expediente a un estado anterior.",
         );
       }
-      const [{ count: gastos }, { count: facturas }] = await Promise.all([
-        supabase.from("gastos_operativos").select("id", { count: "exact", head: true }).eq("expediente_id", id),
-        supabase.from("facturas_ecf").select("id", { count: "exact", head: true }).eq("expediente_id", id),
-      ]);
+      const { count: gastos } = await supabase
+        .from("gastos")
+        .select("id", { count: "exact", head: true })
+        .eq("expediente_id", id)
+        .is("deleted_at", null);
       const msg = validarAvanceEstado(actual, estado, {
         exp,
         tieneGastos: (gastos ?? 0) > 0,
-        tieneFactura: (facturas ?? 0) > 0,
+        tieneFactura: !!(exp as any)?.factura_ecf_id,
       });
       if (msg) throw new Error(msg);
       const { error } = await supabase.from("expedientes").update({ estado: estado as any }).eq("id", id);
