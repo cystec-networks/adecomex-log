@@ -3117,6 +3117,7 @@ export type Database = {
           fecha_tasa_manual: string | null
           fecha_verificado: string | null
           flete: number | null
+          forzar_regreso_estado: boolean
           id: string
           incoterm: string | null
           liq_oficial_total: number | null
@@ -3124,6 +3125,7 @@ export type Database = {
           liq_siga_numero: string | null
           medio_transporte: string | null
           metodo_transporte_codigo: string | null
+          motivo_regreso_estado: string | null
           naviera: string | null
           numero: string
           numero_certificado_origen: string | null
@@ -3219,6 +3221,7 @@ export type Database = {
           fecha_tasa_manual?: string | null
           fecha_verificado?: string | null
           flete?: number | null
+          forzar_regreso_estado?: boolean
           id?: string
           incoterm?: string | null
           liq_oficial_total?: number | null
@@ -3226,6 +3229,7 @@ export type Database = {
           liq_siga_numero?: string | null
           medio_transporte?: string | null
           metodo_transporte_codigo?: string | null
+          motivo_regreso_estado?: string | null
           naviera?: string | null
           numero?: string
           numero_certificado_origen?: string | null
@@ -3321,6 +3325,7 @@ export type Database = {
           fecha_tasa_manual?: string | null
           fecha_verificado?: string | null
           flete?: number | null
+          forzar_regreso_estado?: boolean
           id?: string
           incoterm?: string | null
           liq_oficial_total?: number | null
@@ -3328,6 +3333,7 @@ export type Database = {
           liq_siga_numero?: string | null
           medio_transporte?: string | null
           metodo_transporte_codigo?: string | null
+          motivo_regreso_estado?: string | null
           naviera?: string | null
           numero?: string
           numero_certificado_origen?: string | null

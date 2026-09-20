@@ -57,6 +57,13 @@
       "when": 1789835618155,
       "tag": "0007_transportes_campos_solicitud_pago",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789863427856,
+      "tag": "0008_validar_transiciones_expediente",
+      "breakpoints": true
     }
   ]
 }
