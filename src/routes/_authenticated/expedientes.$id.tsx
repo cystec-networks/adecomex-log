@@ -426,16 +426,45 @@ function DetalleExpediente() {
   const hitosTotal = hitosHeader?.length ?? 0;
 
 
+  const puedeForzarRegreso = (roles ?? []).some((r) => ["admin", "operaciones"].includes(r));
+
   const updateEstado = useMutation({
     mutationFn: async (estado: string) => {
-      if (estado === "despachado" && !(exp as any)?.factura_ecf_id) {
-        throw new Error("Para cambiar a Despachado debes vincular una Factura e-CF real (pestaña Finanzas).");
+      const actual = (exp as any)?.estado as string;
+      if (estadoIndex(estado) < estadoIndex(actual)) {
+        throw new Error(
+          puedeForzarRegreso
+            ? "Para regresar a un estado anterior usa el botón \"Corregir estado\"."
+            : "No se puede regresar el expediente a un estado anterior.",
+        );
       }
+      const [{ count: gastos }, { count: facturas }] = await Promise.all([
+        supabase.from("gastos_operativos").select("id", { count: "exact", head: true }).eq("expediente_id", id),
+        supabase.from("facturas_ecf").select("id", { count: "exact", head: true }).eq("expediente_id", id),
+      ]);
+      const msg = validarAvanceEstado(actual, estado, {
+        exp,
+        tieneGastos: (gastos ?? 0) > 0,
+        tieneFactura: (facturas ?? 0) > 0,
+      });
+      if (msg) throw new Error(msg);
       const { error } = await supabase.from("expedientes").update({ estado: estado as any }).eq("id", id);
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: id, accion: `cambio_estado:${estado}` });
     },
     onSuccess: () => { toast.success("Estado actualizado"); qc.invalidateQueries({ queryKey: ["expediente", id] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const forzarRegreso = useMutation({
+    mutationFn: async ({ estado, motivo }: { estado: string; motivo: string }) => {
+      const { error } = await supabase
+        .from("expedientes")
+        .update({ estado: estado as any, forzar_regreso_estado: true, motivo_regreso_estado: motivo } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Estado corregido"); qc.invalidateQueries({ queryKey: ["expediente", id] }); },
     onError: (e: any) => toast.error(e.message),
   });
 
