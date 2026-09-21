@@ -4433,7 +4433,14 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
         <div className="grid gap-1.5">
           <Label>Total oficial (RD$)</Label>
           <Input type="text" inputMode="decimal" value={form.liq_oficial_total ?? ""}
-            onChange={(e) => { if (disabled) return; const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("liq_oficial_total", v); }}
+            onChange={(e) => {
+              if (disabled) return;
+              // Limpia cualquier valor pegado (ej. "RD$ 38,532.98" desde SIGA) dejando solo el número.
+              let v = e.target.value.replace(/[^\d.,]/g, "").replace(/,/g, ".");
+              const dot = v.indexOf(".");
+              if (dot !== -1) v = v.slice(0, dot) + "." + v.slice(dot + 1).replace(/\./g, "").slice(0, 2);
+              if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("liq_oficial_total", v);
+            }}
             placeholder="0.00" className="tabular-nums" disabled={disabled} />
         </div>
       </div>
