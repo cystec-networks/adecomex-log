@@ -3177,9 +3177,10 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
       monto_propina_legal: Number(r.monto_propina_legal ?? 0),
     });
     setFile(null);
+    setConceptoOtro(Boolean(r.concepto) && !conceptos.includes(r.concepto));
     setOpen(true);
   };
-  const openNew = () => { setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); setOpen(true); };
+  const openNew = () => { setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); setConceptoOtro(false); setOpen(true); };
 
   const subtotal = gastos.reduce((s, r) => s + (r.es_reembolso ? -Number(r.monto || 0) : Number(r.monto || 0)), 0);
 
