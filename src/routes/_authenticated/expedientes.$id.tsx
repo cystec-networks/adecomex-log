@@ -4435,8 +4435,27 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
           <Input type="text" inputMode="decimal" value={form.liq_oficial_total ?? ""}
             onChange={(e) => {
               if (disabled) return;
-              // Limpia cualquier valor pegado (ej. "RD$ 38,532.98" desde SIGA) dejando solo el número.
-              let v = e.target.value.replace(/[^\d.,]/g, "").replace(/,/g, ".");
+              // Limpia cualquier valor pegado (ej. "RD$ 38,532.98" o "2,169,442.46" desde SIGA)
+              // dejando solo el número, detectando si la coma es miles o decimal.
+              const raw = e.target.value.replace(/[^\d.,]/g, "");
+              const lastComma = raw.lastIndexOf(",");
+              const lastDot = raw.lastIndexOf(".");
+              let v = raw;
+              if (lastComma !== -1 && lastDot !== -1) {
+                // Conviven ambos separadores: el que aparece más a la derecha es el decimal.
+                const sepMiles = lastComma > lastDot ? "." : ",";
+                v = raw.split(sepMiles).join("");
+                if (lastComma > lastDot) v = v.replace(",", ".");
+              } else if (lastComma !== -1) {
+                // Solo comas: decimal si tras la última coma hay 1-2 dígitos ("38,5"); miles si 3 ("2,169").
+                const digitos = raw.length - lastComma - 1;
+                if (digitos === 1 || digitos === 2) v = raw.replace(",", ".");
+                else v = raw.split(",").join("");
+              } else if (lastDot !== -1) {
+                // Solo puntos: varios grupos de exactamente 3 dígitos ("2.169.442") es formato de miles.
+                const grupos = raw.split(".");
+                if (grupos.length > 2 && grupos.slice(1).every((g) => g.length === 3)) v = raw.split(".").join("");
+              }
               const dot = v.indexOf(".");
               if (dot !== -1) v = v.slice(0, dot) + "." + v.slice(dot + 1).replace(/\./g, "").slice(0, 2);
               if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("liq_oficial_total", v);
