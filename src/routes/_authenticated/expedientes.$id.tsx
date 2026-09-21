@@ -516,90 +516,44 @@ function DetalleExpediente() {
   return (
     <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
       <Tabs defaultValue="info">
-      <div className="sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6 md:pb-3">
-        <div className="space-y-2 md:space-y-3">
-        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2 md:flex md:flex-wrap md:items-center md:gap-3">
+      <div className="sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6">
+        <div className="space-y-1.5 md:space-y-2">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3">
           <Button variant="ghost" size="sm" asChild className="shrink-0 px-2 md:px-3"><Link to="/expedientes"><ArrowLeft className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Volver</span></Link></Button>
-          <div className="flex-1 min-w-0">
-            {isNuevo ? (
-              <>
-                <h1 className="font-display text-2xl font-bold">Nuevo Expediente</h1>
-                <p className="text-sm text-muted-foreground">
-                  Completa los campos a mano, o escanea el BL y/o la factura comercial para autollenarlos. El número se genera automáticamente.
-                </p>
-              </>
-            ) : (
-              <>
-                <h1 className="font-display flex min-w-0 items-center gap-2 text-xl font-bold md:flex-wrap md:gap-3 md:text-2xl">
-                  <span className="truncate">{expData.numero}</span>
-                  <Badge className="bg-primary/10 text-primary border-transparent">{ESTADO_LABEL[expData.estado ?? ""] ?? expData.estado?.replace("_"," ")}</Badge>
-                  {expData.solicitudes?.numero && <Badge variant="outline" className="hidden md:inline-flex">← {expData.solicitudes.numero}</Badge>}
-                </h1>
-                <div className="mt-0.5 flex min-w-0 items-center text-base font-bold text-foreground md:text-xl">
-                  {expData.clientes ? (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button type="button" variant="link" className="h-auto min-w-0 justify-start truncate p-0 text-left text-base font-bold text-foreground underline decoration-dotted underline-offset-2 md:text-xl" title={expData.clientes.nombre}>
-                          {expData.clientes.nombre}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[min(22rem,calc(100vw-2rem))] p-0 border-none bg-transparent shadow-none z-50" side="bottom" align="start" sideOffset={8}>
-                        <div className="rounded-md border bg-background shadow-lg px-3 py-2 text-xs space-y-0.5">
-                          <div><span className="text-muted-foreground">RNC:</span> {expData.clientes.rnc ?? "—"}</div>
-                          <div><span className="text-muted-foreground">Contacto:</span> {expData.clientes.contacto ?? "—"}</div>
-                          <div><span className="text-muted-foreground">Email:</span> {(expData.clientes as any).email ?? "—"}</div>
-                          <div><span className="text-muted-foreground">Teléfono:</span> {expData.clientes.telefono ?? "—"}</div>
-                          <div><span className="text-muted-foreground">Dirección:</span> {(expData.clientes as any).direccion ?? "—"}</div>
-                          <div className="mt-2 flex items-center gap-1 border-t pt-2">
-                            <WhatsAppButton
-                              phone={expData.clientes.telefono}
-                              clientName={expData.clientes.nombre}
-                              recordType="Expediente"
-                              recordNumber={expData.numero}
-                              variant="icon"
-                            />
-                            <EmailButton
-                              email={(expData.clientes as any).email}
-                              clientName={expData.clientes.nombre}
-                              recordType="Expediente"
-                              recordNumber={expData.numero}
-                              variant="icon"
-                            />
-                            <SearchEmailButton
-                              recordType="Expediente"
-                              recordNumber={expData.numero}
-                              variant="icon"
-                            />
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  ) : (
-                    <span className="truncate">Sin cliente</span>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
           {isNuevo ? (
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="min-w-0 flex-1">
+              <h1 className="font-display truncate text-lg font-bold md:text-xl">Nuevo Expediente</h1>
+              <p className="truncate text-xs text-muted-foreground md:text-sm">
+                Completa los campos a mano, o escanea el BL y/o la factura comercial para autollenarlos. El número se genera automáticamente.
+              </p>
+            </div>
+          ) : (
+            <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-2 md:min-w-[7rem]">
+              <h1 className="font-display shrink-0 text-lg font-bold md:text-xl">{expData.numero}</h1>
+              {expData.solicitudes?.numero && <Badge variant="outline" className="hidden shrink-0 md:inline-flex">← {expData.solicitudes.numero}</Badge>}
+            </div>
+          )}
+          {isNuevo && (
+            <div className="flex items-center gap-2">
               <EscanearBlButton onExtracted={(res) => { blRes.current = res; void aplicarCombinado(); toast.success("BL procesado — revisa y ajusta los campos"); }} />
               <EscanearFacturaExpButton onExtracted={(res) => { facRes.current = res; void aplicarCombinado(); toast.success("Factura procesada — revisa y ajusta los campos"); }} />
             </div>
-          ) : (
-            <div className="hidden items-center gap-2 md:flex md:flex-wrap">
+          )}
+          {(
+            <div className="hidden items-center gap-1.5 md:flex md:flex-wrap">
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
+                className="h-8 w-8 shrink-0"
                 disabled={duplicarMut.isPending}
                 onClick={() => duplicarMut.mutate()}
                 title="Duplicar expediente"
               >
-                <Copy className="h-4 w-4 mr-1" /> {duplicarMut.isPending ? "Duplicando…" : "Duplicar"}
+                <Copy className="h-4 w-4" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="px-2">
                     <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
                     <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
                   </Button>
@@ -613,8 +567,8 @@ function DetalleExpediente() {
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <HerramientasDgaVuceMenu />
-              <RastreosEnvioMenu />
+              <HerramientasDgaVuceMenu className="px-2" />
+              <RastreosEnvioMenu className="px-2" />
               <RastrearEmbarqueButton
                 containerNumber={expData.numeros_contenedores}
                 blNumber={expData.bl_awb}
@@ -674,40 +628,55 @@ function DetalleExpediente() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          {!isNuevo && (
-            <div className="col-start-2 col-end-4 flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-xs font-normal text-muted-foreground md:w-full md:text-sm">
-              <span className="min-w-0 shrink-0" title={`BL/AWB: ${expData.bl_awb ?? "—"}`}>BL/AWB: {expData.bl_awb ?? "—"}</span>
-              {expData.numeros_contenedores && (
-                <>
-                  <Badge variant="secondary" className="min-w-0 flex-1 justify-start font-mono text-xs" title={`Contenedor: ${expData.numeros_contenedores}`}>
-                    <span className="truncate">Contenedor: {expData.numeros_contenedores}</span>
-                  </Badge>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 shrink-0"
-                    onClick={() => {
-                      void navigator.clipboard.writeText(expData.numeros_contenedores);
-                      toast.success("Número de contenedor copiado");
-                    }}
-                    title="Copiar número de contenedor"
-                    aria-label="Copiar número de contenedor"
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
-                </>
-              )}
-            </div>
-          )}
         </div>
 
         {!isNuevo && (
-        <div className="flex flex-wrap items-center gap-2 md:gap-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">Estado:</Label>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 md:gap-x-4">
+          {expData.clientes ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="link" className="h-auto min-w-0 max-w-[16rem] justify-start truncate p-0 text-left text-sm font-semibold text-foreground underline decoration-dotted underline-offset-2" title={expData.clientes.nombre}>
+                  {expData.clientes.nombre}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[min(22rem,calc(100vw-2rem))] p-0 border-none bg-transparent shadow-none z-50" side="bottom" align="start" sideOffset={8}>
+                <div className="rounded-md border bg-background shadow-lg px-3 py-2 text-xs space-y-0.5">
+                  <div><span className="text-muted-foreground">RNC:</span> {expData.clientes.rnc ?? "—"}</div>
+                  <div><span className="text-muted-foreground">Contacto:</span> {expData.clientes.contacto ?? "—"}</div>
+                  <div><span className="text-muted-foreground">Email:</span> {(expData.clientes as any).email ?? "—"}</div>
+                  <div><span className="text-muted-foreground">Teléfono:</span> {expData.clientes.telefono ?? "—"}</div>
+                  <div><span className="text-muted-foreground">Dirección:</span> {(expData.clientes as any).direccion ?? "—"}</div>
+                  <div className="mt-2 flex items-center gap-1 border-t pt-2">
+                    <WhatsAppButton
+                      phone={expData.clientes.telefono}
+                      clientName={expData.clientes.nombre}
+                      recordType="Expediente"
+                      recordNumber={expData.numero}
+                      variant="icon"
+                    />
+                    <EmailButton
+                      email={(expData.clientes as any).email}
+                      clientName={expData.clientes.nombre}
+                      recordType="Expediente"
+                      recordNumber={expData.numero}
+                      variant="icon"
+                    />
+                    <SearchEmailButton
+                      recordType="Expediente"
+                      recordNumber={expData.numero}
+                      variant="icon"
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <span className="truncate text-sm text-muted-foreground">Sin cliente</span>
+          )}
+          <div className="flex items-center gap-1.5">
+            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
             <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
-              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-40 text-xs md:text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {ESTADO_ORDEN.map((e) => (
                   <SelectItem key={e} value={e} disabled={estadoIndex(e) < estadoIndex(expData.estado)}>
@@ -724,7 +693,7 @@ function DetalleExpediente() {
               />
             )}
             {expData.estado && (
-              <span className="text-sm text-muted-foreground whitespace-nowrap">
+              <span className="whitespace-nowrap text-xs text-muted-foreground md:text-sm">
                 {(() => {
                   const fecha = {
                     digitar: expData.fecha_recibido,
@@ -740,27 +709,54 @@ function DetalleExpediente() {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">Despacho:</Label>
-            <span className="text-sm font-medium">{hitosDone} de {hitosTotal}</span>
+          <div className="flex min-w-0 items-center gap-1.5 text-xs md:text-sm">
+            <span className="min-w-0 shrink" title={`BL/AWB: ${expData.bl_awb ?? "—"}`}>
+              <span className="text-muted-foreground">BL/AWB:</span>{" "}
+              <span className="font-medium">{expData.bl_awb ?? "—"}</span>
+            </span>
+            {expData.numeros_contenedores && (
+              <>
+                <span className="min-w-0 truncate font-medium" title={`Contenedor: ${expData.numeros_contenedores}`}>
+                  <span className="text-muted-foreground">Contenedor:</span> {expData.numeros_contenedores}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(expData.numeros_contenedores);
+                    toast.success("Número de contenedor copiado");
+                  }}
+                  title="Copiar número de contenedor"
+                  aria-label="Copiar número de contenedor"
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Despacho:</Label>
+            <span className="text-xs font-medium md:text-sm">{hitosDone} de {hitosTotal}</span>
           </div>
 
           {expData.numero_dua && (
             <div className="flex min-w-0 items-center gap-1.5">
-              <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">Declaración DUA:</Label>
-              <span className="truncate text-sm font-medium" title={expData.numero_dua}>{expData.numero_dua}</span>
+              <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Declaración DUA:</Label>
+              <span className="truncate text-xs font-medium md:text-sm" title={expData.numero_dua}>{expData.numero_dua}</span>
             </div>
           )}
           {expData.numero_igra && (
             <div className="flex min-w-0 items-center gap-1.5">
-              <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">N.º de despacho:</Label>
-              <span className="truncate text-sm font-medium" title={expData.numero_igra}>{expData.numero_igra}</span>
+              <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">N.º de despacho:</Label>
+              <span className="truncate text-xs font-medium md:text-sm" title={expData.numero_igra}>{expData.numero_igra}</span>
             </div>
           )}
           {permisosNumeros && (
             <div className="flex min-w-0 items-center gap-1.5">
-              <Label className="text-sm text-muted-foreground whitespace-nowrap mb-0">N.º de permiso:</Label>
-              <span className="truncate text-sm font-medium" title={permisosNumeros}>{permisosNumeros}</span>
+              <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">N.º de permiso:</Label>
+              <span className="truncate text-xs font-medium md:text-sm" title={permisosNumeros}>{permisosNumeros}</span>
             </div>
           )}
 
@@ -787,7 +783,7 @@ function DetalleExpediente() {
         </div>
         )}
       </div>
-        <TabsList className="mt-2 flex h-auto max-w-full flex-nowrap justify-start overflow-x-auto md:mt-3 md:flex-wrap">
+        <TabsList className="mt-1.5 flex h-auto max-w-full flex-nowrap justify-start overflow-x-auto md:mt-2 md:flex-wrap">
           {tabOrder.map((key) => {
             const label = TAB_LABELS[key];
             if (!label) return null;
