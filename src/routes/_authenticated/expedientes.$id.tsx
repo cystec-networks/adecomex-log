@@ -528,7 +528,7 @@ function DetalleExpediente() {
               </p>
             </div>
           ) : (
-            <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3 md:min-w-[7.5rem]">
+            <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-2 md:min-w-[7rem]">
               <h1 className="font-display shrink-0 text-lg font-bold md:text-xl">{expData.numero}</h1>
               {expData.solicitudes?.numero && <Badge variant="outline" className="hidden shrink-0 md:inline-flex">← {expData.solicitudes.numero}</Badge>}
             </div>
@@ -544,7 +544,7 @@ function DetalleExpediente() {
               <Button
                 variant="outline"
                 size="sm"
-                className="px-2.5"
+                className="px-2"
                 disabled={duplicarMut.isPending}
                 onClick={() => duplicarMut.mutate()}
                 title="Duplicar expediente"
@@ -553,7 +553,7 @@ function DetalleExpediente() {
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="px-2.5">
+                  <Button variant="outline" size="sm" className="px-2">
                     <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
                     <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
                   </Button>
@@ -567,8 +567,8 @@ function DetalleExpediente() {
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <HerramientasDgaVuceMenu />
-              <RastreosEnvioMenu />
+              <HerramientasDgaVuceMenu className="px-2" />
+              <RastreosEnvioMenu className="px-2" />
               <RastrearEmbarqueButton
                 containerNumber={expData.numeros_contenedores}
                 blNumber={expData.bl_awb}
