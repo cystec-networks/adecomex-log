@@ -7,9 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
-import { Save, MailSearch, Building2 } from "lucide-react";
+import { Save, MailSearch, Building2, Landmark } from "lucide-react";
 import { GMAIL_AUTHUSER_KEY, GMAIL_AUTHUSER_DEFAULT } from "@/lib/system-settings";
 import { EMPRESA_RNC_KEY } from "@/lib/fiscal-606";
+import {
+  REEMBOLSO_BANCO_KEY,
+  DATOS_BANCARIOS_VACIOS,
+  parseDatosBancarios,
+  type DatosBancariosReembolso,
+} from "@/lib/reembolso-config";
 
 export const Route = createFileRoute("/_authenticated/admin/configuracion")({
   ssr: false,
