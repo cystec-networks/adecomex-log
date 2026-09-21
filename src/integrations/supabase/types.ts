@@ -3180,6 +3180,7 @@ export type Database = {
           rectificacion_tecnica: boolean
           reembolso_estado: string
           reembolso_fecha_pago: string | null
+          reembolso_generado_at: string | null
           regimen_aduanero: string | null
           regimen_codigo: string | null
           regimen_codigo_exportacion: string | null
@@ -3291,6 +3292,7 @@ export type Database = {
           rectificacion_tecnica?: boolean
           reembolso_estado?: string
           reembolso_fecha_pago?: string | null
+          reembolso_generado_at?: string | null
           regimen_aduanero?: string | null
           regimen_codigo?: string | null
           regimen_codigo_exportacion?: string | null
@@ -3402,6 +3404,7 @@ export type Database = {
           rectificacion_tecnica?: boolean
           reembolso_estado?: string
           reembolso_fecha_pago?: string | null
+          reembolso_generado_at?: string | null
           regimen_aduanero?: string | null
           regimen_codigo?: string | null
           regimen_codigo_exportacion?: string | null
