@@ -1759,6 +1759,75 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               disabled={!editable}
             />
           </div>
+          <div className={cn("grid gap-1.5 md:col-span-2", camposFaltantes.has("req-regimen_aduanero") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-regimen_aduanero">
+            <Label>{isNuevo && <ReqMark />}Régimen Aduanero</Label>
+            <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => { set("regimen_aduanero", v); limpiarFaltante("req-regimen_aduanero"); }} disabled={!editable}>
+              <SelectTrigger><SelectValue placeholder="Selecciona régimen" /></SelectTrigger>
+              <SelectContent>
+                {[
+                  "Admisión Temporal",
+                  "Admisión Temporal sin Transformación",
+                  "Depósito de Reexportación",
+                  "Depósito Fiscal",
+                  "Depósito Logístico",
+                  "Depósito Particular",
+                  "Despacho a Consumo",
+                  "Reimportación",
+                  "Zona Franca Comercial",
+                  "Zonas Francas Industrial y Especiales",
+                ].map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Rectificación técnica</Label>
+            <div className="h-9 flex items-center gap-3">
+              <Switch
+                checked={form.rectificacion_tecnica}
+                onCheckedChange={(v) => set("rectificacion_tecnica", v)}
+                disabled={!editable}
+              />
+              <span className="text-sm text-muted-foreground">
+                {form.rectificacion_tecnica ? "Sí" : "No"}
+              </span>
+            </div>
+          </div>
+          {form.rectificacion_tecnica && (
+            <div className="grid gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+              <Label>N° de Trámite</Label>
+              <Input
+                value={form.numero_tramite_rectificacion}
+                onChange={(e) => set("numero_tramite_rectificacion", e.target.value)}
+                placeholder="RT-2026-0456"
+                disabled={!editable}
+              />
+            </div>
+          )}
+          <AutoField label="Preferencia comercial" value={form.preferencia_comercial} onChange={(v) => set("preferencia_comercial", v)} suggestion={sug.preferencia_comercial ?? []} disabled={!editable} />
+          {(() => {
+            const p = (form.preferencia_comercial || "").trim().toLowerCase();
+            const showCert = p !== "" && p !== "ninguna" && p !== "no aplica" && p !== "n/a";
+            return showCert ? (
+              <div className="grid gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                <Label>N° Certificado de Origen</Label>
+                <Input
+                  value={form.numero_certificado_origen}
+                  onChange={(e) => set("numero_certificado_origen", e.target.value)}
+                  placeholder="CO-2026-00123"
+                  disabled={!editable}
+                />
+              </div>
+            ) : null;
+          })()}
+          <div className="grid gap-1.5">
+            <Label>Canal de riesgo</Label>
+            <Select value={form.canal_riesgo || undefined} onValueChange={(v) => set("canal_riesgo", v)} disabled={!editable}>
+              <SelectTrigger><SelectValue placeholder="Selecciona canal" /></SelectTrigger>
+              <SelectContent>
+                {["Verde","Amarillo","Rojo"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
       </Section>
 
       <Section id="descripcion-mercancia" title="4. Descripción de mercancía" subtitle="Detalle físico y clasificación de la carga">
@@ -1794,22 +1863,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               disabled={!editable}
             />
           </div>
-          <AutoField label="Preferencia comercial" value={form.preferencia_comercial} onChange={(v) => set("preferencia_comercial", v)} suggestion={sug.preferencia_comercial ?? []} disabled={!editable} />
-          {(() => {
-            const p = (form.preferencia_comercial || "").trim().toLowerCase();
-            const showCert = p !== "" && p !== "ninguna" && p !== "no aplica" && p !== "n/a";
-            return showCert ? (
-              <div className="grid gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                <Label>N° Certificado de Origen</Label>
-                <Input
-                  value={form.numero_certificado_origen}
-                  onChange={(e) => set("numero_certificado_origen", e.target.value)}
-                  placeholder="CO-2026-00123"
-                  disabled={!editable}
-                />
-              </div>
-            ) : null;
-          })()}
           <div className="grid gap-2 md:col-span-2">
             <div className="flex items-center justify-between">
               <Label>Contenedores / Furgones</Label>
@@ -1879,39 +1932,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               El campo “Números de contenedores” se actualiza automáticamente con esta lista al guardar.
             </p>
           </div>
-          <div className="grid gap-1.5">
-            <Label>Rectificación técnica</Label>
-            <div className="h-9 flex items-center gap-3">
-              <Switch
-                checked={form.rectificacion_tecnica}
-                onCheckedChange={(v) => set("rectificacion_tecnica", v)}
-                disabled={!editable}
-              />
-              <span className="text-sm text-muted-foreground">
-                {form.rectificacion_tecnica ? "Sí" : "No"}
-              </span>
-            </div>
-          </div>
-          {form.rectificacion_tecnica && (
-            <div className="grid gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-              <Label>N° de Trámite</Label>
-              <Input
-                value={form.numero_tramite_rectificacion}
-                onChange={(e) => set("numero_tramite_rectificacion", e.target.value)}
-                placeholder="RT-2026-0456"
-                disabled={!editable}
-              />
-            </div>
-          )}
-          <div className="grid gap-1.5">
-            <Label>Canal de riesgo</Label>
-            <Select value={form.canal_riesgo || undefined} onValueChange={(v) => set("canal_riesgo", v)} disabled={!editable}>
-              <SelectTrigger><SelectValue placeholder="Selecciona canal" /></SelectTrigger>
-              <SelectContent>
-                {["Verde","Amarillo","Rojo"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
           <div className={cn("md:col-span-2 lg:col-span-3", camposFaltantes.has("req-mercancia") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-mercancia">
             {isNuevo && (
               <Label className="mb-1.5 block"><ReqMark />Detalle de mercancía (al menos 1 producto)</Label>
@@ -1979,18 +1999,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
 
 
-            const REGIMENES = [
-              "Admisión Temporal",
-              "Admisión Temporal sin Transformación",
-              "Depósito de Reexportación",
-              "Depósito Fiscal",
-              "Depósito Logístico",
-              "Depósito Particular",
-              "Despacho a Consumo",
-              "Reimportación",
-              "Zona Franca Comercial",
-              "Zonas Francas Industrial y Especiales",
-            ];
             return (
               <div className="md:col-span-2 lg:col-span-3 grid gap-4 pt-2 border-t">
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-2">Valores CIF</div>
@@ -2022,15 +2030,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                     <div className="h-9 px-3 rounded-md border bg-muted/50 flex items-center text-sm font-semibold tabular-nums">
                       {fmt(cif)}
                     </div>
-                  </div>
-                  <div className={cn("grid gap-1.5 md:col-span-2", camposFaltantes.has("req-regimen_aduanero") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-regimen_aduanero">
-                    <Label>{isNuevo && <ReqMark />}Régimen Aduanero</Label>
-                    <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => { set("regimen_aduanero", v); limpiarFaltante("req-regimen_aduanero"); }} disabled={!editable}>
-                      <SelectTrigger><SelectValue placeholder="Selecciona régimen" /></SelectTrigger>
-                      <SelectContent>
-                        {REGIMENES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
                   </div>
                   {esExportacion && (
                     <div className="grid gap-1.5 md:col-span-2">
