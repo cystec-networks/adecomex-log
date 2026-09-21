@@ -166,9 +166,6 @@ const CONCEPTOS_FACTURA = [
   "Honorarios","Transporte","Gestión aduanal","Reembolso de gastos","Servicios adicionales","Otros",
 ];
 const ESTADOS_FACTURA = ["pendiente","cobrada","anulada"];
-const CONCEPTOS_GASTO = [
-  "Flete","Aranceles","ITBIS","Gastos portuarios","Transporte","Honorarios de terceros","Reembolsos","Otros",
-];
 
 function ReadOnlyField({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -3364,6 +3361,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
           <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
             <tr>
               <th className="text-left px-4 py-2">Concepto</th>
+              <th className="text-left">Notas</th>
               <th className="text-left">Proveedor</th>
               <th className="text-left">Fecha</th>
               <th className="text-left">Adjunto</th>
@@ -3375,6 +3373,9 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
             {gastos.map((r) => (
               <tr key={r.id} className="border-b last:border-0">
                 <td className="px-4 py-2">{r.concepto}{r.es_reembolso && <Badge variant="outline" className="ml-2 text-xs">reembolso</Badge>}</td>
+                <td className="text-xs text-muted-foreground max-w-[220px]">
+                  {r.notas ? <span className="block truncate" title={r.notas}>{r.notas}</span> : "—"}
+                </td>
                 <td className="text-xs text-muted-foreground">{r.proveedor || "—"}</td>
                 <td className="text-xs">{fmtLocalDate(r.fecha)}</td>
                 <td>{r.adjunto_path ? <DocumentoPreviewButton path={r.adjunto_path} variant="link" size="sm" className="h-auto p-0" icon={<FileText className="h-3.5 w-3.5 mr-1" />} label="Ver" /> : <span className="text-xs text-muted-foreground">—</span>}</td>
@@ -3387,10 +3388,10 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
                 </td>
               </tr>
             ))}
-            {gastos.length === 0 && <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">Sin gastos registrados.</td></tr>}
+            {gastos.length === 0 && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Sin gastos registrados.</td></tr>}
             {gastos.length > 0 && (
               <tr className="bg-muted/20 font-medium">
-                <td colSpan={4} className="px-4 py-2 text-right">Subtotal (neto)</td>
+                <td colSpan={5} className="px-4 py-2 text-right">Subtotal (neto)</td>
                 <td className="text-right">{fmtDOP(subtotal)}</td>
                 <td></td>
               </tr>
