@@ -95,6 +95,13 @@ export function SolicitudReembolsoPdfButton({ exp }: { exp: any }) {
         datosBancarios: banco,
       });
 
+      // Registra la fecha de generación (solo la primera vez) para el reporte de Reembolsos.
+      await supabase
+        .from("expedientes")
+        .update({ reembolso_generado_at: new Date().toISOString() } as any)
+        .eq("id", exp.id)
+        .is("reembolso_generado_at", null);
+
       fileNameRef.current = `REEBGVEXP-${numeroExp || "SIN NUMERO"}.pdf`;
       doc.setProperties({ title: fileNameRef.current.replace(/\.pdf$/, "") });
       docRef.current = doc;

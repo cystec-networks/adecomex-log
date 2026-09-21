@@ -65,6 +65,7 @@ import { Route as AuthenticatedAdminSolicitudesPagoTransferenciaRouteImport } fr
 import { Route as AuthenticatedAdminRespaldoDatosRouteImport } from './routes/_authenticated/admin.respaldo-datos'
 import { Route as AuthenticatedAdminReportesFiscalesRouteImport } from './routes/_authenticated/admin.reportes-fiscales'
 import { Route as AuthenticatedAdminRegistroDiarioRouteImport } from './routes/_authenticated/admin.registro-diario'
+import { Route as AuthenticatedAdminReembolsosRouteImport } from './routes/_authenticated/admin.reembolsos'
 import { Route as AuthenticatedAdminPlantillasDocumentosRouteImport } from './routes/_authenticated/admin.plantillas-documentos'
 import { Route as AuthenticatedAdminGastosOperativosRouteImport } from './routes/_authenticated/admin.gastos-operativos'
 import { Route as AuthenticatedAdminFacturacionRouteImport } from './routes/_authenticated/admin.facturacion'
@@ -407,6 +408,12 @@ const AuthenticatedAdminRegistroDiarioRoute =
     path: '/admin/registro-diario',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminReembolsosRoute =
+  AuthenticatedAdminReembolsosRouteImport.update({
+    id: '/admin/reembolsos',
+    path: '/admin/reembolsos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminPlantillasDocumentosRoute =
   AuthenticatedAdminPlantillasDocumentosRouteImport.update({
     id: '/admin/plantillas-documentos',
@@ -613,6 +620,7 @@ export interface FileRoutesByFullPath {
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
+  '/admin/reembolsos': typeof AuthenticatedAdminReembolsosRoute
   '/admin/registro-diario': typeof AuthenticatedAdminRegistroDiarioRoute
   '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/admin/respaldo-datos': typeof AuthenticatedAdminRespaldoDatosRoute
@@ -697,6 +705,7 @@ export interface FileRoutesByTo {
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
+  '/admin/reembolsos': typeof AuthenticatedAdminReembolsosRoute
   '/admin/registro-diario': typeof AuthenticatedAdminRegistroDiarioRoute
   '/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/admin/respaldo-datos': typeof AuthenticatedAdminRespaldoDatosRoute
@@ -785,6 +794,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/_authenticated/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/_authenticated/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
+  '/_authenticated/admin/reembolsos': typeof AuthenticatedAdminReembolsosRoute
   '/_authenticated/admin/registro-diario': typeof AuthenticatedAdminRegistroDiarioRoute
   '/_authenticated/admin/reportes-fiscales': typeof AuthenticatedAdminReportesFiscalesRoute
   '/_authenticated/admin/respaldo-datos': typeof AuthenticatedAdminRespaldoDatosRoute
@@ -871,6 +881,7 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/gastos-operativos'
     | '/admin/plantillas-documentos'
+    | '/admin/reembolsos'
     | '/admin/registro-diario'
     | '/admin/reportes-fiscales'
     | '/admin/respaldo-datos'
@@ -955,6 +966,7 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/gastos-operativos'
     | '/admin/plantillas-documentos'
+    | '/admin/reembolsos'
     | '/admin/registro-diario'
     | '/admin/reportes-fiscales'
     | '/admin/respaldo-datos'
@@ -1042,6 +1054,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/facturacion'
     | '/_authenticated/admin/gastos-operativos'
     | '/_authenticated/admin/plantillas-documentos'
+    | '/_authenticated/admin/reembolsos'
     | '/_authenticated/admin/registro-diario'
     | '/_authenticated/admin/reportes-fiscales'
     | '/_authenticated/admin/respaldo-datos'
@@ -1509,6 +1522,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRegistroDiarioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/reembolsos': {
+      id: '/_authenticated/admin/reembolsos'
+      path: '/admin/reembolsos'
+      fullPath: '/admin/reembolsos'
+      preLoaderRoute: typeof AuthenticatedAdminReembolsosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/plantillas-documentos': {
       id: '/_authenticated/admin/plantillas-documentos'
       path: '/admin/plantillas-documentos'
@@ -1739,6 +1759,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminFacturacionRoute: typeof AuthenticatedAdminFacturacionRoute
   AuthenticatedAdminGastosOperativosRoute: typeof AuthenticatedAdminGastosOperativosRoute
   AuthenticatedAdminPlantillasDocumentosRoute: typeof AuthenticatedAdminPlantillasDocumentosRoute
+  AuthenticatedAdminReembolsosRoute: typeof AuthenticatedAdminReembolsosRoute
   AuthenticatedAdminRegistroDiarioRoute: typeof AuthenticatedAdminRegistroDiarioRoute
   AuthenticatedAdminReportesFiscalesRoute: typeof AuthenticatedAdminReportesFiscalesRoute
   AuthenticatedAdminRespaldoDatosRoute: typeof AuthenticatedAdminRespaldoDatosRoute
@@ -1812,6 +1833,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAdminGastosOperativosRoute,
   AuthenticatedAdminPlantillasDocumentosRoute:
     AuthenticatedAdminPlantillasDocumentosRoute,
+  AuthenticatedAdminReembolsosRoute: AuthenticatedAdminReembolsosRoute,
   AuthenticatedAdminRegistroDiarioRoute: AuthenticatedAdminRegistroDiarioRoute,
   AuthenticatedAdminReportesFiscalesRoute:
     AuthenticatedAdminReportesFiscalesRoute,

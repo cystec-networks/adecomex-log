@@ -1,0 +1,2 @@
+ALTER TABLE public.expedientes ADD COLUMN IF NOT EXISTS reembolso_generado_at TIMESTAMPTZ;
+COMMENT ON COLUMN public.expedientes.reembolso_generado_at IS 'Fecha de la primera generación del documento REEBGVEXP.';
