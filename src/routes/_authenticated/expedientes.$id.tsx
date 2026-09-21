@@ -631,7 +631,7 @@ function DetalleExpediente() {
         </div>
 
         {!isNuevo && (
-        <div className="grid min-w-0 grid-cols-1 gap-x-3 gap-y-1 md:grid-cols-2 xl:grid-cols-[minmax(9rem,1fr)_minmax(12rem,1.1fr)_minmax(9rem,1fr)_minmax(14rem,1.7fr)]">
+        <div className="grid min-w-0 grid-cols-1 gap-x-3 gap-y-1 md:grid-cols-2 xl:grid-cols-[minmax(9rem,1fr)_minmax(18.5rem,1.4fr)_minmax(9rem,1fr)_minmax(12rem,1.3fr)]">
           <div className="min-w-0">
           {expData.clientes ? (
             <Popover>
@@ -678,7 +678,7 @@ function DetalleExpediente() {
           <div className="flex min-w-0 items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
             <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
-              <SelectTrigger className="h-8 w-28 min-w-0 flex-1 text-xs md:w-36 md:flex-none md:text-sm"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-28 min-w-0 flex-1 text-xs md:w-32 md:flex-initial md:text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {ESTADO_ORDEN.map((e) => (
                   <SelectItem key={e} value={e} disabled={estadoIndex(e) < estadoIndex(expData.estado)}>
