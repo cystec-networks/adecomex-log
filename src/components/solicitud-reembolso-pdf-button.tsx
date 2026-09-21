@@ -110,9 +110,19 @@ export function SolicitudReembolsoPdfButton({ exp }: { exp: any }) {
 
   return (
     <>
-      <Button variant="outline" size="sm" disabled={generando} onClick={generar}>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={generando || sinReembolsos}
+        title={sinReembolsos ? "Este expediente no tiene gastos marcados como \"Es reembolso\"" : undefined}
+        onClick={generar}
+      >
         <FileText className="h-4 w-4 mr-1" />
-        {generando ? "Generando…" : "Generar Solicitud de Reembolso"}
+        {generando
+          ? "Generando…"
+          : sinReembolsos
+            ? "Solicitud de Reembolso (sin gastos marcados)"
+            : "Generar Solicitud de Reembolso"}
       </Button>
 
       <Dialog open={!!previewUrl} onOpenChange={(o) => { if (!o) cerrar(); }}>
