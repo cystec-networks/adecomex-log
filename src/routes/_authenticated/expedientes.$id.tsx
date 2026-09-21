@@ -1408,6 +1408,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         : null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
+      if (!payload.acuerdo_codigo) payload.acuerdo_codigo = null;
       if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
 
       // Tasa Oficial DGA obligatoria antes de crear.
