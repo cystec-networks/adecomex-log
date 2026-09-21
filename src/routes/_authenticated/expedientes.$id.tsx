@@ -678,7 +678,7 @@ function DetalleExpediente() {
           <div className="flex min-w-0 items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
             <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
-              <SelectTrigger className="h-8 w-24 min-w-0 flex-1 text-xs md:w-28 md:text-sm"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-28 min-w-0 flex-1 text-xs md:w-36 md:flex-none md:text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {ESTADO_ORDEN.map((e) => (
                   <SelectItem key={e} value={e} disabled={estadoIndex(e) < estadoIndex(expData.estado)}>
