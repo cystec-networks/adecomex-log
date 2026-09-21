@@ -1759,31 +1759,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} />
           <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} />
           <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} disabled={!editable} />
-          <div className={cn("grid gap-1.5", camposFaltantes.has("req-puerto_arribo") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-puerto_arribo">
-            <Label><ReqMark />Puerto de arribo</Label>
-            <DgaCombobox
-              table="dga_puertos"
-              value={form.puerto_arribo}
-              codigo={form.puerto_arribo_codigo}
-              onChange={(nombre, codigo) => { setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo })); limpiarFaltante("req-puerto_arribo"); }}
-              placeholder="Buscar puerto (catálogo DGA)"
-              disabled={!editable}
-            />
-            {form.puerto_arribo && !form.puerto_arribo_codigo && (
-              <span className="text-[11px] text-amber-700">Sin código DGA: selecciona el puerto del catálogo para el XML.</span>
-            )}
-          </div>
-          <div className={cn("grid gap-1.5", camposFaltantes.has("req-area_aduanera") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-area_aduanera">
-            <Label><ReqMark />Área / Administración aduanera</Label>
-            <DgaCombobox
-              table="dga_areas"
-              value={form.area_aduanera}
-              codigo={form.area_aduanera_codigo}
-              onChange={(nombre, codigo) => { setForm((f) => ({ ...f, area_aduanera: nombre, area_aduanera_codigo: codigo })); limpiarFaltante("req-area_aduanera"); }}
-              placeholder="Buscar área (catálogo DGA)"
-              disabled={!editable}
-            />
-          </div>
           <div className={cn("grid gap-1.5 md:col-span-2", camposFaltantes.has("req-regimen_aduanero") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-regimen_aduanero">
             <Label>{isNuevo && <ReqMark />}Régimen Aduanero</Label>
             <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => { set("regimen_aduanero", v); limpiarFaltante("req-regimen_aduanero"); }} disabled={!editable}>
