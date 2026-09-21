@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,22 @@ export function SolicitudReembolsoPdfButton({ exp }: { exp: any }) {
   const [generando, setGenerando] = useState(false);
   const docRef = useRef<any>(null);
   const fileNameRef = useRef("Solicitud de Reembolso.pdf");
+
+  const { data: totalReembolsos } = useQuery({
+    queryKey: ["gastos-reembolso-count", exp?.id],
+    enabled: Boolean(exp?.id),
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("gastos")
+        .select("id", { count: "exact", head: true })
+        .eq("expediente_id", exp.id)
+        .eq("es_reembolso", true)
+        .is("deleted_at", null);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+  const sinReembolsos = totalReembolsos === 0;
 
   const cerrar = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl.split("#")[0]);
