@@ -53,8 +53,10 @@ export function requisitoFaltante(paso: string, ctx: Ctx): string | null {
         ? "No se puede pasar a Verificado: falta el Número de despacho (sección Declaración)."
         : null;
     case "despachado":
-      return vacio(ctx.exp?.liq_siga_numero)
-        ? "No se puede pasar a Despachado: falta el N.º Liquidación SIGA (Resultado oficial DGA)."
+      if (vacio(ctx.exp?.liq_siga_numero))
+        return "No se puede pasar a Despachado: falta el N.º Liquidación SIGA (Resultado oficial DGA).";
+      return !ctx.tieneGastos
+        ? "No se puede pasar a Despachado: no hay gastos operativos registrados en el expediente."
         : null;
     case "entregado":
       return !ctx.tieneGastos
