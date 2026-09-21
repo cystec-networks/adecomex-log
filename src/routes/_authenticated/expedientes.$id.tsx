@@ -1301,6 +1301,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         : null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
+      if (!payload.acuerdo_codigo) payload.acuerdo_codigo = null;
       // Congelar la tasa cuando el expediente pasa a despachado o registra resultado oficial DGA.
       if (debeCongelar({ estado: exp.estado, liq_oficial_total: payload.liq_oficial_total, tasa_cambio_congelada: exp.tasa_cambio_congelada })) {
         payload.tasa_cambio_congelada = true;
