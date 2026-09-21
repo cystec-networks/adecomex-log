@@ -702,28 +702,13 @@ function DetalleExpediente() {
             </span>
           </div>
           <div className="flex h-8 min-w-0 items-center gap-1.5 text-xs md:text-sm">
-            <span className="min-w-0 flex-1 truncate font-medium" title={`Contenedor: ${expData.numeros_contenedores ?? "—"}`}>
-              <span className="text-muted-foreground">Contenedor:</span> {expData.numeros_contenedores ?? "—"}
+            <span className="min-w-0 flex-1 truncate" title={`Fecha Estimada de Llegada (ETA): ${expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}`}>
+              <span className="text-muted-foreground">ETA:</span>{" "}
+              <span className="font-medium">{expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}</span>
             </span>
-            {expData.numeros_contenedores && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 shrink-0"
-                  onClick={() => {
-                    void navigator.clipboard.writeText(expData.numeros_contenedores);
-                    toast.success("Número de contenedor copiado");
-                  }}
-                  title="Copiar número de contenedor"
-                  aria-label="Copiar número de contenedor"
-                >
-                  <Copy className="h-3 w-3" />
-                </Button>
-            )}
           </div>
           <div className="flex h-7 min-w-0 items-center gap-1.5">
-            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Despacho:</Label>
+            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Etapa Operativa:</Label>
             <span className="text-xs font-medium md:text-sm">{hitosDone} de {hitosTotal}</span>
           </div>
 
