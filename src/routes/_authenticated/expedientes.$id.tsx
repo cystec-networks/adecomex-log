@@ -179,7 +179,7 @@ function ReadOnlyField({ label, value }: { label: string; value?: string | null 
 
 const TAB_ORDER_KEY = "exp-tab-order-v1";
 const TAB_LABELS: Record<string, string> = {
-  info: "Información",
+  info: "Generales",
   checklist: "Seguimiento Operativo",
   liqfinal: "Liquidación Final",
   docs: "Documentos",
