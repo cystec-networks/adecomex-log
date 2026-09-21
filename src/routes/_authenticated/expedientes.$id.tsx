@@ -675,7 +675,7 @@ function DetalleExpediente() {
             <span className="flex h-8 items-center truncate text-sm text-muted-foreground">Sin cliente</span>
           )}
           </div>
-          <div className="grid min-w-0 grid-cols-[auto_minmax(5.5rem,1fr)_auto] items-center gap-1.5">
+          <div className="grid min-w-0 grid-cols-[auto_minmax(5.5rem,1fr)] items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
             <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
               <SelectTrigger className="h-8 w-full min-w-0 text-xs md:text-sm"><SelectValue /></SelectTrigger>
@@ -693,22 +693,6 @@ function DetalleExpediente() {
                 pendiente={forzarRegreso.isPending}
                 onConfirm={(estado, motivo) => forzarRegreso.mutate({ estado, motivo })}
               />
-            )}
-            {expData.estado && (
-              <span className="min-w-0 truncate whitespace-nowrap text-xs text-muted-foreground md:text-sm">
-                {(() => {
-                  const fecha = {
-                    digitar: expData.fecha_recibido,
-                    en_transito: expData.fecha_en_transito,
-                    presentar: expData.fecha_presentado,
-                    verificar: expData.fecha_verificado,
-                    despachado: expData.fecha_despachado,
-                    entregado: expData.fecha_entregado,
-                    facturar: expData.fecha_facturado,
-                  }[expData.estado as string];
-                  return fecha ? `· ${fmtLocalDate(fecha)}` : null;
-                })()}
-              </span>
             )}
           </div>
           <div className="flex h-8 min-w-0 items-center gap-1.5 text-xs md:text-sm">
