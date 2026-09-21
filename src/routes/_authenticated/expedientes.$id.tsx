@@ -3195,10 +3195,28 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
             <DialogHeader><DialogTitle>{editingId ? "Editar gasto" : "Nuevo gasto"}</DialogTitle></DialogHeader>
             <div className="grid gap-3">
               <div className="grid gap-1.5"><Label>Concepto</Label>
-                <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v, es_reembolso: v === "Reembolsos" ? true : f.es_reembolso })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CONCEPTOS_GASTO.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                <Select
+                  value={conceptoOtro ? "__otro__" : (f.concepto || "")}
+                  onValueChange={(v) => {
+                    if (v === "__otro__") { setConceptoOtro(true); setF({ ...f, concepto: "" }); return; }
+                    setConceptoOtro(false);
+                    setF({ ...f, concepto: v, es_reembolso: v === "Reembolsos" ? true : f.es_reembolso });
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Seleccione un concepto" /></SelectTrigger>
+                  <SelectContent>
+                    {conceptos.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    <SelectItem value="__otro__">Otro (escribir)</SelectItem>
+                  </SelectContent>
                 </Select>
+                {conceptoOtro && (
+                  <Input
+                    autoFocus
+                    placeholder="Escriba el concepto"
+                    value={f.concepto}
+                    onChange={(e) => setF({ ...f, concepto: e.target.value })}
+                  />
+                )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5"><Label>Monto (DOP)</Label><Input type="number" step="0.01" value={f.monto} onChange={(e) => setF({ ...f, monto: e.target.value })} /></div>
