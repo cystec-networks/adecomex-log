@@ -2053,13 +2053,26 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                   )}
                   <div className="grid gap-1.5 md:col-span-2">
                     <Label>Acuerdo Comercial <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-                    <CatalogCombobox
-                      table="catalogo_acuerdos"
-                      value={form.acuerdo_comercial}
-                      onChange={(nombre) => set("acuerdo_comercial", nombre)}
-                      placeholder="N/A / Ninguno"
-                      disabled={!editable}
-                    />
+                     <Select
+                       value={form.acuerdo_codigo || "__none__"}
+                       onValueChange={(v) => {
+                         if (v === "__none__") {
+                           setForm((f) => ({ ...f, acuerdo_codigo: "", acuerdo_comercial: "" }));
+                           return;
+                         }
+                         const a = (acuerdosComerciales ?? []).find((x: any) => x.codigo === v);
+                         setForm((f) => ({ ...f, acuerdo_codigo: v, acuerdo_comercial: a?.nombre ?? "" }));
+                       }}
+                       disabled={!editable}
+                     >
+                       <SelectTrigger><SelectValue placeholder="N/A / Ninguno" /></SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="__none__">N/A / Ninguno</SelectItem>
+                         {(acuerdosComerciales ?? []).map((a: any) => (
+                           <SelectItem key={a.codigo} value={a.codigo}>{a.codigo} · {a.nombre}</SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
                   </div>
                   {isNuevo && (
                     <div id="tasa-oficial-nuevo" className="grid gap-1.5">
