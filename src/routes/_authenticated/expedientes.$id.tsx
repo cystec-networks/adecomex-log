@@ -1229,6 +1229,15 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   });
   const [tasaNuevaInput, setTasaNuevaInput] = useState("");
 
+  // Catálogo de Acuerdos Comerciales (SIGA): el código es la fuente de verdad del AgreementCode.
+  const { data: acuerdosComerciales } = useQuery({
+    queryKey: ["catalogo_acuerdos", "selector"],
+    queryFn: async () => {
+      const { data } = await supabase.from("catalogo_acuerdos").select("codigo, nombre").order("codigo");
+      return data ?? [];
+    },
+  });
+
   // Catálogo de regímenes de Exportación (SIGA), separado del de Importación.
   const { data: regimenesExportacion } = useQuery({
     queryKey: ["catalogo_regimenes", "exportacion"],
