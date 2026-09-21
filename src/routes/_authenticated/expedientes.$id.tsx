@@ -711,7 +711,7 @@ function DetalleExpediente() {
           <div className="flex min-w-0 items-center gap-1.5 text-xs md:text-sm">
             <span className="min-w-0 shrink" title={`BL/AWB: ${expData.bl_awb ?? "—"}`}>
               <span className="text-muted-foreground">BL/AWB:</span>{" "}
-              <span className="font-medium">{expData.bl_aww ?? expData.bl_awb ?? "—"}</span>
+              <span className="font-medium">{expData.bl_awb ?? "—"}</span>
             </span>
             {expData.numeros_contenedores && (
               <>
