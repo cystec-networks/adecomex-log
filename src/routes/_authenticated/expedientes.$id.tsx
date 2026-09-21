@@ -675,10 +675,10 @@ function DetalleExpediente() {
             <span className="flex h-8 items-center truncate text-sm text-muted-foreground">Sin cliente</span>
           )}
           </div>
-          <div className="flex min-w-0 items-center gap-1.5">
+          <div className="grid min-w-0 grid-cols-[auto_minmax(5.5rem,1fr)_auto] items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
             <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
-              <SelectTrigger className="h-8 min-w-0 flex-1 text-xs md:text-sm"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-full min-w-0 text-xs md:text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {ESTADO_ORDEN.map((e) => (
                   <SelectItem key={e} value={e} disabled={estadoIndex(e) < estadoIndex(expData.estado)}>
@@ -695,7 +695,7 @@ function DetalleExpediente() {
               />
             )}
             {expData.estado && (
-              <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">
+              <span className="min-w-0 truncate whitespace-nowrap text-xs text-muted-foreground md:text-sm">
                 {(() => {
                   const fecha = {
                     digitar: expData.fecha_recibido,
@@ -5353,7 +5353,7 @@ function ForzarRegresoEstadoDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="text-muted-foreground">Corregir estado</Button>
+        <Button variant="ghost" size="sm" className="h-8 shrink-0 px-1.5 text-xs text-muted-foreground">Corregir estado</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
