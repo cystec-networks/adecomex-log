@@ -529,49 +529,8 @@ function DetalleExpediente() {
             </div>
           ) : (
             <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3">
-              <h1 className="font-display truncate text-lg font-bold md:text-xl">{expData.numero}</h1>
+              <h1 className="font-display shrink-0 text-lg font-bold md:text-xl">{expData.numero}</h1>
               {expData.solicitudes?.numero && <Badge variant="outline" className="hidden shrink-0 md:inline-flex">← {expData.solicitudes.numero}</Badge>}
-              {expData.clientes ? (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button type="button" variant="link" className="h-auto min-w-0 justify-start truncate p-0 text-left text-sm font-semibold text-foreground underline decoration-dotted underline-offset-2" title={expData.clientes.nombre}>
-                      {expData.clientes.nombre}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[min(22rem,calc(100vw-2rem))] p-0 border-none bg-transparent shadow-none z-50" side="bottom" align="start" sideOffset={8}>
-                    <div className="rounded-md border bg-background shadow-lg px-3 py-2 text-xs space-y-0.5">
-                      <div><span className="text-muted-foreground">RNC:</span> {expData.clientes.rnc ?? "—"}</div>
-                      <div><span className="text-muted-foreground">Contacto:</span> {expData.clientes.contacto ?? "—"}</div>
-                      <div><span className="text-muted-foreground">Email:</span> {(expData.clientes as any).email ?? "—"}</div>
-                      <div><span className="text-muted-foreground">Teléfono:</span> {expData.clientes.telefono ?? "—"}</div>
-                      <div><span className="text-muted-foreground">Dirección:</span> {(expData.clientes as any).direccion ?? "—"}</div>
-                      <div className="mt-2 flex items-center gap-1 border-t pt-2">
-                        <WhatsAppButton
-                          phone={expData.clientes.telefono}
-                          clientName={expData.clientes.nombre}
-                          recordType="Expediente"
-                          recordNumber={expData.numero}
-                          variant="icon"
-                        />
-                        <EmailButton
-                          email={(expData.clientes as any).email}
-                          clientName={expData.clientes.nombre}
-                          recordType="Expediente"
-                          recordNumber={expData.numero}
-                          variant="icon"
-                        />
-                        <SearchEmailButton
-                          recordType="Expediente"
-                          recordNumber={expData.numero}
-                          variant="icon"
-                        />
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              ) : (
-                <span className="truncate text-sm text-muted-foreground">Sin cliente</span>
-              )}
             </div>
           )}
           {isNuevo && (
@@ -672,6 +631,47 @@ function DetalleExpediente() {
 
         {!isNuevo && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 md:gap-x-4">
+          {expData.clientes ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="link" className="h-auto min-w-0 max-w-[16rem] justify-start truncate p-0 text-left text-sm font-semibold text-foreground underline decoration-dotted underline-offset-2" title={expData.clientes.nombre}>
+                  {expData.clientes.nombre}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[min(22rem,calc(100vw-2rem))] p-0 border-none bg-transparent shadow-none z-50" side="bottom" align="start" sideOffset={8}>
+                <div className="rounded-md border bg-background shadow-lg px-3 py-2 text-xs space-y-0.5">
+                  <div><span className="text-muted-foreground">RNC:</span> {expData.clientes.rnc ?? "—"}</div>
+                  <div><span className="text-muted-foreground">Contacto:</span> {expData.clientes.contacto ?? "—"}</div>
+                  <div><span className="text-muted-foreground">Email:</span> {(expData.clientes as any).email ?? "—"}</div>
+                  <div><span className="text-muted-foreground">Teléfono:</span> {expData.clientes.telefono ?? "—"}</div>
+                  <div><span className="text-muted-foreground">Dirección:</span> {(expData.clientes as any).direccion ?? "—"}</div>
+                  <div className="mt-2 flex items-center gap-1 border-t pt-2">
+                    <WhatsAppButton
+                      phone={expData.clientes.telefono}
+                      clientName={expData.clientes.nombre}
+                      recordType="Expediente"
+                      recordNumber={expData.numero}
+                      variant="icon"
+                    />
+                    <EmailButton
+                      email={(expData.clientes as any).email}
+                      clientName={expData.clientes.nombre}
+                      recordType="Expediente"
+                      recordNumber={expData.numero}
+                      variant="icon"
+                    />
+                    <SearchEmailButton
+                      recordType="Expediente"
+                      recordNumber={expData.numero}
+                      variant="icon"
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <span className="truncate text-sm text-muted-foreground">Sin cliente</span>
+          )}
           <div className="flex items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
             <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
