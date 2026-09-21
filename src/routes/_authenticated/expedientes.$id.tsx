@@ -28,6 +28,8 @@ import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
 import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
 import { AutoField } from "@/components/auto-field";
 import { BadgeVigenciaPinDga } from "@/components/badge-vigencia";
+import { AplicarCertificadoPartidas } from "@/components/aplicar-certificado-partidas";
+
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { DgaCombobox } from "@/components/dga-combobox";
@@ -1822,13 +1824,23 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             return showCert ? (
               <div className="grid gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                 <Label>N° Certificado de Origen</Label>
-                <Input
-                  value={form.numero_certificado_origen}
-                  onChange={(e) => set("numero_certificado_origen", e.target.value)}
-                  placeholder="CO-2026-00123"
-                  disabled={!editable}
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={form.numero_certificado_origen}
+                    onChange={(e) => set("numero_certificado_origen", e.target.value)}
+                    placeholder="CO-2026-00123"
+                    disabled={!editable}
+                  />
+                  {!isNuevo && (
+                    <AplicarCertificadoPartidas
+                      expedienteId={exp.id}
+                      numeroCertificado={form.numero_certificado_origen}
+                      disabled={!editable || !(form.numero_certificado_origen || "").trim()}
+                    />
+                  )}
+                </div>
               </div>
+
             ) : null;
           })()}
           <div className="grid gap-1.5">
