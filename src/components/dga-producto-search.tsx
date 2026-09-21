@@ -211,6 +211,7 @@ export function DgaProductoSearch({ onSelect }: Props) {
                 <span className="text-[11px] text-muted-foreground font-mono">
                   {p.codigo_producto}{p.partida_arancelaria ? ` · ${p.partida_arancelaria}` : ""}
                   {p.marca ? ` · ${p.marca}` : ""}{p.modelo ? ` · ${p.modelo}` : ""}
+                  {p.pais ? ` · País: ${p.pais}` : ""}
                 </span>
               </button>
             </li>
