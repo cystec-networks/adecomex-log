@@ -528,7 +528,7 @@ function DetalleExpediente() {
               </p>
             </div>
           ) : (
-            <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3 md:min-w-[7.5rem]">
               <h1 className="font-display shrink-0 text-lg font-bold md:text-xl">{expData.numero}</h1>
               {expData.solicitudes?.numero && <Badge variant="outline" className="hidden shrink-0 md:inline-flex">← {expData.solicitudes.numero}</Badge>}
             </div>
@@ -540,10 +540,11 @@ function DetalleExpediente() {
             </div>
           )}
           {(
-            <div className="hidden items-center gap-2 md:flex md:flex-wrap">
+            <div className="hidden items-center gap-1.5 md:flex md:flex-wrap">
               <Button
                 variant="outline"
                 size="sm"
+                className="px-2.5"
                 disabled={duplicarMut.isPending}
                 onClick={() => duplicarMut.mutate()}
                 title="Duplicar expediente"
@@ -552,7 +553,7 @@ function DetalleExpediente() {
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="px-2.5">
                     <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
                     <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
                   </Button>
