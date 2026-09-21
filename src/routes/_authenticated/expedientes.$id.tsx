@@ -4419,14 +4419,14 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
       <div className="grid gap-3 md:grid-cols-3">
         <div className="grid gap-1.5">
           <Label>N.º Liquidación SIGA</Label>
-          <Input value={form.liq_siga_numero || ""} onChange={(e) => set("liq_siga_numero", e.target.value)} placeholder="LIQ-2026-000123" disabled={disabled} />
+          <Input value={form.liq_siga_numero || ""} onChange={(e) => { set("liq_siga_numero", e.target.value); if (!form.liq_siga_estado) set("liq_siga_estado", "Registrada"); }} placeholder="LIQ-2026-000123" disabled={disabled} />
         </div>
         <div className="grid gap-1.5">
           <Label>Estado</Label>
           <Select value={form.liq_siga_estado || undefined} onValueChange={(v) => set("liq_siga_estado", v)} disabled={disabled}>
             <SelectTrigger><SelectValue placeholder="Selecciona estado" /></SelectTrigger>
             <SelectContent>
-              {["Inspeccionada", "Liberada", "Con observación", "Rectificada"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {["Registrada", "Inspeccionada", "Pagada", "Liberada", "Con observación", "Rectificada"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
