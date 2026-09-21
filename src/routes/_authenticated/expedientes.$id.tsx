@@ -949,6 +949,7 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     regimen_aduanero: d.regimen_aduanero ?? "",
     regimen_codigo_exportacion: d.regimen_codigo_exportacion ?? "",
     acuerdo_comercial: d.acuerdo_comercial ?? "",
+    acuerdo_codigo: d.acuerdo_codigo ?? "",
     observaciones: d.observaciones ?? "",
     pais_origen_codigo: d.pais_origen_codigo ?? "",
     pais_procedencia: d.pais_procedencia ?? "",
