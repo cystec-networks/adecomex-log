@@ -388,6 +388,30 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_conceptos_gasto: {
+        Row: {
+          codigo: string
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
       catalogo_contactos: {
         Row: {
           activo: boolean

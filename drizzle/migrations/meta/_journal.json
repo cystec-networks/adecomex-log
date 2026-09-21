@@ -85,6 +85,13 @@
       "when": 1789948385434,
       "tag": "0011_add_liq_siga_pin_vigencia",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790002025961,
+      "tag": "0012_create_catalogo_conceptos_gasto",
+      "breakpoints": true
     }
   ]
 }
