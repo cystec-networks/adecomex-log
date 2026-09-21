@@ -706,6 +706,21 @@ function DetalleExpediente() {
               <span className="text-muted-foreground">ETA:</span>{" "}
               <span className="font-medium">{expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}</span>
             </span>
+            {(() => {
+              if (["despachado", "entregado", "facturar"].includes(expData.estado) || !expData.fecha_compromiso) return null;
+              const eta = parseLocalDate(expData.fecha_compromiso);
+              if (!eta) return null;
+              const today = new Date(); today.setHours(0, 0, 0, 0);
+              eta.setHours(0, 0, 0, 0);
+              const diff = Math.round((eta.getTime() - today.getTime()) / 86400000);
+              const toneClass = diff > 5 ? "text-emerald-600 dark:text-emerald-400" : diff >= 0 ? "text-amber-600 dark:text-amber-400" : "text-destructive";
+              const full = diff > 0 ? `${diff} días por llegar` : diff === 0 ? "Llega hoy" : `${Math.abs(diff)} días de atraso`;
+              return (
+                <span title={full} aria-label={full} className={`shrink-0 text-xs font-medium tabular-nums ${toneClass}`}>
+                  {diff}
+                </span>
+              );
+            })()}
           </div>
           <div className="flex h-7 min-w-0 items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Etapa Operativa:</Label>
