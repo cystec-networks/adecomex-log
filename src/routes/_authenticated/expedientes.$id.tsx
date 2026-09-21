@@ -604,20 +604,6 @@ function DetalleExpediente() {
                     <RastreosEnvioItems />
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <a
-                    href={expData.numeros_contenedores
-                      ? `https://e-tracking.net/tracking/container-tracking?container=${encodeURIComponent(expData.numeros_contenedores)}`
-                      : expData.bl_awb
-                        ? `https://e-tracking.net/tracking/bl-tracking?bl=${encodeURIComponent(expData.bl_awb)}`
-                        : "https://e-tracking.net/"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Ship className="h-4 w-4" /> Rastrear Embarque
-                  </a>
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
