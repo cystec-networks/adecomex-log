@@ -3029,6 +3029,23 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
   const [file, setFile] = useState<File | null>(null);
   const [crearCxp, setCrearCxp] = useState(false);
   const [cxpVence, setCxpVence] = useState<string>("");
+  const [conceptoOtro, setConceptoOtro] = useState(false);
+
+  const { data: conceptosCatalogo } = useQuery({
+    queryKey: ["catalogo_conceptos_gasto"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("catalogo_conceptos_gasto")
+        .select("codigo,nombre")
+        .order("nombre");
+      if (error) throw error;
+      return (data ?? []).map((r: any) => r.nombre as string);
+    },
+    staleTime: 5 * 60_000,
+  });
+  const conceptos = conceptosCatalogo ?? [];
+
+
 
 
   const save = useMutation({
