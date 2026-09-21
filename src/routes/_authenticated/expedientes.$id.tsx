@@ -717,7 +717,7 @@ function DetalleExpediente() {
               const full = diff > 0 ? `${diff} días por llegar` : diff === 0 ? "Llega hoy" : `${Math.abs(diff)} días de atraso`;
               return (
                 <span title={full} aria-label={full} className={`shrink-0 text-xs font-medium tabular-nums ${toneClass}`}>
-                  {diff >= 0 ? diff : diff}
+                  {diff}
                 </span>
               );
             })()}
