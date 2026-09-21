@@ -3196,7 +3196,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
             <div className="grid gap-3">
               <div className="grid gap-1.5"><Label>Concepto</Label>
                 <Select
-                  value={conceptoOtro ? "__otro__" : (f.concepto || "")}
+                  value={(conceptoOtro || (!!f.concepto && conceptos.length > 0 && !conceptos.includes(f.concepto))) ? "__otro__" : (f.concepto || "")}
                   onValueChange={(v) => {
                     if (v === "__otro__") { setConceptoOtro(true); setF({ ...f, concepto: "" }); return; }
                     setConceptoOtro(false);
@@ -3209,7 +3209,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
                     <SelectItem value="__otro__">Otro (escribir)</SelectItem>
                   </SelectContent>
                 </Select>
-                {conceptoOtro && (
+                {(conceptoOtro || (!!f.concepto && conceptos.length > 0 && !conceptos.includes(f.concepto))) && (
                   <Input
                     autoFocus
                     placeholder="Escriba el concepto"
