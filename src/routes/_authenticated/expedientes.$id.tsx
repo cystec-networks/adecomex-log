@@ -543,13 +543,13 @@ function DetalleExpediente() {
             <div className="hidden items-center gap-1.5 md:flex md:flex-wrap">
               <Button
                 variant="outline"
-                size="sm"
-                className="px-2"
+                size="icon"
+                className="h-8 w-8 shrink-0"
                 disabled={duplicarMut.isPending}
                 onClick={() => duplicarMut.mutate()}
                 title="Duplicar expediente"
               >
-                <Copy className="h-4 w-4 mr-1" /> {duplicarMut.isPending ? "Duplicando…" : "Duplicar"}
+                <Copy className="h-4 w-4" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
