@@ -949,6 +949,7 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     regimen_aduanero: d.regimen_aduanero ?? "",
     regimen_codigo_exportacion: d.regimen_codigo_exportacion ?? "",
     acuerdo_comercial: d.acuerdo_comercial ?? "",
+    acuerdo_codigo: d.acuerdo_codigo ?? "",
     observaciones: d.observaciones ?? "",
     pais_origen_codigo: d.pais_origen_codigo ?? "",
     pais_procedencia: d.pais_procedencia ?? "",
@@ -1228,6 +1229,15 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   });
   const [tasaNuevaInput, setTasaNuevaInput] = useState("");
 
+  // Catálogo de Acuerdos Comerciales (SIGA): el código es la fuente de verdad del AgreementCode.
+  const { data: acuerdosComerciales } = useQuery({
+    queryKey: ["catalogo_acuerdos", "selector"],
+    queryFn: async () => {
+      const { data } = await supabase.from("catalogo_acuerdos").select("codigo, nombre").order("codigo");
+      return data ?? [];
+    },
+  });
+
   // Catálogo de regímenes de Exportación (SIGA), separado del de Importación.
   const { data: regimenesExportacion } = useQuery({
     queryKey: ["catalogo_regimenes", "exportacion"],
@@ -1300,6 +1310,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         : null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
+      if (!payload.acuerdo_codigo) payload.acuerdo_codigo = null;
       // Congelar la tasa cuando el expediente pasa a despachado o registra resultado oficial DGA.
       if (debeCongelar({ estado: exp.estado, liq_oficial_total: payload.liq_oficial_total, tasa_cambio_congelada: exp.tasa_cambio_congelada })) {
         payload.tasa_cambio_congelada = true;
@@ -1406,6 +1417,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         : null;
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
+      if (!payload.acuerdo_codigo) payload.acuerdo_codigo = null;
       if (contValidos.length) payload.numeros_contenedores = contValidos.map((c) => c.numero.trim()).join(", ");
 
       // Tasa Oficial DGA obligatoria antes de crear.
@@ -2050,13 +2062,26 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                   )}
                   <div className="grid gap-1.5 md:col-span-2">
                     <Label>Acuerdo Comercial <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-                    <CatalogCombobox
-                      table="catalogo_acuerdos"
-                      value={form.acuerdo_comercial}
-                      onChange={(nombre) => set("acuerdo_comercial", nombre)}
-                      placeholder="N/A / Ninguno"
-                      disabled={!editable}
-                    />
+                     <Select
+                       value={form.acuerdo_codigo || "__none__"}
+                       onValueChange={(v) => {
+                         if (v === "__none__") {
+                           setForm((f) => ({ ...f, acuerdo_codigo: "", acuerdo_comercial: "" }));
+                           return;
+                         }
+                         const a = (acuerdosComerciales ?? []).find((x: any) => x.codigo === v);
+                         setForm((f) => ({ ...f, acuerdo_codigo: v, acuerdo_comercial: a?.nombre ?? "" }));
+                       }}
+                       disabled={!editable}
+                     >
+                       <SelectTrigger><SelectValue placeholder="N/A / Ninguno" /></SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="__none__">N/A / Ninguno</SelectItem>
+                         {(acuerdosComerciales ?? []).map((a: any) => (
+                           <SelectItem key={a.codigo} value={a.codigo}>{a.codigo} · {a.nombre}</SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
                   </div>
                   {isNuevo && (
                     <div id="tasa-oficial-nuevo" className="grid gap-1.5">

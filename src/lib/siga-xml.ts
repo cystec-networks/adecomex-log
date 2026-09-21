@@ -328,7 +328,6 @@ ${T("ForeignSupplierCode", supplierCode, "   ")}
 ${T("ForeignSupplierNationality", exp.suplidor_rnc ? origen : "", "   ")}
   </ImpDeclarationSupplier>`;
 
-  const certOrigen = exp.numero_certificado_origen ? "true" : "false";
 
   const productos = (items ?? []).map((it) => {
     const desc = it.detalle_producto ?? "";
@@ -348,8 +347,8 @@ ${T("Qty", num(it.cantidad), "   ")}
 ${T("Weight", num(it.peso), "   ")}
 ${T("ProductSpecification", it.especificaciones, "   ")}
 ${T("TempProductYN", "false", "   ")}
-${T("CertificateOrignYN", certOrigen, "   ")}
-${T("CertificateOriginNo", exp.numero_certificado_origen, "   ")}
+${T("CertificateOrignYN", it.tiene_certificado_origen ? "true" : "false", "   ")}
+${T("CertificateOriginNo", it.tiene_certificado_origen ? it.certificado_origen_numero : "", "   ")}
 ${T("OriginCountry", it.pais_origen_codigo || origen, "   ")}
 ${T("OrganicYN", "false", "   ")}
 ${T("GradeAlcohol", "0", "   ")}
