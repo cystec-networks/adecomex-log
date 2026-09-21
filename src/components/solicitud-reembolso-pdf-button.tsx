@@ -44,7 +44,7 @@ export function SolicitudReembolsoPdfButton({ exp }: { exp: any }) {
       const [gastosRes, expRes, banco] = await Promise.all([
         supabase
           .from("gastos")
-          .select("concepto, monto, es_reembolso")
+          .select("concepto, monto, es_reembolso, notas")
           .eq("expediente_id", exp.id)
           .eq("es_reembolso", true)
           .is("deleted_at", null)
@@ -61,6 +61,7 @@ export function SolicitudReembolsoPdfButton({ exp }: { exp: any }) {
 
       const lineas = (gastosRes.data ?? []).map((g: any) => ({
         descripcion: g.concepto ?? "—",
+        nota: g.notas ?? null,
         cantidad: 1,
         precio: Number(g.monto) || 0,
       }));
