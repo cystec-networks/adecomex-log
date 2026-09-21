@@ -3178,6 +3178,8 @@ export type Database = {
           puerto_salida: string | null
           puerto_salida_codigo: string | null
           rectificacion_tecnica: boolean
+          reembolso_estado: string
+          reembolso_fecha_pago: string | null
           regimen_aduanero: string | null
           regimen_codigo: string | null
           regimen_codigo_exportacion: string | null
@@ -3287,6 +3289,8 @@ export type Database = {
           puerto_salida?: string | null
           puerto_salida_codigo?: string | null
           rectificacion_tecnica?: boolean
+          reembolso_estado?: string
+          reembolso_fecha_pago?: string | null
           regimen_aduanero?: string | null
           regimen_codigo?: string | null
           regimen_codigo_exportacion?: string | null
@@ -3396,6 +3400,8 @@ export type Database = {
           puerto_salida?: string | null
           puerto_salida_codigo?: string | null
           rectificacion_tecnica?: boolean
+          reembolso_estado?: string
+          reembolso_fecha_pago?: string | null
           regimen_aduanero?: string | null
           regimen_codigo?: string | null
           regimen_codigo_exportacion?: string | null

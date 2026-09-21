@@ -26,6 +26,7 @@ import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
 import { calcImpuestosLinea } from "@/lib/impuestos";
 import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
 import { SolicitudReembolsoPdfButton } from "@/components/solicitud-reembolso-pdf-button";
+import { ReembolsoEstadoControl } from "@/components/reembolso-estado-control";
 import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
 import { AutoField } from "@/components/auto-field";
 import { BadgeVigenciaPinDga } from "@/components/badge-vigencia";
@@ -3184,8 +3185,9 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
 
   return (
     <Card>
-      <CardHeader className="flex-row items-center justify-between">
+      <CardHeader className="flex-row items-center justify-between gap-3 flex-wrap">
         <CardTitle className="text-base">Gastos operativos</CardTitle>
+        <ReembolsoEstadoControl expedienteId={expedienteId} />
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); } }}>
           <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar gasto</Button>
           <DialogContent className="max-h-[85vh] overflow-y-auto">
