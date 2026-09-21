@@ -45,7 +45,6 @@ import { GenerarXmlCertificadoOrigenButton } from "@/components/generar-xml-cert
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
 import { SearchEmailButton } from "@/components/search-email-button";
-import { RastrearEmbarqueButton } from "@/components/rastrear-embarque-button";
 import { ChecklistHitos } from "@/components/checklist-hitos";
 import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
@@ -569,12 +568,6 @@ function DetalleExpediente() {
               </DropdownMenu>
               <HerramientasDgaVuceMenu className="px-2" />
               <RastreosEnvioMenu className="px-2" />
-              <RastrearEmbarqueButton
-                containerNumber={expData.numeros_contenedores}
-                blNumber={expData.bl_awb}
-                expedienteNumber={expData.numero}
-                className="[&>div]:hidden"
-              />
             </div>
           )}
           {!isNuevo && (
