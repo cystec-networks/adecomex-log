@@ -631,11 +631,12 @@ function DetalleExpediente() {
         </div>
 
         {!isNuevo && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 md:gap-x-4">
+        <div className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-2 xl:grid-cols-[minmax(10rem,1.2fr)_minmax(15rem,1.35fr)_minmax(9rem,1fr)_minmax(14rem,1.7fr)]">
+          <div className="min-w-0">
           {expData.clientes ? (
             <Popover>
               <PopoverTrigger asChild>
-                <Button type="button" variant="link" className="h-auto min-w-0 max-w-[16rem] justify-start truncate p-0 text-left text-sm font-semibold text-foreground underline decoration-dotted underline-offset-2" title={expData.clientes.nombre}>
+                <Button type="button" variant="link" className="h-8 w-full min-w-0 justify-start truncate p-0 text-left text-sm font-semibold text-foreground underline decoration-dotted underline-offset-2" title={expData.clientes.nombre}>
                   {expData.clientes.nombre}
                 </Button>
               </PopoverTrigger>
@@ -671,12 +672,13 @@ function DetalleExpediente() {
               </PopoverContent>
             </Popover>
           ) : (
-            <span className="truncate text-sm text-muted-foreground">Sin cliente</span>
+            <span className="flex h-8 items-center truncate text-sm text-muted-foreground">Sin cliente</span>
           )}
-          <div className="flex items-center gap-1.5">
+          </div>
+          <div className="grid min-w-0 grid-cols-[auto_minmax(5.5rem,1fr)_auto] items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
             <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
-              <SelectTrigger className="h-8 w-40 text-xs md:text-sm"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-full min-w-0 text-xs md:text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {ESTADO_ORDEN.map((e) => (
                   <SelectItem key={e} value={e} disabled={estadoIndex(e) < estadoIndex(expData.estado)}>
@@ -693,7 +695,7 @@ function DetalleExpediente() {
               />
             )}
             {expData.estado && (
-              <span className="whitespace-nowrap text-xs text-muted-foreground md:text-sm">
+              <span className="min-w-0 truncate whitespace-nowrap text-xs text-muted-foreground md:text-sm">
                 {(() => {
                   const fecha = {
                     digitar: expData.fecha_recibido,
@@ -709,16 +711,17 @@ function DetalleExpediente() {
               </span>
             )}
           </div>
-          <div className="flex min-w-0 items-center gap-1.5 text-xs md:text-sm">
-            <span className="min-w-0 shrink" title={`BL/AWB: ${expData.bl_awb ?? "—"}`}>
+          <div className="flex h-8 min-w-0 items-center gap-1.5 text-xs md:text-sm">
+            <span className="min-w-0 truncate" title={`BL/AWB: ${expData.bl_awb ?? "—"}`}>
               <span className="text-muted-foreground">BL/AWB:</span>{" "}
               <span className="font-medium">{expData.bl_awb ?? "—"}</span>
             </span>
+          </div>
+          <div className="flex h-8 min-w-0 items-center gap-1.5 text-xs md:text-sm">
+            <span className="min-w-0 flex-1 truncate font-medium" title={`Contenedor: ${expData.numeros_contenedores ?? "—"}`}>
+              <span className="text-muted-foreground">Contenedor:</span> {expData.numeros_contenedores ?? "—"}
+            </span>
             {expData.numeros_contenedores && (
-              <>
-                <span className="min-w-0 truncate font-medium" title={`Contenedor: ${expData.numeros_contenedores}`}>
-                  <span className="text-muted-foreground">Contenedor:</span> {expData.numeros_contenedores}
-                </span>
                 <Button
                   type="button"
                   variant="ghost"
@@ -733,36 +736,29 @@ function DetalleExpediente() {
                 >
                   <Copy className="h-3 w-3" />
                 </Button>
-              </>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex h-7 min-w-0 items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Despacho:</Label>
             <span className="text-xs font-medium md:text-sm">{hitosDone} de {hitosTotal}</span>
           </div>
 
-          {expData.numero_dua && (
-            <div className="flex min-w-0 items-center gap-1.5">
-              <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Declaración DUA:</Label>
-              <span className="truncate text-xs font-medium md:text-sm" title={expData.numero_dua}>{expData.numero_dua}</span>
-            </div>
-          )}
-          {expData.numero_igra && (
-            <div className="flex min-w-0 items-center gap-1.5">
-              <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">N.º de despacho:</Label>
-              <span className="truncate text-xs font-medium md:text-sm" title={expData.numero_igra}>{expData.numero_igra}</span>
-            </div>
-          )}
-          {permisosNumeros && (
-            <div className="flex min-w-0 items-center gap-1.5">
-              <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">N.º de permiso:</Label>
-              <span className="truncate text-xs font-medium md:text-sm" title={permisosNumeros}>{permisosNumeros}</span>
-            </div>
-          )}
+          <div className="flex h-7 min-w-0 items-center gap-1.5">
+            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Declaración DUA:</Label>
+            <span className="truncate text-xs font-medium md:text-sm" title={expData.numero_dua ?? "—"}>{expData.numero_dua ?? "—"}</span>
+          </div>
+          <div className="flex h-7 min-w-0 items-center gap-1.5">
+            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">N.º de despacho:</Label>
+            <span className="truncate text-xs font-medium md:text-sm" title={expData.numero_igra ?? "—"}>{expData.numero_igra ?? "—"}</span>
+          </div>
+          <div className="flex h-7 min-w-0 items-center gap-1.5">
+            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">N.º de permiso:</Label>
+            <span className="truncate text-xs font-medium md:text-sm" title={permisosNumeros || "—"}>{permisosNumeros || "—"}</span>
+          </div>
 
           {(() => {
             const a = alertaDeclaracionTardia(expData);
-            if (!a) return null;
+            if (!a) return <span className="hidden xl:block" aria-hidden="true" />;
             const cls = a.tone === "danger"
               ? "border-destructive/40 bg-destructive/10 text-destructive"
               : a.tone === "warning"
@@ -774,7 +770,7 @@ function DetalleExpediente() {
             return (
               <span
                 title="Ley 168-21: 5 días laborables desde el arribo para presentar la declaración"
-                className={`inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium ${cls}`}
+                className={`inline-flex min-w-0 items-center justify-center truncate rounded border px-2 py-0.5 text-xs font-medium md:col-span-2 xl:col-span-1 ${cls}`}
               >
                 {txt}
               </span>
@@ -5357,7 +5353,7 @@ function ForzarRegresoEstadoDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="text-muted-foreground">Corregir estado</Button>
+        <Button variant="ghost" size="sm" className="h-8 shrink-0 px-1.5 text-xs text-muted-foreground">Corregir estado</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
