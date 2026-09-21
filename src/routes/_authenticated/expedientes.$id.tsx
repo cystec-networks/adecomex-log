@@ -702,25 +702,29 @@ function DetalleExpediente() {
             </span>
           </div>
           <div className="flex h-8 min-w-0 items-center gap-1.5 text-xs md:text-sm">
-            <span className="min-w-0 flex-1 truncate" title={`Fecha Estimada de Llegada (ETA): ${expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}`}>
-              <span className="text-muted-foreground">ETA:</span>{" "}
-              <span className="font-medium">{expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}</span>
+            <span className="flex min-w-0 items-baseline gap-1.5" title={`Fecha Estimada de Llegada (ETA): ${expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}`}>
+              <span className="shrink-0 text-muted-foreground">ETA:</span>{" "}
+              <span className="min-w-0 truncate font-medium">{expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}</span>
+              {(() => {
+                if (["despachado", "entregado", "facturar"].includes(expData.estado) || !expData.fecha_compromiso) return null;
+                const eta = parseLocalDate(expData.fecha_compromiso);
+                if (!eta) return null;
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                eta.setHours(0, 0, 0, 0);
+                const diff = Math.round((eta.getTime() - today.getTime()) / 86400000);
+                const toneClass = diff > 5 ? "text-emerald-600 dark:text-emerald-400" : diff >= 0 ? "text-amber-600 dark:text-amber-400" : "text-destructive";
+                const full = diff > 0 ? `${diff} días por llegar` : diff === 0 ? "Llega hoy" : `${Math.abs(diff)} días de atraso`;
+                return (
+                  <span title={full} aria-label={full} className={`shrink-0 text-xs font-medium tabular-nums ${toneClass}`}>
+                    {diff} (Días)
+                  </span>
+                );
+              })()}
             </span>
-            {(() => {
-              if (["despachado", "entregado", "facturar"].includes(expData.estado) || !expData.fecha_compromiso) return null;
-              const eta = parseLocalDate(expData.fecha_compromiso);
-              if (!eta) return null;
-              const today = new Date(); today.setHours(0, 0, 0, 0);
-              eta.setHours(0, 0, 0, 0);
-              const diff = Math.round((eta.getTime() - today.getTime()) / 86400000);
-              const toneClass = diff > 5 ? "text-emerald-600 dark:text-emerald-400" : diff >= 0 ? "text-amber-600 dark:text-amber-400" : "text-destructive";
-              const full = diff > 0 ? `${diff} días por llegar` : diff === 0 ? "Llega hoy" : `${Math.abs(diff)} días de atraso`;
-              return (
-                <span title={full} aria-label={full} className={`shrink-0 text-xs font-medium tabular-nums ${toneClass}`}>
-                  {diff}
-                </span>
-              );
-            })()}
+            <span className="flex min-w-0 flex-1 items-baseline gap-1" title={`Puerto: ${expData.puerto_arribo ?? "—"}`}>
+              <span className="shrink-0 text-muted-foreground">Puerto:</span>{" "}
+              <span className="min-w-0 truncate font-medium">{expData.puerto_arribo ?? "—"}</span>
+            </span>
           </div>
           <div className="flex h-7 min-w-0 items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Etapa Operativa:</Label>
