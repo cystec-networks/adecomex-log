@@ -72,6 +72,49 @@ function AdminConfiguracion() {
     if (rncRow?.value != null) setEmpresaRnc(rncRow.value);
   }, [rncRow?.value]);
 
+  const { data: bancoRow } = useQuery({
+    queryKey: ["system_settings", REEMBOLSO_BANCO_KEY],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("system_settings")
+        .select("key,value,description,updated_at")
+        .eq("key", REEMBOLSO_BANCO_KEY)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const [banco, setBanco] = useState<DatosBancariosReembolso>({ ...DATOS_BANCARIOS_VACIOS });
+  useEffect(() => {
+    if (bancoRow?.value != null) setBanco(parseDatosBancarios(bancoRow.value));
+  }, [bancoRow?.value]);
+
+  const saveBanco = useMutation({
+    mutationFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await supabase.from("system_settings").upsert(
+        {
+          key: REEMBOLSO_BANCO_KEY,
+          value: JSON.stringify({
+            cuenta: banco.cuenta.trim(),
+            tipo_cuenta: banco.tipo_cuenta.trim(),
+            beneficiario: banco.beneficiario.trim(),
+            banco: banco.banco.trim(),
+          }),
+          description: "Datos bancarios fijos de la empresa usados en la Solicitud de Reembolso de Gastos.",
+          updated_by: u.user?.id ?? null,
+        },
+        { onConflict: "key" },
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Datos bancarios guardados");
+      qc.invalidateQueries({ queryKey: ["system_settings", REEMBOLSO_BANCO_KEY] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "No se pudo guardar"),
+  });
+
   const saveRnc = useMutation({
     mutationFn: async () => {
       const v = empresaRnc.trim();
@@ -210,6 +253,65 @@ function AdminConfiguracion() {
             <Button onClick={() => saveRnc.mutate()} disabled={saveRnc.isPending}>
               <Save className="h-4 w-4 mr-1" />
               Guardar RNC
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Landmark className="h-5 w-5 text-primary" />
+            Datos bancarios para Solicitudes de Reembolso
+          </CardTitle>
+          <CardDescription>
+            Cuenta a la que el cliente debe transferir los gastos operativos adelantados. Se usa en
+            todas las Solicitudes de Reembolso de Gastos generadas desde los Expedientes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="banco-cuenta">Cuenta</Label>
+              <Input
+                id="banco-cuenta"
+                value={banco.cuenta}
+                onChange={(e) => setBanco({ ...banco, cuenta: e.target.value })}
+                placeholder="N° de cuenta"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="banco-tipo">Tipo de cuenta</Label>
+              <Input
+                id="banco-tipo"
+                value={banco.tipo_cuenta}
+                onChange={(e) => setBanco({ ...banco, tipo_cuenta: e.target.value })}
+                placeholder="Corriente / Ahorros"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="banco-beneficiario">Beneficiario</Label>
+              <Input
+                id="banco-beneficiario"
+                value={banco.beneficiario}
+                onChange={(e) => setBanco({ ...banco, beneficiario: e.target.value })}
+                placeholder="Nombre del beneficiario"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="banco-banco">Banco</Label>
+              <Input
+                id="banco-banco"
+                value={banco.banco}
+                onChange={(e) => setBanco({ ...banco, banco: e.target.value })}
+                placeholder="Nombre del banco"
+              />
+            </div>
+          </div>
+          <div>
+            <Button onClick={() => saveBanco.mutate()} disabled={saveBanco.isPending}>
+              <Save className="h-4 w-4 mr-1" />
+              Guardar datos bancarios
             </Button>
           </div>
         </CardContent>
