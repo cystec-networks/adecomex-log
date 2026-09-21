@@ -166,9 +166,6 @@ const CONCEPTOS_FACTURA = [
   "Honorarios","Transporte","Gestión aduanal","Reembolso de gastos","Servicios adicionales","Otros",
 ];
 const ESTADOS_FACTURA = ["pendiente","cobrada","anulada"];
-const CONCEPTOS_GASTO = [
-  "Flete","Aranceles","ITBIS","Gastos portuarios","Transporte","Honorarios de terceros","Reembolsos","Otros",
-];
 
 function ReadOnlyField({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -3014,7 +3011,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const empty = {
-    concepto: CONCEPTOS_GASTO[0], monto: 0, fecha: "", proveedor: "", es_reembolso: false, notas: "",
+    concepto: "", monto: 0, fecha: "", proveedor: "", es_reembolso: false, notas: "",
     rnc_cedula_proveedor: "", tipo_id_proveedor: "", ncf_proveedor: "", tipo_ncf_proveedor: "",
     ncf_modificado: "", monto_facturado: 0, itbis_facturado: 0, itbis_retenido: 0, isr_retenido: 0,
     forma_pago: "",
@@ -3029,6 +3026,23 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
   const [file, setFile] = useState<File | null>(null);
   const [crearCxp, setCrearCxp] = useState(false);
   const [cxpVence, setCxpVence] = useState<string>("");
+  const [conceptoOtro, setConceptoOtro] = useState(false);
+
+  const { data: conceptosCatalogo } = useQuery({
+    queryKey: ["catalogo_conceptos_gasto"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("catalogo_conceptos_gasto")
+        .select("codigo,nombre")
+        .order("nombre");
+      if (error) throw error;
+      return (data ?? []).map((r: any) => r.nombre as string);
+    },
+    staleTime: 5 * 60_000,
+  });
+  const conceptos = conceptosCatalogo ?? [];
+
+
 
 
   const save = useMutation({
@@ -3160,9 +3174,10 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
       monto_propina_legal: Number(r.monto_propina_legal ?? 0),
     });
     setFile(null);
+    setConceptoOtro(Boolean(r.concepto) && !conceptos.includes(r.concepto));
     setOpen(true);
   };
-  const openNew = () => { setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); setOpen(true); };
+  const openNew = () => { setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); setConceptoOtro(false); setOpen(true); };
 
   const subtotal = gastos.reduce((s, r) => s + (r.es_reembolso ? -Number(r.monto || 0) : Number(r.monto || 0)), 0);
 
@@ -3177,10 +3192,28 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
             <DialogHeader><DialogTitle>{editingId ? "Editar gasto" : "Nuevo gasto"}</DialogTitle></DialogHeader>
             <div className="grid gap-3">
               <div className="grid gap-1.5"><Label>Concepto</Label>
-                <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v, es_reembolso: v === "Reembolsos" ? true : f.es_reembolso })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CONCEPTOS_GASTO.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                <Select
+                  value={(conceptoOtro || (!!f.concepto && conceptos.length > 0 && !conceptos.includes(f.concepto))) ? "__otro__" : (f.concepto || "")}
+                  onValueChange={(v) => {
+                    if (v === "__otro__") { setConceptoOtro(true); setF({ ...f, concepto: "" }); return; }
+                    setConceptoOtro(false);
+                    setF({ ...f, concepto: v, es_reembolso: v === "Reembolsos" ? true : f.es_reembolso });
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Seleccione un concepto" /></SelectTrigger>
+                  <SelectContent>
+                    {conceptos.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    <SelectItem value="__otro__">Otro (escribir)</SelectItem>
+                  </SelectContent>
                 </Select>
+                {(conceptoOtro || (!!f.concepto && conceptos.length > 0 && !conceptos.includes(f.concepto))) && (
+                  <Input
+                    autoFocus
+                    placeholder="Escriba el concepto"
+                    value={f.concepto}
+                    onChange={(e) => setF({ ...f, concepto: e.target.value })}
+                  />
+                )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5"><Label>Monto (DOP)</Label><Input type="number" step="0.01" value={f.monto} onChange={(e) => setF({ ...f, monto: e.target.value })} /></div>
@@ -3328,6 +3361,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
           <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
             <tr>
               <th className="text-left px-4 py-2">Concepto</th>
+              <th className="text-left">Notas</th>
               <th className="text-left">Proveedor</th>
               <th className="text-left">Fecha</th>
               <th className="text-left">Adjunto</th>
@@ -3339,6 +3373,9 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
             {gastos.map((r) => (
               <tr key={r.id} className="border-b last:border-0">
                 <td className="px-4 py-2">{r.concepto}{r.es_reembolso && <Badge variant="outline" className="ml-2 text-xs">reembolso</Badge>}</td>
+                <td className="text-xs text-muted-foreground max-w-[220px]">
+                  {r.notas ? <span className="block truncate" title={r.notas}>{r.notas}</span> : "—"}
+                </td>
                 <td className="text-xs text-muted-foreground">{r.proveedor || "—"}</td>
                 <td className="text-xs">{fmtLocalDate(r.fecha)}</td>
                 <td>{r.adjunto_path ? <DocumentoPreviewButton path={r.adjunto_path} variant="link" size="sm" className="h-auto p-0" icon={<FileText className="h-3.5 w-3.5 mr-1" />} label="Ver" /> : <span className="text-xs text-muted-foreground">—</span>}</td>
@@ -3351,10 +3388,10 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
                 </td>
               </tr>
             ))}
-            {gastos.length === 0 && <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">Sin gastos registrados.</td></tr>}
+            {gastos.length === 0 && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Sin gastos registrados.</td></tr>}
             {gastos.length > 0 && (
               <tr className="bg-muted/20 font-medium">
-                <td colSpan={4} className="px-4 py-2 text-right">Subtotal (neto)</td>
+                <td colSpan={5} className="px-4 py-2 text-right">Subtotal (neto)</td>
                 <td className="text-right">{fmtDOP(subtotal)}</td>
                 <td></td>
               </tr>

@@ -42,7 +42,8 @@ type TableKey =
   | "catalogo_tipo_transito"
   | "catalogo_tipo_courier"
   | "catalogo_tipo_consignatario"
-  | "catalogo_tipo_documento_siga";
+  | "catalogo_tipo_documento_siga"
+  | "catalogo_conceptos_gasto";
 
 const TABLE_LABELS: Record<TableKey, string> = {
   catalogo_paises: "Países",
@@ -67,6 +68,7 @@ const TABLE_LABELS: Record<TableKey, string> = {
   catalogo_tipo_courier: "Manifiesto · Tipo Courier",
   catalogo_tipo_consignatario: "Manifiesto · Tipo de Consignatario",
   catalogo_tipo_documento_siga: "Manifiesto · Tipo de Documento",
+  catalogo_conceptos_gasto: "Conceptos de Gastos Operativos",
 };
 
 const PENDING_TABLES: TableKey[] = [
@@ -94,6 +96,7 @@ function CatalogosAdmin() {
     "catalogo_criterio_origen","catalogo_metodo_calificacion",
     "catalogo_tipo_transporte_manifiesto","catalogo_tipo_bl","catalogo_tipo_transito",
     "catalogo_tipo_courier","catalogo_tipo_consignatario","catalogo_tipo_documento_siga",
+    "catalogo_conceptos_gasto",
   ];
 
   return (
@@ -193,6 +196,7 @@ const FIELDS: Record<TableKey, Array<{ k: string; label: string; required?: bool
   catalogo_tipo_courier: BASIC_FIELDS,
   catalogo_tipo_consignatario: BASIC_FIELDS,
   catalogo_tipo_documento_siga: BASIC_FIELDS,
+  catalogo_conceptos_gasto: BASIC_WITH_ESTADO,
 };
 
 

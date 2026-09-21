@@ -4,6 +4,7 @@
 
 export type LineaReembolso = {
   descripcion: string;
+  nota?: string | null;
   cantidad: number;
   precio: number;
 };
@@ -133,7 +134,7 @@ export async function buildSolicitudReembolsoPdf(input: SolicitudReembolsoInput)
     head: [["Descripción", "Cantidad", "Precio", "Total"]],
     body: [
       ...input.lineas.map((l) => [
-        l.descripcion,
+        l.nota?.trim() ? `${l.descripcion}\nNota: ${l.nota.trim()}` : l.descripcion,
         String(l.cantidad),
         money(l.precio),
         money(l.cantidad * l.precio),
