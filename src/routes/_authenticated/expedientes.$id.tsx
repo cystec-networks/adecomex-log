@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
 import { calcImpuestosLinea } from "@/lib/impuestos";
 import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
+import { SolicitudReembolsoPdfButton } from "@/components/solicitud-reembolso-pdf-button";
 import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
 import { AutoField } from "@/components/auto-field";
 import { BadgeVigenciaPinDga } from "@/components/badge-vigencia";
@@ -562,6 +563,7 @@ function DetalleExpediente() {
                     <GenerarXmlSigaButton expedienteId={id} />
                     <GenerarXmlCertificadoOrigenButton expedienteId={id} />
                     <PreLiquidacionPdfButton exp={expData} />
+                    <SolicitudReembolsoPdfButton exp={expData} />
                     <GenerarDocumentoButton exp={expData} />
                   </div>
                 </DropdownMenuContent>
@@ -588,7 +590,8 @@ function DetalleExpediente() {
                       <GenerarXmlSigaButton expedienteId={id} />
                       <GenerarXmlCertificadoOrigenButton expedienteId={id} />
                       <PreLiquidacionPdfButton exp={expData} />
-                      <GenerarDocumentoButton exp={expData} />
+                      <SolicitudReembolsoPdfButton exp={expData} />
+                    <GenerarDocumentoButton exp={expData} />
                     </div>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
