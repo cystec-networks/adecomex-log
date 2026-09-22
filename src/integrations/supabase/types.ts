@@ -3172,6 +3172,14 @@ export type Database = {
           pais_procedencia_codigo: string | null
           peso_bruto: number | null
           peso_neto: number | null
+          pin_almacenaje: string | null
+          pin_almacenaje_fecha_pago: string | null
+          pin_almacenaje_fecha_registro: string | null
+          pin_almacenaje_monto: number | null
+          pin_contenedor: string | null
+          pin_contenedor_fecha_pago: string | null
+          pin_contenedor_fecha_registro: string | null
+          pin_contenedor_monto: number | null
           preferencia_comercial: string | null
           puerto_arribo: string | null
           puerto_arribo_codigo: string | null
@@ -3200,6 +3208,8 @@ export type Database = {
           total_cif: number | null
           total_fob: number | null
           updated_at: string
+          valores_enviados: boolean
+          valores_enviados_at: string | null
           zf_aplica: boolean | null
           zf_otros_valores: number | null
           zf_valor_cif: number | null
@@ -3284,6 +3294,14 @@ export type Database = {
           pais_procedencia_codigo?: string | null
           peso_bruto?: number | null
           peso_neto?: number | null
+          pin_almacenaje?: string | null
+          pin_almacenaje_fecha_pago?: string | null
+          pin_almacenaje_fecha_registro?: string | null
+          pin_almacenaje_monto?: number | null
+          pin_contenedor?: string | null
+          pin_contenedor_fecha_pago?: string | null
+          pin_contenedor_fecha_registro?: string | null
+          pin_contenedor_monto?: number | null
           preferencia_comercial?: string | null
           puerto_arribo?: string | null
           puerto_arribo_codigo?: string | null
@@ -3312,6 +3330,8 @@ export type Database = {
           total_cif?: number | null
           total_fob?: number | null
           updated_at?: string
+          valores_enviados?: boolean
+          valores_enviados_at?: string | null
           zf_aplica?: boolean | null
           zf_otros_valores?: number | null
           zf_valor_cif?: number | null
@@ -3396,6 +3416,14 @@ export type Database = {
           pais_procedencia_codigo?: string | null
           peso_bruto?: number | null
           peso_neto?: number | null
+          pin_almacenaje?: string | null
+          pin_almacenaje_fecha_pago?: string | null
+          pin_almacenaje_fecha_registro?: string | null
+          pin_almacenaje_monto?: number | null
+          pin_contenedor?: string | null
+          pin_contenedor_fecha_pago?: string | null
+          pin_contenedor_fecha_registro?: string | null
+          pin_contenedor_monto?: number | null
           preferencia_comercial?: string | null
           puerto_arribo?: string | null
           puerto_arribo_codigo?: string | null
@@ -3424,6 +3452,8 @@ export type Database = {
           total_cif?: number | null
           total_fob?: number | null
           updated_at?: string
+          valores_enviados?: boolean
+          valores_enviados_at?: string | null
           zf_aplica?: boolean | null
           zf_otros_valores?: number | null
           zf_valor_cif?: number | null
