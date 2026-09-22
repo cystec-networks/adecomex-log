@@ -128,6 +128,24 @@ function terminoPin(registroLocal: string): string {
   return isoToLocalInput(new Date(d.getTime() + 96 * 3600000).toISOString());
 }
 
+// PIN de pago Almacenaje / Contenedor (Resultado oficial DGA).
+const OPCIONES_PIN_ALMACENAJE = ["DPW", "HIT", "RODEMSA", "GLOBAL STORE", "DIF", "TD BONDED", "ALMADELA", "HAINA BONDED"];
+const OPCIONES_PIN_CONTENEDOR = ["DPH", "FDA", "PORTCOLLECT", "VECONINTER"];
+function normalizarPinesPago(payload: any) {
+  for (const k of [
+    "pin_almacenaje", "pin_almacenaje_fecha_registro", "pin_almacenaje_fecha_pago",
+    "pin_contenedor", "pin_contenedor_fecha_registro", "pin_contenedor_fecha_pago",
+    "valores_enviados_at",
+  ]) {
+    if (!payload[k]) payload[k] = null;
+  }
+  for (const k of ["pin_almacenaje_monto", "pin_contenedor_monto"]) {
+    payload[k] = payload[k] === "" || payload[k] == null ? null : Number(payload[k]);
+  }
+  payload.valores_enviados = !!payload.valores_enviados;
+}
+
+
 const TIPOS_DOC = [
   "Factura proforma","Factura comercial","Bill of Lading","Guía aérea","Lista de empaque",
   "Certificado de origen","Certificado sanitario","Certificado fitosanitario","Certificado de análisis",
@@ -927,6 +945,16 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     liq_siga_fecha_pago: d.liq_siga_fecha_pago ?? "",
     liq_siga_registro_at: isoToLocalInput(d.liq_siga_registro_at),
     liq_siga_termino_at: isoToLocalInput(d.liq_siga_termino_at),
+    pin_almacenaje: d.pin_almacenaje ?? "",
+    pin_almacenaje_monto: d.pin_almacenaje_monto ?? "",
+    pin_almacenaje_fecha_registro: d.pin_almacenaje_fecha_registro ?? "",
+    pin_almacenaje_fecha_pago: d.pin_almacenaje_fecha_pago ?? "",
+    pin_contenedor: d.pin_contenedor ?? "",
+    pin_contenedor_monto: d.pin_contenedor_monto ?? "",
+    pin_contenedor_fecha_registro: d.pin_contenedor_fecha_registro ?? "",
+    pin_contenedor_fecha_pago: d.pin_contenedor_fecha_pago ?? "",
+    valores_enviados: d.valores_enviados ?? false,
+    valores_enviados_at: d.valores_enviados_at ?? null,
     tipo_despacho_aduanero: d.tipo_despacho_aduanero ?? "",
     cantidad_despacho: d.cantidad_despacho ?? "",
     tipo_operacion: d.tipo_operacion ?? (tipoDefault === "exportacion" ? "Exportación" : ""),
@@ -1270,6 +1298,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       payload.liq_siga_fecha_registro = payload.liq_siga_registro_at
         ? isoToLocalInput(payload.liq_siga_registro_at).slice(0, 10)
         : null;
+      normalizarPinesPago(payload);
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
       if (!payload.acuerdo_codigo) payload.acuerdo_codigo = null;
@@ -1377,6 +1406,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       payload.liq_siga_fecha_registro = payload.liq_siga_registro_at
         ? isoToLocalInput(payload.liq_siga_registro_at).slice(0, 10)
         : null;
+      normalizarPinesPago(payload);
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
       if (!payload.acuerdo_codigo) payload.acuerdo_codigo = null;
@@ -4496,6 +4526,79 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
           <Label>Fecha de pago</Label>
           <Input type="date" value={form.liq_siga_fecha_pago || ""} onChange={(e) => set("liq_siga_fecha_pago", e.target.value)} disabled={disabled} />
         </div>
+      </div>
+
+      {/* PIN pago Almacenaje */}
+      <div className="grid gap-3 md:grid-cols-4 mt-3">
+        <div className="grid gap-1.5">
+          <Label>PIN pago Almacenaje</Label>
+          <Select value={form.pin_almacenaje || undefined} onValueChange={(v) => set("pin_almacenaje", v)} disabled={disabled}>
+            <SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger>
+            <SelectContent>
+              {OPCIONES_PIN_ALMACENAJE.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Monto a pagar (RD$)</Label>
+          <Input type="text" inputMode="decimal" className="tabular-nums" placeholder="0.00" disabled={disabled}
+            value={form.pin_almacenaje_monto ?? ""}
+            onChange={(e) => { const v = e.target.value.replace(/[^\d.]/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("pin_almacenaje_monto", v); }} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Fecha de Registro</Label>
+          <Input type="date" value={form.pin_almacenaje_fecha_registro || ""} onChange={(e) => set("pin_almacenaje_fecha_registro", e.target.value)} disabled={disabled} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Fecha de pago</Label>
+          <Input type="date" value={form.pin_almacenaje_fecha_pago || ""} onChange={(e) => set("pin_almacenaje_fecha_pago", e.target.value)} disabled={disabled} />
+        </div>
+      </div>
+
+      {/* PIN pago Contenedor */}
+      <div className="grid gap-3 md:grid-cols-4 mt-3">
+        <div className="grid gap-1.5">
+          <Label>PIN pago Contenedor</Label>
+          <Select value={form.pin_contenedor || undefined} onValueChange={(v) => set("pin_contenedor", v)} disabled={disabled}>
+            <SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger>
+            <SelectContent>
+              {OPCIONES_PIN_CONTENEDOR.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Monto a pagar (RD$)</Label>
+          <Input type="text" inputMode="decimal" className="tabular-nums" placeholder="0.00" disabled={disabled}
+            value={form.pin_contenedor_monto ?? ""}
+            onChange={(e) => { const v = e.target.value.replace(/[^\d.]/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("pin_contenedor_monto", v); }} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Fecha de Registro</Label>
+          <Input type="date" value={form.pin_contenedor_fecha_registro || ""} onChange={(e) => set("pin_contenedor_fecha_registro", e.target.value)} disabled={disabled} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Fecha de pago</Label>
+          <Input type="date" value={form.pin_contenedor_fecha_pago || ""} onChange={(e) => set("pin_contenedor_fecha_pago", e.target.value)} disabled={disabled} />
+        </div>
+      </div>
+
+      {/* Cotejo de envío de valores */}
+      <div className="flex items-center gap-3 mt-3">
+        <Switch
+          id="valores-enviados"
+          checked={!!form.valores_enviados}
+          disabled={disabled}
+          onCheckedChange={(v) => {
+            set("valores_enviados", v);
+            set("valores_enviados_at", v ? new Date().toISOString() : null);
+          }}
+        />
+        <Label htmlFor="valores-enviados" className="cursor-pointer">Valores enviados</Label>
+        {form.valores_enviados && form.valores_enviados_at && (
+          <span className="text-xs text-muted-foreground">
+            {new Date(form.valores_enviados_at).toLocaleString("es-DO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+          </span>
+        )}
       </div>
       <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
         {estimadoRd != null && (
