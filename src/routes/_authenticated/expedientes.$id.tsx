@@ -4527,6 +4527,79 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
           <Input type="date" value={form.liq_siga_fecha_pago || ""} onChange={(e) => set("liq_siga_fecha_pago", e.target.value)} disabled={disabled} />
         </div>
       </div>
+
+      {/* PIN pago Almacenaje */}
+      <div className="grid gap-3 md:grid-cols-4 mt-3">
+        <div className="grid gap-1.5">
+          <Label>PIN pago Almacenaje</Label>
+          <Select value={form.pin_almacenaje || undefined} onValueChange={(v) => set("pin_almacenaje", v)} disabled={disabled}>
+            <SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger>
+            <SelectContent>
+              {OPCIONES_PIN_ALMACENAJE.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Monto a pagar (RD$)</Label>
+          <Input type="text" inputMode="decimal" className="tabular-nums" placeholder="0.00" disabled={disabled}
+            value={form.pin_almacenaje_monto ?? ""}
+            onChange={(e) => { const v = e.target.value.replace(/[^\d.]/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("pin_almacenaje_monto", v); }} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Fecha de Registro</Label>
+          <Input type="date" value={form.pin_almacenaje_fecha_registro || ""} onChange={(e) => set("pin_almacenaje_fecha_registro", e.target.value)} disabled={disabled} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Fecha de pago</Label>
+          <Input type="date" value={form.pin_almacenaje_fecha_pago || ""} onChange={(e) => set("pin_almacenaje_fecha_pago", e.target.value)} disabled={disabled} />
+        </div>
+      </div>
+
+      {/* PIN pago Contenedor */}
+      <div className="grid gap-3 md:grid-cols-4 mt-3">
+        <div className="grid gap-1.5">
+          <Label>PIN pago Contenedor</Label>
+          <Select value={form.pin_contenedor || undefined} onValueChange={(v) => set("pin_contenedor", v)} disabled={disabled}>
+            <SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger>
+            <SelectContent>
+              {OPCIONES_PIN_CONTENEDOR.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Monto a pagar (RD$)</Label>
+          <Input type="text" inputMode="decimal" className="tabular-nums" placeholder="0.00" disabled={disabled}
+            value={form.pin_contenedor_monto ?? ""}
+            onChange={(e) => { const v = e.target.value.replace(/[^\d.]/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("pin_contenedor_monto", v); }} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Fecha de Registro</Label>
+          <Input type="date" value={form.pin_contenedor_fecha_registro || ""} onChange={(e) => set("pin_contenedor_fecha_registro", e.target.value)} disabled={disabled} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Fecha de pago</Label>
+          <Input type="date" value={form.pin_contenedor_fecha_pago || ""} onChange={(e) => set("pin_contenedor_fecha_pago", e.target.value)} disabled={disabled} />
+        </div>
+      </div>
+
+      {/* Cotejo de envío de valores */}
+      <div className="flex items-center gap-3 mt-3">
+        <Switch
+          id="valores-enviados"
+          checked={!!form.valores_enviados}
+          disabled={disabled}
+          onCheckedChange={(v) => {
+            set("valores_enviados", v);
+            set("valores_enviados_at", v ? new Date().toISOString() : null);
+          }}
+        />
+        <Label htmlFor="valores-enviados" className="cursor-pointer">Valores enviados</Label>
+        {form.valores_enviados && form.valores_enviados_at && (
+          <span className="text-xs text-muted-foreground">
+            {new Date(form.valores_enviados_at).toLocaleString("es-DO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+          </span>
+        )}
+      </div>
       <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
         {estimadoRd != null && (
           <>
