@@ -1280,6 +1280,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       payload.liq_siga_fecha_registro = payload.liq_siga_registro_at
         ? isoToLocalInput(payload.liq_siga_registro_at).slice(0, 10)
         : null;
+      normalizarPinesPago(payload);
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
       if (!payload.acuerdo_codigo) payload.acuerdo_codigo = null;
