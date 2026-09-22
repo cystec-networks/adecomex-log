@@ -128,6 +128,24 @@ function terminoPin(registroLocal: string): string {
   return isoToLocalInput(new Date(d.getTime() + 96 * 3600000).toISOString());
 }
 
+// PIN de pago Almacenaje / Contenedor (Resultado oficial DGA).
+const OPCIONES_PIN_ALMACENAJE = ["DPW", "HIT", "RODEMSA", "GLOBAL STORE", "DIF", "TD BONDED", "ALMADELA", "HAINA BONDED"];
+const OPCIONES_PIN_CONTENEDOR = ["DPH", "FDA", "PORTCOLLECT", "VECONINTER"];
+function normalizarPinesPago(payload: any) {
+  for (const k of [
+    "pin_almacenaje", "pin_almacenaje_fecha_registro", "pin_almacenaje_fecha_pago",
+    "pin_contenedor", "pin_contenedor_fecha_registro", "pin_contenedor_fecha_pago",
+    "valores_enviados_at",
+  ]) {
+    if (!payload[k]) payload[k] = null;
+  }
+  for (const k of ["pin_almacenaje_monto", "pin_contenedor_monto"]) {
+    payload[k] = payload[k] === "" || payload[k] == null ? null : Number(payload[k]);
+  }
+  payload.valores_enviados = !!payload.valores_enviados;
+}
+
+
 const TIPOS_DOC = [
   "Factura proforma","Factura comercial","Bill of Lading","Guía aérea","Lista de empaque",
   "Certificado de origen","Certificado sanitario","Certificado fitosanitario","Certificado de análisis",
