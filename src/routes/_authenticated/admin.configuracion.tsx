@@ -16,6 +16,7 @@ import {
   parseDatosBancarios,
   type DatosBancariosReembolso,
 } from "@/lib/reembolso-config";
+import { OficioConfigCard } from "@/components/oficio-config-card";
 
 export const Route = createFileRoute("/_authenticated/admin/configuracion")({
   ssr: false,
@@ -316,6 +317,7 @@ function AdminConfiguracion() {
           </div>
         </CardContent>
       </Card>
+      <OficioConfigCard />
     </div>
   );
 }

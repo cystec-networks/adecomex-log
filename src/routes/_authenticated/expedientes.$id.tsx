@@ -1820,7 +1820,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               />
             </div>
           )}
-          {form.rectificacion_tecnica && !isNew && (
+          {form.rectificacion_tecnica && !isNuevo && (
             <div className="grid gap-1.5 items-end">
               <Label className="invisible">Oficio</Label>
               <OficioRectificacionButton expedienteId={exp.id} />
