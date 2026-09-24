@@ -32,7 +32,7 @@ export function OficioRectificacionButton({ expedienteId, disabled }: { expedien
     try {
       const [expRes, itemsRes, docsRes, cfg] = await Promise.all([
         supabase.from("expedientes").select("*, clientes(nombre, rnc)").eq("id", expedienteId).maybeSingle(),
-        supabase.from("mercancia_items").select("detalle_producto, descripcion, pais_origen").eq("expediente_id", expedienteId).is("deleted_at", null).order("item_no"),
+        supabase.from("mercancia_items").select("detalle_producto, especificaciones, pais_origen").eq("expediente_id", expedienteId).is("deleted_at", null).order("item_no"),
         supabase.from("documentos").select("tipo, estado").eq("expediente_id", expedienteId),
         fetchOficioConfig(),
       ]);
@@ -45,8 +45,8 @@ export function OficioRectificacionButton({ expedienteId, disabled }: { expedien
       const datos: DatosRectificacion = {
         productoCorrecto: e.producto_correcto_rectificacion ?? "",
         consignatario: e.clientes?.nombre ?? "",
-        rnc: e.clientes?.rnc ?? "",
-        productoDeclarado: uniq(items.map((i) => i.detalle_producto || i.descripcion)).join("; ") || (e.descripcion_mercancia ?? ""),
+        rnc: formatRnc(e.clientes?.rnc ?? ""),
+        productoDeclarado: uniq(items.map((i) => i.detalle_producto || i.especificaciones)).join("; ") || (e.descripcion_mercancia ?? ""),
         peso: e.peso_neto != null ? Number(e.peso_neto).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "",
         pais: uniq(items.map((i) => i.pais_origen)).join(", ") || (e.pais_origen ?? ""),
         puerto: e.puerto_arribo ?? "",
@@ -147,3 +147,10 @@ export function OficioRectificacionButton({ expedienteId, disabled }: { expedien
 }
 
 export default OficioRectificacionButton;
+
+function formatRnc(r: string) {
+  const d = r.replace(/\D/g, "");
+  if (d.length === 9) return `${d.slice(0, 3)}-${d.slice(3, 8)}-${d.slice(8)}`;
+  if (d.length === 11) return `${d.slice(0, 3)}-${d.slice(3, 10)}-${d.slice(10)}`;
+  return r;
+}

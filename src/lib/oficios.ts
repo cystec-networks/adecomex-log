@@ -92,7 +92,7 @@ ${tipo.cuerpo(datos)}
 <p style="margin:24px 0 16px;text-align:justify">Sin otro particular por el momento y en espera de que nuestra solicitud pueda ser procesada a la mayor brevedad posible, queda de usted:</p>
 <p style="margin:0">Saludos Cordiales,</p>
 <div style="display:flex;align-items:flex-end;gap:24px;margin-top:4px">
-<div style="width:260px"><img src="${abs(firmaAsset.url)}" alt="Firma" style="width:250px;display:block;margin-bottom:-18px" crossorigin="anonymous"><div style="border-top:1px solid #000;padding-top:2px">${esc(cfg.firmante_nombre)},<br>${esc(cfg.firmante_cargo)}.</div></div>
+<div style="width:260px"><img src="${abs(firmaAsset.url)}" alt="Firma" style="width:250px;display:block;margin-bottom:-18px" crossorigin="anonymous"><div style="border-top:1px solid #000;padding-top:4px;position:relative">${esc(cfg.firmante_nombre)},<br>${esc(cfg.firmante_cargo)}.</div></div>
 <img src="${abs(selloAsset.url)}" alt="Sello" style="width:130px" crossorigin="anonymous">
 </div>
 </div>
