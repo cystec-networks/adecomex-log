@@ -3908,6 +3908,7 @@ function MercanciaItemsBlock({
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Detalle de mercancía</div>
         <Button size="sm" variant="outline" onClick={startNew} disabled={disabled}><Plus className="h-4 w-4 mr-1" />Agregar ítem</Button>
       </div>
+      <AvisoRegimenSuspensivo expedienteId={expedienteId} />
       <div className="rounded-md border overflow-auto max-h-[70vh]">
         <table className="w-full text-sm min-w-[1400px]">
             <thead className="sticky-table-header bg-muted/50 text-[10.5px] uppercase tracking-wide text-muted-foreground">
@@ -3965,9 +3966,9 @@ function MercanciaItemsBlock({
                         const vu = Number(unitFob(it.valor_fob, it.cantidad));
                         return isFinite(vu) ? vu.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : "—";
                       })()}</td>
-                      <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{it.pct_gravamen != null ? `${Number(it.pct_gravamen)}%` : <span className="text-amber-600 text-xs">—</span>}</td>
+                      <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{susp.suspendido ? <span className="text-muted-foreground text-xs">N/A</span> : it.pct_gravamen != null ? `${Number(it.pct_gravamen)}%` : <span className="text-amber-600 text-xs">—</span>}</td>
                       <td className="px-2 py-2 text-center bg-amber-50/40 text-xs">{it.aplica_isc ? "Sí" : "No"}</td>
-                      <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{it.aplica_isc && it.pct_isc != null ? `${Number(it.pct_isc)}%` : "—"}</td>
+                      <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{susp.suspendido ? "N/A" : it.aplica_isc && it.pct_isc != null ? `${Number(it.pct_isc)}%` : "—"}</td>
                       <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{rd(c.cifLinea)}</td>
                       <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{rd(c.gravamen)}</td>
                       <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.selectivo)}</td>
@@ -4453,6 +4454,48 @@ function LiquidacionEstimadaBlock({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function AvisoRegimenSuspensivo({ expedienteId }: { expedienteId: string }) {
+  const susp = useImpuestosSusp();
+  const qc = useQueryClient();
+  const { data: roles } = useMyRoles();
+  const { user } = useCurrentUser();
+  const puede = (roles ?? []).some((r) => ["admin", "operaciones"].includes(r));
+  const [busy, setBusy] = useState(false);
+  if (!susp.suspensivo || !expedienteId) return null;
+  const toggle = async () => {
+    const activar = !susp.override;
+    const msg = activar
+      ? "¿Habilitar captura manual de impuestos en este expediente de régimen suspensivo? Úsalo solo si la DGA los exige."
+      : "¿Desactivar el override? Los impuestos volverán a mostrarse en cero.";
+    if (!window.confirm(msg)) return;
+    setBusy(true);
+    const { error } = await supabase.from("expedientes").update({
+      impuestos_override_manual: activar,
+      impuestos_override_at: activar ? new Date().toISOString() : null,
+      impuestos_override_por: activar ? user?.id ?? null : null,
+    }).eq("id", expedienteId);
+    if (!error) {
+      await supabase.from("auditoria").insert({ tabla: "expedientes", registro_id: expedienteId, accion: activar ? "override_impuestos_on" : "override_impuestos_off", usuario_id: user?.id ?? null } as any);
+    }
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(activar ? "Captura manual de impuestos habilitada" : "Override desactivado");
+    refrescarExpediente(qc, expedienteId);
+  };
+  return (
+    <div className={cn("flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm", susp.override ? "border-primary/40 bg-primary/5" : "border-amber-300 bg-amber-50 text-amber-900")}>
+      <span className="font-medium">
+        {susp.override ? "Impuestos capturados manualmente (override) en régimen suspensivo" : "⚠ Régimen suspensivo de impuestos — Solo aplica Servicio Aduanero"}
+      </span>
+      {puede && (
+        <Button type="button" size="sm" variant="outline" disabled={busy} onClick={toggle}>
+          {susp.override ? "Quitar override" : "Capturar impuestos manualmente (excepción DGA)"}
+        </Button>
+      )}
     </div>
   );
 }
