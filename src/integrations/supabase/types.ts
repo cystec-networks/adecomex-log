@@ -5509,6 +5509,8 @@ export type Database = {
           activo: boolean
           created_at: string
           email: string | null
+          firma_cargo: string | null
+          firma_nombre: string | null
           id: string
           is_portal_account: boolean
           nombre: string
@@ -5518,6 +5520,8 @@ export type Database = {
           activo?: boolean
           created_at?: string
           email?: string | null
+          firma_cargo?: string | null
+          firma_nombre?: string | null
           id: string
           is_portal_account?: boolean
           nombre?: string
@@ -5527,6 +5531,8 @@ export type Database = {
           activo?: boolean
           created_at?: string
           email?: string | null
+          firma_cargo?: string | null
+          firma_nombre?: string | null
           id?: string
           is_portal_account?: boolean
           nombre?: string

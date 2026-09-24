@@ -33,6 +33,7 @@ import { BadgeVigenciaPinDga } from "@/components/badge-vigencia";
 import { AplicarCertificadoPartidas } from "@/components/aplicar-certificado-partidas";
 import { OficioRectificacionButton } from "@/components/oficio-rectificacion-button";
 import { PaqueteRectificacionButton } from "@/components/paquete-rectificacion-button";
+import { CorreoDgaButton } from "@/components/correo-dga-button";
 
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
@@ -1829,6 +1830,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               <div className="flex flex-wrap gap-2">
                 <OficioRectificacionButton expedienteId={exp.id} />
                 <PaqueteRectificacionButton expedienteId={exp.id} />
+                <CorreoDgaButton expedienteId={exp.id} />
               </div>
             </div>
           )}
