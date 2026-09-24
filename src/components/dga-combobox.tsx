@@ -122,7 +122,7 @@ export function DgaCombobox({
 
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative min-w-0", className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -130,9 +130,9 @@ export function DgaCombobox({
             variant="outline"
             role="combobox"
             disabled={disabled}
-            className="w-full justify-between font-normal h-9"
+            className="w-full min-w-0 justify-between overflow-hidden font-normal h-9"
           >
-            <span className={cn("truncate", !display && "text-muted-foreground")}>
+            <span className={cn("min-w-0 flex-1 truncate text-left", !display && "text-muted-foreground")}>
               {display || placeholder}
             </span>
             <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
