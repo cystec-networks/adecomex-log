@@ -4479,7 +4479,7 @@ function AvisoRegimenSuspensivo({ expedienteId }: { expedienteId: string }) {
       impuestos_override_por: activar ? user?.id ?? null : null,
     }).eq("id", expedienteId);
     if (!error) {
-      await supabase.from("auditoria").insert({ tabla: "expedientes", registro_id: expedienteId, accion: activar ? "override_impuestos_on" : "override_impuestos_off", usuario_id: user?.id ?? null } as any);
+      await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: expedienteId, accion: activar ? "override_impuestos_on" : "override_impuestos_off" });
     }
     setBusy(false);
     if (error) { toast.error(error.message); return; }
