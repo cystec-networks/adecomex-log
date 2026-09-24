@@ -127,6 +127,13 @@
       "when": 1790269177682,
       "tag": "0017_add_producto_correcto_rectificacion",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790279621980,
+      "tag": "0018_firma_correo_perfil",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS firma_nombre text, ADD COLUMN IF NOT EXISTS firma_cargo text;
