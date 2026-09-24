@@ -31,6 +31,7 @@ import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
 import { AutoField } from "@/components/auto-field";
 import { BadgeVigenciaPinDga } from "@/components/badge-vigencia";
 import { AplicarCertificadoPartidas } from "@/components/aplicar-certificado-partidas";
+import { OficioRectificacionButton } from "@/components/oficio-rectificacion-button";
 
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
@@ -921,6 +922,7 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     numero_certificado_origen: d.numero_certificado_origen ?? "",
     rectificacion_tecnica: !!d.rectificacion_tecnica,
     numero_tramite_rectificacion: d.numero_tramite_rectificacion ?? "",
+    producto_correcto_rectificacion: d.producto_correcto_rectificacion ?? "",
     canal_riesgo: d.canal_riesgo ?? "",
     total_fob: d.total_fob ?? "",
     seguro: d.seguro ?? "",
@@ -1805,6 +1807,23 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                 placeholder="RT-2026-0456"
                 disabled={!editable}
               />
+            </div>
+          )}
+          {form.rectificacion_tecnica && (
+            <div className="grid gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+              <Label>Producto correcto</Label>
+              <Input
+                value={form.producto_correcto_rectificacion}
+                onChange={(e) => set("producto_correcto_rectificacion", e.target.value)}
+                placeholder="Descripción real de la mercancía"
+                disabled={!editable}
+              />
+            </div>
+          )}
+          {form.rectificacion_tecnica && !isNew && (
+            <div className="grid gap-1.5 items-end">
+              <Label className="invisible">Oficio</Label>
+              <OficioRectificacionButton expedienteId={exp.id} />
             </div>
           )}
           <AutoField label="Preferencia comercial" value={form.preferencia_comercial} onChange={(v) => set("preferencia_comercial", v)} suggestion={sug.preferencia_comercial ?? []} disabled={!editable} />
