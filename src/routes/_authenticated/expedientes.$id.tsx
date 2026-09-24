@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
 import { calcImpuestosLinea } from "@/lib/impuestos";
 import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
+import { ImpuestosSuspCtx, useImpuestosSusp, useEstadoSuspensivo, esRegimenSuspensivo } from "@/lib/impuestos";
 import { SolicitudReembolsoPdfButton } from "@/components/solicitud-reembolso-pdf-button";
 import { ReembolsoEstadoControl } from "@/components/reembolso-estado-control";
 import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
@@ -3933,7 +3934,7 @@ function MercanciaItemsBlock({
                 ) : (items ?? []).map((it: any) => {
                   const c = calcImpuestosLinea(
                     Number(it.valor_fob) || 0, totalFob, seguro, flete, otros,
-                    it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis,
+                    it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis, susp.suspendido,
                   );
                   const tasa = tasaByCodigo.get((it.codigo_arancelario || "").trim());
                   const unverifiedHint = tasa && !tasa.verificado && it.pct_gravamen != null;
@@ -3993,7 +3994,7 @@ function MercanciaItemsBlock({
                   {(() => {
                     const tasaCambio = Number(tasaCambioUsada) || 0;
                     const totalImpuestosUSD =
-                      (items ?? []).reduce((s: number, it: any) => s + calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis).total, 0)
+                      (items ?? []).reduce((s: number, it: any) => s + calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis, susp.suspendido).total, 0)
                       + (Number(servicioAduaneroUsd) || 0);
                     const totalImpuestosDOP = tasaCambio > 0 ? totalImpuestosUSD * tasaCambio + FORMULARIO_DUA_RD : null;
                     return totalImpuestosDOP != null
@@ -4292,7 +4293,7 @@ function LiquidacionEstimadaBlock({
   const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
   const totalCif = totalFob + seguro + flete + otros;
   const totals = (items ?? []).reduce((acc: any, it: any) => {
-    const c = calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
+    const c = calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis, susp.suspendido);
     acc.gravamen += c.gravamen; acc.selectivo += c.selectivo; acc.itbis += c.itbis; acc.total += c.total;
     return acc;
   }, { gravamen: 0, selectivo: 0, itbis: 0, total: 0 });
@@ -4463,7 +4464,7 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
   const otros = Number(form.otros) || 0;
   const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
   const estimadoUsd = (items ?? []).reduce((acc: number, it: any) => {
-    const c = calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
+    const c = calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis, susp.suspendido);
     return acc + c.total;
   }, 0);
   const servicioUsd = Number(servicioAduaneroUsd) || 0;
@@ -4779,7 +4780,9 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
       return;
     }
 
+    const impuestosSuspendidos = (await esRegimenSuspensivo(expData.regimen_aduanero)) && !expData.impuestos_override_manual;
     const { doc } = await buildPreLiquidacionPdf({
+      impuestosSuspendidos,
       infoCols: [
         [
           ["N° Expediente", expData.numero ?? "—"],
@@ -5277,7 +5280,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
 
   const calcFila = (it: any) => {
     const fob = Number(it.valor_fob) || 0;
-    const est = calcImpuestosLinea(fob, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
+    const est = calcImpuestosLinea(fob, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis, susp.suspendido);
     const cant = Number(it.cantidad) || 0;
     const shareLinea = totalFob > 0 ? fob / totalFob : 0;
     const gastosAdicLinea = gastosAdicionalesUSD * shareLinea;
