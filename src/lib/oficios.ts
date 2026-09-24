@@ -5,7 +5,9 @@
  * Para agregar otro oficio (aforo, corrección de peso…), crear un nuevo `OficioTipo`.
  */
 import { supabase } from "@/integrations/supabase/client";
-import logoAsset from "@/assets/logo-adecomex-horizontal.png.asset.json";
+import membreteAsset from "@/assets/oficio-membrete.png.asset.json";
+import firmaAsset from "@/assets/oficio-img1.png.asset.json";
+import selloAsset from "@/assets/oficio-img2.jpg.asset.json";
 
 export const OFICIO_CONFIG_KEY = "oficios_config";
 
@@ -22,21 +24,27 @@ export type OficioConfig = {
 };
 
 export const OFICIO_CONFIG_DEFAULT: OficioConfig = {
-  destinatario_nombre: "",
+  destinatario_nombre: "Nelson de Jesús Arroyo Pedormo",
   destinatario_cargo: "Director General de Aduanas",
-  destinatario_institucion: "Dirección General de Aduanas (DGA)",
+  destinatario_institucion: "Ciudad",
   firmante_nombre: "Ing. Francisco E. López Martínez",
-  firmante_cargo: "Gerente",
-  ciudad: "Santo Domingo, D.N.",
-  direccion: "",
-  telefono: "",
-  email: "",
+  firmante_cargo: "Gerente ADECOMEX, SRL",
+  ciudad: "Santo Domingo, Rep. Dom.",
+  direccion: "Calle Respaldo San Miguel # 12, Bayona, Santo Domingo Oeste, Republica Dominicana.",
+  telefono: "(809) 531-3888, Móvil.: (809) 931-3246",
+  email: "adecomex@claro.net.do",
 };
 
 export function parseOficioConfig(raw: string | null | undefined): OficioConfig {
   if (!raw) return { ...OFICIO_CONFIG_DEFAULT };
   try {
-    return { ...OFICIO_CONFIG_DEFAULT, ...(JSON.parse(raw) as Partial<OficioConfig>) };
+    const parsed = JSON.parse(raw) as Partial<OficioConfig>;
+    const out = { ...OFICIO_CONFIG_DEFAULT };
+    for (const k of Object.keys(out) as (keyof OficioConfig)[]) {
+      const v = parsed[k];
+      if (typeof v === "string" && v.trim()) out[k] = v;
+    }
+    return out;
   } catch {
     return { ...OFICIO_CONFIG_DEFAULT };
   }
@@ -50,8 +58,10 @@ export async function fetchOficioConfig(): Promise<OficioConfig> {
 export const esc = (s: unknown) =>
   String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+/** Formato de la carta modelo: "23 de Septiembre del 2026." */
 export function fechaLarga(d = new Date()) {
-  return d.toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" });
+  return `${d.getDate()} de ${MESES[d.getMonth()]} del ${d.getFullYear()}.`;
 }
 
 export type OficioTipo<D> = {
@@ -63,22 +73,30 @@ export type OficioTipo<D> = {
   cuerpo: (d: D) => string; // HTML
 };
 
-/** Envuelve el cuerpo con membrete, destinatario, firma y pie comunes. */
+const abs = (u: string) => (typeof window !== "undefined" ? new URL(u, window.location.origin).href : u);
+
+/** Envuelve el cuerpo con membrete, destinatario, firma y pie comunes (réplica de la carta modelo). */
 export function renderOficio<D>(tipo: OficioTipo<D>, datos: D, cfg: OficioConfig): string {
-  const logo = typeof window !== "undefined" ? new URL(logoAsset.url, window.location.origin).href : logoAsset.url;
-  const pie = [cfg.direccion, cfg.telefono && `Tel.: ${cfg.telefono}`, cfg.email].filter(Boolean).map(esc).join(" · ");
-  return `<div class="doc-page" style="font-family:Arial,Helvetica,sans-serif;color:#000;font-size:12pt;line-height:1.5;width:100%;min-height:10in;display:flex;flex-direction:column">
-<div style="text-align:center;border-bottom:2px solid #1f3a5f;padding-bottom:8px;margin-bottom:18px"><img src="${logo}" alt="ADECOMEX SRL" style="height:70px" crossorigin="anonymous"></div>
-<div style="flex:1">
-<p style="text-align:right">${esc(cfg.ciudad)}, ${esc(fechaLarga())}</p>
-<p>${cfg.destinatario_nombre ? `<b>${esc(cfg.destinatario_nombre)}</b><br>` : ""}${esc(cfg.destinatario_cargo)}<br>${esc(cfg.destinatario_institucion)}<br>Su despacho.-</p>
-<p><b>Asunto:</b> ${esc(tipo.asunto(datos))}</p>
-<p>Distinguido señor Director:</p>
-${tipo.cuerpo(datos)}
-<p>Sin otro particular, nos despedimos atentamente,</p>
-<p style="margin-top:60px">______________________________<br><b>${esc(cfg.firmante_nombre)}</b><br>${esc(cfg.firmante_cargo)}<br>ADECOMEX SRL</p>
+  const contacto = [cfg.email && `E-mail: ${esc(cfg.email)}`, cfg.telefono && `Tel.: ${esc(cfg.telefono)}`].filter(Boolean).join(", ");
+  return `<div class="doc-page" style="font-family:'Times New Roman',Times,serif;color:#000;font-size:12pt;line-height:1.35;width:100%;min-height:10in;display:flex;flex-direction:column">
+<div style="border-bottom:1px solid #000;padding-bottom:6px;margin-bottom:36px">
+<img src="${abs(membreteAsset.url)}" alt="ADECOMEX SRL" style="height:90px;display:block" crossorigin="anonymous">
+<div style="font-family:Arial,sans-serif;font-size:11pt;margin-left:115px">RNC: 130-481301</div>
 </div>
-<div style="border-top:1px solid #1f3a5f;margin-top:24px;padding-top:6px;text-align:center;font-size:9pt;color:#333">ADECOMEX SRL${pie ? ` · ${pie}` : ""}</div>
+<div style="flex:1">
+<p style="margin:0 0 36px">${esc(cfg.ciudad)}<br>${esc(fechaLarga())}</p>
+<p style="margin:0 0 16px">Señor:<br>${cfg.destinatario_nombre ? `<b>${esc(cfg.destinatario_nombre)}</b><br>` : ""}${esc(cfg.destinatario_cargo)}.<br>${esc(cfg.destinatario_institucion)}.</p>
+<p style="margin:0 0 12px">Asunto: <b>${esc(tipo.asunto(datos))}</b>.</p>
+<p style="margin:0 0 12px">Distinguido Señor,</p>
+${tipo.cuerpo(datos)}
+<p style="margin:24px 0 16px;text-align:justify">Sin otro particular por el momento y en espera de que nuestra solicitud pueda ser procesada a la mayor brevedad posible, queda de usted:</p>
+<p style="margin:0">Saludos Cordiales,</p>
+<div style="display:flex;align-items:flex-end;gap:24px;margin-top:4px">
+<div style="width:260px"><img src="${abs(firmaAsset.url)}" alt="Firma" style="width:250px;display:block;margin-bottom:-18px" crossorigin="anonymous"><div style="border-top:1px solid #000;padding-top:2px">${esc(cfg.firmante_nombre)},<br>${esc(cfg.firmante_cargo)}.</div></div>
+<img src="${abs(selloAsset.url)}" alt="Sello" style="width:130px" crossorigin="anonymous">
+</div>
+</div>
+<div style="border-top:1px solid #000;margin-top:16px;padding-top:4px;text-align:center;font-family:Arial,sans-serif;font-size:10pt">${esc(cfg.direccion)}${contacto ? `<br>${contacto}` : ""}</div>
 </div>`;
 }
 
@@ -103,14 +121,16 @@ export const OFICIO_RECTIFICACION: OficioTipo<DatosRectificacion> = {
   tipoDocumento: "Oficio de Rectificación Técnica",
   asunto: (d) => `Solicitud de aplicación Rectificación Técnica de ${d.productoCorrecto || "—"}`,
   cuerpo: (d) => {
-    const fila = (k: string, v: string) =>
-      `<tr><td style="padding:2px 8px 2px 0;width:42%"><b>${esc(k)}:</b></td><td style="padding:2px 0">${esc(v || "—")}</td></tr>`;
-    return `<p>Por medio de la presente, muy cortésmente le solicitamos la aplicación de una Rectificación Técnica a la mercancía que se detalla a continuación, debido a que fue declarada como <b>${esc(d.productoDeclarado || "—")}</b>, cuando en realidad corresponde a <b>${esc(d.productoCorrecto || "—")}</b>.</p>
-<table style="border-collapse:collapse;width:100%;margin:6px 0 12px">
-${fila("Consignatario", d.consignatario)}${fila("RNC", d.rnc)}${fila("Producto declarado", d.productoDeclarado)}${fila("Producto correcto", d.productoCorrecto)}${fila("Peso", d.peso ? `${d.peso} kg` : "")}${fila("País de procedencia", d.pais)}${fila("Puerto de llegada", d.puerto)}${fila("N.º de DUA", d.dua)}${fila("N.º de Permiso VUCE", d.permiso)}${d.tramite ? fila("N.º de Trámite", d.tramite) : ""}
-</table>
-<p>Anexamos los siguientes documentos:</p>
-${d.anexos.length ? `<ul style="margin:0 0 12px 18px;padding:0">${d.anexos.map((a) => `<li>${esc(a)}</li>`).join("")}</ul>` : "<p>—</p>"}`;
+    const li = (t: string) => `<div>-${t}</div>`;
+    return `<p style="margin:0 0 16px;text-align:justify">Después de externarle un cordial saludo, tenga la presente por propósito solicitar su aprobación en la <b>Rectificación Técnica de ${esc(d.productoDeclarado || "—")}${d.peso ? ` para ${esc(d.peso)}Kgs` : ""},</b> es ${esc(d.productoCorrecto || "—")}, consignada a <b>${esc(d.consignatario || "—")}${d.rnc ? `, RNC: ${esc(d.rnc)}` : ""},</b> procedente de <b>${esc((d.pais || "—").toUpperCase())},</b> la cual llegó al país por el puerto de ${esc((d.puerto || "—").toUpperCase())}.</p>
+<p style="margin:0">Para los fines de lugar anexamos copia de los documentos requeridos, mismos que citamos a continuación:</p>
+${li(`Declaración única aduanera (DUA) No. <b>${esc(d.dua || "—")}.</b>`)}
+${li("Reporte de Liquidación de impuestos.")}
+${li("Copia del Conocimiento de embarque (BL)")}
+${li("Copia de la factura comercial.")}
+${li("Copia del certificado de origen.")}
+${li("Copia de certificado Sanitario/Análisis.")}
+${li(`Copia de Permiso VUCE de Agricultura No.: <b>${esc(d.permiso || "—")}.</b>`)}`;
   },
 };
 
