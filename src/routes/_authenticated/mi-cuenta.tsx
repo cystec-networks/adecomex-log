@@ -109,3 +109,40 @@ function MiCuenta() {
     </div>
   );
 }
+
+function FirmaCorreoCard({ profile }: { profile: { id: string; nombre: string; firma_nombre: string | null; firma_cargo: string | null } }) {
+  const [nombre, setNombre] = useState(profile.firma_nombre ?? profile.nombre ?? "");
+  const [cargo, setCargo] = useState(profile.firma_cargo ?? "");
+  const [saving, setSaving] = useState(false);
+  const guardar = async () => {
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ firma_nombre: nombre.trim() || null, firma_cargo: cargo.trim() || null })
+      .eq("id", profile.id);
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Firma de correo guardada");
+  };
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Firma de correo</CardTitle>
+        <CardDescription>Se usa al preparar correos desde el sistema (por ejemplo, el correo a la DGA).</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-1.5">
+            <Label htmlFor="firma-nombre">Nombre</Label>
+            <Input id="firma-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="firma-cargo">Cargo</Label>
+            <Input id="firma-cargo" value={cargo} onChange={(e) => setCargo(e.target.value)} placeholder="Ej. Encargado de Operaciones" />
+          </div>
+        </div>
+        <Button onClick={guardar} disabled={saving}>{saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}Guardar firma</Button>
+      </CardContent>
+    </Card>
+  );
+}
