@@ -3181,6 +3181,7 @@ export type Database = {
           pin_contenedor_fecha_registro: string | null
           pin_contenedor_monto: number | null
           preferencia_comercial: string | null
+          producto_correcto_rectificacion: string | null
           puerto_arribo: string | null
           puerto_arribo_codigo: string | null
           puerto_salida: string | null
@@ -3303,6 +3304,7 @@ export type Database = {
           pin_contenedor_fecha_registro?: string | null
           pin_contenedor_monto?: number | null
           preferencia_comercial?: string | null
+          producto_correcto_rectificacion?: string | null
           puerto_arribo?: string | null
           puerto_arribo_codigo?: string | null
           puerto_salida?: string | null
@@ -3425,6 +3427,7 @@ export type Database = {
           pin_contenedor_fecha_registro?: string | null
           pin_contenedor_monto?: number | null
           preferencia_comercial?: string | null
+          producto_correcto_rectificacion?: string | null
           puerto_arribo?: string | null
           puerto_arribo_codigo?: string | null
           puerto_salida?: string | null

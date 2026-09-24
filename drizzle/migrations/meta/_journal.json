@@ -120,6 +120,13 @@
       "when": 1790106434332,
       "tag": "0016_add_pines_pago_almacenaje_contenedor",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790269177682,
+      "tag": "0017_add_producto_correcto_rectificacion",
+      "breakpoints": true
     }
   ]
 }
