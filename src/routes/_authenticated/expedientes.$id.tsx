@@ -32,6 +32,7 @@ import { AutoField } from "@/components/auto-field";
 import { BadgeVigenciaPinDga } from "@/components/badge-vigencia";
 import { AplicarCertificadoPartidas } from "@/components/aplicar-certificado-partidas";
 import { OficioRectificacionButton } from "@/components/oficio-rectificacion-button";
+import { PaqueteRectificacionButton } from "@/components/paquete-rectificacion-button";
 
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
@@ -150,11 +151,13 @@ function normalizarPinesPago(payload: any) {
 const TIPOS_DOC = [
   "Factura proforma","Factura comercial","Bill of Lading","Guía aérea","Lista de empaque",
   "Certificado de origen","Certificado sanitario","Certificado fitosanitario","Certificado de análisis",
+  "Declaración Única Aduanera (DUA)","Reporte de Liquidación de Impuestos",
   "Permiso VUCE previo","Orden de compra",
   "Carta de instrucción","Póliza de seguro","DUA","Evidencia de entrega","Otro",
 ];
 
 const CHECKLIST_DOCUMENTOS_BASE = [
+  "Declaración Única Aduanera (DUA)","Reporte de Liquidación de Impuestos",
   "Factura comercial","Bill of Lading","Lista de empaque",
   "Certificado de origen","Certificado sanitario",
   "Certificado fitosanitario","Certificado de análisis",
@@ -1823,7 +1826,10 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           {form.rectificacion_tecnica && !isNuevo && (
             <div className="grid gap-1.5 items-end">
               <Label className="invisible">Oficio</Label>
-              <OficioRectificacionButton expedienteId={exp.id} />
+              <div className="flex flex-wrap gap-2">
+                <OficioRectificacionButton expedienteId={exp.id} />
+                <PaqueteRectificacionButton expedienteId={exp.id} />
+              </div>
             </div>
           )}
           <AutoField label="Preferencia comercial" value={form.preferencia_comercial} onChange={(v) => set("preferencia_comercial", v)} suggestion={sug.preferencia_comercial ?? []} disabled={!editable} />
