@@ -47,7 +47,7 @@ export function OficioRectificacionButton({ expedienteId, disabled }: { expedien
         consignatario: e.clientes?.nombre ?? "",
         rnc: e.clientes?.rnc ?? "",
         productoDeclarado: uniq(items.map((i) => i.detalle_producto || i.descripcion)).join("; ") || (e.descripcion_mercancia ?? ""),
-        peso: e.peso_neto != null ? Number(e.peso_neto).toLocaleString("es-DO") : "",
+        peso: e.peso_neto != null ? Number(e.peso_neto).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "",
         pais: uniq(items.map((i) => i.pais_origen)).join(", ") || (e.pais_origen ?? ""),
         puerto: e.puerto_arribo ?? "",
         dua: e.numero_dua ?? "",
