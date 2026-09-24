@@ -743,6 +743,7 @@ export type Database = {
           estado: string
           id: string
           nombre: string
+          suspensivo_impuestos: boolean
           tipo_operacion: string
           updated_at: string
         }
@@ -752,6 +753,7 @@ export type Database = {
           estado?: string
           id?: string
           nombre: string
+          suspensivo_impuestos?: boolean
           tipo_operacion?: string
           updated_at?: string
         }
@@ -761,6 +763,7 @@ export type Database = {
           estado?: string
           id?: string
           nombre?: string
+          suspensivo_impuestos?: boolean
           tipo_operacion?: string
           updated_at?: string
         }
@@ -3143,6 +3146,9 @@ export type Database = {
           flete: number | null
           forzar_regreso_estado: boolean
           id: string
+          impuestos_override_at: string | null
+          impuestos_override_manual: boolean
+          impuestos_override_por: string | null
           incoterm: string | null
           liq_oficial_total: number | null
           liq_siga_estado: string | null
@@ -3266,6 +3272,9 @@ export type Database = {
           flete?: number | null
           forzar_regreso_estado?: boolean
           id?: string
+          impuestos_override_at?: string | null
+          impuestos_override_manual?: boolean
+          impuestos_override_por?: string | null
           incoterm?: string | null
           liq_oficial_total?: number | null
           liq_siga_estado?: string | null
@@ -3389,6 +3398,9 @@ export type Database = {
           flete?: number | null
           forzar_regreso_estado?: boolean
           id?: string
+          impuestos_override_at?: string | null
+          impuestos_override_manual?: boolean
+          impuestos_override_por?: string | null
           incoterm?: string | null
           liq_oficial_total?: number | null
           liq_siga_estado?: string | null

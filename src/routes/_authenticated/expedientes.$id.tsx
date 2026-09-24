@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
 import { calcImpuestosLinea } from "@/lib/impuestos";
 import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
+import { ImpuestosSuspCtx, useImpuestosSusp, useEstadoSuspensivo, esRegimenSuspensivo } from "@/lib/impuestos";
 import { SolicitudReembolsoPdfButton } from "@/components/solicitud-reembolso-pdf-button";
 import { ReembolsoEstadoControl } from "@/components/reembolso-estado-control";
 import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
@@ -478,6 +479,7 @@ function DetalleExpediente() {
 
 
   const puedeForzarRegreso = (roles ?? []).some((r) => ["admin", "operaciones"].includes(r));
+  const suspEstado = useEstadoSuspensivo((exp as any)?.regimen_aduanero, (exp as any)?.impuestos_override_manual);
 
   const updateEstado = useMutation({
     mutationFn: async (estado: string) => {
@@ -536,6 +538,7 @@ function DetalleExpediente() {
 
   return (
     <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
+      <ImpuestosSuspCtx.Provider value={suspEstado}>
       <Tabs defaultValue="info">
       <div className="sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6">
         <div className="space-y-1.5 md:space-y-2">
@@ -845,6 +848,7 @@ function DetalleExpediente() {
         )}
       </div>
       </Tabs>
+      </ImpuestosSuspCtx.Provider>
       {!isNuevo && canEditExpediente && !modoEdicion && (
         <Button onClick={() => setModoEdicion(true)} className="fixed bottom-6 right-24 z-30 shadow-lg" size="lg">
           <Pencil className="h-4 w-4 mr-1" /> Editar
@@ -1308,6 +1312,23 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
       if (!payload.acuerdo_codigo) payload.acuerdo_codigo = null;
+      // Régimen suspensivo: confirmar antes de poner en cero impuestos capturados.
+      if ((payload.regimen_aduanero ?? "") !== (exp.regimen_aduanero ?? "") && !exp.impuestos_override_manual
+        && (await esRegimenSuspensivo(payload.regimen_aduanero)) && !(await esRegimenSuspensivo(exp.regimen_aduanero))) {
+        const { data: conImp } = await supabase.from("mercancia_items").select("id")
+          .eq("expediente_id", exp.id).is("deleted_at", null)
+          .or("pct_gravamen.gt.0,pct_isc.gt.0");
+        if ((conImp ?? []).length > 0) {
+          if (!window.confirm(`El régimen "${payload.regimen_aduanero}" es suspensivo de impuestos. ${conImp!.length} línea(s) de mercancía tienen % Gravamen o % ISC capturados y se pondrán en cero. ¿Continuar?`)) {
+            throw new Error("Cambio de régimen cancelado.");
+          }
+          const { error: eZ } = await supabase.from("mercancia_items")
+            .update({ pct_gravamen: 0, pct_isc: 0, aplica_isc: false })
+            .in("id", conImp!.map((r: any) => r.id));
+          if (eZ) throw eZ;
+          qc.invalidateQueries({ queryKey: ["mercancia-items", exp.id] });
+        }
+      }
       // Congelar la tasa cuando el expediente pasa a despachado o registra resultado oficial DGA.
       if (debeCongelar({ estado: exp.estado, liq_oficial_total: payload.liq_oficial_total, tasa_cambio_congelada: exp.tasa_cambio_congelada })) {
         payload.tasa_cambio_congelada = true;
@@ -3658,6 +3679,7 @@ function MercanciaItemsBlock({
   localItems?: any[];
   onLocalItemsChange?: (items: any[]) => void;
 }) {
+  const susp = useImpuestosSusp();
   const qc = useQueryClient();
   const local = !!onLocalItemsChange;
   const { data: itemsDb } = useQuery({
@@ -3903,6 +3925,7 @@ function MercanciaItemsBlock({
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Detalle de mercancía</div>
         <Button size="sm" variant="outline" onClick={startNew} disabled={disabled}><Plus className="h-4 w-4 mr-1" />Agregar ítem</Button>
       </div>
+      <AvisoRegimenSuspensivo expedienteId={expedienteId} />
       <div className="rounded-md border overflow-auto max-h-[70vh]">
         <table className="w-full text-sm min-w-[1400px]">
             <thead className="sticky-table-header bg-muted/50 text-[10.5px] uppercase tracking-wide text-muted-foreground">
@@ -3933,7 +3956,7 @@ function MercanciaItemsBlock({
                 ) : (items ?? []).map((it: any) => {
                   const c = calcImpuestosLinea(
                     Number(it.valor_fob) || 0, totalFob, seguro, flete, otros,
-                    it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis,
+                    it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis, susp.suspendido,
                   );
                   const tasa = tasaByCodigo.get((it.codigo_arancelario || "").trim());
                   const unverifiedHint = tasa && !tasa.verificado && it.pct_gravamen != null;
@@ -3960,9 +3983,9 @@ function MercanciaItemsBlock({
                         const vu = Number(unitFob(it.valor_fob, it.cantidad));
                         return isFinite(vu) ? vu.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : "—";
                       })()}</td>
-                      <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{it.pct_gravamen != null ? `${Number(it.pct_gravamen)}%` : <span className="text-amber-600 text-xs">—</span>}</td>
+                      <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{susp.suspendido ? <span className="text-muted-foreground text-xs">N/A</span> : it.pct_gravamen != null ? `${Number(it.pct_gravamen)}%` : <span className="text-amber-600 text-xs">—</span>}</td>
                       <td className="px-2 py-2 text-center bg-amber-50/40 text-xs">{it.aplica_isc ? "Sí" : "No"}</td>
-                      <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{it.aplica_isc && it.pct_isc != null ? `${Number(it.pct_isc)}%` : "—"}</td>
+                      <td className="px-2 py-2 text-right tabular-nums bg-amber-50/40">{susp.suspendido ? "N/A" : it.aplica_isc && it.pct_isc != null ? `${Number(it.pct_isc)}%` : "—"}</td>
                       <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{rd(c.cifLinea)}</td>
                       <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{rd(c.gravamen)}</td>
                       <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.selectivo)}</td>
@@ -3993,7 +4016,7 @@ function MercanciaItemsBlock({
                   {(() => {
                     const tasaCambio = Number(tasaCambioUsada) || 0;
                     const totalImpuestosUSD =
-                      (items ?? []).reduce((s: number, it: any) => s + calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis).total, 0)
+                      (items ?? []).reduce((s: number, it: any) => s + calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis, susp.suspendido).total, 0)
                       + (Number(servicioAduaneroUsd) || 0);
                     const totalImpuestosDOP = tasaCambio > 0 ? totalImpuestosUSD * tasaCambio + FORMULARIO_DUA_RD : null;
                     return totalImpuestosDOP != null
@@ -4285,6 +4308,7 @@ function MercanciaItemsBlock({
 function LiquidacionEstimadaBlock({
   exp, seguro, flete, otros, servicioAduaneroUsd = 0, disabled = false,
 }: { exp: any; seguro: number; flete: number; otros: number; servicioAduaneroUsd?: number; disabled?: boolean }) {
+  const susp = useImpuestosSusp();
   const { data: items } = useQuery({
     queryKey: ["mercancia-items", exp.id],
     queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
@@ -4292,7 +4316,7 @@ function LiquidacionEstimadaBlock({
   const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
   const totalCif = totalFob + seguro + flete + otros;
   const totals = (items ?? []).reduce((acc: any, it: any) => {
-    const c = calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
+    const c = calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis, susp.suspendido);
     acc.gravamen += c.gravamen; acc.selectivo += c.selectivo; acc.itbis += c.itbis; acc.total += c.total;
     return acc;
   }, { gravamen: 0, selectivo: 0, itbis: 0, total: 0 });
@@ -4451,7 +4475,50 @@ function LiquidacionEstimadaBlock({
   );
 }
 
+function AvisoRegimenSuspensivo({ expedienteId }: { expedienteId: string }) {
+  const susp = useImpuestosSusp();
+  const qc = useQueryClient();
+  const { data: roles } = useMyRoles();
+  const { user } = useCurrentUser();
+  const puede = (roles ?? []).some((r) => ["admin", "operaciones"].includes(r));
+  const [busy, setBusy] = useState(false);
+  if (!susp.suspensivo || !expedienteId) return null;
+  const toggle = async () => {
+    const activar = !susp.override;
+    const msg = activar
+      ? "¿Habilitar captura manual de impuestos en este expediente de régimen suspensivo? Úsalo solo si la DGA los exige."
+      : "¿Desactivar el override? Los impuestos volverán a mostrarse en cero.";
+    if (!window.confirm(msg)) return;
+    setBusy(true);
+    const { error } = await supabase.from("expedientes").update({
+      impuestos_override_manual: activar,
+      impuestos_override_at: activar ? new Date().toISOString() : null,
+      impuestos_override_por: activar ? user?.id ?? null : null,
+    }).eq("id", expedienteId);
+    if (!error) {
+      await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: expedienteId, accion: activar ? "override_impuestos_on" : "override_impuestos_off" });
+    }
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(activar ? "Captura manual de impuestos habilitada" : "Override desactivado");
+    refrescarExpediente(qc, expedienteId);
+  };
+  return (
+    <div className={cn("flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm", susp.override ? "border-primary/40 bg-primary/5" : "border-amber-300 bg-amber-50 text-amber-900")}>
+      <span className="font-medium">
+        {susp.override ? "Impuestos capturados manualmente (override) en régimen suspensivo" : "⚠ Régimen suspensivo de impuestos — Solo aplica Servicio Aduanero"}
+      </span>
+      {puede && (
+        <Button type="button" size="sm" variant="outline" disabled={busy} onClick={toggle}>
+          {susp.override ? "Quitar override" : "Capturar impuestos manualmente (excepción DGA)"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabled = false }: { exp: any; form: any; set: (k: string, v: any) => void; servicioAduaneroUsd?: number; disabled?: boolean }) {
+  const susp = useImpuestosSusp();
   const tc = useTasaCambioForExpediente(exp);
   // Estimado total en US$: recalculado a partir de items — para simplicidad, tomamos del form (mercancía se recalcula por línea).
   const { data: items } = useQuery({
@@ -4463,7 +4530,7 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
   const otros = Number(form.otros) || 0;
   const totalFob = (items ?? []).reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
   const estimadoUsd = (items ?? []).reduce((acc: number, it: any) => {
-    const c = calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
+    const c = calcImpuestosLinea(Number(it.valor_fob) || 0, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis, susp.suspendido);
     return acc + c.total;
   }, 0);
   const servicioUsd = Number(servicioAduaneroUsd) || 0;
@@ -4479,6 +4546,7 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
         <div className="font-semibold text-sm">Resultado oficial DGA</div>
         <Badge variant="outline" className="text-[10px] ml-auto">Opcional · al recibir la liquidación</Badge>
       </div>
+      <div className="mb-3"><AvisoRegimenSuspensivo expedienteId={exp?.id} /></div>
       <div className="grid gap-3 md:grid-cols-3">
         <div className="grid gap-1.5">
           <Label>N.º Liquidación SIGA</Label>
@@ -4779,7 +4847,9 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
       return;
     }
 
+    const impuestosSuspendidos = (await esRegimenSuspensivo(expData.regimen_aduanero)) && !expData.impuestos_override_manual;
     const { doc } = await buildPreLiquidacionPdf({
+      impuestosSuspendidos,
       infoCols: [
         [
           ["N° Expediente", expData.numero ?? "—"],
@@ -5206,6 +5276,7 @@ function LiquidacionFinalPdfButton({
 // Liquidación Final por producto → entrada a Almacén
 // ---------------------------------------------------------------------------
 function LiquidacionFinalSection({ exp }: { exp: any }) {
+  const susp = useImpuestosSusp();
   const qc = useQueryClient();
   const { user } = useCurrentUser();
   const { data: roles } = useMyRoles();
@@ -5277,7 +5348,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
 
   const calcFila = (it: any) => {
     const fob = Number(it.valor_fob) || 0;
-    const est = calcImpuestosLinea(fob, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
+    const est = calcImpuestosLinea(fob, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis, susp.suspendido);
     const cant = Number(it.cantidad) || 0;
     const shareLinea = totalFob > 0 ? fob / totalFob : 0;
     const gastosAdicLinea = gastosAdicionalesUSD * shareLinea;

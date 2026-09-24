@@ -39,6 +39,8 @@ export type PreLiqInput = {
   avisoReferencial?: string | null;
   /** Tasa de Servicio Aduanero calculada (US$) */
   servicioAduaneroUsd?: number | null;
+  /** Régimen suspensivo de impuestos: gravamen/ISC/ITBIS en cero. */
+  impuestosSuspendidos?: boolean;
 };
 
 export async function buildPreLiquidacionPdf(input: PreLiqInput) {
@@ -108,7 +110,7 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
   const totals = { fob: 0, cif: 0, grav: 0, isc: 0, itbis: 0, total: 0, cant: 0 };
   const body = list.map((it: any) => {
     const fob = Number(it.valor_fob) || 0;
-    const c = calcImpuestosLinea(fob, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis);
+    const c = calcImpuestosLinea(fob, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis, !!input.impuestosSuspendidos);
     totals.fob += fob; totals.cif += c.cifLinea; totals.grav += c.gravamen;
     totals.isc += c.selectivo; totals.itbis += c.itbis; totals.total += c.total;
     totals.cant += Number(it.cantidad) || 0;

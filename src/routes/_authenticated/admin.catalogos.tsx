@@ -155,7 +155,7 @@ const BASIC_WITH_ESTADO = [
   { k: "estado", label: "Estado", type: "select" as const, options: ["confirmado", "pendiente"] },
 ];
 
-const FIELDS: Record<TableKey, Array<{ k: string; label: string; required?: boolean; type?: "text" | "select"; options?: string[] }>> = {
+const FIELDS: Record<TableKey, Array<{ k: string; label: string; required?: boolean; type?: "text" | "select"; options?: string[]; bool?: boolean }>> = {
   catalogo_paises: BASIC_FIELDS,
   catalogo_puertos: [
     { k: "codigo", label: "Código", required: true },
@@ -180,6 +180,7 @@ const FIELDS: Record<TableKey, Array<{ k: string; label: string; required?: bool
   catalogo_regimenes: [
     ...BASIC_WITH_ESTADO,
     { k: "tipo_operacion", label: "Tipo de operación", type: "select" as const, options: ["importacion", "exportacion"] },
+    { k: "suspensivo_impuestos", label: "Régimen suspensivo de impuestos", type: "select" as const, options: ["Sí", "No"], bool: true },
   ],
   catalogo_acuerdos: BASIC_WITH_ESTADO,
   catalogo_tipos_despacho: BASIC_WITH_ESTADO,
@@ -242,7 +243,7 @@ function CatalogTable({ table, isAdmin }: { table: TableKey; isAdmin: boolean })
   const upsert = useMutation({
     mutationFn: async (payload: any) => {
       const cleaned: any = {};
-      fields.forEach((f) => { cleaned[f.k] = payload[f.k] || null; });
+      fields.forEach((f) => { cleaned[f.k] = f.bool ? payload[f.k] === "Sí" : (payload[f.k] || null); });
       if (dialog?.mode === "edit") {
         const { error } = await filtroFila(supabase.from(table).update(cleaned), dialog.row);
         if (error) throw error;
@@ -316,7 +317,7 @@ function CatalogTable({ table, isAdmin }: { table: TableKey; isAdmin: boolean })
               {(data?.rows ?? []).map((r: any) => (
                 <tr key={r.id ?? r.codigo} className="border-t">
                   {fields.map((f) => (
-                    <td key={f.k} className="px-3 py-2 tabular-nums">{r[f.k] ?? "—"}</td>
+                    <td key={f.k} className="px-3 py-2 tabular-nums">{f.bool ? (r[f.k] ? "Sí" : "No") : (r[f.k] ?? "—")}</td>
                   ))}
                   {isAdmin && (
                     <td className="px-3 py-2 text-right whitespace-nowrap">
@@ -365,7 +366,7 @@ function CatalogTable({ table, isAdmin }: { table: TableKey; isAdmin: boolean })
 function CatalogEditDialog({ fields, initial, mode, onClose, onSave, saving }: any) {
   const [f, setF] = useState<any>(() => {
     const base: any = {};
-    fields.forEach((fd: any) => { base[fd.k] = initial[fd.k] ?? ""; });
+    fields.forEach((fd: any) => { base[fd.k] = fd.bool ? (initial[fd.k] ? "Sí" : "No") : (initial[fd.k] ?? ""); });
     return base;
   });
   return (

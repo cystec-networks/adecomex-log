@@ -141,6 +141,13 @@
       "when": 1790280591870,
       "tag": "0019_grant_write_catalogos",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790290123217,
+      "tag": "0020_regimen_suspensivo_impuestos",
+      "breakpoints": true
     }
   ]
 }
