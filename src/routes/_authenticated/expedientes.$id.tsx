@@ -1312,6 +1312,23 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (!payload.regimen_aduanero) payload.regimen_aduanero = null;
       if (!payload.acuerdo_comercial) payload.acuerdo_comercial = null;
       if (!payload.acuerdo_codigo) payload.acuerdo_codigo = null;
+      // Régimen suspensivo: confirmar antes de poner en cero impuestos capturados.
+      if ((payload.regimen_aduanero ?? "") !== (exp.regimen_aduanero ?? "") && !exp.impuestos_override_manual
+        && (await esRegimenSuspensivo(payload.regimen_aduanero)) && !(await esRegimenSuspensivo(exp.regimen_aduanero))) {
+        const { data: conImp } = await supabase.from("mercancia_items").select("id")
+          .eq("expediente_id", exp.id).is("deleted_at", null)
+          .or("pct_gravamen.gt.0,pct_isc.gt.0");
+        if ((conImp ?? []).length > 0) {
+          if (!window.confirm(`El régimen "${payload.regimen_aduanero}" es suspensivo de impuestos. ${conImp!.length} línea(s) de mercancía tienen % Gravamen o % ISC capturados y se pondrán en cero. ¿Continuar?`)) {
+            throw new Error("Cambio de régimen cancelado.");
+          }
+          const { error: eZ } = await supabase.from("mercancia_items")
+            .update({ pct_gravamen: 0, pct_isc: 0, aplica_isc: false })
+            .in("id", conImp!.map((r: any) => r.id));
+          if (eZ) throw eZ;
+          qc.invalidateQueries({ queryKey: ["mercancia-items", exp.id] });
+        }
+      }
       // Congelar la tasa cuando el expediente pasa a despachado o registra resultado oficial DGA.
       if (debeCongelar({ estado: exp.estado, liq_oficial_total: payload.liq_oficial_total, tasa_cambio_congelada: exp.tasa_cambio_congelada })) {
         payload.tasa_cambio_congelada = true;
@@ -4529,6 +4546,7 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
         <div className="font-semibold text-sm">Resultado oficial DGA</div>
         <Badge variant="outline" className="text-[10px] ml-auto">Opcional · al recibir la liquidación</Badge>
       </div>
+      <div className="mb-3"><AvisoRegimenSuspensivo expedienteId={exp?.id} /></div>
       <div className="grid gap-3 md:grid-cols-3">
         <div className="grid gap-1.5">
           <Label>N.º Liquidación SIGA</Label>
