@@ -2244,6 +2244,10 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   };
 
   const upload = async () => {
+    if (file && CHECKLIST_DOCUMENTOS_BASE.includes(tipo) && !(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
+      toast.error("Este documento del Checklist de Recepción solo acepta archivos PDF.");
+      return;
+    }
     setUploading(true);
     try {
       if (editId) {
@@ -2347,7 +2351,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                   <SelectContent>{TIPOS_DOC.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}</Label><Input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></div>
+              <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}{CHECKLIST_DOCUMENTOS_BASE.includes(tipo) && <span className="text-xs text-muted-foreground ml-1">(solo PDF)</span>}</Label><Input type="file" accept={CHECKLIST_DOCUMENTOS_BASE.includes(tipo) ? "application/pdf,.pdf" : undefined} onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></div>
               <div className="grid gap-1.5"><Label>Fecha vencimiento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
               <div className="grid gap-1.5"><Label>Observaciones</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
             </div>
