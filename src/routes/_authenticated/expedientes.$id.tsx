@@ -198,15 +198,15 @@ function ReadOnlyField({ label, value }: { label: string; value?: string | null 
 const TAB_ORDER_KEY = "exp-tab-order-v1";
 const TAB_LABELS: Record<string, string> = {
   info: "Generales",
-  checklist: "Seguimiento Operativo",
+  checklist: "Seguimientos",
   liqfinal: "Liquidación Final",
   docs: "Documentos",
-  permisos: "Permisos VUCE",
+  permisos: "Permisos",
   transportes: "Transportes",
   recepcion: "Recepción",
   inc: "Incidencias",
   cost: "Finanzas",
-  costprod: "Costos del Producto",
+  costprod: "Costos de Productos",
   aud: "Auditoría",
 };
 const DEFAULT_TAB_ORDER = Object.keys(TAB_LABELS);
