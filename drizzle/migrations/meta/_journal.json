@@ -134,6 +134,13 @@
       "when": 1790279621980,
       "tag": "0018_firma_correo_perfil",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790280591870,
+      "tag": "0019_grant_write_catalogos",
+      "breakpoints": true
     }
   ]
 }
