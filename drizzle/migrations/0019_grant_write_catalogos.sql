@@ -1,0 +1,1 @@
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.catalogo_acuerdos, public.catalogo_regimenes, public.catalogo_tipos_despacho, public.catalogo_estados_producto, public.catalogo_documentos_requeridos, public.catalogo_tipos_documento_id, public.catalogo_areas TO authenticated;
