@@ -479,6 +479,7 @@ function DetalleExpediente() {
 
 
   const puedeForzarRegreso = (roles ?? []).some((r) => ["admin", "operaciones"].includes(r));
+  const suspEstado = useEstadoSuspensivo((exp as any)?.regimen_aduanero, (exp as any)?.impuestos_override_manual);
 
   const updateEstado = useMutation({
     mutationFn: async (estado: string) => {
@@ -537,6 +538,7 @@ function DetalleExpediente() {
 
   return (
     <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
+      <ImpuestosSuspCtx.Provider value={suspEstado}>
       <Tabs defaultValue="info">
       <div className="sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6">
         <div className="space-y-1.5 md:space-y-2">
@@ -846,6 +848,7 @@ function DetalleExpediente() {
         )}
       </div>
       </Tabs>
+      </ImpuestosSuspCtx.Provider>
       {!isNuevo && canEditExpediente && !modoEdicion && (
         <Button onClick={() => setModoEdicion(true)} className="fixed bottom-6 right-24 z-30 shadow-lg" size="lg">
           <Pencil className="h-4 w-4 mr-1" /> Editar
@@ -3659,6 +3662,7 @@ function MercanciaItemsBlock({
   localItems?: any[];
   onLocalItemsChange?: (items: any[]) => void;
 }) {
+  const susp = useImpuestosSusp();
   const qc = useQueryClient();
   const local = !!onLocalItemsChange;
   const { data: itemsDb } = useQuery({
@@ -4286,6 +4290,7 @@ function MercanciaItemsBlock({
 function LiquidacionEstimadaBlock({
   exp, seguro, flete, otros, servicioAduaneroUsd = 0, disabled = false,
 }: { exp: any; seguro: number; flete: number; otros: number; servicioAduaneroUsd?: number; disabled?: boolean }) {
+  const susp = useImpuestosSusp();
   const { data: items } = useQuery({
     queryKey: ["mercancia-items", exp.id],
     queryFn: async () => (await supabase.from("mercancia_items").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("item_no")).data ?? [],
@@ -4453,6 +4458,7 @@ function LiquidacionEstimadaBlock({
 }
 
 function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabled = false }: { exp: any; form: any; set: (k: string, v: any) => void; servicioAduaneroUsd?: number; disabled?: boolean }) {
+  const susp = useImpuestosSusp();
   const tc = useTasaCambioForExpediente(exp);
   // Estimado total en US$: recalculado a partir de items — para simplicidad, tomamos del form (mercancía se recalcula por línea).
   const { data: items } = useQuery({
@@ -5209,6 +5215,7 @@ function LiquidacionFinalPdfButton({
 // Liquidación Final por producto → entrada a Almacén
 // ---------------------------------------------------------------------------
 function LiquidacionFinalSection({ exp }: { exp: any }) {
+  const susp = useImpuestosSusp();
   const qc = useQueryClient();
   const { user } = useCurrentUser();
   const { data: roles } = useMyRoles();
