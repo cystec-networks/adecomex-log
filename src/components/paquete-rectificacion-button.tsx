@@ -17,7 +17,7 @@ const ORDEN: { etiqueta: string; tipos: string[] }[] = [
   { etiqueta: "Conocimiento de embarque (BL)", tipos: ["Bill of Lading"] },
   { etiqueta: "Factura comercial", tipos: ["Factura comercial"] },
   { etiqueta: "Certificado de origen", tipos: ["Certificado de origen"] },
-  { etiqueta: "Certificado Sanitario/Análisis", tipos: ["Certificado sanitario", "Certificado de análisis"] },
+  { etiqueta: "Certificado Sanitario/Análisis", tipos: ["Certificado sanitario", "Certificado de análisis", "Certificado fitosanitario"] },
 ];
 
 const esPdf = (p?: string | null) => !!p && p.toLowerCase().endsWith(".pdf");
