@@ -868,6 +868,7 @@ function DetalleExpediente() {
             ocrAplicado={ocrAplicado}
             tipoParam={tipoParam}
           />
+          </div>
         </TabsContent>
         {!isNuevo && (
         <>
