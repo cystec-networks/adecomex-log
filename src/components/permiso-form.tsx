@@ -128,6 +128,10 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
 
   const [uploading, setUploading] = useState(false);
   const uploadFile = async (file: File) => {
+    const { validarNombreSiga } = await import("@/lib/codigo-siga");
+    const v = validarNombreSiga(file.name, "PER");
+    if (!v.ok) { toast.error(v.error, { duration: 8000 }); return; }
+    if (v.advertencia) toast.warning(v.advertencia, { duration: 8000 });
     setUploading(true);
     try {
       const path = `permisos/${crypto.randomUUID()}-${file.name}`;

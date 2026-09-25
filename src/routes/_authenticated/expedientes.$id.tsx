@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { leerEncabezadoDocumento } from "@/lib/ai-texto-documento.functions";
-import { sha256File, fileToBase64, coincideContenido, prefijoSiga, siguienteCodigoSiga } from "@/lib/codigo-siga";
+import { sha256File, fileToBase64, coincideContenido, prefijoSiga, siguienteCodigoSiga, validarNombreSiga, nombreArchivo } from "@/lib/codigo-siga";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -2332,6 +2332,11 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       toast.error("Este documento del Checklist de Recepción solo acepta archivos PDF.");
       return;
     }
+    if (file) {
+      const v = validarNombreSiga(file.name, prefijoSiga(tipo));
+      if (!v.ok) { toast.error(v.error, { duration: 8000 }); return; }
+      if (v.advertencia) toast.warning(v.advertencia, { duration: 8000 });
+    }
     setUploading(true);
     try {
       let fileHash: string | null = null;
@@ -2506,7 +2511,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                   return (
                     <div key={t} className="flex items-center gap-3 py-1.5 border-b last:border-0 border-border/50 text-sm">
                       <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${st.dot}`} />
-                      <span className="flex-1 min-w-0 truncate">{t}</span>
+                      <span className="flex-1 min-w-0 truncate">{t}{d?.storage_path && <span className="block text-[11px] text-muted-foreground truncate" title={nombreArchivo(d.storage_path)}>{nombreArchivo(d.storage_path)}</span>}</span>
                       <span className="w-16 shrink-0 font-mono text-xs text-primary">{d?.storage_path && d?.codigo_siga ? d.codigo_siga : ""}</span>
                       <span className={`text-xs w-24 shrink-0 ${st.text} inline-flex items-center gap-1`}>
                         {d ? st.label : "Pendiente"}
