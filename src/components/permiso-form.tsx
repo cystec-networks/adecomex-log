@@ -70,6 +70,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
   const [form, setForm] = useState({
     numero: "",
     numero_resolucion: "",
+    codigo_siga: null as string | null,
     expediente_id: expedienteId ?? "",
     orden_id: ordenId ?? "",
     cliente_id: "",
