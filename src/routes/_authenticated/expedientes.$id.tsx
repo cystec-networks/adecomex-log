@@ -1903,35 +1903,37 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             <Label>Descripción</Label>
             <Textarea rows={3} value={form.descripcion_mercancia} onChange={(e) => set("descripcion_mercancia", e.target.value)} disabled={!editable} />
           </div>
-          <div className="grid gap-1.5">
-            <Label>Peso neto (kg)</Label>
-            <Input
-              type="text"
-              inputMode="decimal"
-              value={form.peso_neto ?? ""}
-              onChange={(e) => {
-                const v = e.target.value.replace(",", ".");
-                if (v === "" || /^\d*\.?\d*$/.test(v)) set("peso_neto", v);
-              }}
-              placeholder="0.00"
-              disabled={!editable}
-            />
+          <div className="grid gap-4 content-start">
+            <div className="grid gap-1.5">
+              <Label>Peso neto (kg)</Label>
+              <Input
+                type="text"
+                inputMode="decimal"
+                value={form.peso_neto ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value.replace(",", ".");
+                  if (v === "" || /^\d*\.?\d*$/.test(v)) set("peso_neto", v);
+                }}
+                placeholder="0.00"
+                disabled={!editable}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Peso bruto (kg)</Label>
+              <Input
+                type="text"
+                inputMode="decimal"
+                value={form.peso_bruto ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value.replace(",", ".");
+                  if (v === "" || /^\d*\.?\d*$/.test(v)) set("peso_bruto", v);
+                }}
+                placeholder="0.00"
+                disabled={!editable}
+              />
+            </div>
           </div>
-          <div className="grid gap-1.5">
-            <Label>Peso bruto (kg)</Label>
-            <Input
-              type="text"
-              inputMode="decimal"
-              value={form.peso_bruto ?? ""}
-              onChange={(e) => {
-                const v = e.target.value.replace(",", ".");
-                if (v === "" || /^\d*\.?\d*$/.test(v)) set("peso_bruto", v);
-              }}
-              placeholder="0.00"
-              disabled={!editable}
-            />
-          </div>
-          <div className="grid gap-2 md:col-span-2">
+          <div className="lg:col-span-2">
             <div className="flex items-center justify-between">
               <Label>Contenedores / Furgones</Label>
               {editable && (
