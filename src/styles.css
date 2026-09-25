@@ -194,8 +194,12 @@
     width: 100%;
     padding: 0 8px;
   }
-  .print-ficha-generales #ficha-generales-print button,
-  .print-ficha-generales #ficha-generales-print [role="tablist"] {
+  .print-ficha-generales #ficha-generales-print button {
+    border-color: #d4d4d8 !important;
+    box-shadow: none !important;
+    pointer-events: none;
+  }
+  .print-ficha-generales #ficha-generales-print button svg {
     display: none !important;
   }
   .print-ficha-generales #ficha-generales-print input,
