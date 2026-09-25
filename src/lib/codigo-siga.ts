@@ -62,3 +62,22 @@ export async function siguienteCodigoSiga(expedienteId: string, prefijo: Prefijo
   const next = (nums.length ? Math.max(...nums) : 0) + 1;
   return `${prefijo}-${String(next).padStart(3, "0")}`;
 }
+
+const PREFIJOS: PrefijoSiga[] = ["FAC", "DOE", "CEO", "PER", "OTD"];
+
+/** Valida el nombre del archivo contra el prefijo SIGA esperado. */
+export function validarNombreSiga(nombre: string, esperado: PrefijoSiga):
+  { ok: true; advertencia?: string } | { ok: false; error: string } {
+  const n = nombre.toUpperCase();
+  if (n.includes(`${esperado}-`)) return { ok: true };
+  if (PREFIJOS.some((p) => n.includes(`${p}-`)))
+    return { ok: false, error: `El nombre del archivo no corresponde al tipo de documento esperado (se espera prefijo ${esperado}-). Verifica que estás subiendo el documento correcto.` };
+  return { ok: true, advertencia: "Este archivo no tiene el prefijo de codificación SIGA (FAC-, DOE-, CEO-, PER-, OTD-). Se recomienda renombrarlo antes de subirlo a SIGA." };
+}
+
+/** Nombre original del archivo a partir de la ruta guardada. */
+export function nombreArchivo(path: string | null | undefined): string {
+  if (!path) return "";
+  const base = path.split("/").pop() ?? "";
+  return base.replace(/^\d{10,}_/, "").replace(/^[0-9a-f-]{36}-/i, "");
+}
