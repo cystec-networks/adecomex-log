@@ -209,3 +209,8 @@
     box-shadow: none !important;
   }
 }
+@media print {
+  .print-ficha-generales #ficha-generales-print :disabled {
+    opacity: 1 !important;
+  }
+}
