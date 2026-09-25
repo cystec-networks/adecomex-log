@@ -178,3 +178,30 @@
   background: var(--background, white);
 }
 
+
+@media print {
+  .print-ficha-generales body * {
+    visibility: hidden;
+  }
+  .print-ficha-generales #ficha-generales-print,
+  .print-ficha-generales #ficha-generales-print * {
+    visibility: visible;
+  }
+  .print-ficha-generales #ficha-generales-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0 8px;
+  }
+  .print-ficha-generales #ficha-generales-print button,
+  .print-ficha-generales #ficha-generales-print [role="tablist"] {
+    display: none !important;
+  }
+  .print-ficha-generales #ficha-generales-print input,
+  .print-ficha-generales #ficha-generales-print textarea,
+  .print-ficha-generales #ficha-generales-print select {
+    border-color: #d4d4d8 !important;
+    box-shadow: none !important;
+  }
+}
