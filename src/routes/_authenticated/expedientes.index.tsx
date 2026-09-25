@@ -450,14 +450,14 @@ function Expedientes() {
       </td>
 
       <td className="px-1 py-1 align-middle text-right whitespace-nowrap">
-        <RastreosEnvioMenu variant="icon" />
+        <RastreosEnvioMenu variant="icon" className="h-7 w-7" />
         <WhatsAppButton
           phone={e.clientes?.telefono}
           clientName={e.clientes?.nombre}
           recordType="Expediente"
           recordNumber={e.numero}
           variant="icon"
-          className="h-8 w-8"
+          className="h-7 w-7"
         />
         <EmailButton
           email={(e.clientes as any)?.email}
@@ -465,12 +465,12 @@ function Expedientes() {
           recordType="Expediente"
           recordNumber={e.numero}
           variant="icon"
-          className="h-8 w-8"
+          className="h-7 w-7"
         />
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-primary"
+          className="h-7 w-7 text-muted-foreground hover:text-primary"
           disabled={duplicarMut.isPending}
           onClick={() => duplicarMut.mutate(e.id)}
           title="Duplicar expediente"
@@ -480,7 +480,7 @@ function Expedientes() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+          className="h-7 w-7 text-muted-foreground hover:text-destructive"
           onClick={() => setToTrash({ id: e.id, numero: e.numero })}
           title="Mover a papelera"
         >
