@@ -143,6 +143,10 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
       const payload: any = { ...form };
       ["expediente_id","orden_id","cliente_id","tipo","fecha_solicitud","fecha_emision","fecha_vencimiento","documento_url","numero_resolucion","institucion_emisora","observaciones","numero"]
         .forEach((k) => { if (payload[k] === "") payload[k] = null; });
+      if (payload.documento_url && payload.expediente_id && !payload.codigo_siga) {
+        const { siguienteCodigoSiga } = await import("@/lib/codigo-siga");
+        payload.codigo_siga = await siguienteCodigoSiga(payload.expediente_id, "PER");
+      }
       if (mode === "new") {
         if (payload.numero == null) throw new Error("Escribe el N° de Permiso VUCE (se captura manualmente).");
         const { data: u } = await supabase.auth.getUser();
