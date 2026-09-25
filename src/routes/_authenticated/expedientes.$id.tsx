@@ -854,7 +854,7 @@ function DetalleExpediente() {
             <div className="hidden print:block mb-4">
               <h1 className="text-xl font-bold">Expediente {expData.numero} — Ficha General</h1>
               <p className="text-sm text-muted-foreground">
-                Cliente: {expData.clientes?.nombre ?? "—"} · Impreso el {fmtLocalDate(new Date())}
+                Cliente: {expData.clientes?.nombre ?? "—"} · Impreso el {new Date().toLocaleDateString("es-DO")}
               </p>
             </div>
           <TabInfo
