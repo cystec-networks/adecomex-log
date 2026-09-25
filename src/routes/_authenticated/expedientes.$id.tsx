@@ -329,12 +329,18 @@ function DetalleExpediente() {
   const [tabActiva, setTabActiva] = useState("info");
   const imprimirFichaGenerales = () => {
     setTabActiva("info");
-    const limpiar = () => document.documentElement.classList.remove("print-ficha-generales");
+    const limpiar = () => {
+      document.documentElement.classList.remove("print-ficha-generales");
+      window.dispatchEvent(new CustomEvent("ficha-print-mode", { detail: false }));
+    };
     window.addEventListener("afterprint", limpiar, { once: true });
     setTimeout(() => {
-      document.documentElement.classList.add("print-ficha-generales");
-      window.print();
-      setTimeout(limpiar, 500);
+      window.dispatchEvent(new CustomEvent("ficha-print-mode", { detail: true }));
+      setTimeout(() => {
+        document.documentElement.classList.add("print-ficha-generales");
+        window.print();
+        setTimeout(limpiar, 500);
+      }, 250);
     }, 150);
   };
   const dragTab = useRef<string | null>(null);
@@ -920,6 +926,12 @@ function Section({ title, subtitle, children, id, className }: { title: React.Re
   const [abierto, setAbierto] = useState(() => {
     try { return localStorage.getItem(`exp-section-${id}`) === "1"; } catch { return false; }
   });
+  const [forzarAbierto, setForzarAbierto] = useState(false);
+  useEffect(() => {
+    const h = (e: Event) => setForzarAbierto((e as CustomEvent<boolean>).detail);
+    window.addEventListener("ficha-print-mode", h);
+    return () => window.removeEventListener("ficha-print-mode", h);
+  }, []);
   const toggle = () => {
     const next = !abierto;
     setAbierto(next);
@@ -936,7 +948,7 @@ function Section({ title, subtitle, children, id, className }: { title: React.Re
           <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", abierto && "rotate-180")} />
         </div>
       </CardHeader>
-      {abierto && <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">{children}</CardContent>}
+      {(abierto || forzarAbierto) && <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">{children}</CardContent>}
     </Card>
   );
 }
