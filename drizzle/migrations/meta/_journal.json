@@ -148,6 +148,13 @@
       "when": 1790290123217,
       "tag": "0020_regimen_suspensivo_impuestos",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790357100099,
+      "tag": "0021_codigo_siga_documentos",
+      "breakpoints": true
     }
   ]
 }
