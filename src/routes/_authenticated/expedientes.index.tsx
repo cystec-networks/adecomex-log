@@ -491,11 +491,11 @@ function Expedientes() {
   );
 
   return (
-    <div className="p-3 md:p-4 space-y-3 max-w-[1600px] mx-auto">
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex-1 min-w-[240px]">
-          <h1 className="font-display text-lg font-bold leading-tight">Expedientes · {tipoLabel}</h1>
-          <p className="text-xs text-muted-foreground hidden md:block">Expedientes aduanales agrupados por tipo de solicitud.</p>
+    <div className="p-3 md:p-4 space-y-3 max-w-[1600px] mx-auto h-full flex flex-col">
+      <div className="flex items-center gap-3 flex-wrap shrink-0">
+        <div className="flex-1 min-w-[200px] min-w-0">
+          <h1 className="font-display text-lg font-bold leading-tight truncate">Expedientes · {tipoLabel}</h1>
+          <p className="text-xs text-muted-foreground hidden xl:block truncate">Expedientes aduanales agrupados por tipo de solicitud.</p>
         </div>
         <div className="flex gap-1 rounded-md border p-0.5 bg-card">
           <Link to="/expedientes" search={{ tipo: "todos", estado: estadoParam, eta: etaParam }} className={`px-2.5 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos <Badge variant="secondary" className="text-[10px] h-4 px-1">{countAll}</Badge></Link>
@@ -510,8 +510,8 @@ function Expedientes() {
         </Button>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="flex-row items-center gap-2 flex-wrap p-3">
+      <Card className="overflow-hidden flex-1 min-h-0 flex flex-col">
+        <CardHeader className="flex-row items-center gap-2 flex-wrap p-3 shrink-0">
           <CardTitle className="text-sm flex-1 min-w-[140px]">{filtered.length} expedientes</CardTitle>
           <Select value={estado} onValueChange={setEstado}>
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
@@ -543,11 +543,11 @@ function Expedientes() {
           </Toggle>
           <Input placeholder="Buscar por BL/AWB, expediente, cliente, mercancía o contenedor..." value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 flex-1 min-h-0">
           {filtered.length === 0 && (
             <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin expedientes. Crea uno con "Nuevo Expediente" o súbelo por OCR.</div>
           )}
-          <div className="overflow-auto max-h-[calc(100dvh-200px)] min-h-[320px]">
+          <div className="overflow-auto h-full">
             {gruposVisibles.map((g) => {
               const rows = grupos[g];
               if (rows.length === 0) return null;
