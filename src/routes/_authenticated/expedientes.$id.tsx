@@ -1933,7 +1933,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               />
             </div>
           </div>
-          <div className="lg:col-span-2">
+          <div className="grid gap-2 lg:col-span-2">
             <div className="flex items-center justify-between">
               <Label>Contenedores / Furgones</Label>
               {editable && (
