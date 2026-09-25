@@ -600,6 +600,10 @@ function DetalleExpediente() {
                     <PreLiquidacionPdfButton exp={expData} />
                     <SolicitudReembolsoPdfButton exp={expData} />
                     <GenerarDocumentoButton exp={expData} />
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={imprimirFichaGenerales}>
+                      <Printer className="h-4 w-4" /> Imprimir Ficha General (PDF)
+                    </DropdownMenuItem>
                      {!isNuevo && expData.rectificacion_tecnica && (
                        <>
                          <DropdownMenuSeparator />
@@ -634,8 +638,12 @@ function DetalleExpediente() {
                       <GenerarXmlCertificadoOrigenButton expedienteId={id} />
                       <PreLiquidacionPdfButton exp={expData} />
                       <SolicitudReembolsoPdfButton exp={expData} />
-                       <GenerarDocumentoButton exp={expData} />
-                       {expData.rectificacion_tecnica && (
+                        <GenerarDocumentoButton exp={expData} />
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={imprimirFichaGenerales}>
+                          <Printer className="h-4 w-4" /> Imprimir Ficha General (PDF)
+                        </DropdownMenuItem>
+                        {expData.rectificacion_tecnica && (
                          <>
                            <DropdownMenuSeparator />
                            <OficioRectificacionButton expedienteId={id} />
@@ -842,6 +850,13 @@ function DetalleExpediente() {
       </div>
       <div className="px-6">
         <TabsContent value="info">
+          <div id="ficha-generales-print">
+            <div className="hidden print:block mb-4">
+              <h1 className="text-xl font-bold">Expediente {expData.numero} — Ficha General</h1>
+              <p className="text-sm text-muted-foreground">
+                Cliente: {expData.clientes?.nombre ?? "—"} · Impreso el {fmtLocalDate(new Date())}
+              </p>
+            </div>
           <TabInfo
             id={id}
             exp={expData}
