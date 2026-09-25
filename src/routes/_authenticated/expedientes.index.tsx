@@ -216,7 +216,7 @@ function Expedientes() {
     const icon = active ? (sort!.dir === "asc" ? "▲" : "▼") : def ? "▲" : "↕";
     const alignClass = align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left";
     return (
-      <th className={`px-4 py-2.5 ${alignClass} ${className}`}>
+      <th className={`px-4 py-1.5 ${alignClass} ${className}`}>
         <button
           type="button"
           onClick={() => toggleSort(k)}
@@ -337,7 +337,7 @@ function Expedientes() {
 
   const ExpedienteRow = ({ e }: { e: any }) => (
     <tr key={e.id} className={`hover:bg-muted/30 transition-colors ${rowHighlight(e)}`}>
-      <td className="px-2 py-2 align-middle whitespace-nowrap">
+      <td className="px-2 py-1 align-middle whitespace-nowrap">
         <Link
           to="/expedientes/$id"
           params={{ id: e.id }}
@@ -347,22 +347,22 @@ function Expedientes() {
           {e.numero}
         </Link>
       </td>
-      <td className="px-2 py-2 align-middle whitespace-nowrap text-foreground/90">
+      <td className="px-2 py-1 align-middle whitespace-nowrap text-foreground/90">
         <TruncatedCell value={e.clientes?.nombre} />
       </td>
-      <td className="px-2 py-2 align-middle text-muted-foreground text-xs whitespace-nowrap">
+      <td className="px-2 py-1 align-middle text-muted-foreground text-xs whitespace-nowrap">
         <MercanciaCell items={e.mercancia_items} />
       </td>
-      <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground text-xs whitespace-nowrap">
+      <td className="px-2 py-1 align-middle text-right tabular-nums text-muted-foreground text-xs whitespace-nowrap">
         {e.numero_dua ?? "—"}
       </td>
-      <td className="px-2 py-2 align-middle text-muted-foreground whitespace-nowrap">
+      <td className="px-2 py-1 align-middle text-muted-foreground whitespace-nowrap">
         {e.bl_awb ?? "—"}
       </td>
-      <td className="px-2 py-2 align-middle text-right tabular-nums text-muted-foreground whitespace-nowrap">
+      <td className="px-2 py-1 align-middle text-right tabular-nums text-muted-foreground whitespace-nowrap">
         {(() => { const d = parseLocalDate(e.fecha_compromiso); return d ? d.toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"; })()}
       </td>
-      <td className="px-2 py-2 align-middle text-center whitespace-nowrap w-12 min-w-12">
+      <td className="px-2 py-1 align-middle text-center whitespace-nowrap w-12 min-w-12">
         {(() => {
           const d = diasRestantes(e);
           if (!d) return <span className="text-muted-foreground">—</span>;
@@ -397,13 +397,13 @@ function Expedientes() {
           );
         })()}
       </td>
-      <td className="px-2 py-2 align-middle text-muted-foreground text-xs whitespace-nowrap">
+      <td className="px-2 py-1 align-middle text-muted-foreground text-xs whitespace-nowrap">
         {e.puerto_arribo ?? "—"}
       </td>
-      <td className="px-2 py-2 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
+      <td className="px-2 py-1 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
         {e.numero_vuce ?? "—"}
       </td>
-      <td className="px-2 py-2 align-middle text-center whitespace-nowrap">
+      <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
         <div className="flex flex-col items-center gap-0.5">
           {estadoBadge(e.estado)}
           {(e.liq_siga_termino_at || e.liq_siga_fecha_pago) && (
@@ -449,7 +449,7 @@ function Expedientes() {
         </div>
       </td>
 
-      <td className="px-1 py-2 align-middle text-right whitespace-nowrap">
+      <td className="px-1 py-1 align-middle text-right whitespace-nowrap">
         <RastreosEnvioMenu variant="icon" />
         <WhatsAppButton
           phone={e.clientes?.telefono}
@@ -553,7 +553,7 @@ function Expedientes() {
               if (rows.length === 0) return null;
               return (
                 <div key={g}>
-                  <div className="px-3 py-2 bg-muted/60 border-y flex items-center gap-2 sticky top-0 z-10 h-[33px]">
+                  <div className="px-3 py-1 bg-muted/60 border-y flex items-center gap-2 sticky top-0 z-10 h-7">
                     <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">{grupoLabel[g]}</span>
                     <Badge variant="secondary" className="text-[10px]">{rows.length}</Badge>
                   </div>
@@ -562,15 +562,15 @@ function Expedientes() {
                       <tr>
                         <Th k="numero" className="px-2 whitespace-nowrap">Expediente</Th>
                         <Th k="cliente" className="px-2 whitespace-nowrap">Cliente</Th>
-                        <th className="px-2 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Mercancía</th>
+                        <th className="px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Mercancía</th>
                         <Th k="numero_dua" className="px-2 whitespace-nowrap">DUA</Th>
                         <Th k="bl_awb" className="px-2 whitespace-nowrap">BL / AWB</Th>
                         <Th k="fecha_compromiso" className="px-2 whitespace-nowrap">ETA</Th>
-                        <th className="px-2 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap w-12 min-w-12">Días</th>
+                        <th className="px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap w-12 min-w-12">Días</th>
                         <Th k="puerto_arribo" className="px-2 whitespace-nowrap">Puerto</Th>
                         <Th k="numero_vuce" className="px-2 whitespace-nowrap">Permiso VUCE</Th>
                         <Th k="estado" className="px-2 whitespace-nowrap">Estado</Th>
-                        <th className="px-1 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"></th>
+                        <th className="px-1 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"></th>
                       </tr>
                     </thead>
 
