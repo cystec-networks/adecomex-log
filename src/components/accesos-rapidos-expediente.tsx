@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Ship,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const DGA_VUCE_TOOLS = [
   { label: "Buscador de Productos", url: "https://www.aduanas.gob.do/consultas/buscador-de-productos/", icon: Search },
