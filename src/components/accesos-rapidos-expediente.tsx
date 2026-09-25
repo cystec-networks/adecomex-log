@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Ship,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const DGA_VUCE_TOOLS = [
   { label: "Buscador de Productos", url: "https://www.aduanas.gob.do/consultas/buscador-de-productos/", icon: Search },
@@ -100,7 +101,7 @@ export function HerramientasDgaVuceMenu({ variant = "button", className }: { var
           <Button
             variant="ghost"
             size="icon"
-            className={`h-8 w-8 text-muted-foreground hover:text-primary ${className ?? ""}`}
+            className={cn("h-8 w-8 text-muted-foreground hover:text-primary", className)}
             title="Herramientas DGA/VUCE"
             aria-label="Herramientas DGA/VUCE"
             onClick={(e) => e.stopPropagation()}
@@ -129,7 +130,7 @@ export function RastreosEnvioMenu({ variant = "button", className }: { variant?:
           <Button
             variant="ghost"
             size="icon"
-            className={`h-8 w-8 text-muted-foreground hover:text-primary ${className ?? ""}`}
+            className={cn("h-8 w-8 text-muted-foreground hover:text-primary", className)}
             title="Rastreos de Envío"
             aria-label="Rastreos de Envío"
             onClick={(e) => e.stopPropagation()}
