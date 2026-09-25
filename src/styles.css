@@ -214,3 +214,12 @@
     opacity: 1 !important;
   }
 }
+@media print {
+  .print-ficha-generales #ficha-generales-print button:not([role="combobox"]) {
+    display: none !important;
+  }
+  .print-ficha-generales #ficha-generales-print .lucide-chevron-down,
+  .print-ficha-generales #ficha-generales-print button[role="combobox"] svg {
+    display: none !important;
+  }
+}
