@@ -1,4 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { leerEncabezadoDocumento } from "@/lib/ai-texto-documento.functions";
+import { sha256File, fileToBase64, coincideContenido, prefijoSiga, siguienteCodigoSiga } from "@/lib/codigo-siga";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
