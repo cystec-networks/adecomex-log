@@ -19,7 +19,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical, Printer } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
@@ -326,6 +326,17 @@ function DetalleExpediente() {
   const navExp = useNavigate();
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
+  const [tabActiva, setTabActiva] = useState("info");
+  const imprimirFichaGenerales = () => {
+    setTabActiva("info");
+    const limpiar = () => document.documentElement.classList.remove("print-ficha-generales");
+    window.addEventListener("afterprint", limpiar, { once: true });
+    setTimeout(() => {
+      document.documentElement.classList.add("print-ficha-generales");
+      window.print();
+      setTimeout(limpiar, 500);
+    }, 150);
+  };
   const dragTab = useRef<string | null>(null);
   const [modoEdicion, setModoEdicion] = useState(!!nuevo || isNuevo);
   const { data: roles } = useMyRoles();
@@ -539,7 +550,7 @@ function DetalleExpediente() {
   return (
     <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
       <ImpuestosSuspCtx.Provider value={suspEstado}>
-      <Tabs defaultValue="info">
+      <Tabs value={tabActiva} onValueChange={setTabActiva}>
       <div className="sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6">
         <div className="space-y-1.5 md:space-y-2">
         <div className="flex flex-wrap items-center gap-2 md:gap-3">
