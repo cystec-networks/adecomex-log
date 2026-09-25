@@ -89,6 +89,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
       setForm({
         numero: existing.numero ?? "",
         numero_resolucion: existing.numero_resolucion ?? "",
+        codigo_siga: (existing as any).codigo_siga ?? null,
         expediente_id: existing.expediente_id ?? "",
         orden_id: (existing as any).orden_id ?? "",
         cliente_id: existing.cliente_id ?? "",
