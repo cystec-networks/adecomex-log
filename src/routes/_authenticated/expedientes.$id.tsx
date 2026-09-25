@@ -19,7 +19,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical, Printer } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
@@ -326,6 +326,23 @@ function DetalleExpediente() {
   const navExp = useNavigate();
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
+  const [tabActiva, setTabActiva] = useState("info");
+  const imprimirFichaGenerales = () => {
+    setTabActiva("info");
+    const limpiar = () => {
+      document.documentElement.classList.remove("print-ficha-generales");
+      window.dispatchEvent(new CustomEvent("ficha-print-mode", { detail: false }));
+    };
+    window.addEventListener("afterprint", limpiar, { once: true });
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("ficha-print-mode", { detail: true }));
+      setTimeout(() => {
+        document.documentElement.classList.add("print-ficha-generales");
+        window.print();
+        setTimeout(limpiar, 500);
+      }, 250);
+    }, 150);
+  };
   const dragTab = useRef<string | null>(null);
   const [modoEdicion, setModoEdicion] = useState(!!nuevo || isNuevo);
   const { data: roles } = useMyRoles();
@@ -539,7 +556,7 @@ function DetalleExpediente() {
   return (
     <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
       <ImpuestosSuspCtx.Provider value={suspEstado}>
-      <Tabs defaultValue="info">
+      <Tabs value={tabActiva} onValueChange={setTabActiva}>
       <div className="sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6">
         <div className="space-y-1.5 md:space-y-2">
         <div className="flex flex-wrap items-center gap-2 md:gap-3">
@@ -589,6 +606,10 @@ function DetalleExpediente() {
                     <PreLiquidacionPdfButton exp={expData} />
                     <SolicitudReembolsoPdfButton exp={expData} />
                     <GenerarDocumentoButton exp={expData} />
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={imprimirFichaGenerales}>
+                      <Printer className="h-4 w-4" /> Imprimir Ficha General (PDF)
+                    </DropdownMenuItem>
                      {!isNuevo && expData.rectificacion_tecnica && (
                        <>
                          <DropdownMenuSeparator />
@@ -623,8 +644,12 @@ function DetalleExpediente() {
                       <GenerarXmlCertificadoOrigenButton expedienteId={id} />
                       <PreLiquidacionPdfButton exp={expData} />
                       <SolicitudReembolsoPdfButton exp={expData} />
-                       <GenerarDocumentoButton exp={expData} />
-                       {expData.rectificacion_tecnica && (
+                        <GenerarDocumentoButton exp={expData} />
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={imprimirFichaGenerales}>
+                          <Printer className="h-4 w-4" /> Imprimir Ficha General (PDF)
+                        </DropdownMenuItem>
+                        {expData.rectificacion_tecnica && (
                          <>
                            <DropdownMenuSeparator />
                            <OficioRectificacionButton expedienteId={id} />
@@ -831,6 +856,13 @@ function DetalleExpediente() {
       </div>
       <div className="px-6">
         <TabsContent value="info">
+          <div id="ficha-generales-print">
+            <div className="hidden print:block mb-4">
+              <h1 className="text-xl font-bold">Expediente {expData.numero} — Ficha General</h1>
+              <p className="text-sm text-muted-foreground">
+                Cliente: {expData.clientes?.nombre ?? "—"} · Impreso el {new Date().toLocaleDateString("es-DO")}
+              </p>
+            </div>
           <TabInfo
             id={id}
             exp={expData}
@@ -842,6 +874,7 @@ function DetalleExpediente() {
             ocrAplicado={ocrAplicado}
             tipoParam={tipoParam}
           />
+          </div>
         </TabsContent>
         {!isNuevo && (
         <>
@@ -893,6 +926,12 @@ function Section({ title, subtitle, children, id, className }: { title: React.Re
   const [abierto, setAbierto] = useState(() => {
     try { return localStorage.getItem(`exp-section-${id}`) === "1"; } catch { return false; }
   });
+  const [forzarAbierto, setForzarAbierto] = useState(false);
+  useEffect(() => {
+    const h = (e: Event) => setForzarAbierto((e as CustomEvent<boolean>).detail);
+    window.addEventListener("ficha-print-mode", h);
+    return () => window.removeEventListener("ficha-print-mode", h);
+  }, []);
   const toggle = () => {
     const next = !abierto;
     setAbierto(next);
@@ -909,7 +948,7 @@ function Section({ title, subtitle, children, id, className }: { title: React.Re
           <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", abierto && "rotate-180")} />
         </div>
       </CardHeader>
-      {abierto && <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">{children}</CardContent>}
+      {(abierto || forzarAbierto) && <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">{children}</CardContent>}
     </Card>
   );
 }
