@@ -55,6 +55,7 @@ import { ChecklistHitos } from "@/components/checklist-hitos";
 import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
+import { PortadaExpedienteButton } from "@/components/portada-expediente-button";
 import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
 import { unitFob, loadBrokerConfig } from "@/lib/siga-xml";
@@ -606,6 +607,7 @@ function DetalleExpediente() {
                     <PreLiquidacionPdfButton exp={expData} />
                     <SolicitudReembolsoPdfButton exp={expData} />
                     <GenerarDocumentoButton exp={expData} />
+{!isNuevo && <PortadaExpedienteButton expedienteId={id} />}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onSelect={imprimirFichaGenerales}>
                       <Printer className="h-4 w-4" /> Imprimir Ficha General (PDF)
@@ -645,6 +647,7 @@ function DetalleExpediente() {
                       <PreLiquidacionPdfButton exp={expData} />
                       <SolicitudReembolsoPdfButton exp={expData} />
                         <GenerarDocumentoButton exp={expData} />
+{!isNuevo && <PortadaExpedienteButton expedienteId={id} />}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onSelect={imprimirFichaGenerales}>
                           <Printer className="h-4 w-4" /> Imprimir Ficha General (PDF)
