@@ -589,6 +589,14 @@ function DetalleExpediente() {
                     <PreLiquidacionPdfButton exp={expData} />
                     <SolicitudReembolsoPdfButton exp={expData} />
                     <GenerarDocumentoButton exp={expData} />
+                     {!isNuevo && expData.rectificacion_tecnica && (
+                       <>
+                         <DropdownMenuSeparator />
+                         <OficioRectificacionButton expedienteId={id} />
+                         <PaqueteRectificacionButton expedienteId={id} />
+                         <CorreoDgaButton expedienteId={id} />
+                       </>
+                     )}
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -615,7 +623,15 @@ function DetalleExpediente() {
                       <GenerarXmlCertificadoOrigenButton expedienteId={id} />
                       <PreLiquidacionPdfButton exp={expData} />
                       <SolicitudReembolsoPdfButton exp={expData} />
-                    <GenerarDocumentoButton exp={expData} />
+                       <GenerarDocumentoButton exp={expData} />
+                       {expData.rectificacion_tecnica && (
+                         <>
+                           <DropdownMenuSeparator />
+                           <OficioRectificacionButton expedienteId={id} />
+                           <PaqueteRectificacionButton expedienteId={id} />
+                           <CorreoDgaButton expedienteId={id} />
+                         </>
+                       )}
                     </div>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
@@ -1843,16 +1859,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                 placeholder="Descripción real de la mercancía"
                 disabled={!editable}
               />
-            </div>
-          )}
-          {form.rectificacion_tecnica && !isNuevo && (
-            <div className="grid gap-1.5 items-end">
-              <Label className="invisible">Oficio</Label>
-              <div className="flex flex-wrap gap-2">
-                <OficioRectificacionButton expedienteId={exp.id} />
-                <PaqueteRectificacionButton expedienteId={exp.id} />
-                <CorreoDgaButton expedienteId={exp.id} />
-              </div>
             </div>
           )}
           <AutoField label="Preferencia comercial" value={form.preferencia_comercial} onChange={(v) => set("preferencia_comercial", v)} suggestion={sug.preferencia_comercial ?? []} disabled={!editable} />
