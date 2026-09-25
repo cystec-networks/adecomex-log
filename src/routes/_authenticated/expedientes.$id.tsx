@@ -2469,7 +2469,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
               <div className="grid gap-1.5"><Label>Fecha vencimiento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
               <div className="grid gap-1.5"><Label>Observaciones</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
             </div>
-            <DialogFooter><Button onClick={upload} disabled={uploading}>Guardar</Button></DialogFooter>
+            <DialogFooter><Button onClick={upload} disabled={uploading}>{leyendo ? "Revisando documento…" : "Guardar"}</Button></DialogFooter>
           </DialogContent>
         </Dialog>
       </CardHeader>
@@ -2504,6 +2504,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                     <div key={t} className="flex items-center gap-3 py-1.5 border-b last:border-0 border-border/50 text-sm">
                       <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${st.dot}`} />
                       <span className="flex-1 min-w-0 truncate">{t}</span>
+                      <span className="w-16 shrink-0 font-mono text-xs text-primary">{d?.storage_path && d?.codigo_siga ? d.codigo_siga : ""}</span>
                       <span className={`text-xs w-24 shrink-0 ${st.text} inline-flex items-center gap-1`}>
                         {d ? st.label : "Pendiente"}
                         {d?.estado === "recibido" && !d?.storage_path && <span className="text-[10px] text-muted-foreground leading-none">(sin archivo)</span>}
@@ -2533,6 +2534,22 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
             </div>
           );
         })()}
+        <Dialog open={!!confirmacion} onOpenChange={(o) => { if (!o) cerrarConfirmacion(false); }}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>{confirmacion?.titulo}</DialogTitle></DialogHeader>
+            <p className="text-sm">{confirmacion?.mensaje}</p>
+            {confirmacion?.requiereCheck && (
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={confirmAck} onChange={(e) => setConfirmAck(e.target.checked)} />
+                Confirmo que es intencional: este archivo corresponde a ambas categorías.
+              </label>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => cerrarConfirmacion(false)}>Cancelar</Button>
+              <Button onClick={() => cerrarConfirmacion(true)} disabled={!!confirmacion?.requiereCheck && !confirmAck}>Continuar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <table className="w-full text-sm">
           <thead className="text-xs text-muted-foreground border-b bg-muted/30">
             <tr><th className="text-left px-4 py-2">Tipo</th><th className="text-left">Estado</th><th className="text-left">Recepción</th><th className="text-left">Vencimiento</th><th /></tr>
@@ -2542,7 +2559,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
               const vd = daysFromToday(d.fecha_vencimiento); const vencido = d.fecha_vencimiento && !isNaN(vd) && vd < 0;
               return (
                 <tr key={d.id} className="border-b last:border-0">
-                  <td className="px-4 py-2 font-medium"><FileText className="h-4 w-4 inline mr-1 text-muted-foreground" />{d.tipo}</td>
+                  <td className="px-4 py-2 font-medium"><FileText className="h-4 w-4 inline mr-1 text-muted-foreground" />{d.tipo}{d.codigo_siga && <Badge variant="outline" className="ml-2 font-mono text-[10px]">{d.codigo_siga}</Badge>}</td>
                   <td>
                     <Select value={d.estado} onValueChange={(v) => cambiarEstado(d.id, v)}>
                       <SelectTrigger className="w-36 h-7 text-xs"><SelectValue /></SelectTrigger>
