@@ -2243,11 +2243,13 @@ export type Database = {
       }
       documentos: {
         Row: {
+          codigo_siga: string | null
           created_at: string
           estado: Database["public"]["Enums"]["doc_estado"]
           expediente_id: string
           fecha_recepcion: string | null
           fecha_vencimiento: string | null
+          file_hash: string | null
           id: string
           observaciones: string | null
           responsable_id: string | null
@@ -2256,11 +2258,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          codigo_siga?: string | null
           created_at?: string
           estado?: Database["public"]["Enums"]["doc_estado"]
           expediente_id: string
           fecha_recepcion?: string | null
           fecha_vencimiento?: string | null
+          file_hash?: string | null
           id?: string
           observaciones?: string | null
           responsable_id?: string | null
@@ -2269,11 +2273,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          codigo_siga?: string | null
           created_at?: string
           estado?: Database["public"]["Enums"]["doc_estado"]
           expediente_id?: string
           fecha_recepcion?: string | null
           fecha_vencimiento?: string | null
+          file_hash?: string | null
           id?: string
           observaciones?: string | null
           responsable_id?: string | null
@@ -5286,6 +5292,7 @@ export type Database = {
       permisos: {
         Row: {
           cliente_id: string | null
+          codigo_siga: string | null
           created_at: string
           created_by: string | null
           documento_url: string | null
@@ -5307,6 +5314,7 @@ export type Database = {
         }
         Insert: {
           cliente_id?: string | null
+          codigo_siga?: string | null
           created_at?: string
           created_by?: string | null
           documento_url?: string | null
@@ -5328,6 +5336,7 @@ export type Database = {
         }
         Update: {
           cliente_id?: string | null
+          codigo_siga?: string | null
           created_at?: string
           created_by?: string | null
           documento_url?: string | null
