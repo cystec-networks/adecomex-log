@@ -2296,6 +2296,11 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const [obs, setObs] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [leyendo, setLeyendo] = useState(false);
+  const [confirmacion, setConfirmacion] = useState<{ titulo: string; mensaje: string; requiereCheck?: boolean; resolve: (v: boolean) => void } | null>(null);
+  const [confirmAck, setConfirmAck] = useState(false);
+  const leerEncabezado = useServerFn(leerEncabezadoDocumento);
+  const cerrarConfirmacion = (v: boolean) => { confirmacion?.resolve(v); setConfirmacion(null); };
 
   const { data: docs } = useQuery({
     queryKey: ["documentos", expedienteId],
@@ -2316,6 +2321,9 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
     setOpen(true);
   };
 
+  const pedirConfirmacion = (c: { titulo: string; mensaje: string; requiereCheck?: boolean }) =>
+    new Promise<boolean>((resolve) => { setConfirmAck(false); setConfirmacion({ ...c, resolve }); });
+
   const upload = async () => {
     if (file && CHECKLIST_DOCUMENTOS_BASE.includes(tipo) && !(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
       toast.error("Este documento del Checklist de Recepción solo acepta archivos PDF.");
@@ -2323,6 +2331,37 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
     }
     setUploading(true);
     try {
+      let fileHash: string | null = null;
+      if (file) {
+        fileHash = await sha256File(file);
+        const dup = (docs ?? []).find((d: any) => d.file_hash === fileHash && d.id !== editId && d.tipo !== tipo);
+        if (dup) {
+          const ok = await pedirConfirmacion({
+            titulo: "Archivo duplicado",
+            mensaje: `Este archivo ya fue cargado como ${dup.tipo}${dup.codigo_siga ? ` (${dup.codigo_siga})` : ""}. ¿Seguro que también corresponde a ${tipo}?`,
+            requiereCheck: true,
+          });
+          if (!ok) return;
+        }
+        try {
+          setLeyendo(true);
+          const { texto } = await leerEncabezado({ data: { filename: file.name, mime: file.type || "application/pdf", base64: await fileToBase64(file) } });
+          setLeyendo(false);
+          if (texto && coincideContenido(tipo, texto) === false) {
+            const ok = await pedirConfirmacion({
+              titulo: "Revisa el documento",
+              mensaje: `Este documento no parece corresponder a ${tipo}. ¿Deseas continuar de todas formas?`,
+            });
+            if (!ok) return;
+          }
+        } catch { /* si la lectura falla, se permite continuar */ } finally { setLeyendo(false); }
+      }
+      const docActual: any = editId ? (docs ?? []).find((d: any) => d.id === editId) : null;
+      const codigo = file
+        ? (docActual?.codigo_siga && prefijoSiga(docActual.tipo) === prefijoSiga(tipo)
+            ? docActual.codigo_siga
+            : await siguienteCodigoSiga(expedienteId, prefijoSiga(tipo)))
+        : docActual?.codigo_siga ?? null;
       if (editId) {
         let path = editPath;
         if (file) {
@@ -2334,10 +2373,11 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
         }
         const { error: e2 } = await supabase.from("documentos").update({
           tipo, storage_path: path,
+          ...(file ? { file_hash: fileHash, codigo_siga: codigo, estado: "recibido" as const, fecha_recepcion: docActual?.fecha_recepcion ?? new Date().toISOString().slice(0, 10) } : {}),
           fecha_vencimiento: venc || null, observaciones: obs || null,
         }).eq("id", editId);
         if (e2) throw e2;
-        toast.success("Documento actualizado");
+        toast.success(codigo && file ? `Documento actualizado · ${codigo}` : "Documento actualizado");
       } else {
         let path: string | null = null;
         if (file) {
@@ -2350,9 +2390,10 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           estado: file ? "recibido" : "pendiente",
           fecha_recepcion: file ? new Date().toISOString().slice(0, 10) : null,
           fecha_vencimiento: venc || null, observaciones: obs || null,
+          file_hash: fileHash, codigo_siga: codigo,
         });
         if (e2) throw e2;
-        toast.success("Documento agregado");
+        toast.success(codigo ? `Documento agregado · ${codigo}` : "Documento agregado");
       }
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
       setOpen(false); resetForm();
