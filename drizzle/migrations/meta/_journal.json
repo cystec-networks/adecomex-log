@@ -169,6 +169,13 @@
       "when": 1790382879920,
       "tag": "0023_despacho_requiere_numero_despacho",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790385052762,
+      "tag": "0024_presentado_requiere_llegada_origen_pesos",
+      "breakpoints": true
     }
   ]
 }
