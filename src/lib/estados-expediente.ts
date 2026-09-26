@@ -63,6 +63,8 @@ export function requisitoFaltante(paso: string, ctx: Ctx): string | null {
     case "despachado":
       if (vacio(ctx.exp?.numero_igra))
         return "No se puede despachar este Expediente: falta capturar el Número de despacho.";
+      if (vacio(ctx.exp?.fecha_aprobacion_despacho))
+        return "No se puede despachar este Expediente: falta capturar la Fecha de Aprobación del N° de despacho.";
       if (vacio(ctx.exp?.numero_dua))
         return "No se puede despachar este Expediente: falta capturar la Declaración DUA.";
       if (vacio(ctx.exp?.regimen_aduanero))
