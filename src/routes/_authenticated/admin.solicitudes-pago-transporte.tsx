@@ -344,6 +344,8 @@ function SolicitudesPagoTransportePage() {
         flete_moneda: s.moneda || "DOP",
         numero_control_pago: s.numero_control,
         solicitud_pago_id: s.id,
+        // Usa el TR reservado y ya comunicado al transportista
+        ...((s as any).numero_viaje ? { numero_viaje: (s as any).numero_viaje } : {}),
         observaciones: s.descripcion ?? null,
         created_by: u.user?.id ?? null,
       };

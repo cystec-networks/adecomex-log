@@ -139,7 +139,7 @@ function SolicitudPagoTransportePage() {
       const json = await res.json();
       if (!res.ok || !json?.numero_control) throw new Error(json?.error ?? "No se pudo registrar la solicitud.");
 
-      const nc: string = json.numero_control;
+      const nc: string = json.numero_viaje || json.numero_control;
       setSolicitudId(json.id ?? null);
       setNumeroControl(nc);
       const ruta = form.referencia_viaje.trim();
