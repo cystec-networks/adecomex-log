@@ -3163,7 +3163,22 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
     setF({ concepto: r.concepto, monto: Number(r.monto || 0), fecha_emision: r.fecha_emision ?? "", fecha_pago: r.fecha_pago ?? "", estado: r.estado ?? "pendiente", referencia: r.referencia ?? "", notas: r.notas ?? "" });
     setOpen(true);
   };
-  const openNew = () => { setEditingId(null); setF(empty); setOpen(true); };
+  const openNew = () => {
+    setEditingId(null);
+    if (ecfVinculada) {
+      setPrefillEcf(ecfVinculada);
+      setF({
+        ...empty,
+        referencia: ecfVinculada.encf ?? "",
+        fecha_emision: ecfVinculada.fecha_emision ?? "",
+        monto: Number(ecfVinculada.monto_total || 0),
+      });
+    } else {
+      setPrefillEcf(null);
+      setF(empty);
+    }
+    setOpen(true);
+  };
 
   const subtotal = facturas.reduce((s, r) => s + Number(r.monto || 0), 0);
   const estadoBadge = (e: string) => e === "cobrada" ? "bg-[var(--success)]/15 text-[var(--success)]" : e === "anulada" ? "bg-muted text-muted-foreground" : "bg-amber-500/15 text-amber-700";
