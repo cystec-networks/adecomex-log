@@ -523,7 +523,31 @@ function DetalleExpediente() {
         tieneFactura: !!(exp as any)?.factura_ecf_id,
       });
       if (msg) throw new Error(msg);
-      const { error } = await supabase.from("expedientes").update({ estado: estado as any }).eq("id", id);
+      let forzarDespacho: string | null = null;
+      if (estadoIndex(actual) < estadoIndex("despachado") && estadoIndex(estado) >= estadoIndex("despachado")) {
+        const { data: perms } = await supabase
+          .from("permisos")
+          .select("numero, tipo, estado")
+          .eq("expediente_id", id)
+          .is("eliminado_en", null)
+          .neq("estado", "aprobado");
+        if (perms && perms.length > 0) {
+          const p: any = perms[0];
+          const bloqueo = `No se puede despachar este Expediente: tiene ${perms.length} permiso(s) sin aprobar (ej. ${p.numero || p.tipo} (${p.tipo}) - Estado: ${String(p.estado).replace("_", " ")}). Todos los permisos asociados deben estar Aprobados antes de despachar.`;
+          if (!puedeForzarRegreso) throw new Error(bloqueo);
+          const motivo = window.prompt(`${bloqueo}\n\nComo Administración/Operaciones puedes forzar el despacho por excepción justificada. Escribe el motivo (quedará en Auditoría):`);
+          if (!motivo || !motivo.trim()) throw new Error(bloqueo);
+          forzarDespacho = motivo.trim();
+        }
+      }
+      const { error } = await supabase
+        .from("expedientes")
+        .update(
+          (forzarDespacho
+            ? { estado, forzar_regreso_estado: true, motivo_regreso_estado: forzarDespacho }
+            : { estado }) as any,
+        )
+        .eq("id", id);
       if (error) throw error;
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: id, accion: `cambio_estado:${estado}` });
     },
