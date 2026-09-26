@@ -524,6 +524,24 @@ function DetalleExpediente() {
       });
       if (msg) throw new Error(msg);
       let forzarDespacho: string | null = null;
+      if (estadoIndex(actual) < estadoIndex("presentar") && estadoIndex(estado) >= estadoIndex("presentar")) {
+        const { data: docs } = await supabase
+          .from("documentos")
+          .select("tipo, storage_path")
+          .eq("expediente_id", id)
+          .in("tipo", ["Factura comercial", "Bill of Lading"]);
+        const tiene = (t: string) => (docs ?? []).some((d: any) => d.tipo === t && d.storage_path && String(d.storage_path).trim() !== "");
+        const fac = tiene("Factura comercial");
+        const bl = tiene("Bill of Lading");
+        if (!fac || !bl) {
+          const falta = !fac && !bl ? "Factura comercial y Bill of Lading" : !fac ? "Factura comercial" : "Bill of Lading";
+          const bloqueo = `No se puede marcar como Presentado: falta adjuntar ${falta}.`;
+          if (!puedeForzarRegreso) throw new Error(bloqueo);
+          const motivo = window.prompt(`${bloqueo}\n\nComo Administración/Operaciones puedes forzar el paso por excepción justificada. Escribe el motivo (quedará en Auditoría):`);
+          if (!motivo || !motivo.trim()) throw new Error(bloqueo);
+          forzarDespacho = motivo.trim();
+        }
+      }
       if (estadoIndex(actual) < estadoIndex("despachado") && estadoIndex(estado) >= estadoIndex("despachado")) {
         const { data: perms } = await supabase
           .from("permisos")
@@ -2543,7 +2561,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                   return (
                     <div key={t} className="flex items-center gap-3 py-1.5 border-b last:border-0 border-border/50 text-sm">
                       <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${st.dot}`} />
-                      <span className="flex-1 min-w-0 truncate">{t}{d?.storage_path && <span className="block text-[11px] text-muted-foreground truncate" title={nombreArchivo(d.storage_path)}>{nombreArchivo(d.storage_path)}</span>}</span>
+                      <span className="flex-1 min-w-0 truncate">{(t === "Factura comercial" || t === "Bill of Lading") && <span className="text-destructive mr-0.5" title="Obligatorio para pasar a Presentado">*</span>}{t}{d?.storage_path && <span className="block text-[11px] text-muted-foreground truncate" title={nombreArchivo(d.storage_path)}>{nombreArchivo(d.storage_path)}</span>}</span>
                       <span className="w-16 shrink-0 font-mono text-xs text-primary">{d?.storage_path && d?.codigo_siga ? d.codigo_siga : ""}</span>
                       <span className={`text-xs w-24 shrink-0 ${st.text} inline-flex items-center gap-1`}>
                         {d ? st.label : "Pendiente"}
