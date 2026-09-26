@@ -155,6 +155,13 @@
       "when": 1790357100099,
       "tag": "0021_codigo_siga_documentos",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790382037037,
+      "tag": "0022_validar_despacho_permisos_aprobados",
+      "breakpoints": true
     }
   ]
 }
