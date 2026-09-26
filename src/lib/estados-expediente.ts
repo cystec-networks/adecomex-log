@@ -45,6 +45,14 @@ export function requisitoFaltante(paso: string, ctx: Ctx): string | null {
         ? "No se puede pasar a Manifestado: falta la Fecha de Llegada Real (Información General)."
         : null;
     case "presentar":
+      if (!ctx.exp?.fecha_llegada_real)
+        return "No se puede pasar a Presentado: falta la Fecha de Llegada Real (Información General).";
+      if (vacio(ctx.exp?.pais_origen))
+        return "No se puede pasar a Presentado: falta el País de Origen (Datos de importación).";
+      if (ctx.exp?.peso_neto == null || Number(ctx.exp.peso_neto) <= 0)
+        return "No se puede pasar a Presentado: falta el Peso Neto (Descripción de mercancía).";
+      if (ctx.exp?.peso_bruto == null || Number(ctx.exp.peso_bruto) <= 0)
+        return "No se puede pasar a Presentado: falta el Peso Bruto (Descripción de mercancía).";
       return vacio(ctx.exp?.numero_dua)
         ? "No se puede pasar a Presentado: falta la Declaración DUA (sección Declaración)."
         : null;

@@ -1,0 +1,3 @@
+- [x] Marcar los campos obligatorios de Declaración, llegada, origen y pesos.
+- [ ] Exigir llegada real, país de origen y pesos positivos antes de Presentado en pantalla y base de datos.
+- [ ] Verificar el bloqueo y los asteriscos en el Expediente.
