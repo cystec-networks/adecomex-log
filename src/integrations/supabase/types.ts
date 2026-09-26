@@ -6127,6 +6127,7 @@ export type Database = {
           moneda: string
           monto: number
           numero_control: string | null
+          numero_viaje: string | null
           origen: string | null
           placa_contenedor: string | null
           porcentaje_margen: number | null
@@ -6155,6 +6156,7 @@ export type Database = {
           moneda?: string
           monto?: number
           numero_control?: string | null
+          numero_viaje?: string | null
           origen?: string | null
           placa_contenedor?: string | null
           porcentaje_margen?: number | null
@@ -6183,6 +6185,7 @@ export type Database = {
           moneda?: string
           monto?: number
           numero_control?: string | null
+          numero_viaje?: string | null
           origen?: string | null
           placa_contenedor?: string | null
           porcentaje_margen?: number | null
