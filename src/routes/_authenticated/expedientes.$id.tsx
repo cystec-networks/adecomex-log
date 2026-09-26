@@ -3187,7 +3187,7 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-base">Facturación (cobros)</CardTitle>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); } }}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); setPrefillEcf(null); } }}>
           <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar factura</Button>
           <DialogContent>
             <DialogHeader><DialogTitle>{editingId ? "Editar factura" : "Nueva factura"}</DialogTitle></DialogHeader>
