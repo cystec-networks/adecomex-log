@@ -290,6 +290,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
               value={form.estado}
               onValueChange={(v) => {
                 set("estado", v);
+                console.log("[dbg] estado change", v, "fa=", form.fecha_aprobacion);
                 if (v === "aprobado" && !form.fecha_aprobacion) {
                   set("fecha_aprobacion", new Date().toISOString().slice(0, 10));
                 }
