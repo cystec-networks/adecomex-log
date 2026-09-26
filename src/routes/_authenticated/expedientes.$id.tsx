@@ -1458,6 +1458,14 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     onSuccess: () => {
       ultimoGuardadoPropio.set(exp.id, Date.now());
       toast.success("Guardado");
+      {
+        const falt = [
+          !String(form.numero_dua ?? "").trim() && "Declaración DUA",
+          !String(form.numero_igra ?? "").trim() && "Número de despacho",
+          !String(form.regimen_aduanero ?? "").trim() && "Régimen Aduanero",
+        ].filter(Boolean);
+        if (falt.length) toast.warning(`Campos requeridos pendientes en Declaración: ${falt.join(", ")}. Serán obligatorios para pasar a Despachado.`);
+      }
       setModoEdicion(false);
       if (nuevo) {
         nav({ to: "/expedientes/$id", params: { id: exp.id }, search: {} });
