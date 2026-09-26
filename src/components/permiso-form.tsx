@@ -215,11 +215,11 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
         <CardHeader className="pb-3 border-b">
           <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Vinculación</CardTitle>
         </CardHeader>
-        <CardContent className="pt-5 grid gap-4 md:grid-cols-3">
-          <div className="grid gap-1.5">
+        <CardContent className="pt-5 grid gap-4 md:grid-cols-3 md:[grid-template-columns:repeat(3,minmax(0,1fr))]">
+          <div className="grid min-w-0 gap-1.5">
             <Label>Expediente vinculado</Label>
             <Select value={form.expediente_id || undefined} onValueChange={(v) => set("expediente_id", v)}>
-              <SelectTrigger><SelectValue placeholder="Selecciona expediente" /></SelectTrigger>
+              <SelectTrigger className="min-w-0 overflow-hidden [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder="Selecciona expediente" /></SelectTrigger>
               <SelectContent>
                 {(expedientes ?? []).map((e: any) => (
                   <SelectItem key={e.id} value={e.id}>{e.numero} · {e.clientes?.nombre ?? "—"}</SelectItem>
@@ -227,10 +227,10 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
               </SelectContent>
             </Select>
           </div>
-          <div className="grid gap-1.5">
+          <div className="grid min-w-0 gap-1.5">
             <Label>Orden de Compra vinculada</Label>
             <Select value={form.orden_id || undefined} onValueChange={(v) => set("orden_id", v)}>
-              <SelectTrigger><SelectValue placeholder="Selecciona orden (opcional)" /></SelectTrigger>
+              <SelectTrigger className="min-w-0 overflow-hidden [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder="Selecciona orden (opcional)" /></SelectTrigger>
               <SelectContent>
                 {(ordenes ?? []).map((e: any) => (
                   <SelectItem key={e.id} value={e.id}>{e.numero} · {e.clientes?.nombre ?? "—"}</SelectItem>
@@ -238,9 +238,9 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
               </SelectContent>
             </Select>
           </div>
-          <div className="grid gap-1.5">
+          <div className="grid min-w-0 gap-1.5">
             <Label>Cliente (auto)</Label>
-            <div className="h-9 px-3 rounded-md border bg-muted/40 flex items-center text-sm">
+            <div className="h-9 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis px-3 rounded-md border bg-muted/40 flex items-center text-sm">
               {(() => {
                 const exp = (expedientes ?? []).find((e: any) => e.id === form.expediente_id);
                 const ord = (ordenes ?? []).find((e: any) => e.id === form.orden_id);
