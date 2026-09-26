@@ -1738,7 +1738,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         <Field label="Fecha de Cargado" value={form.fecha_cargado} onChange={(v) => set("fecha_cargado", v)} type="date" disabled={!editable} />
         <Field label="Fecha Estimada de Llegada (ETA)" value={form.fecha_compromiso} onChange={(v) => set("fecha_compromiso", v)} type="date" disabled={!editable} />
         <div className="grid gap-1">
-          <Field label="Fecha de Llegada Real" value={form.fecha_llegada_real} onChange={(v) => set("fecha_llegada_real", v)} type="date" disabled={!editable} />
+          <Field label="Fecha de Llegada Real" value={form.fecha_llegada_real} onChange={(v) => set("fecha_llegada_real", v)} type="date" disabled={!editable} req />
           <p className="text-[11px] leading-tight text-muted-foreground">
             Se llena cuando el embarque ya arribó de verdad — a partir de esta fecha corre el plazo legal de presentación (5 días hábiles).
           </p>
@@ -1778,7 +1778,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           </>
         )}
         <div className="grid gap-1.5">
-          <Label>País de origen</Label>
+          <Label><ReqMark />País de origen</Label>
           <DgaCombobox
             table="dga_paises"
             value={form.pais_origen}
@@ -1881,7 +1881,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             />
           </div>
           <div className={cn("grid gap-1.5", camposFaltantes.has("req-regimen_aduanero") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-regimen_aduanero">
-            <Label>{isNuevo && <ReqMark />}Régimen Aduanero</Label>
+            <Label><ReqMark />Régimen Aduanero</Label>
             <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => { set("regimen_aduanero", v); limpiarFaltante("req-regimen_aduanero"); }} disabled={!editable}>
               <SelectTrigger><SelectValue placeholder="Selecciona régimen" /></SelectTrigger>
               <SelectContent>
@@ -1900,8 +1900,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               </SelectContent>
             </Select>
           </div>
-          <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} />
-          <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} />
+          <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} req />
+          <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} req />
           <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} disabled={!editable} />
           <div className="grid gap-1.5">
             <Label>Rectificación técnica</Label>
@@ -1982,7 +1982,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           </div>
           <div className="grid gap-4 content-start">
             <div className="grid gap-1.5">
-              <Label>Peso neto (kg)</Label>
+              <Label><ReqMark />Peso neto (kg)</Label>
               <Input
                 type="text"
                 inputMode="decimal"
@@ -1996,7 +1996,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               />
             </div>
             <div className="grid gap-1.5">
-              <Label>Peso bruto (kg)</Label>
+              <Label><ReqMark />Peso bruto (kg)</Label>
               <Input
                 type="text"
                 inputMode="decimal"
