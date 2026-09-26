@@ -77,6 +77,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
     tipo: "",
     institucion_emisora: "",
     estado: "solicitado",
+    fecha_aprobacion: "",
     fecha_solicitud: "",
     fecha_emision: "",
     fecha_vencimiento: "",
@@ -97,6 +98,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
         tipo: existing.tipo ?? "",
         institucion_emisora: existing.institucion_emisora ?? "",
         estado: existing.estado ?? "solicitado",
+        fecha_aprobacion: (existing as any).fecha_aprobacion ?? "",
         fecha_solicitud: existing.fecha_solicitud ?? "",
         fecha_emision: existing.fecha_emision ?? "",
         fecha_vencimiento: existing.fecha_vencimiento ?? "",
@@ -147,7 +149,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
   const save = useMutation({
     mutationFn: async () => {
       const payload: any = { ...form };
-      ["expediente_id","orden_id","cliente_id","tipo","fecha_solicitud","fecha_emision","fecha_vencimiento","documento_url","numero_resolucion","institucion_emisora","observaciones","numero"]
+      ["expediente_id","orden_id","cliente_id","tipo","fecha_solicitud","fecha_emision","fecha_vencimiento","fecha_aprobacion","documento_url","numero_resolucion","institucion_emisora","observaciones","numero"]
         .forEach((k) => { if (payload[k] === "") payload[k] = null; });
       if (payload.documento_url && payload.expediente_id && !payload.codigo_siga) {
         const { siguienteCodigoSiga } = await import("@/lib/codigo-siga");
@@ -284,10 +286,30 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
           </div>
           <div className="grid gap-1.5">
             <Label>Estado</Label>
-            <Select value={form.estado} onValueChange={(v) => set("estado", v)}>
+            <Select
+              value={form.estado}
+              onValueChange={(v) => {
+                set("estado", v);
+                if (v === "aprobado" && !form.fecha_aprobacion) {
+                  set("fecha_aprobacion", new Date().toISOString().slice(0, 10));
+                }
+              }}
+            >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>{PERMISO_ESTADOS.map((s) => <SelectItem key={s.v} value={s.v}>{s.l}</SelectItem>)}</SelectContent>
             </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Fecha de Aprobación</Label>
+            <Input
+              type="date"
+              value={form.fecha_aprobacion}
+              disabled={form.estado !== "aprobado"}
+              onChange={(e) => set("fecha_aprobacion", e.target.value)}
+            />
+            {form.estado !== "aprobado" && (
+              <p className="text-[10px] text-muted-foreground">Se habilita cuando el estado sea Aprobado.</p>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -5300,6 +5300,7 @@ export type Database = {
           eliminado_por: string | null
           estado: Database["public"]["Enums"]["permiso_estado"]
           expediente_id: string | null
+          fecha_aprobacion: string | null
           fecha_emision: string | null
           fecha_solicitud: string | null
           fecha_vencimiento: string | null
@@ -5322,6 +5323,7 @@ export type Database = {
           eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["permiso_estado"]
           expediente_id?: string | null
+          fecha_aprobacion?: string | null
           fecha_emision?: string | null
           fecha_solicitud?: string | null
           fecha_vencimiento?: string | null
@@ -5344,6 +5346,7 @@ export type Database = {
           eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["permiso_estado"]
           expediente_id?: string | null
+          fecha_aprobacion?: string | null
           fecha_emision?: string | null
           fecha_solicitud?: string | null
           fecha_vencimiento?: string | null

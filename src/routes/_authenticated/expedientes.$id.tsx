@@ -3743,6 +3743,7 @@ function TabPermisosExp({ expedienteId }: { expedienteId: string }) {
                 <th className="text-left">Tipo</th>
                 <th className="text-left">Institución</th>
                 <th className="text-left">Estado</th>
+                <th className="text-left">Aprobado</th>
                 <th className="text-left">Emisión</th>
                 <th className="text-left">Vence</th>
                 <th></th>
@@ -3757,6 +3758,7 @@ function TabPermisosExp({ expedienteId }: { expedienteId: string }) {
                   <td className="text-muted-foreground">{TIPOS[p.tipo] ?? "—"}</td>
                   <td className="text-muted-foreground">{p.institucion_emisora ?? "—"}</td>
                   <td><Badge variant="outline">{ESTADOS[p.estado] ?? p.estado}</Badge></td>
+                  <td className="text-xs text-muted-foreground">{fmtLocalDate(p.fecha_aprobacion)}</td>
                   <td className="text-xs text-muted-foreground">{fmtLocalDate(p.fecha_emision)}</td>
                   <td className="text-xs text-muted-foreground">{fmtLocalDate(p.fecha_vencimiento)}</td>
                   <td className="px-4 py-2 text-right">

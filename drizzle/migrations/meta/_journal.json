@@ -190,6 +190,13 @@
       "when": 1790426100479,
       "tag": "0026_solicitud_pago_reserva_numero_viaje",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1790435109403,
+      "tag": "0027_permisos_fecha_aprobacion",
+      "breakpoints": true
     }
   ]
 }
