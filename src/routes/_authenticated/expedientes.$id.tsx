@@ -3114,6 +3114,17 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
   const [editingId, setEditingId] = useState<string | null>(null);
   const empty = { concepto: CONCEPTOS_FACTURA[0], monto: 0, fecha_emision: "", fecha_pago: "", estado: "pendiente", referencia: "", notas: "" };
   const [f, setF] = useState<any>(empty);
+  const [prefillEcf, setPrefillEcf] = useState<any | null>(null);
+  const { data: ecfVinculada } = useQuery({
+    queryKey: ["ecf-vinculada", expedienteId],
+    queryFn: async () => {
+      const { data: exp } = await supabase.from("expedientes").select("factura_ecf_id").eq("id", expedienteId).maybeSingle();
+      const fid = (exp as any)?.factura_ecf_id;
+      if (!fid) return null;
+      const { data: ecf } = await supabase.from("facturas_ecf").select("id,encf,fecha_emision,monto_total,estado").eq("id", fid).maybeSingle();
+      return ecf ?? null;
+    },
+  });
 
   const save = useMutation({
     mutationFn: async () => {
