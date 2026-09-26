@@ -558,6 +558,19 @@ function DetalleExpediente() {
           forzarDespacho = motivo.trim();
         }
       }
+      if (
+        estadoIndex(actual) < estadoIndex("entregado") &&
+        estadoIndex(estado) >= estadoIndex("entregado") &&
+        !(exp as any)?.factura_ecf_id
+      ) {
+        const bloqueo = "No se puede marcar como Entregado este Expediente: falta vincular la Factura E-CF (DGII).";
+        if (!puedeForzarRegreso) throw new Error(bloqueo);
+        if (!forzarDespacho) {
+          const motivo = window.prompt(`${bloqueo}\n\nComo Administración/Operaciones puedes forzar el paso por excepción justificada. Escribe el motivo (quedará en Auditoría):`);
+          if (!motivo || !motivo.trim()) throw new Error(bloqueo);
+          forzarDespacho = motivo.trim();
+        }
+      }
       const { error } = await supabase
         .from("expedientes")
         .update(
