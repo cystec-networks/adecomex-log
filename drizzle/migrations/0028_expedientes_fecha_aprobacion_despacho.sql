@@ -1,0 +1,1 @@
+ALTER TABLE public.expedientes ADD COLUMN IF NOT EXISTS fecha_aprobacion_despacho date;

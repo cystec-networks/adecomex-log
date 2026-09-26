@@ -3137,6 +3137,7 @@ export type Database = {
           etapa_actual: number
           factura_comercial: string | null
           factura_ecf_id: string | null
+          fecha_aprobacion_despacho: string | null
           fecha_cargado: string | null
           fecha_cierre: string | null
           fecha_compromiso: string | null
@@ -3263,6 +3264,7 @@ export type Database = {
           etapa_actual?: number
           factura_comercial?: string | null
           factura_ecf_id?: string | null
+          fecha_aprobacion_despacho?: string | null
           fecha_cargado?: string | null
           fecha_cierre?: string | null
           fecha_compromiso?: string | null
@@ -3389,6 +3391,7 @@ export type Database = {
           etapa_actual?: number
           factura_comercial?: string | null
           factura_ecf_id?: string | null
+          fecha_aprobacion_despacho?: string | null
           fecha_cargado?: string | null
           fecha_cierre?: string | null
           fecha_compromiso?: string | null
