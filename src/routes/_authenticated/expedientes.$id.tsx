@@ -1025,6 +1025,7 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     numero_dua: d.numero_dua ?? "",
     numero_vuce: d.numero_vuce ?? "",
     numero_igra: d.numero_igra ?? "",
+    fecha_aprobacion_despacho: d.fecha_aprobacion_despacho ?? "",
     descripcion_mercancia: d.descripcion_mercancia ?? "",
     peso_neto: d.peso_neto ?? "",
     peso_bruto: d.peso_bruto ?? "",
@@ -1391,6 +1392,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (!payload.fecha_compromiso) payload.fecha_compromiso = null;
       if (!payload.fecha_llegada_real) payload.fecha_llegada_real = null;
       if (!payload.fecha_cargado) payload.fecha_cargado = null;
+      if (!payload.fecha_aprobacion_despacho) payload.fecha_aprobacion_despacho = null;
       payload.peso_neto = payload.peso_neto === "" ? null : Number(payload.peso_neto);
       payload.peso_bruto = payload.peso_bruto === "" ? null : Number(payload.peso_bruto);
       const toNum = (v: any) => (v === "" || v == null ? null : Number(v));
@@ -1920,6 +1922,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           </div>
           <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} req />
           <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} req />
+          <Field label="Fecha de Aprobación" value={form.fecha_aprobacion_despacho} onChange={(v) => set("fecha_aprobacion_despacho", v)} type="date" disabled={!editable} />
           <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} disabled={!editable} />
           <div className="grid gap-1.5">
             <Label>Rectificación técnica</Label>
