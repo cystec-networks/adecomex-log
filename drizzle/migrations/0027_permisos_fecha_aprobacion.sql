@@ -1,0 +1,1 @@
+ALTER TABLE public.permisos ADD COLUMN IF NOT EXISTS fecha_aprobacion date;
