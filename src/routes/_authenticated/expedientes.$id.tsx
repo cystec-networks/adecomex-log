@@ -3114,6 +3114,17 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
   const [editingId, setEditingId] = useState<string | null>(null);
   const empty = { concepto: CONCEPTOS_FACTURA[0], monto: 0, fecha_emision: "", fecha_pago: "", estado: "pendiente", referencia: "", notas: "" };
   const [f, setF] = useState<any>(empty);
+  const [prefillEcf, setPrefillEcf] = useState<any | null>(null);
+  const { data: ecfVinculada } = useQuery({
+    queryKey: ["ecf-vinculada", expedienteId],
+    queryFn: async () => {
+      const { data: exp } = await supabase.from("expedientes").select("factura_ecf_id").eq("id", expedienteId).maybeSingle();
+      const fid = (exp as any)?.factura_ecf_id;
+      if (!fid) return null;
+      const { data: ecf } = await supabase.from("facturas_ecf").select("id,encf,fecha_emision,monto_total,estado").eq("id", fid).maybeSingle();
+      return ecf ?? null;
+    },
+  });
 
   const save = useMutation({
     mutationFn: async () => {
@@ -3152,7 +3163,22 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
     setF({ concepto: r.concepto, monto: Number(r.monto || 0), fecha_emision: r.fecha_emision ?? "", fecha_pago: r.fecha_pago ?? "", estado: r.estado ?? "pendiente", referencia: r.referencia ?? "", notas: r.notas ?? "" });
     setOpen(true);
   };
-  const openNew = () => { setEditingId(null); setF(empty); setOpen(true); };
+  const openNew = () => {
+    setEditingId(null);
+    if (ecfVinculada) {
+      setPrefillEcf(ecfVinculada);
+      setF({
+        ...empty,
+        referencia: ecfVinculada.encf ?? "",
+        fecha_emision: ecfVinculada.fecha_emision ?? "",
+        monto: Number(ecfVinculada.monto_total || 0),
+      });
+    } else {
+      setPrefillEcf(null);
+      setF(empty);
+    }
+    setOpen(true);
+  };
 
   const subtotal = facturas.reduce((s, r) => s + Number(r.monto || 0), 0);
   const estadoBadge = (e: string) => e === "cobrada" ? "bg-[var(--success)]/15 text-[var(--success)]" : e === "anulada" ? "bg-muted text-muted-foreground" : "bg-amber-500/15 text-amber-700";
@@ -3161,10 +3187,15 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-base">Facturación (cobros)</CardTitle>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); } }}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); setPrefillEcf(null); } }}>
           <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar factura</Button>
           <DialogContent>
             <DialogHeader><DialogTitle>{editingId ? "Editar factura" : "Nueva factura"}</DialogTitle></DialogHeader>
+            {!editingId && prefillEcf && (
+              <p className="text-xs text-muted-foreground bg-muted/40 rounded-md px-3 py-2">
+                Datos prellenados desde la e-CF vinculada <span className="font-medium">{prefillEcf.encf}</span>. Puedes ajustarlos antes de guardar.
+              </p>
+            )}
             <div className="grid gap-3">
               <div className="grid gap-1.5"><Label>Concepto</Label>
                 <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v })}>
