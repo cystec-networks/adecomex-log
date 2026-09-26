@@ -3191,6 +3191,11 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
           <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar factura</Button>
           <DialogContent>
             <DialogHeader><DialogTitle>{editingId ? "Editar factura" : "Nueva factura"}</DialogTitle></DialogHeader>
+            {!editingId && prefillEcf && (
+              <p className="text-xs text-muted-foreground bg-muted/40 rounded-md px-3 py-2">
+                Datos prellenados desde la e-CF vinculada <span className="font-medium">{prefillEcf.encf}</span>. Puedes ajustarlos antes de guardar.
+              </p>
+            )}
             <div className="grid gap-3">
               <div className="grid gap-1.5"><Label>Concepto</Label>
                 <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v })}>
