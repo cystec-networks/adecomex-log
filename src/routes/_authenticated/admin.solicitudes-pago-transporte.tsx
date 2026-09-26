@@ -148,7 +148,7 @@ function SolicitudesPagoTransportePage() {
     return rows.filter((r) => {
       if (estado !== "todas" && r.estado !== estado) return false;
       if (!term) return true;
-      return [r.numero_control, r.transportista_nombre, r.referencia_viaje ?? ""]
+      return [r.numero_control, (r as any).numero_viaje ?? "", r.transportista_nombre, r.referencia_viaje ?? ""]
         .some((v) => (v ?? "").toLowerCase().includes(term));
     });
   }, [rows, estado, q]);
@@ -344,6 +344,8 @@ function SolicitudesPagoTransportePage() {
         flete_moneda: s.moneda || "DOP",
         numero_control_pago: s.numero_control,
         solicitud_pago_id: s.id,
+        // Usa el TR reservado y ya comunicado al transportista
+        ...((s as any).numero_viaje ? { numero_viaje: (s as any).numero_viaje } : {}),
         observaciones: s.descripcion ?? null,
         created_by: u.user?.id ?? null,
       };
@@ -465,6 +467,9 @@ function SolicitudesPagoTransportePage() {
                     >
                       {r.numero_control}
                     </button>
+                    {(r as any).numero_viaje && (
+                      <span className="block text-[10px] text-muted-foreground font-mono" title="N° de Viaje comunicado al transportista">{(r as any).numero_viaje}</span>
+                    )}
                   </td>
                   <td className="py-1.5 pr-3"><span className="block max-w-[180px] truncate" title={r.transportista_nombre}>{r.transportista_nombre}</span></td>
                   <td className="py-1.5 pr-3">
