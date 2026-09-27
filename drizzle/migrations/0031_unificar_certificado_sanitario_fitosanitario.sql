@@ -1,0 +1,1 @@
+UPDATE public.documentos SET tipo = 'Certificado Sanitario/Fitosanitario' WHERE tipo IN ('Certificado sanitario','Certificado fitosanitario');
