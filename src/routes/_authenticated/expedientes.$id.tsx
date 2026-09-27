@@ -751,7 +751,6 @@ function DetalleExpediente() {
               </DropdownMenu>
               <HerramientasDgaVuceMenu className="px-2" />
               <RastreosEnvioMenu className="px-2" />
-              {!isNuevo && <ControlesGuardadoHeader expedienteId={id} />}
             </div>
           )}
           {!isNuevo && (
