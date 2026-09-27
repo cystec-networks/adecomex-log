@@ -10,8 +10,7 @@ import membreteAsset from "@/assets/oficio-membrete.png.asset.json";
 const CHECKLIST = [
   "Declaración Única Aduanera (DUA)", "Reporte de Liquidación de Impuestos",
   "Factura comercial", "Bill of Lading", "Lista de empaque",
-  "Certificado de origen", "Certificado sanitario",
-  "Certificado fitosanitario", "Certificado de análisis",
+  "Certificado de origen", "Certificado Sanitario/Fitosanitario", "Certificado de análisis",
 ];
 
 const v = (x: unknown) => (x == null || String(x).trim() === "" ? "—" : esc(x));

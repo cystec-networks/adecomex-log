@@ -7,7 +7,7 @@ export function prefijoSiga(tipo: string | null | undefined): PrefijoSiga {
     case "Factura comercial": return "FAC";
     case "Bill of Lading": case "Guía aérea": return "DOE";
     case "Certificado de origen": return "CEO";
-    case "Certificado sanitario": case "Certificado fitosanitario":
+    case "Certificado Sanitario/Fitosanitario": case "Certificado sanitario": case "Certificado fitosanitario":
     case "Certificado de análisis": case "Permiso VUCE previo": return "PER";
     default: return "OTD";
   }
@@ -18,8 +18,7 @@ const KEYWORDS: Record<string, string[]> = {
   "Bill of Lading": ["bill of lading", "conocimiento de embarque", "airway bill", "air waybill", "carta de porte", "b/l"],
   "Guía aérea": ["airway bill", "air waybill", "awb", "guia aerea"],
   "Certificado de origen": ["certificate of origin", "certificado de origen", "origin"],
-  "Certificado sanitario": ["sanitario", "sanitary", "health certificate", "salud"],
-  "Certificado fitosanitario": ["fitosanitario", "phytosanitary"],
+  "Certificado Sanitario/Fitosanitario": ["sanitario", "sanitary", "health certificate", "salud", "fitosanitario", "phytosanitary"],
   "Certificado de análisis": ["analisis", "analysis", "certificate of analysis", "laboratorio", "laboratory"],
   "Permiso VUCE previo": ["vuce", "permiso", "autorizacion"],
   "Lista de empaque": ["packing list", "lista de empaque", "packing"],

@@ -156,7 +156,7 @@ function normalizarPinesPago(payload: any) {
 
 const TIPOS_DOC = [
   "Factura proforma","Factura comercial","Bill of Lading","Guía aérea","Lista de empaque",
-  "Certificado de origen","Certificado sanitario","Certificado fitosanitario","Certificado de análisis",
+  "Certificado de origen","Certificado Sanitario/Fitosanitario","Certificado de análisis",
   "Declaración Única Aduanera (DUA)","Reporte de Liquidación de Impuestos",
   "Permiso VUCE previo","Orden de compra",
   "Carta de instrucción","Póliza de seguro","DUA","Evidencia de entrega","Otro",
@@ -165,8 +165,7 @@ const TIPOS_DOC = [
 const CHECKLIST_DOCUMENTOS_BASE = [
   "Declaración Única Aduanera (DUA)","Reporte de Liquidación de Impuestos",
   "Factura comercial","Bill of Lading","Lista de empaque",
-  "Certificado de origen","Certificado sanitario",
-  "Certificado fitosanitario","Certificado de análisis",
+  "Certificado de origen","Certificado Sanitario/Fitosanitario","Certificado de análisis",
 ];
 
 const DOC_ESTADO_STYLE: Record<string, { dot: string; text: string; label: string }> = {
