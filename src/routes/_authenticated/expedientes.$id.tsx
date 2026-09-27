@@ -223,6 +223,59 @@ const DEFAULT_TAB_ORDER = Object.keys(TAB_LABELS);
 // Timestamp del último guardado propio por expediente, para no auto-avisar por Realtime.
 const ultimoGuardadoPropio = new Map<string, number>();
 
+type EstadoGuardadoHeader = { hayCambios: boolean; editable: boolean; puedeEditar: boolean; pendiente: boolean; estado: "ok" | "error" | null } | null;
+function publicarEstadoGuardado(e: EstadoGuardadoHeader) {
+  if (typeof window === "undefined") return;
+  (window as any).__expGuardado = e;
+  window.dispatchEvent(new CustomEvent("exp-guardado-estado", { detail: e }));
+}
+
+function ControlesGuardadoHeader({ expedienteId }: { expedienteId: string }) {
+  const qc = useQueryClient();
+  const [st, setSt] = useState<EstadoGuardadoHeader>(null);
+  useEffect(() => {
+    setSt((window as any).__expGuardado ?? null);
+    const h = (ev: Event) => setSt((ev as CustomEvent).detail ?? null);
+    window.addEventListener("exp-guardado-estado", h);
+    return () => window.removeEventListener("exp-guardado-estado", h);
+  }, []);
+  const [refrescando, setRefrescando] = useState(false);
+  const refrescar = async () => {
+    setRefrescando(true);
+    try { await refrescarExpediente(qc, expedienteId); await qc.invalidateQueries(); } finally { setRefrescando(false); }
+  };
+  return (
+    <div className="flex items-center gap-1.5 border-l pl-1.5">
+      {st?.hayCambios && (
+        <span className="flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400" title="Cambios sin guardar">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" /> Sin guardar
+        </span>
+      )}
+      {!st?.hayCambios && st?.estado === "ok" && <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">✓ Cambios guardados</span>}
+      {st?.estado === "error" && <span className="text-xs font-medium text-destructive">✗ No se pudo guardar, intenta de nuevo</span>}
+      <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={refrescar} disabled={refrescando} title="Refrescar datos del Expediente">
+        <RefreshCw className={"h-4 w-4" + (refrescando ? " animate-spin" : "")} />
+      </Button>
+      {st?.puedeEditar ? (
+        <Button variant="outline" size="sm" className="px-2" onClick={() => window.dispatchEvent(new Event("exp-editar"))}>
+          <Pencil className="h-4 w-4 mr-1" /> Editar
+        </Button>
+      ) : (
+        <Button
+          size="sm"
+          className="relative px-3"
+          disabled={!st?.editable || st?.pendiente}
+          onClick={() => window.dispatchEvent(new Event("exp-guardar"))}
+          title={st ? "Guardar cambios" : "En esta ficha cada registro se guarda desde su propia ventana"}
+        >
+          {st?.hayCambios && <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-background bg-amber-500" />}
+          {st?.pendiente ? "Guardando…" : "Guardar cambios"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 function refrescarExpediente(qc: ReturnType<typeof useQueryClient>, id: string) {
   qc.invalidateQueries({ queryKey: ["expediente", id] });
   qc.invalidateQueries({ queryKey: ["expedientes"] });
@@ -697,6 +750,7 @@ function DetalleExpediente() {
               </DropdownMenu>
               <HerramientasDgaVuceMenu className="px-2" />
               <RastreosEnvioMenu className="px-2" />
+              {!isNuevo && <ControlesGuardadoHeader expedienteId={id} />}
             </div>
           )}
           {!isNuevo && (
@@ -1711,47 +1765,30 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     crear.mutate();
   };
 
-  const BotonesAccion = () => (
+  // Publica el estado de guardado para los botones del panel superior fijo.
+  useEffect(() => {
+    if (isNuevo) return;
+    publicarEstadoGuardado({ hayCambios, editable, puedeEditar: canEdit && !modoEdicion, pendiente: save.isPending, estado: estadoGuardado });
+  }, [isNuevo, hayCambios, editable, canEdit, modoEdicion, save.isPending, estadoGuardado]);
+  useEffect(() => () => publicarEstadoGuardado(null), []);
+  useEffect(() => {
+    if (isNuevo) return;
+    const onSave = () => save.mutate();
+    const onEdit = () => setModoEdicion(true);
+    window.addEventListener("exp-guardar", onSave);
+    window.addEventListener("exp-editar", onEdit);
+    return () => { window.removeEventListener("exp-guardar", onSave); window.removeEventListener("exp-editar", onEdit); };
+  });
+
+  const BotonesAccion = () => !isNuevo ? null : (
     <div
       className="print:hidden sticky z-10 -mx-1 flex flex-wrap items-center justify-end gap-2 rounded-md border bg-background px-2 py-2 shadow-md"
       style={{ top: "calc(var(--exp-header-h, 0px) + 4px)" }}
     >
-      {!isNuevo && hayCambios && (
-        <span className="mr-auto flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400">
-          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-amber-500" /> Cambios sin guardar
-        </span>
-      )}
-      {!isNuevo && !hayCambios && estadoGuardado === "ok" && (
-        <span className="mr-auto text-sm font-medium text-emerald-700 dark:text-emerald-400">✓ Cambios guardados</span>
-      )}
-      {!isNuevo && estadoGuardado === "error" && (
-        <span className="mr-auto text-sm font-medium text-destructive">✗ No se pudo guardar, intenta de nuevo</span>
-      )}
-      {isNuevo ? (
-        <>
-          <Button variant="outline" onClick={() => nav({ to: "/expedientes" })}>Cancelar</Button>
-          <Button onClick={intentarCrear} disabled={crear.isPending}>
-            <Check className="h-4 w-4 mr-1" />{crear.isPending ? "Creando…" : "Crear expediente"}
-          </Button>
-        </>
-      ) : (
-        <>
-          <Button variant="outline" onClick={() => refrescarExpediente(qc, exp.id)}>
-            <RefreshCw className="h-4 w-4 mr-1" /> Refrescar
-          </Button>
-          {canEdit && !modoEdicion && (
-            <Button variant="outline" onClick={() => setModoEdicion(true)}>
-              <Pencil className="h-4 w-4 mr-1" /> Editar
-            </Button>
-          )}
-          {editable && (
-            <Button onClick={() => save.mutate()} disabled={save.isPending} className="relative">
-              {hayCambios && <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-background bg-amber-500" />}
-              {save.isPending ? "Guardando…" : "Guardar cambios"}
-            </Button>
-          )}
-        </>
-      )}
+      <Button variant="outline" onClick={() => nav({ to: "/expedientes" })}>Cancelar</Button>
+      <Button onClick={intentarCrear} disabled={crear.isPending}>
+        <Check className="h-4 w-4 mr-1" />{crear.isPending ? "Creando…" : "Crear expediente"}
+      </Button>
     </div>
   );
 
