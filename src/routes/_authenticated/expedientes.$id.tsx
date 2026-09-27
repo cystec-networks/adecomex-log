@@ -708,6 +708,7 @@ function DetalleExpediente() {
           )}
           {(
             <div className="hidden items-center gap-1.5 md:flex md:flex-wrap">
+              {!isNuevo && <ControlesGuardadoHeader expedienteId={id} />}
               <Button
                 variant="outline"
                 size="icon"
