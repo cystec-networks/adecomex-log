@@ -874,8 +874,16 @@ function DetalleExpediente() {
           })()}
         </div>
         )}
+        {!isNuevo && (
+          <div className="mt-1 flex h-6 min-w-0 items-center gap-1.5">
+            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Descripción:</Label>
+            <span className="min-w-0 flex-1 truncate text-xs font-medium md:text-sm" title={expData.descripcion_mercancia ?? "—"}>
+              {expData.descripcion_mercancia || "—"}
+            </span>
+          </div>
+        )}
       </div>
-        <TabsList className="mt-1.5 flex h-auto max-w-full flex-nowrap justify-start overflow-x-auto md:mt-2 md:flex-wrap">
+        <TabsList className="mt-1.5 flex h-auto max-w-full flex-nowrap justify-start overflow-x-auto md:mt-1 md:flex-wrap">
           {tabOrder.map((key) => {
             const label = TAB_LABELS[key];
             if (!label) return null;
