@@ -2415,7 +2415,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           </div>
       </Section>
 
-      <BotonesAccion />
     </div>
   );
 }
