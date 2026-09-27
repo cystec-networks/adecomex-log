@@ -621,7 +621,16 @@ function DetalleExpediente() {
     <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
       <ImpuestosSuspCtx.Provider value={suspEstado}>
       <Tabs value={tabActiva} onValueChange={setTabActiva}>
-      <div className="sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6">
+      <div
+        ref={(el) => {
+          if (!el || (el as any)._roSet) return;
+          (el as any)._roSet = true;
+          const upd = () => document.documentElement.style.setProperty("--exp-header-h", `${el.offsetHeight}px`);
+          upd();
+          new ResizeObserver(upd).observe(el);
+        }}
+        className="sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6"
+      >
         <div className="space-y-1.5 md:space-y-2">
         <div className="flex flex-wrap items-center gap-2 md:gap-3">
           <Button variant="ghost" size="sm" asChild className="shrink-0 px-2 md:px-3"><Link to="/expedientes"><ArrowLeft className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Volver</span></Link></Button>
@@ -972,11 +981,6 @@ function DetalleExpediente() {
       </div>
       </Tabs>
       </ImpuestosSuspCtx.Provider>
-      {!isNuevo && canEditExpediente && !modoEdicion && (
-        <Button onClick={() => setModoEdicion(true)} className="fixed bottom-6 right-24 z-30 shadow-lg" size="lg">
-          <Pencil className="h-4 w-4 mr-1" /> Editar
-        </Button>
-      )}
     </div>
   );
 }
@@ -1503,7 +1507,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     },
     onSuccess: () => {
       ultimoGuardadoPropio.set(exp.id, Date.now());
-      toast.success("Guardado");
+      toast.success("✓ Cambios guardados");
       {
         const falt = [
           !String(form.numero_dua ?? "").trim() && "Declaración DUA",
@@ -1539,6 +1543,34 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       }
     },
   });
+
+  // Indicador de cambios sin guardar y resultado del último guardado.
+  const [base, setBase] = useState<string | null>(null);
+  const [estadoGuardado, setEstadoGuardado] = useState<null | "ok" | "error">(null);
+  const snapshot = JSON.stringify([form, contenedores]);
+  useEffect(() => {
+    if (modoEdicion && !isNuevo) setBase((b) => b ?? snapshot);
+    if (!modoEdicion) setBase(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modoEdicion, isNuevo]);
+  const hayCambios = editable && !isNuevo && base !== null && base !== snapshot;
+  useEffect(() => {
+    if (hayCambios && estadoGuardado === "ok") setEstadoGuardado(null);
+  }, [hayCambios, estadoGuardado]);
+  useEffect(() => {
+    if (save.isSuccess) {
+      setEstadoGuardado("ok");
+      const t = setTimeout(() => setEstadoGuardado(null), 4000);
+      return () => clearTimeout(t);
+    }
+    if (save.isError) {
+      setEstadoGuardado("error");
+      toast.error("✗ No se pudo guardar, intenta de nuevo");
+      const t = setTimeout(() => setEstadoGuardado(null), 6000);
+      return () => clearTimeout(t);
+    }
+  }, [save.isSuccess, save.isError, save.submittedAt]);
+
 
 
   // Creación de un Expediente nuevo (id === "nuevo").
@@ -1680,21 +1712,41 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   };
 
   const BotonesAccion = () => (
-    <div className="flex justify-end gap-2 sticky bottom-4">
+    <div
+      className="print:hidden sticky z-10 -mx-1 flex flex-wrap items-center justify-end gap-2 rounded-md border bg-background px-2 py-2 shadow-md"
+      style={{ top: "calc(var(--exp-header-h, 0px) + 4px)" }}
+    >
+      {!isNuevo && hayCambios && (
+        <span className="mr-auto flex items-center gap-1.5 text-sm font-medium text-amber-700 dark:text-amber-400">
+          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-amber-500" /> Cambios sin guardar
+        </span>
+      )}
+      {!isNuevo && !hayCambios && estadoGuardado === "ok" && (
+        <span className="mr-auto text-sm font-medium text-emerald-700 dark:text-emerald-400">✓ Cambios guardados</span>
+      )}
+      {!isNuevo && estadoGuardado === "error" && (
+        <span className="mr-auto text-sm font-medium text-destructive">✗ No se pudo guardar, intenta de nuevo</span>
+      )}
       {isNuevo ? (
         <>
-          <Button size="lg" variant="outline" onClick={() => nav({ to: "/expedientes" })} className="shadow-lg">Cancelar</Button>
-          <Button size="lg" onClick={intentarCrear} disabled={crear.isPending} className="shadow-lg">
+          <Button variant="outline" onClick={() => nav({ to: "/expedientes" })}>Cancelar</Button>
+          <Button onClick={intentarCrear} disabled={crear.isPending}>
             <Check className="h-4 w-4 mr-1" />{crear.isPending ? "Creando…" : "Crear expediente"}
           </Button>
         </>
       ) : (
         <>
-          <Button size="lg" variant="outline" onClick={() => refrescarExpediente(qc, exp.id)} className="shadow-lg">
+          <Button variant="outline" onClick={() => refrescarExpediente(qc, exp.id)}>
             <RefreshCw className="h-4 w-4 mr-1" /> Refrescar
           </Button>
+          {canEdit && !modoEdicion && (
+            <Button variant="outline" onClick={() => setModoEdicion(true)}>
+              <Pencil className="h-4 w-4 mr-1" /> Editar
+            </Button>
+          )}
           {editable && (
-            <Button size="lg" onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg">
+            <Button onClick={() => save.mutate()} disabled={save.isPending} className="relative">
+              {hayCambios && <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-background bg-amber-500" />}
               {save.isPending ? "Guardando…" : "Guardar cambios"}
             </Button>
           )}
@@ -1706,6 +1758,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   return (
     <div className="space-y-5">
       <BotonesAccion />
+
       {hasSolicitud && (
         <Section id="datos-solicitud-original" className="bg-muted/30 border-dashed" title={
           <span className="flex items-center justify-between gap-3">
@@ -2362,7 +2415,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           </div>
       </Section>
 
-      <BotonesAccion />
     </div>
   );
 }
