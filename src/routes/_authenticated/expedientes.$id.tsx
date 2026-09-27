@@ -708,6 +708,7 @@ function DetalleExpediente() {
           )}
           {(
             <div className="hidden items-center gap-1.5 md:flex md:flex-wrap">
+              {!isNuevo && <ControlesGuardadoHeader expedienteId={id} />}
               <Button
                 variant="outline"
                 size="icon"
@@ -750,7 +751,6 @@ function DetalleExpediente() {
               </DropdownMenu>
               <HerramientasDgaVuceMenu className="px-2" />
               <RastreosEnvioMenu className="px-2" />
-              {!isNuevo && <ControlesGuardadoHeader expedienteId={id} />}
             </div>
           )}
           {!isNuevo && (
