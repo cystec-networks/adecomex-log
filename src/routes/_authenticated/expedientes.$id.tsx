@@ -484,7 +484,13 @@ function DetalleExpediente() {
   const { data: hitosHeader } = useQuery({
     queryKey: ["expediente-hitos-header", id],
     enabled: !isNuevo,
-    queryFn: async () => (await supabase.from("expediente_hitos").select("estado").eq("expediente_id", id)).data ?? [],
+    queryFn: async () => {
+      const { data } = await supabase.from("expediente_hitos")
+        .select("estado, catalogo_hitos!inner(activo)")
+        .eq("expediente_id", id)
+        .eq("catalogo_hitos.activo", true);
+      return data ?? [];
+    },
   });
 
   const { data: permisosHeader } = useQuery({

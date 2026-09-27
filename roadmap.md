@@ -1,3 +1,4 @@
 - [x] Marcar los campos obligatorios de Declaración, llegada, origen y pesos.
 - [x] Exigir llegada real, país de origen y pesos positivos antes de Presentado en pantalla y base de datos.
 - [x] Verificar el bloqueo y los asteriscos en el Expediente.
+- [ ] Ocultar los ocho pasos acordados del Checklist de Despacho sin borrar su historial y ajustar el progreso y los avisos.
