@@ -1713,7 +1713,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
   const BotonesAccion = () => (
     <div
-      className="sticky z-10 -mx-1 flex flex-wrap items-center justify-end gap-2 rounded-md border bg-background/95 px-2 py-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80"
+      className="print:hidden sticky z-10 -mx-1 flex flex-wrap items-center justify-end gap-2 rounded-md border bg-background/95 px-2 py-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80"
       style={{ top: "calc(var(--exp-header-h, 0px) + 4px)" }}
     >
       {!isNuevo && hayCambios && (
