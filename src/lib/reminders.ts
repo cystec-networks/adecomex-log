@@ -163,7 +163,8 @@ export function useReminders() {
           .limit(200),
         supabase
           .from("expediente_hitos")
-          .select("id,expediente_id,estado,fecha_programada,hito_codigo, catalogo_hitos(nombre), expedientes!inner(numero,eliminado_en)")
+          .select("id,expediente_id,estado,fecha_programada,hito_codigo, catalogo_hitos!inner(nombre,activo), expedientes!inner(numero,eliminado_en)")
+          .eq("catalogo_hitos.activo", true)
           .in("estado", ["pendiente", "en_curso"])
           .not("fecha_programada", "is", null)
           .lte("fecha_programada", isoDay(hitoLimite))
