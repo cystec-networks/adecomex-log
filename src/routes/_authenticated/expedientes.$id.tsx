@@ -2611,6 +2611,27 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                     </div>
                   );
                 })}
+                {(() => {
+                  const otros = ((docs ?? []) as any[]).filter((d) => d.tipo === "Otro" && d.storage_path);
+                  return (
+                    <div className="flex items-start gap-3 py-1.5 text-sm">
+                      <span className={`h-2.5 w-2.5 rounded-full shrink-0 mt-1.5 ${otros.length ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+                      <div className="flex-1 min-w-0">
+                        <div>Otros <span className="text-[11px] text-muted-foreground">({otros.length} archivo{otros.length === 1 ? "" : "s"})</span></div>
+                        {otros.map((o) => (
+                          <div key={o.id} className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                            <span className="w-14 shrink-0 font-mono text-primary">{o.codigo_siga ?? ""}</span>
+                            <span className="truncate flex-1 min-w-0" title={nombreArchivo(o.storage_path)}>{nombreArchivo(o.storage_path)}</span>
+                            <DocumentoPreviewButton path={o.storage_path} variant="ghost" size="sm" label="Ver" />
+                          </div>
+                        ))}
+                      </div>
+                      <Button variant="outline" size="sm" className="h-7 text-xs shrink-0" onClick={() => openNuevo("Otro")}>
+                        <Upload className="h-3.5 w-3.5 mr-1" />Agregar
+                      </Button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           );
