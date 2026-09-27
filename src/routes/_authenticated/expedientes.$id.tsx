@@ -253,16 +253,12 @@ function ControlesGuardadoHeader({ expedienteId }: { expedienteId: string }) {
       )}
       {!st?.hayCambios && st?.estado === "ok" && <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">✓ Cambios guardados</span>}
       {st?.estado === "error" && <span className="text-xs font-medium text-destructive">✗ No se pudo guardar, intenta de nuevo</span>}
-      <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={refrescar} disabled={refrescando} title="Refrescar datos del Expediente">
-        <RefreshCw className={"h-4 w-4" + (refrescando ? " animate-spin" : "")} />
-      </Button>
       {st?.puedeEditar ? (
-        <Button variant="outline" size="sm" className="px-2" onClick={() => window.dispatchEvent(new Event("exp-editar"))}>
+        <Button onClick={() => window.dispatchEvent(new Event("exp-editar"))}>
           <Pencil className="h-4 w-4 mr-1" /> Editar
         </Button>
       ) : (
         <Button
-          size="sm"
           className="relative px-3"
           disabled={!st?.editable || st?.pendiente}
           onClick={() => window.dispatchEvent(new Event("exp-guardar"))}
@@ -272,6 +268,9 @@ function ControlesGuardadoHeader({ expedienteId }: { expedienteId: string }) {
           {st?.pendiente ? "Guardando…" : "Guardar cambios"}
         </Button>
       )}
+      <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={refrescar} disabled={refrescando} title="Refrescar datos del Expediente">
+        <RefreshCw className={"h-4 w-4" + (refrescando ? " animate-spin" : "")} />
+      </Button>
     </div>
   );
 }
