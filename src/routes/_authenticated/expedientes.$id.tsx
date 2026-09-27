@@ -621,7 +621,16 @@ function DetalleExpediente() {
     <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
       <ImpuestosSuspCtx.Provider value={suspEstado}>
       <Tabs value={tabActiva} onValueChange={setTabActiva}>
-      <div className="sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6">
+      <div
+        ref={(el) => {
+          if (!el || (el as any)._roSet) return;
+          (el as any)._roSet = true;
+          const upd = () => document.documentElement.style.setProperty("--exp-header-h", `${el.offsetHeight}px`);
+          upd();
+          new ResizeObserver(upd).observe(el);
+        }}
+        className="sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6"
+      >
         <div className="space-y-1.5 md:space-y-2">
         <div className="flex flex-wrap items-center gap-2 md:gap-3">
           <Button variant="ghost" size="sm" asChild className="shrink-0 px-2 md:px-3"><Link to="/expedientes"><ArrowLeft className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Volver</span></Link></Button>
