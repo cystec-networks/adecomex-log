@@ -151,7 +151,19 @@ function normalizarPinesPago(payload: any) {
     payload[k] = payload[k] === "" || payload[k] == null ? null : Number(payload[k]);
   }
   payload.valores_enviados = !!payload.valores_enviados;
+  // Fechas vacías → NULL (Postgres no acepta '' en columnas date/timestamp).
+  for (const k of CAMPOS_FECHA_EXPEDIENTE) {
+    if (k in payload && (payload[k] === "" || (typeof payload[k] === "string" && !payload[k].trim()))) payload[k] = null;
+  }
 }
+const CAMPOS_FECHA_EXPEDIENTE = [
+  "certificado_periodo_desde", "certificado_periodo_hasta", "fecha_aprobacion_despacho", "fecha_cargado",
+  "fecha_cierre", "fecha_compromiso", "fecha_despachado", "fecha_en_transito", "fecha_entregado",
+  "fecha_facturado", "fecha_llegada_real", "fecha_presentado", "fecha_recibido", "fecha_tasa_manual",
+  "fecha_verificado", "impuestos_override_at", "liq_siga_fecha_pago", "liq_siga_fecha_registro",
+  "liq_siga_registro_at", "liq_siga_termino_at", "reembolso_fecha_pago", "reembolso_generado_at",
+  "eliminado_en",
+];
 
 
 const TIPOS_DOC = [
@@ -1786,7 +1798,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     >
       <Button variant="outline" onClick={() => nav({ to: "/expedientes" })}>Cancelar</Button>
       <Button onClick={intentarCrear} disabled={crear.isPending}>
-        <Check className="h-4 w-4 mr-1" />{crear.isPending ? "Creando…" : "Crear expediente"}
+        <Check className="h-4 w-4 mr-1" /><span key={crear.isPending ? "p" : "i"}>{crear.isPending ? "Creando…" : "Crear expediente"}</span>
       </Button>
     </div>
   );
