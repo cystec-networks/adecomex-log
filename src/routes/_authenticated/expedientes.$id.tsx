@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { leerEncabezadoDocumento } from "@/lib/ai-texto-documento.functions";
-import { sha256File, fileToBase64, coincideContenido, prefijoSiga, siguienteCodigoSiga, validarNombreSiga, nombreArchivo } from "@/lib/codigo-siga";
+import { sha256File, prefijoSiga, siguienteCodigoSiga, validarNombreSiga, nombreArchivo } from "@/lib/codigo-siga";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -2478,10 +2477,8 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const [obs, setObs] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [leyendo, setLeyendo] = useState(false);
   const [confirmacion, setConfirmacion] = useState<{ titulo: string; mensaje: string; requiereCheck?: boolean; resolve: (v: boolean) => void } | null>(null);
   const [confirmAck, setConfirmAck] = useState(false);
-  const leerEncabezado = useServerFn(leerEncabezadoDocumento);
   const cerrarConfirmacion = (v: boolean) => { confirmacion?.resolve(v); setConfirmacion(null); };
 
   const { data: docs } = useQuery({
@@ -2644,7 +2641,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
               <div className="grid gap-1.5"><Label>Fecha vencimiento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
               <div className="grid gap-1.5"><Label>Observaciones</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
             </div>
-            <DialogFooter><Button onClick={upload} disabled={uploading}>{leyendo ? "Revisando documento…" : "Guardar"}</Button></DialogFooter>
+            <DialogFooter><Button onClick={upload} disabled={uploading}>Guardar</Button></DialogFooter>
           </DialogContent>
         </Dialog>
       </CardHeader>
