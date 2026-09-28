@@ -1798,7 +1798,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     >
       <Button variant="outline" onClick={() => nav({ to: "/expedientes" })}>Cancelar</Button>
       <Button onClick={intentarCrear} disabled={crear.isPending}>
-        <Check className="h-4 w-4 mr-1" />{crear.isPending ? "Creando…" : "Crear expediente"}
+        <Check className="h-4 w-4 mr-1" /><span key={crear.isPending ? "p" : "i"}>{crear.isPending ? "Creando…" : "Crear expediente"}</span>
       </Button>
     </div>
   );
