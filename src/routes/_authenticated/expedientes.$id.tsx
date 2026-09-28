@@ -2530,18 +2530,6 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           });
           if (!ok) return;
         }
-        try {
-          setLeyendo(true);
-          const { texto } = await leerEncabezado({ data: { filename: file.name, mime: file.type || "application/pdf", base64: await fileToBase64(file) } });
-          setLeyendo(false);
-          if (texto && coincideContenido(tipo, texto) === false) {
-            const ok = await pedirConfirmacion({
-              titulo: "Revisa el documento",
-              mensaje: `Este documento no parece corresponder a ${tipo}. ¿Deseas continuar de todas formas?`,
-            });
-            if (!ok) return;
-          }
-        } catch { /* si la lectura falla, se permite continuar */ } finally { setLeyendo(false); }
       }
       const docActual: any = editId ? (docs ?? []).find((d: any) => d.id === editId) : null;
       const codigo = file
