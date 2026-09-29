@@ -2,6 +2,16 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Acceso a ADECOMEX Flow | ADECOMEX" },
+      { name: "description", content: "Accede a la gestión aduanal y de expedientes de ADECOMEX Flow." },
+      { property: "og:title", content: "Acceso a ADECOMEX Flow | ADECOMEX" },
+      { property: "og:description", content: "Accede a la gestión aduanal y de expedientes de ADECOMEX Flow." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   ssr: false,
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
