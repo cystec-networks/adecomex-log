@@ -2,3 +2,4 @@
 - [x] Exigir llegada real, país de origen y pesos positivos antes de Presentado en pantalla y base de datos.
 - [x] Verificar el bloqueo y los asteriscos en el Expediente.
 - [x] Ocultar los ocho pasos acordados del Checklist de Despacho sin borrar su historial y ajustar el progreso y los avisos.
+- [x] Mostrar el N° de Viaje en el volante de pago, mantener el TF secundario y verificar dos pagos de un viaje (segundo pago simulado, sin crear registros reales).
