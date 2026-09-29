@@ -292,7 +292,7 @@ function FacturacionPage() {
                         <div className="flex flex-wrap gap-1">
                           {(exps ?? []).map((e) => (
                             <Link key={e.id} to="/expedientes/$id" params={{ id: e.id }}>
-                              <Badge variant="secondary" className="hover:bg-primary/20">
+                              <Badge variant="secondary" className="expediente-numero hover:bg-primary/20">
                                 <ExternalLink className="h-3 w-3 mr-1" />{e.numero}
                               </Badge>
                             </Link>

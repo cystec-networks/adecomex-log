@@ -706,7 +706,7 @@ function DetalleExpediente() {
             </div>
           ) : (
             <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-2 md:min-w-[7rem]">
-              <h1 className="font-display shrink-0 text-lg font-bold md:text-xl">{expData.numero}</h1>
+              <h1 className="font-display shrink-0 text-lg font-bold md:text-xl expediente-numero">{expData.numero}</h1>
               {expData.solicitudes?.numero && <Badge variant="outline" className="hidden shrink-0 md:inline-flex">← {expData.solicitudes.numero}</Badge>}
             </div>
           )}
@@ -1005,7 +1005,7 @@ function DetalleExpediente() {
         <TabsContent value="info">
           <div id="ficha-generales-print">
             <div className="hidden print:block mb-4">
-              <h1 className="text-xl font-bold">Expediente {expData.numero} — Ficha General</h1>
+              <h1 className="text-xl font-bold">Expediente <span className="expediente-numero">{expData.numero}</span> — Ficha General</h1>
               <p className="text-sm text-muted-foreground">
                 Cliente: {expData.clientes?.nombre ?? "—"} · Impreso el {new Date().toLocaleDateString("es-DO")}
               </p>
@@ -1875,7 +1875,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sug.contacto_solicitud ?? []} />
           </>
         ) : (
-          <Field label="Número / ID" value={form.numero} onChange={(v) => set("numero", v)} disabled={!editable} />
+          <Field label="Número / ID" value={form.numero} onChange={(v) => set("numero", v)} disabled={!editable} className="[&_input]:expediente-numero [&_input:disabled]:opacity-100" />
         )}
         <Field label="BL / AWB / Guía" value={form.bl_awb} onChange={(v) => { set("bl_awb", v); limpiarFaltante("req-bl_awb"); }} disabled={!editable} req fieldId="req-bl_awb" highlight={camposFaltantes.has("req-bl_awb")} />
         <AutoField label="Medio de transporte" value={form.medio_transporte} onChange={(v) => set("medio_transporte", v)} suggestion={sug.medio_transporte ?? []} disabled={!editable} />

@@ -369,7 +369,7 @@ function RentTable({ title, rows, positive }: {
               <tbody>
                 {rows.map(r => (
                   <tr key={r.id} className="border-b last:border-0">
-                    <td className="py-2 font-medium">{r.numero}</td>
+                    <td className="py-2 expediente-numero">{r.numero}</td>
                     <td className="py-2">{r.cliente}</td>
                     <td className={`py-2 text-right ${r.utilidad >= 0 ? "text-emerald-600" : "text-red-600"}`}>{fmtRD(r.utilidad)}</td>
                     <td className="py-2 text-right">{fmtPct(r.margen)}</td>

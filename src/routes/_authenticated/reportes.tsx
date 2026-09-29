@@ -524,7 +524,7 @@ function ExpedienteRow({ e, items, showCliente }: { e: any; items: any[]; showCl
                 <ChevronRight className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-90" : ""}`} />
               </button>
             )}
-            <Link to="/expedientes/$id" params={{ id: e.id }} className="font-mono font-semibold text-primary hover:underline">
+            <Link to="/expedientes/$id" params={{ id: e.id }} className="font-mono expediente-numero hover:underline">
               {e.numero}
             </Link>
           </div>

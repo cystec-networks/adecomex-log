@@ -382,7 +382,7 @@ function RentabilidadExpedientesPanel() {
                 <tbody>
                   {negativos.map((r) => (
                     <tr key={r.expediente_id} className="border-b last:border-0">
-                      <td className="py-1.5"><a href={`/expedientes/${r.expediente_id}`} className="text-primary hover:underline font-medium">{r.numero ?? r.expediente_id.slice(0, 8)}</a></td>
+                      <td className="py-1.5"><a href={`/expedientes/${r.expediente_id}`} className="expediente-numero hover:underline">{r.numero ?? r.expediente_id.slice(0, 8)}</a></td>
                       <td className="text-xs text-muted-foreground">{r.estado}</td>
                       <td className="text-right tabular-nums">{fmtRD(Number(r.total_facturado))}</td>
                       <td className="text-right tabular-nums">{fmtRD(Number(r.total_costos_reales))}</td>
@@ -430,7 +430,7 @@ function RentabilidadExpedientesPanel() {
                     return (
                       <tr key={r.expediente_id} className="border-b last:border-0 hover:bg-muted/40">
                         <td className="py-1.5 text-muted-foreground">{i + 1}</td>
-                        <td><a href={`/expedientes/${r.expediente_id}`} className="text-primary hover:underline font-medium">{r.numero ?? r.expediente_id.slice(0, 8)}</a></td>
+                        <td><a href={`/expedientes/${r.expediente_id}`} className="expediente-numero hover:underline">{r.numero ?? r.expediente_id.slice(0, 8)}</a></td>
                         <td className="text-xs text-muted-foreground">{r.estado}</td>
                         <td className="text-right tabular-nums">{fmtRD(Number(r.total_facturado))}</td>
                         <td className="text-right tabular-nums">{fmtRD(Number(r.total_costos_reales))}</td>

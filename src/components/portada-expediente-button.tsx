@@ -63,7 +63,7 @@ export function PortadaExpedienteButton({ expedienteId }: { expedienteId: string
       const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#000;width:100%;height:9.6in;display:flex;flex-direction:column">
 <div style="display:flex;align-items:flex-end;justify-content:space-between;border-bottom:2px solid #1f3a5f;padding-bottom:6px;margin-bottom:12px">
 <div><img src="${new URL(membreteAsset.url, window.location.origin).href}" crossorigin="anonymous" style="height:70px;display:block"><div style="font-size:9pt;margin-left:90px">RNC: 130-481301</div></div>
-<div style="text-align:right"><div style="font-size:16pt;font-weight:700;color:#1f3a5f">PORTADA DEL EXPEDIENTE</div><div style="font-size:20pt;font-weight:700">${v(e.numero)}</div></div>
+<div style="text-align:right"><div style="font-size:16pt;font-weight:700;color:#1f3a5f">PORTADA DEL EXPEDIENTE</div><div style="font-size:20pt;font-weight:700;color:var(--brand-red)">${v(e.numero)}</div></div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;border:1px solid #bbb;border-radius:4px;padding:8px;margin-bottom:12px;font-size:9.5pt">
 <div><div style="color:#555">Estado actual</div><b>${v(estadoLabel(e.estado))}</b></div>
