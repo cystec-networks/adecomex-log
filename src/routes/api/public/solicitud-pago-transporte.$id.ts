@@ -21,7 +21,7 @@ export const Route = createFileRoute("/api/public/solicitud-pago-transporte/$id"
         const { data, error } = await (supabaseAdmin as any)
           .from("solicitudes_pago_transporte")
           .select(
-            "numero_control, transportista_nombre, transportista_rnc, telefono, referencia_viaje, placa_contenedor, cantidad_viajes, precio_viaje, porcentaje_margen, monto, descuento_cxc, factura_costo_numero, factura_costo_fecha, moneda, descripcion, created_at, clientes(nombre)",
+            "numero_control, numero_viaje, transporte_id, transportista_nombre, transportista_rnc, telefono, referencia_viaje, placa_contenedor, cantidad_viajes, precio_viaje, porcentaje_margen, monto, descuento_cxc, factura_costo_numero, factura_costo_fecha, moneda, descripcion, created_at, clientes(nombre)",
           )
           .eq("id", parsed.data)
           .maybeSingle();
@@ -30,21 +30,21 @@ export const Route = createFileRoute("/api/public/solicitud-pago-transporte/$id"
           return Response.json({ error: "No encontrada" }, { status: 404, headers: CORS });
         }
 
-        const { data: t } = await (supabaseAdmin as any)
-          .from("transportes")
-          .select("numero_viaje")
-          .eq("solicitud_pago_id", parsed.data)
-          .order("created_at", { ascending: true })
-          .limit(1)
-          .maybeSingle();
+        // Un viaje puede tener varios pagos: el transporte vinculado prevalece
+        // sobre el TR reservado individualmente al crear cada solicitud.
+        const transporte = (supabaseAdmin as any).from("transportes").select("numero_viaje");
+        const { data: t } = data.transporte_id
+          ? await transporte.eq("id", data.transporte_id).maybeSingle()
+          : await transporte.eq("solicitud_pago_id", parsed.data)
+              .order("created_at", { ascending: true }).limit(1).maybeSingle();
 
-        const { clientes, ...rest } = data as any;
+        const { clientes, transporte_id, ...rest } = data as any;
         return Response.json(
           {
             solicitud: {
               ...rest,
               cliente_nombre: clientes?.nombre ?? null,
-              numero_viaje: t?.numero_viaje ?? null,
+              numero_viaje: t?.numero_viaje || data.numero_viaje || null,
             },
           },
           { headers: CORS },

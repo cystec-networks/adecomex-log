@@ -66,11 +66,14 @@ export function SolicitudPagoPrintView({ solicitud }: { solicitud: SolicitudPago
 
         <div className="mt-2 rounded-md border border-primary/40 bg-primary/5 px-2 py-1.5 text-center">
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-            {s.numero_viaje?.trim() ? "N° Viaje / Ref." : "Número de control"}
+            N° de Viaje / Referencia
           </div>
           <div className="font-mono text-xl font-bold leading-tight text-primary">
-            {s.numero_viaje?.trim() || s.numero_control}
+            {s.numero_viaje?.trim() || s.referencia_viaje?.trim() || "—"}
           </div>
+        </div>
+        <div className="mt-1 text-right text-[10px] text-muted-foreground">
+          Control de pago: <span className="font-mono">{s.numero_control}</span>
         </div>
 
         <div className="mt-2">
@@ -180,7 +183,7 @@ export function SolicitudPagoPrintView({ solicitud }: { solicitud: SolicitudPago
         ) : null}
 
         <div className="mt-3 border-t pt-1.5 text-center text-[10px] text-muted-foreground">
-          ADECOMEX SRL · Documento generado electrónicamente · {s.numero_viaje?.trim() || s.numero_control}
+          ADECOMEX SRL · Documento generado electrónicamente · {s.numero_viaje?.trim() || s.referencia_viaje?.trim() || "—"}
         </div>
       </div>
     </>
