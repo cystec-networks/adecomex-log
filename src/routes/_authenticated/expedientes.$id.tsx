@@ -5323,11 +5323,13 @@ function LiquidacionFinalPdfButton({
     doc.setFontSize(11);
     doc.text("LIQUIDACIÓN FINAL DE PRODUCTO", M, 58);
     doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
-    doc.text(
-      `N° Expediente: ${exp.numero ?? "—"}   |   Cliente: ${exp.clientes?.nombre ?? "—"}`,
-      M,
-      70,
-    );
+    const expLabel = "N° Expediente: ";
+    doc.text(expLabel, M, 70);
+    doc.setFont("helvetica", "bold"); doc.setTextColor(190, 30, 44);
+    const numeroExp = exp.numero ?? "—";
+    doc.text(numeroExp, M + doc.getTextWidth(expLabel), 70);
+    doc.setFont("helvetica", "normal"); doc.setTextColor(100);
+    doc.text(`   |   Cliente: ${exp.clientes?.nombre ?? "—"}`, M + doc.getTextWidth(expLabel) + doc.getTextWidth(numeroExp), 70);
     doc.text(
       `Generado: ${new Date().toLocaleString("es-DO")}   |   Usuario: ${user?.email ?? "—"}`,
       M,

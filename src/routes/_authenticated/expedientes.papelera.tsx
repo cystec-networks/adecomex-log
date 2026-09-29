@@ -615,7 +615,7 @@ function Papelera() {
           <AlertDialogHeader>
             <AlertDialogTitle>Restaurar registro</AlertDialogTitle>
             <AlertDialogDescription>
-              El registro <strong>{toRestore?.numero}</strong> volverá a la lista principal.
+              El registro <strong className={toRestore?.kind === "expedientes" ? "expediente-numero" : ""}>{toRestore?.numero}</strong> volverá a la lista principal.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -639,7 +639,7 @@ function Papelera() {
             <AlertDialogDescription asChild>
               <div className="space-y-3">
                 <p>
-                  Esta acción es <strong>irreversible</strong>. Se borrará el registro <strong>{toDelete?.numero}</strong> junto
+                  Esta acción es <strong>irreversible</strong>. Se borrará el registro <strong className={toDelete?.kind === "expedientes" ? "expediente-numero" : ""}>{toDelete?.numero}</strong> junto
                   con sus datos asociados.
                 </p>
                 <p>Escribe <strong>ELIMINAR</strong> para confirmar:</p>

@@ -99,6 +99,12 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
     body: infoBody,
     theme: "grid",
     styles: { fontSize: 7.5, cellPadding: 3 },
+    didParseCell: (data) => {
+      if (data.section === "body" && data.column.index === 1 && infoCols[0]?.[data.row.index]?.[0] === "N° Expediente") {
+        data.cell.styles.textColor = [190, 30, 44];
+        data.cell.styles.fontStyle = "bold";
+      }
+    },
     columnStyles: {
       0: { fontStyle: "bold", textColor: 90, cellWidth: 72 },
       2: { fontStyle: "bold", textColor: 90, cellWidth: 78 },
