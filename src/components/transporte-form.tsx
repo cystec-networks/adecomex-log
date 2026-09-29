@@ -477,7 +477,7 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
             <div><span className="text-muted-foreground">Contenedor(es) actual:</span> {form.placa_contenedor || "—"}</div>
             <div>
               <span className="text-muted-foreground">Expediente actual:</span>{" "}
-              {(expedientes ?? []).find((e: any) => e.id === form.expediente_id)?.numero ?? "—"}
+              <span className="expediente-numero">{(expedientes ?? []).find((e: any) => e.id === form.expediente_id)?.numero ?? "—"}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Flete actual:</span>{" "}
@@ -503,7 +503,7 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
                 <SelectContent>
                   <SelectItem value={NO_EXPEDIENTE}>— Sin expediente —</SelectItem>
                   {(expedientes ?? []).map((e: any) => (
-                    <SelectItem key={e.id} value={e.id}>{e.numero} · {e.clientes?.nombre ?? "—"}</SelectItem>
+                     <SelectItem key={e.id} value={e.id}><span className="expediente-numero">{e.numero}</span> · {e.clientes?.nombre ?? "—"}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -584,7 +584,7 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
               <SelectContent>
                 <SelectItem value={NO_EXPEDIENTE}>— Sin expediente —</SelectItem>
                 {(expedientes ?? []).map((e: any) => (
-                  <SelectItem key={e.id} value={e.id}>{e.numero} · {e.clientes?.nombre ?? "—"}</SelectItem>
+                   <SelectItem key={e.id} value={e.id}><span className="expediente-numero">{e.numero}</span> · {e.clientes?.nombre ?? "—"}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

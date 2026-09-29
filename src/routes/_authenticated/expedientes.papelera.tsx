@@ -236,7 +236,7 @@ function Papelera() {
                   <tbody>
                     {expRows.map((e: any) => (
                       <tr key={e.id} className="border-b last:border-0 hover:bg-muted/40">
-                        <td className="px-4 py-2 font-medium">{e.numero}</td>
+                        <td className="px-4 py-2 expediente-numero">{e.numero}</td>
                         <td>{e.clientes?.nombre ?? "—"}</td>
                         <td className="text-xs">{e.numero_dua ?? "—"}</td>
                         <td className="text-muted-foreground">{e.bl_awb ?? "—"}</td>
@@ -346,7 +346,7 @@ function Papelera() {
                     {perRows.map((p: any) => (
                       <tr key={p.id} className="border-b last:border-0 hover:bg-muted/40">
                         <td className="px-4 py-2 font-medium">{p.numero}</td>
-                        <td className="text-xs">{p.expedientes?.numero ?? "—"}</td>
+                        <td className="text-xs expediente-numero">{p.expedientes?.numero ?? "—"}</td>
                         <td>{p.clientes?.nombre ?? "—"}</td>
                         <td className="text-muted-foreground">{p.tipo ?? "—"}</td>
                         <td><Badge variant="outline">{p.estado?.replace("_"," ")}</Badge></td>
@@ -395,7 +395,7 @@ function Papelera() {
                     {trRows.map((t: any) => (
                       <tr key={t.id} className="border-b last:border-0 hover:bg-muted/40">
                         <td className="px-4 py-2 font-medium">{t.numero_viaje}</td>
-                        <td className="text-xs">{t.expedientes?.numero ?? "—"}</td>
+                        <td className="text-xs expediente-numero">{t.expedientes?.numero ?? "—"}</td>
                         <td>{t.clientes?.nombre ?? "—"}</td>
                         <td className="text-muted-foreground">{t.tipo ?? "—"}</td>
                         <td>{t.transportista ?? "—"}</td>
@@ -615,7 +615,7 @@ function Papelera() {
           <AlertDialogHeader>
             <AlertDialogTitle>Restaurar registro</AlertDialogTitle>
             <AlertDialogDescription>
-              El registro <strong>{toRestore?.numero}</strong> volverá a la lista principal.
+              El registro <strong className={toRestore?.kind === "expedientes" ? "expediente-numero" : ""}>{toRestore?.numero}</strong> volverá a la lista principal.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -639,7 +639,7 @@ function Papelera() {
             <AlertDialogDescription asChild>
               <div className="space-y-3">
                 <p>
-                  Esta acción es <strong>irreversible</strong>. Se borrará el registro <strong>{toDelete?.numero}</strong> junto
+                  Esta acción es <strong>irreversible</strong>. Se borrará el registro <strong className={toDelete?.kind === "expedientes" ? "expediente-numero" : ""}>{toDelete?.numero}</strong> junto
                   con sus datos asociados.
                 </p>
                 <p>Escribe <strong>ELIMINAR</strong> para confirmar:</p>

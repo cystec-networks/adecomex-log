@@ -179,7 +179,7 @@ export function GlobalSearch() {
                         }}
                         className="w-full text-left px-3 py-2 hover:bg-muted/50 flex flex-col"
                       >
-                        <span className="text-sm font-medium truncate">{r.primary}</span>
+                        <span className={`text-sm font-medium truncate ${r.kind === "expediente" ? "expediente-numero" : ""}`}>{r.primary}</span>
                         {r.secondary && <span className="text-xs text-muted-foreground truncate">{r.secondary}</span>}
                       </button>
                     </li>

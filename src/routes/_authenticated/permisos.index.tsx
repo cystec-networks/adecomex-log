@@ -208,7 +208,7 @@ function Permisos() {
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             {p.expedientes?.numero ? (
-                              <Link to="/expedientes/$id" params={{ id: p.expediente_id }} className="text-primary hover:underline">{p.expedientes.numero} ↗</Link>
+                              <Link to="/expedientes/$id" params={{ id: p.expediente_id }} className="expediente-numero hover:underline">{p.expedientes.numero} ↗</Link>
                             ) : "—"}
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">{p.clientes?.nombre ?? "—"}</td>

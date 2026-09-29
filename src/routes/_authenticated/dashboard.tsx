@@ -159,7 +159,7 @@ function Dashboard() {
                 {ultimosExp.map((e: any) => (
                   <tr key={e.id} className="border-b last:border-0 hover:bg-muted/40">
                     <td className="px-4 py-2 font-medium">
-                      <Link to="/expedientes/$id" params={{ id: e.id }} className="hover:underline">{e.numero ?? e.id.slice(0, 8)}</Link>
+                      <Link to="/expedientes/$id" params={{ id: e.id }} className="expediente-numero hover:underline">{e.numero ?? e.id.slice(0, 8)}</Link>
                     </td>
                     <td><EstadoBadge value={e.estado} /></td>
                     <td><Badge variant="outline" className="text-[10px]">Etapa {e.etapa_actual ?? 1} de 14</Badge></td>

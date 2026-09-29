@@ -199,7 +199,7 @@ function DetalleSolicitud() {
         {form.estado === "convertida" && expedienteVinculado ? (
           <Button variant="outline" asChild>
             <Link to="/expedientes/$id" params={{ id: expedienteVinculado.id }}>
-              <FolderPlus className="h-4 w-4 mr-1" />Ver expediente {expedienteVinculado.numero} ↗
+              <FolderPlus className="h-4 w-4 mr-1" />Ver expediente <span className="expediente-numero">{expedienteVinculado.numero}</span> ↗
             </Link>
           </Button>
         ) : form.estado !== "convertida" ? (

@@ -203,7 +203,7 @@ function Transportes() {
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             {t.expedientes?.numero ? (
-                              <Link to="/expedientes/$id" params={{ id: t.expediente_id }} className="text-primary hover:underline">{t.expedientes.numero} ↗</Link>
+                              <Link to="/expedientes/$id" params={{ id: t.expediente_id }} className="expediente-numero hover:underline">{t.expedientes.numero} ↗</Link>
                             ) : "—"}
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">{t.clientes?.nombre ?? "—"}</td>

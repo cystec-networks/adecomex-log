@@ -141,7 +141,7 @@ function PendientesPage() {
               {expsFiltered.map((e: any) => (
                 <tr key={e.id} className="border-b last:border-0 hover:bg-muted/20">
                   <td className="px-3 py-2 font-medium">
-                    <Link to="/expedientes/$id" params={{ id: e.id }} className="hover:underline flex items-center gap-1">
+                    <Link to="/expedientes/$id" params={{ id: e.id }} className="expediente-numero hover:underline flex items-center gap-1">
                       {e.numero} <ExternalLink className="h-3 w-3" />
                     </Link>
                   </td>

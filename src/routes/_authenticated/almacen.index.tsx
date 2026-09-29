@@ -185,7 +185,7 @@ function AlmacenPage() {
                             <Link
                               to="/expedientes/$id"
                               params={{ id: r.expedientes.id }}
-                              className="text-primary hover:underline inline-flex items-center gap-1"
+                              className="expediente-numero hover:underline inline-flex items-center gap-1"
                             >
                               {r.expedientes.numero} <ExternalLink className="h-3 w-3" />
                             </Link>

@@ -124,7 +124,7 @@ function PortalListado() {
         className={`cursor-pointer hover:brightness-95 transition-colors ${rowHighlight(exp)}`}
         onClick={() => irAlDetalle(exp.id)}
       >
-        <TableCell className="font-mono text-xs font-semibold whitespace-nowrap">{exp.numero ?? "—"}</TableCell>
+        <TableCell className="font-mono text-xs expediente-numero whitespace-nowrap">{exp.numero ?? "—"}</TableCell>
         <TableCell className="max-w-[220px]">
           <span className="block truncate" title={exp.descripcion_mercancia ?? undefined}>
             {exp.descripcion_mercancia ?? "—"}

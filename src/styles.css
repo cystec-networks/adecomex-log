@@ -149,6 +149,12 @@
   --brand-red: oklch(0.62 0.23 27);
 }
 
+/* Identificador de expediente: el mismo énfasis en campos, listas y vistas relacionadas. */
+.expediente-numero {
+  color: var(--brand-red);
+  font-weight: 700;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);

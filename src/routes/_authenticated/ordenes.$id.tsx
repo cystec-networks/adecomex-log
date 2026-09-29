@@ -221,7 +221,7 @@ function DetalleOrden() {
         {expedienteVinculado ? (
           <Button variant="outline" asChild>
             <Link to="/expedientes/$id" params={{ id: expedienteVinculado.id }}>
-              <FolderPlus className="h-4 w-4 mr-1" />Ver Expediente {expedienteVinculado.numero} ↗
+              <FolderPlus className="h-4 w-4 mr-1" />Ver Expediente <span className="expediente-numero">{expedienteVinculado.numero}</span> ↗
             </Link>
           </Button>
         ) : canEdit ? (

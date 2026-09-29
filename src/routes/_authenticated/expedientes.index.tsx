@@ -341,7 +341,7 @@ function Expedientes() {
         <Link
           to="/expedientes/$id"
           params={{ id: e.id }}
-          className="font-semibold text-primary hover:underline underline-offset-2 decoration-primary/40"
+          className="expediente-numero hover:underline underline-offset-2"
           title={`Abrir expediente ${e.numero}`}
         >
           {e.numero}
@@ -605,7 +605,7 @@ function Expedientes() {
           <AlertDialogHeader>
             <AlertDialogTitle>Mover a la papelera</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Estás seguro de que deseas mover el expediente <strong>{toTrash?.numero}</strong> a la papelera?
+              ¿Estás seguro de que deseas mover el expediente <strong className="expediente-numero">{toTrash?.numero}</strong> a la papelera?
               Podrás restaurarlo más adelante desde la sección Papelera.
             </AlertDialogDescription>
           </AlertDialogHeader>

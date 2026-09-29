@@ -527,7 +527,7 @@ function CotizacionesTab() {
                     {c.expedientes?.id && (
                       <Link to="/expedientes/$id" params={{ id: c.expedientes.id }} className="no-underline block">
                         <Badge variant="outline" className="mt-1 cursor-pointer font-normal">
-                          ← Expediente {c.expedientes.numero}
+                          ← Expediente <span className="expediente-numero">{c.expedientes.numero}</span>
                         </Badge>
                       </Link>
                     )}
@@ -587,7 +587,7 @@ function CotizacionesTab() {
                                 {c.expedientes?.id && (
                                   <>
                                     <br /><br />
-                                    Esta cotización está vinculada al Expediente {c.expedientes.numero} — al borrarla, ese vínculo se perderá.
+                                    Esta cotización está vinculada al Expediente <span className="expediente-numero">{c.expedientes.numero}</span> — al borrarla, ese vínculo se perderá.
                                   </>
                                 )}
                               </AlertDialogDescription>
@@ -809,7 +809,7 @@ function CotizacionDialog({
                 className="no-underline"
               >
                 <Badge variant="outline" className="cursor-pointer">
-                  ← Expediente {cotizacion.expedientes.numero}
+                  ← Expediente <span className="expediente-numero">{cotizacion.expedientes.numero}</span>
                 </Badge>
               </Link>
             )}
