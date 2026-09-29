@@ -276,7 +276,7 @@ function ReembolsosPage() {
                   <tr key={s.expedienteId} className="border-b last:border-0 whitespace-nowrap">
                     <td className="py-1.5 pr-3 font-mono font-medium">{s.numeroDoc}</td>
                     <td className="py-1.5 pr-3">
-                      <Link to="/expedientes/$id" params={{ id: s.expedienteId }} className="text-primary hover:underline">
+                       <Link to="/expedientes/$id" params={{ id: s.expedienteId }} className="expediente-numero hover:underline">
                         {s.expediente}
                       </Link>
                     </td>
