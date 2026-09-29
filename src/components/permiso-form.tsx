@@ -222,7 +222,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
               <SelectTrigger className="min-w-0 overflow-hidden [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder="Selecciona expediente" /></SelectTrigger>
               <SelectContent>
                 {(expedientes ?? []).map((e: any) => (
-                  <SelectItem key={e.id} value={e.id}>{e.numero} · {e.clientes?.nombre ?? "—"}</SelectItem>
+                   <SelectItem key={e.id} value={e.id}><span className="expediente-numero">{e.numero}</span> · {e.clientes?.nombre ?? "—"}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
