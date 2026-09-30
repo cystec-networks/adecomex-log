@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,6 +73,20 @@ const CATEGORIA_CXP_ORDEN: CategoriaCxp[] = ["compras", "transportes", "servicio
 
 const fmtMoney = (n: number, m: string) =>
   `${m === "USD" ? "US$" : m === "EUR" ? "€" : "RD$"} ${(n || 0).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// Orden ascendente por número de factura: compara como número natural
+// (2207 < 2249 < 10004) con desempate por fecha de factura.
+function cmpFactura(a: Row, b: Row) {
+  const na = (a.numero_factura ?? "").trim();
+  const nb = (b.numero_factura ?? "").trim();
+  if (na && nb) {
+    const c = na.localeCompare(nb, "es", { numeric: true, sensitivity: "base" });
+    if (c !== 0) return c;
+  }
+  if (na) return -1;
+  if (nb) return 1;
+  return (a.fecha_factura ?? "").localeCompare(b.fecha_factura ?? "");
+}
 
 const ESTADO_LABEL: Record<Estado, string> = {
   pendiente: "Pendiente", parcial: "Parcial", pagado: "Pagado", disputado: "Disputado",
@@ -162,6 +176,7 @@ function CuentasPorPagarPage() {
   const [fProveedor, setFProveedor] = useState("");
   const [agrupar, setAgrupar] = useState<Agrupacion>("ninguna");
   const [colapsados, setColapsados] = useState<Record<string, boolean>>({});
+  const [resumenCatOpen, setResumenCatOpen] = useState(false);
   const [openNew, setOpenNew] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -173,21 +188,23 @@ function CuentasPorPagarPage() {
   const [convRow, setConvRow] = useState<Row | null>(null);
 
 
-  const { data: rows = [], isLoading } = useQuery({
+  const { data: rowsRaw = [], isLoading } = useQuery({
     queryKey: ["cxp", fEstado, fMoneda, fCategoria, fProveedor],
     queryFn: async () => {
       let q = (supabase.from as any)("cuentas_por_pagar")
         .select("*")
-        .order("fecha_vencimiento", { ascending: true, nullsFirst: false });
+        .order("created_at", { ascending: true });
       if (fEstado !== "todos") q = q.eq("estado", fEstado);
       if (fMoneda !== "todas") q = q.eq("moneda", fMoneda);
       if (fCategoria !== "todas") q = q.eq("categoria", fCategoria);
       if (fProveedor.trim()) q = q.ilike("proveedor_nombre", `%${fProveedor.trim()}%`);
       const { data, error } = await q;
       if (error) throw error;
-      return (data ?? []) as Row[];
+      // Orden ascendente por No. Factura (orden natural: 2207 < 2249 < 10004).
+      return ([...(data ?? [])] as Row[]).sort(cmpFactura);
     },
   });
+  const rows = rowsRaw;
 
   const { data: gastosExp = [] } = useQuery({
     queryKey: ["cxp-gastos-exp"],
@@ -439,7 +456,7 @@ function CuentasPorPagarPage() {
 
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Cuentas por Pagar</h1>
@@ -448,13 +465,12 @@ function CuentasPorPagarPage() {
         <Button onClick={() => { setEditingId(null); setForm(emptyForm); setOpenNew(true); }}><Plus className="h-4 w-4 mr-1" /> Nueva cuenta por pagar</Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Total pendiente por pagar</CardTitle>
-            <CardDescription>Suma de saldos abiertos, por moneda.</CardDescription>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm">Total pendiente por pagar <span className="text-xs font-normal text-muted-foreground">— suma de saldos abiertos, por moneda</span></CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-1">
             {Object.keys(resumen).length === 0 ? (
               <p className="text-sm text-muted-foreground">Sin saldos pendientes.</p>
             ) : (
@@ -462,7 +478,7 @@ function CuentasPorPagarPage() {
                 {Object.entries(resumen).map(([m, v]) => (
                   <div key={m}>
                     <div className="text-xs text-muted-foreground">{m}</div>
-                    <div className="text-xl font-semibold tabular-nums">{fmtMoney(v, m)}</div>
+                    <div className="text-lg font-semibold tabular-nums">{fmtMoney(v, m)}</div>
                   </div>
                 ))}
               </div>
@@ -471,11 +487,10 @@ function CuentasPorPagarPage() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Total pagado</CardTitle>
-            <CardDescription>Suma de pagos registrados, por moneda.</CardDescription>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm">Total pagado <span className="text-xs font-normal text-muted-foreground">— suma de pagos registrados, por moneda</span></CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-1">
             {Object.keys(resumenPagado).length === 0 ? (
               <p className="text-sm text-muted-foreground">Sin pagos registrados.</p>
             ) : (
@@ -483,7 +498,7 @@ function CuentasPorPagarPage() {
                 {Object.entries(resumenPagado).map(([m, v]) => (
                   <div key={m}>
                     <div className="text-xs text-muted-foreground">{m}</div>
-                    <div className="text-xl font-semibold tabular-nums">{fmtMoney(v, m)}</div>
+                    <div className="text-lg font-semibold tabular-nums">{fmtMoney(v, m)}</div>
                   </div>
                 ))}
               </div>
@@ -494,38 +509,50 @@ function CuentasPorPagarPage() {
 
       {resumenCategoriaCxp.length > 0 && (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Resumen por categoría</CardTitle>
-            <CardDescription>Total y saldo pendiente por categoría y moneda.</CardDescription>
+          <CardHeader className="p-4 pb-2">
+            <button
+              type="button"
+              className="flex items-center gap-2 w-full text-left"
+              onClick={() => setResumenCatOpen((v) => !v)}
+              title={resumenCatOpen ? "Ocultar resumen por categoría" : "Mostrar resumen por categoría"}
+            >
+              {resumenCatOpen ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+              <span>
+                <span className="block text-sm font-semibold">Resumen por categoría</span>
+                <span className="block text-xs text-muted-foreground">Total y saldo pendiente por categoría y moneda.</span>
+              </span>
+            </button>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {CATEGORIA_CXP_ORDEN.map((cat) => {
-              const grupos = resumenCategoriaCxp.filter((g) => g.categoria === cat);
-              if (grupos.length === 0) return null;
-              const totalCount = grupos.reduce((acc, g) => acc + g.count, 0);
-              return (
-                <div key={cat} className="rounded-lg border bg-muted/30 p-3">
-                  <div className="text-xs text-muted-foreground">{CATEGORIA_CXP_LABEL[cat]}</div>
-                  <div className="flex flex-col gap-1 mt-1">
-                    {grupos.map((g) => (
-                      <div key={g.moneda} className="flex justify-between items-center gap-2">
-                        <span className="text-lg font-semibold tabular-nums">{fmtMoney(g.total, g.moneda)}</span>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">Saldo {fmtMoney(g.saldo, g.moneda)}</span>
-                      </div>
-                    ))}
+          {resumenCatOpen && (
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4 pt-0">
+              {CATEGORIA_CXP_ORDEN.map((cat) => {
+                const grupos = resumenCategoriaCxp.filter((g) => g.categoria === cat);
+                if (grupos.length === 0) return null;
+                const totalCount = grupos.reduce((acc, g) => acc + g.count, 0);
+                return (
+                  <div key={cat} className="rounded-lg border bg-muted/30 p-3">
+                    <div className="text-xs text-muted-foreground">{CATEGORIA_CXP_LABEL[cat]}</div>
+                    <div className="flex flex-col gap-1 mt-1">
+                      {grupos.map((g) => (
+                        <div key={g.moneda} className="flex justify-between items-center gap-2">
+                          <span className="text-base font-semibold tabular-nums">{fmtMoney(g.total, g.moneda)}</span>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">Saldo {fmtMoney(g.saldo, g.moneda)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {totalCount} cuenta{totalCount === 1 ? "" : "s"}
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {totalCount} cuenta{totalCount === 1 ? "" : "s"}
-                  </div>
-                </div>
-              );
-            })}
-          </CardContent>
+                );
+              })}
+            </CardContent>
+          )}
         </Card>
       )}
 
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="p-4 pb-2">
           <div className="flex flex-wrap gap-3 items-end">
             <div className="min-w-[160px]">
               <Label className="text-xs">Estado</Label>
@@ -583,7 +610,7 @@ function CuentasPorPagarPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-auto max-h-[70vh]">
+          <div className="overflow-auto max-h-[calc(100vh-260px)] min-h-[300px]">
             <table className="w-full text-sm">
               <thead className="sticky-table-header bg-muted/40 text-xs uppercase text-muted-foreground">
                 <tr>
