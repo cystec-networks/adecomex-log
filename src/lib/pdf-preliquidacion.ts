@@ -247,12 +247,13 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
       filaResumen("Gravamen", totals.grav),
       filaResumen("Selectivo (ISC)", totals.isc),
       filaResumen("ITBIS", totals.itbis),
+      filaResumen("Total de Impuestos", totals.grav + totals.isc + totals.itbis),
       filaResumen("Servicio Aduanero", servicioAduaneroUsd),
       mostrarRd
         ? ["Formulario DUA (RD$258.26 fijo)", nf(FORMULARIO_DUA_RD), nf(formularioDuaUsd)]
         : ["Formulario DUA (RD$258.26 fijo)", "—"],
       filaResumen(
-        "Total Impuestos Estimados",
+        "TOTAL A PAGAR",
         totals.grav + totals.isc + totals.itbis + servicioAduaneroUsd + formularioDuaUsd,
       ),
     ],
