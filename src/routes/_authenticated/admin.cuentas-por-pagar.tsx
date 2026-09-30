@@ -173,21 +173,23 @@ function CuentasPorPagarPage() {
   const [convRow, setConvRow] = useState<Row | null>(null);
 
 
-  const { data: rows = [], isLoading } = useQuery({
+  const { data: rowsRaw = [], isLoading } = useQuery({
     queryKey: ["cxp", fEstado, fMoneda, fCategoria, fProveedor],
     queryFn: async () => {
       let q = (supabase.from as any)("cuentas_por_pagar")
         .select("*")
-        .order("fecha_vencimiento", { ascending: true, nullsFirst: false });
+        .order("created_at", { ascending: true });
       if (fEstado !== "todos") q = q.eq("estado", fEstado);
       if (fMoneda !== "todas") q = q.eq("moneda", fMoneda);
       if (fCategoria !== "todas") q = q.eq("categoria", fCategoria);
       if (fProveedor.trim()) q = q.ilike("proveedor_nombre", `%${fProveedor.trim()}%`);
       const { data, error } = await q;
       if (error) throw error;
-      return (data ?? []) as Row[];
+      // Orden ascendente por No. Factura (orden natural: 2207 < 2249 < 10004).
+      return ([...(data ?? [])] as Row[]).sort(cmpFactura);
     },
   });
+  const rows = rowsRaw;
 
   const { data: gastosExp = [] } = useQuery({
     queryKey: ["cxp-gastos-exp"],
