@@ -3222,6 +3222,7 @@ export type Database = {
           total_cif: number | null
           total_fob: number | null
           updated_at: string
+          updated_by: string | null
           valores_enviados: boolean
           valores_enviados_at: string | null
           zf_aplica: boolean | null
@@ -3349,6 +3350,7 @@ export type Database = {
           total_cif?: number | null
           total_fob?: number | null
           updated_at?: string
+          updated_by?: string | null
           valores_enviados?: boolean
           valores_enviados_at?: string | null
           zf_aplica?: boolean | null
@@ -3476,6 +3478,7 @@ export type Database = {
           total_cif?: number | null
           total_fob?: number | null
           updated_at?: string
+          updated_by?: string | null
           valores_enviados?: boolean
           valores_enviados_at?: string | null
           zf_aplica?: boolean | null
