@@ -487,9 +487,12 @@ function DetalleExpediente() {
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "expedientes", filter: `id=eq.${id}` },
-        () => {
-          const t = ultimoGuardadoPropio.get(id);
-          if (t && Date.now() - t < 2000) return; // cambio propio recién guardado
+        async (payload: any) => {
+          // Solo avisar si el cambio lo hizo OTRA persona (el trigger fija updated_by).
+          const autor = payload?.new?.updated_by as string | null | undefined;
+          if (!autor) return;
+          const { data: s } = await supabase.auth.getSession();
+          if (autor === s.session?.user?.id) return;
           toast.info("Este expediente fue actualizado por otro usuario.", {
             action: { label: "Recargar", onClick: () => refrescarExpediente(qc, id) },
             duration: 15000,
