@@ -242,7 +242,7 @@ function publicarEstadoGuardado(e: EstadoGuardadoHeader) {
   window.dispatchEvent(new CustomEvent("exp-guardado-estado", { detail: e }));
 }
 
-function ControlesGuardadoHeader({ expedienteId }: { expedienteId: string }) {
+function ControlesGuardadoHeader({ expedienteId, compacto = false }: { expedienteId: string; compacto?: boolean }) {
   const qc = useQueryClient();
   const [st, setSt] = useState<EstadoGuardadoHeader>(null);
   useEffect(() => {
@@ -257,27 +257,30 @@ function ControlesGuardadoHeader({ expedienteId }: { expedienteId: string }) {
     try { await refrescarExpediente(qc, expedienteId); await qc.invalidateQueries(); } finally { setRefrescando(false); }
   };
   return (
-    <div className="flex items-center gap-1.5 border-l pl-1.5">
-      {st?.hayCambios && (
+    <div className={compacto ? "flex items-center gap-1" : "flex items-center gap-1.5 border-l pl-1.5"}>
+      {!compacto && st?.hayCambios && (
         <span className="flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400" title="Cambios sin guardar">
           <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" /> Sin guardar
         </span>
       )}
-      {!st?.hayCambios && st?.estado === "ok" && <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">✓ Cambios guardados</span>}
-      {st?.estado === "error" && <span className="text-xs font-medium text-destructive">✗ No se pudo guardar, intenta de nuevo</span>}
+      {!compacto && !st?.hayCambios && st?.estado === "ok" && <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">✓ Cambios guardados</span>}
+      {st?.estado === "error" && <span className="text-xs font-medium text-destructive">{compacto ? "✗" : "✗ No se pudo guardar, intenta de nuevo"}</span>}
+      {compacto && !st?.hayCambios && st?.estado === "ok" && <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">✓</span>}
       {st?.puedeEditar ? (
-        <Button onClick={() => window.dispatchEvent(new Event("exp-editar"))}>
+        <Button size={compacto ? "sm" : "default"} onClick={() => window.dispatchEvent(new Event("exp-editar"))} aria-label="Editar">
           <Pencil className="h-4 w-4 mr-1" /> Editar
         </Button>
       ) : (
         <Button
+          size={compacto ? "sm" : "default"}
           className="relative px-3"
           disabled={!st?.editable || st?.pendiente}
           onClick={() => window.dispatchEvent(new Event("exp-guardar"))}
           title={st ? "Guardar cambios" : "En esta ficha cada registro se guarda desde su propia ventana"}
+          aria-label="Guardar cambios"
         >
           {st?.hayCambios && <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-background bg-amber-500" />}
-          {st?.pendiente ? "Guardando…" : "Guardar cambios"}
+          {st?.pendiente ? "Guardando…" : compacto ? "Guardar" : "Guardar cambios"}
         </Button>
       )}
       <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={refrescar} disabled={refrescando} title="Refrescar datos del Expediente">
@@ -780,6 +783,11 @@ function DetalleExpediente() {
               </DropdownMenu>
               <HerramientasDgaVuceMenu className="px-2" />
               <RastreosEnvioMenu className="px-2" />
+            </div>
+          )}
+          {!isNuevo && (
+            <div className="flex shrink-0 items-center md:hidden">
+              <ControlesGuardadoHeader expedienteId={id} compacto />
             </div>
           )}
           {!isNuevo && (
