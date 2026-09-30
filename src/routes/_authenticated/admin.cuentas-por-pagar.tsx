@@ -74,6 +74,20 @@ const CATEGORIA_CXP_ORDEN: CategoriaCxp[] = ["compras", "transportes", "servicio
 const fmtMoney = (n: number, m: string) =>
   `${m === "USD" ? "US$" : m === "EUR" ? "€" : "RD$"} ${(n || 0).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+// Orden ascendente por número de factura: compara como número natural
+// (2207 < 2249 < 10004) con desempate por fecha de factura.
+function cmpFactura(a: Row, b: Row) {
+  const na = (a.numero_factura ?? "").trim();
+  const nb = (b.numero_factura ?? "").trim();
+  if (na && nb) {
+    const c = na.localeCompare(nb, "es", { numeric: true, sensitivity: "base" });
+    if (c !== 0) return c;
+  }
+  if (na) return -1;
+  if (nb) return 1;
+  return (a.fecha_factura ?? "").localeCompare(b.fecha_factura ?? "");
+}
+
 const ESTADO_LABEL: Record<Estado, string> = {
   pendiente: "Pendiente", parcial: "Parcial", pagado: "Pagado", disputado: "Disputado",
 };
