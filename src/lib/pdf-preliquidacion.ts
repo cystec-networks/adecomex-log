@@ -252,6 +252,7 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
       mostrarRd
         ? ["Formulario DUA (RD$258.26 fijo)", nf(FORMULARIO_DUA_RD), nf(formularioDuaUsd)]
         : ["Formulario DUA (RD$258.26 fijo)", "—"],
+      filaResumen("Total Servicios DGA", servicioAduaneroUsd + formularioDuaUsd),
       filaResumen(
         "TOTAL A PAGAR",
         totals.grav + totals.isc + totals.itbis + servicioAduaneroUsd + formularioDuaUsd,

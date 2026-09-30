@@ -4827,6 +4827,7 @@ function LiquidacionEstimadaBlock({
             <tr className="border-t border-amber-200 bg-amber-100/30 font-semibold"><td className="px-4 py-1.5">Total de Impuestos</td><td className="text-right">{fmt(totals.gravamen + totals.selectivo + totals.itbis)}</td><td className="text-right">{rd(totals.gravamen + totals.selectivo + totals.itbis)}</td></tr>
             <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Servicio Aduanero</td><td className="text-right">{fmt(servicioUsd)}</td><td className="text-right">{rd(servicioUsd)}</td></tr>
             <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Formulario DUA (RD$258.26 fijo)</td><td className="text-right">{tasa != null ? fmt(duaUsd) : "—"}</td><td className="text-right">{fmt(FORMULARIO_DUA_RD)}</td></tr>
+            <tr className="border-t border-amber-200 bg-amber-100/30 font-semibold"><td className="px-4 py-1.5">Total Servicios DGA</td><td className="text-right">{fmt(servicioUsd + duaUsd)}</td><td className="text-right">{tasa != null ? fmt((servicioUsd + duaUsd) * tasa) : "—"}</td></tr>
             <tr className="border-t-2 border-primary bg-primary text-primary-foreground font-bold">
               <td className="px-4 py-2.5 text-sm">TOTAL A PAGAR</td>
               <td className="text-right text-base">{fmt(totals.total + servicioUsd + duaUsd)}</td>
