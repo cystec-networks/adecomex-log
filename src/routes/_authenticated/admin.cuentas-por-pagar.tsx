@@ -176,6 +176,7 @@ function CuentasPorPagarPage() {
   const [fProveedor, setFProveedor] = useState("");
   const [agrupar, setAgrupar] = useState<Agrupacion>("ninguna");
   const [colapsados, setColapsados] = useState<Record<string, boolean>>({});
+  const [resumenCatOpen, setResumenCatOpen] = useState(false);
   const [openNew, setOpenNew] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -455,7 +456,7 @@ function CuentasPorPagarPage() {
 
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Cuentas por Pagar</h1>
@@ -464,13 +465,12 @@ function CuentasPorPagarPage() {
         <Button onClick={() => { setEditingId(null); setForm(emptyForm); setOpenNew(true); }}><Plus className="h-4 w-4 mr-1" /> Nueva cuenta por pagar</Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Total pendiente por pagar</CardTitle>
-            <CardDescription>Suma de saldos abiertos, por moneda.</CardDescription>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm">Total pendiente por pagar <span className="text-xs font-normal text-muted-foreground">— suma de saldos abiertos, por moneda</span></CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-1">
             {Object.keys(resumen).length === 0 ? (
               <p className="text-sm text-muted-foreground">Sin saldos pendientes.</p>
             ) : (
@@ -478,7 +478,7 @@ function CuentasPorPagarPage() {
                 {Object.entries(resumen).map(([m, v]) => (
                   <div key={m}>
                     <div className="text-xs text-muted-foreground">{m}</div>
-                    <div className="text-xl font-semibold tabular-nums">{fmtMoney(v, m)}</div>
+                    <div className="text-lg font-semibold tabular-nums">{fmtMoney(v, m)}</div>
                   </div>
                 ))}
               </div>
@@ -487,11 +487,10 @@ function CuentasPorPagarPage() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Total pagado</CardTitle>
-            <CardDescription>Suma de pagos registrados, por moneda.</CardDescription>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm">Total pagado <span className="text-xs font-normal text-muted-foreground">— suma de pagos registrados, por moneda</span></CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-1">
             {Object.keys(resumenPagado).length === 0 ? (
               <p className="text-sm text-muted-foreground">Sin pagos registrados.</p>
             ) : (
@@ -499,7 +498,7 @@ function CuentasPorPagarPage() {
                 {Object.entries(resumenPagado).map(([m, v]) => (
                   <div key={m}>
                     <div className="text-xs text-muted-foreground">{m}</div>
-                    <div className="text-xl font-semibold tabular-nums">{fmtMoney(v, m)}</div>
+                    <div className="text-lg font-semibold tabular-nums">{fmtMoney(v, m)}</div>
                   </div>
                 ))}
               </div>
