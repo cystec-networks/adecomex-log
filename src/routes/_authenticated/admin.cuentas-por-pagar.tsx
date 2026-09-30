@@ -509,38 +509,50 @@ function CuentasPorPagarPage() {
 
       {resumenCategoriaCxp.length > 0 && (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Resumen por categoría</CardTitle>
-            <CardDescription>Total y saldo pendiente por categoría y moneda.</CardDescription>
+          <CardHeader className="p-4 pb-2">
+            <button
+              type="button"
+              className="flex items-center gap-2 w-full text-left"
+              onClick={() => setResumenCatOpen((v) => !v)}
+              title={resumenCatOpen ? "Ocultar resumen por categoría" : "Mostrar resumen por categoría"}
+            >
+              {resumenCatOpen ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+              <span>
+                <span className="block text-sm font-semibold">Resumen por categoría</span>
+                <span className="block text-xs text-muted-foreground">Total y saldo pendiente por categoría y moneda.</span>
+              </span>
+            </button>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {CATEGORIA_CXP_ORDEN.map((cat) => {
-              const grupos = resumenCategoriaCxp.filter((g) => g.categoria === cat);
-              if (grupos.length === 0) return null;
-              const totalCount = grupos.reduce((acc, g) => acc + g.count, 0);
-              return (
-                <div key={cat} className="rounded-lg border bg-muted/30 p-3">
-                  <div className="text-xs text-muted-foreground">{CATEGORIA_CXP_LABEL[cat]}</div>
-                  <div className="flex flex-col gap-1 mt-1">
-                    {grupos.map((g) => (
-                      <div key={g.moneda} className="flex justify-between items-center gap-2">
-                        <span className="text-lg font-semibold tabular-nums">{fmtMoney(g.total, g.moneda)}</span>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">Saldo {fmtMoney(g.saldo, g.moneda)}</span>
-                      </div>
-                    ))}
+          {resumenCatOpen && (
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4 pt-0">
+              {CATEGORIA_CXP_ORDEN.map((cat) => {
+                const grupos = resumenCategoriaCxp.filter((g) => g.categoria === cat);
+                if (grupos.length === 0) return null;
+                const totalCount = grupos.reduce((acc, g) => acc + g.count, 0);
+                return (
+                  <div key={cat} className="rounded-lg border bg-muted/30 p-3">
+                    <div className="text-xs text-muted-foreground">{CATEGORIA_CXP_LABEL[cat]}</div>
+                    <div className="flex flex-col gap-1 mt-1">
+                      {grupos.map((g) => (
+                        <div key={g.moneda} className="flex justify-between items-center gap-2">
+                          <span className="text-base font-semibold tabular-nums">{fmtMoney(g.total, g.moneda)}</span>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">Saldo {fmtMoney(g.saldo, g.moneda)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {totalCount} cuenta{totalCount === 1 ? "" : "s"}
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {totalCount} cuenta{totalCount === 1 ? "" : "s"}
-                  </div>
-                </div>
-              );
-            })}
-          </CardContent>
+                );
+              })}
+            </CardContent>
+          )}
         </Card>
       )}
 
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="p-4 pb-2">
           <div className="flex flex-wrap gap-3 items-end">
             <div className="min-w-[160px]">
               <Label className="text-xs">Estado</Label>
@@ -598,7 +610,7 @@ function CuentasPorPagarPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-auto max-h-[70vh]">
+          <div className="overflow-auto max-h-[calc(100vh-260px)] min-h-[300px]">
             <table className="w-full text-sm">
               <thead className="sticky-table-header bg-muted/40 text-xs uppercase text-muted-foreground">
                 <tr>
