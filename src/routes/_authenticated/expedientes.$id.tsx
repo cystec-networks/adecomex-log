@@ -1289,16 +1289,20 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     }
     setForm((f) => {
       const next: any = { ...f };
-      for (const [k, v] of Object.entries(ocrAplicado.campos)) {
-        if (v === null || v === undefined || v === "") continue;
+      for (const [k, v0] of Object.entries(ocrAplicado.campos)) {
+        if (v0 === null || v0 === undefined || v0 === "") continue;
+        const v = typeof v0 === "number" ? String(v0) : v0;
         const actual = (f as any)[k];
-        if (actual === "" || actual === null || actual === undefined || actual === ocrPuesto.current[k]) {
+        // XML: los códigos vienen exactos, así que reemplazan lo que haya.
+        if (ocrAplicado.desdeXml || actual === "" || actual === null || actual === undefined || actual === ocrPuesto.current[k]) {
           next[k] = v;
           ocrPuesto.current[k] = v;
         }
       }
+      if (ocrAplicado.clienteId) next.cliente_id = ocrAplicado.clienteId;
       return next;
     });
+    if (ocrAplicado.productos?.length) setProductosNuevos(ocrAplicado.productos);
     if (ocrAplicado.cliente) setClienteOcr(ocrAplicado.cliente);
   }, [ocrAplicado, isNuevo]);
 
