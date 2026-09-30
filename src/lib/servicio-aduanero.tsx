@@ -97,19 +97,25 @@ export function useFilasServicioAduanero(expedienteId: string | null | undefined
   });
 }
 
-/** Reemplaza las líneas guardadas de un Expediente por las indicadas. */
+/**
+ * Reemplaza las líneas guardadas de un Expediente por las indicadas, en UNA sola
+ * transacción de BD: si la inserción falla, el borrado se revierte y las líneas
+ * anteriores se conservan.
+ */
 export async function guardarFilasServicioAduanero(expedienteId: string, filas: FilaServicio[]) {
-  await supabase.from("expediente_servicio_aduanero").delete().eq("expediente_id", expedienteId);
-  const validas = (filas ?? []).filter((f) => f.tipo_despacho && Number(f.cantidad) > 0);
-  if (!validas.length) return;
-  const { error } = await supabase.from("expediente_servicio_aduanero").insert(
-    validas.map((f) => ({
-      expediente_id: expedienteId,
-      tipo_despacho: f.tipo_despacho,
-      cantidad: Number(f.cantidad),
-    })),
-  );
-  if (error) throw error;
+  const validas = (filas ?? [])
+    .map((f) => ({ tipo_despacho: String(f.tipo_despacho ?? "").trim(), cantidad: Number(f.cantidad) }))
+    .filter((f) => f.tipo_despacho && Number.isFinite(f.cantidad) && f.cantidad > 0);
+  const { error } = await supabase.rpc("reemplazar_servicio_aduanero", {
+    _expediente_id: expedienteId,
+    _filas: validas,
+  });
+  if (error) {
+    console.error("Servicio Aduanero — error de BD:", error);
+    throw new Error(
+      `No se guardaron las líneas de Servicio Aduanero (las anteriores se conservaron): ${error.message}${error.code ? ` [${error.code}]` : ""}`,
+    );
+  }
 }
 
 /** Totales de Servicio Aduanero + Formulario DUA a partir de una lista de líneas. */

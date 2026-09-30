@@ -225,6 +225,13 @@
       "when": 1790472800273,
       "tag": "0031_unificar_certificado_sanitario_fitosanitario",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1790784201199,
+      "tag": "0032_reemplazar_servicio_aduanero_atomico",
+      "breakpoints": true
     }
   ]
 }
