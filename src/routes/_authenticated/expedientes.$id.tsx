@@ -68,6 +68,7 @@ import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
 import { TabRecepcion } from "@/components/tab-recepcion";
 import { EscanearBlButton, EscanearFacturaButton as EscanearFacturaExpButton } from "@/components/escanear-documento-expediente-buttons";
+import { NuevoDesdeXmlButton } from "@/components/nuevo-desde-xml-button";
 import { type OcrExtraction } from "@/lib/ai-ocr.functions";
 import {
   HerramientasDgaVuceItems,
@@ -383,6 +384,10 @@ export type OcrAplicado = {
   campos: Record<string, any>;
   contenedores: OcrExtraction["contenedores"];
   cliente: string | null;
+  /** Solo desde XML: líneas de mercancía, cliente por RNC y reemplazo total de campos. */
+  productos?: any[];
+  clienteId?: string | null;
+  desdeXml?: boolean;
 };
 
 function DetalleExpediente() {
@@ -714,6 +719,20 @@ function DetalleExpediente() {
             <div className="flex items-center gap-2">
               <EscanearBlButton onExtracted={(res) => { blRes.current = res; void aplicarCombinado(); toast.success("BL procesado — revisa y ajusta los campos"); }} />
               <EscanearFacturaExpButton onExtracted={(res) => { facRes.current = res; void aplicarCombinado(); toast.success("Factura procesada — revisa y ajusta los campos"); }} />
+              <NuevoDesdeXmlButton
+                onAplicar={(d) => {
+                  ocrSeq.current += 1;
+                  setOcrAplicado({
+                    seq: ocrSeq.current,
+                    campos: d.campos,
+                    contenedores: d.contenedores,
+                    cliente: d.clienteNombre,
+                    productos: d.productos,
+                    clienteId: d.clienteId,
+                    desdeXml: true,
+                  });
+                }}
+              />
             </div>
           )}
           {(
@@ -1270,16 +1289,20 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     }
     setForm((f) => {
       const next: any = { ...f };
-      for (const [k, v] of Object.entries(ocrAplicado.campos)) {
-        if (v === null || v === undefined || v === "") continue;
+      for (const [k, v0] of Object.entries(ocrAplicado.campos)) {
+        if (v0 === null || v0 === undefined || v0 === "") continue;
+        const v = typeof v0 === "number" ? String(v0) : v0;
         const actual = (f as any)[k];
-        if (actual === "" || actual === null || actual === undefined || actual === ocrPuesto.current[k]) {
+        // XML: los códigos vienen exactos, así que reemplazan lo que haya.
+        if (ocrAplicado.desdeXml || actual === "" || actual === null || actual === undefined || actual === ocrPuesto.current[k]) {
           next[k] = v;
           ocrPuesto.current[k] = v;
         }
       }
+      if (ocrAplicado.clienteId) next.cliente_id = ocrAplicado.clienteId;
       return next;
     });
+    if (ocrAplicado.productos?.length) setProductosNuevos(ocrAplicado.productos);
     if (ocrAplicado.cliente) setClienteOcr(ocrAplicado.cliente);
   }, [ocrAplicado, isNuevo]);
 
