@@ -6982,6 +6982,10 @@ export type Database = {
       }
       marcar_password_cambiada_cliente: { Args: never; Returns: undefined }
       marcar_password_cambiada_estudiante: { Args: never; Returns: undefined }
+      reemplazar_servicio_aduanero: {
+        Args: { _expediente_id: string; _filas: Json }
+        Returns: number
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       unaccent: { Args: { "": string }; Returns: string }
