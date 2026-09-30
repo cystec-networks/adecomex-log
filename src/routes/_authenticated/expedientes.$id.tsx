@@ -4807,34 +4807,60 @@ function LiquidacionEstimadaBlock({
             )}
           </span>
         </div>
-        <table className="w-full text-sm tabular-nums">
-          <thead className="bg-amber-100/40 text-[11px] uppercase text-amber-900">
-            <tr>
-              <th className="text-left px-4 py-1.5 font-medium">Concepto</th>
-              <th className="text-right px-4 py-1.5 w-36 font-medium">US$</th>
-              <th className="text-right px-4 py-1.5 w-44 font-medium">RD$</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Total FOB</td><td className="text-right">{fmt(totalFob)}</td><td className="text-right">{rd(totalFob)}</td></tr>
-            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Seguro</td><td className="text-right">{fmt(seguro)}</td><td className="text-right">{rd(seguro)}</td></tr>
-            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Flete</td><td className="text-right">{fmt(flete)}</td><td className="text-right">{rd(flete)}</td></tr>
-            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Otros</td><td className="text-right">{fmt(otros)}</td><td className="text-right">{rd(otros)}</td></tr>
-            <tr className="border-t border-amber-200 bg-amber-100/30 font-semibold"><td className="px-4 py-1.5">Total CIF</td><td className="text-right">{fmt(totalCif)}</td><td className="text-right">{rd(totalCif)}</td></tr>
-            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Total Gravamen</td><td className="text-right">{fmt(totals.gravamen)}</td><td className="text-right">{rd(totals.gravamen)}</td></tr>
-            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Total Selectivo (ISC)</td><td className="text-right">{fmt(totals.selectivo)}</td><td className="text-right">{rd(totals.selectivo)}</td></tr>
-            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Total ITBIS</td><td className="text-right">{fmt(totals.itbis)}</td><td className="text-right">{rd(totals.itbis)}</td></tr>
-            <tr className="border-t border-amber-200 bg-amber-100/30 font-semibold"><td className="px-4 py-1.5">Total de Impuestos</td><td className="text-right">{fmt(totals.gravamen + totals.selectivo + totals.itbis)}</td><td className="text-right">{rd(totals.gravamen + totals.selectivo + totals.itbis)}</td></tr>
-            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Servicio Aduanero</td><td className="text-right">{fmt(servicioUsd)}</td><td className="text-right">{rd(servicioUsd)}</td></tr>
-            <tr className="border-t border-amber-200/60"><td className="px-4 py-1.5 text-muted-foreground">Formulario DUA (RD$258.26 fijo)</td><td className="text-right">{tasa != null ? fmt(duaUsd) : "—"}</td><td className="text-right">{fmt(FORMULARIO_DUA_RD)}</td></tr>
-            <tr className="border-t border-amber-200 bg-amber-100/30 font-semibold"><td className="px-4 py-1.5">Total Servicios DGA</td><td className="text-right">{fmt(servicioUsd + duaUsd)}</td><td className="text-right">{tasa != null ? fmt((servicioUsd + duaUsd) * tasa) : "—"}</td></tr>
-            <tr className="border-t-2 border-primary bg-primary text-primary-foreground font-bold">
-              <td className="px-4 py-2.5 text-sm">TOTAL A PAGAR</td>
-              <td className="text-right text-base">{fmt(totals.total + servicioUsd + duaUsd)}</td>
-              <td className="text-right text-base">{tasa != null ? fmt((totals.total + servicioUsd) * tasa + FORMULARIO_DUA_RD) : "—"}</td>
-            </tr>
-          </tbody>
-        </table>
+        {(() => {
+          type Fila = { l: string; u: React.ReactNode; r: React.ReactNode; sub?: boolean };
+          const grupos: { titulo: string; filas: Fila[] }[] = [
+            { titulo: "CIF", filas: [
+              { l: "Total FOB", u: fmt(totalFob), r: rd(totalFob) },
+              { l: "Seguro", u: fmt(seguro), r: rd(seguro) },
+              { l: "Flete", u: fmt(flete), r: rd(flete) },
+              { l: "Otros", u: fmt(otros), r: rd(otros) },
+              { l: "Total CIF", u: fmt(totalCif), r: rd(totalCif), sub: true },
+            ]},
+            { titulo: "Impuestos", filas: [
+              { l: "Total Gravamen", u: fmt(totals.gravamen), r: rd(totals.gravamen) },
+              { l: "Total Selectivo (ISC)", u: fmt(totals.selectivo), r: rd(totals.selectivo) },
+              { l: "Total ITBIS", u: fmt(totals.itbis), r: rd(totals.itbis) },
+              { l: "Total de Impuestos", u: fmt(totals.gravamen + totals.selectivo + totals.itbis), r: rd(totals.gravamen + totals.selectivo + totals.itbis), sub: true },
+            ]},
+            { titulo: "Servicio Aduanero / DUA", filas: [
+              { l: "Servicio Aduanero", u: fmt(servicioUsd), r: rd(servicioUsd) },
+              { l: "Formulario DUA (RD$258.26 fijo)", u: tasa != null ? fmt(duaUsd) : "—", r: fmt(FORMULARIO_DUA_RD) },
+              { l: "Total Servicios DGA", u: fmt(servicioUsd + duaUsd), r: tasa != null ? fmt((servicioUsd + duaUsd) * tasa) : "—", sub: true },
+            ]},
+          ];
+          return (
+            <div className="text-sm tabular-nums">
+              <div className="grid grid-cols-1 lg:grid-cols-3 lg:divide-x divide-amber-200">
+                {grupos.map((g) => (
+                  <table key={g.titulo} className="w-full border-t border-amber-200 lg:border-t-0">
+                    <thead className="bg-amber-100/40 text-[11px] uppercase text-amber-900">
+                      <tr>
+                        <th className="text-left px-3 py-1.5 font-semibold">{g.titulo}</th>
+                        <th className="text-right px-2 py-1.5 font-medium">US$</th>
+                        <th className="text-right px-3 py-1.5 font-medium">RD$</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {g.filas.map((f) => (
+                        <tr key={f.l} className={f.sub ? "border-t border-amber-200 bg-amber-100/30 font-semibold" : "border-t border-amber-200/60"}>
+                          <td className={`px-3 py-1.5 ${f.sub ? "" : "text-muted-foreground"}`}>{f.l}</td>
+                          <td className="text-right px-2 whitespace-nowrap">{f.u}</td>
+                          <td className="text-right px-3 whitespace-nowrap">{f.r}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ))}
+              </div>
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-6 items-center border-t-2 border-primary bg-primary text-primary-foreground font-bold px-4 py-2.5">
+                <span className="text-sm">TOTAL A PAGAR</span>
+                <span className="text-right text-base whitespace-nowrap">US$ {fmt(totals.total + servicioUsd + duaUsd)}</span>
+                <span className="text-right text-base whitespace-nowrap">RD$ {tasa != null ? fmt((totals.total + servicioUsd) * tasa + FORMULARIO_DUA_RD) : "—"}</span>
+              </div>
+            </div>
+          );
+        })()}
         {!anyPct && (
           <div className="px-4 py-2 text-[11px] text-amber-800 italic border-t border-amber-200">
             Aún no has capturado % Gravamen ni Selectivo en las líneas. Edita cada ítem para calcular impuestos.
