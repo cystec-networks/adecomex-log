@@ -3266,6 +3266,10 @@ async function sincronizarCobroDesdeEcf(expedienteId: string, fid: string | null
   const buscar = async (id: string) => (await supabase.from("facturas").select("id,editada_manual").eq("expediente_id", expedienteId).eq("factura_ecf_id", id).is("deleted_at", null).limit(1).maybeSingle()).data as any;
   let fila = await buscar(fid);
   if (!fila && prevFid && prevFid !== fid) fila = await buscar(prevFid);
+  if (!fila && ecf.encf) {
+    const porRef = (await supabase.from("facturas").select("id").eq("expediente_id", expedienteId).eq("referencia", ecf.encf).is("deleted_at", null).limit(1).maybeSingle()).data as any;
+    if (porRef) { await supabase.from("facturas").update({ factura_ecf_id: ecf.id }).eq("id", porRef.id); return "fila de cobro existente vinculada"; }
+  }
   if (fila) {
     if (fila.editada_manual) return "la fila de cobro ya editada a mano se conservó";
     const { error } = await supabase.from("facturas").update(datos).eq("id", fila.id);
