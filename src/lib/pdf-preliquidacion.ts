@@ -237,10 +237,12 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
   ];
   let resumenEndY = startResumen;
   grupos.forEach(({ titulo, filas }, index) => {
+    // Alinear los tres subtotales en la última línea, como en el resumen en pantalla.
+    const filasAlineadas = [...filas.slice(0, -1), ...Array.from({ length: 5 - filas.length }, () => ["", "", ""]), filas[filas.length - 1]];
     autoTable(doc, {
       startY: startResumen,
       head: [[titulo, "US$", "RD$"]],
-      body: filas,
+      body: filasAlineadas,
       theme: "grid",
       styles: { fontSize: 7.3, cellPadding: 3, overflow: "linebreak" },
       headStyles: { fillColor: [30, 58, 138], fontSize: 7.3 },
@@ -250,7 +252,7 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
         2: { halign: "right", cellWidth: width * 0.25 },
       },
       didParseCell: (data) => {
-        if (data.section === "body" && data.row.index === filas.length - 1) {
+        if (data.section === "body" && data.row.index === filasAlineadas.length - 1) {
           data.cell.styles.fontStyle = "bold";
           data.cell.styles.fillColor = [245, 247, 250];
         }
