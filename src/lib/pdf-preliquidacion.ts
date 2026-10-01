@@ -151,10 +151,8 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
     footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 6.8 },
     columnStyles: {
       0: { cellWidth: 22 }, 1: { cellWidth: 54 }, 3: { cellWidth: 42 }, 4: { cellWidth: 46 },
-      5: { cellWidth: 52 }, 6: { cellWidth: 57 }, 7: { cellWidth: 68 },
-      8: { cellWidth: 66 }, 9: { cellWidth: 56 }, 10: { cellWidth: 64 }, 11: { cellWidth: 69 },
       5: { halign: "right", cellWidth: 52 }, 6: { halign: "right", cellWidth: 57 }, 7: { halign: "right", cellWidth: 68 },
-      8: { halign: "right" }, 9: { halign: "right" }, 10: { halign: "right" }, 11: { halign: "right" },
+      8: { halign: "right", cellWidth: 66 }, 9: { halign: "right", cellWidth: 56 }, 10: { halign: "right", cellWidth: 64 }, 11: { halign: "right", cellWidth: 69 },
     },
     margin: { left: M, right: M },
   });
@@ -213,79 +211,73 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
     detalleCargaEndY = Math.max(detalleCargaEndY, (doc as any).lastAutoTable.finalY);
   }
 
-  const startResumen = detalleCargaEndY + 14;
+  const startResumen = detalleCargaEndY + 8;
   const mostrarRd = tasaCambio > 0;
-  const resumenFontSize = startResumen + (mostrarRd ? 170 : 150) > pageH - 40 ? 7 : 8;
-
   const servicioAduaneroUsd = Number(input.servicioAduaneroUsd) || 0;
   const formularioDuaUsd = mostrarRd ? FORMULARIO_DUA_RD / tasaCambio : 0;
-
-  const filaResumen = (label: string, usd: number) =>
-    mostrarRd ? [label, rd(usd), nf(usd)] : [label, nf(usd)];
-
-  autoTable(doc, {
-    startY: startResumen,
-    head: [mostrarRd ? ["Valores", "RD$", "US$"] : ["Valores", "US$"]],
-    body: [
+  const width = (pageW - M * 2) / 3;
+  const filaResumen = (label: string, usd: number) => [label, nf(usd), rd(usd)];
+  const grupos = [
+    { titulo: "CIF", filas: [
       filaResumen("Total FOB", Number(input.totalFobOverride) || totals.fob),
-      filaResumen("Seguro", seguro),
-      filaResumen("Flete", flete),
-      filaResumen("Otros", otros),
+      filaResumen("Seguro", seguro), filaResumen("Flete", flete), filaResumen("Otros", otros),
       filaResumen("Total CIF", Number(input.totalCifOverride) || totals.cif),
-    ],
-    theme: "grid",
-    headStyles: { fillColor: [30, 58, 138], fontSize: resumenFontSize },
-    bodyStyles: { fontSize: resumenFontSize },
-    columnStyles: mostrarRd
-      ? {
-          0: { fontStyle: "bold", textColor: 90, cellWidth: 100 },
-          1: { halign: "right", cellWidth: 70 },
-          2: { halign: "right", cellWidth: 70 },
-        }
-      : { 0: { fontStyle: "bold", textColor: 90, cellWidth: 110 }, 1: { halign: "right" } },
-    margin: { left: M },
-    tableWidth: 240,
-  });
-  autoTable(doc, {
-    startY: startResumen,
-    head: [mostrarRd ? ["Impuestos estimados", "RD$", "US$"] : ["Impuestos estimados", "US$"]],
-    body: [
-      filaResumen("Gravamen", totals.grav),
-      filaResumen("Selectivo (ISC)", totals.isc),
-      filaResumen("ITBIS", totals.itbis),
+    ] },
+    { titulo: "IMPUESTOS", filas: [
+      filaResumen("Total Gravamen", totals.grav),
+      filaResumen("Total Selectivo (ISC)", totals.isc),
+      filaResumen("Total ITBIS", totals.itbis),
       filaResumen("Total de Impuestos", totals.grav + totals.isc + totals.itbis),
+    ] },
+    { titulo: "SERVICIO ADUANERO / DUA", filas: [
       filaResumen("Servicio Aduanero", servicioAduaneroUsd),
-      mostrarRd
-        ? ["Formulario DUA (RD$258.26 fijo)", nf(FORMULARIO_DUA_RD), nf(formularioDuaUsd)]
-        : ["Formulario DUA (RD$258.26 fijo)", "—"],
+      ["Formulario DUA (RD$258.26 fijo)", mostrarRd ? nf(formularioDuaUsd) : "—", mostrarRd ? nf(FORMULARIO_DUA_RD) : "—"],
       filaResumen("Total Servicios DGA", servicioAduaneroUsd + formularioDuaUsd),
-      filaResumen(
-        "TOTAL A PAGAR",
-        totals.grav + totals.isc + totals.itbis + servicioAduaneroUsd + formularioDuaUsd,
-      ),
-    ],
-    theme: "grid",
-    headStyles: { fillColor: [30, 58, 138], fontSize: resumenFontSize },
-    bodyStyles: { fontSize: resumenFontSize },
-    columnStyles: mostrarRd
-      ? {
-          0: { fontStyle: "bold", textColor: 90, cellWidth: 120 },
-          1: { halign: "right", cellWidth: 60 },
-          2: { halign: "right", cellWidth: 60 },
+    ] },
+  ];
+  let resumenEndY = startResumen;
+  grupos.forEach(({ titulo, filas }, index) => {
+    autoTable(doc, {
+      startY: startResumen,
+      head: [[titulo, "US$", "RD$"]],
+      body: filas,
+      theme: "grid",
+      styles: { fontSize: 7.3, cellPadding: 3, overflow: "linebreak" },
+      headStyles: { fillColor: [30, 58, 138], fontSize: 7.3 },
+      columnStyles: {
+        0: { cellWidth: width * 0.54 },
+        1: { halign: "right", cellWidth: width * 0.21 },
+        2: { halign: "right", cellWidth: width * 0.25 },
+      },
+      didParseCell: (data) => {
+        if (data.section === "body" && data.row.index === filas.length - 1) {
+          data.cell.styles.fontStyle = "bold";
+          data.cell.styles.fillColor = [245, 247, 250];
         }
-      : { 0: { fontStyle: "bold", textColor: 90, cellWidth: 140 }, 1: { halign: "right" } },
-    margin: { left: pageW - M - 240 },
-    tableWidth: 240,
+      },
+      margin: { left: M + index * width, right: 0 },
+      tableWidth: width,
+    });
+    resumenEndY = Math.max(resumenEndY, (doc as any).lastAutoTable.finalY);
   });
+
+  const totalUsd = totals.grav + totals.isc + totals.itbis + servicioAduaneroUsd + formularioDuaUsd;
+  const totalY = resumenEndY + 3;
+  doc.setFillColor(30, 58, 88);
+  doc.rect(M, totalY, pageW - M * 2, 23, "F");
+  doc.setTextColor(255); doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+  doc.text("TOTAL A PAGAR", M + 9, totalY + 15);
+  doc.text(`US$ ${nf(totalUsd)}       RD$ ${rd(totalUsd)}`, pageW - M - 9, totalY + 15, { align: "right" });
+  doc.setTextColor(0);
 
   const nota =
     "Este documento es una pre-liquidación estimada generada por ADECOMEX SRL con fines de planificación interna. " +
     "Los montos aquí presentados son referenciales y están sujetos a la liquidación oficial que emita la Dirección General de Aduanas (DGA), " +
     "la cual puede variar según revisión de valor, clasificación arancelaria, origen, cantidad u otros elementos determinados por la autoridad aduanera.";
-  let notaY = (doc as any).lastAutoTable.finalY + 36;
-  doc.setFontSize(7.5); doc.setTextColor(110);
+  let notaY = totalY + 35;
+  doc.setFontSize(7); doc.setTextColor(110);
   const lines = doc.splitTextToSize(nota, pageW - M * 2);
-  if (notaY + lines.length * 10 > pageH - 40) { doc.addPage(); notaY = 50; }
+  if (notaY + lines.length * 9 > pageH - 34) { doc.addPage(); notaY = 40; }
   doc.text(lines, M, notaY);
   doc.setTextColor(0);
 
