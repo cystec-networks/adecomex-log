@@ -3007,13 +3007,8 @@ function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
 
   return (
     <div className="space-y-4">
-      <RentabilidadCard expedienteId={expedienteId} />
+      {void totalEst}{void totalReal}
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total estimado</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalEst)}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total real</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalReal)}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Diferencia</div><div className={`text-2xl font-display font-bold mt-1 ${totalReal - totalEst > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(totalReal - totalEst)}</div></CardContent></Card>
-      </div>
 
       <div className="flex justify-end" title="Genera una pre-factura desde este expediente y conviértela en la factura e-CF definitiva.">
         <CotizacionServiciosExpedienteButton exp={exp} />
@@ -3221,8 +3216,13 @@ function LiquidacionSection({ expedienteId }: { expedienteId: string }) {
   });
 
   const totalFact = (facturas ?? []).reduce((s: number, f: any) => s + Number(f.monto || 0), 0);
+  const { data: costosLiq } = useQuery({
+    queryKey: ["costos", expedienteId],
+    queryFn: async () => (await supabase.from("costos").select("*").eq("expediente_id", expedienteId)).data ?? [],
+  });
   const totalGastos = (gastos ?? []).reduce((s: number, g: any) => s + (g.es_reembolso ? -Number(g.monto || 0) : Number(g.monto || 0)), 0);
-  const utilidad = totalFact - totalGastos;
+  const totalCostosReales = (costosLiq ?? []).reduce((s: number, c: any) => s + Number(c.monto_real || 0), 0);
+  const utilidad = totalFact - totalCostosReales - totalGastos;
   const margen = totalFact > 0 ? (utilidad / totalFact) * 100 : 0;
 
   const marginColor = margen < 0 ? "text-destructive" : margen < 15 ? "text-amber-600" : "text-[var(--success)]";
@@ -3234,8 +3234,9 @@ function LiquidacionSection({ expedienteId }: { expedienteId: string }) {
         <h3 className="font-display font-semibold text-lg">Liquidación del expediente</h3>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total facturado</div><div className="text-xl font-display font-bold mt-1">{fmtDOP(totalFact)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Costos reales</div><div className="text-xl font-display font-bold mt-1">{fmtDOP(totalCostosReales)}</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total gastos</div><div className="text-xl font-display font-bold mt-1">{fmtDOP(totalGastos)}</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Utilidad</div><div className={`text-xl font-display font-bold mt-1 ${marginColor}`}>{fmtDOP(utilidad)}</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Margen</div><div className={`text-xl font-display font-bold mt-1 ${marginColor}`}>{margen.toFixed(1)}%</div></CardContent></Card>
