@@ -312,13 +312,16 @@ function FacturacionPage() {
                 {!isLoading && filtered.length === 0 && (
                   <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Sin facturas registradas.</td></tr>
                 )}
-                {grupos.flatMap((grupo, index) => [
-                  <tr key={`mes-${grupo.mes}-${index}`} className="bg-muted/70 border-y border-border">
+                {grupos.flatMap((grupo) => [
+                  <tr key={`mes-${grupo.mes}`} className="bg-muted/70 border-y border-border cursor-pointer hover:bg-muted" onClick={() => toggleGrupo(grupo.mes)} aria-expanded={estaAbierto(grupo.mes)}>
                     <th colSpan={7} scope="rowgroup" className="px-3 py-2 text-left text-xs font-bold uppercase text-foreground">
-                      {grupo.titulo}
+                      <div className="flex items-center justify-between gap-3">
+                        <span>{estaAbierto(grupo.mes) ? "▾" : "▸"} {grupo.titulo} <span className="font-normal normal-case text-muted-foreground">— {grupo.facturas.length} {grupo.facturas.length === 1 ? "factura" : "facturas"}</span></span>
+                        <span>{fmtRD(grupo.total)}</span>
+                      </div>
                     </th>
                   </tr>,
-                  ...grupo.facturas.map((f: any) => {
+                  ...(!estaAbierto(grupo.mes) ? [] : grupo.facturas).map((f: any) => {
                   const exps = f.expedientes as { id: string; numero: string }[] | null;
                   const trs = f.transportes as { id: string; numero_viaje: string }[] | null;
                   return (
