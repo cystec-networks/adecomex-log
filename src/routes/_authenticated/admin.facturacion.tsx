@@ -114,6 +114,8 @@ function FacturacionPage() {
       }
       return true;
     }).sort((a: any, b: any) => {
+      const fa = String(a.fecha_emision ?? ""), fb = String(b.fecha_emision ?? "");
+      if (fa !== fb) return fa > fb ? -1 : 1;
       const numeroA = BigInt(String(a.encf ?? "").replace(/\D/g, "") || "0");
       const numeroB = BigInt(String(b.encf ?? "").replace(/\D/g, "") || "0");
       if (numeroA !== numeroB) return numeroA > numeroB ? -1 : 1;
@@ -122,24 +124,37 @@ function FacturacionPage() {
   }, [facturas, clienteFiltro, tipoFiltro, desde, hasta, q]);
 
   const grupos = useMemo(() => {
-    const gruposPorOrden: { mes: string; titulo: string; facturas: typeof filtered }[] = [];
+    const mapa = new Map<string, { mes: string; titulo: string; total: number; facturas: typeof filtered }>();
     for (const factura of filtered) {
-      const mes = factura.fecha_emision?.slice(0, 7) ?? "";
-      let grupo = gruposPorOrden[gruposPorOrden.length - 1];
-      if (!grupo || grupo.mes !== mes) {
+      const raw = factura.fecha_emision?.slice(0, 7) ?? "";
+      const mes = /^\d{4}-\d{2}$/.test(raw) ? raw : "";
+      let grupo = mapa.get(mes);
+      if (!grupo) {
         grupo = {
           mes,
-          titulo: /^\d{4}-\d{2}$/.test(mes)
+          titulo: mes
             ? new Intl.DateTimeFormat("es-DO", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${mes}-01T12:00:00Z`))
             : "Sin fecha de emisión",
+          total: 0,
           facturas: [],
         };
-        gruposPorOrden.push(grupo);
+        mapa.set(mes, grupo);
       }
       grupo.facturas.push(factura);
+      grupo.total += Number(factura.monto_total || 0);
     }
-    return gruposPorOrden;
+    return [...mapa.values()].sort((a, b) => (a.mes === b.mes ? 0 : !a.mes ? 1 : !b.mes ? -1 : a.mes > b.mes ? -1 : 1));
   }, [filtered]);
+
+  const [abiertos, setAbiertos] = useState<Set<string> | null>(null);
+  useEffect(() => { setAbiertos(null); }, [clienteFiltro, tipoFiltro, desde, hasta, q]);
+  const estaAbierto = (mes: string) => (abiertos ? abiertos.has(mes) : grupos[0]?.mes === mes);
+  const toggleGrupo = (mes: string) => {
+    const base = abiertos ?? new Set(grupos[0] ? [grupos[0].mes] : []);
+    const next = new Set(base);
+    if (next.has(mes)) next.delete(mes); else next.add(mes);
+    setAbiertos(next);
+  };
 
   const enviarPapelera = useMutation({
     mutationFn: async (id: string) => {
