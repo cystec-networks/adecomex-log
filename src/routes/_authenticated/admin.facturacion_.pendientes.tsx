@@ -200,7 +200,8 @@ function PendientesPage() {
                     />
                   </td>
                 </tr>
-              ))}
+                )),
+              ])}
             </tbody>
           </table>
         </CardContent>
