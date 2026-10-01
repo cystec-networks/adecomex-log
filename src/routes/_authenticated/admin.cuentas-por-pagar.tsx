@@ -505,7 +505,6 @@ function CuentasPorPagarPage() {
             )}
           </CardContent>
         </Card>
-      </div>
 
       {resumenCategoriaCxp.length > 0 && (
         <Card className={resumenCatOpen ? "md:col-span-3" : undefined}>
@@ -550,6 +549,8 @@ function CuentasPorPagarPage() {
           )}
         </Card>
       )}
+
+      </div>
 
       <Card>
         <CardHeader className="p-4 pb-2">
