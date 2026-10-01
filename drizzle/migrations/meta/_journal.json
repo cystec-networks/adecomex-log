@@ -246,6 +246,13 @@
       "when": 1790869069969,
       "tag": "0034_itbis_proindustria",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1790872863538,
+      "tag": "0035_facturas_ecf_link",
+      "breakpoints": true
     }
   ]
 }
