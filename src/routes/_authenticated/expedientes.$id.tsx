@@ -2137,6 +2137,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                     <AplicarCertificadoPartidas
                       expedienteId={exp.id}
                       numeroCertificado={form.numero_certificado_origen}
+                      preferenciaComercial={form.preferencia_comercial || ""}
                       disabled={!editable || !(form.numero_certificado_origen || "").trim()}
                     />
                   )}
