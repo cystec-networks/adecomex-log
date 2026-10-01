@@ -58,7 +58,7 @@ import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { PortadaExpedienteButton } from "@/components/portada-expediente-button";
-import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado } from "@/lib/estados-expediente";
+import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado, fechasDespachoFaltantes } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
 import { unitFob, loadBrokerConfig } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
@@ -579,6 +579,7 @@ function DetalleExpediente() {
 
 
   const puedeForzarRegreso = (roles ?? []).some((r) => ["admin", "operaciones"].includes(r));
+  const esAdminDespacho = (roles ?? []).includes("admin");
   const suspEstado = useEstadoSuspensivo((exp as any)?.regimen_aduanero, (exp as any)?.impuestos_override_manual);
 
   const updateEstado = useMutation({
@@ -622,6 +623,14 @@ function DetalleExpediente() {
         }
       }
       if (estadoIndex(actual) < estadoIndex("despachado") && estadoIndex(estado) >= estadoIndex("despachado")) {
+        const faltanFechas = fechasDespachoFaltantes(exp);
+        if (faltanFechas.length) {
+          const bloqueo = "No se puede despachar:\n- " + faltanFechas.join("\n- ");
+          if (!esAdminDespacho) throw new Error(bloqueo);
+          const motivo = window.prompt(`${bloqueo}\n\nComo Administrador puedes forzar el despacho. Escribe la justificación obligatoria (quedará en Auditoría):`);
+          if (!motivo || !motivo.trim()) throw new Error(bloqueo);
+          forzarDespacho = motivo.trim();
+        }
         const { data: perms } = await supabase
           .from("permisos")
           .select("numero, tipo, estado")

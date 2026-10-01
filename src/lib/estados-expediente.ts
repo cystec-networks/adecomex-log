@@ -63,8 +63,6 @@ export function requisitoFaltante(paso: string, ctx: Ctx): string | null {
     case "despachado":
       if (vacio(ctx.exp?.numero_igra))
         return "No se puede despachar este Expediente: falta capturar el Número de despacho.";
-      if (vacio(ctx.exp?.fecha_aprobacion_despacho))
-        return "No se puede despachar este Expediente: falta capturar la Fecha de Aprobación del N° de despacho.";
       if (vacio(ctx.exp?.numero_dua))
         return "No se puede despachar este Expediente: falta capturar la Declaración DUA.";
       if (vacio(ctx.exp?.regimen_aduanero))
@@ -97,4 +95,13 @@ export function validarAvanceEstado(desde: string, hasta: string, ctx: Ctx): str
     if (msg) return msg;
   }
   return null;
+}
+
+/** Fechas DGA requeridas para despachar (forzable solo por Administrador con justificación). */
+export function fechasDespachoFaltantes(exp: any): string[] {
+  const vacio = (v: any) => !v || String(v).trim() === "";
+  const f: string[] = [];
+  if (vacio(exp?.liq_siga_fecha_pago)) f.push("falta la Fecha de pago del PIN de DGA (Resultado oficial DGA)");
+  if (vacio(exp?.fecha_aprobacion_despacho)) f.push("falta la Fecha de Aprobación del Número de despacho (Documentos oficiales ante DGA y VUCE)");
+  return f;
 }
