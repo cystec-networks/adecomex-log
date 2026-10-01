@@ -465,7 +465,7 @@ function CuentasPorPagarPage() {
         <Button onClick={() => { setEditingId(null); setForm(emptyForm); setOpenNew(true); }}><Plus className="h-4 w-4 mr-1" /> Nueva cuenta por pagar</Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <Card>
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm">Total pendiente por pagar <span className="text-xs font-normal text-muted-foreground">— suma de saldos abiertos, por moneda</span></CardTitle>
@@ -508,7 +508,7 @@ function CuentasPorPagarPage() {
       </div>
 
       {resumenCategoriaCxp.length > 0 && (
-        <Card>
+        <Card className={resumenCatOpen ? "md:col-span-3" : undefined}>
           <CardHeader className="p-4 pb-2">
             <button
               type="button"
