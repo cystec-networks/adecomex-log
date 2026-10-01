@@ -3535,8 +3535,10 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           deleted_by: string | null
+          editada_manual: boolean
           estado: string
           expediente_id: string
+          factura_ecf_id: string | null
           fecha_emision: string | null
           fecha_pago: string | null
           id: string
@@ -3550,8 +3552,10 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
+          editada_manual?: boolean
           estado?: string
           expediente_id: string
+          factura_ecf_id?: string | null
           fecha_emision?: string | null
           fecha_pago?: string | null
           id?: string
@@ -3565,8 +3569,10 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
+          editada_manual?: boolean
           estado?: string
           expediente_id?: string
+          factura_ecf_id?: string | null
           fecha_emision?: string | null
           fecha_pago?: string | null
           id?: string
@@ -3610,6 +3616,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_rentabilidad_expediente"
             referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "facturas_factura_ecf_id_fkey"
+            columns: ["factura_ecf_id"]
+            isOneToOne: false
+            referencedRelation: "facturas_ecf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_factura_ecf_id_fkey"
+            columns: ["factura_ecf_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["id"]
           },
         ]
       }

@@ -3256,6 +3256,31 @@ function LiquidacionSection({ expedienteId }: { expedienteId: string }) {
   );
 }
 
+/** Crea o actualiza la fila de "Facturación (cobros)" vinculada a la e-CF del expediente.
+ *  No sobrescribe filas que el usuario ya editó a mano. */
+async function sincronizarCobroDesdeEcf(expedienteId: string, fid: string | null, prevFid: string | null): Promise<string | null> {
+  if (!fid) return null;
+  const { data: ecf } = await supabase.from("facturas_ecf").select("id,encf,fecha_emision,monto_total").eq("id", fid).maybeSingle();
+  if (!ecf) return null;
+  const datos = { referencia: ecf.encf ?? null, fecha_emision: ecf.fecha_emision ?? null, monto: Number(ecf.monto_total || 0), factura_ecf_id: ecf.id };
+  const buscar = async (id: string) => (await supabase.from("facturas").select("id,editada_manual").eq("expediente_id", expedienteId).eq("factura_ecf_id", id).is("deleted_at", null).limit(1).maybeSingle()).data as any;
+  let fila = await buscar(fid);
+  if (!fila && prevFid && prevFid !== fid) fila = await buscar(prevFid);
+  if (!fila && ecf.encf) {
+    const porRef = (await supabase.from("facturas").select("id").eq("expediente_id", expedienteId).eq("referencia", ecf.encf).is("deleted_at", null).limit(1).maybeSingle()).data as any;
+    if (porRef) { await supabase.from("facturas").update({ factura_ecf_id: ecf.id }).eq("id", porRef.id); return "fila de cobro existente vinculada"; }
+  }
+  if (fila) {
+    if (fila.editada_manual) return "la fila de cobro ya editada a mano se conservó";
+    const { error } = await supabase.from("facturas").update(datos).eq("id", fila.id);
+    if (error) throw error;
+    return "fila de cobro actualizada";
+  }
+  const { error } = await supabase.from("facturas").insert({ expediente_id: expedienteId, concepto: "Gestión aduanal", estado: "pendiente", ...datos });
+  if (error) throw error;
+  return "fila de cobro creada";
+}
+
 function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; totalFact: number }) {
   const qc = useQueryClient();
   const { data: exp } = useQuery({
@@ -3264,12 +3289,16 @@ function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; to
   });
   const link = useMutation({
     mutationFn: async (fid: string | null) => {
+      const prevFid = (exp as any)?.factura_ecf_id ?? null;
       const { error } = await supabase.from("expedientes").update({ factura_ecf_id: fid }).eq("id", expedienteId);
       if (error) throw error;
+      return await sincronizarCobroDesdeEcf(expedienteId, fid, prevFid);
     },
-    onSuccess: () => {
-      toast.success("Factura e-CF actualizada");
+    onSuccess: (msg) => {
+      toast.success(msg ? `Factura e-CF actualizada · ${msg}` : "Factura e-CF actualizada");
       qc.invalidateQueries({ queryKey: ["expediente", expedienteId] });
+      qc.invalidateQueries({ queryKey: ["facturas", expedienteId] });
+      qc.invalidateQueries({ queryKey: ["ecf-vinculada", expedienteId] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -3317,6 +3346,18 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
     },
   });
 
+  // Expedientes que ya tenían e-CF vinculada antes de esta función: crear su fila de cobro una vez.
+  const autoSyncHecho = useRef(false);
+  useEffect(() => {
+    if (!ecfVinculada || autoSyncHecho.current) return;
+    const existe = facturas.some((r: any) => r.factura_ecf_id === ecfVinculada.id || (r.referencia && r.referencia === ecfVinculada.encf));
+    if (existe) return;
+    autoSyncHecho.current = true;
+    sincronizarCobroDesdeEcf(expedienteId, ecfVinculada.id, null)
+      .then(() => qc.invalidateQueries({ queryKey: ["facturas", expedienteId] }))
+      .catch((e) => toast.error(e.message));
+  }, [ecfVinculada, facturas, expedienteId, qc]);
+
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -3325,10 +3366,10 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
         estado: f.estado, referencia: f.referencia || null, notas: f.notas || null,
       };
       if (editingId) {
-        const { error } = await supabase.from("facturas").update(payload).eq("id", editingId);
+        const { error } = await supabase.from("facturas").update({ ...payload, editada_manual: true }).eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("facturas").insert({ expediente_id: expedienteId, ...payload });
+        const { error } = await supabase.from("facturas").insert({ expediente_id: expedienteId, ...payload, factura_ecf_id: prefillEcf?.id ?? null, editada_manual: !!prefillEcf });
         if (error) throw error;
       }
     },
@@ -3356,7 +3397,8 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
   };
   const openNew = () => {
     setEditingId(null);
-    if (ecfVinculada) {
+    const yaVinculada = ecfVinculada && facturas.some((r: any) => r.factura_ecf_id === ecfVinculada.id);
+    if (ecfVinculada && !yaVinculada) {
       setPrefillEcf(ecfVinculada);
       setF({
         ...empty,
