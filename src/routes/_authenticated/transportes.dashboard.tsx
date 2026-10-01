@@ -17,7 +17,7 @@ import { parseLocalDate } from "@/lib/dates";
 export const Route = createFileRoute("/_authenticated/transportes/dashboard")({
   component: TransporteDashboard,
   errorComponent: ({ error }) => (
-    <div className="p-6 text-destructive">{error.message}</div>
+    <div className="p-6 text-destructive">{(error as Error)?.message}</div>
   ),
   notFoundComponent: () => <div className="p-6">No disponible</div>,
 });
