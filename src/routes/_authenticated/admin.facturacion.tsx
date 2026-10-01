@@ -134,7 +134,7 @@ function FacturacionPage() {
         ? new Intl.DateTimeFormat("es-DO", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${mes}-01T12:00:00Z`))
         : "Sin fecha de emisión",
       facturas,
-    }));
+    })).sort((a, b) => b.mes.localeCompare(a.mes));
   }, [filtered]);
 
   const enviarPapelera = useMutation({
