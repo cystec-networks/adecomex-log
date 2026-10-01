@@ -5269,7 +5269,7 @@ function CotizacionServiciosExpedienteButton({ exp }: { exp: any }) {
       qc.invalidateQueries({ queryKey: ["cotizaciones-servicios"] });
       navigate({ to: "/admin/cotizaciones-servicios", search: { editar: cotId } });
     },
-    onError: (e: any) => toast.error(e.message ?? "No se pudo crear la cotización"),
+    onError: (e: any) => { if (e?.message !== "__cancelado__") toast.error(e.message ?? "No se pudo crear la cotización"); },
   });
 
   if (!canEdit) return null;
