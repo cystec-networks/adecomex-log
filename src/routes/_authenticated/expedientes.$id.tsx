@@ -1255,7 +1255,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const { data: clientesLite } = useQuery({
     queryKey: ["clientes-lite"],
     enabled: isNuevo,
-    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc,contacto,email,telefono,direccion").order("nombre")).data ?? [],
+    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc,contacto,email,telefono,direccion,registrado_proindustria").order("nombre")).data ?? [],
   });
   const [clienteOcr, setClienteOcr] = useState<string | null>(null);
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
