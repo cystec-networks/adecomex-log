@@ -1400,6 +1400,7 @@ export type Database = {
           email: string | null
           id: string
           nombre: string
+          registrado_proindustria: boolean
           rnc: string | null
           telefono: string | null
           updated_at: string
@@ -1414,6 +1415,7 @@ export type Database = {
           email?: string | null
           id?: string
           nombre: string
+          registrado_proindustria?: boolean
           rnc?: string | null
           telefono?: string | null
           updated_at?: string
@@ -1428,6 +1430,7 @@ export type Database = {
           email?: string | null
           id?: string
           nombre?: string
+          registrado_proindustria?: boolean
           rnc?: string | null
           telefono?: string | null
           updated_at?: string
@@ -4486,6 +4489,7 @@ export type Database = {
           gravamen_real: number | null
           id: string
           isc_real: number | null
+          itbis_proindustria: boolean
           itbis_real: number | null
           item_no: number
           liquidacion_final_en: string | null
@@ -4528,6 +4532,7 @@ export type Database = {
           gravamen_real?: number | null
           id?: string
           isc_real?: number | null
+          itbis_proindustria?: boolean
           itbis_real?: number | null
           item_no: number
           liquidacion_final_en?: string | null
@@ -4570,6 +4575,7 @@ export type Database = {
           gravamen_real?: number | null
           id?: string
           isc_real?: number | null
+          itbis_proindustria?: boolean
           itbis_real?: number | null
           item_no?: number
           liquidacion_final_en?: string | null
