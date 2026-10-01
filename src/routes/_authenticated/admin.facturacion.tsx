@@ -23,6 +23,16 @@ import { FileText } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/admin/facturacion")({
   ssr: false,
   validateSearch: z.object({ editar: z.string().optional() }),
+  head: () => ({
+    meta: [
+      { title: "Facturación e-CF | ADECOMEX" },
+      { name: "description", content: "Consulta de comprobantes fiscales electrónicos emitidos, agrupados por mes de emisión." },
+      { property: "og:title", content: "Facturación e-CF | ADECOMEX" },
+      { property: "og:description", content: "Consulta de comprobantes fiscales electrónicos emitidos, agrupados por mes de emisión." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth" });
@@ -63,7 +73,7 @@ function FacturacionPage() {
         .from("facturas_ecf")
         .select("*, facturas_ecf_lineas(*), expedientes:expedientes!expedientes_factura_ecf_id_fkey(id,numero), transportes:transportes!transportes_factura_ecf_id_fkey(id,numero_viaje)")
         .is("eliminado_en", null)
-        .order("fecha_emision", { ascending: false });
+        .order("encf", { ascending: false });
       return data ?? [];
     },
   });
@@ -103,8 +113,29 @@ function FacturacionPage() {
         ) return false;
       }
       return true;
+    }).sort((a: any, b: any) => {
+      const numeroA = BigInt(String(a.encf ?? "").replace(/\D/g, "") || "0");
+      const numeroB = BigInt(String(b.encf ?? "").replace(/\D/g, "") || "0");
+      if (numeroA !== numeroB) return numeroA > numeroB ? -1 : 1;
+      return String(b.encf ?? "").localeCompare(String(a.encf ?? "")) || String(a.id).localeCompare(String(b.id));
     });
   }, [facturas, clienteFiltro, tipoFiltro, desde, hasta, q]);
+
+  const grupos = useMemo(() => {
+    const meses = new Map<string, typeof filtered>();
+    for (const factura of filtered) {
+      const mes = factura.fecha_emision?.slice(0, 7) ?? "";
+      if (!meses.has(mes)) meses.set(mes, []);
+      meses.get(mes)?.push(factura);
+    }
+    return Array.from(meses, ([mes, facturas]) => ({
+      mes,
+      titulo: /^\d{4}-\d{2}$/.test(mes)
+        ? new Intl.DateTimeFormat("es-DO", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${mes}-01T12:00:00Z`))
+        : "Sin fecha de emisión",
+      facturas,
+    }));
+  }, [filtered]);
 
   const enviarPapelera = useMutation({
     mutationFn: async (id: string) => {
@@ -262,19 +293,24 @@ function FacturacionPage() {
                 {!isLoading && filtered.length === 0 && (
                   <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Sin facturas registradas.</td></tr>
                 )}
-                {filtered.map((f: any) => {
+                {grupos.flatMap((grupo) => [
+                  <tr key={`mes-${grupo.mes}`} className="bg-muted/70 border-y border-border">
+                    <th colSpan={7} scope="rowgroup" className="px-3 py-2 text-left text-xs font-bold uppercase text-foreground">
+                      {grupo.titulo}
+                    </th>
+                  </tr>,
+                  ...grupo.facturas.map((f: any) => {
                   const exps = f.expedientes as { id: string; numero: string }[] | null;
                   const trs = f.transportes as { id: string; numero_viaje: string }[] | null;
                   return (
                     <tr key={f.id} className="border-b last:border-0 hover:bg-muted/20">
                       <td className="px-3 py-2 font-mono font-medium">
-                        <button
-                          className="text-primary hover:underline"
+                        <Button variant="link" className="h-auto p-0 font-mono font-medium"
                           onClick={() => setEditId(f.id)}
                           title="Editar factura"
                         >
                           {f.encf}
-                        </button>
+                        </Button>
                       </td>
 
                       <td>
@@ -339,7 +375,8 @@ function FacturacionPage() {
                       </td>
                     </tr>
                   );
-                })}
+                  }),
+                ])}
               </tbody>
             </table>
           </div>
