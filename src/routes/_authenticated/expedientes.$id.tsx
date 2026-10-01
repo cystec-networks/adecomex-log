@@ -3256,29 +3256,50 @@ function LiquidacionSection({ expedienteId }: { expedienteId: string }) {
   );
 }
 
-/** Crea o actualiza la fila de "Facturación (cobros)" vinculada a la e-CF del expediente.
- *  No sobrescribe filas que el usuario ya editó a mano. */
+/** Crea o actualiza un renglón de "Facturación (cobros)" por cada línea de la e-CF vinculada.
+ *  No sobrescribe renglones editados a mano; no duplica (empareja por línea e-CF). */
 async function sincronizarCobroDesdeEcf(expedienteId: string, fid: string | null, prevFid: string | null): Promise<string | null> {
   if (!fid) return null;
   const { data: ecf } = await supabase.from("facturas_ecf").select("id,encf,fecha_emision,monto_total").eq("id", fid).maybeSingle();
   if (!ecf) return null;
-  const datos = { referencia: ecf.encf ?? null, fecha_emision: ecf.fecha_emision ?? null, monto: Number(ecf.monto_total || 0), factura_ecf_id: ecf.id };
-  const buscar = async (id: string) => (await supabase.from("facturas").select("id,editada_manual").eq("expediente_id", expedienteId).eq("factura_ecf_id", id).is("deleted_at", null).limit(1).maybeSingle()).data as any;
-  let fila = await buscar(fid);
-  if (!fila && prevFid && prevFid !== fid) fila = await buscar(prevFid);
-  if (!fila && ecf.encf) {
-    const porRef = (await supabase.from("facturas").select("id").eq("expediente_id", expedienteId).eq("referencia", ecf.encf).is("deleted_at", null).limit(1).maybeSingle()).data as any;
-    if (porRef) { await supabase.from("facturas").update({ factura_ecf_id: ecf.id }).eq("id", porRef.id); return "fila de cobro existente vinculada"; }
+  const { data: lineasDb } = await supabase.from("facturas_ecf_lineas").select("id,orden,descripcion,valor,itbis,gravado").eq("factura_id", fid).order("orden");
+  const lineas: any[] = (lineasDb ?? []).length
+    ? lineasDb!
+    : [{ id: null, descripcion: "Gestión aduanal", valor: Number(ecf.monto_total || 0), itbis: 0, gravado: null }];
+  const ids = [fid, prevFid].filter(Boolean) as string[];
+  const { data: filasDb } = await supabase.from("facturas").select("id,editada_manual,factura_ecf_id,ecf_linea_id,referencia")
+    .eq("expediente_id", expedienteId).is("deleted_at", null);
+  const candidatas = (filasDb ?? []).filter((r: any) => (r.factura_ecf_id && ids.includes(r.factura_ecf_id)) || (!r.factura_ecf_id && ecf.encf && r.referencia === ecf.encf)) as any[];
+  const usadas = new Set<string>();
+  let creadas = 0, actualizadas = 0, conservadas = 0;
+  for (const l of lineas) {
+    let fila = l.id ? candidatas.find((r) => r.ecf_linea_id === l.id) : undefined;
+    if (!fila) fila = candidatas.find((r) => !usadas.has(r.id) && !r.editada_manual && (!r.ecf_linea_id || r.factura_ecf_id !== fid));
+    const datos = {
+      concepto: (l.descripcion || "Gestión aduanal").trim(), referencia: ecf.encf ?? null, fecha_emision: ecf.fecha_emision ?? null,
+      monto: Number(l.valor || 0), itbis: Number(l.itbis || 0), gravado: l.gravado, factura_ecf_id: ecf.id, ecf_linea_id: l.id,
+    };
+    if (fila) {
+      usadas.add(fila.id);
+      if (fila.editada_manual) { conservadas++; continue; }
+      const { error } = await supabase.from("facturas").update(datos).eq("id", fila.id);
+      if (error) throw error;
+      actualizadas++;
+    } else {
+      const { error } = await supabase.from("facturas").insert({ expediente_id: expedienteId, estado: "pendiente", ...datos });
+      if (error) throw error;
+      creadas++;
+    }
   }
-  if (fila) {
-    if (fila.editada_manual) return "la fila de cobro ya editada a mano se conservó";
-    const { error } = await supabase.from("facturas").update(datos).eq("id", fila.id);
-    if (error) throw error;
-    return "fila de cobro actualizada";
+  // Renglones automáticos sobrantes (de la e-CF anterior o de un total consolidado) que nadie editó.
+  const sobrantes = candidatas.filter((r) => !usadas.has(r.id) && !r.editada_manual).map((r) => r.id);
+  if (sobrantes.length) {
+    const { data: u } = await supabase.auth.getUser();
+    await supabase.from("facturas").update({ deleted_at: new Date().toISOString(), deleted_by: u.user?.id }).in("id", sobrantes);
   }
-  const { error } = await supabase.from("facturas").insert({ expediente_id: expedienteId, concepto: "Gestión aduanal", estado: "pendiente", ...datos });
-  if (error) throw error;
-  return "fila de cobro creada";
+  if (!creadas && !sobrantes.length && !actualizadas) return conservadas ? "renglones editados a mano se conservaron" : null;
+  const partes = [creadas && `${creadas} creados`, actualizadas && `${actualizadas} actualizados`, conservadas && `${conservadas} conservados`].filter(Boolean);
+  return `renglones de cobro: ${partes.join(", ")}`;
 }
 
 function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; totalFact: number }) {
@@ -3350,11 +3371,9 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
   const autoSyncHecho = useRef(false);
   useEffect(() => {
     if (!ecfVinculada || autoSyncHecho.current) return;
-    const existe = facturas.some((r: any) => r.factura_ecf_id === ecfVinculada.id || (r.referencia && r.referencia === ecfVinculada.encf));
-    if (existe) return;
     autoSyncHecho.current = true;
     sincronizarCobroDesdeEcf(expedienteId, ecfVinculada.id, null)
-      .then(() => qc.invalidateQueries({ queryKey: ["facturas", expedienteId] }))
+      .then((m) => { if (m) qc.invalidateQueries({ queryKey: ["facturas", expedienteId] }); })
       .catch((e) => toast.error(e.message));
   }, [ecfVinculada, facturas, expedienteId, qc]);
 

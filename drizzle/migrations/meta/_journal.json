@@ -253,6 +253,13 @@
       "when": 1790872863538,
       "tag": "0035_facturas_ecf_link",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1790875227965,
+      "tag": "0036_facturas_ecf_lineas_link",
+      "breakpoints": true
     }
   ]
 }
