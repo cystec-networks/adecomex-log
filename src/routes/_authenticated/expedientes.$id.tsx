@@ -1877,6 +1877,9 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                 if (!c) return null;
                 return (
                   <div className="mt-1.5 rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
+                    {c.registrado_proindustria && (
+                      <div className="font-semibold text-emerald-700">Empresa registrada en PROINDUSTRIA — revisar qué partidas califican para ITBIS 9%.</div>
+                    )}
                     <div><span className="text-muted-foreground">RNC:</span> {c.rnc ?? "—"}</div>
                     <div><span className="text-muted-foreground">Contacto:</span> {c.contacto ?? "—"}</div>
                     <div><span className="text-muted-foreground">Email:</span> {c.email ?? "—"}</div>
