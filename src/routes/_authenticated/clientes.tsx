@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/clientes")({
   component: Clientes,
 });
 
-const empty = { nombre: "", rnc: "", contacto: "", email: "", telefono: "", direccion: "" };
+const empty = { nombre: "", rnc: "", contacto: "", email: "", telefono: "", direccion: "", registrado_proindustria: false };
 
 function Clientes() {
   const qc = useQueryClient();
@@ -104,6 +104,10 @@ function Clientes() {
                 <div className="grid gap-1.5"><Label>RNC</Label><Input value={form.rnc ?? ""} onChange={(e) => setForm({ ...form, rnc: e.target.value })} /></div>
                 <div className="grid gap-1.5"><Label>Contacto</Label><Input value={form.contacto ?? ""} onChange={(e) => setForm({ ...form, contacto: e.target.value })} /></div>
               </div>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" className="h-4 w-4" checked={!!form.registrado_proindustria} onChange={(e) => setForm({ ...form, registrado_proindustria: e.target.checked })} />
+                Empresa registrada en PROINDUSTRIA <span className="text-xs text-muted-foreground">(solo informativo; el 9% se marca por partida)</span>
+              </label>
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
                   <Label>Email (opcional)</Label>
@@ -170,7 +174,7 @@ function Clientes() {
             <tbody>
               {filtered.map((c: any) => (
                 <tr key={c.id} className="border-b last:border-0 hover:bg-muted/40">
-                  <td className="px-4 py-2 font-medium">{c.nombre}</td>
+                  <td className="px-4 py-2 font-medium">{c.nombre}{c.registrado_proindustria && <Badge variant="outline" className="ml-2 text-[10px] border-emerald-300 text-emerald-700">PROINDUSTRIA</Badge>}</td>
                   <td className="text-muted-foreground">{c.rnc ?? "—"}</td>
                   <td>{c.contacto ?? "—"}</td>
                   <td>
