@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +33,7 @@ function PendientesPage() {
     queryKey: ["ecf-pendientes-exp"],
     queryFn: async () => (await supabase
       .from("expedientes")
-      .select("id, numero, cliente_id, factura_comercial, estado, created_at, clientes(nombre)")
+      .select("id, numero, cliente_id, factura_comercial, estado, created_at, fecha_aprobacion_despacho, clientes(nombre)")
       .is("eliminado_en", null)
       .is("factura_ecf_id", null)
       .not("factura_comercial", "is", null)
@@ -86,8 +86,44 @@ function PendientesPage() {
       e.numero?.toLowerCase().includes(s) ||
       e.factura_comercial?.toLowerCase().includes(s) ||
       e.clientes?.nombre?.toLowerCase().includes(s)
-    );
+    ).sort((a: any, b: any) => {
+      const fa = String(a.fecha_aprobacion_despacho ?? ""), fb = String(b.fecha_aprobacion_despacho ?? "");
+      if (fa !== fb) return !fa ? 1 : !fb ? -1 : fa > fb ? -1 : 1;
+      const ca = String(a.created_at ?? ""), cb = String(b.created_at ?? "");
+      if (ca !== cb) return ca > cb ? -1 : 1;
+      return String(b.numero ?? "").localeCompare(String(a.numero ?? ""), undefined, { numeric: true });
+    });
   }, [expedientes, q]);
+
+  const gruposExp = useMemo(() => {
+    const mapa = new Map<string, { mes: string; titulo: string; items: any[] }>();
+    for (const e of expsFiltered) {
+      const raw = String(e.fecha_aprobacion_despacho ?? "").slice(0, 7);
+      const mes = /^\d{4}-\d{2}$/.test(raw) ? raw : "";
+      let g = mapa.get(mes);
+      if (!g) {
+        g = {
+          mes,
+          titulo: mes
+            ? new Intl.DateTimeFormat("es-DO", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${mes}-01T12:00:00Z`))
+            : "Sin fecha de despacho",
+          items: [],
+        };
+        mapa.set(mes, g);
+      }
+      g.items.push(e);
+    }
+    return [...mapa.values()];
+  }, [expsFiltered]);
+
+  const [abiertos, setAbiertos] = useState<Set<string> | null>(null);
+  useEffect(() => { setAbiertos(null); }, [q]);
+  const estaAbierto = (mes: string) => (abiertos ? abiertos.has(mes) : gruposExp[0]?.mes === mes);
+  const toggleGrupo = (mes: string) => {
+    const next = new Set(abiertos ?? (gruposExp[0] ? [gruposExp[0].mes] : []));
+    if (next.has(mes)) next.delete(mes); else next.add(mes);
+    setAbiertos(next);
+  };
 
   const trsFiltered = useMemo(() => {
     const s = q.toLowerCase();
@@ -130,15 +166,22 @@ function PendientesPage() {
                 <th className="text-left px-3 py-2">Expediente</th>
                 <th className="text-left">Cliente</th>
                 <th className="text-left">N° Factura anotado</th>
+                <th className="text-left">Fecha despacho</th>
                 <th className="text-left">Estado</th>
                 <th className="text-left w-[420px]">Vincular a e-CF</th>
               </tr>
             </thead>
             <tbody>
               {expsFiltered.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">Sin expedientes pendientes.</td></tr>
+                <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">Sin expedientes pendientes.</td></tr>
               )}
-              {expsFiltered.map((e: any) => (
+              {gruposExp.flatMap((g) => [
+                <tr key={`mes-${g.mes}`} className="bg-muted/70 border-y border-border cursor-pointer hover:bg-muted" onClick={() => toggleGrupo(g.mes)} aria-expanded={estaAbierto(g.mes)}>
+                  <th colSpan={6} scope="rowgroup" className="px-3 py-2 text-left text-xs font-bold uppercase text-foreground">
+                    {estaAbierto(g.mes) ? "▾" : "▸"} {g.titulo} <span className="font-normal normal-case text-muted-foreground">— {g.items.length} {g.items.length === 1 ? "expediente" : "expedientes"}</span>
+                  </th>
+                </tr>,
+                ...(!estaAbierto(g.mes) ? [] : g.items).map((e: any) => (
                 <tr key={e.id} className="border-b last:border-0 hover:bg-muted/20">
                   <td className="px-3 py-2 font-medium">
                     <Link to="/expedientes/$id" params={{ id: e.id }} className="expediente-numero hover:underline flex items-center gap-1">
@@ -147,6 +190,7 @@ function PendientesPage() {
                   </td>
                   <td>{e.clientes?.nombre ?? "—"}</td>
                   <td className="font-mono">{e.factura_comercial}</td>
+                  <td className="text-muted-foreground">{e.fecha_aprobacion_despacho ? fmtLocalDate(e.fecha_aprobacion_despacho) : "—"}</td>
                   <td><Badge variant="outline">{e.estado}</Badge></td>
                   <td className="py-1.5 pr-3">
                     <FacturaEcfSelector
@@ -156,7 +200,8 @@ function PendientesPage() {
                     />
                   </td>
                 </tr>
-              ))}
+                )),
+              ])}
             </tbody>
           </table>
         </CardContent>
