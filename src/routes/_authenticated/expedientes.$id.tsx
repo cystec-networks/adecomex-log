@@ -3007,13 +3007,8 @@ function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
 
   return (
     <div className="space-y-4">
-      <RentabilidadCard expedienteId={expedienteId} />
+      {void totalEst}{void totalReal}
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total estimado</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalEst)}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total real</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalReal)}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Diferencia</div><div className={`text-2xl font-display font-bold mt-1 ${totalReal - totalEst > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(totalReal - totalEst)}</div></CardContent></Card>
-      </div>
 
       <div className="flex justify-end" title="Genera una pre-factura desde este expediente y conviértela en la factura e-CF definitiva.">
         <CotizacionServiciosExpedienteButton exp={exp} />
