@@ -3276,7 +3276,7 @@ async function sincronizarCobroDesdeEcf(expedienteId: string, fid: string | null
     let fila = l.id ? candidatas.find((r) => r.ecf_linea_id === l.id) : undefined;
     if (!fila) fila = candidatas.find((r) => !usadas.has(r.id) && !r.editada_manual && (!r.ecf_linea_id || r.factura_ecf_id !== fid));
     const datos = {
-      concepto: (l.descripcion || "Gestión aduanal").trim(), referencia: ecf.encf ?? null, fecha_emision: ecf.fecha_emision ?? null,
+      concepto: l.descripcion?.trim() === "Servicios exentos" ? "Servicios de Transportes (exentos)" : (l.descripcion || "Gestión aduanal").trim(), referencia: ecf.encf ?? null, fecha_emision: ecf.fecha_emision ?? null,
       monto: Number(l.valor || 0), itbis: Number(l.itbis || 0), gravado: l.gravado, factura_ecf_id: ecf.id, ecf_linea_id: l.id,
     };
     if (fila) {
