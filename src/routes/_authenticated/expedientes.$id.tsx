@@ -3028,6 +3028,9 @@ function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
         </CardHeader>
       </Card>
 
+      <LiquidacionSection expedienteId={expedienteId} />
+
+
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costos del expediente</CardTitle>
@@ -3079,8 +3082,6 @@ function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
           </table>
         </CardContent>
       </Card>
-
-      <LiquidacionSection expedienteId={expedienteId} />
     </div>
   );
 }
@@ -3249,9 +3250,9 @@ function LiquidacionSection({ expedienteId }: { expedienteId: string }) {
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Margen</div><div className={`text-xl font-display font-bold mt-1 ${marginColor}`}>{margen.toFixed(1)}%</div></CardContent></Card>
       </div>
 
+      <GastosBlock expedienteId={expedienteId} gastos={gastos ?? []} />
       <FacturaEcfBlock expedienteId={expedienteId} totalFact={totalFact} />
       <FacturasBlock expedienteId={expedienteId} facturas={facturas ?? []} />
-      <GastosBlock expedienteId={expedienteId} gastos={gastos ?? []} />
     </div>
   );
 }
