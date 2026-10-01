@@ -3535,13 +3535,16 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           deleted_by: string | null
+          ecf_linea_id: string | null
           editada_manual: boolean
           estado: string
           expediente_id: string
           factura_ecf_id: string | null
           fecha_emision: string | null
           fecha_pago: string | null
+          gravado: boolean | null
           id: string
+          itbis: number
           monto: number
           notas: string | null
           referencia: string | null
@@ -3552,13 +3555,16 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
+          ecf_linea_id?: string | null
           editada_manual?: boolean
           estado?: string
           expediente_id: string
           factura_ecf_id?: string | null
           fecha_emision?: string | null
           fecha_pago?: string | null
+          gravado?: boolean | null
           id?: string
+          itbis?: number
           monto?: number
           notas?: string | null
           referencia?: string | null
@@ -3569,19 +3575,29 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
+          ecf_linea_id?: string | null
           editada_manual?: boolean
           estado?: string
           expediente_id?: string
           factura_ecf_id?: string | null
           fecha_emision?: string | null
           fecha_pago?: string | null
+          gravado?: boolean | null
           id?: string
+          itbis?: number
           monto?: number
           notas?: string | null
           referencia?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "facturas_ecf_linea_id_fkey"
+            columns: ["ecf_linea_id"]
+            isOneToOne: false
+            referencedRelation: "facturas_ecf_lineas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "facturas_expediente_id_fkey"
             columns: ["expediente_id"]
