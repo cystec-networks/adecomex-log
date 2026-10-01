@@ -4,3 +4,4 @@
 - [x] Ocultar los ocho pasos acordados del Checklist de Despacho sin borrar su historial y ajustar el progreso y los avisos.
 - [x] Mostrar el N° de Viaje en el volante de pago, mantener el TF secundario y verificar dos pagos de un viaje (segundo pago simulado, sin crear registros reales).
 - [x] Agrupar CIF, Impuestos y Servicios DGA en el PDF de preliquidación y comprobar impresión compacta en una hoja con 2 y 12 partidas.
+- [x] Ordenar Facturación e-CF globalmente por número descendente, separar tramos por mes de emisión y comprobar filtros y listado completo.
