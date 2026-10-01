@@ -3353,7 +3353,7 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
         const { error } = await supabase.from("facturas").update({ ...payload, editada_manual: true }).eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("facturas").insert({ expediente_id: expedienteId, ...payload });
+        const { error } = await supabase.from("facturas").insert({ expediente_id: expedienteId, ...payload, factura_ecf_id: prefillEcf?.id ?? null, editada_manual: !!prefillEcf });
         if (error) throw error;
       }
     },
