@@ -114,6 +114,8 @@ function FacturacionPage() {
       }
       return true;
     }).sort((a: any, b: any) => {
+      const fa = String(a.fecha_emision ?? ""), fb = String(b.fecha_emision ?? "");
+      if (fa !== fb) return fa > fb ? -1 : 1;
       const numeroA = BigInt(String(a.encf ?? "").replace(/\D/g, "") || "0");
       const numeroB = BigInt(String(b.encf ?? "").replace(/\D/g, "") || "0");
       if (numeroA !== numeroB) return numeroA > numeroB ? -1 : 1;
@@ -122,24 +124,37 @@ function FacturacionPage() {
   }, [facturas, clienteFiltro, tipoFiltro, desde, hasta, q]);
 
   const grupos = useMemo(() => {
-    const gruposPorOrden: { mes: string; titulo: string; facturas: typeof filtered }[] = [];
+    const mapa = new Map<string, { mes: string; titulo: string; total: number; facturas: typeof filtered }>();
     for (const factura of filtered) {
-      const mes = factura.fecha_emision?.slice(0, 7) ?? "";
-      let grupo = gruposPorOrden[gruposPorOrden.length - 1];
-      if (!grupo || grupo.mes !== mes) {
+      const raw = factura.fecha_emision?.slice(0, 7) ?? "";
+      const mes = /^\d{4}-\d{2}$/.test(raw) ? raw : "";
+      let grupo = mapa.get(mes);
+      if (!grupo) {
         grupo = {
           mes,
-          titulo: /^\d{4}-\d{2}$/.test(mes)
+          titulo: mes
             ? new Intl.DateTimeFormat("es-DO", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${mes}-01T12:00:00Z`))
             : "Sin fecha de emisión",
+          total: 0,
           facturas: [],
         };
-        gruposPorOrden.push(grupo);
+        mapa.set(mes, grupo);
       }
       grupo.facturas.push(factura);
+      grupo.total += Number(factura.monto_total || 0);
     }
-    return gruposPorOrden;
+    return [...mapa.values()].sort((a, b) => (a.mes === b.mes ? 0 : !a.mes ? 1 : !b.mes ? -1 : a.mes > b.mes ? -1 : 1));
   }, [filtered]);
+
+  const [abiertos, setAbiertos] = useState<Set<string> | null>(null);
+  useEffect(() => { setAbiertos(null); }, [clienteFiltro, tipoFiltro, desde, hasta, q]);
+  const estaAbierto = (mes: string) => (abiertos ? abiertos.has(mes) : grupos[0]?.mes === mes);
+  const toggleGrupo = (mes: string) => {
+    const base = abiertos ?? new Set(grupos[0] ? [grupos[0].mes] : []);
+    const next = new Set(base);
+    if (next.has(mes)) next.delete(mes); else next.add(mes);
+    setAbiertos(next);
+  };
 
   const enviarPapelera = useMutation({
     mutationFn: async (id: string) => {
@@ -297,13 +312,16 @@ function FacturacionPage() {
                 {!isLoading && filtered.length === 0 && (
                   <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Sin facturas registradas.</td></tr>
                 )}
-                {grupos.flatMap((grupo, index) => [
-                  <tr key={`mes-${grupo.mes}-${index}`} className="bg-muted/70 border-y border-border">
+                {grupos.flatMap((grupo) => [
+                  <tr key={`mes-${grupo.mes}`} className="bg-muted/70 border-y border-border cursor-pointer hover:bg-muted" onClick={() => toggleGrupo(grupo.mes)} aria-expanded={estaAbierto(grupo.mes)}>
                     <th colSpan={7} scope="rowgroup" className="px-3 py-2 text-left text-xs font-bold uppercase text-foreground">
-                      {grupo.titulo}
+                      <div className="flex items-center justify-between gap-3">
+                        <span>{estaAbierto(grupo.mes) ? "▾" : "▸"} {grupo.titulo} <span className="font-normal normal-case text-muted-foreground">— {grupo.facturas.length} {grupo.facturas.length === 1 ? "factura" : "facturas"}</span></span>
+                        <span>{fmtRD(grupo.total)}</span>
+                      </div>
                     </th>
                   </tr>,
-                  ...grupo.facturas.map((f: any) => {
+                  ...(!estaAbierto(grupo.mes) ? [] : grupo.facturas).map((f: any) => {
                   const exps = f.expedientes as { id: string; numero: string }[] | null;
                   const trs = f.transportes as { id: string; numero_viaje: string }[] | null;
                   return (
