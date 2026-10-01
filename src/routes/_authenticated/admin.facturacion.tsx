@@ -122,19 +122,23 @@ function FacturacionPage() {
   }, [facturas, clienteFiltro, tipoFiltro, desde, hasta, q]);
 
   const grupos = useMemo(() => {
-    const meses = new Map<string, typeof filtered>();
+    const gruposPorOrden: { mes: string; titulo: string; facturas: typeof filtered }[] = [];
     for (const factura of filtered) {
       const mes = factura.fecha_emision?.slice(0, 7) ?? "";
-      if (!meses.has(mes)) meses.set(mes, []);
-      meses.get(mes)?.push(factura);
+      let grupo = gruposPorOrden[gruposPorOrden.length - 1];
+      if (!grupo || grupo.mes !== mes) {
+        grupo = {
+          mes,
+          titulo: /^\d{4}-\d{2}$/.test(mes)
+            ? new Intl.DateTimeFormat("es-DO", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${mes}-01T12:00:00Z`))
+            : "Sin fecha de emisión",
+          facturas: [],
+        };
+        gruposPorOrden.push(grupo);
+      }
+      grupo.facturas.push(factura);
     }
-    return Array.from(meses, ([mes, facturas]) => ({
-      mes,
-      titulo: /^\d{4}-\d{2}$/.test(mes)
-        ? new Intl.DateTimeFormat("es-DO", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${mes}-01T12:00:00Z`))
-        : "Sin fecha de emisión",
-      facturas,
-    })).sort((a, b) => b.mes.localeCompare(a.mes));
+    return gruposPorOrden;
   }, [filtered]);
 
   const enviarPapelera = useMutation({
@@ -293,8 +297,8 @@ function FacturacionPage() {
                 {!isLoading && filtered.length === 0 && (
                   <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Sin facturas registradas.</td></tr>
                 )}
-                {grupos.flatMap((grupo) => [
-                  <tr key={`mes-${grupo.mes}`} className="bg-muted/70 border-y border-border">
+                {grupos.flatMap((grupo, index) => [
+                  <tr key={`mes-${grupo.mes}-${index}`} className="bg-muted/70 border-y border-border">
                     <th colSpan={7} scope="rowgroup" className="px-3 py-2 text-left text-xs font-bold uppercase text-foreground">
                       {grupo.titulo}
                     </th>
