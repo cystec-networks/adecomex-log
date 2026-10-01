@@ -768,6 +768,7 @@ function DetalleExpediente() {
                     <PreLiquidacionPdfButton exp={expData} />
                     <SolicitudReembolsoPdfButton exp={expData} />
                     <GenerarDocumentoButton exp={expData} />
+                    {!isNuevo && <CotizacionServiciosExpedienteButton exp={expData} />}
 {!isNuevo && <PortadaExpedienteButton expedienteId={id} />}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onSelect={imprimirFichaGenerales}>
@@ -813,6 +814,7 @@ function DetalleExpediente() {
                       <PreLiquidacionPdfButton exp={expData} />
                       <SolicitudReembolsoPdfButton exp={expData} />
                         <GenerarDocumentoButton exp={expData} />
+                        <CotizacionServiciosExpedienteButton exp={expData} />
 {!isNuevo && <PortadaExpedienteButton expedienteId={id} />}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onSelect={imprimirFichaGenerales}>
@@ -5233,6 +5235,19 @@ function CotizacionServiciosExpedienteButton({ exp }: { exp: any }) {
 
   const crear = useMutation({
     mutationFn: async () => {
+      // Evita duplicados: si ya existe (creada desde otro punto de entrada), se reutiliza.
+      const { data: existente } = await supabase
+        .from("cotizaciones_servicios").select("id").eq("expediente_id", exp.id)
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (existente) return existente.id as string;
+      const [{ count: nCostos }, { count: nGastos }] = await Promise.all([
+        supabase.from("costos").select("id", { count: "exact", head: true }).eq("expediente_id", exp.id),
+        supabase.from("gastos").select("id", { count: "exact", head: true }).eq("expediente_id", exp.id).is("deleted_at", null),
+      ]);
+      if (!nCostos && !nGastos &&
+        !confirm("Este Expediente no tiene costos ni gastos registrados aún — la cotización puede salir incompleta. ¿Crearla de todos modos?")) {
+        throw new Error("__cancelado__");
+      }
       const { data: u } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("cotizaciones_servicios")
