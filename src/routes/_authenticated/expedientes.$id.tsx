@@ -1255,7 +1255,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const { data: clientesLite } = useQuery({
     queryKey: ["clientes-lite"],
     enabled: isNuevo,
-    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc,contacto,email,telefono,direccion").order("nombre")).data ?? [],
+    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc,contacto,email,telefono,direccion,registrado_proindustria").order("nombre")).data ?? [],
   });
   const [clienteOcr, setClienteOcr] = useState<string | null>(null);
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
@@ -1877,6 +1877,9 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                 if (!c) return null;
                 return (
                   <div className="mt-1.5 rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
+                    {c.registrado_proindustria && (
+                      <div className="font-semibold text-emerald-700">Empresa registrada en PROINDUSTRIA — revisar qué partidas califican para ITBIS 9%.</div>
+                    )}
                     <div><span className="text-muted-foreground">RNC:</span> {c.rnc ?? "—"}</div>
                     <div><span className="text-muted-foreground">Contacto:</span> {c.contacto ?? "—"}</div>
                     <div><span className="text-muted-foreground">Email:</span> {c.email ?? "—"}</div>
@@ -4080,7 +4083,7 @@ function MercanciaItemsBlock({
   const emptyForm = {
     codigo_arancelario: "", detalle_producto: "", unidad_medida: "", unidad_codigo: "",
     cantidad: "", peso: "", valor_fob: "",
-    pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "18",
+    pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "18", itbis_proindustria: false as boolean,
     product_code: "", cod_marca: "", marca: "", cod_modelo: "", modelo: "", especificaciones: "",
     estado_producto_codigo: "",
     product_year: "", tiene_certificado_origen: false as boolean, certificado_origen_numero: "",
@@ -4155,7 +4158,8 @@ function MercanciaItemsBlock({
         pct_gravamen: f.pct_gravamen === "" ? null : Number(f.pct_gravamen),
         aplica_isc: !!f.aplica_isc,
         pct_isc: f.aplica_isc && f.pct_isc !== "" ? Number(f.pct_isc) : null,
-        pct_itbis: f.pct_itbis === "" ? null : Number(f.pct_itbis),
+        pct_itbis: f.itbis_proindustria ? 9 : (f.pct_itbis === "" ? null : Number(f.pct_itbis)),
+        itbis_proindustria: !!f.itbis_proindustria,
         product_code: f.product_code?.trim() || null,
         cod_marca: f.cod_marca?.trim() || null,
         marca: f.marca?.trim() || null,
@@ -4187,7 +4191,7 @@ function MercanciaItemsBlock({
         const { error } = await supabase.from("mercancia_items").insert({ ...payload, expediente_id: expedienteId, item_no: nextNo });
         if (error) throw error;
       }
-      await autoLearnTasa(codigo, payload.pct_gravamen, payload.aplica_isc, payload.pct_isc, payload.pct_itbis ?? null);
+      await autoLearnTasa(codigo, payload.pct_gravamen, payload.aplica_isc, payload.pct_isc, f.itbis_proindustria ? null : (payload.pct_itbis ?? null));
     },
     onSuccess: () => { toast.success(editingId ? "Ítem actualizado" : "Ítem agregado"); setOpen(false); setEditingId(null); setF(emptyForm); setValorUnitario(""); if (!local) invalidate(); },
     onError: (e: any) => toast.error(e.message),
@@ -4246,6 +4250,7 @@ function MercanciaItemsBlock({
       aplica_isc: !!it.aplica_isc,
       pct_isc: it.pct_isc != null ? String(it.pct_isc) : "",
       pct_itbis: it.pct_itbis != null ? String(it.pct_itbis) : "18",
+      itbis_proindustria: !!it.itbis_proindustria,
       product_code: it.product_code ?? "",
       cod_marca: it.cod_marca ?? "",
       marca: it.marca ?? "",
@@ -4358,7 +4363,14 @@ function MercanciaItemsBlock({
                       <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{rd(c.cifLinea)}</td>
                       <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{rd(c.gravamen)}</td>
                       <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{fmt(c.selectivo)}</td>
-                      <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">{rd(c.itbis)}</td>
+                      <td className="px-2 py-2 text-right tabular-nums bg-slate-50/50">
+                        <div className="flex items-center justify-end gap-1">
+                          {it.itbis_proindustria && (
+                            <span title={Number(it.pct_gravamen) > 0 ? "ITBIS Reducido PROINDUSTRIA (9%). Este beneficio requiere que la partida tenga 0% de Arancel según la Ley 242-20 — verificar elegibilidad antes de aplicar." : "ITBIS Reducido PROINDUSTRIA (9%)"} className={`rounded px-1 text-[9px] font-semibold ${Number(it.pct_gravamen) > 0 ? "bg-amber-200 text-amber-900" : "bg-emerald-100 text-emerald-800"}`}>9% PRO{Number(it.pct_gravamen) > 0 ? " ⚠" : ""}</span>
+                          )}
+                          {rd(c.itbis)}
+                        </div>
+                      </td>
                       <td className="px-2 py-2 text-right tabular-nums bg-emerald-50/60 font-semibold">{rd(c.total)}</td>
                     <td className="px-2 py-2 text-right whitespace-nowrap">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(it)} disabled={disabled} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
@@ -4431,7 +4443,7 @@ function MercanciaItemsBlock({
                         pct_gravamen: p.pct_gravamen != null ? String(p.pct_gravamen) : prev.pct_gravamen,
                         aplica_isc: !!p.aplica_isc,
                         pct_isc: p.aplica_isc && p.pct_isc != null ? String(p.pct_isc) : "",
-                        pct_itbis: p.pct_itbis != null ? String(p.pct_itbis) : prev.pct_itbis,
+                        pct_itbis: prev.itbis_proindustria ? "9" : (p.pct_itbis != null ? String(p.pct_itbis) : prev.pct_itbis),
                       }
                     : {}),
                 }));
@@ -4550,9 +4562,22 @@ function MercanciaItemsBlock({
                 )}
                 <div className="grid gap-1.5">
                   <Label>% ITBIS</Label>
-                  <Input type="text" inputMode="decimal" value={f.pct_itbis} disabled={tasaBloqueada}
+                  <Input type="text" inputMode="decimal" value={f.itbis_proindustria ? "9" : f.pct_itbis} disabled={tasaBloqueada || f.itbis_proindustria}
                     onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, pct_itbis: v }); }}
                     placeholder="18" />
+                </div>
+                <div className="grid gap-1.5 sm:col-span-2">
+                  <div className="flex items-center gap-2">
+                    <Switch id="itbis-proindustria" checked={!!f.itbis_proindustria}
+                      onCheckedChange={(v) => setF({ ...f, itbis_proindustria: v, pct_itbis: v ? "9" : "18" })} />
+                    <Label htmlFor="itbis-proindustria" className="cursor-pointer">ITBIS Reducido — PROINDUSTRIA (9%)</Label>
+                  </div>
+                  {f.itbis_proindustria && Number(f.pct_gravamen || 0) > 0 && (
+                    <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 flex items-start gap-1">
+                      <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-amber-600" />
+                      Este beneficio requiere que la partida tenga 0% de Arancel según la Ley 242-20 — verificar elegibilidad antes de aplicar.
+                    </p>
+                  )}
                 </div>
               </div>
               {tasaBloqueada ? (

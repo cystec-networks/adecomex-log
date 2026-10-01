@@ -239,6 +239,13 @@
       "when": 1790784995450,
       "tag": "0033_expedientes_updated_by",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1790869069969,
+      "tag": "0034_itbis_proindustria",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,2 @@
+ALTER TABLE public.mercancia_items ADD COLUMN IF NOT EXISTS itbis_proindustria boolean NOT NULL DEFAULT false;
+ALTER TABLE public.clientes ADD COLUMN IF NOT EXISTS registrado_proindustria boolean NOT NULL DEFAULT false;
