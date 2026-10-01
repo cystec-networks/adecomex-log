@@ -579,6 +579,7 @@ function DetalleExpediente() {
 
 
   const puedeForzarRegreso = (roles ?? []).some((r) => ["admin", "operaciones"].includes(r));
+  const esAdminDespacho = (roles ?? []).includes("admin");
   const suspEstado = useEstadoSuspensivo((exp as any)?.regimen_aduanero, (exp as any)?.impuestos_override_manual);
 
   const updateEstado = useMutation({
@@ -622,6 +623,14 @@ function DetalleExpediente() {
         }
       }
       if (estadoIndex(actual) < estadoIndex("despachado") && estadoIndex(estado) >= estadoIndex("despachado")) {
+        const faltanFechas = fechasDespachoFaltantes(exp);
+        if (faltanFechas.length) {
+          const bloqueo = "No se puede despachar:\n- " + faltanFechas.join("\n- ");
+          if (!esAdminDespacho) throw new Error(bloqueo);
+          const motivo = window.prompt(`${bloqueo}\n\nComo Administrador puedes forzar el despacho. Escribe la justificación obligatoria (quedará en Auditoría):`);
+          if (!motivo || !motivo.trim()) throw new Error(bloqueo);
+          forzarDespacho = motivo.trim();
+        }
         const { data: perms } = await supabase
           .from("permisos")
           .select("numero, tipo, estado")
