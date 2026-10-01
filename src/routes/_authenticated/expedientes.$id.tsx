@@ -3342,6 +3342,18 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
     },
   });
 
+  // Expedientes que ya tenían e-CF vinculada antes de esta función: crear su fila de cobro una vez.
+  const autoSyncHecho = useRef(false);
+  useEffect(() => {
+    if (!ecfVinculada || autoSyncHecho.current) return;
+    const existe = facturas.some((r: any) => r.factura_ecf_id === ecfVinculada.id || (r.referencia && r.referencia === ecfVinculada.encf));
+    if (existe) return;
+    autoSyncHecho.current = true;
+    sincronizarCobroDesdeEcf(expedienteId, ecfVinculada.id, null)
+      .then(() => qc.invalidateQueries({ queryKey: ["facturas", expedienteId] }))
+      .catch((e) => toast.error(e.message));
+  }, [ecfVinculada, facturas, expedienteId, qc]);
+
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
