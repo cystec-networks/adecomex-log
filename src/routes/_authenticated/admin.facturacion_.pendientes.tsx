@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +33,7 @@ function PendientesPage() {
     queryKey: ["ecf-pendientes-exp"],
     queryFn: async () => (await supabase
       .from("expedientes")
-      .select("id, numero, cliente_id, factura_comercial, estado, created_at, clientes(nombre)")
+      .select("id, numero, cliente_id, factura_comercial, estado, created_at, fecha_aprobacion_despacho, clientes(nombre)")
       .is("eliminado_en", null)
       .is("factura_ecf_id", null)
       .not("factura_comercial", "is", null)
