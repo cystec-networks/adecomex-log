@@ -3373,7 +3373,7 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
     if (!ecfVinculada || autoSyncHecho.current) return;
     autoSyncHecho.current = true;
     sincronizarCobroDesdeEcf(expedienteId, ecfVinculada.id, null)
-      .then((m) => m && qc.invalidateQueries({ queryKey: ["facturas", expedienteId] }))
+      .then((m) => { if (m) qc.invalidateQueries({ queryKey: ["facturas", expedienteId] }); })
       .catch((e) => toast.error(e.message));
   }, [ecfVinculada, facturas, expedienteId, qc]);
 
