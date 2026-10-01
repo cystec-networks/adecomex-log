@@ -53,39 +53,39 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
   const nf = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const rd = (n: number) => (tasaCambio > 0 ? nf(n * tasaCambio) : "—");
 
-  const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+  const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const M = 32;
+  const M = 24;
 
   doc.setFontSize(13); doc.setFont("helvetica", "bold");
-  doc.text("ADECOMEX SRL — Gestión y Logística", M, 40);
+  doc.text("ADECOMEX SRL — Gestión y Logística", M, 32);
   doc.setFontSize(11);
-  doc.text("PRE-LIQUIDACIÓN DE IMPUESTOS", M, 58);
+  doc.text("PRE-LIQUIDACIÓN DE IMPUESTOS", M, 47);
   doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
-  doc.text("(Estimado interno — sujeto a la liquidación oficial de la DGA)", M, 70);
+  doc.text("(Estimado interno — sujeto a la liquidación oficial de la DGA)", M, 59);
   if (tasaCambio > 0) {
-    doc.text(`Tasa de cambio: RD$ ${nf(tasaCambio)} por US$1.00`, M, 82);
+    doc.text(`Tasa oficial: RD$ ${nf(tasaCambio)} por US$1.00`, M, 71);
   } else {
     doc.setTextColor(180, 140, 30);
-    doc.text("Sin tasa de cambio registrada — los montos en RD$ no se pueden calcular", M, 82);
+    doc.text("Sin tasa de cambio registrada — los montos en RD$ no se pueden calcular", M, 71);
     doc.setTextColor(100);
   }
   doc.text(
     `Generado: ${new Date().toLocaleString("es-DO")}   |   Usuario: ${input.usuarioEmail ?? "—"}`,
     M,
-    94,
+    83,
   );
   doc.setTextColor(0);
 
-  let infoStartY = 106;
+  let infoStartY = 92;
   if (input.avisoReferencial) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
     doc.setTextColor(180, 60, 30);
     const avisoLines = doc.splitTextToSize(input.avisoReferencial, pageW - M * 2) as string[];
-    doc.text(avisoLines, M, 108);
-    infoStartY = 108 + avisoLines.length * 10 + 6;
+    doc.text(avisoLines, M, 94);
+    infoStartY = 94 + avisoLines.length * 9 + 4;
     doc.setTextColor(0);
     doc.setFont("helvetica", "normal");
   }
@@ -98,7 +98,7 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
     startY: infoStartY,
     body: infoBody,
     theme: "grid",
-    styles: { fontSize: 7.5, cellPadding: 3 },
+    styles: { fontSize: 7, cellPadding: 2.5, overflow: "linebreak" },
     didParseCell: (data) => {
       if (data.section === "body" && data.column.index === 1 && infoCols[0]?.[data.row.index]?.[0] === "N° Expediente") {
         data.cell.styles.textColor = [190, 30, 44];
@@ -106,9 +106,9 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
       }
     },
     columnStyles: {
-      0: { fontStyle: "bold", textColor: 90, cellWidth: 72 },
-      2: { fontStyle: "bold", textColor: 90, cellWidth: 78 },
-      4: { fontStyle: "bold", textColor: 90, cellWidth: 72 },
+      0: { fontStyle: "bold", textColor: 90, cellWidth: 84 },
+      2: { fontStyle: "bold", textColor: 90, cellWidth: 92 },
+      4: { fontStyle: "bold", textColor: 90, cellWidth: 82 },
     },
     margin: { left: M, right: M },
   });
@@ -137,7 +137,7 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
   });
 
   autoTable(doc, {
-    startY: (doc as any).lastAutoTable.finalY + 12,
+    startY: (doc as any).lastAutoTable.finalY + 8,
     head: [["Item", "Arancel", "Descripción", "Unidad", "Origen", "Cantidad", "FOB (US$)", "CIF (RD$)", "Gravamen (RD$)", "ISC (RD$)", "ITBIS (RD$)", "Total imp. (RD$)"]],
     body,
     foot: [[
@@ -145,19 +145,22 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
       rd(totals.grav), rd(totals.isc), rd(totals.itbis), rd(totals.total),
     ]],
     theme: "grid",
-    headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
+    styles: { cellPadding: 2, overflow: "linebreak" },
+    headStyles: { fillColor: [30, 58, 138], fontSize: 6.8 },
     bodyStyles: { fontSize: 6.8 },
-    footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 7 },
+    footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 6.8 },
     columnStyles: {
-      0: { cellWidth: 20 }, 1: { cellWidth: 50 }, 3: { cellWidth: 34 }, 4: { cellWidth: 44 },
-      5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" },
+      0: { cellWidth: 22 }, 1: { cellWidth: 54 }, 3: { cellWidth: 42 }, 4: { cellWidth: 46 },
+      5: { cellWidth: 52 }, 6: { cellWidth: 57 }, 7: { cellWidth: 68 },
+      8: { cellWidth: 66 }, 9: { cellWidth: 56 }, 10: { cellWidth: 64 }, 11: { cellWidth: 69 },
+      5: { halign: "right", cellWidth: 52 }, 6: { halign: "right", cellWidth: 57 }, 7: { halign: "right", cellWidth: 68 },
       8: { halign: "right" }, 9: { halign: "right" }, 10: { halign: "right" }, 11: { halign: "right" },
     },
     margin: { left: M, right: M },
   });
 
-  const detalleCargaStartY = (doc as any).lastAutoTable.finalY + 12;
-  const detalleCargaTableWidth = 240;
+  const detalleCargaStartY = (doc as any).lastAutoTable.finalY + 8;
+  const detalleCargaTableWidth = 260;
 
   autoTable(doc, {
     startY: detalleCargaStartY,
@@ -167,8 +170,9 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
       ["Peso Neto", input.pesoNeto != null ? `${nf(Number(input.pesoNeto))} kg` : "—"],
     ],
     theme: "grid",
-    headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
-    bodyStyles: { fontSize: 8 },
+    headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
+    bodyStyles: { fontSize: 7 },
+    styles: { cellPadding: 2 },
     columnStyles: { 0: { fontStyle: "bold", textColor: 90, cellWidth: 120 } },
     margin: { left: M },
     tableWidth: detalleCargaTableWidth,
@@ -187,8 +191,9 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
         c.tipo ?? "—",
       ]),
       theme: "grid",
-      headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
+      bodyStyles: { fontSize: 7 },
+      styles: { cellPadding: 2 },
       margin: { left: pageW - M - detalleCargaTableWidth },
       tableWidth: detalleCargaTableWidth,
     });
@@ -199,8 +204,9 @@ export async function buildPreLiquidacionPdf(input: PreLiqInput) {
       head: [["Contenedores"]],
       body: input.contenedores.split(/[,;\n/]+/).map((c) => [c.trim()]).filter((r) => r[0]),
       theme: "grid",
-      headStyles: { fillColor: [30, 58, 138], fontSize: 8 },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
+      bodyStyles: { fontSize: 7 },
+      styles: { cellPadding: 2 },
       margin: { left: pageW - M - detalleCargaTableWidth },
       tableWidth: detalleCargaTableWidth,
     });
