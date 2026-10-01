@@ -321,7 +321,7 @@ export function FacturaEcfFormDialog({
       }
       if (exento > 0) {
         nuevas.push({
-          cantidad: 1, descripcion: "Servicios exentos",
+          cantidad: 1, descripcion: "Servicios de Transportes (exentos)",
           unidad: "UND", precio: +exento.toFixed(2), itbis: 0,
           descuento: 0, recargo: 0, gravado: false,
         });
