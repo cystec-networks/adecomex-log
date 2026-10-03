@@ -30,6 +30,7 @@ export function alertaDeclaracionTardia(exp: {
   if (!exp) return null;
   if (exp.estado !== "digitar" && exp.estado !== "en_transito" && exp.estado !== "manifestado") return null;
   if (!exp.fecha_llegada_real) return null;
+  if (exp.sla_dias === null) return null; // régimen sin plazo configurado
 
   const eta = parseLocalDate(exp.fecha_llegada_real);
   if (isNaN(eta.getTime())) return null;

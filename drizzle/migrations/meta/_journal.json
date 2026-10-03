@@ -288,6 +288,13 @@
       "when": 1791055006267,
       "tag": "0040_expediente_endosos",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791056721888,
+      "tag": "0041_plazo_presentar_por_regimen",
+      "breakpoints": true
     }
   ]
 }
