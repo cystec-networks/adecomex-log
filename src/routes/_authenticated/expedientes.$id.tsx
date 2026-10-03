@@ -879,11 +879,11 @@ function DetalleExpediente() {
 
         {!isNuevo && (
         <div className="expediente-info-fila2">
-          <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-1.5">
           {expData.clientes ? (
             <Popover>
               <PopoverTrigger asChild>
-                <Button type="button" variant="link" className="h-8 w-full min-w-0 justify-start truncate p-0 text-left text-sm font-semibold text-foreground underline decoration-dotted underline-offset-2" title={expData.clientes.nombre}>
+                <Button type="button" variant="link" className="h-8 min-w-0 max-w-full shrink justify-start truncate p-0 text-left text-sm font-semibold text-foreground underline decoration-dotted underline-offset-2" title={expData.clientes.nombre}>
                   {expData.clientes.nombre}
                 </Button>
               </PopoverTrigger>
