@@ -66,7 +66,7 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
   const tono = vencido ? "text-destructive" : r <= 2 ? "text-warning" : "text-foreground";
   const cantidad = Math.abs(r);
   const unidad = cantidad === 1 ? "día hábil" : "días hábiles";
-  const txt = vencido ? `vencido hace ${cantidad} ${unidad}` : `${cantidad} ${unidad} restantes`;
+  const txt = vencido ? `vencido hace ${cantidad} ${unidad}` : `${cantidad} ${unidad} ${cantidad === 1 ? "restante" : "restantes"}`;
   const fecha = vencimiento.toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "numeric" });
   const contenido = `${vencido ? "Venció" : "Vence"} presentación: ${fecha}${vencido ? " ⚠" : ""} (${txt})`;
 
