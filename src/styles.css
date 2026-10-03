@@ -29,14 +29,20 @@
 .expediente-header-menus { grid-area: menus; }
 @media (min-width: 768px) {
   .expediente-header-grid {
-    grid-template-columns: auto minmax(0, 1fr) 16.5rem auto auto;
-    grid-template-areas: "back number state save more";
-    column-gap: 0.375rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "back number" "state save" "more more";
   }
   .expediente-header-back { justify-self: start; }
   .expediente-header-number > [data-slot="badge"] { display: none; }
   .expediente-header-menus { display: none; }
-  .expediente-header-more { display: inline-flex; }
+  .expediente-header-more { display: inline-flex; justify-self: end; }
+}
+@container expediente-header (min-width: 650px) {
+  .expediente-header-grid {
+    grid-template-columns: auto minmax(0, 1fr) 16.5rem auto auto;
+    grid-template-areas: "back number state save more";
+    column-gap: 0.375rem;
+  }
 }
 @container expediente-header (min-width: 1250px) {
   .expediente-header-grid {
