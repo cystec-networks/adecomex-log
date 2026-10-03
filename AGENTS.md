@@ -19,7 +19,7 @@ El PDF de preliquidación de expediente y cotización comparte el generador hori
 
 Use explicit responsive grid slots and reserved action widths for the expediente header; desktop controls stay on one row, with secondary menus consolidated into More actions when the container cannot fit them, while mobile keeps accessible rows.
 
-Use intrinsic desktop widths for client and BL/AWB, a right-anchored port, and a shrinkable presentation badge with container-based icon/date fallback; preserve full tooltip text so legal details remain accessible.
+Use space-between across all present desktop header fields, flatten the arrival wrapper for equal gaps, preserve intrinsic client and BL/AWB widths, and group the shrinkable presentation badge with its edit control; container-based icon/date fallback preserves full tooltip details.
 
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
 - Presentation deadline uses catalogo_regimenes.dias_habiles_presentar with optional expedientes.plazo_presentar_override; expedientes.sla_dias is deprecated — resolve via src/lib/plazo-presentacion.ts. In the header, require real arrival and a configured regime (never ETA), show business days relative to today, and classify overdue by the calendar date so weekends cannot hide expiration.
