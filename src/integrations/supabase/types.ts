@@ -740,6 +740,7 @@ export type Database = {
         Row: {
           codigo: string
           created_at: string
+          dias_habiles_presentar: number | null
           estado: string
           id: string
           nombre: string
@@ -750,6 +751,7 @@ export type Database = {
         Insert: {
           codigo: string
           created_at?: string
+          dias_habiles_presentar?: number | null
           estado?: string
           id?: string
           nombre: string
@@ -760,6 +762,7 @@ export type Database = {
         Update: {
           codigo?: string
           created_at?: string
+          dias_habiles_presentar?: number | null
           estado?: string
           id?: string
           nombre?: string
@@ -3295,6 +3298,7 @@ export type Database = {
           pin_contenedor_fecha_pago: string | null
           pin_contenedor_fecha_registro: string | null
           pin_contenedor_monto: number | null
+          plazo_presentar_override: number | null
           preferencia_comercial: string | null
           producto_correcto_rectificacion: string | null
           puerto_arribo: string | null
@@ -3423,6 +3427,7 @@ export type Database = {
           pin_contenedor_fecha_pago?: string | null
           pin_contenedor_fecha_registro?: string | null
           pin_contenedor_monto?: number | null
+          plazo_presentar_override?: number | null
           preferencia_comercial?: string | null
           producto_correcto_rectificacion?: string | null
           puerto_arribo?: string | null
@@ -3551,6 +3556,7 @@ export type Database = {
           pin_contenedor_fecha_pago?: string | null
           pin_contenedor_fecha_registro?: string | null
           pin_contenedor_monto?: number | null
+          plazo_presentar_override?: number | null
           preferencia_comercial?: string | null
           producto_correcto_rectificacion?: string | null
           puerto_arribo?: string | null
