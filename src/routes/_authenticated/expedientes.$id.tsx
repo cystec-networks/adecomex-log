@@ -1407,6 +1407,22 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     };
   }, [histDb]);
 
+  // Contacto principal del cliente seleccionado (modo creación): autocompleta
+  // contacto_solicitud y limita las sugerencias a los contactos de ese cliente.
+  const contactoDelCliente = useMemo(() => {
+    const c = (clientesLite ?? []).find((cl: any) => cl.id === form.cliente_id);
+    return (c?.contacto ?? "").toString().trim();
+  }, [clientesLite, form.cliente_id]);
+  const sugContactoCliente = useMemo(() => (contactoDelCliente ? [contactoDelCliente] : []), [contactoDelCliente]);
+  const clientePrevRef = useRef<string>("");
+  useEffect(() => {
+    if (!isNuevo) return;
+    if (form.cliente_id === clientePrevRef.current) return;
+    clientePrevRef.current = form.cliente_id;
+    const c = (clientesLite ?? []).find((cl: any) => cl.id === form.cliente_id);
+    if (c) setForm((f) => ({ ...f, contacto_solicitud: (c.contacto ?? "").toString().trim() }));
+  }, [form.cliente_id, clientesLite, isNuevo]);
+
   const { data: contenedoresDb } = useQuery({
     queryKey: ["expediente-contenedores", exp.id],
     enabled: !isNuevo,

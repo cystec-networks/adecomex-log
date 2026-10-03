@@ -56,7 +56,7 @@ function NuevaCotizacion() {
 
   const { data: clientes } = useQuery({
     queryKey: ["clientes-select"],
-    queryFn: async () => (await supabase.from("clientes").select("id,nombre").order("nombre")).data ?? [],
+    queryFn: async () => (await supabase.from("clientes").select("id,nombre,contacto").order("nombre")).data ?? [],
   });
   const { data: perfiles } = useQuery({
     queryKey: ["vendedores-lite"],
