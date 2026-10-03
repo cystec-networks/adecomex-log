@@ -1,0 +1,2 @@
+ALTER TABLE public.expedientes ADD COLUMN IF NOT EXISTS fecha_presentacion_real date;
+COMMENT ON COLUMN public.expedientes.fecha_presentacion_real IS 'Fecha real de presentación capturada manualmente; fuente del indicador de cumplimiento. fecha_presentado sigue siendo la fecha automática del cambio de estado.';
