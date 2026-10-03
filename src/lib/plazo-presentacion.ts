@@ -38,6 +38,20 @@ export function plazoEfectivo(
 
 const habil = (d: Date) => d.getDay() !== 0 && d.getDay() !== 6;
 
+/** Diferencia firmada de días hábiles entre dos fechas, sin depender de hoy. */
+export function diasHabilesEntre(desde: Date, hasta: Date): number {
+  const sign = hasta >= desde ? 1 : -1;
+  const [a, b] = sign > 0 ? [desde, hasta] : [hasta, desde];
+  const cur = new Date(a); cur.setHours(0, 0, 0, 0);
+  cur.setDate(cur.getDate() + 1);
+  let count = 0;
+  while (cur <= b) {
+    if (habil(cur)) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return sign * count;
+}
+
 /** Fecha de vencimiento: N días hábiles contando desde la llegada (inclusive). */
 export function venceEn(llegada: string, dias: number): Date | null {
   const d = parseLocalDate(llegada);
