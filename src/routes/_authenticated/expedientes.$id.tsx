@@ -941,18 +941,17 @@ function DetalleExpediente() {
               })()}
           </div>
           <CampoHeader etiqueta="Puerto" valor={expData.puerto_arribo} />
-          <div className="flex h-8 min-w-0 items-center gap-1.5">
-            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Etapa Operativa:</Label>
-            <span className="text-xs font-medium md:text-sm">{hitosDone} de {hitosTotal}</span>
-          </div>
         </div>
         )}
         {!isNuevo && (
         <div className="expediente-info-fila3">
+          <div className="flex h-8 min-w-0 items-center gap-1.5">
+            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Etapa Operativa:</Label>
+            <span className="text-xs font-medium md:text-sm">{hitosDone} de {hitosTotal}</span>
+          </div>
           <CampoHeader etiqueta="Declaración DUA" valor={expData.numero_dua} />
           <CampoHeader etiqueta="N.º de despacho" valor={expData.numero_igra} />
           <CampoHeader etiqueta="N.º de permiso" valor={permisosNumeros} />
-          <CampoHeader etiqueta="Solicitud original" valor={expData.solicitudes?.numero} />
 
           {(() => {
             const a = alertaDeclaracionTardia(expData);
