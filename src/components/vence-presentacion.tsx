@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil } from "lucide-react";
+import { Pencil, CalendarDays, Check, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { parseLocalDate, fmtLocalDate, hoyRD } from "@/lib/dates";
 
 /** Píldora compacta alineada con el tratamiento visual del badge de Estado del encabezado. */
 const pill = (tono: string) =>
-  `inline-flex h-7 shrink-0 items-center whitespace-nowrap rounded-md border px-2 text-xs font-medium ${tono}`;
+  `expediente-presentation-pill inline-grid h-7 items-center whitespace-nowrap rounded-md border px-2 text-xs font-medium ${tono}`;
 const TONO_NEUTRO = "border-border bg-muted/50 text-foreground";
 const TONO_ALERTA = "border-warning/40 bg-warning/10 text-warning";
 const TONO_ERROR = "border-destructive/40 bg-destructive/10 text-destructive";
@@ -52,7 +52,10 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
     return <>
       <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
       <span className={pill(tarde ? TONO_ALERTA : TONO_OK)} title={completo} aria-label={completo}>
-        {compacto}
+        <span className="expediente-presentation-content">
+          <span className="expediente-presentation-full">{compacto}</span>
+          <span className="expediente-presentation-short">{tarde ? <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}{fecha}</span>
+        </span>
       </span>
     </>;
   }
@@ -83,7 +86,12 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
 
   return (<>
     <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
-    <span className={pill(tono)} title={completo} aria-label={completo}>{compacto}</span>
+    <span className={pill(tono)} title={completo} aria-label={completo}>
+      <span className="expediente-presentation-content">
+        <span className="expediente-presentation-full">{compacto}</span>
+        <span className="expediente-presentation-short">{vencido ? <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}{fecha}</span>
+      </span>
+    </span>
     {canEdit && exp?.id && (
       <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) setVal(exp.plazo_presentar_override ? String(exp.plazo_presentar_override) : ""); }}>
         <PopoverTrigger asChild>

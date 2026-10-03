@@ -66,16 +66,32 @@
 .expediente-header-arrival-separator { display: none; }
 /* Valores largos (BL/AWB): completos siempre; envuelven en pantallas angostas y van en una línea en desktop. */
 .expediente-header-valor-largo { min-width: 0; overflow-wrap: anywhere; }
-/* Cliente: ancho tope con puntos suspensivos; el tooltip (title) muestra el nombre completo. */
-.expediente-header-cliente { max-width: 16rem; min-width: 0; }
+/* La identidad no cede espacio; el plazo conserva el detalle en su tooltip. */
+.expediente-header-cliente { min-width: 0; }
+.expediente-header-cliente > button { white-space: normal; overflow-wrap: anywhere; }
+.expediente-presentation-pill { container: presentation-pill / inline-size; }
+.expediente-presentation-short { display: none; }
+.expediente-presentation-content { display: flex; align-items: center; gap: 0.25rem; min-width: 0; }
+.expediente-presentation-full { overflow: hidden; text-overflow: ellipsis; }
+@container presentation-pill (max-width: 210px) {
+  .expediente-presentation-full { display: none; }
+  .expediente-presentation-short { display: inline-flex; align-items: center; gap: 0.25rem; }
+}
 @container expediente-header (min-width: 560px) {
   .expediente-info-fila2, .expediente-info-fila3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@container expediente-header (min-width: 1000px) {
-  .expediente-info-fila2 { grid-template-columns: minmax(0, max-content) auto minmax(0, 1fr) minmax(0, 0.9fr); }
-  .expediente-header-arrival { padding-bottom: 0; }
+@container expediente-header (min-width: 700px) {
+  .expediente-info-fila2 { display: flex; align-items: center; flex-wrap: nowrap; overflow-x: auto; }
+  .expediente-info-fila2 > .expediente-header-cliente,
+  .expediente-info-fila2 > .expediente-header-bl { flex: 0 0 auto; }
+  .expediente-header-cliente > button { white-space: nowrap; overflow: visible; }
+  .expediente-header-arrival { flex: 1 1 auto; flex-wrap: nowrap; padding-bottom: 0; }
+  .expediente-header-arrival > .expediente-presentation-pill { flex: 0 1 17rem; width: 17rem; min-width: 6.75rem; }
+  .expediente-info-fila2 > .expediente-header-puerto { flex: 0 0 auto; margin-left: auto; }
   .expediente-header-arrival-separator { display: inline; }
   .expediente-header-valor-largo { overflow-wrap: normal; white-space: nowrap; }
+}
+@container expediente-header (min-width: 1000px) {
   .expediente-info-fila3 { grid-template-columns: repeat(4, minmax(0, 1fr)) max-content; }
 }
 

@@ -899,7 +899,7 @@ function DetalleExpediente() {
           {expData.clientes ? (
             <Popover>
               <PopoverTrigger asChild>
-                <Button type="button" variant="link" className="h-8 min-w-0 max-w-full shrink justify-start truncate p-0 text-left text-sm font-semibold text-foreground underline decoration-dotted underline-offset-2" title={expData.clientes.nombre}>
+                <Button type="button" variant="link" className="h-auto min-h-8 min-w-0 justify-start p-0 text-left text-sm font-semibold text-foreground underline decoration-dotted underline-offset-2" title={expData.clientes.nombre}>
                   {expData.clientes.nombre}
                 </Button>
               </PopoverTrigger>
@@ -939,7 +939,7 @@ function DetalleExpediente() {
           )}
           <EndosoBadge expedienteId={id} originalNombre={expData.clientes?.nombre} />
           </div>
-          <CampoHeader etiqueta="BL/AWB" valor={expData.bl_awb} largo />
+          <CampoHeader etiqueta="BL/AWB" valor={expData.bl_awb} largo className="expediente-header-bl" />
           <div className="expediente-header-arrival">
           {expData.fecha_llegada_real ? (
             <div className="grid h-8 shrink-0 grid-cols-[auto_auto] items-center gap-1.5 text-xs md:text-sm" title={`Fecha de Llegada Real: ${fmtLocalDate(expData.fecha_llegada_real)}`}>
@@ -972,7 +972,7 @@ function DetalleExpediente() {
           )}
           <VencePresentacion exp={expData} canEdit={canEditExpediente} />
           </div>
-          <CampoHeader etiqueta="Puerto" valor={expData.puerto_arribo} />
+           <CampoHeader etiqueta="Puerto" valor={expData.puerto_arribo} largo className="expediente-header-puerto" />
         </div>
         )}
         {!isNuevo && (
@@ -6166,10 +6166,10 @@ function ForzarRegresoEstadoDialog({
 }
 
 /** Campo del encabezado con etiqueta fija; valores largos se ven completos (envueltos o en una línea) al pasar el mouse o tocar. */
-function CampoHeader({ etiqueta, valor, largo }: { etiqueta: string; valor: string | null | undefined; largo?: boolean }) {
+function CampoHeader({ etiqueta, valor, largo, className }: { etiqueta: string; valor: string | null | undefined; largo?: boolean; className?: string }) {
   const texto = valor && String(valor).trim() ? String(valor) : "—";
   return (
-    <div className={cn("grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 text-xs md:text-sm", largo ? "min-h-8 py-0.5" : "h-8")}>
+    <div className={cn("grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 text-xs md:text-sm", largo ? "min-h-8 py-0.5" : "h-8", className)}>
       <span className="whitespace-nowrap text-muted-foreground">{etiqueta}:</span>
       <Popover>
         <PopoverTrigger asChild>
