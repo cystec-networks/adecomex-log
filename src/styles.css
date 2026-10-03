@@ -80,7 +80,7 @@
 @container expediente-header (min-width: 560px) {
   .expediente-info-fila2, .expediente-info-fila3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@container expediente-header (min-width: 1000px) {
+@container expediente-header (min-width: 700px) {
   .expediente-info-fila2 { display: flex; align-items: center; flex-wrap: nowrap; overflow-x: auto; }
   .expediente-info-fila2 > .expediente-header-cliente,
   .expediente-info-fila2 > .expediente-header-bl { flex: 0 0 auto; }
@@ -90,6 +90,8 @@
   .expediente-info-fila2 > .expediente-header-puerto { flex: 0 0 auto; margin-left: auto; }
   .expediente-header-arrival-separator { display: inline; }
   .expediente-header-valor-largo { overflow-wrap: normal; white-space: nowrap; }
+}
+@container expediente-header (min-width: 1000px) {
   .expediente-info-fila3 { grid-template-columns: repeat(4, minmax(0, 1fr)) max-content; }
 }
 
