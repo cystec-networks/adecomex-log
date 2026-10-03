@@ -26,7 +26,7 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
   if (etapaPosterior) {
     const presentado = parseLocalDate(exp?.fecha_presentado);
     const vencimiento = llegada && dias ? venceEn(llegada, dias) : null;
-    if (!presentado || !vencimiento) return null;
+    if (isNaN(presentado.getTime()) || !vencimiento) return null;
     const tarde = presentado > vencimiento;
     const diferencia = Math.abs(diasHabilesEntre(presentado, vencimiento));
     const unidad = diferencia === 1 ? "día hábil" : "días hábiles";
