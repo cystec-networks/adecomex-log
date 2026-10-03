@@ -26,7 +26,7 @@ import {
 import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical, Printer, Repeat2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
+import { fmtLocalDate, parseLocalDate, daysFromToday, hoyRD, hoyRDISO } from "@/lib/dates";
 import { calcImpuestosLinea } from "@/lib/impuestos";
 import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
 import { ImpuestosSuspCtx, useImpuestosSusp, useEstadoSuspensivo, esRegimenSuspensivo } from "@/lib/impuestos";
@@ -1265,6 +1265,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const editable = (canEdit && modoEdicion) || isNuevo;
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState(() => construirFormInicial(isNuevo ? null : exp, isNuevo, isNuevo ? tipoParam : ""));
+  const sugeridaPresentacion = useRef(false);
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
   const esExportacion = (form.tipo_operacion || "").toLowerCase().startsWith("export");
   // Exportación: precarga los datos del agente despachante de ADECOMEX si están vacíos.
