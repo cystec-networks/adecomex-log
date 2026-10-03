@@ -11,4 +11,4 @@
 - [x] Mover el plazo junto a ETA en el encabezado, mostrar la edición solo al pulsar el lápiz y verificar escritorio y celular sin cambiar el cálculo.
 - [x] Ocultar el vencimiento desde Verificado y mostrar cumplimiento cuando exista una fecha de presentación fiable.
 - [x] Mover Agregar endoso a Documentos y Reportes, con divisor e ícono propios, y comprobar ambos accesos.
-- [ ] Corregir el aviso del header: solo llegada real y régimen configurado, días restantes desde hoy y alerta de vencimiento; conservar cumplimiento y verificar sin cambiar datos.
+- [x] Corregir el aviso del header: solo llegada real y régimen configurado, días restantes desde hoy y alerta de vencimiento; conservar cumplimiento y verificar sin cambiar datos.
