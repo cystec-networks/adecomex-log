@@ -725,9 +725,31 @@ function DetalleExpediente() {
               </p>
             </div>
           ) : (
-            <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-2 md:min-w-[7rem]">
+            <div className="flex min-w-0 items-center gap-2 md:gap-2">
               <h1 className="font-display shrink-0 text-lg font-bold md:text-xl expediente-numero">{expData.numero}</h1>
               {expData.solicitudes?.numero && <Badge variant="outline" className="hidden shrink-0 md:inline-flex">← {expData.solicitudes.numero}</Badge>}
+            </div>
+          )}
+          {!isNuevo && (
+            <div className="flex shrink-0 items-center gap-1.5">
+              <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
+              <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
+                <SelectTrigger className="h-8 w-24 min-w-0 text-xs md:w-32 md:text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ESTADO_ORDEN.map((e) => (
+                    <SelectItem key={e} value={e} disabled={estadoIndex(e) < estadoIndex(expData.estado)}>
+                      {ESTADO_LABEL[e]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {puedeForzarRegreso && estadoIndex(expData.estado) > 0 && (
+                <ForzarRegresoEstadoDialog
+                  estadoActual={expData.estado}
+                  pendiente={forzarRegreso.isPending}
+                  onConfirm={(estado, motivo) => forzarRegreso.mutate({ estado, motivo })}
+                />
+              )}
             </div>
           )}
           {isNuevo && (
@@ -858,7 +880,7 @@ function DetalleExpediente() {
         </div>
 
         {!isNuevo && (
-        <div className="grid min-w-0 grid-cols-1 gap-x-3 gap-y-1 md:grid-cols-2 xl:grid-cols-[minmax(9rem,1fr)_minmax(18.5rem,1.4fr)_minmax(9rem,1fr)_minmax(12rem,1.3fr)]">
+        <div className="grid min-w-0 grid-cols-1 gap-x-3 gap-y-1 md:grid-cols-2 xl:grid-cols-[minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(12rem,1.3fr)_minmax(9rem,1fr)]">
           <div className="min-w-0">
           {expData.clientes ? (
             <Popover>
@@ -901,26 +923,6 @@ function DetalleExpediente() {
           ) : (
             <span className="flex h-8 items-center truncate text-sm text-muted-foreground">Sin cliente</span>
           )}
-          </div>
-          <div className="flex min-w-0 items-center gap-1.5">
-            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
-            <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
-              <SelectTrigger className="h-8 w-28 min-w-0 flex-1 text-xs md:w-32 md:flex-initial md:text-sm"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {ESTADO_ORDEN.map((e) => (
-                  <SelectItem key={e} value={e} disabled={estadoIndex(e) < estadoIndex(expData.estado)}>
-                    {ESTADO_LABEL[e]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {puedeForzarRegreso && estadoIndex(expData.estado) > 0 && (
-              <ForzarRegresoEstadoDialog
-                estadoActual={expData.estado}
-                pendiente={forzarRegreso.isPending}
-                onConfirm={(estado, motivo) => forzarRegreso.mutate({ estado, motivo })}
-              />
-            )}
           </div>
           <div className="flex h-8 min-w-0 items-center gap-1.5 text-xs md:text-sm">
             <span className="min-w-0 truncate" title={`BL/AWB: ${expData.bl_awb ?? "—"}`}>
