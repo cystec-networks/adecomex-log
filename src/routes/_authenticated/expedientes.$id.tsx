@@ -1306,6 +1306,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     setClienteOcr(null);
     ocrPuesto.current = {};
     ultimoOcrSeq.current = 0;
+    clientePrevRef.current = "";
     setContenedores([]);
   }, [id, isNuevo, exp]);
 
@@ -1901,7 +1902,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               : <CatalogoAutocomplete tabla="catalogo_tipos_carga" label="Tipo de carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />}
             <ReadOnlyField label="Origen" value={exp.pais_origen} />
             <ReadOnlyField label="Incoterm" value={exp.incoterm} />
-            <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sug.contacto_solicitud ?? []} disabled={!editable} />
+            <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={expData?.clientes?.contacto ? [expData.clientes.contacto] : []} disabled={!editable} />
         </Section>
       )}
 
@@ -1953,7 +1954,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               <Label><ReqMark />Tipo de carga</Label>
               <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => { set("tipo_carga", v); limpiarFaltante("req-tipo_carga"); }} placeholder="Escribe o selecciona…" />
             </div>
-            <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sug.contacto_solicitud ?? []} />
+            <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sugContactoCliente} />
           </>
         ) : (
           <Field label="Número / ID" value={form.numero} onChange={(v) => set("numero", v)} disabled={!editable} className="[&_input]:text-brand-red [&_input]:font-bold [&_input:disabled]:opacity-100" />

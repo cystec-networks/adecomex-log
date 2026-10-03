@@ -128,7 +128,7 @@ function NuevaCotizacion() {
           c.nombre.toLowerCase().includes(res.cliente!.toLowerCase()) ||
           res.cliente!.toLowerCase().includes(c.nombre.toLowerCase()),
       );
-      if (match) set("cliente_id", match.id);
+      if (match) setForm((f: any) => ({ ...f, cliente_id: match.id, contacto: (match.contacto ?? "").toString().trim() }));
     }
   };
 
@@ -151,7 +151,10 @@ function NuevaCotizacion() {
           <CardHeader><CardTitle className="text-base">Cliente y responsable</CardTitle></CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-1.5"><Label>Cliente</Label>
-              <Select value={form.cliente_id || undefined} onValueChange={(v) => set("cliente_id", v)}>
+              <Select value={form.cliente_id || undefined} onValueChange={(v) => {
+                const c = (clientes ?? []).find((cl: any) => cl.id === v);
+                setForm((f: any) => ({ ...f, cliente_id: v, contacto: (c?.contacto ?? "").toString().trim() }));
+              }}>
                 <SelectTrigger><SelectValue placeholder="Selecciona cliente" /></SelectTrigger>
                 <SelectContent>{(clientes ?? []).map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
               </Select>
