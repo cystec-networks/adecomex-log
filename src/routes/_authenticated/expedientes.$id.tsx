@@ -6119,3 +6119,23 @@ function ForzarRegresoEstadoDialog({
     </Dialog>
   );
 }
+
+/** Campo del encabezado con etiqueta fija; valores largos se truncan y se ven completos al pasar el mouse o tocar. */
+function CampoHeader({ etiqueta, valor }: { etiqueta: string; valor: string | null | undefined }) {
+  const texto = valor && String(valor).trim() ? String(valor) : "—";
+  return (
+    <div className="grid h-8 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 text-xs md:text-sm">
+      <span className="whitespace-nowrap text-muted-foreground">{etiqueta}:</span>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button type="button" className="min-w-0 truncate text-left font-medium" title={`${etiqueta}: ${texto}`}>
+            {texto}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto max-w-[min(24rem,calc(100vw-2rem))] break-words p-2 text-xs" align="start">
+          <span className="text-muted-foreground">{etiqueta}:</span> <span className="font-medium">{texto}</span>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
