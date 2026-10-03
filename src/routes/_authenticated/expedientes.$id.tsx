@@ -4217,7 +4217,8 @@ function MercanciaItemsBlock({
         unidad_codigo: f.unidad_codigo || null,
         cantidad: f.cantidad === "" ? 0 : Number(f.cantidad),
         peso: f.peso === "" ? 0 : Number(f.peso),
-        valor_fob: f.valor_fob === "" ? 0 : Number(f.valor_fob),
+        valor_fob: f.valor_fob === "" ? 0 : Math.round(Number(f.valor_fob) * 100) / 100,
+        valor_fob_4d: f.valor_fob === "" ? 0 : Number(f.valor_fob),
         pct_gravamen: f.pct_gravamen === "" ? null : Number(f.pct_gravamen),
         aplica_isc: !!f.aplica_isc,
         pct_isc: f.aplica_isc && f.pct_isc !== "" ? Number(f.pct_isc) : null,
@@ -4308,7 +4309,7 @@ function MercanciaItemsBlock({
       unidad_codigo: it.unidad_codigo ?? "",
       cantidad: it.cantidad != null ? String(it.cantidad) : "",
       peso: it.peso != null ? String(it.peso) : "",
-      valor_fob: it.valor_fob != null ? String(it.valor_fob) : "",
+      valor_fob: (it.valor_fob_4d ?? it.valor_fob) != null ? Number(it.valor_fob_4d ?? it.valor_fob).toFixed(4) : "",
       pct_gravamen: it.pct_gravamen != null ? String(it.pct_gravamen) : "",
       aplica_isc: !!it.aplica_isc,
       pct_isc: it.pct_isc != null ? String(it.pct_isc) : "",
@@ -4329,7 +4330,7 @@ function MercanciaItemsBlock({
       es_organico: !!it.es_organico,
       grado_alcohol: it.grado_alcohol != null ? String(it.grado_alcohol) : "",
     });
-    const vu = unitFob(it.valor_fob, it.cantidad);
+    const vu = unitFob(it.valor_fob_4d ?? it.valor_fob, it.cantidad);
     setValorUnitario(isFinite(Number(vu)) ? Number(vu).toFixed(4) : "");
     setTasaBloqueada(false);
     setOpen(true);
@@ -4576,9 +4577,9 @@ function MercanciaItemsBlock({
             <div className="grid gap-1.5">
               <Label>Valor FOB (US$)</Label>
               <Input type="text" inputMode="decimal" value={f.valor_fob}
-                onChange={(e) => { const v = e.target.value.replace(/,/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) setF({ ...f, valor_fob: v }); }}
-                onBlur={(e) => { const v = e.target.value; if (v !== "" && !isNaN(Number(v))) setF({ ...f, valor_fob: Number(v).toFixed(2) }); }}
-                placeholder="0.00" />
+                onChange={(e) => { const v = e.target.value.replace(/,/g, ""); if (v === "" || /^\d*\.?\d{0,4}$/.test(v)) setF({ ...f, valor_fob: v }); }}
+                onBlur={(e) => { const v = e.target.value; if (v !== "" && !isNaN(Number(v))) setF({ ...f, valor_fob: Number(v).toFixed(4) }); }}
+                placeholder="0.0000" />
             </div>
             <div className="grid gap-1.5">
               <Label>Valor Unitario (US$)</Label>
@@ -4587,14 +4588,14 @@ function MercanciaItemsBlock({
                 onBlur={(e) => {
                   const v = e.target.value;
                   if (v !== "" && !isNaN(Number(v)) && Number(f.cantidad) > 0) {
-                    const nuevoFobTotal = (Number(v) * Number(f.cantidad)).toFixed(2);
+                    const nuevoFobTotal = (Math.round(Number(v) * Number(f.cantidad) * 10000) / 10000).toFixed(4);
                     setF({ ...f, valor_fob: nuevoFobTotal });
                     setValorUnitario(Number(v).toFixed(4));
                   }
                 }}
                 placeholder="0.0000" />
               <p className="text-[11px] text-muted-foreground">
-                El FOB Total se ajusta automáticamente al editar el Valor Unitario (redondeado a centavos).
+                El Valor FOB se ajusta automáticamente al editar el Valor Unitario (4 decimales).
               </p>
             </div>
 
