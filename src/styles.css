@@ -66,6 +66,7 @@
   padding-bottom: 0.25rem;
 }
 .expediente-header-arrival-separator { display: none; }
+.expediente-header-arrival > :first-child { justify-self: start; }
 @container expediente-header (min-width: 560px) {
   .expediente-info-fila2, .expediente-info-fila3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

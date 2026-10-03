@@ -8,4 +8,4 @@
 - [x] Fijar posiciones del encabezado del expediente y verificar cambios de Estado en escritorio y celular sin desplazar controles.
 - [x] Mantener el encabezado en una línea en computadora y reunir los menús en Más acciones cuando no caben.
 - [x] Integrar los días con ETA, restaurar el contraste de Estado y reemplazar Corregir estado por un ícono con tooltip; verificar escritorio y celular.
-- [ ] Mover el plazo junto a ETA en el encabezado, mostrar la edición solo al pulsar el lápiz y verificar escritorio y celular sin cambiar el cálculo.
+- [x] Mover el plazo junto a ETA en el encabezado, mostrar la edición solo al pulsar el lápiz y verificar escritorio y celular sin cambiar el cálculo.
