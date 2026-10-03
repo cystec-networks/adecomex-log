@@ -7,3 +7,4 @@
 - [x] Ordenar Facturación e-CF globalmente por número descendente, separar tramos por mes de emisión y comprobar filtros y listado completo.
 - [x] Fijar posiciones del encabezado del expediente y verificar cambios de Estado en escritorio y celular sin desplazar controles.
 - [x] Mantener el encabezado en una línea en computadora y reunir los menús en Más acciones cuando no caben.
+- [x] Integrar los días con ETA, restaurar el contraste de Estado y reemplazar Corregir estado por un ícono con tooltip; verificar escritorio y celular.

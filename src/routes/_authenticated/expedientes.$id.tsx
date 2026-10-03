@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
@@ -725,10 +726,10 @@ function DetalleExpediente() {
             </div>
           )}
           {!isNuevo && (
-            <div className="expediente-header-state grid min-w-0 grid-cols-[auto_minmax(0,1fr)_7rem] items-center gap-1.5">
+            <div className="expediente-header-state grid min-w-0 grid-cols-[auto_minmax(0,1fr)_2rem] items-center gap-1.5">
               <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
               <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
-                <SelectTrigger className="h-8 w-full min-w-0 text-xs md:text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label="Estado del expediente" className="h-8 w-full min-w-0 text-xs text-foreground disabled:opacity-100 [&>svg]:shrink-0 [&>svg]:opacity-100 md:text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ESTADO_ORDEN.map((e) => (
                     <SelectItem key={e} value={e} disabled={estadoIndex(e) < estadoIndex(expData.estado)}>
@@ -737,7 +738,7 @@ function DetalleExpediente() {
                   ))}
                 </SelectContent>
               </Select>
-              <div className={cn("w-28", !(puedeForzarRegreso && estadoIndex(expData.estado) > 0) && "invisible")}>
+              <div className={cn("w-8", !(puedeForzarRegreso && estadoIndex(expData.estado) > 0) && "invisible")}>
                 <ForzarRegresoEstadoDialog
                   estadoActual={expData.estado}
                   pendiente={forzarRegreso.isPending}
@@ -921,24 +922,25 @@ function DetalleExpediente() {
           )}
           </div>
           <CampoHeader etiqueta="BL/AWB" valor={expData.bl_awb} />
-          <div className="grid h-8 min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1.5 text-xs md:text-sm" title={`Fecha Estimada de Llegada (ETA): ${expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}`}>
+          <div className="grid h-8 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 text-xs md:text-sm" title={`Fecha Estimada de Llegada (ETA): ${expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}`}>
               <span className="text-muted-foreground">ETA:</span>
-              <span className="min-w-0 truncate font-medium">{expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}</span>
+              <span className="min-w-0 truncate font-medium">{expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}
               {(() => {
-                if (["despachado", "entregado", "facturar"].includes(expData.estado) || !expData.fecha_compromiso) return <span />;
+                if (["despachado", "entregado", "facturar"].includes(expData.estado) || !expData.fecha_compromiso) return null;
                 const eta = parseLocalDate(expData.fecha_compromiso);
-                if (!eta) return <span />;
+                if (!eta) return null;
                 const today = new Date(); today.setHours(0, 0, 0, 0);
                 eta.setHours(0, 0, 0, 0);
                 const diff = Math.round((eta.getTime() - today.getTime()) / 86400000);
                 const toneClass = diff > 5 ? "text-emerald-600 dark:text-emerald-400" : diff >= 0 ? "text-amber-600 dark:text-amber-400" : "text-destructive";
                 const full = diff > 0 ? `${diff} días por llegar` : diff === 0 ? "Llega hoy" : `${Math.abs(diff)} días de atraso`;
                 return (
-                  <span title={full} aria-label={full} className={`shrink-0 text-xs font-medium tabular-nums ${toneClass}`}>
-                    {diff} (Días)
+                  <span title={full} aria-label={full} className={`font-medium tabular-nums ${toneClass}`}>
+                    {` (${diff} ${Math.abs(diff) === 1 ? "día" : "días"})`}
                   </span>
                 );
               })()}
+              </span>
           </div>
           <CampoHeader etiqueta="Puerto" valor={expData.puerto_arribo} />
         </div>
@@ -6075,9 +6077,18 @@ function ForzarRegresoEstadoDialog({
         if (!v) { setDestino(""); setMotivo(""); }
       }}
     >
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 shrink-0 px-1.5 text-xs text-muted-foreground">Corregir estado</Button>
-      </DialogTrigger>
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Corregir estado" className="h-8 w-8 shrink-0 text-foreground">
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Corregir estado</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Corregir estado del expediente</DialogTitle>
