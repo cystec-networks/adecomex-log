@@ -9,3 +9,5 @@
 - [x] Mantener el encabezado en una línea en computadora y reunir los menús en Más acciones cuando no caben.
 - [x] Integrar los días con ETA, restaurar el contraste de Estado y reemplazar Corregir estado por un ícono con tooltip; verificar escritorio y celular.
 - [x] Mover el plazo junto a ETA en el encabezado, mostrar la edición solo al pulsar el lápiz y verificar escritorio y celular sin cambiar el cálculo.
+- [ ] Ocultar el vencimiento desde Verificado y mostrar cumplimiento cuando exista una fecha de presentación fiable.
+- [ ] Mover Agregar endoso a Documentos y Reportes, con divisor e ícono propios, y comprobar ambos accesos.
