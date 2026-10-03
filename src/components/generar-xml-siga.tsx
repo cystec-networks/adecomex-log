@@ -36,7 +36,17 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
     queryKey: ["expediente-xml", expedienteId, open],
     enabled: open,
     queryFn: async () =>
-      (await supabase.from("expedientes").select("*, clientes(*)").eq("id", expedienteId).maybeSingle()).data,
+    {
+      const e: any = (await supabase.from("expedientes").select("*, clientes(*)").eq("id", expedienteId).maybeSingle()).data;
+      if (!e) return e;
+      // Endoso activo: el Importador/Consignatario declarado es el cliente endosado.
+      const { data: endoso } = await supabase
+        .from("expediente_endosos")
+        .select("endosado:clientes!expediente_endosos_consignatario_endosado_id_fkey(*)")
+        .eq("expediente_id", expedienteId).eq("activo", true).maybeSingle();
+      const endosado = (endoso as any)?.endosado;
+      return endosado ? { ...e, clientes: endosado, cliente_original: e.clientes } : e;
+    },
   });
 
   const { data: items } = useQuery({

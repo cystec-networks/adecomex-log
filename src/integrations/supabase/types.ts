@@ -2961,6 +2961,105 @@ export type Database = {
           },
         ]
       }
+      expediente_endosos: {
+        Row: {
+          activo: boolean
+          consignatario_endosado_id: string
+          consignatario_original_id: string | null
+          created_at: string
+          created_by: string | null
+          documento_id: string | null
+          expediente_id: string
+          fecha_endoso: string | null
+          id: string
+          observaciones: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          consignatario_endosado_id: string
+          consignatario_original_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          documento_id?: string | null
+          expediente_id: string
+          fecha_endoso?: string | null
+          id?: string
+          observaciones?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          consignatario_endosado_id?: string
+          consignatario_original_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          documento_id?: string | null
+          expediente_id?: string
+          fecha_endoso?: string | null
+          id?: string
+          observaciones?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expediente_endosos_consignatario_endosado_id_fkey"
+            columns: ["consignatario_endosado_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_endosos_consignatario_original_id_fkey"
+            columns: ["consignatario_original_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_endosos_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_endosos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_endosos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_endosos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "expediente_endosos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "expediente_endosos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+        ]
+      }
       expediente_hitos: {
         Row: {
           created_at: string

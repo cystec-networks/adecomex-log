@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { EndosoBadge, EndosoSection } from "@/components/expediente-endoso";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -878,11 +879,11 @@ function DetalleExpediente() {
 
         {!isNuevo && (
         <div className="expediente-info-fila2">
-          <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-1.5">
           {expData.clientes ? (
             <Popover>
               <PopoverTrigger asChild>
-                <Button type="button" variant="link" className="h-8 w-full min-w-0 justify-start truncate p-0 text-left text-sm font-semibold text-foreground underline decoration-dotted underline-offset-2" title={expData.clientes.nombre}>
+                <Button type="button" variant="link" className="h-8 min-w-0 max-w-full shrink justify-start truncate p-0 text-left text-sm font-semibold text-foreground underline decoration-dotted underline-offset-2" title={expData.clientes.nombre}>
                   {expData.clientes.nombre}
                 </Button>
               </PopoverTrigger>
@@ -920,6 +921,7 @@ function DetalleExpediente() {
           ) : (
             <span className="flex h-8 items-center truncate text-sm text-muted-foreground">Sin cliente</span>
           )}
+          <EndosoBadge expedienteId={id} originalNombre={expData.clientes?.nombre} />
           </div>
           <CampoHeader etiqueta="BL/AWB" valor={expData.bl_awb} />
           <div className="grid h-8 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 text-xs md:text-sm" title={`Fecha Estimada de Llegada (ETA): ${expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}`}>
@@ -1932,6 +1934,11 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             </div>
           );
         })()}
+        {!isNuevo && (
+          <div className="md:col-span-2 lg:col-span-3 xl:col-span-4 col-span-full">
+            <EndosoSection expedienteId={id} clienteOriginal={exp?.clientes ? { id: exp.cliente_id, nombre: exp.clientes.nombre } : null} editable={canEdit} />
+          </div>
+        )}
       </Section>
 
 
