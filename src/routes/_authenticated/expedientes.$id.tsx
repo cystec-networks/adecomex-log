@@ -725,7 +725,7 @@ function DetalleExpediente() {
               </p>
             </div>
           ) : (
-            <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-2 md:min-w-[7rem]">
+            <div className="flex min-w-0 items-center gap-2 md:gap-2">
               <h1 className="font-display shrink-0 text-lg font-bold md:text-xl expediente-numero">{expData.numero}</h1>
               {expData.solicitudes?.numero && <Badge variant="outline" className="hidden shrink-0 md:inline-flex">← {expData.solicitudes.numero}</Badge>}
             </div>
