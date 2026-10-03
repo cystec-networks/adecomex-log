@@ -62,6 +62,8 @@ import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { PortadaExpedienteButton } from "@/components/portada-expediente-button";
 import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado, fechasDespachoFaltantes } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
+import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
+import { VencePresentacion } from "@/components/vence-presentacion";
 import { unitFob, loadBrokerConfig } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
@@ -417,6 +419,7 @@ function DetalleExpediente() {
   const dragTab = useRef<string | null>(null);
   const [modoEdicion, setModoEdicion] = useState(!!nuevo || isNuevo);
   const { data: roles } = useMyRoles();
+  const { data: plazosReg } = usePlazosRegimen();
   const canEditExpediente = (roles ?? []).some((r) =>
     ["admin", "finanzas", "operaciones", "agente_aduanal", "contabilidad"].includes(r),
   );
@@ -958,7 +961,7 @@ function DetalleExpediente() {
           <CampoHeader etiqueta="N.º de permiso" valor={permisosNumeros} />
 
           {(() => {
-            const a = alertaDeclaracionTardia(expData);
+            const a = alertaDeclaracionTardia({ ...expData, sla_dias: plazoEfectivo(expData, plazosReg).dias });
             if (!a) return <span className="hidden xl:block" aria-hidden="true" />;
             const cls = a.tone === "danger"
               ? "border-destructive/40 bg-destructive/10 text-destructive"
@@ -1914,7 +1917,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         <Field label="BL / AWB / Guía" value={form.bl_awb} onChange={(v) => { set("bl_awb", v); limpiarFaltante("req-bl_awb"); }} disabled={!editable} req fieldId="req-bl_awb" highlight={camposFaltantes.has("req-bl_awb")} />
         <AutoField label="Medio de transporte" value={form.medio_transporte} onChange={(v) => set("medio_transporte", v)} suggestion={sug.medio_transporte ?? []} disabled={!editable} />
         <AutoField label="Naviera" value={form.naviera} onChange={(v) => set("naviera", v)} suggestion={sug.naviera ?? []} disabled={!editable} />
-        <Field label="SLA (días)" value={form.sla_dias} onChange={(v) => set("sla_dias", v)} type="number" disabled={!editable} />
+        {!isNuevo && (
+          <div className="grid gap-1.5">
+            <Label>Plazo de presentación</Label>
+            <div className="flex h-9 items-center rounded-md border bg-muted/30 px-2"><VencePresentacion exp={exp} canEdit={canEdit} /></div>
+          </div>
+        )}
         <Field label="Fecha de Cargado" value={form.fecha_cargado} onChange={(v) => set("fecha_cargado", v)} type="date" disabled={!editable} />
         <Field label="Fecha Estimada de Llegada (ETA)" value={form.fecha_compromiso} onChange={(v) => set("fecha_compromiso", v)} type="date" disabled={!editable} />
         <div className="grid gap-1">
