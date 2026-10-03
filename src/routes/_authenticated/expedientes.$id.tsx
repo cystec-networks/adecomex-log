@@ -941,6 +941,20 @@ function DetalleExpediente() {
           </div>
           <CampoHeader etiqueta="BL/AWB" valor={expData.bl_awb} />
           <div className="expediente-header-arrival">
+          {expData.fecha_llegada_real ? (
+            <div className="grid h-8 shrink-0 grid-cols-[auto_auto] items-center gap-1.5 text-xs md:text-sm" title={`Fecha de Llegada Real: ${fmtLocalDate(expData.fecha_llegada_real)}`}>
+              <span className="text-muted-foreground">Llegada:</span>
+              <span className="min-w-0 truncate font-medium">
+                {fmtLocalDate(expData.fecha_llegada_real)}
+                {(() => {
+                  if (!expData.fecha_cargado) return null;
+                  const dias = Math.round((new Date(expData.fecha_llegada_real).getTime() - new Date(expData.fecha_cargado).getTime()) / 86400000);
+                  if (!Number.isFinite(dias)) return null;
+                  return <span className="tabular-nums">{dias >= 0 ? ` (${dias} ${dias === 1 ? "día" : "días"} tránsito)` : " (Fechas inconsistentes)"}</span>;
+                })()}
+              </span>
+            </div>
+          ) : (
           <div className="grid h-8 shrink-0 grid-cols-[auto_auto] items-center gap-1.5 text-xs md:text-sm" title={`Fecha Estimada de Llegada (ETA): ${expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}`}>
               <span className="text-muted-foreground">ETA:</span>
               <span className="min-w-0 truncate font-medium">{expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}
@@ -961,6 +975,7 @@ function DetalleExpediente() {
               })()}
               </span>
           </div>
+          )}
           <VencePresentacion exp={expData} canEdit={canEditExpediente} />
           </div>
           <CampoHeader etiqueta="Puerto" valor={expData.puerto_arribo} />
@@ -1942,17 +1957,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             Se llena cuando el embarque ya arribó de verdad — a partir de esta fecha corre el plazo legal de presentación (5 días hábiles).
           </p>
         </div>
-        {form.fecha_cargado && form.fecha_compromiso && (() => {
-          const dias = Math.round((new Date(form.fecha_compromiso).getTime() - new Date(form.fecha_cargado).getTime()) / 86400000);
-          return (
-            <div className="grid gap-1.5">
-              <Label className="text-muted-foreground">Días de tránsito</Label>
-              <div className="h-9 flex items-center px-3 rounded-md border bg-muted/30 text-sm">
-                {dias >= 0 ? `${dias} día${dias === 1 ? "" : "s"}` : "Fechas inconsistentes"}
-              </div>
-            </div>
-          );
-        })()}
       </Section>
       {!isNuevo && <EndosoSection expedienteId={id} clienteOriginal={exp?.clientes ? { id: exp.cliente_id, nombre: exp.clientes.nombre } : null} editable={canEdit} solicitudApertura={solicitudEndoso} />}
 
