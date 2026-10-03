@@ -730,6 +730,28 @@ function DetalleExpediente() {
               {expData.solicitudes?.numero && <Badge variant="outline" className="hidden shrink-0 md:inline-flex">← {expData.solicitudes.numero}</Badge>}
             </div>
           )}
+          {!isNuevo && (
+            <div className="flex shrink-0 items-center gap-1.5">
+              <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
+              <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
+                <SelectTrigger className="h-8 w-24 min-w-0 text-xs md:w-32 md:text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ESTADO_ORDEN.map((e) => (
+                    <SelectItem key={e} value={e} disabled={estadoIndex(e) < estadoIndex(expData.estado)}>
+                      {ESTADO_LABEL[e]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {puedeForzarRegreso && estadoIndex(expData.estado) > 0 && (
+                <ForzarRegresoEstadoDialog
+                  estadoActual={expData.estado}
+                  pendiente={forzarRegreso.isPending}
+                  onConfirm={(estado, motivo) => forzarRegreso.mutate({ estado, motivo })}
+                />
+              )}
+            </div>
+          )}
           {isNuevo && (
             <div className="flex items-center gap-2">
               <EscanearBlButton onExtracted={(res) => { blRes.current = res; void aplicarCombinado(); toast.success("BL procesado — revisa y ajusta los campos"); }} />
