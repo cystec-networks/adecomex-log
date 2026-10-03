@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { usePlazosRegimen, plazoEfectivo, diasRegimen, venceEn, habilesRestantes, diasHabilesEntre } from "@/lib/plazo-presentacion";
 import { estadoIndex } from "@/lib/estados-expediente";
-import { parseLocalDate, fmtLocalDate } from "@/lib/dates";
+import { parseLocalDate, fmtLocalDate, hoyRD } from "@/lib/dates";
 
 export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean }) {
   const qc = useQueryClient();
@@ -28,7 +28,7 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
   // Use the shared state ordering, including every stage after verification.
   const etapaPosterior = estadoIndex(exp?.estado) >= estadoIndex("verificar");
   if (etapaPosterior) {
-    const presentado = parseLocalDate(exp?.fecha_presentado);
+    const presentado = parseLocalDate(exp?.fecha_presentacion_real);
     if (isNaN(presentado.getTime())) return null;
     const tarde = presentado > vencimiento;
     const diferencia = Math.abs(diasHabilesEntre(presentado, vencimiento));
@@ -38,11 +38,11 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
       : presentado.getTime() === vencimiento.getTime()
         ? "el día del vencimiento"
         : `${diferencia} ${unidad} antes del vencimiento`;
-    const texto = `Presentado: ${fmtLocalDate(exp.fecha_presentado)} (${detalle})`;
+    const texto = `Presentado: ${fmtLocalDate(exp.fecha_presentacion_real)} (${detalle})`;
     return <>
       <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
-      <span className={`flex min-w-0 items-center gap-1 text-xs md:text-sm ${tarde ? "text-warning" : "text-success"}`} title={`${texto}. Fecha registrada al pasar a Presentado.`}>
-        <span className="min-w-0 truncate font-medium">Presentado: {fmtLocalDate(exp.fecha_presentado)} {tarde ? "⚠" : "✓"} ({detalle})</span>
+      <span className={`flex min-w-0 items-center gap-1 text-xs md:text-sm ${tarde ? "text-warning" : "text-success"}`} title={`${texto}. Fecha real de presentación capturada en Información General.`}>
+        <span className="min-w-0 truncate font-medium">Presentado: {fmtLocalDate(exp.fecha_presentacion_real)} {tarde ? "⚠" : "✓"} ({detalle})</span>
       </span>
     </>;
   }
@@ -59,8 +59,7 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
   };
 
   const r = habilesRestantes(vencimiento);
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
+  const hoy = hoyRD();
   // A Friday deadline is already overdue on Saturday, even with zero business days elapsed.
   const vencido = vencimiento < hoy;
   const tono = vencido ? "text-destructive" : r <= 2 ? "text-warning" : "text-foreground";

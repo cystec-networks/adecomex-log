@@ -26,7 +26,7 @@ import {
 import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical, Printer, Repeat2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
+import { fmtLocalDate, parseLocalDate, daysFromToday, hoyRD, hoyRDISO } from "@/lib/dates";
 import { calcImpuestosLinea } from "@/lib/impuestos";
 import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
 import { ImpuestosSuspCtx, useImpuestosSusp, useEstadoSuspensivo, esRegimenSuspensivo } from "@/lib/impuestos";
@@ -163,7 +163,7 @@ function normalizarPinesPago(payload: any) {
 const CAMPOS_FECHA_EXPEDIENTE = [
   "certificado_periodo_desde", "certificado_periodo_hasta", "fecha_aprobacion_despacho", "fecha_cargado",
   "fecha_cierre", "fecha_compromiso", "fecha_despachado", "fecha_en_transito", "fecha_entregado",
-  "fecha_facturado", "fecha_llegada_real", "fecha_presentado", "fecha_recibido", "fecha_tasa_manual",
+  "fecha_facturado", "fecha_llegada_real", "fecha_presentado", "fecha_presentacion_real", "fecha_recibido", "fecha_tasa_manual",
   "fecha_verificado", "impuestos_override_at", "liq_siga_fecha_pago", "liq_siga_fecha_registro",
   "liq_siga_registro_at", "liq_siga_termino_at", "reembolso_fecha_pago", "reembolso_generado_at",
   "eliminado_en",
@@ -962,7 +962,7 @@ function DetalleExpediente() {
                 if (["despachado", "entregado", "facturar"].includes(expData.estado) || !expData.fecha_compromiso) return null;
                 const eta = parseLocalDate(expData.fecha_compromiso);
                 if (!eta) return null;
-                const today = new Date(); today.setHours(0, 0, 0, 0);
+                const today = hoyRD();
                 eta.setHours(0, 0, 0, 0);
                 const diff = Math.round((eta.getTime() - today.getTime()) / 86400000);
                 const toneClass = diff > 5 ? "text-emerald-600 dark:text-emerald-400" : diff >= 0 ? "text-amber-600 dark:text-amber-400" : "text-destructive";
@@ -1167,6 +1167,7 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     sla_dias: d.sla_dias ?? 5,
     fecha_compromiso: d.fecha_compromiso ?? "",
     fecha_llegada_real: d.fecha_llegada_real ?? "",
+    fecha_presentacion_real: d.fecha_presentacion_real ?? "",
     fecha_cargado: d.fecha_cargado ?? "",
     medio_transporte: d.medio_transporte ?? "",
     naviera: d.naviera ?? "",
@@ -1264,6 +1265,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const editable = (canEdit && modoEdicion) || isNuevo;
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState(() => construirFormInicial(isNuevo ? null : exp, isNuevo, isNuevo ? tipoParam : ""));
+  const sugeridaPresentacion = useRef(false);
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
   const esExportacion = (form.tipo_operacion || "").toLowerCase().startsWith("export");
   // Exportación: precarga los datos del agente despachante de ADECOMEX si están vacíos.
@@ -2104,6 +2106,20 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             </Select>
           </div>
           <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} req />
+          <div className="grid gap-1.5">
+            <Label className="flex items-center gap-1">
+              Fecha de Presentación
+              {!form.fecha_presentacion_real && estadoIndex(exp?.estado) >= estadoIndex("presentar") && (
+                <span className="inline-flex items-center gap-1 text-warning" title="Falta capturar la fecha real de presentación" role="img" aria-label="Falta capturar la fecha real de presentación">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  <span className="text-[11px] font-normal">Falta capturar</span>
+                </span>
+              )}
+            </Label>
+            <Input type="date" value={form.fecha_presentacion_real ?? ""} disabled={!editable}
+              onFocus={() => { if (!form.fecha_presentacion_real && !sugeridaPresentacion.current) { sugeridaPresentacion.current = true; set("fecha_presentacion_real", hoyRDISO()); } }}
+              onChange={(e) => set("fecha_presentacion_real", e.target.value)} />
+          </div>
           <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} req />
           <Field label="Fecha de Aprobación" value={form.fecha_aprobacion_despacho} onChange={(v) => set("fecha_aprobacion_despacho", v)} type="date" disabled={!editable} />
           <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} disabled={!editable} />

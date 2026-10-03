@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { parseLocalDate } from "@/lib/dates";
+import { hoyRD } from "@/lib/dates";
 
 export type PlazoRegimen = { codigo: string; nombre: string; dias: number | null };
 
@@ -68,7 +69,7 @@ export function venceEn(llegada: string, dias: number): Date | null {
 
 /** Días hábiles restantes desde hoy (excluido) hasta el vencimiento (incluido). Negativo si venció. */
 export function habilesRestantes(vence: Date): number {
-  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const hoy = hoyRD();
   if (vence.getTime() === hoy.getTime()) return 0;
   const sign = vence > hoy ? 1 : -1;
   const [a, b] = sign > 0 ? [hoy, vence] : [vence, hoy];
