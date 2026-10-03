@@ -1902,7 +1902,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               : <CatalogoAutocomplete tabla="catalogo_tipos_carga" label="Tipo de carga" value={form.tipo_carga} onChange={(v) => set("tipo_carga", v)} placeholder="Escribe o selecciona…" />}
             <ReadOnlyField label="Origen" value={exp.pais_origen} />
             <ReadOnlyField label="Incoterm" value={exp.incoterm} />
-            <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={expData?.clientes?.contacto ? [expData.clientes.contacto] : []} disabled={!editable} />
+            <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={(exp as any)?.clientes?.contacto ? [(exp as any).clientes.contacto] : []} disabled={!editable} />
         </Section>
       )}
 
