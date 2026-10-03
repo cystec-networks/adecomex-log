@@ -10,7 +10,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronRight, Trash2, AlarmClock, AlertTriangle, Clock, Plus, Copy } from "lucide-react";
+import { ChevronRight, Repeat2, Trash2, AlarmClock, AlertTriangle, Clock, Plus, Copy } from "lucide-react";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { Toggle } from "@/components/ui/toggle";
 import { WhatsAppButton } from "@/components/whatsapp-button";
@@ -71,7 +71,7 @@ function Expedientes() {
     queryKey: ["expedientes"],
     queryFn: async () => (await supabase
       .from("expedientes")
-      .select("id,numero,estado,bl_awb,factura_comercial,fecha_compromiso,fecha_llegada_real,created_at,updated_at,medio_transporte,naviera,suplidor,pais_origen,pais_procedencia,incoterm,puerto_salida,puerto_arribo,numero_dua,numero_vuce,numero_igra,descripcion_mercancia,numeros_contenedores,numero_certificado_origen,tipo_operacion,tipo_carga,regimen_aduanero,observaciones,total_fob,total_cif,liq_siga_numero,liq_siga_termino_at,liq_siga_fecha_pago, clientes(nombre,telefono,email), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento), mercancia_items(item_no, detalle_producto, deleted_at)")
+      .select("id,numero,estado,bl_awb,factura_comercial,fecha_compromiso,fecha_llegada_real,created_at,updated_at,medio_transporte,naviera,suplidor,pais_origen,pais_procedencia,incoterm,puerto_salida,puerto_arribo,numero_dua,numero_vuce,numero_igra,descripcion_mercancia,numeros_contenedores,numero_certificado_origen,tipo_operacion,tipo_carga,regimen_aduanero,observaciones,total_fob,total_cif,liq_siga_numero,liq_siga_termino_at,liq_siga_fecha_pago, clientes(nombre,telefono,email), expediente_endosos(activo, endosado:clientes!expediente_endosos_consignatario_endosado_id_fkey(nombre)), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento), mercancia_items(item_no, detalle_producto, deleted_at)")
       .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
   });
@@ -348,7 +348,17 @@ function Expedientes() {
         </Link>
       </td>
       <td className="px-2 py-1 align-middle whitespace-nowrap text-foreground/90">
-        <TruncatedCell value={e.clientes?.nombre} />
+        {(() => {
+          const end = (e.expediente_endosos ?? []).find((x: any) => x.activo && x.endosado);
+          return end ? (
+            <span className="inline-flex max-w-full items-center gap-1">
+              <TruncatedCell value={e.clientes?.nombre} />
+              <span title={`Endosado a: ${end.endosado.nombre}`} aria-label={`Endosado a ${end.endosado.nombre}`} className="shrink-0 text-amber-600">
+                <Repeat2 className="h-3.5 w-3.5" />
+              </span>
+            </span>
+          ) : <TruncatedCell value={e.clientes?.nombre} />;
+        })()}
       </td>
       <td className="px-2 py-1 align-middle text-muted-foreground text-xs whitespace-nowrap">
         <MercanciaCell items={e.mercancia_items} />
