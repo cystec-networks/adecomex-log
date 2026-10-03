@@ -924,26 +924,6 @@ function DetalleExpediente() {
             <span className="flex h-8 items-center truncate text-sm text-muted-foreground">Sin cliente</span>
           )}
           </div>
-          <div className="flex min-w-0 items-center gap-1.5">
-            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
-            <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
-              <SelectTrigger className="h-8 w-28 min-w-0 flex-1 text-xs md:w-32 md:flex-initial md:text-sm"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {ESTADO_ORDEN.map((e) => (
-                  <SelectItem key={e} value={e} disabled={estadoIndex(e) < estadoIndex(expData.estado)}>
-                    {ESTADO_LABEL[e]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {puedeForzarRegreso && estadoIndex(expData.estado) > 0 && (
-              <ForzarRegresoEstadoDialog
-                estadoActual={expData.estado}
-                pendiente={forzarRegreso.isPending}
-                onConfirm={(estado, motivo) => forzarRegreso.mutate({ estado, motivo })}
-              />
-            )}
-          </div>
           <div className="flex h-8 min-w-0 items-center gap-1.5 text-xs md:text-sm">
             <span className="min-w-0 truncate" title={`BL/AWB: ${expData.bl_awb ?? "—"}`}>
               <span className="text-muted-foreground">BL/AWB:</span>{" "}
