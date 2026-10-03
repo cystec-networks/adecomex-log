@@ -720,9 +720,8 @@ function DetalleExpediente() {
               </p>
             </div>
           ) : (
-            <div className="expediente-header-number flex min-w-0 items-center gap-2 md:gap-2">
-              <h1 className="font-display min-w-0 truncate text-lg font-bold md:text-xl expediente-numero">{expData.numero}</h1>
-              {expData.solicitudes?.numero && <Badge variant="outline" className="hidden shrink-0 md:inline-flex">← {expData.solicitudes.numero}</Badge>}
+            <div className="expediente-header-number flex items-center">
+              <h1 className="font-display whitespace-nowrap text-lg font-bold md:text-xl expediente-numero">{expData.numero}</h1>
             </div>
           )}
           {!isNuevo && (
@@ -877,7 +876,7 @@ function DetalleExpediente() {
         </div>
 
         {!isNuevo && (
-        <div className="grid min-w-0 grid-cols-1 gap-x-3 gap-y-1 md:grid-cols-2 xl:grid-cols-[minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(12rem,1.3fr)_minmax(9rem,1fr)]">
+        <div className="expediente-info-fila2">
           <div className="min-w-0">
           {expData.clientes ? (
             <Popover>
@@ -921,20 +920,14 @@ function DetalleExpediente() {
             <span className="flex h-8 items-center truncate text-sm text-muted-foreground">Sin cliente</span>
           )}
           </div>
-          <div className="flex h-8 min-w-0 items-center gap-1.5 text-xs md:text-sm">
-            <span className="min-w-0 truncate" title={`BL/AWB: ${expData.bl_awb ?? "—"}`}>
-              <span className="text-muted-foreground">BL/AWB:</span>{" "}
-              <span className="font-medium">{expData.bl_awb ?? "—"}</span>
-            </span>
-          </div>
-          <div className="flex h-8 min-w-0 items-center gap-1.5 text-xs md:text-sm">
-            <span className="flex min-w-0 items-baseline gap-1.5" title={`Fecha Estimada de Llegada (ETA): ${expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}`}>
-              <span className="shrink-0 text-muted-foreground">ETA:</span>{" "}
+          <CampoHeader etiqueta="BL/AWB" valor={expData.bl_awb} />
+          <div className="grid h-8 min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1.5 text-xs md:text-sm" title={`Fecha Estimada de Llegada (ETA): ${expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}`}>
+              <span className="text-muted-foreground">ETA:</span>
               <span className="min-w-0 truncate font-medium">{expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}</span>
               {(() => {
-                if (["despachado", "entregado", "facturar"].includes(expData.estado) || !expData.fecha_compromiso) return null;
+                if (["despachado", "entregado", "facturar"].includes(expData.estado) || !expData.fecha_compromiso) return <span />;
                 const eta = parseLocalDate(expData.fecha_compromiso);
-                if (!eta) return null;
+                if (!eta) return <span />;
                 const today = new Date(); today.setHours(0, 0, 0, 0);
                 eta.setHours(0, 0, 0, 0);
                 const diff = Math.round((eta.getTime() - today.getTime()) / 86400000);
@@ -946,29 +939,20 @@ function DetalleExpediente() {
                   </span>
                 );
               })()}
-            </span>
-            <span className="flex min-w-0 flex-1 items-baseline gap-1" title={`Puerto: ${expData.puerto_arribo ?? "—"}`}>
-              <span className="shrink-0 text-muted-foreground">Puerto:</span>{" "}
-              <span className="min-w-0 truncate font-medium">{expData.puerto_arribo ?? "—"}</span>
-            </span>
           </div>
-          <div className="flex h-7 min-w-0 items-center gap-1.5">
+          <CampoHeader etiqueta="Puerto" valor={expData.puerto_arribo} />
+          <div className="flex h-8 min-w-0 items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Etapa Operativa:</Label>
             <span className="text-xs font-medium md:text-sm">{hitosDone} de {hitosTotal}</span>
           </div>
-
-          <div className="flex h-7 min-w-0 items-center gap-1.5">
-            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Declaración DUA:</Label>
-            <span className="truncate text-xs font-medium md:text-sm" title={expData.numero_dua ?? "—"}>{expData.numero_dua ?? "—"}</span>
-          </div>
-          <div className="flex h-7 min-w-0 items-center gap-1.5">
-            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">N.º de despacho:</Label>
-            <span className="truncate text-xs font-medium md:text-sm" title={expData.numero_igra ?? "—"}>{expData.numero_igra ?? "—"}</span>
-          </div>
-          <div className="flex h-7 min-w-0 items-center gap-1.5">
-            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">N.º de permiso:</Label>
-            <span className="truncate text-xs font-medium md:text-sm" title={permisosNumeros || "—"}>{permisosNumeros || "—"}</span>
-          </div>
+        </div>
+        )}
+        {!isNuevo && (
+        <div className="expediente-info-fila3">
+          <CampoHeader etiqueta="Declaración DUA" valor={expData.numero_dua} />
+          <CampoHeader etiqueta="N.º de despacho" valor={expData.numero_igra} />
+          <CampoHeader etiqueta="N.º de permiso" valor={permisosNumeros} />
+          <CampoHeader etiqueta="Solicitud original" valor={expData.solicitudes?.numero} />
 
           {(() => {
             const a = alertaDeclaracionTardia(expData);
@@ -993,9 +977,9 @@ function DetalleExpediente() {
         </div>
         )}
         {!isNuevo && (
-          <div className="mt-1 flex h-6 min-w-0 items-center gap-1.5">
-            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Descripción:</Label>
-            <span className="min-w-0 flex-1 truncate text-xs font-medium md:text-sm" title={expData.descripcion_mercancia ?? "—"}>
+          <div className="mt-1 grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-1.5">
+            <Label className="mb-0 whitespace-nowrap text-xs leading-5 text-muted-foreground md:text-sm">Descripción:</Label>
+            <span className="line-clamp-3 min-w-0 break-words text-xs font-medium leading-5 md:text-sm" title={expData.descripcion_mercancia ?? "—"}>
               {expData.descripcion_mercancia || "—"}
             </span>
           </div>
@@ -6133,5 +6117,25 @@ function ForzarRegresoEstadoDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Campo del encabezado con etiqueta fija; valores largos se truncan y se ven completos al pasar el mouse o tocar. */
+function CampoHeader({ etiqueta, valor }: { etiqueta: string; valor: string | null | undefined }) {
+  const texto = valor && String(valor).trim() ? String(valor) : "—";
+  return (
+    <div className="grid h-8 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 text-xs md:text-sm">
+      <span className="whitespace-nowrap text-muted-foreground">{etiqueta}:</span>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button type="button" className="min-w-0 truncate text-left font-medium" title={`${etiqueta}: ${texto}`}>
+            {texto}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto max-w-[min(24rem,calc(100vw-2rem))] break-words p-2 text-xs" align="start">
+          <span className="text-muted-foreground">{etiqueta}:</span> <span className="font-medium">{texto}</span>
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }
