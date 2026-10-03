@@ -50,7 +50,7 @@ export function EndosoBadge({ expedienteId, originalNombre }: { expedienteId: st
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge variant="outline" className="max-w-full cursor-help truncate border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          <Badge variant="outline" className="min-w-0 max-w-[60%] shrink cursor-help truncate border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
             <Repeat2 className="mr-1 h-3 w-3 shrink-0" />
             <span className="truncate">Endosado a: {endoso.endosado.nombre}</span>
           </Badge>
