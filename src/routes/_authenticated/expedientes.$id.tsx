@@ -1953,13 +1953,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             </div>
           );
         })()}
-        {!isNuevo && (
-          <div className="md:col-span-2 lg:col-span-3 xl:col-span-4 col-span-full">
-            <EndosoSection expedienteId={id} clienteOriginal={exp?.clientes ? { id: exp.cliente_id, nombre: exp.clientes.nombre } : null} editable={canEdit} solicitudApertura={solicitudEndoso} />
-          </div>
-        )}
       </Section>
-
+      {!isNuevo && <EndosoSection expedienteId={id} clienteOriginal={exp?.clientes ? { id: exp.cliente_id, nombre: exp.clientes.nombre } : null} editable={canEdit} solicitudApertura={solicitudEndoso} />}
 
       <Section id="datos-importacion" title={esExportacion ? "2. Datos de la operación" : "2. Datos de importación"} subtitle={esExportacion ? "Origen de la mercancía y términos comerciales" : "Origen, proveedor y términos comerciales"}>
         {!esExportacion && (
