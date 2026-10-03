@@ -28,6 +28,14 @@
 .expediente-header-menus { grid-area: menus; }
 @media (min-width: 768px) {
   .expediente-header-grid {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "back number" "state save" "menus menus";
+    column-gap: 0.75rem;
+  }
+  .expediente-header-back { justify-self: start; }
+}
+@media (min-width: 1200px) {
+  .expediente-header-grid {
     grid-template-columns: auto minmax(0, 1fr) 18rem auto;
     grid-template-areas: "back number state save" "menus menus menus menus";
     column-gap: 0.75rem;
