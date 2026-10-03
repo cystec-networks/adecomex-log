@@ -11,6 +11,14 @@ import { usePlazosRegimen, plazoEfectivo, diasRegimen, venceEn, habilesRestantes
 import { estadoIndex } from "@/lib/estados-expediente";
 import { parseLocalDate, fmtLocalDate, hoyRD } from "@/lib/dates";
 
+/** Píldora compacta alineada con el tratamiento visual del badge de Estado del encabezado. */
+const pill = (tono: string) =>
+  `inline-flex h-7 shrink-0 items-center whitespace-nowrap rounded-md border px-2 text-xs font-medium ${tono}`;
+const TONO_NEUTRO = "border-border bg-muted/50 text-foreground";
+const TONO_ALERTA = "border-warning/40 bg-warning/10 text-warning";
+const TONO_ERROR = "border-destructive/40 bg-destructive/10 text-destructive";
+const TONO_OK = "border-success/40 bg-success/10 text-success";
+
 export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean }) {
   const qc = useQueryClient();
   const { data: plazos } = usePlazosRegimen();
@@ -38,11 +46,13 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
       : presentado.getTime() === vencimiento.getTime()
         ? "el día del vencimiento"
         : `${diferencia} ${unidad} antes del vencimiento`;
-    const texto = `Presentado: ${fmtLocalDate(exp.fecha_presentacion_real)} (${detalle})`;
+    const fecha = fmtLocalDate(exp.fecha_presentacion_real);
+    const compacto = `Presentado: ${fecha} ${tarde ? "⚠" : "✓"} (${diferencia === 0 ? "0d" : `${tarde ? "+" : "-"}${diferencia}d`})`;
+    const completo = `Presentado: ${fecha} (${detalle}). Fecha real de presentación capturada en Información General.`;
     return <>
       <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
-      <span className={`flex min-w-0 items-center gap-1 text-xs md:text-sm ${tarde ? "text-warning" : "text-success"}`} title={`${texto}. Fecha real de presentación capturada en Información General.`}>
-        <span className="min-w-0 truncate font-medium">Presentado: {fmtLocalDate(exp.fecha_presentacion_real)} {tarde ? "⚠" : "✓"} ({detalle})</span>
+      <span className={pill(tarde ? TONO_ALERTA : TONO_OK)} title={completo} aria-label={completo}>
+        {compacto}
       </span>
     </>;
   }
@@ -62,37 +72,36 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
   const hoy = hoyRD();
   // A Friday deadline is already overdue on Saturday, even with zero business days elapsed.
   const vencido = vencimiento < hoy;
-  const tono = vencido ? "text-destructive" : r <= 2 ? "text-warning" : "text-foreground";
   const cantidad = Math.abs(r);
   const unidad = cantidad === 1 ? "día hábil" : "días hábiles";
-  const txt = vencido ? `vencido hace ${cantidad} ${unidad}` : `${cantidad} ${unidad} ${cantidad === 1 ? "restante" : "restantes"}`;
+  const detalle = vencido ? `vencido hace ${cantidad} ${unidad}` : `${cantidad} ${unidad} ${cantidad === 1 ? "restante" : "restantes"}`;
   const fecha = vencimiento.toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "numeric" });
-  const contenido = `${vencido ? "Venció" : "Vence"} presentación: ${fecha}${vencido ? " ⚠" : ""} (${txt})`;
+  const completo = `${vencido ? "Venció" : "Vence"} presentación: ${fecha}${vencido ? " ⚠" : ""} (${detalle}).`
+    + ` ${esOverride ? "Plazo propio de este expediente" : "Plazo del régimen"}, contado desde la llegada real.`;
+  const compacto = vencido ? `Venció: ${fecha} ⚠ (hace ${cantidad}d)` : `Vence: ${fecha} (${cantidad}d háb.)`;
+  const tono = vencido ? TONO_ERROR : r <= 2 ? TONO_ALERTA : TONO_NEUTRO;
 
   return (<>
     <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
-    <div className={`flex min-w-0 items-center gap-1 text-xs md:text-sm ${tono}`}
-      title={`${esOverride ? "Plazo propio de este expediente" : "Plazo del régimen"}, contado desde la llegada real`}>
-      <span className="min-w-0 truncate font-medium" title={typeof contenido === "string" ? contenido : undefined}>{contenido}{esOverride && <span className="ml-1 text-[11px] text-muted-foreground">(plazo propio)</span>}</span>
-      {canEdit && exp?.id && (
-        <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) setVal(exp.plazo_presentar_override ? String(exp.plazo_presentar_override) : ""); }}>
-          <PopoverTrigger asChild>
-            <Button type="button" variant="ghost" size="icon" className="h-6 w-6 shrink-0" aria-label="Editar plazo de presentación" title="Editar plazo de presentación">
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-          </PopoverTrigger>
-          {open && <PopoverContent align="end" side="bottom" sideOffset={8} className="w-[min(20rem,calc(100vw-2rem))] space-y-2" aria-label="Editar plazo de presentación">
-            <Label htmlFor="plazo-ov">Plazo propio (días hábiles)</Label>
-            <p className="text-[11px] text-muted-foreground">Solo para este expediente (prórroga o excepción). Régimen: {base ?? "sin configurar"} días.</p>
-            <Input id="plazo-ov" type="number" min={1} value={val} onChange={(e) => setVal(e.target.value)} />
-            <div className="flex gap-2">
-              <Button size="sm" disabled={saving} onClick={() => { const v = parseInt(val, 10); if (!v || v < 1) return toast.error("Escribe un número de días mayor que 0"); guardar(v); }}>Guardar</Button>
-              {exp.plazo_presentar_override && <Button size="sm" variant="outline" disabled={saving} onClick={() => guardar(null)}>Usar plazo del régimen</Button>}
-            </div>
-          </PopoverContent>}
-        </Popover>
-      )}
-    </div>
+    <span className={pill(tono)} title={completo} aria-label={completo}>{compacto}</span>
+    {canEdit && exp?.id && (
+      <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) setVal(exp.plazo_presentar_override ? String(exp.plazo_presentar_override) : ""); }}>
+        <PopoverTrigger asChild>
+          <Button type="button" variant="ghost" size="icon" className="h-6 w-6 shrink-0" aria-label="Editar plazo de presentación" title="Editar plazo de presentación">
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+        </PopoverTrigger>
+        {open && <PopoverContent align="end" side="bottom" sideOffset={8} className="w-[min(20rem,calc(100vw-2rem))] space-y-2" aria-label="Editar plazo de presentación">
+          <Label htmlFor="plazo-ov">Plazo propio (días hábiles)</Label>
+          <p className="text-[11px] text-muted-foreground">Solo para este expediente (prórroga o excepción). Régimen: {base ?? "sin configurar"} días.</p>
+          <Input id="plazo-ov" type="number" min={1} value={val} onChange={(e) => setVal(e.target.value)} />
+          <div className="flex gap-2">
+            <Button size="sm" disabled={saving} onClick={() => { const v = parseInt(val, 10); if (!v || v < 1) return toast.error("Escribe un número de días mayor que 0"); guardar(v); }}>Guardar</Button>
+            {exp.plazo_presentar_override && <Button size="sm" variant="outline" disabled={saving} onClick={() => guardar(null)}>Usar plazo del régimen</Button>}
+          </div>
+        </PopoverContent>}
+      </Popover>
+    )}
     </>
   );
 }

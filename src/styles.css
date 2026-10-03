@@ -59,21 +59,21 @@
   grid-template-columns: minmax(0, 1fr);
 }
 .expediente-header-arrival {
-  display: grid;
-  min-width: 0;
-  align-items: center;
-  grid-template-columns: minmax(0, 1fr);
-  padding-bottom: 0.25rem;
+  display: flex; flex-wrap: wrap; align-items: center;
+  column-gap: 0.375rem; row-gap: 0.25rem;
+  min-width: 0; padding-bottom: 0.25rem;
 }
 .expediente-header-arrival-separator { display: none; }
-.expediente-header-arrival > :first-child { justify-self: start; }
+/* Valores largos (BL/AWB): completos siempre; envuelven en pantallas angostas y van en una línea en desktop. */
+.expediente-header-valor-largo { min-width: 0; overflow-wrap: anywhere; }
 @container expediente-header (min-width: 560px) {
   .expediente-info-fila2, .expediente-info-fila3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @container expediente-header (min-width: 1000px) {
-  .expediente-info-fila2 { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 3fr) minmax(0, 0.9fr); }
-  .expediente-header-arrival { grid-template-columns: auto auto minmax(0, 1fr); column-gap: 0.375rem; padding-bottom: 0; }
+  .expediente-info-fila2 { grid-template-columns: minmax(0, 1.2fr) auto minmax(0, 1fr) minmax(0, 0.9fr); }
+  .expediente-header-arrival { padding-bottom: 0; }
   .expediente-header-arrival-separator { display: inline; }
+  .expediente-header-valor-largo { overflow-wrap: normal; white-space: nowrap; }
   .expediente-info-fila3 { grid-template-columns: repeat(4, minmax(0, 1fr)) max-content; }
 }
 
