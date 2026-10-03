@@ -37,16 +37,16 @@
   .expediente-header-menus { display: none; }
   .expediente-header-more { display: inline-flex; justify-self: end; }
 }
-@container expediente-header (min-width: 650px) {
+@container expediente-header (min-width: 700px) {
   .expediente-header-grid {
-    grid-template-columns: auto minmax(0, 1fr) 16.5rem auto auto;
+    grid-template-columns: auto minmax(0, 1fr) 18rem auto auto;
     grid-template-areas: "back number state save more";
     column-gap: 0.375rem;
   }
 }
 @container expediente-header (min-width: 1250px) {
   .expediente-header-grid {
-    grid-template-columns: auto minmax(9rem, 1fr) 16.5rem auto auto;
+    grid-template-columns: auto minmax(9rem, 1fr) 18rem auto auto;
     grid-template-areas: "back number state save menus";
   }
   .expediente-header-menus { display: flex; flex-wrap: nowrap; }
