@@ -336,6 +336,7 @@ function Expedientes() {
     );
   };
 
+  const { data: plazosReg } = usePlazosRegimen();
   const ExpedienteRow = ({ e }: { e: any }) => (
     <tr key={e.id} className={`hover:bg-muted/30 transition-colors ${rowHighlight(e)}`}>
       <td className="px-2 py-1 align-middle whitespace-nowrap">
@@ -437,7 +438,7 @@ function Expedientes() {
             const a = alertaDeclaracionTardia({ ...e, sla_dias: plazoEfectivo(e, plazosReg).dias });
             if (!a) return null;
             const title =
-              "Ley 168-21: 5 días laborables desde el arribo para presentar la declaración. " +
+              `Ley 168-21: ${plazoEfectivo(e, plazosReg).dias} días laborables desde el arribo para presentar la declaración. ` +
               (a.tone === "danger"
                 ? (a.diasRestantes === 0 ? "Vence hoy." : `Vencido hace ${Math.abs(a.diasRestantes)} día(s) hábiles.`)
                 : `Quedan ${a.diasRestantes} día(s) hábiles para declarar.`);
