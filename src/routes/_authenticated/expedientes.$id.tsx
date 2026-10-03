@@ -927,7 +927,8 @@ function DetalleExpediente() {
           <EndosoBadge expedienteId={id} originalNombre={expData.clientes?.nombre} />
           </div>
           <CampoHeader etiqueta="BL/AWB" valor={expData.bl_awb} />
-          <div className="grid h-8 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 text-xs md:text-sm" title={`Fecha Estimada de Llegada (ETA): ${expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}`}>
+          <div className="expediente-header-arrival">
+          <div className="grid h-8 shrink-0 grid-cols-[auto_auto] items-center gap-1.5 text-xs md:text-sm" title={`Fecha Estimada de Llegada (ETA): ${expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}`}>
               <span className="text-muted-foreground">ETA:</span>
               <span className="min-w-0 truncate font-medium">{expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}
               {(() => {
@@ -946,6 +947,9 @@ function DetalleExpediente() {
                 );
               })()}
               </span>
+          </div>
+          <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
+          <VencePresentacion exp={expData} canEdit={canEditExpediente} />
           </div>
           <CampoHeader etiqueta="Puerto" valor={expData.puerto_arribo} />
         </div>
@@ -1917,12 +1921,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         <Field label="BL / AWB / Guía" value={form.bl_awb} onChange={(v) => { set("bl_awb", v); limpiarFaltante("req-bl_awb"); }} disabled={!editable} req fieldId="req-bl_awb" highlight={camposFaltantes.has("req-bl_awb")} />
         <AutoField label="Medio de transporte" value={form.medio_transporte} onChange={(v) => set("medio_transporte", v)} suggestion={sug.medio_transporte ?? []} disabled={!editable} />
         <AutoField label="Naviera" value={form.naviera} onChange={(v) => set("naviera", v)} suggestion={sug.naviera ?? []} disabled={!editable} />
-        {!isNuevo && (
-          <div className="grid gap-1.5">
-            <Label>Plazo de presentación</Label>
-            <div className="flex h-9 items-center rounded-md border bg-muted/30 px-2"><VencePresentacion exp={exp} canEdit={canEdit} /></div>
-          </div>
-        )}
         <Field label="Fecha de Cargado" value={form.fecha_cargado} onChange={(v) => set("fecha_cargado", v)} type="date" disabled={!editable} />
         <Field label="Fecha Estimada de Llegada (ETA)" value={form.fecha_compromiso} onChange={(v) => set("fecha_compromiso", v)} type="date" disabled={!editable} />
         <div className="grid gap-1">

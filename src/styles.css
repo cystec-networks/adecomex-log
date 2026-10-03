@@ -58,11 +58,22 @@
   display: grid; min-width: 0; column-gap: 0.75rem; row-gap: 0.125rem;
   grid-template-columns: minmax(0, 1fr);
 }
+.expediente-header-arrival {
+  display: grid;
+  min-width: 0;
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  padding-bottom: 0.25rem;
+}
+.expediente-header-arrival-separator { display: none; }
+.expediente-header-arrival > :first-child { justify-self: start; }
 @container expediente-header (min-width: 560px) {
   .expediente-info-fila2, .expediente-info-fila3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @container expediente-header (min-width: 1000px) {
-  .expediente-info-fila2 { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); }
+  .expediente-info-fila2 { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 3fr) minmax(0, 0.9fr); }
+  .expediente-header-arrival { grid-template-columns: auto auto minmax(0, 1fr); column-gap: 0.375rem; padding-bottom: 0; }
+  .expediente-header-arrival-separator { display: inline; }
   .expediente-info-fila3 { grid-template-columns: repeat(4, minmax(0, 1fr)) max-content; }
 }
 

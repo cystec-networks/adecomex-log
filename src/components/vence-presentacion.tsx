@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil, CalendarClock } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -37,26 +37,29 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
   } else if (!llegada) {
     contenido = <span>Vence presentación: — (falta fecha de llegada/ETA · {dias} días hábiles)</span>;
   } else {
-    const v = venceEn(llegada, dias)!;
-    const r = habilesRestantes(v);
-    tono = r < 0 ? "text-destructive" : r <= 2 ? "text-amber-600 dark:text-amber-400" : "text-foreground";
-    const txt = r < 0 ? `vencido hace ${-r} ${-r === 1 ? "día hábil" : "días hábiles"}` : `${r} ${r === 1 ? "día hábil restante" : "días hábiles restantes"}`;
-    contenido = <span>Vence presentación: <b>{v.toLocaleDateString("es-DO")}</b> ({txt})</span>;
+    const v = venceEn(llegada, dias);
+    if (v) {
+      const r = habilesRestantes(v);
+      tono = r < 0 ? "text-destructive" : r <= 2 ? "text-warning" : "text-foreground";
+      const txt = r < 0 ? `vencido hace ${-r} ${-r === 1 ? "día hábil" : "días hábiles"}` : `${r} ${r === 1 ? "día hábil" : "días hábiles"}`;
+      contenido = `Vence presentación: ${v.toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "numeric" })} (${txt})`;
+    } else {
+      contenido = "Vence presentación: — (falta fecha de llegada/ETA válida)";
+    }
   }
 
   return (
-    <div className={`flex min-w-0 items-center gap-1.5 text-xs md:text-sm ${tono}`}
+    <div className={`flex min-w-0 items-center gap-1 text-xs md:text-sm ${tono}`}
       title={`${esOverride ? `Plazo propio de este expediente: ${dias}` : `Plazo del régimen: ${base ?? "sin configurar"}`} días hábiles desde la llegada/ETA`}>
-      <CalendarClock className="h-4 w-4 shrink-0" />
-      <span className="min-w-0 truncate">{contenido}{esOverride && <span className="ml-1 text-[11px] text-muted-foreground">(plazo propio)</span>}</span>
+      <span className="min-w-0 truncate font-medium" title={typeof contenido === "string" ? contenido : undefined}>{contenido}{esOverride && <span className="ml-1 text-[11px] text-muted-foreground">(plazo propio)</span>}</span>
       {canEdit && exp?.id && (
         <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) setVal(exp.plazo_presentar_override ? String(exp.plazo_presentar_override) : ""); }}>
           <PopoverTrigger asChild>
-            <Button type="button" variant="ghost" size="icon" className="h-6 w-6 shrink-0" aria-label="Plazo propio de este expediente" title="Plazo propio de este expediente">
+            <Button type="button" variant="ghost" size="icon" className="h-6 w-6 shrink-0" aria-label="Editar plazo de presentación" title="Editar plazo de presentación">
               <Pencil className="h-3.5 w-3.5" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-72 space-y-2">
+          {open && <PopoverContent align="end" side="bottom" sideOffset={8} className="w-[min(20rem,calc(100vw-2rem))] space-y-2" aria-label="Editar plazo de presentación">
             <Label htmlFor="plazo-ov">Plazo propio (días hábiles)</Label>
             <p className="text-[11px] text-muted-foreground">Solo para este expediente (prórroga o excepción). Régimen: {base ?? "sin configurar"} días.</p>
             <Input id="plazo-ov" type="number" min={1} value={val} onChange={(e) => setVal(e.target.value)} />
@@ -64,7 +67,7 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
               <Button size="sm" disabled={saving} onClick={() => { const v = parseInt(val, 10); if (!v || v < 1) return toast.error("Escribe un número de días mayor que 0"); guardar(v); }}>Guardar</Button>
               {exp.plazo_presentar_override && <Button size="sm" variant="outline" disabled={saving} onClick={() => guardar(null)}>Usar plazo del régimen</Button>}
             </div>
-          </PopoverContent>
+          </PopoverContent>}
         </Popover>
       )}
     </div>
