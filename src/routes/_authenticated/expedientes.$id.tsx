@@ -707,7 +707,7 @@ function DetalleExpediente() {
           upd();
           new ResizeObserver(upd).observe(el);
         }}
-        className="sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6"
+        className="expediente-header-container sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6"
       >
         <div className="space-y-1.5 md:space-y-2">
         <div className={isNuevo ? "grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:flex md:flex-wrap md:gap-3" : "expediente-header-grid"}>
@@ -825,8 +825,8 @@ function DetalleExpediente() {
           {!isNuevo && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="expediente-header-more flex shrink-0 md:hidden">
-                  <MoreVertical className="h-4 w-4" /> Más acciones
+                <Button variant="outline" size="sm" className="expediente-header-more flex shrink-0 md:w-8 md:px-0" title="Más acciones" aria-label="Más acciones">
+                  <MoreVertical className="h-4 w-4" /> <span className="md:hidden">Más acciones</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
