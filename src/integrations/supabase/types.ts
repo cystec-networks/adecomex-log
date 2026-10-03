@@ -4546,6 +4546,7 @@ export type Database = {
           unidad_medida: string | null
           updated_at: string
           valor_fob: number | null
+          valor_fob_4d: number | null
         }
         Insert: {
           aplica_isc?: boolean | null
@@ -4589,6 +4590,7 @@ export type Database = {
           unidad_medida?: string | null
           updated_at?: string
           valor_fob?: number | null
+          valor_fob_4d?: number | null
         }
         Update: {
           aplica_isc?: boolean | null
@@ -4632,6 +4634,7 @@ export type Database = {
           unidad_medida?: string | null
           updated_at?: string
           valor_fob?: number | null
+          valor_fob_4d?: number | null
         }
         Relationships: [
           {

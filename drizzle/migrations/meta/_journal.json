@@ -274,6 +274,13 @@
       "when": 1790881136687,
       "tag": "0038_despacho_fechas_dga_forzable_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791030221077,
+      "tag": "0039_mercancia_fob_4_decimales",
+      "breakpoints": true
     }
   ]
 }
