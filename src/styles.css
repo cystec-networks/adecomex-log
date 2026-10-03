@@ -67,7 +67,7 @@
 /* Valores largos (BL/AWB): completos siempre; envuelven en pantallas angostas y van en una línea en desktop. */
 .expediente-header-valor-largo { min-width: 0; overflow-wrap: anywhere; }
 /* Cliente: ancho tope con puntos suspensivos; el tooltip (title) muestra el nombre completo. */
-.expediente-header-cliente { max-width: min(16rem, 100%); min-width: 0; }
+.expediente-header-cliente { max-width: 16rem; min-width: 0; }
 @container expediente-header (min-width: 560px) {
   .expediente-info-fila2, .expediente-info-fila3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
