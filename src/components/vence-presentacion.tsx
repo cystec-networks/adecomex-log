@@ -16,17 +16,20 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
   const { data: plazos } = usePlazosRegimen();
   const { dias, esOverride } = plazoEfectivo(exp, plazos);
   const base = diasRegimen(exp?.regimen_aduanero, plazos);
-  const llegada: string | null = exp?.fecha_llegada_real || exp?.fecha_compromiso || null;
+  const llegada: string | null = exp?.fecha_llegada_real || null;
   const [open, setOpen] = useState(false);
   const [val, setVal] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Never infer a legal deadline from an estimate or an unconfigured regime.
+  const vencimiento = llegada && dias && base ? venceEn(llegada, dias) : null;
+  if (!vencimiento) return null;
 
   // Use the shared state ordering, including every stage after verification.
   const etapaPosterior = estadoIndex(exp?.estado) >= estadoIndex("verificar");
   if (etapaPosterior) {
     const presentado = parseLocalDate(exp?.fecha_presentado);
-    const vencimiento = llegada && dias ? venceEn(llegada, dias) : null;
-    if (isNaN(presentado.getTime()) || !vencimiento) return null;
+    if (isNaN(presentado.getTime())) return null;
     const tarde = presentado > vencimiento;
     const diferencia = Math.abs(diasHabilesEntre(presentado, vencimiento));
     const unidad = diferencia === 1 ? "día hábil" : "días hábiles";
@@ -55,28 +58,22 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
     setOpen(false);
   };
 
-  let contenido: React.ReactNode;
-  let tono = "text-muted-foreground";
-  if (!dias) {
-    contenido = <span>Vence presentación: — <span className="italic">Configurar plazo para este régimen</span></span>;
-  } else if (!llegada) {
-    contenido = <span>Vence presentación: — (falta fecha de llegada/ETA · {dias} días hábiles)</span>;
-  } else {
-    const v = venceEn(llegada, dias);
-    if (v) {
-      const r = habilesRestantes(v);
-      tono = r < 0 ? "text-destructive" : r <= 2 ? "text-warning" : "text-foreground";
-      const txt = r < 0 ? `vencido hace ${-r} ${-r === 1 ? "día hábil" : "días hábiles"}` : `${r} ${r === 1 ? "día hábil" : "días hábiles"}`;
-      contenido = `Vence presentación: ${v.toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "numeric" })} (${txt})`;
-    } else {
-      contenido = "Vence presentación: — (falta fecha de llegada/ETA válida)";
-    }
-  }
+  const r = habilesRestantes(vencimiento);
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  // A Friday deadline is already overdue on Saturday, even with zero business days elapsed.
+  const vencido = vencimiento < hoy;
+  const tono = vencido ? "text-destructive" : r <= 2 ? "text-warning" : "text-foreground";
+  const cantidad = Math.abs(r);
+  const unidad = cantidad === 1 ? "día hábil" : "días hábiles";
+  const txt = vencido ? `vencido hace ${cantidad} ${unidad}` : `${cantidad} ${unidad} restantes`;
+  const fecha = vencimiento.toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const contenido = `${vencido ? "Venció" : "Vence"} presentación: ${fecha}${vencido ? " ⚠" : ""} (${txt})`;
 
   return (<>
     <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
     <div className={`flex min-w-0 items-center gap-1 text-xs md:text-sm ${tono}`}
-      title={`${esOverride ? `Plazo propio de este expediente: ${dias}` : `Plazo del régimen: ${base ?? "sin configurar"}`} días hábiles desde la llegada/ETA`}>
+      title={`${esOverride ? "Plazo propio de este expediente" : "Plazo del régimen"}, contado desde la llegada real`}>
       <span className="min-w-0 truncate font-medium" title={typeof contenido === "string" ? contenido : undefined}>{contenido}{esOverride && <span className="ml-1 text-[11px] text-muted-foreground">(plazo propio)</span>}</span>
       {canEdit && exp?.id && (
         <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) setVal(exp.plazo_presentar_override ? String(exp.plazo_presentar_override) : ""); }}>
