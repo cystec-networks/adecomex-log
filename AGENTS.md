@@ -16,3 +16,5 @@ El identificador visible de un expediente usa la clase compartida `expediente-nu
 En el volante de solicitud de pago, resolver primero el número del transporte vinculado y luego el TR reservado en la solicitud; un viaje puede tener varios controles TF, que siguen siendo secundarios para conciliación.
 
 El PDF de preliquidación de expediente y cotización comparte el generador horizontal con resumen CIF, Impuestos y Servicios DGA; mantenerlo centralizado evita diferencias entre ambas impresiones.
+
+Use explicit responsive grid slots for the expediente header and reserve status/action widths so state changes never reflow primary controls; secondary menus occupy their own row.

@@ -11,6 +11,29 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Stable header slots: content changes never decide which row a control occupies. */
+.expediente-header-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  grid-template-areas: "back number number" "state state state" "save save more";
+  align-items: center;
+  gap: 0.5rem;
+}
+.expediente-header-back { grid-area: back; }
+.expediente-header-number { grid-area: number; }
+.expediente-header-state { grid-area: state; }
+.expediente-header-save { grid-area: save; }
+.expediente-header-more { grid-area: more; }
+.expediente-header-menus { grid-area: menus; }
+@media (min-width: 768px) {
+  .expediente-header-grid {
+    grid-template-columns: auto minmax(0, 1fr) 18rem auto;
+    grid-template-areas: "back number state save" "menus menus menus menus";
+    column-gap: 0.75rem;
+  }
+}
+
 @theme inline {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-display: "Manrope", "Inter", sans-serif;

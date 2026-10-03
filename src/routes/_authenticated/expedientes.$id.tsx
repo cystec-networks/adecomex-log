@@ -258,22 +258,17 @@ function ControlesGuardadoHeader({ expedienteId, compacto = false }: { expedient
   };
   return (
     <div className={compacto ? "flex items-center gap-1" : "flex items-center gap-1.5 border-l pl-1.5"}>
-      {!compacto && st?.hayCambios && (
-        <span className="flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400" title="Cambios sin guardar">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" /> Sin guardar
-        </span>
-      )}
-      {!compacto && !st?.hayCambios && st?.estado === "ok" && <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">✓ Cambios guardados</span>}
-      {st?.estado === "error" && <span className="text-xs font-medium text-destructive">{compacto ? "✗" : "✗ No se pudo guardar, intenta de nuevo"}</span>}
-      {compacto && !st?.hayCambios && st?.estado === "ok" && <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">✓</span>}
+      <span className="flex h-4 w-4 shrink-0 items-center justify-center text-xs" role="status" title={st?.estado === "error" ? "No se pudo guardar, intenta de nuevo" : st?.hayCambios ? "Cambios sin guardar" : st?.estado === "ok" ? "Cambios guardados" : undefined}>
+        {st?.estado === "error" ? <span className="text-destructive">✗<span className="sr-only">No se pudo guardar, intenta de nuevo</span></span> : st?.hayCambios ? <span className="h-2 w-2 rounded-full bg-warning"><span className="sr-only">Cambios sin guardar</span></span> : st?.estado === "ok" ? <span className="text-success">✓<span className="sr-only">Cambios guardados</span></span> : null}
+      </span>
       {st?.puedeEditar ? (
-        <Button size={compacto ? "sm" : "default"} onClick={() => window.dispatchEvent(new Event("exp-editar"))} aria-label="Editar">
+        <Button size={compacto ? "sm" : "default"} className={compacto ? "w-24 shrink-0" : "w-32 shrink-0"} onClick={() => window.dispatchEvent(new Event("exp-editar"))} aria-label="Editar">
           <Pencil className="h-4 w-4 mr-1" /> Editar
         </Button>
       ) : (
         <Button
           size={compacto ? "sm" : "default"}
-          className="relative px-3"
+          className={compacto ? "relative w-24 shrink-0 px-3" : "relative w-32 shrink-0 px-3"}
           disabled={!st?.editable || st?.pendiente}
           onClick={() => window.dispatchEvent(new Event("exp-guardar"))}
           title={st ? "Guardar cambios" : "En esta ficha cada registro se guarda desde su propia ventana"}
@@ -715,8 +710,8 @@ function DetalleExpediente() {
         className="sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6"
       >
         <div className="space-y-1.5 md:space-y-2">
-        <div className="flex flex-wrap items-center gap-2 md:gap-3">
-          <Button variant="ghost" size="sm" asChild className="shrink-0 px-2 md:px-3"><Link to="/expedientes"><ArrowLeft className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Volver</span></Link></Button>
+        <div className={isNuevo ? "grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:flex md:flex-wrap md:gap-3" : "expediente-header-grid"}>
+          <Button variant="ghost" size="sm" asChild className="expediente-header-back shrink-0 px-2 md:px-3"><Link to="/expedientes"><ArrowLeft className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Volver</span></Link></Button>
           {isNuevo ? (
             <div className="min-w-0 flex-1">
               <h1 className="font-display truncate text-lg font-bold md:text-xl">Nuevo Expediente</h1>
@@ -725,16 +720,16 @@ function DetalleExpediente() {
               </p>
             </div>
           ) : (
-            <div className="flex min-w-0 items-center gap-2 md:gap-2">
-              <h1 className="font-display shrink-0 text-lg font-bold md:text-xl expediente-numero">{expData.numero}</h1>
+            <div className="expediente-header-number flex min-w-0 items-center gap-2 md:gap-2">
+              <h1 className="font-display min-w-0 truncate text-lg font-bold md:text-xl expediente-numero">{expData.numero}</h1>
               {expData.solicitudes?.numero && <Badge variant="outline" className="hidden shrink-0 md:inline-flex">← {expData.solicitudes.numero}</Badge>}
             </div>
           )}
           {!isNuevo && (
-            <div className="flex shrink-0 items-center gap-1.5">
+            <div className="expediente-header-state grid min-w-0 grid-cols-[auto_minmax(0,1fr)_7rem] items-center gap-1.5">
               <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
               <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
-                <SelectTrigger className="h-8 w-24 min-w-0 text-xs md:w-32 md:text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-8 w-full min-w-0 text-xs md:text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ESTADO_ORDEN.map((e) => (
                     <SelectItem key={e} value={e} disabled={estadoIndex(e) < estadoIndex(expData.estado)}>
@@ -743,13 +738,13 @@ function DetalleExpediente() {
                   ))}
                 </SelectContent>
               </Select>
-              {puedeForzarRegreso && estadoIndex(expData.estado) > 0 && (
+              <div className={cn("w-28", !(puedeForzarRegreso && estadoIndex(expData.estado) > 0) && "invisible")}>
                 <ForzarRegresoEstadoDialog
                   estadoActual={expData.estado}
                   pendiente={forzarRegreso.isPending}
                   onConfirm={(estado, motivo) => forzarRegreso.mutate({ estado, motivo })}
                 />
-              )}
+              </div>
             </div>
           )}
           {isNuevo && (
@@ -773,8 +768,9 @@ function DetalleExpediente() {
             </div>
           )}
           {(
-            <div className="hidden items-center gap-1.5 md:flex md:flex-wrap">
-              {!isNuevo && <ControlesGuardadoHeader expedienteId={id} />}
+            <div className={isNuevo ? "hidden items-center gap-1.5 md:flex md:flex-wrap" : "hidden md:contents"}>
+              {!isNuevo && <div className="expediente-header-save"><ControlesGuardadoHeader expedienteId={id} /></div>}
+              <div className={isNuevo ? "flex items-center gap-1.5" : "expediente-header-menus flex min-w-0 flex-wrap items-center gap-1.5"}>
               <Button
                 variant="outline"
                 size="icon"
@@ -818,17 +814,18 @@ function DetalleExpediente() {
               </DropdownMenu>
               <HerramientasDgaVuceMenu className="px-2" />
               <RastreosEnvioMenu className="px-2" />
+              </div>
             </div>
           )}
           {!isNuevo && (
-            <div className="flex shrink-0 items-center md:hidden">
+            <div className="expediente-header-save flex shrink-0 items-center md:hidden">
               <ControlesGuardadoHeader expedienteId={id} compacto />
             </div>
           )}
           {!isNuevo && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="flex shrink-0 md:hidden">
+                <Button variant="outline" size="sm" className="expediente-header-more flex shrink-0 md:hidden">
                   <MoreVertical className="h-4 w-4" /> Más acciones
                 </Button>
               </DropdownMenuTrigger>
