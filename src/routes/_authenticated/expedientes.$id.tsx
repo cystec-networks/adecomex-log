@@ -939,19 +939,13 @@ function DetalleExpediente() {
           )}
           <EndosoBadge expedienteId={id} originalNombre={expData.clientes?.nombre} />
           </div>
-          <CampoHeader etiqueta="BL/AWB" valor={expData.bl_awb} />
+          <CampoHeader etiqueta="BL/AWB" valor={expData.bl_awb} largo />
           <div className="expediente-header-arrival">
           {expData.fecha_llegada_real ? (
             <div className="grid h-8 shrink-0 grid-cols-[auto_auto] items-center gap-1.5 text-xs md:text-sm" title={`Fecha de Llegada Real: ${fmtLocalDate(expData.fecha_llegada_real)}`}>
               <span className="text-muted-foreground">Llegada:</span>
-              <span className="min-w-0 truncate font-medium">
+              <span className="min-w-0 whitespace-nowrap font-medium">
                 {fmtLocalDate(expData.fecha_llegada_real)}
-                {(() => {
-                  if (!expData.fecha_cargado) return null;
-                  const dias = Math.round((new Date(expData.fecha_llegada_real).getTime() - new Date(expData.fecha_cargado).getTime()) / 86400000);
-                  if (!Number.isFinite(dias)) return null;
-                  return <span className="tabular-nums">{dias >= 0 ? ` (${dias} ${dias === 1 ? "día" : "días"} tránsito)` : " (Fechas inconsistentes)"}</span>;
-                })()}
               </span>
             </div>
           ) : (
@@ -6171,15 +6165,15 @@ function ForzarRegresoEstadoDialog({
   );
 }
 
-/** Campo del encabezado con etiqueta fija; valores largos se truncan y se ven completos al pasar el mouse o tocar. */
-function CampoHeader({ etiqueta, valor }: { etiqueta: string; valor: string | null | undefined }) {
+/** Campo del encabezado con etiqueta fija; valores largos se ven completos (envueltos o en una línea) al pasar el mouse o tocar. */
+function CampoHeader({ etiqueta, valor, largo }: { etiqueta: string; valor: string | null | undefined; largo?: boolean }) {
   const texto = valor && String(valor).trim() ? String(valor) : "—";
   return (
-    <div className="grid h-8 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 text-xs md:text-sm">
+    <div className={cn("grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 text-xs md:text-sm", largo ? "min-h-8 py-0.5" : "h-8")}>
       <span className="whitespace-nowrap text-muted-foreground">{etiqueta}:</span>
       <Popover>
         <PopoverTrigger asChild>
-          <button type="button" className="min-w-0 truncate text-left font-medium" title={`${etiqueta}: ${texto}`}>
+          <button type="button" className={cn("text-left font-medium", largo ? "expediente-header-valor-largo" : "min-w-0 truncate")} title={`${etiqueta}: ${texto}`}>
             {texto}
           </button>
         </PopoverTrigger>
