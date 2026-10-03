@@ -6,3 +6,4 @@
 - [x] Agrupar CIF, Impuestos y Servicios DGA en el PDF de preliquidación y comprobar impresión compacta en una hoja con 2 y 12 partidas.
 - [x] Ordenar Facturación e-CF globalmente por número descendente, separar tramos por mes de emisión y comprobar filtros y listado completo.
 - [x] Fijar posiciones del encabezado del expediente y verificar cambios de Estado en escritorio y celular sin desplazar controles.
+- [x] Mantener el encabezado en una línea en computadora y reunir los menús en Más acciones cuando no caben.
