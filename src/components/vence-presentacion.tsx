@@ -49,7 +49,7 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
     const fecha = fmtLocalDate(exp.fecha_presentacion_real);
     const compacto = `Presentado: ${fecha} ${tarde ? "⚠" : "✓"} (${diferencia === 0 ? "0d" : `${tarde ? "+" : "-"}${diferencia}d`})`;
     const completo = `Presentado: ${fecha} (${detalle}). Fecha real de presentación capturada en Información General.`;
-    return <>
+    return <span className="expediente-presentation-slot">
       <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
       <span className={pill(tarde ? TONO_ALERTA : TONO_OK)} title={completo} aria-label={completo}>
         <span className="expediente-presentation-content">
@@ -57,7 +57,7 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
           <span className="expediente-presentation-short">{tarde ? <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}{fecha}</span>
         </span>
       </span>
-    </>;
+    </span>;
   }
 
   const guardar = async (nuevo: number | null) => {
@@ -84,7 +84,7 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
   const compacto = vencido ? `Venció: ${fecha} ⚠ (hace ${cantidad}d)` : `Vence: ${fecha} (${cantidad}d háb.)`;
   const tono = vencido ? TONO_ERROR : r <= 2 ? TONO_ALERTA : TONO_NEUTRO;
 
-  return (<>
+  return (<span className="expediente-presentation-slot">
     <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
     <span className={pill(tono)} title={completo} aria-label={completo}>
       <span className="expediente-presentation-content">
@@ -110,6 +110,6 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
         </PopoverContent>}
       </Popover>
     )}
-    </>
+    </span>
   );
 }
