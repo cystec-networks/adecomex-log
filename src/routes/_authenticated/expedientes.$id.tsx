@@ -880,7 +880,7 @@ function DetalleExpediente() {
         </div>
 
         {!isNuevo && (
-        <div className="grid min-w-0 grid-cols-1 gap-x-3 gap-y-1 md:grid-cols-2 xl:grid-cols-[minmax(9rem,1fr)_minmax(18.5rem,1.4fr)_minmax(9rem,1fr)_minmax(12rem,1.3fr)]">
+        <div className="grid min-w-0 grid-cols-1 gap-x-3 gap-y-1 md:grid-cols-2 xl:grid-cols-[minmax(9rem,1fr)_minmax(9rem,1fr)_minmax(12rem,1.3fr)_minmax(9rem,1fr)]">
           <div className="min-w-0">
           {expData.clientes ? (
             <Popover>
