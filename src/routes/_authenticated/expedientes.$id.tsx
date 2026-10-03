@@ -23,7 +23,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical, Printer } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical, Printer, Repeat2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday } from "@/lib/dates";
@@ -400,6 +400,11 @@ function DetalleExpediente() {
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const [tabActiva, setTabActiva] = useState("info");
+  const [solicitudEndoso, setSolicitudEndoso] = useState(0);
+  const abrirEndoso = () => {
+    setTabActiva("info");
+    setSolicitudEndoso((v) => v + 1);
+  };
   const imprimirFichaGenerales = () => {
     setTabActiva("info");
     const limpiar = () => {
@@ -814,6 +819,10 @@ function DetalleExpediente() {
                        </>
                      )}
                   </div>
+                  {!isNuevo && canEditExpediente && <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={abrirEndoso}><Repeat2 className="h-4 w-4" /> Agregar endoso</DropdownMenuItem>
+                  </>}
                 </DropdownMenuContent>
               </DropdownMenu>
               <HerramientasDgaVuceMenu className="px-2" />
@@ -861,6 +870,10 @@ function DetalleExpediente() {
                          </>
                        )}
                     </div>
+                    {canEditExpediente && <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={abrirEndoso}><Repeat2 className="h-4 w-4" /> Agregar endoso</DropdownMenuItem>
+                    </>}
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 <DropdownMenuSub>
@@ -948,7 +961,6 @@ function DetalleExpediente() {
               })()}
               </span>
           </div>
-          <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
           <VencePresentacion exp={expData} canEdit={canEditExpediente} />
           </div>
           <CampoHeader etiqueta="Puerto" valor={expData.puerto_arribo} />
@@ -1054,6 +1066,7 @@ function DetalleExpediente() {
             isNuevo={isNuevo}
             ocrAplicado={ocrAplicado}
             tipoParam={tipoParam}
+            solicitudEndoso={solicitudEndoso}
           />
           </div>
         </TabsContent>
@@ -1230,7 +1243,7 @@ function normalizarCamposExportacion(payload: any) {
   });
 }
 
-function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null, tipoParam = "" }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null; tipoParam?: string }) {
+function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null, tipoParam = "", solicitudEndoso = 0 }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null; tipoParam?: string; solicitudEndoso?: number }) {
   const qc = useQueryClient();
   const nav = useNavigate();
   const editable = (canEdit && modoEdicion) || isNuevo;
@@ -1940,13 +1953,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             </div>
           );
         })()}
-        {!isNuevo && (
-          <div className="md:col-span-2 lg:col-span-3 xl:col-span-4 col-span-full">
-            <EndosoSection expedienteId={id} clienteOriginal={exp?.clientes ? { id: exp.cliente_id, nombre: exp.clientes.nombre } : null} editable={canEdit} />
-          </div>
-        )}
       </Section>
-
+      {!isNuevo && <EndosoSection expedienteId={id} clienteOriginal={exp?.clientes ? { id: exp.cliente_id, nombre: exp.clientes.nombre } : null} editable={canEdit} solicitudApertura={solicitudEndoso} />}
 
       <Section id="datos-importacion" title={esExportacion ? "2. Datos de la operación" : "2. Datos de importación"} subtitle={esExportacion ? "Origen de la mercancía y términos comerciales" : "Origen, proveedor y términos comerciales"}>
         {!esExportacion && (

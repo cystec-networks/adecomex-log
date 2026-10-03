@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChevronDown, ChevronRight, FileText, Plus, Repeat2 } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, Repeat2 } from "lucide-react";
 import { toast } from "sonner";
 
 export type EndosoActivo = {
@@ -29,10 +29,11 @@ export function useEndosoActivo(expedienteId: string | undefined) {
     queryKey: ["endoso-activo", expedienteId],
     enabled: !!expedienteId && expedienteId !== "nuevo",
     queryFn: async () => {
+      if (!expedienteId) return null;
       const { data, error } = await supabase
         .from("expediente_endosos")
         .select("*, endosado:clientes!expediente_endosos_consignatario_endosado_id_fkey(id,nombre,rnc), original:clientes!expediente_endosos_consignatario_original_id_fkey(id,nombre), documento:documentos(id,storage_path,tipo)")
-        .eq("expediente_id", expedienteId!)
+        .eq("expediente_id", expedienteId)
         .eq("activo", true)
         .maybeSingle();
       if (error) throw error;
@@ -61,19 +62,28 @@ export function EndosoBadge({ expedienteId, originalNombre }: { expedienteId: st
   );
 }
 
-export function EndosoSection({ expedienteId, clienteOriginal, editable }: {
+export function EndosoSection({ expedienteId, clienteOriginal, editable, solicitudApertura = 0 }: {
   expedienteId: string;
   clienteOriginal: { id: string; nombre: string } | null;
   editable: boolean;
+  solicitudApertura?: number;
 }) {
   const qc = useQueryClient();
   const { data: endoso } = useEndosoActivo(expedienteId);
   const [abierto, setAbierto] = useState(false);
+  const sectionRef = useRef<HTMLDivElement>(null);
   const [endosadoId, setEndosadoId] = useState("");
   const [fecha, setFecha] = useState("");
   const [obs, setObs] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [nuevoCli, setNuevoCli] = useState<{ nombre: string; rnc: string } | null>(null);
+
+  useEffect(() => {
+    if (!solicitudApertura) return;
+    setAbierto(true);
+    const timer = setTimeout(() => sectionRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }), 150);
+    return () => clearTimeout(timer);
+  }, [solicitudApertura]);
 
   useEffect(() => {
     setEndosadoId(endoso?.consignatario_endosado_id ?? "");
@@ -166,19 +176,10 @@ export function EndosoSection({ expedienteId, clienteOriginal, editable }: {
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   };
 
-  if (!abierto && !endoso) {
-    if (!editable) return null;
-    return (
-      <div className="mt-4">
-        <Button type="button" variant="outline" size="sm" onClick={() => setAbierto(true)}>
-          <Plus className="mr-1 h-4 w-4" /> Agregar endoso
-        </Button>
-      </div>
-    );
-  }
+  if (!abierto && !endoso) return null;
 
   return (
-    <div className="mt-4 rounded-lg border border-amber-300 bg-card">
+    <div ref={sectionRef} className="mt-4 rounded-lg border border-amber-300 bg-card">
       <button type="button" className="flex w-full items-center gap-2 px-4 py-2.5 text-left" onClick={() => setAbierto((v) => !v)}>
         {abierto ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         <Repeat2 className="h-4 w-4 text-amber-600" />

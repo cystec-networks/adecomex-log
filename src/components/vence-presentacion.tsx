@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { usePlazosRegimen, plazoEfectivo, diasRegimen, venceEn, habilesRestantes } from "@/lib/plazo-presentacion";
+import { usePlazosRegimen, plazoEfectivo, diasRegimen, venceEn, habilesRestantes, diasHabilesEntre } from "@/lib/plazo-presentacion";
+import { estadoIndex } from "@/lib/estados-expediente";
+import { parseLocalDate, fmtLocalDate } from "@/lib/dates";
 
 export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean }) {
   const qc = useQueryClient();
@@ -18,6 +20,29 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
   const [open, setOpen] = useState(false);
   const [val, setVal] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Use the shared state ordering, including every stage after verification.
+  const etapaPosterior = estadoIndex(exp?.estado) >= estadoIndex("verificar");
+  if (etapaPosterior) {
+    const presentado = parseLocalDate(exp?.fecha_presentado);
+    const vencimiento = llegada && dias ? venceEn(llegada, dias) : null;
+    if (isNaN(presentado.getTime()) || !vencimiento) return null;
+    const tarde = presentado > vencimiento;
+    const diferencia = Math.abs(diasHabilesEntre(presentado, vencimiento));
+    const unidad = diferencia === 1 ? "día hábil" : "días hábiles";
+    const detalle = tarde
+      ? `con ${diferencia} ${unidad} de retraso`
+      : presentado.getTime() === vencimiento.getTime()
+        ? "el día del vencimiento"
+        : `${diferencia} ${unidad} antes del vencimiento`;
+    const texto = `Presentado: ${fmtLocalDate(exp.fecha_presentado)} (${detalle})`;
+    return <>
+      <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
+      <span className={`flex min-w-0 items-center gap-1 text-xs md:text-sm ${tarde ? "text-warning" : "text-success"}`} title={`${texto}. Fecha registrada al pasar a Presentado.`}>
+        <span className="min-w-0 truncate font-medium">Presentado: {fmtLocalDate(exp.fecha_presentado)} {tarde ? "⚠" : "✓"} ({detalle})</span>
+      </span>
+    </>;
+  }
 
   const guardar = async (nuevo: number | null) => {
     setSaving(true);
@@ -48,7 +73,8 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
     }
   }
 
-  return (
+  return (<>
+    <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
     <div className={`flex min-w-0 items-center gap-1 text-xs md:text-sm ${tono}`}
       title={`${esOverride ? `Plazo propio de este expediente: ${dias}` : `Plazo del régimen: ${base ?? "sin configurar"}`} días hábiles desde la llegada/ETA`}>
       <span className="min-w-0 truncate font-medium" title={typeof contenido === "string" ? contenido : undefined}>{contenido}{esOverride && <span className="ml-1 text-[11px] text-muted-foreground">(plazo propio)</span>}</span>
@@ -71,5 +97,6 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
         </Popover>
       )}
     </div>
+    </>
   );
 }

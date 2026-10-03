@@ -22,3 +22,5 @@ Use explicit responsive grid slots and reserved action widths for the expediente
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
 - Presentation deadline = catalogo_regimenes.dias_habiles_presentar (business days from arrival/ETA) with optional expedientes.plazo_presentar_override; expedientes.sla_dias is deprecated — resolve via src/lib/plazo-presentacion.ts.
 - Render the presentation deadline only beside ETA in the sticky header; mount its override popover content only while open to prevent overlap with the read-only indicator.
+- Use the shared state ordering to replace the deadline from verification onward with compliance based on existing fecha_presentado; omit compliance when its date or deadline is missing, never fabricate historical dates.
+- Open the existing Endoso section via a parent-owned request counter from both header document menus, preserving a single form and its current persistence logic.
