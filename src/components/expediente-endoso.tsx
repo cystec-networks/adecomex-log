@@ -86,7 +86,7 @@ export function EndosoSection({ expedienteId, clienteOriginal, editable }: {
   const { data: clientes } = useQuery({
     queryKey: ["clientes-endoso"],
     enabled: abierto,
-    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc").is("deleted_at" as any, null).order("nombre")).data ?? [],
+    queryFn: async () => (await supabase.from("clientes").select("id,nombre,rnc").order("nombre")).data ?? [],
   });
 
   const crearCliente = useMutation({
