@@ -45,8 +45,7 @@ export function diasHabilesRestantes(
     const dow = cursor.getDay();
     if (dow !== 0 && dow !== 6) dias++;
   }
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
+  const hoy = hoyRD();
   return Math.round((cursor.getTime() - hoy.getTime()) / 86400000);
 }
 
@@ -67,8 +66,7 @@ export function habilesRestantesPlazo(
     const dow = limite.getDay();
     if (dow !== 0 && dow !== 6) contados++;
   }
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
+  const hoy = hoyRD();
   const signo = limite.getTime() >= hoy.getTime() ? 1 : -1;
   const desde = signo > 0 ? new Date(hoy) : new Date(limite);
   const hasta = signo > 0 ? limite : hoy;
@@ -86,8 +84,18 @@ export function habilesRestantesPlazo(
 export function daysFromToday(s: string | null | undefined): number {
   const d = parseLocalDate(s);
   if (isNaN(d.getTime())) return NaN;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = hoyRD();
   d.setHours(0, 0, 0, 0);
   return Math.round((d.getTime() - today.getTime()) / 86400000);
+}
+
+// "Hoy" según República Dominicana (America/Santo_Domingo), sin depender del
+// huso del navegador ni de UTC: evita el salto de día a medianoche UTC.
+export const TZ_RD = "America/Santo_Domingo";
+export function hoyRDISO(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: TZ_RD, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+}
+/** Medianoche local del día de hoy en RD, comparable con parseLocalDate(). */
+export function hoyRD(): Date {
+  return parseLocalDate(hoyRDISO());
 }
