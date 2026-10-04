@@ -9,7 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calculator, Copy, X, FileDown, Plus, Trash2, Save } from "lucide-react";
+import { Calculator, Copy, X, FileDown, Plus, Trash2, Save, Pencil, Check } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { DgaProductoSearch } from "@/components/dga-producto-search";
 import { toast } from "sonner";
 import {
   ServicioAduaneroFields,
@@ -40,7 +43,23 @@ const DISCLAIMER =
 type TarifaServicio = { id: string; tipo_despacho: string; unidad: string; tarifa_usd: number };
 
 
-type Linea = { producto: string; fob: string; peso: string; pais?: string };
+type Linea = {
+  producto: string;
+  fob: string;
+  peso: string;
+  pais?: string;
+  codigo?: string; // código arancelario
+  unidad?: string;
+  cantidad?: string;
+  pctGravamen?: string; // vacío = usa el % por defecto del escenario
+  pctIsc?: string;
+  pctItbis?: string;
+  pctGravPref?: string; // tasa preferencial registrada para el código
+  acuerdoPref?: string; // acuerdo al que corresponde esa tasa preferencial
+};
+
+type Regimen = { codigo: string; nombre: string; suspensivo_impuestos: boolean };
+type Acuerdo = { codigo: string; nombre: string };
 
 type Escenario = {
   lineas: Linea[];
@@ -53,6 +72,10 @@ type Escenario = {
   pctItbis: string;
   servicioFilas: FilaServicio[];
   pctGastos: string;
+  regimen?: string;
+  regimenSuspensivo?: boolean;
+  acuerdo?: string;
+  certificado?: boolean;
 };
 
 const LINEA_VACIA: Linea = { producto: "", fob: "", peso: "", pais: "" };
@@ -68,7 +91,21 @@ const VACIO: Escenario = {
   pctItbis: "18",
   servicioFilas: [],
   pctGastos: "",
+  regimen: "Despacho a Consumo",
+  regimenSuspensivo: false,
+  acuerdo: "",
+  certificado: false,
 };
+
+const normTxt = (s?: string | null) =>
+  (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/gi, "").toUpperCase();
+
+/** Indica si la tasa preferencial de la línea corresponde al acuerdo elegido (o no especifica acuerdo). */
+function prefCorresponde(l: Linea, acuerdo?: string) {
+  if (!acuerdo || !(l.pctGravPref ?? "").trim()) return false;
+  if (!(l.acuerdoPref ?? "").trim()) return true;
+  return normTxt(l.acuerdoPref).includes(normTxt(acuerdo)) || normTxt(acuerdo).includes(normTxt(l.acuerdoPref));
+}
 
 
 const num = (s: string) => {
@@ -78,6 +115,11 @@ const num = (s: string) => {
 
 type LineaResultado = {
   producto: string;
+  codigo: string;
+  pctGravamen: number;
+  preferencial: boolean;
+  sinTasaPref: boolean;
+  selectivo: number;
   pais: string;
   fob: number;
   cif: number;
@@ -95,6 +137,7 @@ type Resultado = {
   seguro: number;
   cif: number;
   gravamen: number;
+  selectivo: number;
   itbis: number;
   gastos: number;
   servicio: number;
@@ -114,11 +157,22 @@ function calcular(e: Escenario, tarifas: TarifaServicio[] = []): Resultado {
   const lineas: LineaResultado[] = e.lineas.map((l) => {
     const fob = num(l.fob);
     const share = totalFob > 0 ? fob / totalFob : 1 / Math.max(e.lineas.length, 1);
-    const r = calcImpuestosLinea(fob, totalFob, seguro, flete, 0, num(e.pctGravamen), false, null, num(e.pctItbis));
+    const gravGeneral = (l.pctGravamen ?? "").trim() ? num(l.pctGravamen!) : num(e.pctGravamen);
+    const conAcuerdo = !!e.acuerdo && !!e.certificado;
+    const preferencial = conAcuerdo && prefCorresponde(l, e.acuerdo);
+    const pctGrav = preferencial ? num(l.pctGravPref!) : gravGeneral;
+    const pctIsc = (l.pctIsc ?? "").trim() ? num(l.pctIsc!) : 0;
+    const pctItbis = (l.pctItbis ?? "").trim() ? num(l.pctItbis!) : num(e.pctItbis);
+    const r = calcImpuestosLinea(fob, totalFob, seguro, flete, 0, pctGrav, pctIsc > 0, pctIsc, pctItbis, !!e.regimenSuspensivo);
     const gastos = r.cifLinea * (num(e.pctGastos) / 100);
     const servicioLinea = servicio * share;
     return {
       producto: l.producto,
+      codigo: l.codigo ?? "",
+      pctGravamen: e.regimenSuspensivo ? 0 : pctGrav,
+      preferencial,
+      sinTasaPref: conAcuerdo && !preferencial && !e.regimenSuspensivo,
+      selectivo: r.selectivo,
       pais: l.pais ?? "",
       fob,
       cif: r.cifLinea,
@@ -126,17 +180,18 @@ function calcular(e: Escenario, tarifas: TarifaServicio[] = []): Resultado {
       itbis: r.itbis,
       servicio: servicioLinea,
       gastos,
-      total: r.cifLinea + r.gravamen + r.itbis + servicioLinea + gastos,
+      total: r.cifLinea + r.gravamen + r.selectivo + r.itbis + servicioLinea + gastos,
     };
   });
 
   const cif = lineas.reduce((a, l) => a + l.cif, 0);
   const gravamen = lineas.reduce((a, l) => a + l.gravamen, 0);
+  const selectivo = lineas.reduce((a, l) => a + l.selectivo, 0);
   const itbis = lineas.reduce((a, l) => a + l.itbis, 0);
   const gastos = lineas.reduce((a, l) => a + l.gastos, 0);
-  const totalImpuestos = gravamen + itbis + gastos + servicio;
+  const totalImpuestos = gravamen + selectivo + itbis + gastos + servicio;
 
-  return { totalFob, totalPeso, flete, seguro, cif, gravamen, itbis, gastos, servicio, lineas, totalImpuestos, costoTotal: cif + totalImpuestos };
+  return { totalFob, totalPeso, flete, seguro, cif, gravamen, selectivo, itbis, gastos, servicio, lineas, totalImpuestos, costoTotal: cif + totalImpuestos };
 }
 
 const nf = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -144,9 +199,12 @@ const nf = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, 
 // Estructura compartida de la tabla de resultados (pantalla + PDF)
 export const COLUMNAS_RESULTADO = [
   "Producto",
+  "Código Arancelario",
   "País de Origen",
   "CIF (US$)",
+  "% Grav.",
   "Gravamen (US$)",
+  "Selectivo (US$)",
   "ITBIS (US$)",
   "Servicio Aduanero (US$)",
   "Gastos (US$)",
@@ -158,9 +216,12 @@ function filasResultado(r: Resultado, tasa: number): { body: string[][]; foot: s
   const rd = (n: number) => (tasa > 0 ? nf(n * tasa) : "—");
   const body = r.lineas.map((l, i) => [
     l.producto || `Línea ${i + 1}`,
+    l.codigo || "—",
     l.pais || "—",
     nf(l.cif),
+    `${nf(l.pctGravamen)}%${l.preferencial ? " (pref.)" : ""}`,
     nf(l.gravamen),
+    nf(l.selectivo),
     nf(l.itbis),
     nf(l.servicio),
     nf(l.gastos),
@@ -170,8 +231,11 @@ function filasResultado(r: Resultado, tasa: number): { body: string[][]; foot: s
   const foot = [
     "TOTALES",
     "",
+    "",
     nf(r.cif),
+    "",
     nf(r.gravamen),
+    nf(r.selectivo),
     nf(r.itbis),
     nf(r.servicio),
     nf(r.gastos),
