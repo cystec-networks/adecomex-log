@@ -1959,9 +1959,15 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                 </SelectContent>
               </Select>
             </div>
-            <div className={cn("grid gap-1.5", camposFaltantes.has("req-tipo_carga") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-tipo_carga">
-              <Label><ReqMark />Tipo de carga</Label>
-              <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => { set("tipo_carga", v); limpiarFaltante("req-tipo_carga"); }} placeholder="Escribe o selecciona…" />
+            <div className={cn("grid gap-1.5", camposFaltantes.has("req-tipo_carga") && "ring-2 ring-destructive rounded-md p-2 -m-2", tipoCargaSugerido && "ring-2 ring-warning rounded-md p-2 -m-2")} id="req-tipo_carga">
+              <Label className="flex items-center gap-1.5"><ReqMark />Tipo de carga
+                {tipoCargaSugerido && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-warning bg-warning/10 px-1.5 py-0 text-[10px] font-medium text-warning-foreground" title="Valor inferido por la IA a partir del documento — confírmalo antes de guardar">
+                    <AlertTriangle className="h-3 w-3" /> Sugerido por IA — confirmar
+                  </span>
+                )}
+              </Label>
+              <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => { set("tipo_carga", v); limpiarFaltante("req-tipo_carga"); setTipoCargaSugerido(false); }} placeholder="Escribe o selecciona…" />
             </div>
             <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sugContactoCliente} />
           </>
