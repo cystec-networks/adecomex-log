@@ -103,7 +103,7 @@
 /* La identidad no cede espacio; el plazo conserva el detalle en su tooltip. */
 .expediente-header-cliente { min-width: 0; }
 .expediente-header-cliente > button { white-space: normal; overflow-wrap: anywhere; }
-.expediente-presentation-pill { container: presentation-pill / inline-size; }
+.expediente-presentation-pill { container: presentation-pill / inline-size; min-width: 6.75rem; }
 .expediente-presentation-slot { display: flex; align-items: center; gap: 0.375rem; min-width: 0; }
 .expediente-presentation-short { display: none; }
 .expediente-presentation-content { display: flex; align-items: center; gap: 0.25rem; min-width: 0; }
