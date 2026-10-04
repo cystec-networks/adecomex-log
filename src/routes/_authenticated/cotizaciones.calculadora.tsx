@@ -279,11 +279,13 @@ function TablaResultado({ r, tasa }: { r: Resultado; tasa: number }) {
 }
 
 function ColumnaEscenario({
-  titulo, esc, tarifas, onChange, onQuitar,
+  titulo, esc, tarifas, regimenes, acuerdos, onChange, onQuitar,
 }: {
   titulo: string;
   esc: Escenario;
   tarifas: TarifaServicio[];
+  regimenes: Regimen[];
+  acuerdos: Acuerdo[];
   onChange: (e: Escenario) => void;
   onQuitar?: () => void;
 }) {
@@ -293,9 +295,63 @@ function ColumnaEscenario({
   const rd = (n: number) => (tasa > 0 ? nf(n * tasa) : "—");
   const set = (k: keyof Escenario, v: any) => onChange({ ...esc, [k]: v });
 
-  const setLinea = (i: number, k: keyof Linea, v: string) => {
-    const lineas = esc.lineas.map((l, idx) => (idx === i ? { ...l, [k]: v } : l));
+  const [borrador, setBorrador] = useState<Linea>({ ...LINEA_VACIA });
+  const [editIdx, setEditIdx] = useState<number | null>(null);
+  const [searchKey, setSearchKey] = useState(0);
+  const setB = (k: keyof Linea, v: string) => setBorrador((b) => ({ ...b, [k]: v }));
+  // Líneas reales (se ignoran filas vacías heredadas del formato anterior)
+  const lineasReales = esc.lineas.filter((l) => l.producto.trim() || num(l.fob) > 0);
+
+  const limpiarBorrador = () => { setBorrador({ ...LINEA_VACIA }); setEditIdx(null); setSearchKey((k) => k + 1); };
+
+  const guardarLinea = () => {
+    if (!borrador.producto.trim() && !(borrador.codigo ?? "").trim()) { toast.error("Indica el producto o el código arancelario"); return; }
+    if (num(borrador.fob) <= 0) { toast.error("Indica el valor FOB de la línea"); return; }
+    const linea = { ...borrador, producto: borrador.producto.trim() || borrador.codigo!.trim() };
+    const lineas = editIdx != null
+      ? lineasReales.map((l, i) => (i === editIdx ? linea : l))
+      : [...lineasReales, linea];
     onChange({ ...esc, lineas });
+    limpiarBorrador();
+  };
+
+  const modificar = (i: number) => { setBorrador({ ...LINEA_VACIA, ...lineasReales[i] }); setEditIdx(i); };
+  const borrar = (i: number) => {
+    const lineas = lineasReales.filter((_, idx) => idx !== i);
+    onChange({ ...esc, lineas: lineas.length ? lineas : [{ ...LINEA_VACIA }] });
+    if (editIdx === i) limpiarBorrador();
+  };
+
+  const elegirProducto = async (p: import("@/lib/dga-productos").DgaProducto) => {
+    const partida = (p.partida_arancelaria ?? "").trim();
+    const str = (n: number | null | undefined) => (n != null ? String(n) : "");
+    setBorrador((b) => ({
+      ...b,
+      producto: p.nombre_producto ?? b.producto,
+      codigo: partida || b.codigo,
+      unidad: p.unidad ?? b.unidad,
+      pais: b.pais || (p.pais ?? ""),
+      pctGravamen: str(p.pct_gravamen),
+      pctIsc: p.aplica_isc ? str(p.pct_isc) : "",
+      pctItbis: str(p.pct_itbis),
+      pctGravPref: "",
+      acuerdoPref: "",
+    }));
+    if (!partida) return;
+    const { data } = await supabase
+      .from("catalogo_tasas_arancelarias")
+      .select("pct_gravamen, pct_gravamen_preferencial, acuerdo_preferencial, aplica_isc, pct_isc, pct_itbis")
+      .eq("codigo_arancelario", partida)
+      .maybeSingle();
+    if (!data) return;
+    setBorrador((b) => ({
+      ...b,
+      pctGravamen: b.pctGravamen || str(data.pct_gravamen),
+      pctIsc: b.pctIsc || (data.aplica_isc ? str(data.pct_isc) : ""),
+      pctItbis: b.pctItbis || str(data.pct_itbis),
+      pctGravPref: str(data.pct_gravamen_preferencial),
+      acuerdoPref: data.acuerdo_preferencial ?? "",
+    }));
   };
 
   const fila = (label: string, usd: number, bold = false) => (
@@ -318,33 +374,132 @@ function ColumnaEscenario({
         )}
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Régimen y acuerdo comercial */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-1">
+            <Label className="text-xs">Régimen Aduanero</Label>
+            <Select
+              value={esc.regimen || undefined}
+              onValueChange={(v) => {
+                const r = regimenes.find((x) => x.nombre === v);
+                onChange({ ...esc, regimen: v, regimenSuspensivo: !!r?.suspensivo_impuestos });
+              }}
+            >
+              <SelectTrigger><SelectValue placeholder="Selecciona régimen" /></SelectTrigger>
+              <SelectContent>
+                {regimenes.map((r) => (
+                  <SelectItem key={r.codigo + r.nombre} value={r.nombre}>{r.codigo} — {r.nombre}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {esc.regimenSuspensivo && (
+              <span className="text-[11px] text-muted-foreground">Régimen suspensivo: impuestos en 0.</span>
+            )}
+          </div>
+          <div className="grid gap-1">
+            <Label className="text-xs">Acuerdo Comercial</Label>
+            <Select
+              value={esc.acuerdo || "__ninguno"}
+              onValueChange={(v) => onChange({ ...esc, acuerdo: v === "__ninguno" ? "" : v, certificado: v === "__ninguno" ? false : esc.certificado })}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__ninguno">Ninguno</SelectItem>
+                {acuerdos.map((a) => (
+                  <SelectItem key={a.codigo} value={a.nombre}>{a.nombre}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <label className="flex items-center gap-2 text-xs mt-1">
+              <Checkbox
+                checked={!!esc.certificado}
+                disabled={!esc.acuerdo}
+                onCheckedChange={(v) => onChange({ ...esc, certificado: v === true })}
+              />
+              Certificado de Origen
+            </label>
+          </div>
+        </div>
+
         {/* Productos */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs">Productos</Label>
-            <Button variant="outline" size="sm" onClick={() => onChange({ ...esc, lineas: [...esc.lineas, { ...LINEA_VACIA }] })}>
-              <Plus className="h-3.5 w-3.5 mr-1" />Agregar producto
-            </Button>
+          <Label className="text-xs">Productos</Label>
+          <div className="rounded-md border p-3 space-y-2 bg-muted/20">
+            <DgaProductoSearch key={searchKey} onSelect={(p) => elegirProducto(p)} />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid gap-1 col-span-2"><Label className="text-[11px]">Producto</Label>
+                <Input value={borrador.producto} onChange={(ev) => setB("producto", ev.target.value)} /></div>
+              <div className="grid gap-1"><Label className="text-[11px]">Código arancelario</Label>
+                <Input value={borrador.codigo ?? ""} onChange={(ev) => setB("codigo", ev.target.value)} /></div>
+              <div className="grid gap-1"><Label className="text-[11px]">País origen</Label>
+                <Input value={borrador.pais ?? ""} onChange={(ev) => setB("pais", ev.target.value)} /></div>
+              <div className="grid gap-1"><Label className="text-[11px]">Cantidad</Label>
+                <Input type="number" step="0.01" min="0" value={borrador.cantidad ?? ""} onChange={(ev) => setB("cantidad", ev.target.value)} /></div>
+              <div className="grid gap-1"><Label className="text-[11px]">Unidad</Label>
+                <Input value={borrador.unidad ?? ""} onChange={(ev) => setB("unidad", ev.target.value)} /></div>
+              <div className="grid gap-1"><Label className="text-[11px]">FOB US$</Label>
+                <Input type="number" step="0.01" min="0" value={borrador.fob} onChange={(ev) => setB("fob", ev.target.value)} /></div>
+              <div className="grid gap-1"><Label className="text-[11px]">Peso kg</Label>
+                <Input type="number" step="0.01" min="0" value={borrador.peso} onChange={(ev) => setB("peso", ev.target.value)} /></div>
+              <div className="grid gap-1"><Label className="text-[11px]">% Gravamen</Label>
+                <Input type="number" step="0.01" min="0" value={borrador.pctGravamen ?? ""} placeholder={esc.pctGravamen || "0"} onChange={(ev) => setB("pctGravamen", ev.target.value)} /></div>
+              <div className="grid gap-1"><Label className="text-[11px]">% Selectivo (ISC)</Label>
+                <Input type="number" step="0.01" min="0" value={borrador.pctIsc ?? ""} placeholder="0" onChange={(ev) => setB("pctIsc", ev.target.value)} /></div>
+              <div className="grid gap-1"><Label className="text-[11px]">% ITBIS</Label>
+                <Input type="number" step="0.01" min="0" value={borrador.pctItbis ?? ""} placeholder={esc.pctItbis || "18"} onChange={(ev) => setB("pctItbis", ev.target.value)} /></div>
+              <div className="grid gap-1"><Label className="text-[11px]">% Grav. preferencial</Label>
+                <Input type="number" step="0.01" min="0" value={borrador.pctGravPref ?? ""} placeholder="Sin registrar" onChange={(ev) => setB("pctGravPref", ev.target.value)} /></div>
+            </div>
+            <div className="flex justify-end gap-2">
+              {editIdx != null && <Button variant="ghost" size="sm" onClick={limpiarBorrador}>Cancelar</Button>}
+              <Button size="sm" onClick={guardarLinea}>
+                {editIdx != null ? <><Check className="h-3.5 w-3.5 mr-1" />Guardar cambios</> : <><Plus className="h-3.5 w-3.5 mr-1" />Agregar</>}
+              </Button>
+            </div>
           </div>
-          <div className="space-y-2">
-            {esc.lineas.map((l, i) => (
-              <div key={i} className="grid grid-cols-[1fr_110px_90px_80px_auto] gap-2 items-center">
-                <Input value={l.producto} placeholder="Producto" onChange={(ev) => setLinea(i, "producto", ev.target.value)} />
-                <Input value={l.pais ?? ""} placeholder="País origen" onChange={(ev) => setLinea(i, "pais", ev.target.value)} />
-                <Input type="number" step="0.01" min="0" value={l.fob} placeholder="FOB US$" onChange={(ev) => setLinea(i, "fob", ev.target.value)} />
-                <Input type="number" step="0.01" min="0" value={l.peso} placeholder="Peso kg" onChange={(ev) => setLinea(i, "peso", ev.target.value)} />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  disabled={esc.lineas.length === 1}
-                  title="Eliminar"
-                  onClick={() => onChange({ ...esc, lineas: esc.lineas.filter((_, idx) => idx !== i) })}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
+
+          {lineasReales.length > 0 && (
+            <div className="rounded-md border overflow-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="p-2 text-left">Producto</th>
+                    <th className="p-2 text-left">Código</th>
+                    <th className="p-2 text-right">Cant.</th>
+                    <th className="p-2 text-right">FOB US$</th>
+                    <th className="p-2 text-right">% Grav.</th>
+                    <th className="p-2 text-right">% ISC</th>
+                    <th className="p-2 text-right">% ITBIS</th>
+                    <th className="p-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lineasReales.map((l, i) => {
+                    const res = r.lineas.find((_, idx) => idx === esc.lineas.indexOf(l));
+                    return (
+                      <tr key={i} className={`border-t tabular-nums ${editIdx === i ? "bg-accent/40" : ""}`}>
+                        <td className="p-2">{l.producto}</td>
+                        <td className="p-2">{l.codigo || "—"}</td>
+                        <td className="p-2 text-right">{l.cantidad ? `${l.cantidad} ${l.unidad ?? ""}` : "—"}</td>
+                        <td className="p-2 text-right">{nf(num(l.fob))}</td>
+                        <td className="p-2 text-right">
+                          {res ? `${nf(res.pctGravamen)}%` : "—"}
+                          {res?.preferencial && <Badge variant="secondary" className="ml-1 text-[10px]">Pref.</Badge>}
+                          {res?.sinTasaPref && <span className="ml-1 text-[10px] text-muted-foreground" title="No hay tasa preferencial registrada para este código y acuerdo; se usa el gravamen general.">(sin pref.)</span>}
+                        </td>
+                        <td className="p-2 text-right">{(l.pctIsc ?? "").trim() ? `${l.pctIsc}%` : "—"}</td>
+                        <td className="p-2 text-right">{(l.pctItbis ?? "").trim() ? l.pctItbis : esc.pctItbis || 18}%</td>
+                        <td className="p-2 text-right whitespace-nowrap">
+                          <Button variant="ghost" size="icon" title="Modificar" onClick={() => modificar(i)}><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" title="Borrar" onClick={() => borrar(i)}><Trash2 className="h-4 w-4" /></Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
           <div className="text-xs text-muted-foreground tabular-nums">
             Total FOB: US$ {nf(r.totalFob)} · Peso total: {nf(r.totalPeso)} kg
           </div>
@@ -376,11 +531,11 @@ function ColumnaEscenario({
             <Input type="number" step="0.01" min="0" value={esc.tasa} onChange={(ev) => set("tasa", ev.target.value)} />
           </div>
           <div className="grid gap-1">
-            <Label className="text-xs">% Gravamen</Label>
+            <Label className="text-xs">% Gravamen por defecto</Label>
             <Input type="number" step="0.01" min="0" value={esc.pctGravamen} onChange={(ev) => set("pctGravamen", ev.target.value)} />
           </div>
           <div className="grid gap-1">
-            <Label className="text-xs">% ITBIS</Label>
+            <Label className="text-xs">% ITBIS por defecto</Label>
             <Input type="number" step="0.01" min="0" value={esc.pctItbis} onChange={(ev) => set("pctItbis", ev.target.value)} />
           </div>
           <div className="grid gap-1">
@@ -403,6 +558,9 @@ function ColumnaEscenario({
           {fila("Total FOB", r.totalFob)}
           {fila(esc.fleteReal ? "Flete (real)" : `Flete (${esc.flete || 0}%)`, r.flete)}
           {fila(esc.seguroReal ? "Seguro (real)" : `Seguro (${esc.seguro || 0}%)`, r.seguro)}
+          {fila("Gravamen", r.gravamen)}
+          {fila("Selectivo (ISC)", r.selectivo)}
+          {fila("ITBIS", r.itbis)}
           {fila("Total Impuestos", r.totalImpuestos, true)}
         </div>
 
@@ -461,9 +619,9 @@ async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[], im
       bodyStyles: { fontSize: 8 },
       footStyles: { fillColor: [226, 232, 240], textColor: 20, fontStyle: "bold", fontSize: 8 },
       columnStyles: {
-        0: { cellWidth: 140 }, 1: { cellWidth: 60 },
-        2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" },
-        5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" }, 8: { halign: "right" },
+        0: { cellWidth: 120 }, 1: { cellWidth: 62 }, 2: { cellWidth: 50 },
+        3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" },
+        7: { halign: "right" }, 8: { halign: "right" }, 9: { halign: "right" }, 10: { halign: "right" }, 11: { halign: "right" },
       },
       margin: { left: M, right: M },
     });
@@ -477,8 +635,11 @@ async function generarPdf(escenarios: Escenario[], tarifas: TarifaServicio[], im
         fila(e.fleteReal ? "Flete (monto real)" : `Flete estimado (${e.flete || 0}%)`, r.flete),
         fila(e.seguroReal ? "Seguro (monto real)" : `Seguro estimado (${e.seguro || 0}%)`, r.seguro),
         fila("CIF", r.cif),
-        fila(`Gravamen (${e.pctGravamen || 0}%)`, r.gravamen),
-        fila(`ITBIS (${e.pctItbis || 18}%)`, r.itbis),
+        [`Régimen: ${e.regimen || "—"}${e.regimenSuspensivo ? " (suspensivo)" : ""}`, "", ""],
+        [`Acuerdo comercial: ${e.acuerdo || "Ninguno"}${e.acuerdo ? (e.certificado ? " — con Certificado de Origen" : " — sin Certificado de Origen") : ""}`, "", ""],
+        fila("Gravamen", r.gravamen),
+        fila("Selectivo (ISC)", r.selectivo ?? 0),
+        fila("ITBIS", r.itbis),
         fila(`Gastos (${e.pctGastos || 0}%)`, r.gastos),
         ...(e.servicioFilas.length
           ? e.servicioFilas.map((f) => {
@@ -550,6 +711,28 @@ function CalculadoraRapida() {
     },
   });
 
+  const { data: regimenes = [] } = useQuery({
+    queryKey: ["calc-regimenes-importacion"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("catalogo_regimenes")
+        .select("codigo, nombre, suspensivo_impuestos")
+        .eq("tipo_operacion", "importacion")
+        .order("nombre");
+      if (error) throw error;
+      return ((data ?? []) as Regimen[]).sort((a, b) => Number(a.codigo) - Number(b.codigo));
+    },
+  });
+
+  const { data: acuerdos = [] } = useQuery({
+    queryKey: ["calc-acuerdos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("catalogo_acuerdos").select("codigo, nombre").order("nombre");
+      if (error) throw error;
+      return (data ?? []) as Acuerdo[];
+    },
+  });
+
   const { data: guardados = [] } = useQuery({
     queryKey: ["calculos-pre-liquidacion"],
     queryFn: async () => {
@@ -607,8 +790,9 @@ function CalculadoraRapida() {
     const d = row.datos_entrada ?? {};
     if (!d.escenarioA) { toast.error("El cálculo guardado no tiene datos válidos"); return; }
     setImportador(d.importador ?? row.nombre_importador ?? "");
-    setEscA(d.escenarioA);
-    setEscB(d.escenarioB ?? null);
+    const norm = (x: any): Escenario => ({ ...VACIO, regimen: "", ...x });
+    setEscA(norm(d.escenarioA));
+    setEscB(d.escenarioB ? norm(d.escenarioB) : null);
     toast.success("Cálculo cargado");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -653,6 +837,8 @@ function CalculadoraRapida() {
           titulo={escB ? "Escenario A" : "Escenario"}
           esc={escA}
           tarifas={tarifas}
+          regimenes={regimenes}
+          acuerdos={acuerdos}
           onChange={setEscA}
         />
         {escB && (
@@ -660,6 +846,8 @@ function CalculadoraRapida() {
             titulo="Escenario B"
             esc={escB}
             tarifas={tarifas}
+            regimenes={regimenes}
+            acuerdos={acuerdos}
             onChange={setEscB}
             onQuitar={() => setEscB(null)}
           />
