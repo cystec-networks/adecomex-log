@@ -17,7 +17,7 @@ En el volante de solicitud de pago, resolver primero el número del transporte v
 
 El PDF de preliquidación de expediente y cotización comparte el generador horizontal con resumen CIF, Impuestos y Servicios DGA; mantenerlo centralizado evita diferencias entre ambas impresiones.
 
-Use explicit responsive grid slots and reserved action widths for the expediente header; desktop controls stay on one row, with secondary menus consolidated into More actions when the container cannot fit them, while mobile keeps accessible rows.
+Use explicit responsive grid slots for the expediente header; menu visibility follows the window breakpoint rather than sidebar-reduced container width, while available-width queries compact desktop controls and keep narrow layouts accessible.
 
 Use space-between across all present desktop header fields, flatten the arrival wrapper for equal gaps, preserve intrinsic client and BL/AWB widths, and group the shrinkable presentation badge with its edit control; container-based icon/date fallback preserves full tooltip details.
 
