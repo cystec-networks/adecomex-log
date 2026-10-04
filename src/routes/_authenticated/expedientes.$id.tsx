@@ -361,6 +361,8 @@ function combinarOcr(bl: OcrExtraction | null, fac: OcrExtraction | null): OcrEx
     otros_gastos: fromFac("otros_gastos"),
     notify_party: fromBl("notify_party"),
     agente_entrega: fromBl("agente_entrega"),
+    tipo_carga: fromBl("tipo_carga"),
+    tipo_carga_confianza: fromBl("tipo_carga_confianza"),
   };
 }
 
@@ -390,6 +392,7 @@ export type OcrAplicado = {
   productos?: any[];
   clienteId?: string | null;
   desdeXml?: boolean;
+  tipoCargaConfianza?: "alta" | "media" | null;
 };
 
 function DetalleExpediente() {
@@ -480,7 +483,9 @@ function DetalleExpediente() {
         peso_neto: res.peso_neto_kg,
         descripcion_mercancia: res.descripcion_mercancia || obs,
         observaciones: obs,
+        tipo_carga: res.tipo_carga,
       },
+      tipoCargaConfianza: res.tipo_carga_confianza ?? null,
     });
   };
 
