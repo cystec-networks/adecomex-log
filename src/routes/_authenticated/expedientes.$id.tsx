@@ -2375,7 +2375,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                         <td className="px-2 py-1"><Input value={c.numero} onChange={(e) => setCont(i, "numero", e.target.value)} disabled={!editable} placeholder="MSKU1234567" /></td>
                         <td className="px-2 py-1"><Input value={c.sello1} onChange={(e) => setCont(i, "sello1", e.target.value)} disabled={!editable} /></td>
                         <td className="px-2 py-1"><Input value={c.sello2} onChange={(e) => setCont(i, "sello2", e.target.value)} disabled={!editable} /></td>
-                        <td className="px-2 py-1"><Input value={c.tipo} onChange={(e) => setCont(i, "tipo", e.target.value)} disabled={!editable} placeholder="40HC" /></td>
+                        <td className="px-2 py-1"><Input value={c.tipo} title={c.tipo} className="text-ellipsis" onChange={(e) => setCont(i, "tipo", e.target.value)} disabled={!editable} placeholder="40HC" /></td>
                         {editable && (
                           <td className="px-2 py-1 text-right">
                             <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive"
@@ -4484,7 +4484,7 @@ function MercanciaItemsBlock({
       </div>
       <AvisoRegimenSuspensivo expedienteId={expedienteId} />
       <div className="rounded-md border overflow-auto max-h-[70vh]">
-        <table className="w-full text-sm min-w-[1400px]">
+        <table className="expediente-mercancia-table w-full text-sm min-w-[1400px]">
             <thead className="sticky-table-header bg-muted/50 text-[10.5px] uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-2 py-2 text-left w-10">#</th>

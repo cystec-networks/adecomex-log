@@ -125,6 +125,8 @@
   .expediente-tab-body [role="combobox"] > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .expediente-tab-body div:has(> table) { overflow-x: auto; max-width: 100%; }
   .expediente-tab-body table { max-width: none; }
+  .expediente-tab-body .expediente-mercancia-table { min-width: 85rem; }
+  .expediente-tab-body input { text-overflow: ellipsis; }
   .expediente-tab-body td { overflow-wrap: anywhere; }
   .expediente-tab-body .text-xl, .expediente-tab-body .text-2xl { overflow-wrap: anywhere; }
   .expediente-section-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -139,6 +141,7 @@
   .expediente-desktop .expediente-header-inspeccion > div { display: grid; grid-template-columns: auto minmax(0, 1fr); }
   .expediente-desktop .expediente-header-inspeccion [role="combobox"] { width: 100%; min-width: 0; }
 }
+@media screen and (min-width: 1024px) {
 @container expedientes-listado (max-width: 1050px) {
   .expedientes-listado-filtros { grid-template-columns: minmax(7rem, 1fr) repeat(2, minmax(9rem, 1fr)) auto; }
   .expedientes-listado-filtros > input { grid-column: 1 / -1; }
@@ -146,12 +149,13 @@
 @container expediente-detail (max-width: 1150px) {
   .expediente-desktop .expediente-info-fila3 { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 0.25rem; }
 }
-@container expediente-body (max-width: 1000px) {
+@container expediente-body (max-width: 1150px) {
   .expediente-section-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .expediente-section-fields > .lg\:col-span-3 { grid-column: 1 / -1; }
   .expediente-tab-body .lg\:grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .expediente-tab-body .md\:grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .expediente-tab-body .md\:grid-cols-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 }
 @media screen and (max-width: 1023px) {
   .expedientes-listado-columnas { display: none; }
