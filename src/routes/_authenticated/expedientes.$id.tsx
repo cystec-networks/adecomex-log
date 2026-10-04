@@ -1196,7 +1196,8 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     seguro: d.seguro ?? "",
     flete: d.flete ?? "",
     otros: d.otros ?? "",
-    regimen_aduanero: d.regimen_aduanero ?? "",
+    // Importación nueva: régimen por defecto "Despacho a Consumo" (RegimenCode 1), editable.
+    regimen_aduanero: d.regimen_aduanero ?? (nuevo && tipoDefault !== "exportacion" ? "Despacho a Consumo" : ""),
     regimen_codigo_exportacion: d.regimen_codigo_exportacion ?? "",
     acuerdo_comercial: d.acuerdo_comercial ?? "",
     acuerdo_codigo: d.acuerdo_codigo ?? "",
@@ -1300,6 +1301,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   /** Modo creación: líneas de mercancía en memoria hasta que exista el Expediente. */
   const [productosNuevos, setProductosNuevos] = useState<any[]>([]);
   const [camposFaltantes, setCamposFaltantes] = useState<Set<string>>(new Set());
+  const puertoAreaRef = useRef<Record<string, { codigo: string; nombre: string }>>({});
   const [contenedores, setContenedores] = useState<Array<{ numero: string; sello1: string; sello2: string; tipo: string }>>([]);
 
   useEffect(() => {
@@ -1348,6 +1350,13 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         }
       }
       if (ocrAplicado.clienteId) next.cliente_id = ocrAplicado.clienteId;
+      // Puerto detectado → completar Área aduanera si aún está vacía.
+      const areaMap = puertoAreaRef.current;
+      const areaPuerto = next.puerto_arribo_codigo && areaMap[next.puerto_arribo_codigo];
+      if (areaPuerto && !next.area_aduanera_codigo) {
+        next.area_aduanera = areaPuerto.nombre;
+        next.area_aduanera_codigo = areaPuerto.codigo;
+      }
       return next;
     });
     if (ocrAplicado.productos?.length) setProductosNuevos(ocrAplicado.productos);
@@ -1425,6 +1434,24 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   }, [clientesLite, form.cliente_id]);
   const sugContactoCliente = useMemo(() => (contactoDelCliente ? [contactoDelCliente] : []), [contactoDelCliente]);
   const clientePrevRef = useRef<string>("");
+
+  // Puerto de arribo → Área aduanera DGA (relación dga_puerto_area). Solo al cambiar el puerto; el área sigue editable.
+  const { data: puertoAreaMap } = useQuery({
+    queryKey: ["dga_puerto_area"],
+    queryFn: async () => {
+      const { data: rel } = await supabase.from("dga_puerto_area").select("puerto_codigo, area_codigo");
+      const codigos = Array.from(new Set((rel ?? []).map((r) => r.area_codigo)));
+      const { data: areas } = codigos.length
+        ? await supabase.from("dga_areas").select("codigo, area").in("codigo", codigos)
+        : { data: [] as any[] };
+      const nombre = new Map((areas ?? []).map((a: any) => [a.codigo, a.area]));
+      const m: Record<string, { codigo: string; nombre: string }> = {};
+      (rel ?? []).forEach((r) => { if (nombre.has(r.area_codigo)) m[r.puerto_codigo] = { codigo: r.area_codigo, nombre: nombre.get(r.area_codigo) }; });
+      return m;
+    },
+    staleTime: 10 * 60_000,
+  });
+  puertoAreaRef.current = puertoAreaMap ?? {};
   useEffect(() => {
     if (!isNuevo) return;
     if (form.cliente_id === clientePrevRef.current) return;
@@ -2092,7 +2119,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               table="dga_puertos"
               value={form.puerto_arribo}
               codigo={form.puerto_arribo_codigo}
-              onChange={(nombre, codigo) => { setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo })); limpiarFaltante("req-puerto_arribo"); }}
+              onChange={(nombre, codigo) => {
+                const area = codigo ? puertoAreaRef.current[codigo] : undefined;
+                setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo, ...(area ? { area_aduanera: area.nombre, area_aduanera_codigo: area.codigo } : {}) }));
+                limpiarFaltante("req-puerto_arribo");
+                if (area) limpiarFaltante("req-area_aduanera");
+              }}
               placeholder="Buscar puerto (catálogo DGA)"
               disabled={!editable}
             />

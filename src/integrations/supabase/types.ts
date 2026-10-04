@@ -2226,6 +2226,24 @@ export type Database = {
         }
         Relationships: []
       }
+      dga_puerto_area: {
+        Row: {
+          area_codigo: string
+          created_at: string
+          puerto_codigo: string
+        }
+        Insert: {
+          area_codigo: string
+          created_at?: string
+          puerto_codigo: string
+        }
+        Update: {
+          area_codigo?: string
+          created_at?: string
+          puerto_codigo?: string
+        }
+        Relationships: []
+      }
       dga_puertos: {
         Row: {
           codigo: string
