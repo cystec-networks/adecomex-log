@@ -1301,6 +1301,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   /** Modo creación: líneas de mercancía en memoria hasta que exista el Expediente. */
   const [productosNuevos, setProductosNuevos] = useState<any[]>([]);
   const [camposFaltantes, setCamposFaltantes] = useState<Set<string>>(new Set());
+  const puertoAreaRef = useRef<Record<string, { codigo: string; nombre: string }>>({});
   const [contenedores, setContenedores] = useState<Array<{ numero: string; sello1: string; sello2: string; tipo: string }>>([]);
 
   useEffect(() => {
@@ -1450,18 +1451,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     },
     staleTime: 10 * 60_000,
   });
-  const puertoPrevRef = useRef<string | null>(null);
-  useEffect(() => {
-    const cod = form.puerto_arribo_codigo || "";
-    if (puertoPrevRef.current === null) { puertoPrevRef.current = cod; return; }
-    if (cod === puertoPrevRef.current) return;
-    puertoPrevRef.current = cod;
-    const area = cod && puertoAreaMap?.[cod];
-    if (area && editable) {
-      setForm((f) => ({ ...f, area_aduanera: area.nombre, area_aduanera_codigo: area.codigo }));
-      limpiarFaltante("req-area_aduanera");
-    }
-  }, [form.puerto_arribo_codigo, puertoAreaMap]);
+  puertoAreaRef.current = puertoAreaMap ?? {};
   useEffect(() => {
     if (!isNuevo) return;
     if (form.cliente_id === clientePrevRef.current) return;
@@ -2129,7 +2119,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               table="dga_puertos"
               value={form.puerto_arribo}
               codigo={form.puerto_arribo_codigo}
-              onChange={(nombre, codigo) => { setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo })); limpiarFaltante("req-puerto_arribo"); }}
+              onChange={(nombre, codigo) => {
+                const area = codigo ? puertoAreaRef.current[codigo] : undefined;
+                setForm((f) => ({ ...f, puerto_arribo: nombre, puerto_arribo_codigo: codigo, ...(area ? { area_aduanera: area.nombre, area_aduanera_codigo: area.codigo } : {}) }));
+                limpiarFaltante("req-puerto_arribo");
+                if (area) limpiarFaltante("req-area_aduanera");
+              }}
               placeholder="Buscar puerto (catálogo DGA)"
               disabled={!editable}
             />
