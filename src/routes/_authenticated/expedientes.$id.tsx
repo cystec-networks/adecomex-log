@@ -728,7 +728,7 @@ function DetalleExpediente() {
   const expData: any = isNuevo ? EXPEDIENTE_VACIO : exp;
 
   return (
-    <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
+    <div className={cn("expediente-desktop w-full min-w-0 mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
       <ImpuestosSuspCtx.Provider value={suspEstado}>
       <Tabs value={tabActiva} onValueChange={setTabActiva}>
       <div
@@ -1081,7 +1081,7 @@ function DetalleExpediente() {
           <p className="text-xs text-muted-foreground mt-1">Disponible después de crear el Expediente.</p>
         )}
       </div>
-      <div className="px-6">
+      <div className="expediente-tab-body min-w-0 px-6">
         <TabsContent value="info">
           <div id="ficha-generales-print">
             <div className="hidden print:block mb-4">
@@ -1140,7 +1140,7 @@ function Field({ label, value, onChange, type = "text", className = "", disabled
   return (
     <div className={cn("grid gap-1.5", highlight && "ring-2 ring-destructive rounded-md p-2 -m-2", className)} id={fieldId}>
       <Label>{req && <ReqMark />}{label}</Label>
-      <Input type={type} value={value ?? ""} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
+      <Input type={type} value={value ?? ""} title={String(value ?? "")} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
     </div>
   );
 }
@@ -1162,7 +1162,7 @@ function Section({ title, subtitle, children, id, className }: { title: React.Re
     try { localStorage.setItem(`exp-section-${id}`, next ? "1" : "0"); } catch { /* ignore */ }
   };
   return (
-    <Card className={className}>
+    <Card className={cn("expediente-form-section", className)}>
       <CardHeader className="pb-3 border-b cursor-pointer select-none" onClick={toggle}>
         <div className="flex items-center justify-between">
           <div>
@@ -1172,7 +1172,7 @@ function Section({ title, subtitle, children, id, className }: { title: React.Re
           <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", abierto && "rotate-180")} />
         </div>
       </CardHeader>
-      {(abierto || forzarAbierto) && <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">{children}</CardContent>}
+      {(abierto || forzarAbierto) && <CardContent className="expediente-section-fields pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">{children}</CardContent>}
     </Card>
   );
 }
@@ -2375,7 +2375,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                         <td className="px-2 py-1"><Input value={c.numero} onChange={(e) => setCont(i, "numero", e.target.value)} disabled={!editable} placeholder="MSKU1234567" /></td>
                         <td className="px-2 py-1"><Input value={c.sello1} onChange={(e) => setCont(i, "sello1", e.target.value)} disabled={!editable} /></td>
                         <td className="px-2 py-1"><Input value={c.sello2} onChange={(e) => setCont(i, "sello2", e.target.value)} disabled={!editable} /></td>
-                        <td className="px-2 py-1"><Input value={c.tipo} onChange={(e) => setCont(i, "tipo", e.target.value)} disabled={!editable} placeholder="40HC" /></td>
+                        <td className="px-2 py-1"><Input value={c.tipo} title={c.tipo} className="text-ellipsis" onChange={(e) => setCont(i, "tipo", e.target.value)} disabled={!editable} placeholder="40HC" /></td>
                         {editable && (
                           <td className="px-2 py-1 text-right">
                             <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive"
@@ -4484,7 +4484,7 @@ function MercanciaItemsBlock({
       </div>
       <AvisoRegimenSuspensivo expedienteId={expedienteId} />
       <div className="rounded-md border overflow-auto max-h-[70vh]">
-        <table className="w-full text-sm min-w-[1400px]">
+        <table className="expediente-mercancia-table w-full text-sm min-w-[1400px]">
             <thead className="sticky-table-header bg-muted/50 text-[10.5px] uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-2 py-2 text-left w-10">#</th>

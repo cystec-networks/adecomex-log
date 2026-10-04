@@ -28,6 +28,14 @@ import { daysFromToday, habilesRestantesPlazo } from "@/lib/dates";
 type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 
 export const Route = createFileRoute("/_authenticated/expedientes/")({
+  head: () => ({ meta: [
+    { title: "Expedientes aduanales | ADECOMEX" },
+    { name: "description", content: "Listado de expedientes aduanales de ADECOMEX, con filtros y agrupación por estado." },
+    { property: "og:title", content: "Expedientes aduanales | ADECOMEX" },
+    { property: "og:description", content: "Consulta y seguimiento de expedientes aduanales en ADECOMEX." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   validateSearch: (s: Record<string, unknown>): { tipo?: TipoFilter; estado?: string; eta?: number } => {
     const t = s.tipo;
     const tipo = t === "importacion" || t === "exportacion" || t === "facturados" || t === "todos" ? t : undefined;
@@ -309,7 +317,7 @@ function Expedientes() {
     }
     const all = active.map((it: any) => it.detalle_producto ?? "—").join("\n");
     return (
-      <span title={all} className="block truncate max-w-[160px]">
+       <span title={all} className="block truncate max-w-full">
         <span className="text-muted-foreground">{first}</span>
         <span className="text-[10px] text-muted-foreground/70 ml-1">+{active.length - 1} más</span>
       </span>
@@ -366,10 +374,10 @@ function Expedientes() {
         <MercanciaCell items={e.mercancia_items} />
       </td>
       <td className="px-2 py-1 align-middle text-right tabular-nums text-muted-foreground text-xs whitespace-nowrap">
-        {e.numero_dua ?? "—"}
+        <TruncatedCell value={e.numero_dua} maxClass="max-w-full" />
       </td>
       <td className="px-2 py-1 align-middle text-muted-foreground whitespace-nowrap">
-        {e.bl_awb ?? "—"}
+        <TruncatedCell value={e.bl_awb} maxClass="max-w-full" />
       </td>
       <td className="px-2 py-1 align-middle text-right tabular-nums text-muted-foreground whitespace-nowrap">
         {(() => { const d = parseLocalDate(e.fecha_compromiso); return d ? d.toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"; })()}
@@ -410,10 +418,10 @@ function Expedientes() {
         })()}
       </td>
       <td className="px-2 py-1 align-middle text-muted-foreground text-xs whitespace-nowrap">
-        {e.puerto_arribo ?? "—"}
+        <TruncatedCell value={e.puerto_arribo} maxClass="max-w-full" />
       </td>
       <td className="px-2 py-1 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
-        {e.numero_vuce ?? "—"}
+        <TruncatedCell value={e.numero_vuce} maxClass="max-w-full" />
       </td>
       <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
         <div className="flex flex-col items-center gap-0.5">
@@ -503,8 +511,8 @@ function Expedientes() {
   );
 
   return (
-    <div className="p-3 md:p-4 space-y-3 max-w-[1600px] mx-auto h-full flex flex-col">
-      <div className="flex items-center gap-3 flex-wrap shrink-0">
+    <div className="expedientes-listado p-3 md:p-4 space-y-3 w-full min-w-0 mx-auto h-full flex flex-col">
+      <div className="expedientes-listado-toolbar flex items-center gap-3 flex-wrap shrink-0">
         <div className="flex-1 min-w-[200px] min-w-0">
           <h1 className="font-display text-lg font-bold leading-tight truncate">Expedientes · {tipoLabel}</h1>
           <p className="text-xs text-muted-foreground hidden xl:block truncate">Expedientes aduanales agrupados por tipo de solicitud.</p>
@@ -523,7 +531,7 @@ function Expedientes() {
       </div>
 
       <Card className="overflow-hidden flex-1 min-h-0 flex flex-col">
-        <CardHeader className="flex-row items-center gap-2 flex-wrap p-2 px-3 shrink-0">
+        <CardHeader className="expedientes-listado-filtros flex-row items-center gap-2 flex-wrap p-2 px-3 shrink-0">
           <CardTitle className="text-xs font-medium text-muted-foreground flex-1 min-w-[100px] min-w-0">{filtered.length} expedientes</CardTitle>
           <Select value={estado} onValueChange={setEstado}>
             <SelectTrigger className="w-40 h-8"><SelectValue /></SelectTrigger>
@@ -569,7 +577,8 @@ function Expedientes() {
                     <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">{grupoLabel[g]}</span>
                     <Badge variant="secondary" className="text-[10px]">{rows.length}</Badge>
                   </div>
-                  <table className="w-full text-[13px] border-separate border-spacing-0">
+                  <table className="expedientes-listado-tabla w-full text-[13px] border-separate border-spacing-0">
+                    <colgroup className="expedientes-listado-columnas">{[10, 12, 11, 10, 11, 8, 5, 7, 9, 9, 8].map((width, i) => <col key={i} width={`${width}%`} />)}</colgroup>
                     <thead className="sticky-table-header bg-muted/30 border-b [&_th]:top-[33px]">
                       <tr>
                         <Th k="numero" className="px-2 whitespace-nowrap">Expediente</Th>

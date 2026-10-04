@@ -14,3 +14,4 @@
 - [x] Corregir el aviso del header: solo llegada real y régimen configurado, días restantes desde hoy y alerta de vencimiento; conservar cumplimiento y verificar sin cambiar datos.
 - [x] Reemplazar ETA por Llegada con días de tránsito desde Cargado cuando haya llegada real, quitar el campo duplicado y verificar la secuencia en escritorio y celular.
 - [x] Sustituir Canal de Riesgo por Tipo de Inspección, conservar valores antiguos y verificar selector compartido con el encabezado y distribución equitativa (sin guardar valores de prueba).
+- [x] Adaptar listado y todas las pestañas de Expedientes a escritorio compacto, estándar y grande, preservando la lógica del encabezado; verificar 1366, 1536, 1920 y 2560 px, con secciones abiertas y edición sin guardar. Tablas densas con desplazamiento local y tipo de contenedor largo con detalle al pasar el mouse.

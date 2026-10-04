@@ -98,6 +98,69 @@
   .expediente-info-fila3 > .expediente-header-alerta { grid-column: 1 / -1; }
 }
 
+/* Desktop-only adaptations, deliberately isolated from the rest of the app. */
+@media screen and (min-width: 1024px) {
+  .expedientes-listado { container: expedientes-listado / inline-size; }
+  .expedientes-listado-toolbar > :first-child { flex: 1 1 18rem; }
+  .expedientes-listado-filtros { display: grid; grid-template-columns: minmax(7rem, 1fr) repeat(2, minmax(9rem, 0.9fr)) auto minmax(13rem, 1.5fr); }
+  .expedientes-listado-filtros > * { min-width: 0; max-width: 100%; width: 100%; }
+  .expedientes-listado-tabla { table-layout: fixed; }
+  .expedientes-listado-tabla :is(th, td) { min-width: 0; }
+  .expedientes-listado-tabla th { white-space: normal; overflow-wrap: normal; padding-inline: 0.25rem; }
+  .expedientes-listado-tabla th button { max-width: 100%; white-space: normal; gap: 0.125rem; }
+  .expedientes-listado-tabla td > span { max-width: 100%; }
+  .expedientes-listado-tabla td:nth-child(2) span { min-width: 0; max-width: 100%; }
+  .expedientes-listado-tabla td:nth-child(10) { white-space: normal; }
+  .expedientes-listado-tabla td:nth-child(10) :is(span, div) { max-width: 100%; overflow-wrap: normal; white-space: normal; }
+  .expedientes-listado-tabla td:last-child { white-space: normal; }
+  .expediente-desktop { container: expediente-detail / inline-size; }
+  .expediente-tab-body { container: expediente-body / inline-size; }
+  .expediente-tab-body :is([data-state="active"], .grid, .flex, .rounded-xl.border, .p-6) { min-width: 0; max-width: 100%; }
+  .expediente-tab-body .grid > * { min-width: 0; }
+  .expediente-tab-body .rounded-xl.border > .flex.p-6 { flex-wrap: wrap; gap: 0.75rem; }
+  .expediente-tab-body .rounded-xl.border > .flex.p-6 > div { min-width: 0; }
+  .expediente-tab-body .rounded-xl.border > .flex.p-6 > .flex { flex-wrap: wrap; }
+  .expediente-tab-body :is(label, .font-semibold.leading-none) { overflow-wrap: anywhere; }
+  .expediente-tab-body :is(input, textarea, [role="combobox"]) { min-width: 0; max-width: 100%; }
+  .expediente-tab-body [role="combobox"] > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .expediente-tab-body div:has(> table) { overflow-x: auto; max-width: 100%; }
+  .expediente-tab-body table { max-width: none; }
+  .expediente-tab-body .expediente-mercancia-table { min-width: 85rem; }
+  .expediente-tab-body input { text-overflow: ellipsis; }
+  .expediente-tab-body td { overflow-wrap: anywhere; }
+  .expediente-tab-body .text-xl, .expediente-tab-body .text-2xl { overflow-wrap: anywhere; }
+  .expediente-section-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .expediente-desktop .expediente-info-fila2 { flex-wrap: wrap; overflow: visible; row-gap: 0.25rem; }
+  .expediente-desktop .expediente-info-fila2 > * { max-width: 100%; }
+  .expediente-desktop .expediente-header-cliente { flex-wrap: wrap; }
+  .expediente-desktop .expediente-header-cliente > button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+  .expediente-desktop .expediente-header-valor-largo { overflow-wrap: anywhere; white-space: normal; }
+  .expediente-desktop .expediente-presentation-slot { min-width: 6.75rem; }
+  .expediente-desktop .expediente-info-fila3 { grid-template-columns: repeat(5, minmax(0, max-content)); overflow: visible; }
+  .expediente-desktop .expediente-info-fila3 > * { min-width: 0; max-width: 100%; }
+  .expediente-desktop .expediente-header-inspeccion > div { display: grid; grid-template-columns: auto minmax(0, 1fr); }
+  .expediente-desktop .expediente-header-inspeccion [role="combobox"] { width: 100%; min-width: 0; }
+}
+@media screen and (min-width: 1024px) {
+@container expedientes-listado (max-width: 1050px) {
+  .expedientes-listado-filtros { grid-template-columns: minmax(7rem, 1fr) repeat(2, minmax(9rem, 1fr)) auto; }
+  .expedientes-listado-filtros > input { grid-column: 1 / -1; }
+}
+@container expediente-detail (max-width: 1150px) {
+  .expediente-desktop .expediente-info-fila3 { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 0.25rem; }
+}
+@container expediente-body (max-width: 1150px) {
+  .expediente-section-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .expediente-section-fields > .lg\:col-span-3 { grid-column: 1 / -1; }
+  .expediente-tab-body .lg\:grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .expediente-tab-body .md\:grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .expediente-tab-body .md\:grid-cols-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+}
+@media screen and (max-width: 1023px) {
+  .expedientes-listado-columnas { display: none; }
+}
+
 @theme inline {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-display: "Manrope", "Inter", sans-serif;
