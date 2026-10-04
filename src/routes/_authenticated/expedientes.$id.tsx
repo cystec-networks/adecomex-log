@@ -1312,6 +1312,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     setClienteExtraidoSinMatch(null);
     setClienteOcr(null);
     ocrPuesto.current = {};
+    setTipoCargaSugerido(false);
     ultimoOcrSeq.current = 0;
     clientePrevRef.current = "";
     setContenedores([]);
