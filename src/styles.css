@@ -93,8 +93,10 @@
   .expediente-header-arrival-separator { display: none; }
   .expediente-header-valor-largo { overflow-wrap: normal; white-space: nowrap; }
 }
-@container expediente-header (min-width: 1000px) {
-  .expediente-info-fila3 { grid-template-columns: repeat(4, minmax(0, 1fr)) max-content; }
+@container expediente-header (min-width: 700px) {
+  .expediente-info-fila3 { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .expediente-info-fila3 > :not(.expediente-header-alerta) { flex: 0 1 auto; }
+  .expediente-info-fila3 > .expediente-header-alerta { flex: 0 0 100%; }
 }
 
 @theme inline {
