@@ -42,6 +42,7 @@ import { CorreoDgaButton } from "@/components/correo-dga-button";
 
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
+import { DepositoDestinoField } from "@/components/deposito-destino-field";
 import { DgaCombobox } from "@/components/dga-combobox";
 import { DgaProductoSearch } from "@/components/dga-producto-search";
 import { normalizarNombre, patronSinTildes } from "@/lib/search-filter";
@@ -1208,6 +1209,8 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     puerto_arribo_codigo: d.puerto_arribo_codigo ?? "",
     area_aduanera: d.area_aduanera ?? "",
     area_aduanera_codigo: d.area_aduanera_codigo ?? "",
+    deposito_destino: d.deposito_destino ?? "",
+    deposito_destino_codigo: d.deposito_destino_codigo ?? "",
     liq_siga_numero: d.liq_siga_numero ?? "",
     liq_siga_estado: d.liq_siga_estado ?? "",
     liq_oficial_total: d.liq_oficial_total ?? "",
@@ -2140,6 +2143,16 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               codigo={form.area_aduanera_codigo}
               onChange={(nombre, codigo) => { setForm((f) => ({ ...f, area_aduanera: nombre, area_aduanera_codigo: codigo })); limpiarFaltante("req-area_aduanera"); }}
               placeholder="Buscar área (catálogo DGA)"
+              disabled={!editable}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Depósito de Destino</Label>
+            <DepositoDestinoField
+              areaCodigo={form.area_aduanera_codigo}
+              value={form.deposito_destino}
+              codigo={form.deposito_destino_codigo}
+              onChange={(nombre, codigo) => setForm((f) => ({ ...f, deposito_destino: nombre, deposito_destino_codigo: codigo }))}
               disabled={!editable}
             />
           </div>
