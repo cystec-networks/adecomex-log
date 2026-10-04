@@ -578,7 +578,7 @@ function Expedientes() {
                     <Badge variant="secondary" className="text-[10px]">{rows.length}</Badge>
                   </div>
                   <table className="expedientes-listado-tabla w-full text-[13px] border-separate border-spacing-0">
-                    <colgroup>{[9, 14, 13, 12, 12, 6, 4, 7, 10, 9, 4].map((width, i) => <col key={i} width={`${width}%`} />)}</colgroup>
+                    <colgroup className="expedientes-listado-columnas">{[10, 12, 11, 10, 11, 8, 5, 7, 9, 9, 8].map((width, i) => <col key={i} width={`${width}%`} />)}</colgroup>
                     <thead className="sticky-table-header bg-muted/30 border-b [&_th]:top-[33px]">
                       <tr>
                         <Th k="numero" className="px-2 whitespace-nowrap">Expediente</Th>

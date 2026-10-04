@@ -106,28 +106,28 @@
   .expedientes-listado-filtros > * { min-width: 0; max-width: 100%; width: 100%; }
   .expedientes-listado-tabla { table-layout: fixed; }
   .expedientes-listado-tabla :is(th, td) { min-width: 0; }
-  .expedientes-listado-tabla th { white-space: normal; overflow-wrap: anywhere; }
-  .expedientes-listado-tabla th button { max-width: 100%; white-space: normal; }
+  .expedientes-listado-tabla th { white-space: normal; overflow-wrap: normal; padding-inline: 0.25rem; }
+  .expedientes-listado-tabla th button { max-width: 100%; white-space: normal; gap: 0.125rem; }
   .expedientes-listado-tabla td > span { max-width: 100%; }
   .expedientes-listado-tabla td:nth-child(2) span { min-width: 0; max-width: 100%; }
   .expedientes-listado-tabla td:nth-child(10) { white-space: normal; }
-  .expedientes-listado-tabla td:nth-child(10) :is(span, div) { max-width: 100%; overflow-wrap: anywhere; }
+  .expedientes-listado-tabla td:nth-child(10) :is(span, div) { max-width: 100%; overflow-wrap: normal; white-space: normal; }
   .expedientes-listado-tabla td:last-child { white-space: normal; }
   .expediente-desktop { container: expediente-detail / inline-size; }
   .expediente-tab-body { container: expediente-body / inline-size; }
-  .expediente-tab-body :is([data-state="active"], .grid, .flex, [data-slot="card"], [data-slot="card-content"]) { min-width: 0; max-width: 100%; }
+  .expediente-tab-body :is([data-state="active"], .grid, .flex, .rounded-xl.border, .p-6) { min-width: 0; max-width: 100%; }
   .expediente-tab-body .grid > * { min-width: 0; }
-  .expediente-tab-body [data-slot="card-header"] { flex-wrap: wrap; gap: 0.75rem; }
-  .expediente-tab-body [data-slot="card-header"] > div { min-width: 0; }
-  .expediente-tab-body [data-slot="card-header"] > .flex { flex-wrap: wrap; }
-  .expediente-tab-body :is(label, [data-slot="card-title"]) { overflow-wrap: anywhere; }
+  .expediente-tab-body .rounded-xl.border > .flex.p-6 { flex-wrap: wrap; gap: 0.75rem; }
+  .expediente-tab-body .rounded-xl.border > .flex.p-6 > div { min-width: 0; }
+  .expediente-tab-body .rounded-xl.border > .flex.p-6 > .flex { flex-wrap: wrap; }
+  .expediente-tab-body :is(label, .font-semibold.leading-none) { overflow-wrap: anywhere; }
   .expediente-tab-body :is(input, textarea, [role="combobox"]) { min-width: 0; max-width: 100%; }
   .expediente-tab-body [role="combobox"] > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .expediente-tab-body [data-slot="card-content"]:has(> table) { overflow-x: auto; }
+  .expediente-tab-body div:has(> table) { overflow-x: auto; max-width: 100%; }
   .expediente-tab-body table { max-width: none; }
   .expediente-tab-body td { overflow-wrap: anywhere; }
   .expediente-tab-body .text-xl, .expediente-tab-body .text-2xl { overflow-wrap: anywhere; }
-  .expediente-form-section > [data-slot="card-content"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .expediente-section-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .expediente-desktop .expediente-info-fila2 { flex-wrap: wrap; overflow: visible; row-gap: 0.25rem; }
   .expediente-desktop .expediente-info-fila2 > * { max-width: 100%; }
   .expediente-desktop .expediente-header-cliente { flex-wrap: wrap; }
@@ -147,10 +147,14 @@
   .expediente-desktop .expediente-info-fila3 { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 0.25rem; }
 }
 @container expediente-body (max-width: 1000px) {
-  .expediente-form-section > [data-slot="card-content"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .expediente-form-section > [data-slot="card-content"] > .lg\:col-span-3 { grid-column: 1 / -1; }
+  .expediente-section-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .expediente-section-fields > .lg\:col-span-3 { grid-column: 1 / -1; }
+  .expediente-tab-body .lg\:grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .expediente-tab-body .md\:grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .expediente-tab-body .md\:grid-cols-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media screen and (max-width: 1023px) {
+  .expedientes-listado-columnas { display: none; }
 }
 
 @theme inline {

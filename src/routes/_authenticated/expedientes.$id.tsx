@@ -1172,7 +1172,7 @@ function Section({ title, subtitle, children, id, className }: { title: React.Re
           <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", abierto && "rotate-180")} />
         </div>
       </CardHeader>
-      {(abierto || forzarAbierto) && <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">{children}</CardContent>}
+      {(abierto || forzarAbierto) && <CardContent className="expediente-section-fields pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">{children}</CardContent>}
     </Card>
   );
 }
