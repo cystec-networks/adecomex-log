@@ -728,7 +728,7 @@ function DetalleExpediente() {
   const expData: any = isNuevo ? EXPEDIENTE_VACIO : exp;
 
   return (
-    <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
+    <div className={cn("expediente-desktop w-full min-w-0 mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
       <ImpuestosSuspCtx.Provider value={suspEstado}>
       <Tabs value={tabActiva} onValueChange={setTabActiva}>
       <div
@@ -1081,7 +1081,7 @@ function DetalleExpediente() {
           <p className="text-xs text-muted-foreground mt-1">Disponible después de crear el Expediente.</p>
         )}
       </div>
-      <div className="px-6">
+      <div className="expediente-tab-body min-w-0 px-6">
         <TabsContent value="info">
           <div id="ficha-generales-print">
             <div className="hidden print:block mb-4">
@@ -1140,7 +1140,7 @@ function Field({ label, value, onChange, type = "text", className = "", disabled
   return (
     <div className={cn("grid gap-1.5", highlight && "ring-2 ring-destructive rounded-md p-2 -m-2", className)} id={fieldId}>
       <Label>{req && <ReqMark />}{label}</Label>
-      <Input type={type} value={value ?? ""} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
+      <Input type={type} value={value ?? ""} title={String(value ?? "")} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
     </div>
   );
 }
@@ -1162,7 +1162,7 @@ function Section({ title, subtitle, children, id, className }: { title: React.Re
     try { localStorage.setItem(`exp-section-${id}`, next ? "1" : "0"); } catch { /* ignore */ }
   };
   return (
-    <Card className={className}>
+    <Card className={cn("expediente-form-section", className)}>
       <CardHeader className="pb-3 border-b cursor-pointer select-none" onClick={toggle}>
         <div className="flex items-center justify-between">
           <div>
