@@ -147,6 +147,7 @@ type Resultado = {
 };
 
 function calcular(e: Escenario, tarifas: TarifaServicio[] = []): Resultado {
+  e = { ...e, lineas: e.lineas.filter((l) => l.producto.trim() || num(l.fob) > 0) };
   const totalFob = e.lineas.reduce((a, l) => a + num(l.fob), 0);
   const totalPeso = e.lineas.reduce((a, l) => a + num(l.peso), 0);
   const flete = e.fleteReal ? num(e.flete) : totalFob * (num(e.flete) / 100);
@@ -475,7 +476,7 @@ function ColumnaEscenario({
                 </thead>
                 <tbody>
                   {lineasReales.map((l, i) => {
-                    const res = r.lineas.find((_, idx) => idx === esc.lineas.indexOf(l));
+                    const res = r.lineas[i];
                     return (
                       <tr key={i} className={`border-t tabular-nums ${editIdx === i ? "bg-accent/40" : ""}`}>
                         <td className="p-2">{l.producto}</td>
