@@ -1,3 +1,4 @@
+- [ ] Compactar el detalle de Expediente al 100%: labels y campos de 12–13 px, controles y secciones más bajos, jerarquía crítica intacta; comparar antes/después en 1366×768 y 1920×1080 sin modificar otros módulos.
 - [x] Marcar los campos obligatorios de Declaración, llegada, origen y pesos.
 - [x] Exigir llegada real, país de origen y pesos positivos antes de Presentado en pantalla y base de datos.
 - [x] Verificar el bloqueo y los asteriscos en el Expediente.
