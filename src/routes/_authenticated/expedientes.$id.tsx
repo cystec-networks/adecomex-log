@@ -760,7 +760,7 @@ function DetalleExpediente() {
             <div className="expediente-header-state grid min-w-0 grid-cols-[auto_minmax(0,1fr)_2rem] items-center gap-1.5">
               <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
               <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
-                <SelectTrigger aria-label="Estado del expediente" className="h-8 w-full min-w-0 text-xs text-foreground disabled:opacity-100 [&>svg]:shrink-0 [&>svg]:opacity-100 md:text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label="Estado del expediente" title={ESTADO_LABEL[expData.estado]} className="h-8 w-full min-w-0 text-xs text-foreground disabled:opacity-100 [&>svg]:shrink-0 [&>svg]:opacity-100 md:text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ESTADO_ORDEN.map((e) => (
                     <SelectItem key={e} value={e} disabled={estadoIndex(e) < estadoIndex(expData.estado)}>
@@ -800,7 +800,7 @@ function DetalleExpediente() {
           )}
           {(
             <div className={isNuevo ? "hidden items-center gap-1.5 md:flex md:flex-wrap" : "hidden md:contents"}>
-              {!isNuevo && <div className="expediente-header-save"><ControlesGuardadoHeader expedienteId={id} /></div>}
+              {!isNuevo && <div className="expediente-header-save"><ControlesGuardadoHeader expedienteId={id} compacto /></div>}
               <div className={isNuevo ? "flex items-center gap-1.5" : "expediente-header-menus flex min-w-0 flex-wrap items-center gap-1.5"}>
               <Button
                 variant="outline"
