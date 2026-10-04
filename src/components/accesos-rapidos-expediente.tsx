@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import {
+  Car,
   ChevronDown,
   Container,
   FileCheck,
@@ -25,6 +26,7 @@ export const DGA_VUCE_TOOLS = [
   { label: "Buscador de Productos", url: "https://www.aduanas.gob.do/consultas/buscador-de-productos/", icon: Search },
   { label: "Consulta Aranceles VUCE", url: "https://sirevuce.aduanas.gob.do/", icon: FileText },
   { label: "Arancel de Aduanas 7ma Enmienda 2022", url: "https://www.aduanas.gob.do/consultas/arancel-de-aduanas-7ma-enmienda-2022/", icon: Scale },
+  { label: "Calculadora de Impuestos de Vehículos", url: "https://www.aduanas.gob.do/consultas/calculadora-de-impuestos-de-vehiculos/", icon: Car },
   { label: "Portal VUCE-RD", url: "https://vucerd.gob.do/", icon: ShieldCheck },
   { label: "Portal SIGA", url: "https://siga.aduanas.gob.do/", icon: LayoutGrid },
   { label: "VUCE - Gestión de Trámites", url: "https://app.vucerd.gob.do/auth", icon: FileCheck },
