@@ -2146,16 +2146,18 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               disabled={!editable}
             />
           </div>
-          <div className="grid gap-1.5">
-            <Label>Depósito de Destino</Label>
-            <DepositoDestinoField
-              areaCodigo={form.area_aduanera_codigo}
-              value={form.deposito_destino}
-              codigo={form.deposito_destino_codigo}
-              onChange={(nombre, codigo) => setForm((f) => ({ ...f, deposito_destino: nombre, deposito_destino_codigo: codigo }))}
-              disabled={!editable}
-            />
-          </div>
+          {form.tipo_carga.trim().toUpperCase() !== "FCL" && (
+            <div className="grid gap-1.5">
+              <Label>Depósito de Destino</Label>
+              <DepositoDestinoField
+                areaCodigo={form.area_aduanera_codigo}
+                value={form.deposito_destino}
+                codigo={form.deposito_destino_codigo}
+                onChange={(nombre, codigo) => setForm((f) => ({ ...f, deposito_destino: nombre, deposito_destino_codigo: codigo }))}
+                disabled={!editable}
+              />
+            </div>
+          )}
           <div className={cn("grid gap-1.5", camposFaltantes.has("req-regimen_aduanero") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-regimen_aduanero">
             <Label><ReqMark />Régimen Aduanero</Label>
             <Select value={form.regimen_aduanero || undefined} onValueChange={(v) => { set("regimen_aduanero", v); limpiarFaltante("req-regimen_aduanero"); }} disabled={!editable}>
