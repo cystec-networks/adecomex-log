@@ -1943,6 +1943,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   return (
     <div className="space-y-5">
       <BotonesAccion />
+      {!isNuevo && inspeccionHeaderSlot && createPortal(
+        <div className="flex min-h-8 min-w-0 items-center gap-1.5 text-xs md:text-sm">
+          <Label htmlFor="tipo-inspeccion-header" className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Tipo de Inspección:</Label>
+          <SelectorTipoInspeccion id="tipo-inspeccion-header" value={form.canal_riesgo} onChange={(v) => set("canal_riesgo", v)} disabled={!editable} compacto />
+        </div>, inspeccionHeaderSlot,
+      )}
 
       {hasSolicitud && (
         <Section id="datos-solicitud-original" className="bg-muted/30 border-dashed" title={
@@ -2281,12 +2287,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           <div className="grid gap-1.5">
             <Label htmlFor="tipo-inspeccion-declaracion">Tipo de Inspección</Label>
             <SelectorTipoInspeccion id="tipo-inspeccion-declaracion" value={form.canal_riesgo} onChange={(v) => set("canal_riesgo", v)} disabled={!editable} />
-            {!isNuevo && inspeccionHeaderSlot && createPortal(
-              <div className="flex min-h-8 min-w-0 items-center gap-1.5 text-xs md:text-sm">
-                <Label htmlFor="tipo-inspeccion-header" className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Tipo de Inspección:</Label>
-                <SelectorTipoInspeccion id="tipo-inspeccion-header" value={form.canal_riesgo} onChange={(v) => set("canal_riesgo", v)} disabled={!editable} compacto />
-              </div>, inspeccionHeaderSlot,
-            )}
           </div>
       </Section>
 
