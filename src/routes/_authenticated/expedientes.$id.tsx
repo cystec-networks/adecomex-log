@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical, Printer, Repeat2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday, hoyRD, hoyRDISO } from "@/lib/dates";
 import { calcImpuestosLinea } from "@/lib/impuestos";
@@ -99,6 +100,20 @@ const SUG_INCOTERM = ["EXW", "FCA", "FAS", "FOB", "CFR", "CIF", "CPT", "CIP", "D
 const SUG_PUERTO_SALIDA = ["Shanghai", "Ningbo", "Shenzhen", "Hong Kong", "Busan", "Kaohsiung", "Miami", "Port Everglades", "Jacksonville", "Houston", "New York", "Valencia", "Barcelona", "Algeciras", "Rotterdam", "Hamburgo", "Amberes", "Cartagena", "Manzanillo (PA)", "Balboa"];
 const SUG_PUERTO_ARRIBO = ["Puerto Multimodal Caucedo", "Puerto de Haina Oriental", "Puerto de Haina Occidental", "Puerto de Río Haina", "Puerto de Boca Chica", "Puerto de Manzanillo", "Puerto Plata", "AILA (Las Américas)", "AIC (Cibao)", "AIP (Punta Cana)", "Aeropuerto La Isabela"];
 const SUG_PREFERENCIA = ["DR-CAFTA", "EPA (Unión Europea)", "ALADI", "SGP", "Ninguna"];
+const TIPOS_INSPECCION = ["Despacho Expreso", "Verificación Visual", "Verificación Full", "Verificación Nevera", "Verificación Depósito", "Descarga en Puerto"];
+
+function SelectorTipoInspeccion({ value, onChange, disabled, id, compacto = false }: { value: string; onChange: (value: string) => void; disabled: boolean; id: string; compacto?: boolean }) {
+  return (
+    <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
+      <SelectTrigger id={id} aria-label="Tipo de Inspección" title={value || "Selecciona tipo de inspección"} className={compacto ? "h-8 w-44 min-w-0 text-xs md:text-sm" : undefined}>
+        <span className="min-w-0 truncate">{value || (compacto ? "—" : "Selecciona tipo de inspección")}</span>
+      </SelectTrigger>
+      <SelectContent>
+        {TIPOS_INSPECCION.map((tipo) => <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  );
+}
 
 const searchSchema = z.object({
   nuevo: fallback(z.string(), "").default(""),
@@ -404,6 +419,7 @@ function DetalleExpediente() {
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const [tabActiva, setTabActiva] = useState("info");
+  const [inspeccionHeaderSlot, setInspeccionHeaderSlot] = useState<HTMLDivElement | null>(null);
   const [solicitudEndoso, setSolicitudEndoso] = useState(0);
   const abrirEndoso = () => {
     setTabActiva("info");
@@ -989,11 +1005,14 @@ function DetalleExpediente() {
           </div>
           <CampoHeader etiqueta="Declaración DUA" valor={expData.numero_dua} />
           <CampoHeader etiqueta="N.º de despacho" valor={expData.numero_igra} />
+          <div ref={setInspeccionHeaderSlot} className="expediente-header-inspeccion">
+            {(tabActiva !== "info" || !inspeccionHeaderSlot) && <CampoHeader etiqueta="Tipo de Inspección" valor={expData.canal_riesgo} />}
+          </div>
           <CampoHeader etiqueta="N.º de permiso" valor={permisosNumeros} />
 
           {(() => {
             const a = alertaDeclaracionTardia({ ...expData, sla_dias: plazoEfectivo(expData, plazosReg).dias });
-            if (!a) return <span className="hidden xl:block" aria-hidden="true" />;
+            if (!a) return null;
             const cls = a.tone === "danger"
               ? "border-destructive/40 bg-destructive/10 text-destructive"
               : a.tone === "warning"
@@ -1005,7 +1024,7 @@ function DetalleExpediente() {
             return (
               <span
                 title="Ley 168-21: 5 días laborables desde el arribo para presentar la declaración"
-                className={`inline-flex min-w-0 items-center justify-center truncate rounded border px-2 py-0.5 text-xs font-medium md:col-span-2 xl:col-span-1 ${cls}`}
+                className={`expediente-header-alerta inline-flex min-w-0 items-center justify-center truncate rounded border px-2 py-0.5 text-xs font-medium md:col-span-2 ${cls}`}
               >
                 {txt}
               </span>
@@ -1082,6 +1101,7 @@ function DetalleExpediente() {
             ocrAplicado={ocrAplicado}
             tipoParam={tipoParam}
             solicitudEndoso={solicitudEndoso}
+            inspeccionHeaderSlot={inspeccionHeaderSlot}
           />
           </div>
         </TabsContent>
@@ -1262,7 +1282,7 @@ function normalizarCamposExportacion(payload: any) {
   });
 }
 
-function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null, tipoParam = "", solicitudEndoso = 0 }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null; tipoParam?: string; solicitudEndoso?: number }) {
+function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null, tipoParam = "", solicitudEndoso = 0, inspeccionHeaderSlot = null }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null; tipoParam?: string; solicitudEndoso?: number; inspeccionHeaderSlot?: HTMLDivElement | null }) {
   const qc = useQueryClient();
   const nav = useNavigate();
   const editable = (canEdit && modoEdicion) || isNuevo;
@@ -1923,6 +1943,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   return (
     <div className="space-y-5">
       <BotonesAccion />
+      {!isNuevo && inspeccionHeaderSlot && createPortal(
+        <div className="flex min-h-8 min-w-0 items-center gap-1.5 text-xs md:text-sm">
+          <Label htmlFor="tipo-inspeccion-header" className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Tipo de Inspección:</Label>
+          <SelectorTipoInspeccion id="tipo-inspeccion-header" value={form.canal_riesgo} onChange={(v) => set("canal_riesgo", v)} disabled={!editable} compacto />
+        </div>, inspeccionHeaderSlot,
+      )}
 
       {hasSolicitud && (
         <Section id="datos-solicitud-original" className="bg-muted/30 border-dashed" title={
@@ -2259,13 +2285,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             ) : null;
           })()}
           <div className="grid gap-1.5">
-            <Label>Canal de riesgo</Label>
-            <Select value={form.canal_riesgo || undefined} onValueChange={(v) => set("canal_riesgo", v)} disabled={!editable}>
-              <SelectTrigger><SelectValue placeholder="Selecciona canal" /></SelectTrigger>
-              <SelectContent>
-                {["Verde","Amarillo","Rojo"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="tipo-inspeccion-declaracion">Tipo de Inspección</Label>
+            <SelectorTipoInspeccion id="tipo-inspeccion-declaracion" value={form.canal_riesgo} onChange={(v) => set("canal_riesgo", v)} disabled={!editable} />
           </div>
       </Section>
 
