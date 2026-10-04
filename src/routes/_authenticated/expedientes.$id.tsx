@@ -1349,6 +1349,13 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         }
       }
       if (ocrAplicado.clienteId) next.cliente_id = ocrAplicado.clienteId;
+      // Puerto detectado → completar Área aduanera si aún está vacía.
+      const areaMap = puertoAreaRef.current;
+      const areaPuerto = next.puerto_arribo_codigo && areaMap[next.puerto_arribo_codigo];
+      if (areaPuerto && !next.area_aduanera_codigo) {
+        next.area_aduanera = areaPuerto.nombre;
+        next.area_aduanera_codigo = areaPuerto.codigo;
+      }
       return next;
     });
     if (ocrAplicado.productos?.length) setProductosNuevos(ocrAplicado.productos);
