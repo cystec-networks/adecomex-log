@@ -106,7 +106,7 @@ function SelectorTipoInspeccion({ value, onChange, disabled, id, compacto = fals
   return (
     <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger id={id} aria-label="Tipo de Inspección" title={value || "Selecciona tipo de inspección"} className={compacto ? "h-8 w-44 min-w-0 text-xs md:text-sm" : undefined}>
-        <SelectValue placeholder={compacto ? "—" : "Selecciona tipo de inspección"}>{value || undefined}</SelectValue>
+        <span className="min-w-0 truncate">{value || (compacto ? "—" : "Selecciona tipo de inspección")}</span>
       </SelectTrigger>
       <SelectContent>
         {TIPOS_INSPECCION.map((tipo) => <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>)}

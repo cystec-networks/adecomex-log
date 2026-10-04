@@ -94,9 +94,8 @@
   .expediente-header-valor-largo { overflow-wrap: normal; white-space: nowrap; }
 }
 @container expediente-header (min-width: 700px) {
-  .expediente-info-fila3 { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-  .expediente-info-fila3 > :not(.expediente-header-alerta) { flex: 0 1 auto; }
-  .expediente-info-fila3 > .expediente-header-alerta { flex: 0 0 100%; }
+  .expediente-info-fila3 { display: grid; grid-template-columns: repeat(5, max-content); align-items: center; justify-content: space-between; overflow-x: auto; }
+  .expediente-info-fila3 > .expediente-header-alerta { grid-column: 1 / -1; }
 }
 
 @theme inline {
