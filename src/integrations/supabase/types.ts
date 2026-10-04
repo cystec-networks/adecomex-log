@@ -2145,6 +2145,33 @@ export type Database = {
         }
         Relationships: []
       }
+      dga_depositos_destino: {
+        Row: {
+          area_codigo: string | null
+          centro_logistico: string | null
+          codigo: string
+          created_at: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          area_codigo?: string | null
+          centro_logistico?: string | null
+          codigo: string
+          created_at?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          area_codigo?: string | null
+          centro_logistico?: string | null
+          codigo?: string
+          created_at?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       dga_paises: {
         Row: {
           codigo: string
@@ -3253,6 +3280,8 @@ export type Database = {
           declarante_codigo: string | null
           declarante_nacionalidad: string | null
           declarante_nombre: string | null
+          deposito_destino: string | null
+          deposito_destino_codigo: string | null
           descripcion_mercancia: string | null
           eliminado_en: string | null
           eliminado_por: string | null
@@ -3383,6 +3412,8 @@ export type Database = {
           declarante_codigo?: string | null
           declarante_nacionalidad?: string | null
           declarante_nombre?: string | null
+          deposito_destino?: string | null
+          deposito_destino_codigo?: string | null
           descripcion_mercancia?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
@@ -3513,6 +3544,8 @@ export type Database = {
           declarante_codigo?: string | null
           declarante_nacionalidad?: string | null
           declarante_nombre?: string | null
+          deposito_destino?: string | null
+          deposito_destino_codigo?: string | null
           descripcion_mercancia?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
