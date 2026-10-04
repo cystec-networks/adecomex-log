@@ -800,7 +800,7 @@ function DetalleExpediente() {
           )}
           {(
             <div className={isNuevo ? "hidden items-center gap-1.5 md:flex md:flex-wrap" : "hidden md:contents"}>
-              {!isNuevo && <div className="expediente-header-save"><ControlesGuardadoHeader expedienteId={id} /></div>}
+              {!isNuevo && <div className="expediente-header-save"><ControlesGuardadoHeader expedienteId={id} compacto /></div>}
               <div className={isNuevo ? "flex items-center gap-1.5" : "expediente-header-menus flex min-w-0 flex-wrap items-center gap-1.5"}>
               <Button
                 variant="outline"
