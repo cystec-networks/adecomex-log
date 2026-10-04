@@ -1,3 +1,4 @@
+- [ ] Corregir superposición de acciones del encabezado con separación mínima de 8 px y comprobar 1366×768 y 1920×1080 con menú lateral abierto y colapsado.
 - [x] Compactar el detalle de Expediente al 100%: labels y campos de 12.5 px, controles de 30 px y secciones más bajas, jerarquía crítica intacta; comparar antes/después en 1366×768 y 1920×1080 con la referencia, verificar edición sin guardar y todas las pestañas sin desbordes ni errores; otros módulos intactos.
 - [x] Marcar los campos obligatorios de Declaración, llegada, origen y pesos.
 - [x] Exigir llegada real, país de origen y pesos positivos antes de Presentado en pantalla y base de datos.
