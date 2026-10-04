@@ -80,7 +80,7 @@
   .expediente-header-back { width: auto; padding-inline: 0.75rem; }
   .expediente-header-back > span { display: inline; }
   .expediente-header-back > svg { margin-inline-end: 0.25rem; }
-  .expediente-header-grid { grid-template-columns: auto max-content minmax(8rem, 1fr) max-content max-content; column-gap: 0.5rem; }
+  .expediente-header-grid { grid-template-columns: auto max-content minmax(8rem, 18rem) max-content minmax(max-content, 1fr); column-gap: 0.5rem; }
   .expediente-header-state { margin-inline-start: 0.75rem; }
   .expediente-header-menus { gap: 0.5rem; }
   .expediente-header-menus > button { padding-inline: 0.5rem; font-size: 0.75rem; }
