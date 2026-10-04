@@ -116,6 +116,11 @@ function EscanearDocumentoButton({
                   {campos.map((c) => (
                     <div key={String(c.key)}>
                       <span className="text-muted-foreground">{c.label}:</span> {fmt(data[c.key])}
+                      {c.key === "tipo_carga" && data.tipo_carga && data.tipo_carga_confianza === "media" && (
+                        <span className="ml-1 inline-flex items-center gap-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-500" title="Valor inferido por patrón, no declarado explícitamente en el documento">
+                          <AlertTriangle className="h-3 w-3" /> sugerido — confirmar
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -161,6 +166,7 @@ export function EscanearBlButton({
         { label: "ETA", key: "eta" },
         { label: "Peso bruto", key: "peso_bruto_kg" },
         { label: "Peso neto", key: "peso_neto_kg" },
+        { label: "Tipo de carga", key: "tipo_carga" },
         { label: "Contenedores", key: "contenedores" },
       ]}
     />

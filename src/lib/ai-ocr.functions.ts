@@ -38,6 +38,8 @@ export type OcrExtraction = {
   otros_gastos: number | null;
   notify_party: string | null;
   agente_entrega: string | null;
+  tipo_carga: string | null;
+  tipo_carga_confianza: "alta" | "media" | null;
 };
 
 export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
@@ -65,6 +67,10 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
       "Para todos estos: si el dato no aparece claramente en el documento, usa null en vez de inventar o asumir un valor. " +
       "Agrega también: fob_total (el valor FOB total de la factura, suma de todas las líneas si no hay un total explícito), seguro, flete, otros_gastos — estos últimos 3 solo si aparecen explícitamente desglosados en la factura (no los calcules ni los asumas); usa null si no aparecen. " +
       "Agrega también las claves 'notify_party' y 'agente_entrega': 'notify_party' es la parte a quien se notifica la llegada de la carga (campo 'Notify Party' en el BL — a menudo igual al consignatario, pero puede ser distinto, tómalo tal como aparece). 'agente_entrega' es el agente o empresa indicada para gestionar la entrega en destino (suele aparecer como 'For particulars of delivery apply to' o similar en el BL). " +
+      "Agrega también las claves 'tipo_carga' y 'tipo_carga_confianza'. 'tipo_carga' debe ser UNO de estos valores exactos del catálogo interno: FCL, LCL, Aéreo, Granel, RoRo, Courier, Consolidado. " +
+      "Reglas: (1) CONFIANZA ALTA — si el documento declara el tipo explícitamente, extráelo con tipo_carga_confianza='alta': el texto 'FCL' o 'CY/CY' (o 'CY-CY') equivale a FCL; 'LCL' o 'CFS/CFS' (o 'CFS-CFS') equivale a LCL; en guías aéreas (AWB), una consolidación ('Consolidation', 'CONSOL', Master AWB con House AWB) equivale a 'Consolidado'; 'Courier' si es un envío de mensajería expresa. " +
+      "(2) CONFIANZA MEDIA — si no viene explícito, infiérelo por patrón con tipo_carga_confianza='media': un solo contenedor con un solo sello y lenguaje 'Said to Contain' / 'Shipper's Load and Count' sugiere FCL; referencias a consolidación, groupage, co-load o un Master BL distinto del House BL sugieren LCL (o 'Consolidado' si es AWB). " +
+      "(3) Si no puedes determinarlo con ninguno de estos criterios, usa tipo_carga=null y tipo_carga_confianza=null — NO adivines. " +
       "Usa null cuando el dato no aparezca. Las fechas en formato YYYY-MM-DD si es posible. 'productos' como resumen breve (máx 300 caracteres).";
 
 
@@ -135,5 +141,10 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
       otros_gastos: num(parsed.otros_gastos),
       notify_party: parsed.notify_party ?? null,
       agente_entrega: parsed.agente_entrega ?? null,
+      tipo_carga: parsed.tipo_carga ?? null,
+      tipo_carga_confianza:
+        parsed.tipo_carga_confianza === "alta" || parsed.tipo_carga_confianza === "media"
+          ? parsed.tipo_carga_confianza
+          : null,
     };
   });

@@ -361,6 +361,8 @@ function combinarOcr(bl: OcrExtraction | null, fac: OcrExtraction | null): OcrEx
     otros_gastos: fromFac("otros_gastos"),
     notify_party: fromBl("notify_party"),
     agente_entrega: fromBl("agente_entrega"),
+    tipo_carga: fromBl("tipo_carga"),
+    tipo_carga_confianza: fromBl("tipo_carga_confianza"),
   };
 }
 
@@ -390,6 +392,7 @@ export type OcrAplicado = {
   productos?: any[];
   clienteId?: string | null;
   desdeXml?: boolean;
+  tipoCargaConfianza?: "alta" | "media" | null;
 };
 
 function DetalleExpediente() {
@@ -480,7 +483,9 @@ function DetalleExpediente() {
         peso_neto: res.peso_neto_kg,
         descripcion_mercancia: res.descripcion_mercancia || obs,
         observaciones: obs,
+        tipo_carga: res.tipo_carga,
       },
+      tipoCargaConfianza: res.tipo_carga_confianza ?? null,
     });
   };
 
@@ -1288,6 +1293,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const [clienteOcr, setClienteOcr] = useState<string | null>(null);
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
   const ocrPuesto = useRef<Record<string, any>>({});
+  // true cuando el OCR precargó "Tipo de carga" por inferencia (confianza media): se marca para confirmación.
+  const [tipoCargaSugerido, setTipoCargaSugerido] = useState(false);
   const ultimoOcrSeq = useRef(0);
   const lastResetId = useRef<string | null>(null);
   /** Modo creación: líneas de mercancía en memoria hasta que exista el Expediente. */
@@ -1305,6 +1312,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     setClienteExtraidoSinMatch(null);
     setClienteOcr(null);
     ocrPuesto.current = {};
+    setTipoCargaSugerido(false);
     ultimoOcrSeq.current = 0;
     clientePrevRef.current = "";
     setContenedores([]);
@@ -1344,6 +1352,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     });
     if (ocrAplicado.productos?.length) setProductosNuevos(ocrAplicado.productos);
     if (ocrAplicado.cliente) setClienteOcr(ocrAplicado.cliente);
+    setTipoCargaSugerido(ocrAplicado.campos.tipo_carga != null && ocrAplicado.tipoCargaConfianza === "media");
   }, [ocrAplicado, isNuevo]);
 
   useEffect(() => {
@@ -1950,9 +1959,15 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                 </SelectContent>
               </Select>
             </div>
-            <div className={cn("grid gap-1.5", camposFaltantes.has("req-tipo_carga") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-tipo_carga">
-              <Label><ReqMark />Tipo de carga</Label>
-              <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => { set("tipo_carga", v); limpiarFaltante("req-tipo_carga"); }} placeholder="Escribe o selecciona…" />
+            <div className={cn("grid gap-1.5", camposFaltantes.has("req-tipo_carga") && "ring-2 ring-destructive rounded-md p-2 -m-2", tipoCargaSugerido && "ring-2 ring-warning rounded-md p-2 -m-2")} id="req-tipo_carga">
+              <Label className="flex items-center gap-1.5"><ReqMark />Tipo de carga
+                {tipoCargaSugerido && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-warning bg-warning/10 px-1.5 py-0 text-[10px] font-medium text-warning-foreground" title="Valor inferido por la IA a partir del documento — confírmalo antes de guardar">
+                    <AlertTriangle className="h-3 w-3" /> Sugerido por IA — confirmar
+                  </span>
+                )}
+              </Label>
+              <CatalogoAutocomplete tabla="catalogo_tipos_carga" value={form.tipo_carga} onChange={(v) => { set("tipo_carga", v); limpiarFaltante("req-tipo_carga"); setTipoCargaSugerido(false); }} placeholder="Escribe o selecciona…" />
             </div>
             <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sugContactoCliente} />
           </>
