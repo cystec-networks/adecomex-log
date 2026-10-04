@@ -1293,6 +1293,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const [clienteOcr, setClienteOcr] = useState<string | null>(null);
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
   const ocrPuesto = useRef<Record<string, any>>({});
+  // true cuando el OCR precargó "Tipo de carga" por inferencia (confianza media): se marca para confirmación.
+  const [tipoCargaSugerido, setTipoCargaSugerido] = useState(false);
   const ultimoOcrSeq = useRef(0);
   const lastResetId = useRef<string | null>(null);
   /** Modo creación: líneas de mercancía en memoria hasta que exista el Expediente. */
@@ -1349,6 +1351,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     });
     if (ocrAplicado.productos?.length) setProductosNuevos(ocrAplicado.productos);
     if (ocrAplicado.cliente) setClienteOcr(ocrAplicado.cliente);
+    setTipoCargaSugerido(ocrAplicado.campos.tipo_carga != null && ocrAplicado.tipoCargaConfianza === "media");
   }, [ocrAplicado, isNuevo]);
 
   useEffect(() => {
