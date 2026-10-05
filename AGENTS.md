@@ -1,3 +1,5 @@
+- Use TitleHelp for page subtitle help and primary title/tool rows; ancillary controls occupy a separate row to keep page tools aligned without shrinking badges.
+- Use transparent top-divided form action bars instead of framed sticky panels; this keeps actions within the form flow.
 <!-- LOVABLE:BEGIN -->
 > [!IMPORTANT]
 > This project is connected to [Lovable](https://lovable.dev). Avoid rewriting

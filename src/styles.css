@@ -137,7 +137,7 @@
 /* Desktop-only adaptations, deliberately isolated from the rest of the app. */
 @media screen and (min-width: 1024px) {
   .expedientes-listado { container: expedientes-listado / inline-size; }
-  .expedientes-listado-toolbar > :first-child { flex: 1 1 18rem; }
+  .expedientes-listado-toolbar > :first-child { flex: 1 1 0; }
   .expedientes-listado-filtros { display: grid; grid-template-columns: minmax(7rem, 1fr) repeat(2, minmax(9rem, 0.9fr)) auto minmax(13rem, 1.5fr); }
   .expedientes-listado-filtros > * { min-width: 0; max-width: 100%; width: 100%; }
   .expedientes-listado-tabla { table-layout: fixed; }
@@ -511,3 +511,23 @@
 .expediente-toolbar > button svg { margin-inline: 0; width: 1rem; height: 1rem; }
 /* Listado: celdas con texto completo en varias líneas */
 .expedientes-listado-tabla td:has(> .truncate-wrap), .expedientes-listado-tabla td:has(.truncate-wrap) { white-space: normal; vertical-align: top; }
+
+/* Title and tools share the primary row; ancillary controls have their own row. */
+.expedientes-listado-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; }
+.expedientes-listado-toolbar > :first-child { grid-column: 1; grid-row: 1; }
+.expedientes-listado-toolbar > .expediente-toolbar { grid-column: 2; grid-row: 1; }
+.expedientes-listado-toolbar > button, .expedientes-listado-toolbar > a { grid-column: 3; grid-row: 1; }
+.expedientes-tipo-tabs { grid-column: 1 / -1; grid-row: 2; justify-self: start; }
+.expediente-new-header { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.5rem; align-items: center; }
+.expediente-new-header > .expediente-header-back { grid-area: auto; grid-column: 1; grid-row: 1; }
+.expediente-new-title { grid-column: 2; grid-row: 1; }
+.expediente-new-tools { grid-column: 3; grid-row: 1; }
+.expediente-new-scanners { grid-column: 1 / -1; grid-row: 2; flex-wrap: wrap; }
+@media (max-width: 1023px) {
+  .expediente-new-header, .expedientes-listado-toolbar { grid-template-columns: auto minmax(0, 1fr); }
+  .expediente-new-tools { grid-column: 1 / -1; grid-row: 2; overflow-x: auto; }
+  .expediente-new-scanners { grid-row: 3; }
+  .expedientes-listado-toolbar > .expediente-toolbar { grid-column: 1 / -1; grid-row: 2; overflow-x: auto; }
+  .expedientes-listado-toolbar > button, .expedientes-listado-toolbar > a { grid-column: 2; }
+  .expedientes-tipo-tabs { grid-row: 3; max-width: 100%; overflow-x: auto; }
+}
