@@ -1040,11 +1040,13 @@ function DetalleExpediente() {
           </div>
         )}
       </div>
-        <TabsList className="mt-1.5 flex h-auto max-w-full flex-nowrap justify-start overflow-x-auto md:mt-1 md:flex-wrap">
-          {tabOrder.map((key) => {
-            const label = TAB_LABELS[key];
-            if (!label) return null;
-            return (
+        <TabsOverflowRow
+          tabOrder={tabOrder.filter((k) => TAB_LABELS[k])}
+          labels={TAB_LABELS}
+          active={tabActiva}
+          onSelect={setTabActiva}
+          disabledKey={(k) => isNuevo && k !== "info"}
+          renderTrigger={(key) => (
               <TabsTrigger
                 key={key}
                 value={key}
@@ -1071,11 +1073,11 @@ function DetalleExpediente() {
                 className="cursor-grab active:cursor-grabbing"
                 title={isNuevo && key !== "info" ? "Disponible después de crear el Expediente." : "Arrastra para reordenar"}
               >
-                {label}
+                {TAB_LABELS[key]}
               </TabsTrigger>
-            );
-          })}
-        </TabsList>
+          )}
+        />
+
         {isNuevo && (
           <p className="text-xs text-muted-foreground mt-1">Disponible después de crear el Expediente.</p>
         )}
