@@ -241,14 +241,14 @@ const TAB_ORDER_KEY = "exp-tab-order-v1";
 const TAB_LABELS: Record<string, string> = {
   info: "Generales",
   checklist: "Seguimientos",
-  liqfinal: "Liquidación Final",
+  liqfinal: "Liquidación",
   docs: "Documentos",
   permisos: "Permisos",
   transportes: "Transportes",
   recepcion: "Recepción",
   inc: "Incidencias",
   cost: "Finanzas",
-  costprod: "Costos de Productos",
+  costprod: "Costos",
   aud: "Auditoría",
 };
 const DEFAULT_TAB_ORDER = Object.keys(TAB_LABELS);
