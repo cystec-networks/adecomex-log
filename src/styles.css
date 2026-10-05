@@ -40,9 +40,10 @@
   .expedientes-table-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
   .expedientes-table-scroll::-webkit-scrollbar-track { background: var(--muted); }
   .expedientes-table-scroll::-webkit-scrollbar-thumb { background: var(--muted-foreground); border: 2px solid var(--muted); border-radius: 4px; }
-  .expedientes-listado-tabla .expedientes-row-actions { position: sticky; right: 0; z-index: 5; vertical-align: middle; background: var(--card); border-left: 1px solid var(--border); }
+  .expedientes-listado-tabla .expedientes-row-actions { position: sticky; right: 0; z-index: 5; vertical-align: top; background: var(--card); border-left: 1px solid var(--border); }
   .expedientes-listado-tabla th.expedientes-row-actions { z-index: 25; }
-  .expedientes-action-icons { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 2px; }
+  .expedientes-action-icons { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: flex-start; justify-content: center; gap: 8px; }
+  .expedientes-action-icons > * { flex-shrink: 0; }
   .expedientes-listado-tabla .expedientes-divider-actions { position: sticky; right: 0; z-index: 5; background: color-mix(in srgb, var(--muted) 40%, var(--card)); border-left: 1px solid var(--border); }
   .expediente-header-container { padding: 8px 24px; }
   .expediente-header-grid { grid-template-columns: 88px 172px 320px 192px 548px; grid-template-areas: "back number state save menus"; gap: 8px; }
@@ -85,7 +86,7 @@
   .expedientes-listado-toolbar { grid-template-columns: 548px 456px 348px; gap: 8px; }
   .expedientes-listado-filtros { display: grid; grid-template-columns: 148px 228px 228px 180px 528px; gap: 12px; padding: 8px 12px; }
   .expedientes-listado-filtros > * { width: 100%; min-width: 0; max-width: none; }
-  .expedientes-listado-tabla { table-layout: fixed; width: 1466px; min-width: 1466px; }
+  .expedientes-listado-tabla { table-layout: fixed; width: 1490px; min-width: 1490px; }
   .expedientes-listado-tabla :is(th,td) { white-space: normal; word-break: normal; overflow-wrap: normal; vertical-align: top; }
   .expedientes-listado-tabla th button { max-width: 100%; white-space: normal; word-break: normal; overflow-wrap: normal; }
   .expedientes-listado-tabla .truncate { white-space: normal; overflow: visible; text-overflow: clip; }

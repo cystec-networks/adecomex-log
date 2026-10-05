@@ -471,7 +471,7 @@ function Expedientes() {
         </div>
       </td>
 
-      <td className="expedientes-row-actions px-1 py-1 align-middle text-right whitespace-nowrap">
+      <td className="expedientes-row-actions px-1 py-1 align-top text-right whitespace-nowrap">
         <div className="expedientes-action-icons">
         <RastreosEnvioMenu variant="icon" className="h-7 w-7" />
         <WhatsAppButton
@@ -599,7 +599,7 @@ function Expedientes() {
                     </section>)}
                   </div>
                   <table className="expedientes-listado-tabla w-full text-[13px] border-separate border-spacing-0">
-                    <colgroup className="expedientes-listado-columnas">{[140, 220, 260, 150, 150, 100, 56, 100, 130, 120, 156].map((width, i) => <col key={i} width={width} />)}</colgroup>
+                    <colgroup className="expedientes-listado-columnas">{[140, 220, 260, 150, 150, 100, 56, 100, 130, 120, 180].map((width, i) => <col key={i} width={width} />)}</colgroup>
                     <thead className="sticky-table-header bg-muted/30 border-b [&_th]:top-[33px]">
                       <tr>
                         <Th k="numero" className="px-2 whitespace-nowrap">Expediente</Th>
@@ -612,7 +612,7 @@ function Expedientes() {
                         <Th k="puerto_arribo" className="px-2 whitespace-nowrap">Puerto</Th>
                         <Th k="numero_vuce" className="px-2 whitespace-nowrap">Permiso VUCE</Th>
                         <Th k="estado" className="px-2 whitespace-nowrap">Estado</Th>
-                        <th aria-label="Acciones" className="expedientes-row-actions px-1 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"></th>
+                        <th aria-label="Acciones" className="expedientes-row-actions px-1 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Acciones</th>
                       </tr>
                     </thead>
 
