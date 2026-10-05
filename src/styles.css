@@ -531,3 +531,68 @@
   .expedientes-listado-toolbar > button, .expedientes-listado-toolbar > a { grid-column: 2; }
   .expedientes-tipo-tabs { grid-row: 3; max-width: 100%; overflow-x: auto; }
 }
+
+/* Device-specific presentation leaves the established desktop scale untouched. */
+.expedientes-mobile-cards, .expedientes-tablet-columns, .adaptive-table-tools { display: none; }
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+  :root { --text-aux: 0.75rem; --text-dense: 0.8125rem; --text-form: 0.875rem; }
+  .expedientes-tablet-columns { display: inline-flex; }
+  .expedientes-listado-filtros { display: flex; flex-wrap: wrap; }
+  .expedientes-listado-filtros > input { flex-basis: 100%; max-width: none; }
+  .expedientes-listado-tabla { table-layout: auto; }
+  .expedientes-listado-columnas { display: none; }
+  .expedientes-listado-tabla:not([data-show-columns="true"]) tr > :is(th, td):not([colspan]):not(:nth-child(1)):not(:nth-child(2)):not(:nth-child(6)):not(:nth-child(10)) { display: none; }
+  .expedientes-listado-tabla[data-show-columns="true"] { min-width: 75rem; }
+  .adaptive-data-table:not([data-show-columns="true"]) [data-essential="false"]:not([colspan]) { display: none; }
+  .adaptive-table-tools { display: flex; justify-content: flex-end; padding-block: 0.5rem; }
+  .adaptive-matrix { min-width: 60rem; }
+}
+@media screen and (max-width: 767px) {
+  :root {
+    --text-aux: 0.875rem; --text-dense: 0.875rem; --text-form: 0.875rem;
+    --text-section: 1rem; --text-key: 1.125rem;
+    --text-xs--line-height: 1.375rem; --text-sm--line-height: 1.375rem;
+  }
+  body { font-size: var(--text-form); }
+  /* Floor also covers legacy arbitrary sizes and inline chart/table annotations. */
+  :is(p, span, a, button, label, small, li, dt, dd, th, td, text) { font-size: max(0.875rem, 1em); }
+  :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select, [role="combobox"]) {
+    font-size: 1rem !important; min-height: 2.75rem; max-width: 100%;
+  }
+  :is(input, textarea)::placeholder { font-size: 1rem !important; }
+  :is(button, [role="button"], [role="tab"], [role="menuitem"], [role="option"]) { min-height: 2.75rem; }
+  [data-slot="badge"], .expediente-presentation-pill { height: auto; min-height: 1.5rem; }
+  .expedientes-listado { height: auto; min-height: 100%; }
+  .expedientes-resultados { flex: none; background: transparent; border: none; box-shadow: none; }
+  .expedientes-listado-filtros { display: grid; grid-template-columns: minmax(0,1fr); padding-inline: 0; gap: 0.5rem; }
+  .expedientes-listado-filtros > * { width: 100%; max-width: none; min-width: 0; }
+  .expedientes-listado-toolbar { grid-template-columns: minmax(0,1fr); }
+  .expedientes-listado-toolbar > :first-child { grid-row: 1; grid-column: 1; }
+  .expedientes-listado-toolbar > button, .expedientes-listado-toolbar > a { grid-row: 2; grid-column: 1; justify-self: start; }
+  .expedientes-listado-toolbar > .expediente-toolbar { grid-row: 3; }
+  .expedientes-tipo-tabs { grid-row: 4; width: 100%; }
+  .expedientes-tipo-tabs > a { min-height: 2.75rem; flex-shrink: 0; }
+  .expediente-toolbar > button { height: 2.75rem; }
+  .expedientes-listado-tabla { display: none; }
+  .expedientes-mobile-cards { display: grid; gap: 0.75rem; padding-block: 0.5rem; }
+  .expediente-mobile-card { margin-block-end: 0.75rem; }
+  .expediente-mobile-card [data-slot="badge"] { white-space: normal; text-align: center; }
+  .expediente-new-header { grid-template-columns: auto minmax(0, 1fr); }
+  .expediente-new-tools { max-width: 100%; }
+  .expediente-section-fields { grid-template-columns: minmax(0, 1fr); }
+  .expediente-header-container { position: relative; }
+  .expediente-header-save { min-width: 0; }
+  .expediente-header-save > div { flex-wrap: wrap; }
+  .adaptive-data-table, .adaptive-data-table > tbody, .adaptive-data-table > tfoot { display: block; width: 100%; min-width: 0 !important; }
+  .adaptive-data-table > thead, .adaptive-data-table > colgroup { display: none; }
+  .adaptive-data-table > tbody > tr, .adaptive-data-table > tfoot > tr {
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.5rem;
+    padding: 0.75rem; margin-block: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card);
+  }
+  .adaptive-data-table :is(td, th) { display: block; width: auto; min-width: 0 !important; max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: start; padding: 0.25rem; }
+  .adaptive-data-table td::before { content: attr(data-column-label); display: block; color: var(--muted-foreground); margin-block-end: 0.25rem; }
+  .adaptive-data-table td[data-column-label=""]::before, .adaptive-summary-row td::before { display: none; }
+  .adaptive-data-table .truncate { white-space: normal; overflow: visible; text-overflow: clip; }
+  .adaptive-matrix { min-width: 60rem; }
+  main :is(div, section):has(> .adaptive-matrix) { max-width: 100%; overflow-x: auto; }
+}
