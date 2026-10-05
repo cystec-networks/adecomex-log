@@ -37,6 +37,9 @@
   .expedientes-listado { padding: 16px; width: 100%; min-width: 0; max-width: 1400px; }
   .expedientes-resultados { min-width: 0; }
   .expedientes-table-scroll { width: 100%; overflow: auto; }
+  .expedientes-table-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+  .expedientes-table-scroll::-webkit-scrollbar-track { background: var(--muted); }
+  .expedientes-table-scroll::-webkit-scrollbar-thumb { background: var(--muted-foreground); border: 2px solid var(--muted); border-radius: 4px; }
   .expedientes-listado-tabla .expedientes-row-actions { position: sticky; right: 0; z-index: 5; vertical-align: middle; background: var(--card); border-left: 1px solid var(--border); }
   .expedientes-listado-tabla th.expedientes-row-actions { z-index: 25; }
   .expedientes-action-icons { display: flex; flex-direction: column; align-items: center; gap: 0; }
