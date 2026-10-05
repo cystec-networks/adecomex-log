@@ -29,4 +29,5 @@ Use space-between across all present desktop header fields, flatten the arrival 
 - Open the existing Endoso section via a parent-owned request counter from both header document menus, preserving a single form and its current persistence logic.
 - Render the inspection header selector from TabInfo through a portal into the parent-owned header slot; both selectors use the same draft and save permissions, retaining canal_riesgo storage for legacy compatibility.
 - Scope desktop adaptation to Expedientes wrappers: use available-width container queries for form grids, preserve header identity and deadline priorities, and contain dense table scrolling locally so other modules remain unchanged.
-- Scope compact desktop form typography, control height, and section spacing to the expediente tab body; exclude critical identifiers and leave sticky header and alerts unchanged to preserve hierarchy without browser zoom.
+- Keep compact control height and section spacing scoped to the expediente tab body; typography follows the global role scale, with critical identifiers and alerts retaining higher hierarchy.
+- Define the reading scale once in global CSS theme tokens and screen-only semantic role rules; legacy text-size utilities must not reduce operational data below the dense role, and generated PDFs retain their independent print typography.
