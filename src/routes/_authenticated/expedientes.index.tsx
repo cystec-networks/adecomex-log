@@ -10,7 +10,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronRight, Repeat2, Trash2, AlarmClock, AlertTriangle, Clock, Plus, Copy, Columns3 } from "lucide-react";
+import { ChevronRight, Repeat2, Trash2, AlarmClock, AlertTriangle, Clock, Plus, Copy } from "lucide-react";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { Toggle } from "@/components/ui/toggle";
 import { WhatsAppButton } from "@/components/whatsapp-button";
@@ -58,7 +58,6 @@ function Expedientes() {
   const [etaFilter, setEtaFilter] = useState(etaParam ? String(etaParam) : "all");
   const [toTrash, setToTrash] = useState<{ id: string; numero: string } | null>(null);
   const [soloUrgentes, setSoloUrgentes] = useState(false);
-  const [masColumnas, setMasColumnas] = useState(false);
   const [colapsados, setColapsados] = useState<Record<string, boolean>>(() => {
     try {
       const raw = localStorage.getItem("expedientes-grupos-colapsados");
@@ -566,7 +565,6 @@ function Expedientes() {
             <span className="text-xs">Solo urgentes ETA</span>
           </Toggle>
           <Input placeholder="Buscar por BL/AWB, expediente, cliente, mercancía o contenedor..." value={q} onChange={(e) => setQ(e.target.value)} className="min-w-0 flex-1 max-w-xs h-8" />
-          <Button className="expedientes-tablet-columns" size="sm" variant="outline" aria-expanded={masColumnas} onClick={() => setMasColumnas(v => !v)}><Columns3 className="h-4 w-4" />{masColumnas ? "Columnas esenciales" : "Ver más columnas"}</Button>
         </CardHeader>
         <CardContent className="p-0 flex-1 min-h-0">
           {filtered.length === 0 && (
@@ -597,8 +595,8 @@ function Expedientes() {
                       </Link>)}
                     </section>)}
                   </div>
-                  <table data-show-columns={masColumnas} className="expedientes-listado-tabla w-full text-[13px] border-separate border-spacing-0">
-                    <colgroup className="expedientes-listado-columnas">{[10, 12, 11, 10, 11, 8, 5, 7, 9, 9, 8].map((width, i) => <col key={i} width={`${width}%`} />)}</colgroup>
+                  <table className="expedientes-listado-tabla w-full text-[13px] border-separate border-spacing-0">
+                    <colgroup className="expedientes-listado-columnas">{[120, 200, 220, 150, 150, 100, 56, 100, 130, 100, 40].map((width, i) => <col key={i} width={width} />)}</colgroup>
                     <thead className="sticky-table-header bg-muted/30 border-b [&_th]:top-[33px]">
                       <tr>
                         <Th k="numero" className="px-2 whitespace-nowrap">Expediente</Th>
