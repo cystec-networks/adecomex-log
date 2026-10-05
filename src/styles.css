@@ -27,7 +27,10 @@
 .expediente-presentation-slot, .expediente-presentation-content { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .expediente-presentation-full { white-space: normal; }
 .expediente-header-valor-largo { overflow-wrap: anywhere; }
+.expediente-fixed-tabs { display: none; }
 @media screen and (min-width: 1024px) {
+  .expediente-fixed-tabs { display: block; }
+  .expediente-touch-tabs { display: none; }
   .expediente-desktop, .expedientes-listado { width: 1400px; min-width: 1400px; max-width: 1400px; margin-inline: 0; }
   .expediente-desktop { padding: 0; }
   .expedientes-listado { padding: 16px; }
@@ -43,6 +46,8 @@
   .expediente-info-fila3 { grid-template-columns: 172px 320px 260px 340px 228px; align-items: start; gap: 8px; }
   .expediente-header-arrival { grid-template-columns: 424px; }
   .expediente-info-fila2 > *, .expediente-info-fila3 > * { min-width: 0; max-width: none; }
+  .expediente-info-fila2 > div, .expediente-info-fila3 > div { height: auto; min-height: 32px; }
+  .expediente-info-fila3 > div:not(.expediente-header-inspeccion) { grid-template-columns: 120px 1fr; }
   .expediente-header-cliente > button, .expediente-header-valor-largo, .expediente-header-container .truncate { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; height: auto; min-height: 32px; }
   .expediente-header-container .line-clamp-3 { display: block; overflow: visible; -webkit-line-clamp: unset; }
   .expediente-info-fila3 > .expediente-header-alerta { grid-column: 1 / -1; }
