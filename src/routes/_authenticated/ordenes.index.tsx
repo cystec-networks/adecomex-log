@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { TitleHelp } from "@/components/title-help";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,14 +19,6 @@ import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
 
 
 export const Route = createFileRoute("/_authenticated/ordenes/")({
-  head: () => ({ meta: [
-    { title: "Órdenes de Compras | ADECOMEX" },
-    { name: "description", content: "Consulta de órdenes de compras generadas desde cotizaciones aprobadas." },
-    { property: "og:title", content: "Órdenes de Compras | ADECOMEX" },
-    { property: "og:description", content: "Consulta de órdenes de compras generadas desde cotizaciones aprobadas." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
   component: Ordenes,
 });
 
@@ -87,7 +78,8 @@ function Ordenes() {
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       <div>
-        <div className="flex min-w-0 items-center gap-1"><h1 className="font-display text-2xl font-bold">Órdenes de Compras</h1><TitleHelp text="Órdenes de compras generadas a partir de cotizaciones de compras aprobadas." /></div>
+        <h1 className="font-display text-2xl font-bold">Órdenes de Compras</h1>
+        <p className="text-sm text-muted-foreground">Órdenes de compras generadas a partir de cotizaciones de compras aprobadas.</p>
       </div>
 
       <Card>

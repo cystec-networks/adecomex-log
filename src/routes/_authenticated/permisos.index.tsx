@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { TitleHelp } from "@/components/title-help";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -21,14 +20,6 @@ import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
 
 
 export const Route = createFileRoute("/_authenticated/permisos/")({
-  head: () => ({ meta: [
-    { title: "Permisos VUCE | ADECOMEX" },
-    { name: "description", content: "Listado y seguimiento de permisos VUCE gubernamentales." },
-    { property: "og:title", content: "Permisos VUCE | ADECOMEX" },
-    { property: "og:description", content: "Listado y seguimiento de permisos VUCE gubernamentales." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
   validateSearch: (s: Record<string, unknown>): { vencimiento?: number } => {
     const vencimiento = Number(s.vencimiento);
     return Number.isFinite(vencimiento) && vencimiento > 0 ? { vencimiento: Math.min(365, Math.floor(vencimiento)) } : {};
@@ -155,7 +146,8 @@ function Permisos() {
     <div className="p-4 md:p-6 space-y-6 max-w-[1600px] mx-auto">
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex-1 min-w-[240px]">
-          <div className="flex min-w-0 items-center gap-1"><h1 className="font-display text-2xl font-bold flex items-center gap-2"><FileCheck2 className="h-6 w-6" /> Permisos VUCE</h1><TitleHelp text="Permisos VUCE gubernamentales vinculados a expedientes." /></div>
+          <h1 className="font-display text-2xl font-bold flex items-center gap-2"><FileCheck2 className="h-6 w-6" /> Permisos VUCE</h1>
+          <p className="text-sm text-muted-foreground">Permisos VUCE gubernamentales vinculados a expedientes.</p>
         </div>
         <Button asChild><Link to="/permisos/nuevo"><Plus className="h-4 w-4 mr-1" /> Nuevo permiso VUCE</Link></Button>
       </div>

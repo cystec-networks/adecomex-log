@@ -15,7 +15,6 @@ import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
 import { SearchEmailButton } from "@/components/search-email-button";
 import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
-import { TitleHelp } from "@/components/title-help";
 
 const NO_EXPEDIENTE = "__none__";
 
@@ -443,11 +442,13 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
             <ArrowLeft className="h-4 w-4 mr-1" />Volver
           </Link>
         </Button>
-        <div className="flex flex-1 min-w-0 items-center gap-1">
+        <div className="flex-1 min-w-0">
           <h1 className="font-display text-2xl font-bold">
             {mode === "new" ? "Nuevo Transporte" : `Transporte ${form.numero_viaje}`}
           </h1>
-          <TitleHelp text={mode === "new" ? "Registra un viaje vinculado a un expediente." : "Edita los datos del viaje."} />
+          <p className="text-sm text-muted-foreground">
+            {mode === "new" ? "Registra un viaje vinculado a un expediente." : "Edita los datos del viaje."}
+          </p>
         </div>
         {mode === "edit" && existing && (
           <Button
@@ -886,7 +887,7 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
         </>
       )}
 
-      <div className="form-action-bar flex justify-end gap-2 border-t py-1">
+      <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={() => nav({ to: "/transportes" })}>Cancelar</Button>
         <Button onClick={() => save.mutate()} disabled={save.isPending}>
           <Check className="h-4 w-4 mr-1" />{save.isPending ? "Guardando…" : mode === "new" ? "Crear transporte" : "Guardar cambios"}

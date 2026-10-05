@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Check, Upload, FileText, X } from "lucide-react";
 import { toast } from "sonner";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
-import { TitleHelp } from "@/components/title-help";
 
 export const PERMISO_TIPOS = [
   { v: "sanitario", l: "Sanitario" },
@@ -196,11 +195,13 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
             <ArrowLeft className="h-4 w-4 mr-1" />Volver
           </Link>
         </Button>
-        <div className="flex flex-1 min-w-0 items-center gap-1">
+        <div className="flex-1 min-w-0">
           <h1 className="font-display text-2xl font-bold">
             {mode === "new" ? "Nuevo Permiso VUCE" : `Permiso VUCE ${form.numero}`}
           </h1>
-          <TitleHelp text={mode === "new" ? "Registra un permiso VUCE gubernamental vinculado a un expediente." : "Edita los datos del permiso VUCE."} />
+          <p className="text-sm text-muted-foreground">
+            {mode === "new" ? "Registra un permiso VUCE gubernamental vinculado a un expediente." : "Edita los datos del permiso VUCE."}
+          </p>
         </div>
         <Button variant="outline" onClick={() => nav({ to: "/permisos" })}>
           <X className="h-4 w-4 mr-1" />Cancelar
@@ -356,7 +357,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
         </CardContent>
       </Card>
 
-      <div className="form-action-bar flex justify-end gap-2 border-t py-1">
+      <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={() => nav({ to: "/permisos" })}>Cancelar</Button>
         <Button onClick={() => save.mutate()} disabled={save.isPending}>
           <Check className="h-4 w-4 mr-1" />{save.isPending ? "Guardando…" : mode === "new" ? "Crear permiso" : "Guardar cambios"}

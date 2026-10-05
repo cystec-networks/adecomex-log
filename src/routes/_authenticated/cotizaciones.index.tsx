@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { TitleHelp } from "@/components/title-help";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,14 +23,6 @@ import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
 
 
 export const Route = createFileRoute("/_authenticated/cotizaciones/")({
-  head: () => ({ meta: [
-    { title: "Cotizaciones de Compras | ADECOMEX" },
-    { name: "description", content: "Consulta y gestión de cotizaciones de compras." },
-    { property: "og:title", content: "Cotizaciones de Compras | ADECOMEX" },
-    { property: "og:description", content: "Consulta y gestión de cotizaciones de compras." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
   validateSearch: (s: Record<string, unknown>): { sinConvertir?: boolean } =>
     s.sinConvertir === true || s.sinConvertir === "true" || s.sinConvertir === 1 || s.sinConvertir === "1"
       ? { sinConvertir: true }
@@ -189,7 +180,8 @@ function Cotizaciones() {
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex min-w-0 items-center gap-1"><h1 className="font-display text-2xl font-bold">Cotizaciones de Compras</h1><TitleHelp text="Primera etapa del flujo comercial." /></div>
+          <h1 className="font-display text-2xl font-bold">Cotizaciones de Compras</h1>
+          <p className="text-sm text-muted-foreground">Primera etapa del flujo comercial.</p>
         </div>
         {canEdit && (
           <Button asChild><Link to="/cotizaciones/nueva"><Plus className="h-4 w-4 mr-1" />Nueva cotización de compras</Link></Button>

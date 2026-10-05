@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical, Printer, Repeat2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday, hoyRD, hoyRDISO } from "@/lib/dates";
 import { calcImpuestosLinea } from "@/lib/impuestos";
@@ -66,7 +65,6 @@ import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado, fechasDes
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
 import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
 import { VencePresentacion } from "@/components/vence-presentacion";
-import { TitleHelp } from "@/components/title-help";
 import { unitFob, loadBrokerConfig } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
@@ -101,20 +99,6 @@ const SUG_INCOTERM = ["EXW", "FCA", "FAS", "FOB", "CFR", "CIF", "CPT", "CIP", "D
 const SUG_PUERTO_SALIDA = ["Shanghai", "Ningbo", "Shenzhen", "Hong Kong", "Busan", "Kaohsiung", "Miami", "Port Everglades", "Jacksonville", "Houston", "New York", "Valencia", "Barcelona", "Algeciras", "Rotterdam", "Hamburgo", "Amberes", "Cartagena", "Manzanillo (PA)", "Balboa"];
 const SUG_PUERTO_ARRIBO = ["Puerto Multimodal Caucedo", "Puerto de Haina Oriental", "Puerto de Haina Occidental", "Puerto de Río Haina", "Puerto de Boca Chica", "Puerto de Manzanillo", "Puerto Plata", "AILA (Las Américas)", "AIC (Cibao)", "AIP (Punta Cana)", "Aeropuerto La Isabela"];
 const SUG_PREFERENCIA = ["DR-CAFTA", "EPA (Unión Europea)", "ALADI", "SGP", "Ninguna"];
-const TIPOS_INSPECCION = ["Despacho Expreso", "Verificación Visual", "Verificación Full", "Verificación Nevera", "Verificación Depósito", "Descarga en Puerto"];
-
-function SelectorTipoInspeccion({ value, onChange, disabled, id, compacto = false }: { value: string; onChange: (value: string) => void; disabled: boolean; id: string; compacto?: boolean }) {
-  return (
-    <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger id={id} aria-label="Tipo de Inspección" title={value || "Selecciona tipo de inspección"} className={compacto ? "h-8 w-44 min-w-0 text-xs md:text-sm" : undefined}>
-        <span className="min-w-0 truncate">{value || (compacto ? "—" : "Selecciona tipo de inspección")}</span>
-      </SelectTrigger>
-      <SelectContent>
-        {TIPOS_INSPECCION.map((tipo) => <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>)}
-      </SelectContent>
-    </Select>
-  );
-}
 
 const searchSchema = z.object({
   nuevo: fallback(z.string(), "").default(""),
@@ -232,7 +216,7 @@ function ReadOnlyField({ label, value }: { label: string; value?: string | null 
   return (
     <div className="grid gap-1.5">
       <Label className="text-muted-foreground">{label}</Label>
-      <div className="expediente-readonly-field h-9 px-3 rounded-md border bg-background/50 flex items-center text-sm">{value || <span className="text-muted-foreground">—</span>}</div>
+      <div className="h-9 px-3 rounded-md border bg-background/50 flex items-center text-sm">{value || <span className="text-muted-foreground">—</span>}</div>
     </div>
   );
 }
@@ -241,14 +225,14 @@ const TAB_ORDER_KEY = "exp-tab-order-v1";
 const TAB_LABELS: Record<string, string> = {
   info: "Generales",
   checklist: "Seguimientos",
-  liqfinal: "Liquidación",
+  liqfinal: "Liquidación Final",
   docs: "Documentos",
   permisos: "Permisos",
   transportes: "Transportes",
   recepcion: "Recepción",
   inc: "Incidencias",
   cost: "Finanzas",
-  costprod: "Costos",
+  costprod: "Costos de Productos",
   aud: "Auditoría",
 };
 const DEFAULT_TAB_ORDER = Object.keys(TAB_LABELS);
@@ -420,7 +404,6 @@ function DetalleExpediente() {
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const [tabActiva, setTabActiva] = useState("info");
-  const [inspeccionHeaderSlot, setInspeccionHeaderSlot] = useState<HTMLDivElement | null>(null);
   const [solicitudEndoso, setSolicitudEndoso] = useState(0);
   const abrirEndoso = () => {
     setTabActiva("info");
@@ -729,7 +712,7 @@ function DetalleExpediente() {
   const expData: any = isNuevo ? EXPEDIENTE_VACIO : exp;
 
   return (
-    <div className={cn("expediente-desktop w-full min-w-0 mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
+    <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
       <ImpuestosSuspCtx.Provider value={suspEstado}>
       <Tabs value={tabActiva} onValueChange={setTabActiva}>
       <div
@@ -743,12 +726,14 @@ function DetalleExpediente() {
         className="expediente-header-container sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6"
       >
         <div className="space-y-1.5 md:space-y-2">
-        <div className={isNuevo ? "expediente-new-header" : "expediente-header-grid"}>
+        <div className={isNuevo ? "grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:flex md:flex-wrap md:gap-3" : "expediente-header-grid"}>
           <Button variant="ghost" size="sm" asChild className="expediente-header-back shrink-0 px-2 md:px-3"><Link to="/expedientes"><ArrowLeft className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Volver</span></Link></Button>
           {isNuevo ? (
-            <div className="expediente-new-title flex min-w-0 items-center gap-1">
+            <div className="min-w-0 flex-1">
               <h1 className="font-display truncate text-lg font-bold md:text-xl">Nuevo Expediente</h1>
-              <TitleHelp text="Completa los campos a mano, o escanea el BL y/o la factura comercial para autollenarlos. El número se genera automáticamente." />
+              <p className="truncate text-xs text-muted-foreground md:text-sm">
+                Completa los campos a mano, o escanea el BL y/o la factura comercial para autollenarlos. El número se genera automáticamente.
+              </p>
             </div>
           ) : (
             <div className="expediente-header-number flex items-center">
@@ -759,7 +744,7 @@ function DetalleExpediente() {
             <div className="expediente-header-state grid min-w-0 grid-cols-[auto_minmax(0,1fr)_2rem] items-center gap-1.5">
               <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
               <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
-                <SelectTrigger aria-label="Estado del expediente" title={ESTADO_LABEL[expData.estado]} className="h-8 w-full min-w-0 text-xs text-foreground disabled:opacity-100 [&>svg]:shrink-0 [&>svg]:opacity-100 md:text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label="Estado del expediente" className="h-8 w-full min-w-0 text-xs text-foreground disabled:opacity-100 [&>svg]:shrink-0 [&>svg]:opacity-100 md:text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ESTADO_ORDEN.map((e) => (
                     <SelectItem key={e} value={e} disabled={estadoIndex(e) < estadoIndex(expData.estado)}>
@@ -778,7 +763,7 @@ function DetalleExpediente() {
             </div>
           )}
           {isNuevo && (
-            <div className="expediente-new-scanners flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <EscanearBlButton onExtracted={(res) => { blRes.current = res; void aplicarCombinado(); toast.success("BL procesado — revisa y ajusta los campos"); }} />
               <EscanearFacturaExpButton onExtracted={(res) => { facRes.current = res; void aplicarCombinado(); toast.success("Factura procesada — revisa y ajusta los campos"); }} />
               <NuevoDesdeXmlButton
@@ -798,9 +783,9 @@ function DetalleExpediente() {
             </div>
           )}
           {(
-            <div className={isNuevo ? "expediente-new-tools min-w-0" : "expediente-header-controls"}>
-              {!isNuevo && <div className="expediente-header-save"><ControlesGuardadoHeader expedienteId={id} compacto /></div>}
-              <div className={isNuevo ? "expediente-toolbar" : "expediente-toolbar expediente-header-menus flex min-w-0 flex-wrap items-center gap-1.5"}>
+            <div className={isNuevo ? "hidden items-center gap-1.5 md:flex md:flex-wrap" : "hidden md:contents"}>
+              {!isNuevo && <div className="expediente-header-save"><ControlesGuardadoHeader expedienteId={id} /></div>}
+              <div className={isNuevo ? "flex items-center gap-1.5" : "expediente-header-menus flex min-w-0 flex-wrap items-center gap-1.5"}>
               <Button
                 variant="outline"
                 size="icon"
@@ -852,15 +837,15 @@ function DetalleExpediente() {
             </div>
           )}
           {!isNuevo && (
-            <div className="expediente-header-save expediente-mobile-save flex shrink-0 items-center">
+            <div className="expediente-header-save flex shrink-0 items-center md:hidden">
               <ControlesGuardadoHeader expedienteId={id} compacto />
             </div>
           )}
           {!isNuevo && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="expediente-header-more flex shrink-0" title="Más acciones" aria-label="Más acciones">
-                  <MoreVertical className="h-4 w-4" /> <span>Más acciones</span>
+                <Button variant="outline" size="sm" className="expediente-header-more flex shrink-0 md:w-8 md:px-0" title="Más acciones" aria-label="Más acciones">
+                  <MoreVertical className="h-4 w-4" /> <span className="md:hidden">Más acciones</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
@@ -1004,14 +989,11 @@ function DetalleExpediente() {
           </div>
           <CampoHeader etiqueta="Declaración DUA" valor={expData.numero_dua} />
           <CampoHeader etiqueta="N.º de despacho" valor={expData.numero_igra} />
-          <div ref={setInspeccionHeaderSlot} className="expediente-header-inspeccion">
-            {(tabActiva !== "info" || !inspeccionHeaderSlot) && <CampoHeader etiqueta="Tipo de Inspección" valor={expData.canal_riesgo} />}
-          </div>
           <CampoHeader etiqueta="N.º de permiso" valor={permisosNumeros} />
 
           {(() => {
             const a = alertaDeclaracionTardia({ ...expData, sla_dias: plazoEfectivo(expData, plazosReg).dias });
-            if (!a) return null;
+            if (!a) return <span className="hidden xl:block" aria-hidden="true" />;
             const cls = a.tone === "danger"
               ? "border-destructive/40 bg-destructive/10 text-destructive"
               : a.tone === "warning"
@@ -1023,7 +1005,7 @@ function DetalleExpediente() {
             return (
               <span
                 title="Ley 168-21: 5 días laborables desde el arribo para presentar la declaración"
-                className={`expediente-header-alerta inline-flex min-w-0 items-center justify-center truncate rounded border px-2 py-0.5 text-xs font-medium md:col-span-2 ${cls}`}
+                className={`inline-flex min-w-0 items-center justify-center truncate rounded border px-2 py-0.5 text-xs font-medium md:col-span-2 xl:col-span-1 ${cls}`}
               >
                 {txt}
               </span>
@@ -1040,13 +1022,11 @@ function DetalleExpediente() {
           </div>
         )}
       </div>
-        <TabsOverflowRow
-          tabOrder={tabOrder.filter((k) => TAB_LABELS[k])}
-          labels={TAB_LABELS}
-          active={tabActiva}
-          onSelect={setTabActiva}
-          disabledKey={(k) => isNuevo && k !== "info"}
-          renderTrigger={(key) => (
+        <TabsList className="mt-1.5 flex h-auto max-w-full flex-nowrap justify-start overflow-x-auto md:mt-1 md:flex-wrap">
+          {tabOrder.map((key) => {
+            const label = TAB_LABELS[key];
+            if (!label) return null;
+            return (
               <TabsTrigger
                 key={key}
                 value={key}
@@ -1073,16 +1053,16 @@ function DetalleExpediente() {
                 className="cursor-grab active:cursor-grabbing"
                 title={isNuevo && key !== "info" ? "Disponible después de crear el Expediente." : "Arrastra para reordenar"}
               >
-                {TAB_LABELS[key]}
+                {label}
               </TabsTrigger>
-          )}
-        />
-
+            );
+          })}
+        </TabsList>
         {isNuevo && (
           <p className="text-xs text-muted-foreground mt-1">Disponible después de crear el Expediente.</p>
         )}
       </div>
-      <div className="expediente-tab-body min-w-0 px-6">
+      <div className="px-6">
         <TabsContent value="info">
           <div id="ficha-generales-print">
             <div className="hidden print:block mb-4">
@@ -1102,7 +1082,6 @@ function DetalleExpediente() {
             ocrAplicado={ocrAplicado}
             tipoParam={tipoParam}
             solicitudEndoso={solicitudEndoso}
-            inspeccionHeaderSlot={inspeccionHeaderSlot}
           />
           </div>
         </TabsContent>
@@ -1141,7 +1120,7 @@ function Field({ label, value, onChange, type = "text", className = "", disabled
   return (
     <div className={cn("grid gap-1.5", highlight && "ring-2 ring-destructive rounded-md p-2 -m-2", className)} id={fieldId}>
       <Label>{req && <ReqMark />}{label}</Label>
-      <Input type={type} value={value ?? ""} title={String(value ?? "")} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
+      <Input type={type} value={value ?? ""} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
     </div>
   );
 }
@@ -1163,7 +1142,7 @@ function Section({ title, subtitle, children, id, className }: { title: React.Re
     try { localStorage.setItem(`exp-section-${id}`, next ? "1" : "0"); } catch { /* ignore */ }
   };
   return (
-    <Card className={cn("expediente-form-section", className)}>
+    <Card className={className}>
       <CardHeader className="pb-3 border-b cursor-pointer select-none" onClick={toggle}>
         <div className="flex items-center justify-between">
           <div>
@@ -1173,7 +1152,7 @@ function Section({ title, subtitle, children, id, className }: { title: React.Re
           <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", abierto && "rotate-180")} />
         </div>
       </CardHeader>
-      {(abierto || forzarAbierto) && <CardContent className="expediente-section-fields pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">{children}</CardContent>}
+      {(abierto || forzarAbierto) && <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">{children}</CardContent>}
     </Card>
   );
 }
@@ -1283,7 +1262,7 @@ function normalizarCamposExportacion(payload: any) {
   });
 }
 
-function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null, tipoParam = "", solicitudEndoso = 0, inspeccionHeaderSlot = null }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null; tipoParam?: string; solicitudEndoso?: number; inspeccionHeaderSlot?: HTMLDivElement | null }) {
+function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null, tipoParam = "", solicitudEndoso = 0 }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null; tipoParam?: string; solicitudEndoso?: number }) {
   const qc = useQueryClient();
   const nav = useNavigate();
   const editable = (canEdit && modoEdicion) || isNuevo;
@@ -1931,11 +1910,11 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
   const BotonesAccion = () => !isNuevo ? null : (
     <div
-      className="form-action-bar print:hidden sticky z-10 flex flex-wrap items-center justify-end gap-2 border-t py-1"
+      className="print:hidden sticky z-10 -mx-1 flex flex-wrap items-center justify-end gap-2 rounded-md border bg-background px-2 py-2 shadow-md"
       style={{ top: "calc(var(--exp-header-h, 0px) + 4px)" }}
     >
-      <Button variant="outline" size="sm" onClick={() => nav({ to: "/expedientes" })}>Cancelar</Button>
-      <Button size="sm" onClick={intentarCrear} disabled={crear.isPending}>
+      <Button variant="outline" onClick={() => nav({ to: "/expedientes" })}>Cancelar</Button>
+      <Button onClick={intentarCrear} disabled={crear.isPending}>
         <Check className="h-4 w-4 mr-1" /><span key={crear.isPending ? "p" : "i"}>{crear.isPending ? "Creando…" : "Crear expediente"}</span>
       </Button>
     </div>
@@ -1944,12 +1923,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   return (
     <div className="space-y-5">
       <BotonesAccion />
-      {!isNuevo && inspeccionHeaderSlot && createPortal(
-        <div className="flex min-h-8 min-w-0 items-center gap-1.5 text-xs md:text-sm">
-          <Label htmlFor="tipo-inspeccion-header" className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Tipo de Inspección:</Label>
-          <SelectorTipoInspeccion id="tipo-inspeccion-header" value={form.canal_riesgo} onChange={(v) => set("canal_riesgo", v)} disabled={!editable} compacto />
-        </div>, inspeccionHeaderSlot,
-      )}
 
       {hasSolicitud && (
         <Section id="datos-solicitud-original" className="bg-muted/30 border-dashed" title={
@@ -2029,10 +2002,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             <AutoField label="Contacto" value={form.contacto_solicitud} onChange={(v) => set("contacto_solicitud", v)} suggestion={sugContactoCliente} />
           </>
         ) : (
-          <div className="grid gap-1.5">
-            <Label>Número / ID</Label>
-            <Input className="expediente-numero disabled:opacity-100" value={form.numero} title={form.numero} onChange={(e) => set("numero", e.target.value)} disabled={!editable} />
-          </div>
+          <Field label="Número / ID" value={form.numero} onChange={(v) => set("numero", v)} disabled={!editable} className="[&_input]:text-brand-red [&_input]:font-bold [&_input:disabled]:opacity-100" />
         )}
         <Field label="BL / AWB / Guía" value={form.bl_awb} onChange={(v) => { set("bl_awb", v); limpiarFaltante("req-bl_awb"); }} disabled={!editable} req fieldId="req-bl_awb" highlight={camposFaltantes.has("req-bl_awb")} />
         <AutoField label="Medio de transporte" value={form.medio_transporte} onChange={(v) => set("medio_transporte", v)} suggestion={sug.medio_transporte ?? []} disabled={!editable} />
@@ -2289,8 +2259,13 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             ) : null;
           })()}
           <div className="grid gap-1.5">
-            <Label htmlFor="tipo-inspeccion-declaracion">Tipo de Inspección</Label>
-            <SelectorTipoInspeccion id="tipo-inspeccion-declaracion" value={form.canal_riesgo} onChange={(v) => set("canal_riesgo", v)} disabled={!editable} />
+            <Label>Canal de riesgo</Label>
+            <Select value={form.canal_riesgo || undefined} onValueChange={(v) => set("canal_riesgo", v)} disabled={!editable}>
+              <SelectTrigger><SelectValue placeholder="Selecciona canal" /></SelectTrigger>
+              <SelectContent>
+                {["Verde","Amarillo","Rojo"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
       </Section>
 
@@ -2379,7 +2354,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                         <td className="px-2 py-1"><Input value={c.numero} onChange={(e) => setCont(i, "numero", e.target.value)} disabled={!editable} placeholder="MSKU1234567" /></td>
                         <td className="px-2 py-1"><Input value={c.sello1} onChange={(e) => setCont(i, "sello1", e.target.value)} disabled={!editable} /></td>
                         <td className="px-2 py-1"><Input value={c.sello2} onChange={(e) => setCont(i, "sello2", e.target.value)} disabled={!editable} /></td>
-                        <td className="px-2 py-1"><Input value={c.tipo} title={c.tipo} className="text-ellipsis" onChange={(e) => setCont(i, "tipo", e.target.value)} disabled={!editable} placeholder="40HC" /></td>
+                        <td className="px-2 py-1"><Input value={c.tipo} onChange={(e) => setCont(i, "tipo", e.target.value)} disabled={!editable} placeholder="40HC" /></td>
                         {editable && (
                           <td className="px-2 py-1 text-right">
                             <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive"
@@ -4488,7 +4463,7 @@ function MercanciaItemsBlock({
       </div>
       <AvisoRegimenSuspensivo expedienteId={expedienteId} />
       <div className="rounded-md border overflow-auto max-h-[70vh]">
-        <table className="expediente-mercancia-table w-full text-sm min-w-[1400px]">
+        <table className="w-full text-sm min-w-[1400px]">
             <thead className="sticky-table-header bg-muted/50 text-[10.5px] uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-2 py-2 text-left w-10">#</th>
@@ -6287,40 +6262,4 @@ function CampoHeader({ etiqueta, valor, largo, className }: { etiqueta: string; 
       </Popover>
     </div>
   );
-}
-
-function TabsOverflowRow({
-  tabOrder, labels, active, onSelect, disabledKey, renderTrigger,
-}: {
-  tabOrder: string[];
-  labels: Record<string, string>;
-  active: string;
-  onSelect: (k: string) => void;
-  disabledKey: (k: string) => boolean;
-  renderTrigger: (k: string) => React.ReactNode;
-}) {
-  // Desktop positions never depend on measured text or available width.
-  const touchVisible = tabOrder.slice(0, 3);
-  const touchHidden = tabOrder.slice(3);
-  return <div className="mt-1.5">
-    <div className="expediente-fixed-tabs">
-      <TabsList className="h-auto">{tabOrder.map(renderTrigger)}</TabsList>
-    </div>
-    <div className="expediente-touch-tabs">
-      <TabsList className="grid h-auto w-full grid-cols-4">
-        {touchVisible.map(renderTrigger)}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" aria-label="Más pestañas" className={touchHidden.includes(active) ? "bg-background text-foreground" : ""}>
-              Más <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {touchHidden.map(k => <DropdownMenuItem key={k} disabled={disabledKey(k)} onSelect={() => onSelect(k)} className={k === active ? "bg-accent font-medium" : ""}>{labels[k]}</DropdownMenuItem>)}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </TabsList>
-      {touchHidden.includes(active) && <div className="border-b py-2 font-medium">{labels[active]}</div>}
-    </div>
-  </div>;
 }

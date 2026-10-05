@@ -17,7 +17,6 @@ import { WhatsAppButton } from "@/components/whatsapp-button";
 import { HerramientasDgaVuceMenu, RastreosEnvioMenu } from "@/components/accesos-rapidos-expediente";
 import { EmailButton } from "@/components/email-button";
 import { TruncatedCell } from "@/components/truncated-cell";
-import { TitleHelp } from "@/components/title-help";
 import { BadgeVigenciaPinDga } from "@/components/badge-vigencia";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -29,14 +28,6 @@ import { daysFromToday, habilesRestantesPlazo } from "@/lib/dates";
 type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 
 export const Route = createFileRoute("/_authenticated/expedientes/")({
-  head: () => ({ meta: [
-    { title: "Expedientes aduanales | ADECOMEX" },
-    { name: "description", content: "Listado de expedientes aduanales de ADECOMEX, con filtros y agrupación por estado." },
-    { property: "og:title", content: "Expedientes aduanales | ADECOMEX" },
-    { property: "og:description", content: "Consulta y seguimiento de expedientes aduanales en ADECOMEX." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
   validateSearch: (s: Record<string, unknown>): { tipo?: TipoFilter; estado?: string; eta?: number } => {
     const t = s.tipo;
     const tipo = t === "importacion" || t === "exportacion" || t === "facturados" || t === "todos" ? t : undefined;
@@ -272,7 +263,7 @@ function Expedientes() {
       facturar: "bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900",
     };
     return (
-      <span data-slot="badge" className={`inline-flex items-center px-2 py-0 leading-4 rounded-full text-aux font-normal border ${variants[estadoRaw ?? ""] ?? variants.digitar}`}>
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${variants[estadoRaw ?? ""] ?? variants.digitar}`}>
         {label}
       </span>
     );
@@ -314,11 +305,11 @@ function Expedientes() {
     if (active.length === 0) return <span className="text-muted-foreground">—</span>;
     const first = active[0].detalle_producto ?? "—";
     if (active.length === 1) {
-      return <TruncatedCell value={first} className="text-muted-foreground" wrap />;
+      return <TruncatedCell value={first} className="text-muted-foreground" />;
     }
     const all = active.map((it: any) => it.detalle_producto ?? "—").join("\n");
     return (
-       <span title={all} className="block max-w-full whitespace-normal break-words">
+      <span title={all} className="block truncate max-w-[160px]">
         <span className="text-muted-foreground">{first}</span>
         <span className="text-[10px] text-muted-foreground/70 ml-1">+{active.length - 1} más</span>
       </span>
@@ -332,7 +323,7 @@ function Expedientes() {
     const colapsado = !!colapsados[groupKey];
     return (
       <tr className="bg-muted/40 cursor-pointer hover:bg-muted/60" onClick={() => toggleGrupo(groupKey)}>
-        <td colSpan={10} className="py-2 px-4">
+        <td colSpan={11} className="py-2 px-4">
           <div className="flex items-center gap-3">
             <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${colapsado ? "" : "rotate-90"}`} />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
@@ -341,7 +332,6 @@ function Expedientes() {
             <div className="flex-1 h-px bg-border" />
           </div>
         </td>
-        <td className="expedientes-divider-actions" aria-hidden="true"></td>
       </tr>
     );
   };
@@ -349,7 +339,7 @@ function Expedientes() {
   const { data: plazosReg } = usePlazosRegimen();
   const ExpedienteRow = ({ e }: { e: any }) => (
     <tr key={e.id} className={`hover:bg-muted/30 transition-colors ${rowHighlight(e)}`}>
-      <td className="px-2 py-1 align-top whitespace-nowrap">
+      <td className="px-2 py-1 align-middle whitespace-nowrap">
         <Link
           to="/expedientes/$id"
           params={{ id: e.id }}
@@ -359,32 +349,32 @@ function Expedientes() {
           {e.numero}
         </Link>
       </td>
-      <td className="px-2 py-1 align-top whitespace-nowrap text-foreground/90">
+      <td className="px-2 py-1 align-middle whitespace-nowrap text-foreground/90">
         {(() => {
           const end = (e.expediente_endosos ?? []).find((x: any) => x.activo && x.endosado);
           return end ? (
-            <span className="inline-flex max-w-full items-start gap-1">
-              <TruncatedCell value={e.clientes?.nombre} maxClass="max-w-full" wrap />
+            <span className="inline-flex max-w-full items-center gap-1">
+              <TruncatedCell value={e.clientes?.nombre} />
               <span title={`Endosado a: ${end.endosado.nombre}`} aria-label={`Endosado a ${end.endosado.nombre}`} className="shrink-0 text-amber-600">
                 <Repeat2 className="h-3.5 w-3.5" />
               </span>
             </span>
-          ) : <TruncatedCell value={e.clientes?.nombre} maxClass="max-w-full" wrap />;
+          ) : <TruncatedCell value={e.clientes?.nombre} />;
         })()}
       </td>
-      <td className="px-2 py-1 align-top text-muted-foreground text-xs whitespace-nowrap">
+      <td className="px-2 py-1 align-middle text-muted-foreground text-xs whitespace-nowrap">
         <MercanciaCell items={e.mercancia_items} />
       </td>
-      <td className="px-2 py-1 align-top text-right tabular-nums text-muted-foreground text-xs whitespace-nowrap">
-        <TruncatedCell value={e.numero_dua} maxClass="max-w-full" wrap />
+      <td className="px-2 py-1 align-middle text-right tabular-nums text-muted-foreground text-xs whitespace-nowrap">
+        {e.numero_dua ?? "—"}
       </td>
-      <td className="px-2 py-1 align-top text-muted-foreground whitespace-nowrap">
-        <TruncatedCell value={e.bl_awb} maxClass="max-w-full" wrap />
+      <td className="px-2 py-1 align-middle text-muted-foreground whitespace-nowrap">
+        {e.bl_awb ?? "—"}
       </td>
-      <td className="px-2 py-1 align-top text-right tabular-nums text-muted-foreground whitespace-nowrap">
+      <td className="px-2 py-1 align-middle text-right tabular-nums text-muted-foreground whitespace-nowrap">
         {(() => { const d = parseLocalDate(e.fecha_compromiso); return d ? d.toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"; })()}
       </td>
-      <td className="px-2 py-1 align-top text-center whitespace-nowrap w-12 min-w-12">
+      <td className="px-2 py-1 align-middle text-center whitespace-nowrap w-12 min-w-12">
         {(() => {
           const d = diasRestantes(e);
           if (!d) return <span className="text-muted-foreground">—</span>;
@@ -420,10 +410,10 @@ function Expedientes() {
         })()}
       </td>
       <td className="px-2 py-1 align-middle text-muted-foreground text-xs whitespace-nowrap">
-        <TruncatedCell value={e.puerto_arribo} maxClass="max-w-full" wrap />
+        {e.puerto_arribo ?? "—"}
       </td>
       <td className="px-2 py-1 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
-        <TruncatedCell value={e.numero_vuce} maxClass="max-w-full" wrap />
+        {e.numero_vuce ?? "—"}
       </td>
       <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
         <div className="flex flex-col items-center gap-0.5">
@@ -471,8 +461,7 @@ function Expedientes() {
         </div>
       </td>
 
-      <td className="expedientes-row-actions px-1 py-1 align-top text-right whitespace-nowrap">
-        <div className="expedientes-action-icons">
+      <td className="px-1 py-1 align-middle text-right whitespace-nowrap">
         <RastreosEnvioMenu variant="icon" className="h-7 w-7" />
         <WhatsAppButton
           phone={e.clientes?.telefono}
@@ -509,35 +498,32 @@ function Expedientes() {
         >
           <Trash2 className="h-4 w-4" />
         </Button>
-        </div>
       </td>
     </tr>
   );
 
   return (
-    <div className="expedientes-listado p-3 md:p-4 space-y-3 w-full min-w-0 mx-auto h-full flex flex-col">
-      <div className="expedientes-listado-toolbar flex items-center gap-3 flex-wrap shrink-0">
-        <div className="flex flex-1 min-w-0 items-center gap-1">
+    <div className="p-3 md:p-4 space-y-3 max-w-[1600px] mx-auto h-full flex flex-col">
+      <div className="flex items-center gap-3 flex-wrap shrink-0">
+        <div className="flex-1 min-w-[200px] min-w-0">
           <h1 className="font-display text-lg font-bold leading-tight truncate">Expedientes · {tipoLabel}</h1>
-          <TitleHelp text="Expedientes aduanales agrupados por tipo de solicitud." />
+          <p className="text-xs text-muted-foreground hidden xl:block truncate">Expedientes aduanales agrupados por tipo de solicitud.</p>
         </div>
-        <div className="expedientes-tipo-tabs flex gap-1 rounded-md border p-0.5 bg-card">
+        <div className="flex gap-1 rounded-md border p-0.5 bg-card">
           <Link to="/expedientes" search={{ tipo: "todos", estado: estadoParam, eta: etaParam }} className={`px-2.5 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos <Badge variant="secondary" className="text-[10px] h-4 px-1">{countAll}</Badge></Link>
           <Link to="/expedientes" search={{ tipo: "importacion", estado: estadoParam, eta: etaParam }} className={`px-2.5 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
           <Link to="/expedientes" search={{ tipo: "exportacion", estado: estadoParam, eta: etaParam }} className={`px-2.5 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
           <Link to="/expedientes" search={{ tipo: "facturados", estado: estadoParam, eta: etaParam }} className={`px-2.5 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
         </div>
-        <div className="expediente-toolbar">
-          <HerramientasDgaVuceMenu className="px-2" />
-          <RastreosEnvioMenu className="px-2" />
-        </div>
+        <HerramientasDgaVuceMenu />
+        <RastreosEnvioMenu />
         <Button size="sm" asChild>
           <Link to="/expedientes/$id" params={{ id: "nuevo" }} search={{ nuevo: "", solicitud: "", tipo: tipo === "exportacion" ? "exportacion" : "" }}><Plus className="h-4 w-4 mr-1" />{tipo === "exportacion" ? "Nuevo Expediente de Exportación" : "Nuevo Expediente"}</Link>
         </Button>
       </div>
 
-      <Card className="expedientes-resultados overflow-hidden flex-1 min-h-0 flex flex-col">
-        <CardHeader className="expedientes-listado-filtros flex-row items-center gap-2 flex-wrap p-2 px-3 shrink-0">
+      <Card className="overflow-hidden flex-1 min-h-0 flex flex-col">
+        <CardHeader className="flex-row items-center gap-2 flex-wrap p-2 px-3 shrink-0">
           <CardTitle className="text-xs font-medium text-muted-foreground flex-1 min-w-[100px] min-w-0">{filtered.length} expedientes</CardTitle>
           <Select value={estado} onValueChange={setEstado}>
             <SelectTrigger className="w-40 h-8"><SelectValue /></SelectTrigger>
@@ -573,7 +559,7 @@ function Expedientes() {
           {filtered.length === 0 && (
             <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin expedientes. Crea uno con "Nuevo Expediente" o súbelo por OCR.</div>
           )}
-          <div className="expedientes-table-scroll overflow-auto h-full">
+          <div className="overflow-auto h-full">
             {gruposVisibles.map((g) => {
               const rows = grupos[g];
               if (rows.length === 0) return null;
@@ -583,23 +569,7 @@ function Expedientes() {
                     <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">{grupoLabel[g]}</span>
                     <Badge variant="secondary" className="text-[10px]">{rows.length}</Badge>
                   </div>
-                  <div className="expedientes-mobile-cards">
-                    {[
-                      { key: "digitar_g1", label: "Por Procesar", entries: rows.filter((e: any) => ESTADO_GRUPO_1.includes(e.estado)) },
-                      { key: "en_transito", label: "En Tránsito", entries: rows.filter((e: any) => e.estado === "en_transito") },
-                      { key: "despachado_g3", label: "Despachado / Entregado", entries: rows.filter((e: any) => ESTADO_GRUPO_3.includes(e.estado)) },
-                      { key: "facturados", label: "Facturados", entries: rows.filter((e: any) => e.estado === "facturar") },
-                    ].filter(section => section.entries.length > 0).map(section => <section key={section.key}>
-                      <Button variant="ghost" className="w-full justify-start" aria-expanded={!colapsados[section.key]} onClick={() => toggleGrupo(section.key)}><ChevronRight className={`h-4 w-4 ${colapsados[section.key] ? "" : "rotate-90"}`} />{section.label} ({section.entries.length})</Button>
-                      {!colapsados[section.key] && section.entries.sort(cmp).map((e: any) => <Link key={e.id} to="/expedientes/$id" params={{ id: e.id }} className="expediente-mobile-card border border-border rounded-lg bg-card p-3 grid gap-3 focus-visible:outline-2 focus-visible:outline-ring" aria-label={`Abrir expediente ${e.numero}`}>
-                        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2"><span className="expediente-numero break-words">{e.numero}</span><span>{estadoBadge(e.estado)}</span></div>
-                        <div className="font-medium break-words">{e.clientes?.nombre ?? "—"}</div>
-                        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 items-center"><span className="text-muted-foreground">ETA: {parseLocalDate(e.fecha_compromiso)?.toLocaleDateString("es-DO") ?? "—"}</span><ChevronRight className="h-5 w-5 shrink-0" /></div>
-                      </Link>)}
-                    </section>)}
-                  </div>
-                  <table className="expedientes-listado-tabla w-full text-[13px] border-separate border-spacing-0">
-                    <colgroup className="expedientes-listado-columnas">{[140, 220, 260, 150, 150, 100, 56, 100, 130, 120, 180].map((width, i) => <col key={i} width={width} />)}</colgroup>
+                  <table className="w-full text-[13px] border-separate border-spacing-0">
                     <thead className="sticky-table-header bg-muted/30 border-b [&_th]:top-[33px]">
                       <tr>
                         <Th k="numero" className="px-2 whitespace-nowrap">Expediente</Th>
@@ -612,7 +582,7 @@ function Expedientes() {
                         <Th k="puerto_arribo" className="px-2 whitespace-nowrap">Puerto</Th>
                         <Th k="numero_vuce" className="px-2 whitespace-nowrap">Permiso VUCE</Th>
                         <Th k="estado" className="px-2 whitespace-nowrap">Estado</Th>
-                        <th aria-label="Acciones" className="expedientes-row-actions px-1 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Acciones</th>
+                        <th className="px-1 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"></th>
                       </tr>
                     </thead>
 
