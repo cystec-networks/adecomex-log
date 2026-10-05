@@ -50,7 +50,7 @@
   .expediente-info-fila3 > div:not(.expediente-header-inspeccion) { grid-template-columns: 120px 1fr; }
   .expediente-header-cliente > button, .expediente-header-valor-largo, .expediente-header-container .truncate { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; height: auto; min-height: 32px; }
   .expediente-header-cliente { overflow: visible; white-space: normal; }
-  .expediente-header-cliente button { justify-content: start; }
+  .expediente-header-cliente > button { display: block; width: 340px; flex: none; text-align: left; white-space: normal; overflow-wrap: anywhere; }
   .expediente-header-container .line-clamp-3 { display: block; overflow: visible; -webkit-line-clamp: unset; }
   .expediente-info-fila3 > .expediente-header-alerta { grid-column: 1 / -1; }
   .expediente-presentation-pill { width: 388px; height: auto; min-height: 24px; white-space: normal; }
