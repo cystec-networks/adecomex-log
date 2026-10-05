@@ -332,7 +332,7 @@ function Expedientes() {
     const colapsado = !!colapsados[groupKey];
     return (
       <tr className="bg-muted/40 cursor-pointer hover:bg-muted/60" onClick={() => toggleGrupo(groupKey)}>
-        <td colSpan={11} className="py-2 px-4">
+        <td colSpan={10} className="py-2 px-4">
           <div className="flex items-center gap-3">
             <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${colapsado ? "" : "rotate-90"}`} />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
@@ -341,6 +341,7 @@ function Expedientes() {
             <div className="flex-1 h-px bg-border" />
           </div>
         </td>
+        <td className="expedientes-divider-actions" aria-hidden="true"></td>
       </tr>
     );
   };
@@ -598,7 +599,7 @@ function Expedientes() {
                     </section>)}
                   </div>
                   <table className="expedientes-listado-tabla w-full text-[13px] border-separate border-spacing-0">
-                    <colgroup className="expedientes-listado-columnas">{[140, 220, 260, 150, 150, 100, 56, 100, 130, 120, 40].map((width, i) => <col key={i} width={width} />)}</colgroup>
+                    <colgroup className="expedientes-listado-columnas">{[140, 220, 260, 150, 150, 100, 56, 100, 130, 120, 156].map((width, i) => <col key={i} width={width} />)}</colgroup>
                     <thead className="sticky-table-header bg-muted/30 border-b [&_th]:top-[33px]">
                       <tr>
                         <Th k="numero" className="px-2 whitespace-nowrap">Expediente</Th>
