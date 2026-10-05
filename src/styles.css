@@ -40,11 +40,10 @@
   .expedientes-table-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
   .expedientes-table-scroll::-webkit-scrollbar-track { background: var(--muted); }
   .expedientes-table-scroll::-webkit-scrollbar-thumb { background: var(--muted-foreground); border: 2px solid var(--muted); border-radius: 4px; }
-  .expedientes-listado-tabla .expedientes-row-actions { position: sticky; right: 0; z-index: 5; vertical-align: top; background: var(--card); border-left: 1px solid var(--border); }
-  .expedientes-listado-tabla th.expedientes-row-actions { z-index: 25; }
+  .expedientes-listado-tabla .expedientes-row-actions { vertical-align: top; background: var(--card); border-left: 1px solid var(--border); }
   .expedientes-action-icons { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: flex-start; justify-content: center; gap: 8px; }
   .expedientes-action-icons > * { flex-shrink: 0; }
-  .expedientes-listado-tabla .expedientes-divider-actions { position: sticky; right: 0; z-index: 5; background: color-mix(in srgb, var(--muted) 40%, var(--card)); border-left: 1px solid var(--border); }
+  .expedientes-listado-tabla .expedientes-divider-actions { background: color-mix(in srgb, var(--muted) 40%, var(--card)); border-left: 1px solid var(--border); }
   .expediente-header-container { padding: 8px 24px; }
   .expediente-header-grid { grid-template-columns: 88px 172px 320px 192px 548px; grid-template-areas: "back number state save menus"; gap: 8px; }
   .expediente-header-state { grid-template-columns: 52px 220px 32px; margin: 0; }
