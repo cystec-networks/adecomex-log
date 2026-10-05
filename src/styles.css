@@ -537,7 +537,8 @@
 @media screen and (min-width: 768px) and (max-width: 1024px) {
   :root { --text-aux: 0.75rem; --text-dense: 0.8125rem; --text-form: 0.875rem; }
   .expedientes-tablet-columns { display: inline-flex; }
-  .expedientes-listado-filtros { display: flex; flex-wrap: wrap; }
+  .expedientes-listado-filtros { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .expedientes-listado-filtros > :first-child { flex-basis: 100%; }
   .expedientes-listado-filtros > input { flex-basis: 100%; max-width: none; }
   .expedientes-listado-tabla { table-layout: auto; }
   .expedientes-listado-columnas { display: none; }
