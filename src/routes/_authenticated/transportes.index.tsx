@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { TitleHelp } from "@/components/title-help";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -19,6 +20,14 @@ import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
 
 
 export const Route = createFileRoute("/_authenticated/transportes/")({
+  head: () => ({ meta: [
+    { title: "Transportes | ADECOMEX" },
+    { name: "description", content: "Listado de viajes y logística vinculados a expedientes." },
+    { property: "og:title", content: "Transportes | ADECOMEX" },
+    { property: "og:description", content: "Listado de viajes y logística vinculados a expedientes." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   validateSearch: (s: Record<string, unknown>): { estado?: string } => {
     const estadosValidos = new Set(TRANSPORTE_ESTADOS.map((item) => item.v));
     const estado = typeof s.estado === "string"
@@ -137,8 +146,7 @@ function Transportes() {
     <div className="p-4 md:p-6 space-y-6 max-w-[1600px] mx-auto">
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex-1 min-w-[240px]">
-          <h1 className="font-display text-2xl font-bold flex items-center gap-2"><Truck className="h-6 w-6" /> Transportes</h1>
-          <p className="text-sm text-muted-foreground">Viajes y logística vinculados a expedientes.</p>
+          <div className="flex min-w-0 items-center gap-1"><h1 className="font-display text-2xl font-bold flex items-center gap-2"><Truck className="h-6 w-6" /> Transportes</h1><TitleHelp text="Viajes y logística vinculados a expedientes." /></div>
         </div>
         <Button asChild><Link to="/transportes/nuevo"><Plus className="h-4 w-4 mr-1" /> Nuevo transporte</Link></Button>
       </div>
