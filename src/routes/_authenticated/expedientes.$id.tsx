@@ -66,6 +66,7 @@ import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado, fechasDes
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
 import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
 import { VencePresentacion } from "@/components/vence-presentacion";
+import { TitleHelp } from "@/components/title-help";
 import { unitFob, loadBrokerConfig } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
@@ -742,14 +743,12 @@ function DetalleExpediente() {
         className="expediente-header-container sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6"
       >
         <div className="space-y-1.5 md:space-y-2">
-        <div className={isNuevo ? "grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:flex md:flex-wrap md:gap-3" : "expediente-header-grid"}>
+        <div className={isNuevo ? "expediente-new-header" : "expediente-header-grid"}>
           <Button variant="ghost" size="sm" asChild className="expediente-header-back shrink-0 px-2 md:px-3"><Link to="/expedientes"><ArrowLeft className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Volver</span></Link></Button>
           {isNuevo ? (
-            <div className="min-w-0 flex-1">
+            <div className="expediente-new-title flex min-w-0 items-center gap-1">
               <h1 className="font-display truncate text-lg font-bold md:text-xl">Nuevo Expediente</h1>
-              <p className="truncate text-xs text-muted-foreground md:text-sm">
-                Completa los campos a mano, o escanea el BL y/o la factura comercial para autollenarlos. El número se genera automáticamente.
-              </p>
+              <TitleHelp text="Completa los campos a mano, o escanea el BL y/o la factura comercial para autollenarlos. El número se genera automáticamente." />
             </div>
           ) : (
             <div className="expediente-header-number flex items-center">
@@ -779,7 +778,7 @@ function DetalleExpediente() {
             </div>
           )}
           {isNuevo && (
-            <div className="flex items-center gap-2">
+            <div className="expediente-new-scanners flex items-center gap-2">
               <EscanearBlButton onExtracted={(res) => { blRes.current = res; void aplicarCombinado(); toast.success("BL procesado — revisa y ajusta los campos"); }} />
               <EscanearFacturaExpButton onExtracted={(res) => { facRes.current = res; void aplicarCombinado(); toast.success("Factura procesada — revisa y ajusta los campos"); }} />
               <NuevoDesdeXmlButton
@@ -799,7 +798,7 @@ function DetalleExpediente() {
             </div>
           )}
           {(
-            <div className={isNuevo ? "hidden items-center gap-1.5 md:flex md:flex-wrap" : "hidden md:contents"}>
+            <div className={isNuevo ? "expediente-new-tools min-w-0" : "hidden md:contents"}>
               {!isNuevo && <div className="expediente-header-save"><ControlesGuardadoHeader expedienteId={id} compacto /></div>}
               <div className={isNuevo ? "expediente-toolbar" : "expediente-toolbar expediente-header-menus flex min-w-0 flex-wrap items-center gap-1.5"}>
               <Button
@@ -1930,7 +1929,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
   const BotonesAccion = () => !isNuevo ? null : (
     <div
-      className="print:hidden sticky z-10 -mx-1 flex flex-wrap items-center justify-end gap-2 rounded-md border bg-background px-2 py-1 shadow-sm"
+      className="form-action-bar print:hidden sticky z-10 flex flex-wrap items-center justify-end gap-2 border-t py-1"
       style={{ top: "calc(var(--exp-header-h, 0px) + 4px)" }}
     >
       <Button variant="outline" size="sm" onClick={() => nav({ to: "/expedientes" })}>Cancelar</Button>
