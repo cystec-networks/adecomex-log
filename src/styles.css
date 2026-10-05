@@ -442,7 +442,7 @@
   :is([role="alert"], .expediente-header-alerta) :is(span, div, p) { font-size: inherit !important; }
   .expediente-numero { font-size: var(--text-section) !important; }
   h1.expediente-numero { font-size: var(--text-key) !important; }
-  :is([role="alert"], .expediente-header-alerta, .expediente-header-state, .expediente-presentation-pill) { font-size: var(--text-section) !important; }
+  :is([role="alert"], .expediente-header-alerta, .expediente-header-state) { font-size: var(--text-section) !important; }
   .expediente-header-state :is(label, [role="combobox"]) { font-size: var(--text-section) !important; }
   .expediente-presentation-pill :is(span, div) { font-size: inherit !important; }
   .expediente-readonly-field { font-size: var(--text-form) !important; }
