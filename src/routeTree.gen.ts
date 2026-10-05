@@ -9,118 +9,96 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as PortalRouteRouteImport } from './routes/_portal/route'
-import { Route as PortalEstudianteRouteRouteImport } from './routes/_portal-estudiante/route'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as McpRouteImport } from './routes/mcp'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SolicitudPagoTransporteRouteImport } from './routes/solicitud-pago-transporte'
-import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
-import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
-import { Route as AuthenticatedBienvenidaRouteImport } from './routes/_authenticated/bienvenida'
-import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
-import { Route as AuthenticatedCopilotoRouteImport } from './routes/_authenticated/copiloto'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedMiCuentaRouteImport } from './routes/_authenticated/mi-cuenta'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as McpRouteImport } from './routes/mcp'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PortalEstudianteRouteRouteImport } from './routes/_portal-estudiante/route'
+import { Route as PortalRouteRouteImport } from './routes/_portal/route'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedReportesRouteImport } from './routes/_authenticated/reportes'
-import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
-import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
-import { Route as AuthenticatedAcademiaAccesosEstudiantesRouteImport } from './routes/_authenticated/academia.accesos-estudiantes'
-import { Route as AuthenticatedAcademiaEstudiantesRouteImport } from './routes/_authenticated/academia.estudiantes'
-import { Route as AuthenticatedAcademiaInscripcionesRouteImport } from './routes/_authenticated/academia.inscripciones'
-import { Route as AuthenticatedAcademiaProgramasRouteImport } from './routes/_authenticated/academia.programas'
-import { Route as AuthenticatedAdminAccesosClientesRouteImport } from './routes/_authenticated/admin.accesos-clientes'
-import { Route as AuthenticatedAdminCatalogoProductosDgaRouteImport } from './routes/_authenticated/admin.catalogo-productos-dga'
-import { Route as AuthenticatedAdminCatalogoViajesTransporteRouteImport } from './routes/_authenticated/admin.catalogo-viajes-transporte'
-import { Route as AuthenticatedAdminCatalogosRouteImport } from './routes/_authenticated/admin.catalogos'
-import { Route as AuthenticatedAdminConciliacionBancariaRouteImport } from './routes/_authenticated/admin.conciliacion-bancaria'
-import { Route as AuthenticatedAdminConfiguracionRouteImport } from './routes/_authenticated/admin.configuracion'
-import { Route as AuthenticatedAdminCotizacionesServiciosRouteImport } from './routes/_authenticated/admin.cotizaciones-servicios'
-import { Route as AuthenticatedAdminCuentasPorCobrarRouteImport } from './routes/_authenticated/admin.cuentas-por-cobrar'
-import { Route as AuthenticatedAdminCuentasPorPagarRouteImport } from './routes/_authenticated/admin.cuentas-por-pagar'
-import { Route as AuthenticatedAdminDashboardFinancieroRouteImport } from './routes/_authenticated/admin.dashboard-financiero'
-import { Route as AuthenticatedAdminFacturacionRouteImport } from './routes/_authenticated/admin.facturacion'
-import { Route as AuthenticatedAdminGastosOperativosRouteImport } from './routes/_authenticated/admin.gastos-operativos'
-import { Route as AuthenticatedAdminPlantillasDocumentosRouteImport } from './routes/_authenticated/admin.plantillas-documentos'
-import { Route as AuthenticatedAdminReembolsosRouteImport } from './routes/_authenticated/admin.reembolsos'
-import { Route as AuthenticatedAdminRegistroDiarioRouteImport } from './routes/_authenticated/admin.registro-diario'
-import { Route as AuthenticatedAdminReportesFiscalesRouteImport } from './routes/_authenticated/admin.reportes-fiscales'
-import { Route as AuthenticatedAdminRespaldoDatosRouteImport } from './routes/_authenticated/admin.respaldo-datos'
-import { Route as AuthenticatedAdminSolicitudesPagoTransferenciaRouteImport } from './routes/_authenticated/admin.solicitudes-pago-transferencia'
-import { Route as AuthenticatedAdminSolicitudesPagoTransporteRouteImport } from './routes/_authenticated/admin.solicitudes-pago-transporte'
-import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
-import { Route as AuthenticatedAlmacenIndexRouteImport } from './routes/_authenticated/almacen.index'
-import { Route as AuthenticatedAlmacenesIndexRouteImport } from './routes/_authenticated/almacenes.index'
-import { Route as AuthenticatedCotizacionesIndexRouteImport } from './routes/_authenticated/cotizaciones.index'
-import { Route as AuthenticatedCotizacionesIdRouteImport } from './routes/_authenticated/cotizaciones.$id'
-import { Route as AuthenticatedCotizacionesCalculadoraRouteImport } from './routes/_authenticated/cotizaciones.calculadora'
-import { Route as AuthenticatedCotizacionesNuevaRouteImport } from './routes/_authenticated/cotizaciones.nueva'
-import { Route as AuthenticatedExpedientesIndexRouteImport } from './routes/_authenticated/expedientes.index'
-import { Route as AuthenticatedExpedientesIdRouteImport } from './routes/_authenticated/expedientes.$id'
-import { Route as AuthenticatedExpedientesDashboardRouteImport } from './routes/_authenticated/expedientes.dashboard'
-import { Route as AuthenticatedExpedientesPapeleraRouteImport } from './routes/_authenticated/expedientes.papelera'
-import { Route as AuthenticatedLogisticaIndexRouteImport } from './routes/_authenticated/logistica.index'
-import { Route as AuthenticatedLogisticaIdRouteImport } from './routes/_authenticated/logistica.$id'
-import { Route as AuthenticatedOrdenesIndexRouteImport } from './routes/_authenticated/ordenes.index'
-import { Route as AuthenticatedOrdenesIdRouteImport } from './routes/_authenticated/ordenes.$id'
-import { Route as AuthenticatedOrdenesNuevaRouteImport } from './routes/_authenticated/ordenes.nueva'
-import { Route as AuthenticatedPermisosIndexRouteImport } from './routes/_authenticated/permisos.index'
-import { Route as AuthenticatedPermisosIdRouteImport } from './routes/_authenticated/permisos.$id'
-import { Route as AuthenticatedPermisosNuevoRouteImport } from './routes/_authenticated/permisos.nuevo'
-import { Route as AuthenticatedSolicitudesIdRouteImport } from './routes/_authenticated/solicitudes.$id'
-import { Route as AuthenticatedTransportesIndexRouteImport } from './routes/_authenticated/transportes.index'
-import { Route as AuthenticatedTransportesIdRouteImport } from './routes/_authenticated/transportes.$id'
-import { Route as AuthenticatedTransportesDashboardRouteImport } from './routes/_authenticated/transportes.dashboard'
-import { Route as AuthenticatedTransportesNuevoRouteImport } from './routes/_authenticated/transportes.nuevo'
-import { Route as PortalEstudiantePortalEstudianteIndexRouteImport } from './routes/_portal-estudiante/portal-estudiante.index'
-import { Route as PortalEstudiantePortalEstudianteCambiarPasswordRouteImport } from './routes/_portal-estudiante/portal-estudiante.cambiar-password'
+import { Route as AuthenticatedMiCuentaRouteImport } from './routes/_authenticated/mi-cuenta'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCopilotoRouteImport } from './routes/_authenticated/copiloto'
+import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
+import { Route as AuthenticatedBienvenidaRouteImport } from './routes/_authenticated/bienvenida'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as PortalPortalIndexRouteImport } from './routes/_portal/portal.index'
-import { Route as PortalPortalBienvenidaRouteImport } from './routes/_portal/portal.bienvenida'
-import { Route as PortalPortalCambiarPasswordRouteImport } from './routes/_portal/portal.cambiar-password'
-import { Route as PortalPortalEmbarquesRouteImport } from './routes/_portal/portal.embarques'
-import { Route as ApiPublicCatalogoViajesTransporteRouteImport } from './routes/api/public/catalogo-viajes-transporte'
-import { Route as ApiPublicSolicitudPagoTransporteRouteImport } from './routes/api/public/solicitud-pago-transporte'
-import { Route as ImprimirReciboPagoIdRouteImport } from './routes/imprimir/recibo-pago.$id'
-import { Route as ImprimirSolicitudPagoIdRouteImport } from './routes/imprimir/solicitud-pago.$id'
+import { Route as PortalEstudiantePortalEstudianteIndexRouteImport } from './routes/_portal-estudiante/portal-estudiante.index'
+import { Route as AuthenticatedTransportesIndexRouteImport } from './routes/_authenticated/transportes.index'
+import { Route as AuthenticatedPermisosIndexRouteImport } from './routes/_authenticated/permisos.index'
+import { Route as AuthenticatedOrdenesIndexRouteImport } from './routes/_authenticated/ordenes.index'
+import { Route as AuthenticatedLogisticaIndexRouteImport } from './routes/_authenticated/logistica.index'
+import { Route as AuthenticatedExpedientesIndexRouteImport } from './routes/_authenticated/expedientes.index'
+import { Route as AuthenticatedCotizacionesIndexRouteImport } from './routes/_authenticated/cotizaciones.index'
+import { Route as AuthenticatedAlmacenesIndexRouteImport } from './routes/_authenticated/almacenes.index'
+import { Route as AuthenticatedAlmacenIndexRouteImport } from './routes/_authenticated/almacen.index'
 import { Route as ImprimirSolicitudTransferenciaIdRouteImport } from './routes/imprimir/solicitud-transferencia.$id'
-import { Route as AuthenticatedAdminFacturacionPendientesRouteImport } from './routes/_authenticated/admin.facturacion_.pendientes'
-import { Route as AuthenticatedLegalDocumentosIndexRouteImport } from './routes/_authenticated/legal.documentos.index'
-import { Route as AuthenticatedRrhhEmpleadosIndexRouteImport } from './routes/_authenticated/rrhh.empleados.index'
-import { Route as AuthenticatedRrhhEmpleadosIdRouteImport } from './routes/_authenticated/rrhh.empleados.$id'
-import { Route as AuthenticatedRrhhPrestamosTercerosIndexRouteImport } from './routes/_authenticated/rrhh.prestamos-terceros.index'
+import { Route as ImprimirSolicitudPagoIdRouteImport } from './routes/imprimir/solicitud-pago.$id'
+import { Route as ImprimirReciboPagoIdRouteImport } from './routes/imprimir/recibo-pago.$id'
+import { Route as ApiPublicSolicitudPagoTransporteRouteImport } from './routes/api/public/solicitud-pago-transporte'
+import { Route as ApiPublicCatalogoViajesTransporteRouteImport } from './routes/api/public/catalogo-viajes-transporte'
+import { Route as PortalPortalEmbarquesRouteImport } from './routes/_portal/portal.embarques'
+import { Route as PortalPortalCambiarPasswordRouteImport } from './routes/_portal/portal.cambiar-password'
+import { Route as PortalPortalBienvenidaRouteImport } from './routes/_portal/portal.bienvenida'
+import { Route as PortalEstudiantePortalEstudianteCambiarPasswordRouteImport } from './routes/_portal-estudiante/portal-estudiante.cambiar-password'
+import { Route as AuthenticatedTransportesNuevoRouteImport } from './routes/_authenticated/transportes.nuevo'
+import { Route as AuthenticatedTransportesDashboardRouteImport } from './routes/_authenticated/transportes.dashboard'
+import { Route as AuthenticatedTransportesIdRouteImport } from './routes/_authenticated/transportes.$id'
+import { Route as AuthenticatedSolicitudesIdRouteImport } from './routes/_authenticated/solicitudes.$id'
+import { Route as AuthenticatedPermisosNuevoRouteImport } from './routes/_authenticated/permisos.nuevo'
+import { Route as AuthenticatedPermisosIdRouteImport } from './routes/_authenticated/permisos.$id'
+import { Route as AuthenticatedOrdenesNuevaRouteImport } from './routes/_authenticated/ordenes.nueva'
+import { Route as AuthenticatedOrdenesIdRouteImport } from './routes/_authenticated/ordenes.$id'
+import { Route as AuthenticatedLogisticaIdRouteImport } from './routes/_authenticated/logistica.$id'
+import { Route as AuthenticatedExpedientesPapeleraRouteImport } from './routes/_authenticated/expedientes.papelera'
+import { Route as AuthenticatedExpedientesDashboardRouteImport } from './routes/_authenticated/expedientes.dashboard'
+import { Route as AuthenticatedExpedientesIdRouteImport } from './routes/_authenticated/expedientes.$id'
+import { Route as AuthenticatedCotizacionesNuevaRouteImport } from './routes/_authenticated/cotizaciones.nueva'
+import { Route as AuthenticatedCotizacionesCalculadoraRouteImport } from './routes/_authenticated/cotizaciones.calculadora'
+import { Route as AuthenticatedCotizacionesIdRouteImport } from './routes/_authenticated/cotizaciones.$id'
+import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
+import { Route as AuthenticatedAdminSolicitudesPagoTransporteRouteImport } from './routes/_authenticated/admin.solicitudes-pago-transporte'
+import { Route as AuthenticatedAdminSolicitudesPagoTransferenciaRouteImport } from './routes/_authenticated/admin.solicitudes-pago-transferencia'
+import { Route as AuthenticatedAdminRespaldoDatosRouteImport } from './routes/_authenticated/admin.respaldo-datos'
+import { Route as AuthenticatedAdminReportesFiscalesRouteImport } from './routes/_authenticated/admin.reportes-fiscales'
+import { Route as AuthenticatedAdminRegistroDiarioRouteImport } from './routes/_authenticated/admin.registro-diario'
+import { Route as AuthenticatedAdminReembolsosRouteImport } from './routes/_authenticated/admin.reembolsos'
+import { Route as AuthenticatedAdminPlantillasDocumentosRouteImport } from './routes/_authenticated/admin.plantillas-documentos'
+import { Route as AuthenticatedAdminGastosOperativosRouteImport } from './routes/_authenticated/admin.gastos-operativos'
+import { Route as AuthenticatedAdminFacturacionRouteImport } from './routes/_authenticated/admin.facturacion'
+import { Route as AuthenticatedAdminDashboardFinancieroRouteImport } from './routes/_authenticated/admin.dashboard-financiero'
+import { Route as AuthenticatedAdminCuentasPorPagarRouteImport } from './routes/_authenticated/admin.cuentas-por-pagar'
+import { Route as AuthenticatedAdminCuentasPorCobrarRouteImport } from './routes/_authenticated/admin.cuentas-por-cobrar'
+import { Route as AuthenticatedAdminCotizacionesServiciosRouteImport } from './routes/_authenticated/admin.cotizaciones-servicios'
+import { Route as AuthenticatedAdminConfiguracionRouteImport } from './routes/_authenticated/admin.configuracion'
+import { Route as AuthenticatedAdminConciliacionBancariaRouteImport } from './routes/_authenticated/admin.conciliacion-bancaria'
+import { Route as AuthenticatedAdminCatalogosRouteImport } from './routes/_authenticated/admin.catalogos'
+import { Route as AuthenticatedAdminCatalogoViajesTransporteRouteImport } from './routes/_authenticated/admin.catalogo-viajes-transporte'
+import { Route as AuthenticatedAdminCatalogoProductosDgaRouteImport } from './routes/_authenticated/admin.catalogo-productos-dga'
+import { Route as AuthenticatedAdminAccesosClientesRouteImport } from './routes/_authenticated/admin.accesos-clientes'
+import { Route as AuthenticatedAcademiaProgramasRouteImport } from './routes/_authenticated/academia.programas'
+import { Route as AuthenticatedAcademiaInscripcionesRouteImport } from './routes/_authenticated/academia.inscripciones'
+import { Route as AuthenticatedAcademiaEstudiantesRouteImport } from './routes/_authenticated/academia.estudiantes'
+import { Route as AuthenticatedAcademiaAccesosEstudiantesRouteImport } from './routes/_authenticated/academia.accesos-estudiantes'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedRrhhPrestamosIndexRouteImport } from './routes/_authenticated/rrhh.prestamos.index'
-import { Route as PortalEstudiantePortalEstudianteProgramasIdRouteImport } from './routes/_portal-estudiante/portal-estudiante.programas.$id'
-import { Route as PortalPortalExpedientesIdRouteImport } from './routes/_portal/portal.expedientes.$id'
-import { Route as ApiPublicReciboPagoIdRouteImport } from './routes/api/public/recibo-pago.$id'
+import { Route as AuthenticatedRrhhPrestamosTercerosIndexRouteImport } from './routes/_authenticated/rrhh.prestamos-terceros.index'
+import { Route as AuthenticatedRrhhEmpleadosIndexRouteImport } from './routes/_authenticated/rrhh.empleados.index'
+import { Route as AuthenticatedLegalDocumentosIndexRouteImport } from './routes/_authenticated/legal.documentos.index'
 import { Route as ApiPublicSolicitudPagoTransporteIdRouteImport } from './routes/api/public/solicitud-pago-transporte.$id'
+import { Route as ApiPublicReciboPagoIdRouteImport } from './routes/api/public/recibo-pago.$id'
+import { Route as PortalPortalExpedientesIdRouteImport } from './routes/_portal/portal.expedientes.$id'
+import { Route as PortalEstudiantePortalEstudianteProgramasIdRouteImport } from './routes/_portal-estudiante/portal-estudiante.programas.$id'
+import { Route as AuthenticatedRrhhEmpleadosIdRouteImport } from './routes/_authenticated/rrhh.empleados.$id'
+import { Route as AuthenticatedAdminFacturacionPendientesRouteImport } from './routes/_authenticated/admin.facturacion_.pendientes'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PortalRouteRoute = PortalRouteRouteImport.update({
-  id: '/_portal',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PortalEstudianteRouteRoute = PortalEstudianteRouteRouteImport.update({
-  id: '/_portal-estudiante',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const McpRoute = McpRouteImport.update({
-  id: '/mcp',
-  path: '/mcp',
+const SolicitudPagoTransporteRoute = SolicitudPagoTransporteRouteImport.update({
+  id: '/solicitud-pago-transporte',
+  path: '/solicitud-pago-transporte',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -128,41 +106,36 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SolicitudPagoTransporteRoute = SolicitudPagoTransporteRouteImport.update({
-  id: '/solicitud-pago-transporte',
-  path: '/solicitud-pago-transporte',
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Char91DotmcpChar93ListToolsRoute =
-  Char91DotmcpChar93ListToolsRouteImport.update({
-    id: '/.mcp/list-tools',
-    path: '/.mcp/list-tools',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const Char91DotwellKnownChar93OauthProtectedResourceRoute =
-  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
-    id: '/.well-known/oauth-protected-resource',
-    path: '/.well-known/oauth-protected-resource',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AuthenticatedBienvenidaRoute = AuthenticatedBienvenidaRouteImport.update({
-  id: '/bienvenida',
-  path: '/bienvenida',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
-  id: '/clientes',
-  path: '/clientes',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const PortalEstudianteRouteRoute = PortalEstudianteRouteRouteImport.update({
+  id: '/_portal-estudiante',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedCopilotoRoute = AuthenticatedCopilotoRouteImport.update({
-  id: '/copiloto',
-  path: '/copiloto',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const PortalRouteRoute = PortalRouteRouteImport.update({
+  id: '/_portal',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedReportesRoute = AuthenticatedReportesRouteImport.update({
+  id: '/reportes',
+  path: '/reportes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMiCuentaRoute = AuthenticatedMiCuentaRouteImport.update({
@@ -170,253 +143,53 @@ const AuthenticatedMiCuentaRoute = AuthenticatedMiCuentaRouteImport.update({
   path: '/mi-cuenta',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedReportesRoute = AuthenticatedReportesRouteImport.update({
-  id: '/reportes',
-  path: '/reportes',
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
-  id: '/.lovable/oauth/consent',
-  path: '/.lovable/oauth/consent',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedCopilotoRoute = AuthenticatedCopilotoRouteImport.update({
+  id: '/copiloto',
+  path: '/copiloto',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const Char91DotmcpChar93InvokeToolToolRoute =
-  Char91DotmcpChar93InvokeToolToolRouteImport.update({
-    id: '/.mcp/invoke-tool/$tool',
-    path: '/.mcp/invoke-tool/$tool',
+const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBienvenidaRoute = AuthenticatedBienvenidaRouteImport.update({
+  id: '/bienvenida',
+  path: '/bienvenida',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedAcademiaAccesosEstudiantesRoute =
-  AuthenticatedAcademiaAccesosEstudiantesRouteImport.update({
-    id: '/academia/accesos-estudiantes',
-    path: '/academia/accesos-estudiantes',
-    getParentRoute: () => AuthenticatedRouteRoute,
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedAcademiaEstudiantesRoute =
-  AuthenticatedAcademiaEstudiantesRouteImport.update({
-    id: '/academia/estudiantes',
-    path: '/academia/estudiantes',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAcademiaInscripcionesRoute =
-  AuthenticatedAcademiaInscripcionesRouteImport.update({
-    id: '/academia/inscripciones',
-    path: '/academia/inscripciones',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAcademiaProgramasRoute =
-  AuthenticatedAcademiaProgramasRouteImport.update({
-    id: '/academia/programas',
-    path: '/academia/programas',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminAccesosClientesRoute =
-  AuthenticatedAdminAccesosClientesRouteImport.update({
-    id: '/admin/accesos-clientes',
-    path: '/admin/accesos-clientes',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminCatalogoProductosDgaRoute =
-  AuthenticatedAdminCatalogoProductosDgaRouteImport.update({
-    id: '/admin/catalogo-productos-dga',
-    path: '/admin/catalogo-productos-dga',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminCatalogoViajesTransporteRoute =
-  AuthenticatedAdminCatalogoViajesTransporteRouteImport.update({
-    id: '/admin/catalogo-viajes-transporte',
-    path: '/admin/catalogo-viajes-transporte',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminCatalogosRoute =
-  AuthenticatedAdminCatalogosRouteImport.update({
-    id: '/admin/catalogos',
-    path: '/admin/catalogos',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminConciliacionBancariaRoute =
-  AuthenticatedAdminConciliacionBancariaRouteImport.update({
-    id: '/admin/conciliacion-bancaria',
-    path: '/admin/conciliacion-bancaria',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminConfiguracionRoute =
-  AuthenticatedAdminConfiguracionRouteImport.update({
-    id: '/admin/configuracion',
-    path: '/admin/configuracion',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminCotizacionesServiciosRoute =
-  AuthenticatedAdminCotizacionesServiciosRouteImport.update({
-    id: '/admin/cotizaciones-servicios',
-    path: '/admin/cotizaciones-servicios',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminCuentasPorCobrarRoute =
-  AuthenticatedAdminCuentasPorCobrarRouteImport.update({
-    id: '/admin/cuentas-por-cobrar',
-    path: '/admin/cuentas-por-cobrar',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminCuentasPorPagarRoute =
-  AuthenticatedAdminCuentasPorPagarRouteImport.update({
-    id: '/admin/cuentas-por-pagar',
-    path: '/admin/cuentas-por-pagar',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminDashboardFinancieroRoute =
-  AuthenticatedAdminDashboardFinancieroRouteImport.update({
-    id: '/admin/dashboard-financiero',
-    path: '/admin/dashboard-financiero',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminFacturacionRoute =
-  AuthenticatedAdminFacturacionRouteImport.update({
-    id: '/admin/facturacion',
-    path: '/admin/facturacion',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminGastosOperativosRoute =
-  AuthenticatedAdminGastosOperativosRouteImport.update({
-    id: '/admin/gastos-operativos',
-    path: '/admin/gastos-operativos',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminPlantillasDocumentosRoute =
-  AuthenticatedAdminPlantillasDocumentosRouteImport.update({
-    id: '/admin/plantillas-documentos',
-    path: '/admin/plantillas-documentos',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminReembolsosRoute =
-  AuthenticatedAdminReembolsosRouteImport.update({
-    id: '/admin/reembolsos',
-    path: '/admin/reembolsos',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminRegistroDiarioRoute =
-  AuthenticatedAdminRegistroDiarioRouteImport.update({
-    id: '/admin/registro-diario',
-    path: '/admin/registro-diario',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminReportesFiscalesRoute =
-  AuthenticatedAdminReportesFiscalesRouteImport.update({
-    id: '/admin/reportes-fiscales',
-    path: '/admin/reportes-fiscales',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminRespaldoDatosRoute =
-  AuthenticatedAdminRespaldoDatosRouteImport.update({
-    id: '/admin/respaldo-datos',
-    path: '/admin/respaldo-datos',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminSolicitudesPagoTransferenciaRoute =
-  AuthenticatedAdminSolicitudesPagoTransferenciaRouteImport.update({
-    id: '/admin/solicitudes-pago-transferencia',
-    path: '/admin/solicitudes-pago-transferencia',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminSolicitudesPagoTransporteRoute =
-  AuthenticatedAdminSolicitudesPagoTransporteRouteImport.update({
-    id: '/admin/solicitudes-pago-transporte',
-    path: '/admin/solicitudes-pago-transporte',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminUsuariosRoute =
-  AuthenticatedAdminUsuariosRouteImport.update({
-    id: '/admin/usuarios',
-    path: '/admin/usuarios',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAlmacenIndexRoute =
-  AuthenticatedAlmacenIndexRouteImport.update({
-    id: '/almacen/',
-    path: '/almacen/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAlmacenesIndexRoute =
-  AuthenticatedAlmacenesIndexRouteImport.update({
-    id: '/almacenes/',
-    path: '/almacenes/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedCotizacionesIndexRoute =
-  AuthenticatedCotizacionesIndexRouteImport.update({
-    id: '/cotizaciones/',
-    path: '/cotizaciones/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedCotizacionesIdRoute =
-  AuthenticatedCotizacionesIdRouteImport.update({
-    id: '/cotizaciones/$id',
-    path: '/cotizaciones/$id',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedCotizacionesCalculadoraRoute =
-  AuthenticatedCotizacionesCalculadoraRouteImport.update({
-    id: '/cotizaciones/calculadora',
-    path: '/cotizaciones/calculadora',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedCotizacionesNuevaRoute =
-  AuthenticatedCotizacionesNuevaRouteImport.update({
-    id: '/cotizaciones/nueva',
-    path: '/cotizaciones/nueva',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedExpedientesIndexRoute =
-  AuthenticatedExpedientesIndexRouteImport.update({
-    id: '/expedientes/',
-    path: '/expedientes/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedExpedientesIdRoute =
-  AuthenticatedExpedientesIdRouteImport.update({
-    id: '/expedientes/$id',
-    path: '/expedientes/$id',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedExpedientesDashboardRoute =
-  AuthenticatedExpedientesDashboardRouteImport.update({
-    id: '/expedientes/dashboard',
-    path: '/expedientes/dashboard',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedExpedientesPapeleraRoute =
-  AuthenticatedExpedientesPapeleraRouteImport.update({
-    id: '/expedientes/papelera',
-    path: '/expedientes/papelera',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedLogisticaIndexRoute =
-  AuthenticatedLogisticaIndexRouteImport.update({
-    id: '/logistica/',
-    path: '/logistica/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedLogisticaIdRoute =
-  AuthenticatedLogisticaIdRouteImport.update({
-    id: '/logistica/$id',
-    path: '/logistica/$id',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOrdenesIndexRoute =
-  AuthenticatedOrdenesIndexRouteImport.update({
-    id: '/ordenes/',
-    path: '/ordenes/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOrdenesIdRoute = AuthenticatedOrdenesIdRouteImport.update({
-  id: '/ordenes/$id',
-  path: '/ordenes/$id',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const PortalPortalIndexRoute = PortalPortalIndexRouteImport.update({
+  id: '/portal/',
+  path: '/portal/',
+  getParentRoute: () => PortalRouteRoute,
 } as any)
-const AuthenticatedOrdenesNuevaRoute =
-  AuthenticatedOrdenesNuevaRouteImport.update({
-    id: '/ordenes/nueva',
-    path: '/ordenes/nueva',
+const PortalEstudiantePortalEstudianteIndexRoute =
+  PortalEstudiantePortalEstudianteIndexRouteImport.update({
+    id: '/portal-estudiante/',
+    path: '/portal-estudiante/',
+    getParentRoute: () => PortalEstudianteRouteRoute,
+  } as any)
+const AuthenticatedTransportesIndexRoute =
+  AuthenticatedTransportesIndexRouteImport.update({
+    id: '/transportes/',
+    path: '/transportes/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPermisosIndexRoute =
@@ -425,67 +198,73 @@ const AuthenticatedPermisosIndexRoute =
     path: '/permisos/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedPermisosIdRoute = AuthenticatedPermisosIdRouteImport.update({
-  id: '/permisos/$id',
-  path: '/permisos/$id',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const AuthenticatedOrdenesIndexRoute =
+  AuthenticatedOrdenesIndexRouteImport.update({
+    id: '/ordenes/',
+    path: '/ordenes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLogisticaIndexRoute =
+  AuthenticatedLogisticaIndexRouteImport.update({
+    id: '/logistica/',
+    path: '/logistica/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedExpedientesIndexRoute =
+  AuthenticatedExpedientesIndexRouteImport.update({
+    id: '/expedientes/',
+    path: '/expedientes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCotizacionesIndexRoute =
+  AuthenticatedCotizacionesIndexRouteImport.update({
+    id: '/cotizaciones/',
+    path: '/cotizaciones/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAlmacenesIndexRoute =
+  AuthenticatedAlmacenesIndexRouteImport.update({
+    id: '/almacenes/',
+    path: '/almacenes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAlmacenIndexRoute =
+  AuthenticatedAlmacenIndexRouteImport.update({
+    id: '/almacen/',
+    path: '/almacen/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ImprimirSolicitudTransferenciaIdRoute =
+  ImprimirSolicitudTransferenciaIdRouteImport.update({
+    id: '/imprimir/solicitud-transferencia/$id',
+    path: '/imprimir/solicitud-transferencia/$id',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ImprimirSolicitudPagoIdRoute = ImprimirSolicitudPagoIdRouteImport.update({
+  id: '/imprimir/solicitud-pago/$id',
+  path: '/imprimir/solicitud-pago/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedPermisosNuevoRoute =
-  AuthenticatedPermisosNuevoRouteImport.update({
-    id: '/permisos/nuevo',
-    path: '/permisos/nuevo',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSolicitudesIdRoute =
-  AuthenticatedSolicitudesIdRouteImport.update({
-    id: '/solicitudes/$id',
-    path: '/solicitudes/$id',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedTransportesIndexRoute =
-  AuthenticatedTransportesIndexRouteImport.update({
-    id: '/transportes/',
-    path: '/transportes/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedTransportesIdRoute =
-  AuthenticatedTransportesIdRouteImport.update({
-    id: '/transportes/$id',
-    path: '/transportes/$id',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedTransportesDashboardRoute =
-  AuthenticatedTransportesDashboardRouteImport.update({
-    id: '/transportes/dashboard',
-    path: '/transportes/dashboard',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedTransportesNuevoRoute =
-  AuthenticatedTransportesNuevoRouteImport.update({
-    id: '/transportes/nuevo',
-    path: '/transportes/nuevo',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const PortalEstudiantePortalEstudianteIndexRoute =
-  PortalEstudiantePortalEstudianteIndexRouteImport.update({
-    id: '/portal-estudiante/',
-    path: '/portal-estudiante/',
-    getParentRoute: () => PortalEstudianteRouteRoute,
-  } as any)
-const PortalEstudiantePortalEstudianteCambiarPasswordRoute =
-  PortalEstudiantePortalEstudianteCambiarPasswordRouteImport.update({
-    id: '/portal-estudiante/cambiar-password',
-    path: '/portal-estudiante/cambiar-password',
-    getParentRoute: () => PortalEstudianteRouteRoute,
-  } as any)
-const PortalPortalIndexRoute = PortalPortalIndexRouteImport.update({
-  id: '/portal/',
-  path: '/portal/',
-  getParentRoute: () => PortalRouteRoute,
+const ImprimirReciboPagoIdRoute = ImprimirReciboPagoIdRouteImport.update({
+  id: '/imprimir/recibo-pago/$id',
+  path: '/imprimir/recibo-pago/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const PortalPortalBienvenidaRoute = PortalPortalBienvenidaRouteImport.update({
-  id: '/portal/bienvenida',
-  path: '/portal/bienvenida',
+const ApiPublicSolicitudPagoTransporteRoute =
+  ApiPublicSolicitudPagoTransporteRouteImport.update({
+    id: '/api/public/solicitud-pago-transporte',
+    path: '/api/public/solicitud-pago-transporte',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCatalogoViajesTransporteRoute =
+  ApiPublicCatalogoViajesTransporteRouteImport.update({
+    id: '/api/public/catalogo-viajes-transporte',
+    path: '/api/public/catalogo-viajes-transporte',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const PortalPortalEmbarquesRoute = PortalPortalEmbarquesRouteImport.update({
+  id: '/portal/embarques',
+  path: '/portal/embarques',
   getParentRoute: () => PortalRouteRoute,
 } as any)
 const PortalPortalCambiarPasswordRoute =
@@ -494,61 +273,264 @@ const PortalPortalCambiarPasswordRoute =
     path: '/portal/cambiar-password',
     getParentRoute: () => PortalRouteRoute,
   } as any)
-const PortalPortalEmbarquesRoute = PortalPortalEmbarquesRouteImport.update({
-  id: '/portal/embarques',
-  path: '/portal/embarques',
+const PortalPortalBienvenidaRoute = PortalPortalBienvenidaRouteImport.update({
+  id: '/portal/bienvenida',
+  path: '/portal/bienvenida',
   getParentRoute: () => PortalRouteRoute,
 } as any)
-const ApiPublicCatalogoViajesTransporteRoute =
-  ApiPublicCatalogoViajesTransporteRouteImport.update({
-    id: '/api/public/catalogo-viajes-transporte',
-    path: '/api/public/catalogo-viajes-transporte',
+const PortalEstudiantePortalEstudianteCambiarPasswordRoute =
+  PortalEstudiantePortalEstudianteCambiarPasswordRouteImport.update({
+    id: '/portal-estudiante/cambiar-password',
+    path: '/portal-estudiante/cambiar-password',
+    getParentRoute: () => PortalEstudianteRouteRoute,
+  } as any)
+const AuthenticatedTransportesNuevoRoute =
+  AuthenticatedTransportesNuevoRouteImport.update({
+    id: '/transportes/nuevo',
+    path: '/transportes/nuevo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTransportesDashboardRoute =
+  AuthenticatedTransportesDashboardRouteImport.update({
+    id: '/transportes/dashboard',
+    path: '/transportes/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTransportesIdRoute =
+  AuthenticatedTransportesIdRouteImport.update({
+    id: '/transportes/$id',
+    path: '/transportes/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSolicitudesIdRoute =
+  AuthenticatedSolicitudesIdRouteImport.update({
+    id: '/solicitudes/$id',
+    path: '/solicitudes/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPermisosNuevoRoute =
+  AuthenticatedPermisosNuevoRouteImport.update({
+    id: '/permisos/nuevo',
+    path: '/permisos/nuevo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPermisosIdRoute = AuthenticatedPermisosIdRouteImport.update({
+  id: '/permisos/$id',
+  path: '/permisos/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOrdenesNuevaRoute =
+  AuthenticatedOrdenesNuevaRouteImport.update({
+    id: '/ordenes/nueva',
+    path: '/ordenes/nueva',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOrdenesIdRoute = AuthenticatedOrdenesIdRouteImport.update({
+  id: '/ordenes/$id',
+  path: '/ordenes/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLogisticaIdRoute =
+  AuthenticatedLogisticaIdRouteImport.update({
+    id: '/logistica/$id',
+    path: '/logistica/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedExpedientesPapeleraRoute =
+  AuthenticatedExpedientesPapeleraRouteImport.update({
+    id: '/expedientes/papelera',
+    path: '/expedientes/papelera',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedExpedientesDashboardRoute =
+  AuthenticatedExpedientesDashboardRouteImport.update({
+    id: '/expedientes/dashboard',
+    path: '/expedientes/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedExpedientesIdRoute =
+  AuthenticatedExpedientesIdRouteImport.update({
+    id: '/expedientes/$id',
+    path: '/expedientes/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCotizacionesNuevaRoute =
+  AuthenticatedCotizacionesNuevaRouteImport.update({
+    id: '/cotizaciones/nueva',
+    path: '/cotizaciones/nueva',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCotizacionesCalculadoraRoute =
+  AuthenticatedCotizacionesCalculadoraRouteImport.update({
+    id: '/cotizaciones/calculadora',
+    path: '/cotizaciones/calculadora',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCotizacionesIdRoute =
+  AuthenticatedCotizacionesIdRouteImport.update({
+    id: '/cotizaciones/$id',
+    path: '/cotizaciones/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminUsuariosRoute =
+  AuthenticatedAdminUsuariosRouteImport.update({
+    id: '/admin/usuarios',
+    path: '/admin/usuarios',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminSolicitudesPagoTransporteRoute =
+  AuthenticatedAdminSolicitudesPagoTransporteRouteImport.update({
+    id: '/admin/solicitudes-pago-transporte',
+    path: '/admin/solicitudes-pago-transporte',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminSolicitudesPagoTransferenciaRoute =
+  AuthenticatedAdminSolicitudesPagoTransferenciaRouteImport.update({
+    id: '/admin/solicitudes-pago-transferencia',
+    path: '/admin/solicitudes-pago-transferencia',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminRespaldoDatosRoute =
+  AuthenticatedAdminRespaldoDatosRouteImport.update({
+    id: '/admin/respaldo-datos',
+    path: '/admin/respaldo-datos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminReportesFiscalesRoute =
+  AuthenticatedAdminReportesFiscalesRouteImport.update({
+    id: '/admin/reportes-fiscales',
+    path: '/admin/reportes-fiscales',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminRegistroDiarioRoute =
+  AuthenticatedAdminRegistroDiarioRouteImport.update({
+    id: '/admin/registro-diario',
+    path: '/admin/registro-diario',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminReembolsosRoute =
+  AuthenticatedAdminReembolsosRouteImport.update({
+    id: '/admin/reembolsos',
+    path: '/admin/reembolsos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminPlantillasDocumentosRoute =
+  AuthenticatedAdminPlantillasDocumentosRouteImport.update({
+    id: '/admin/plantillas-documentos',
+    path: '/admin/plantillas-documentos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminGastosOperativosRoute =
+  AuthenticatedAdminGastosOperativosRouteImport.update({
+    id: '/admin/gastos-operativos',
+    path: '/admin/gastos-operativos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminFacturacionRoute =
+  AuthenticatedAdminFacturacionRouteImport.update({
+    id: '/admin/facturacion',
+    path: '/admin/facturacion',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminDashboardFinancieroRoute =
+  AuthenticatedAdminDashboardFinancieroRouteImport.update({
+    id: '/admin/dashboard-financiero',
+    path: '/admin/dashboard-financiero',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminCuentasPorPagarRoute =
+  AuthenticatedAdminCuentasPorPagarRouteImport.update({
+    id: '/admin/cuentas-por-pagar',
+    path: '/admin/cuentas-por-pagar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminCuentasPorCobrarRoute =
+  AuthenticatedAdminCuentasPorCobrarRouteImport.update({
+    id: '/admin/cuentas-por-cobrar',
+    path: '/admin/cuentas-por-cobrar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminCotizacionesServiciosRoute =
+  AuthenticatedAdminCotizacionesServiciosRouteImport.update({
+    id: '/admin/cotizaciones-servicios',
+    path: '/admin/cotizaciones-servicios',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminConfiguracionRoute =
+  AuthenticatedAdminConfiguracionRouteImport.update({
+    id: '/admin/configuracion',
+    path: '/admin/configuracion',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminConciliacionBancariaRoute =
+  AuthenticatedAdminConciliacionBancariaRouteImport.update({
+    id: '/admin/conciliacion-bancaria',
+    path: '/admin/conciliacion-bancaria',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminCatalogosRoute =
+  AuthenticatedAdminCatalogosRouteImport.update({
+    id: '/admin/catalogos',
+    path: '/admin/catalogos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminCatalogoViajesTransporteRoute =
+  AuthenticatedAdminCatalogoViajesTransporteRouteImport.update({
+    id: '/admin/catalogo-viajes-transporte',
+    path: '/admin/catalogo-viajes-transporte',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminCatalogoProductosDgaRoute =
+  AuthenticatedAdminCatalogoProductosDgaRouteImport.update({
+    id: '/admin/catalogo-productos-dga',
+    path: '/admin/catalogo-productos-dga',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminAccesosClientesRoute =
+  AuthenticatedAdminAccesosClientesRouteImport.update({
+    id: '/admin/accesos-clientes',
+    path: '/admin/accesos-clientes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAcademiaProgramasRoute =
+  AuthenticatedAcademiaProgramasRouteImport.update({
+    id: '/academia/programas',
+    path: '/academia/programas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAcademiaInscripcionesRoute =
+  AuthenticatedAcademiaInscripcionesRouteImport.update({
+    id: '/academia/inscripciones',
+    path: '/academia/inscripciones',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAcademiaEstudiantesRoute =
+  AuthenticatedAcademiaEstudiantesRouteImport.update({
+    id: '/academia/estudiantes',
+    path: '/academia/estudiantes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAcademiaAccesosEstudiantesRoute =
+  AuthenticatedAcademiaAccesosEstudiantesRouteImport.update({
+    id: '/academia/accesos-estudiantes',
+    path: '/academia/accesos-estudiantes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicSolicitudPagoTransporteRoute =
-  ApiPublicSolicitudPagoTransporteRouteImport.update({
-    id: '/api/public/solicitud-pago-transporte',
-    path: '/api/public/solicitud-pago-transporte',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ImprimirReciboPagoIdRoute = ImprimirReciboPagoIdRouteImport.update({
-  id: '/imprimir/recibo-pago/$id',
-  path: '/imprimir/recibo-pago/$id',
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ImprimirSolicitudPagoIdRoute = ImprimirSolicitudPagoIdRouteImport.update({
-  id: '/imprimir/solicitud-pago/$id',
-  path: '/imprimir/solicitud-pago/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ImprimirSolicitudTransferenciaIdRoute =
-  ImprimirSolicitudTransferenciaIdRouteImport.update({
-    id: '/imprimir/solicitud-transferencia/$id',
-    path: '/imprimir/solicitud-transferencia/$id',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AuthenticatedAdminFacturacionPendientesRoute =
-  AuthenticatedAdminFacturacionPendientesRouteImport.update({
-    id: '/admin/facturacion_/pendientes',
-    path: '/admin/facturacion/pendientes',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedLegalDocumentosIndexRoute =
-  AuthenticatedLegalDocumentosIndexRouteImport.update({
-    id: '/legal/documentos/',
-    path: '/legal/documentos/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedRrhhEmpleadosIndexRoute =
-  AuthenticatedRrhhEmpleadosIndexRouteImport.update({
-    id: '/rrhh/empleados/',
-    path: '/rrhh/empleados/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedRrhhEmpleadosIdRoute =
-  AuthenticatedRrhhEmpleadosIdRouteImport.update({
-    id: '/rrhh/empleados/$id',
-    path: '/rrhh/empleados/$id',
+const AuthenticatedRrhhPrestamosIndexRoute =
+  AuthenticatedRrhhPrestamosIndexRouteImport.update({
+    id: '/rrhh/prestamos/',
+    path: '/rrhh/prestamos/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedRrhhPrestamosTercerosIndexRoute =
@@ -557,11 +539,34 @@ const AuthenticatedRrhhPrestamosTercerosIndexRoute =
     path: '/rrhh/prestamos-terceros/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedRrhhPrestamosIndexRoute =
-  AuthenticatedRrhhPrestamosIndexRouteImport.update({
-    id: '/rrhh/prestamos/',
-    path: '/rrhh/prestamos/',
+const AuthenticatedRrhhEmpleadosIndexRoute =
+  AuthenticatedRrhhEmpleadosIndexRouteImport.update({
+    id: '/rrhh/empleados/',
+    path: '/rrhh/empleados/',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLegalDocumentosIndexRoute =
+  AuthenticatedLegalDocumentosIndexRouteImport.update({
+    id: '/legal/documentos/',
+    path: '/legal/documentos/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ApiPublicSolicitudPagoTransporteIdRoute =
+  ApiPublicSolicitudPagoTransporteIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => ApiPublicSolicitudPagoTransporteRoute,
+  } as any)
+const ApiPublicReciboPagoIdRoute = ApiPublicReciboPagoIdRouteImport.update({
+  id: '/api/public/recibo-pago/$id',
+  path: '/api/public/recibo-pago/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalPortalExpedientesIdRoute =
+  PortalPortalExpedientesIdRouteImport.update({
+    id: '/portal/expedientes/$id',
+    path: '/portal/expedientes/$id',
+    getParentRoute: () => PortalRouteRoute,
   } as any)
 const PortalEstudiantePortalEstudianteProgramasIdRoute =
   PortalEstudiantePortalEstudianteProgramasIdRouteImport.update({
@@ -569,22 +574,17 @@ const PortalEstudiantePortalEstudianteProgramasIdRoute =
     path: '/portal-estudiante/programas/$id',
     getParentRoute: () => PortalEstudianteRouteRoute,
   } as any)
-const PortalPortalExpedientesIdRoute =
-  PortalPortalExpedientesIdRouteImport.update({
-    id: '/portal/expedientes/$id',
-    path: '/portal/expedientes/$id',
-    getParentRoute: () => PortalRouteRoute,
+const AuthenticatedRrhhEmpleadosIdRoute =
+  AuthenticatedRrhhEmpleadosIdRouteImport.update({
+    id: '/rrhh/empleados/$id',
+    path: '/rrhh/empleados/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiPublicReciboPagoIdRoute = ApiPublicReciboPagoIdRouteImport.update({
-  id: '/api/public/recibo-pago/$id',
-  path: '/api/public/recibo-pago/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicSolicitudPagoTransporteIdRoute =
-  ApiPublicSolicitudPagoTransporteIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => ApiPublicSolicitudPagoTransporteRoute,
+const AuthenticatedAdminFacturacionPendientesRoute =
+  AuthenticatedAdminFacturacionPendientesRouteImport.update({
+    id: '/admin/facturacion_/pendientes',
+    path: '/admin/facturacion/pendientes',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -1130,46 +1130,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_portal': {
-      id: '/_portal'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof PortalRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_portal-estudiante': {
-      id: '/_portal-estudiante'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof PortalEstudianteRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mcp': {
-      id: '/mcp'
-      path: '/mcp'
-      fullPath: '/mcp'
-      preLoaderRoute: typeof McpRouteImport
+    '/solicitud-pago-transporte': {
+      id: '/solicitud-pago-transporte'
+      path: '/solicitud-pago-transporte'
+      fullPath: '/solicitud-pago-transporte'
+      preLoaderRoute: typeof SolicitudPagoTransporteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -1179,53 +1144,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/solicitud-pago-transporte': {
-      id: '/solicitud-pago-transporte'
-      path: '/solicitud-pago-transporte'
-      fullPath: '/solicitud-pago-transporte'
-      preLoaderRoute: typeof SolicitudPagoTransporteRouteImport
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.mcp/list-tools': {
-      id: '/.mcp/list-tools'
-      path: '/.mcp/list-tools'
-      fullPath: '/.mcp/list-tools'
-      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.well-known/oauth-protected-resource': {
-      id: '/.well-known/oauth-protected-resource'
-      path: '/.well-known/oauth-protected-resource'
-      fullPath: '/.well-known/oauth-protected-resource'
-      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+    '/_portal-estudiante': {
+      id: '/_portal-estudiante'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PortalEstudianteRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/bienvenida': {
-      id: '/_authenticated/bienvenida'
-      path: '/bienvenida'
-      fullPath: '/bienvenida'
-      preLoaderRoute: typeof AuthenticatedBienvenidaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/_portal': {
+      id: '/_portal'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PortalRouteRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/clientes': {
-      id: '/_authenticated/clientes'
-      path: '/clientes'
-      fullPath: '/clientes'
-      preLoaderRoute: typeof AuthenticatedClientesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/copiloto': {
-      id: '/_authenticated/copiloto'
-      path: '/copiloto'
-      fullPath: '/copiloto'
-      preLoaderRoute: typeof AuthenticatedCopilotoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+    '/_authenticated/reportes': {
+      id: '/_authenticated/reportes'
+      path: '/reportes'
+      fullPath: '/reportes'
+      preLoaderRoute: typeof AuthenticatedReportesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/mi-cuenta': {
@@ -1235,298 +1200,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMiCuentaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/reportes': {
-      id: '/_authenticated/reportes'
-      path: '/reportes'
-      fullPath: '/reportes'
-      preLoaderRoute: typeof AuthenticatedReportesRouteImport
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/.lovable/oauth/consent': {
-      id: '/.lovable/oauth/consent'
-      path: '/.lovable/oauth/consent'
-      fullPath: '/.lovable/oauth/consent'
-      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+    '/_authenticated/copiloto': {
+      id: '/_authenticated/copiloto'
+      path: '/copiloto'
+      fullPath: '/copiloto'
+      preLoaderRoute: typeof AuthenticatedCopilotoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/clientes': {
+      id: '/_authenticated/clientes'
+      path: '/clientes'
+      fullPath: '/clientes'
+      preLoaderRoute: typeof AuthenticatedClientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bienvenida': {
+      id: '/_authenticated/bienvenida'
+      path: '/bienvenida'
+      fullPath: '/bienvenida'
+      preLoaderRoute: typeof AuthenticatedBienvenidaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.mcp/invoke-tool/$tool': {
-      id: '/.mcp/invoke-tool/$tool'
-      path: '/.mcp/invoke-tool/$tool'
-      fullPath: '/.mcp/invoke-tool/$tool'
-      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/academia/accesos-estudiantes': {
-      id: '/_authenticated/academia/accesos-estudiantes'
-      path: '/academia/accesos-estudiantes'
-      fullPath: '/academia/accesos-estudiantes'
-      preLoaderRoute: typeof AuthenticatedAcademiaAccesosEstudiantesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/_portal/portal/': {
+      id: '/_portal/portal/'
+      path: '/portal'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalPortalIndexRouteImport
+      parentRoute: typeof PortalRouteRoute
     }
-    '/_authenticated/academia/estudiantes': {
-      id: '/_authenticated/academia/estudiantes'
-      path: '/academia/estudiantes'
-      fullPath: '/academia/estudiantes'
-      preLoaderRoute: typeof AuthenticatedAcademiaEstudiantesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/_portal-estudiante/portal-estudiante/': {
+      id: '/_portal-estudiante/portal-estudiante/'
+      path: '/portal-estudiante'
+      fullPath: '/portal-estudiante/'
+      preLoaderRoute: typeof PortalEstudiantePortalEstudianteIndexRouteImport
+      parentRoute: typeof PortalEstudianteRouteRoute
     }
-    '/_authenticated/academia/inscripciones': {
-      id: '/_authenticated/academia/inscripciones'
-      path: '/academia/inscripciones'
-      fullPath: '/academia/inscripciones'
-      preLoaderRoute: typeof AuthenticatedAcademiaInscripcionesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/academia/programas': {
-      id: '/_authenticated/academia/programas'
-      path: '/academia/programas'
-      fullPath: '/academia/programas'
-      preLoaderRoute: typeof AuthenticatedAcademiaProgramasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/accesos-clientes': {
-      id: '/_authenticated/admin/accesos-clientes'
-      path: '/admin/accesos-clientes'
-      fullPath: '/admin/accesos-clientes'
-      preLoaderRoute: typeof AuthenticatedAdminAccesosClientesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/catalogo-productos-dga': {
-      id: '/_authenticated/admin/catalogo-productos-dga'
-      path: '/admin/catalogo-productos-dga'
-      fullPath: '/admin/catalogo-productos-dga'
-      preLoaderRoute: typeof AuthenticatedAdminCatalogoProductosDgaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/catalogo-viajes-transporte': {
-      id: '/_authenticated/admin/catalogo-viajes-transporte'
-      path: '/admin/catalogo-viajes-transporte'
-      fullPath: '/admin/catalogo-viajes-transporte'
-      preLoaderRoute: typeof AuthenticatedAdminCatalogoViajesTransporteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/catalogos': {
-      id: '/_authenticated/admin/catalogos'
-      path: '/admin/catalogos'
-      fullPath: '/admin/catalogos'
-      preLoaderRoute: typeof AuthenticatedAdminCatalogosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/conciliacion-bancaria': {
-      id: '/_authenticated/admin/conciliacion-bancaria'
-      path: '/admin/conciliacion-bancaria'
-      fullPath: '/admin/conciliacion-bancaria'
-      preLoaderRoute: typeof AuthenticatedAdminConciliacionBancariaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/configuracion': {
-      id: '/_authenticated/admin/configuracion'
-      path: '/admin/configuracion'
-      fullPath: '/admin/configuracion'
-      preLoaderRoute: typeof AuthenticatedAdminConfiguracionRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/cotizaciones-servicios': {
-      id: '/_authenticated/admin/cotizaciones-servicios'
-      path: '/admin/cotizaciones-servicios'
-      fullPath: '/admin/cotizaciones-servicios'
-      preLoaderRoute: typeof AuthenticatedAdminCotizacionesServiciosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/cuentas-por-cobrar': {
-      id: '/_authenticated/admin/cuentas-por-cobrar'
-      path: '/admin/cuentas-por-cobrar'
-      fullPath: '/admin/cuentas-por-cobrar'
-      preLoaderRoute: typeof AuthenticatedAdminCuentasPorCobrarRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/cuentas-por-pagar': {
-      id: '/_authenticated/admin/cuentas-por-pagar'
-      path: '/admin/cuentas-por-pagar'
-      fullPath: '/admin/cuentas-por-pagar'
-      preLoaderRoute: typeof AuthenticatedAdminCuentasPorPagarRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/dashboard-financiero': {
-      id: '/_authenticated/admin/dashboard-financiero'
-      path: '/admin/dashboard-financiero'
-      fullPath: '/admin/dashboard-financiero'
-      preLoaderRoute: typeof AuthenticatedAdminDashboardFinancieroRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/facturacion': {
-      id: '/_authenticated/admin/facturacion'
-      path: '/admin/facturacion'
-      fullPath: '/admin/facturacion'
-      preLoaderRoute: typeof AuthenticatedAdminFacturacionRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/gastos-operativos': {
-      id: '/_authenticated/admin/gastos-operativos'
-      path: '/admin/gastos-operativos'
-      fullPath: '/admin/gastos-operativos'
-      preLoaderRoute: typeof AuthenticatedAdminGastosOperativosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/plantillas-documentos': {
-      id: '/_authenticated/admin/plantillas-documentos'
-      path: '/admin/plantillas-documentos'
-      fullPath: '/admin/plantillas-documentos'
-      preLoaderRoute: typeof AuthenticatedAdminPlantillasDocumentosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/reembolsos': {
-      id: '/_authenticated/admin/reembolsos'
-      path: '/admin/reembolsos'
-      fullPath: '/admin/reembolsos'
-      preLoaderRoute: typeof AuthenticatedAdminReembolsosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/registro-diario': {
-      id: '/_authenticated/admin/registro-diario'
-      path: '/admin/registro-diario'
-      fullPath: '/admin/registro-diario'
-      preLoaderRoute: typeof AuthenticatedAdminRegistroDiarioRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/reportes-fiscales': {
-      id: '/_authenticated/admin/reportes-fiscales'
-      path: '/admin/reportes-fiscales'
-      fullPath: '/admin/reportes-fiscales'
-      preLoaderRoute: typeof AuthenticatedAdminReportesFiscalesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/respaldo-datos': {
-      id: '/_authenticated/admin/respaldo-datos'
-      path: '/admin/respaldo-datos'
-      fullPath: '/admin/respaldo-datos'
-      preLoaderRoute: typeof AuthenticatedAdminRespaldoDatosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/solicitudes-pago-transferencia': {
-      id: '/_authenticated/admin/solicitudes-pago-transferencia'
-      path: '/admin/solicitudes-pago-transferencia'
-      fullPath: '/admin/solicitudes-pago-transferencia'
-      preLoaderRoute: typeof AuthenticatedAdminSolicitudesPagoTransferenciaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/solicitudes-pago-transporte': {
-      id: '/_authenticated/admin/solicitudes-pago-transporte'
-      path: '/admin/solicitudes-pago-transporte'
-      fullPath: '/admin/solicitudes-pago-transporte'
-      preLoaderRoute: typeof AuthenticatedAdminSolicitudesPagoTransporteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/usuarios': {
-      id: '/_authenticated/admin/usuarios'
-      path: '/admin/usuarios'
-      fullPath: '/admin/usuarios'
-      preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/almacen/': {
-      id: '/_authenticated/almacen/'
-      path: '/almacen'
-      fullPath: '/almacen/'
-      preLoaderRoute: typeof AuthenticatedAlmacenIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/almacenes/': {
-      id: '/_authenticated/almacenes/'
-      path: '/almacenes'
-      fullPath: '/almacenes/'
-      preLoaderRoute: typeof AuthenticatedAlmacenesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/cotizaciones/': {
-      id: '/_authenticated/cotizaciones/'
-      path: '/cotizaciones'
-      fullPath: '/cotizaciones/'
-      preLoaderRoute: typeof AuthenticatedCotizacionesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/cotizaciones/$id': {
-      id: '/_authenticated/cotizaciones/$id'
-      path: '/cotizaciones/$id'
-      fullPath: '/cotizaciones/$id'
-      preLoaderRoute: typeof AuthenticatedCotizacionesIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/cotizaciones/calculadora': {
-      id: '/_authenticated/cotizaciones/calculadora'
-      path: '/cotizaciones/calculadora'
-      fullPath: '/cotizaciones/calculadora'
-      preLoaderRoute: typeof AuthenticatedCotizacionesCalculadoraRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/cotizaciones/nueva': {
-      id: '/_authenticated/cotizaciones/nueva'
-      path: '/cotizaciones/nueva'
-      fullPath: '/cotizaciones/nueva'
-      preLoaderRoute: typeof AuthenticatedCotizacionesNuevaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/expedientes/': {
-      id: '/_authenticated/expedientes/'
-      path: '/expedientes'
-      fullPath: '/expedientes/'
-      preLoaderRoute: typeof AuthenticatedExpedientesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/expedientes/$id': {
-      id: '/_authenticated/expedientes/$id'
-      path: '/expedientes/$id'
-      fullPath: '/expedientes/$id'
-      preLoaderRoute: typeof AuthenticatedExpedientesIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/expedientes/dashboard': {
-      id: '/_authenticated/expedientes/dashboard'
-      path: '/expedientes/dashboard'
-      fullPath: '/expedientes/dashboard'
-      preLoaderRoute: typeof AuthenticatedExpedientesDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/expedientes/papelera': {
-      id: '/_authenticated/expedientes/papelera'
-      path: '/expedientes/papelera'
-      fullPath: '/expedientes/papelera'
-      preLoaderRoute: typeof AuthenticatedExpedientesPapeleraRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/logistica/': {
-      id: '/_authenticated/logistica/'
-      path: '/logistica'
-      fullPath: '/logistica/'
-      preLoaderRoute: typeof AuthenticatedLogisticaIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/logistica/$id': {
-      id: '/_authenticated/logistica/$id'
-      path: '/logistica/$id'
-      fullPath: '/logistica/$id'
-      preLoaderRoute: typeof AuthenticatedLogisticaIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/ordenes/': {
-      id: '/_authenticated/ordenes/'
-      path: '/ordenes'
-      fullPath: '/ordenes/'
-      preLoaderRoute: typeof AuthenticatedOrdenesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/ordenes/$id': {
-      id: '/_authenticated/ordenes/$id'
-      path: '/ordenes/$id'
-      fullPath: '/ordenes/$id'
-      preLoaderRoute: typeof AuthenticatedOrdenesIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/ordenes/nueva': {
-      id: '/_authenticated/ordenes/nueva'
-      path: '/ordenes/nueva'
-      fullPath: '/ordenes/nueva'
-      preLoaderRoute: typeof AuthenticatedOrdenesNuevaRouteImport
+    '/_authenticated/transportes/': {
+      id: '/_authenticated/transportes/'
+      path: '/transportes'
+      fullPath: '/transportes/'
+      preLoaderRoute: typeof AuthenticatedTransportesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/permisos/': {
@@ -1536,116 +1270,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPermisosIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/permisos/$id': {
-      id: '/_authenticated/permisos/$id'
-      path: '/permisos/$id'
-      fullPath: '/permisos/$id'
-      preLoaderRoute: typeof AuthenticatedPermisosIdRouteImport
+    '/_authenticated/ordenes/': {
+      id: '/_authenticated/ordenes/'
+      path: '/ordenes'
+      fullPath: '/ordenes/'
+      preLoaderRoute: typeof AuthenticatedOrdenesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/permisos/nuevo': {
-      id: '/_authenticated/permisos/nuevo'
-      path: '/permisos/nuevo'
-      fullPath: '/permisos/nuevo'
-      preLoaderRoute: typeof AuthenticatedPermisosNuevoRouteImport
+    '/_authenticated/logistica/': {
+      id: '/_authenticated/logistica/'
+      path: '/logistica'
+      fullPath: '/logistica/'
+      preLoaderRoute: typeof AuthenticatedLogisticaIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/solicitudes/$id': {
-      id: '/_authenticated/solicitudes/$id'
-      path: '/solicitudes/$id'
-      fullPath: '/solicitudes/$id'
-      preLoaderRoute: typeof AuthenticatedSolicitudesIdRouteImport
+    '/_authenticated/expedientes/': {
+      id: '/_authenticated/expedientes/'
+      path: '/expedientes'
+      fullPath: '/expedientes/'
+      preLoaderRoute: typeof AuthenticatedExpedientesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/transportes/': {
-      id: '/_authenticated/transportes/'
-      path: '/transportes'
-      fullPath: '/transportes/'
-      preLoaderRoute: typeof AuthenticatedTransportesIndexRouteImport
+    '/_authenticated/cotizaciones/': {
+      id: '/_authenticated/cotizaciones/'
+      path: '/cotizaciones'
+      fullPath: '/cotizaciones/'
+      preLoaderRoute: typeof AuthenticatedCotizacionesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/transportes/$id': {
-      id: '/_authenticated/transportes/$id'
-      path: '/transportes/$id'
-      fullPath: '/transportes/$id'
-      preLoaderRoute: typeof AuthenticatedTransportesIdRouteImport
+    '/_authenticated/almacenes/': {
+      id: '/_authenticated/almacenes/'
+      path: '/almacenes'
+      fullPath: '/almacenes/'
+      preLoaderRoute: typeof AuthenticatedAlmacenesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/transportes/dashboard': {
-      id: '/_authenticated/transportes/dashboard'
-      path: '/transportes/dashboard'
-      fullPath: '/transportes/dashboard'
-      preLoaderRoute: typeof AuthenticatedTransportesDashboardRouteImport
+    '/_authenticated/almacen/': {
+      id: '/_authenticated/almacen/'
+      path: '/almacen'
+      fullPath: '/almacen/'
+      preLoaderRoute: typeof AuthenticatedAlmacenIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/transportes/nuevo': {
-      id: '/_authenticated/transportes/nuevo'
-      path: '/transportes/nuevo'
-      fullPath: '/transportes/nuevo'
-      preLoaderRoute: typeof AuthenticatedTransportesNuevoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_portal-estudiante/portal-estudiante/': {
-      id: '/_portal-estudiante/portal-estudiante/'
-      path: '/portal-estudiante'
-      fullPath: '/portal-estudiante/'
-      preLoaderRoute: typeof PortalEstudiantePortalEstudianteIndexRouteImport
-      parentRoute: typeof PortalEstudianteRouteRoute
-    }
-    '/_portal-estudiante/portal-estudiante/cambiar-password': {
-      id: '/_portal-estudiante/portal-estudiante/cambiar-password'
-      path: '/portal-estudiante/cambiar-password'
-      fullPath: '/portal-estudiante/cambiar-password'
-      preLoaderRoute: typeof PortalEstudiantePortalEstudianteCambiarPasswordRouteImport
-      parentRoute: typeof PortalEstudianteRouteRoute
-    }
-    '/_portal/portal/': {
-      id: '/_portal/portal/'
-      path: '/portal'
-      fullPath: '/portal/'
-      preLoaderRoute: typeof PortalPortalIndexRouteImport
-      parentRoute: typeof PortalRouteRoute
-    }
-    '/_portal/portal/bienvenida': {
-      id: '/_portal/portal/bienvenida'
-      path: '/portal/bienvenida'
-      fullPath: '/portal/bienvenida'
-      preLoaderRoute: typeof PortalPortalBienvenidaRouteImport
-      parentRoute: typeof PortalRouteRoute
-    }
-    '/_portal/portal/cambiar-password': {
-      id: '/_portal/portal/cambiar-password'
-      path: '/portal/cambiar-password'
-      fullPath: '/portal/cambiar-password'
-      preLoaderRoute: typeof PortalPortalCambiarPasswordRouteImport
-      parentRoute: typeof PortalRouteRoute
-    }
-    '/_portal/portal/embarques': {
-      id: '/_portal/portal/embarques'
-      path: '/portal/embarques'
-      fullPath: '/portal/embarques'
-      preLoaderRoute: typeof PortalPortalEmbarquesRouteImport
-      parentRoute: typeof PortalRouteRoute
-    }
-    '/api/public/catalogo-viajes-transporte': {
-      id: '/api/public/catalogo-viajes-transporte'
-      path: '/api/public/catalogo-viajes-transporte'
-      fullPath: '/api/public/catalogo-viajes-transporte'
-      preLoaderRoute: typeof ApiPublicCatalogoViajesTransporteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/solicitud-pago-transporte': {
-      id: '/api/public/solicitud-pago-transporte'
-      path: '/api/public/solicitud-pago-transporte'
-      fullPath: '/api/public/solicitud-pago-transporte'
-      preLoaderRoute: typeof ApiPublicSolicitudPagoTransporteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/imprimir/recibo-pago/$id': {
-      id: '/imprimir/recibo-pago/$id'
-      path: '/imprimir/recibo-pago/$id'
-      fullPath: '/imprimir/recibo-pago/$id'
-      preLoaderRoute: typeof ImprimirReciboPagoIdRouteImport
+    '/imprimir/solicitud-transferencia/$id': {
+      id: '/imprimir/solicitud-transferencia/$id'
+      path: '/imprimir/solicitud-transferencia/$id'
+      fullPath: '/imprimir/solicitud-transferencia/$id'
+      preLoaderRoute: typeof ImprimirSolicitudTransferenciaIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/imprimir/solicitud-pago/$id': {
@@ -1655,39 +1326,347 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ImprimirSolicitudPagoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/imprimir/solicitud-transferencia/$id': {
-      id: '/imprimir/solicitud-transferencia/$id'
-      path: '/imprimir/solicitud-transferencia/$id'
-      fullPath: '/imprimir/solicitud-transferencia/$id'
-      preLoaderRoute: typeof ImprimirSolicitudTransferenciaIdRouteImport
+    '/imprimir/recibo-pago/$id': {
+      id: '/imprimir/recibo-pago/$id'
+      path: '/imprimir/recibo-pago/$id'
+      fullPath: '/imprimir/recibo-pago/$id'
+      preLoaderRoute: typeof ImprimirReciboPagoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/facturacion_/pendientes': {
-      id: '/_authenticated/admin/facturacion_/pendientes'
-      path: '/admin/facturacion/pendientes'
-      fullPath: '/admin/facturacion/pendientes'
-      preLoaderRoute: typeof AuthenticatedAdminFacturacionPendientesRouteImport
+    '/api/public/solicitud-pago-transporte': {
+      id: '/api/public/solicitud-pago-transporte'
+      path: '/api/public/solicitud-pago-transporte'
+      fullPath: '/api/public/solicitud-pago-transporte'
+      preLoaderRoute: typeof ApiPublicSolicitudPagoTransporteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/catalogo-viajes-transporte': {
+      id: '/api/public/catalogo-viajes-transporte'
+      path: '/api/public/catalogo-viajes-transporte'
+      fullPath: '/api/public/catalogo-viajes-transporte'
+      preLoaderRoute: typeof ApiPublicCatalogoViajesTransporteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_portal/portal/embarques': {
+      id: '/_portal/portal/embarques'
+      path: '/portal/embarques'
+      fullPath: '/portal/embarques'
+      preLoaderRoute: typeof PortalPortalEmbarquesRouteImport
+      parentRoute: typeof PortalRouteRoute
+    }
+    '/_portal/portal/cambiar-password': {
+      id: '/_portal/portal/cambiar-password'
+      path: '/portal/cambiar-password'
+      fullPath: '/portal/cambiar-password'
+      preLoaderRoute: typeof PortalPortalCambiarPasswordRouteImport
+      parentRoute: typeof PortalRouteRoute
+    }
+    '/_portal/portal/bienvenida': {
+      id: '/_portal/portal/bienvenida'
+      path: '/portal/bienvenida'
+      fullPath: '/portal/bienvenida'
+      preLoaderRoute: typeof PortalPortalBienvenidaRouteImport
+      parentRoute: typeof PortalRouteRoute
+    }
+    '/_portal-estudiante/portal-estudiante/cambiar-password': {
+      id: '/_portal-estudiante/portal-estudiante/cambiar-password'
+      path: '/portal-estudiante/cambiar-password'
+      fullPath: '/portal-estudiante/cambiar-password'
+      preLoaderRoute: typeof PortalEstudiantePortalEstudianteCambiarPasswordRouteImport
+      parentRoute: typeof PortalEstudianteRouteRoute
+    }
+    '/_authenticated/transportes/nuevo': {
+      id: '/_authenticated/transportes/nuevo'
+      path: '/transportes/nuevo'
+      fullPath: '/transportes/nuevo'
+      preLoaderRoute: typeof AuthenticatedTransportesNuevoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/legal/documentos/': {
-      id: '/_authenticated/legal/documentos/'
-      path: '/legal/documentos'
-      fullPath: '/legal/documentos/'
-      preLoaderRoute: typeof AuthenticatedLegalDocumentosIndexRouteImport
+    '/_authenticated/transportes/dashboard': {
+      id: '/_authenticated/transportes/dashboard'
+      path: '/transportes/dashboard'
+      fullPath: '/transportes/dashboard'
+      preLoaderRoute: typeof AuthenticatedTransportesDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/rrhh/empleados/': {
-      id: '/_authenticated/rrhh/empleados/'
-      path: '/rrhh/empleados'
-      fullPath: '/rrhh/empleados/'
-      preLoaderRoute: typeof AuthenticatedRrhhEmpleadosIndexRouteImport
+    '/_authenticated/transportes/$id': {
+      id: '/_authenticated/transportes/$id'
+      path: '/transportes/$id'
+      fullPath: '/transportes/$id'
+      preLoaderRoute: typeof AuthenticatedTransportesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/rrhh/empleados/$id': {
-      id: '/_authenticated/rrhh/empleados/$id'
-      path: '/rrhh/empleados/$id'
-      fullPath: '/rrhh/empleados/$id'
-      preLoaderRoute: typeof AuthenticatedRrhhEmpleadosIdRouteImport
+    '/_authenticated/solicitudes/$id': {
+      id: '/_authenticated/solicitudes/$id'
+      path: '/solicitudes/$id'
+      fullPath: '/solicitudes/$id'
+      preLoaderRoute: typeof AuthenticatedSolicitudesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/permisos/nuevo': {
+      id: '/_authenticated/permisos/nuevo'
+      path: '/permisos/nuevo'
+      fullPath: '/permisos/nuevo'
+      preLoaderRoute: typeof AuthenticatedPermisosNuevoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/permisos/$id': {
+      id: '/_authenticated/permisos/$id'
+      path: '/permisos/$id'
+      fullPath: '/permisos/$id'
+      preLoaderRoute: typeof AuthenticatedPermisosIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ordenes/nueva': {
+      id: '/_authenticated/ordenes/nueva'
+      path: '/ordenes/nueva'
+      fullPath: '/ordenes/nueva'
+      preLoaderRoute: typeof AuthenticatedOrdenesNuevaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ordenes/$id': {
+      id: '/_authenticated/ordenes/$id'
+      path: '/ordenes/$id'
+      fullPath: '/ordenes/$id'
+      preLoaderRoute: typeof AuthenticatedOrdenesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/logistica/$id': {
+      id: '/_authenticated/logistica/$id'
+      path: '/logistica/$id'
+      fullPath: '/logistica/$id'
+      preLoaderRoute: typeof AuthenticatedLogisticaIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/expedientes/papelera': {
+      id: '/_authenticated/expedientes/papelera'
+      path: '/expedientes/papelera'
+      fullPath: '/expedientes/papelera'
+      preLoaderRoute: typeof AuthenticatedExpedientesPapeleraRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/expedientes/dashboard': {
+      id: '/_authenticated/expedientes/dashboard'
+      path: '/expedientes/dashboard'
+      fullPath: '/expedientes/dashboard'
+      preLoaderRoute: typeof AuthenticatedExpedientesDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/expedientes/$id': {
+      id: '/_authenticated/expedientes/$id'
+      path: '/expedientes/$id'
+      fullPath: '/expedientes/$id'
+      preLoaderRoute: typeof AuthenticatedExpedientesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cotizaciones/nueva': {
+      id: '/_authenticated/cotizaciones/nueva'
+      path: '/cotizaciones/nueva'
+      fullPath: '/cotizaciones/nueva'
+      preLoaderRoute: typeof AuthenticatedCotizacionesNuevaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cotizaciones/calculadora': {
+      id: '/_authenticated/cotizaciones/calculadora'
+      path: '/cotizaciones/calculadora'
+      fullPath: '/cotizaciones/calculadora'
+      preLoaderRoute: typeof AuthenticatedCotizacionesCalculadoraRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cotizaciones/$id': {
+      id: '/_authenticated/cotizaciones/$id'
+      path: '/cotizaciones/$id'
+      fullPath: '/cotizaciones/$id'
+      preLoaderRoute: typeof AuthenticatedCotizacionesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/usuarios': {
+      id: '/_authenticated/admin/usuarios'
+      path: '/admin/usuarios'
+      fullPath: '/admin/usuarios'
+      preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/solicitudes-pago-transporte': {
+      id: '/_authenticated/admin/solicitudes-pago-transporte'
+      path: '/admin/solicitudes-pago-transporte'
+      fullPath: '/admin/solicitudes-pago-transporte'
+      preLoaderRoute: typeof AuthenticatedAdminSolicitudesPagoTransporteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/solicitudes-pago-transferencia': {
+      id: '/_authenticated/admin/solicitudes-pago-transferencia'
+      path: '/admin/solicitudes-pago-transferencia'
+      fullPath: '/admin/solicitudes-pago-transferencia'
+      preLoaderRoute: typeof AuthenticatedAdminSolicitudesPagoTransferenciaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/respaldo-datos': {
+      id: '/_authenticated/admin/respaldo-datos'
+      path: '/admin/respaldo-datos'
+      fullPath: '/admin/respaldo-datos'
+      preLoaderRoute: typeof AuthenticatedAdminRespaldoDatosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/reportes-fiscales': {
+      id: '/_authenticated/admin/reportes-fiscales'
+      path: '/admin/reportes-fiscales'
+      fullPath: '/admin/reportes-fiscales'
+      preLoaderRoute: typeof AuthenticatedAdminReportesFiscalesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/registro-diario': {
+      id: '/_authenticated/admin/registro-diario'
+      path: '/admin/registro-diario'
+      fullPath: '/admin/registro-diario'
+      preLoaderRoute: typeof AuthenticatedAdminRegistroDiarioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/reembolsos': {
+      id: '/_authenticated/admin/reembolsos'
+      path: '/admin/reembolsos'
+      fullPath: '/admin/reembolsos'
+      preLoaderRoute: typeof AuthenticatedAdminReembolsosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/plantillas-documentos': {
+      id: '/_authenticated/admin/plantillas-documentos'
+      path: '/admin/plantillas-documentos'
+      fullPath: '/admin/plantillas-documentos'
+      preLoaderRoute: typeof AuthenticatedAdminPlantillasDocumentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/gastos-operativos': {
+      id: '/_authenticated/admin/gastos-operativos'
+      path: '/admin/gastos-operativos'
+      fullPath: '/admin/gastos-operativos'
+      preLoaderRoute: typeof AuthenticatedAdminGastosOperativosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/facturacion': {
+      id: '/_authenticated/admin/facturacion'
+      path: '/admin/facturacion'
+      fullPath: '/admin/facturacion'
+      preLoaderRoute: typeof AuthenticatedAdminFacturacionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/dashboard-financiero': {
+      id: '/_authenticated/admin/dashboard-financiero'
+      path: '/admin/dashboard-financiero'
+      fullPath: '/admin/dashboard-financiero'
+      preLoaderRoute: typeof AuthenticatedAdminDashboardFinancieroRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/cuentas-por-pagar': {
+      id: '/_authenticated/admin/cuentas-por-pagar'
+      path: '/admin/cuentas-por-pagar'
+      fullPath: '/admin/cuentas-por-pagar'
+      preLoaderRoute: typeof AuthenticatedAdminCuentasPorPagarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/cuentas-por-cobrar': {
+      id: '/_authenticated/admin/cuentas-por-cobrar'
+      path: '/admin/cuentas-por-cobrar'
+      fullPath: '/admin/cuentas-por-cobrar'
+      preLoaderRoute: typeof AuthenticatedAdminCuentasPorCobrarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/cotizaciones-servicios': {
+      id: '/_authenticated/admin/cotizaciones-servicios'
+      path: '/admin/cotizaciones-servicios'
+      fullPath: '/admin/cotizaciones-servicios'
+      preLoaderRoute: typeof AuthenticatedAdminCotizacionesServiciosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/configuracion': {
+      id: '/_authenticated/admin/configuracion'
+      path: '/admin/configuracion'
+      fullPath: '/admin/configuracion'
+      preLoaderRoute: typeof AuthenticatedAdminConfiguracionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/conciliacion-bancaria': {
+      id: '/_authenticated/admin/conciliacion-bancaria'
+      path: '/admin/conciliacion-bancaria'
+      fullPath: '/admin/conciliacion-bancaria'
+      preLoaderRoute: typeof AuthenticatedAdminConciliacionBancariaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/catalogos': {
+      id: '/_authenticated/admin/catalogos'
+      path: '/admin/catalogos'
+      fullPath: '/admin/catalogos'
+      preLoaderRoute: typeof AuthenticatedAdminCatalogosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/catalogo-viajes-transporte': {
+      id: '/_authenticated/admin/catalogo-viajes-transporte'
+      path: '/admin/catalogo-viajes-transporte'
+      fullPath: '/admin/catalogo-viajes-transporte'
+      preLoaderRoute: typeof AuthenticatedAdminCatalogoViajesTransporteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/catalogo-productos-dga': {
+      id: '/_authenticated/admin/catalogo-productos-dga'
+      path: '/admin/catalogo-productos-dga'
+      fullPath: '/admin/catalogo-productos-dga'
+      preLoaderRoute: typeof AuthenticatedAdminCatalogoProductosDgaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/accesos-clientes': {
+      id: '/_authenticated/admin/accesos-clientes'
+      path: '/admin/accesos-clientes'
+      fullPath: '/admin/accesos-clientes'
+      preLoaderRoute: typeof AuthenticatedAdminAccesosClientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/academia/programas': {
+      id: '/_authenticated/academia/programas'
+      path: '/academia/programas'
+      fullPath: '/academia/programas'
+      preLoaderRoute: typeof AuthenticatedAcademiaProgramasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/academia/inscripciones': {
+      id: '/_authenticated/academia/inscripciones'
+      path: '/academia/inscripciones'
+      fullPath: '/academia/inscripciones'
+      preLoaderRoute: typeof AuthenticatedAcademiaInscripcionesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/academia/estudiantes': {
+      id: '/_authenticated/academia/estudiantes'
+      path: '/academia/estudiantes'
+      fullPath: '/academia/estudiantes'
+      preLoaderRoute: typeof AuthenticatedAcademiaEstudiantesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/academia/accesos-estudiantes': {
+      id: '/_authenticated/academia/accesos-estudiantes'
+      path: '/academia/accesos-estudiantes'
+      fullPath: '/academia/accesos-estudiantes'
+      preLoaderRoute: typeof AuthenticatedAcademiaAccesosEstudiantesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/rrhh/prestamos/': {
+      id: '/_authenticated/rrhh/prestamos/'
+      path: '/rrhh/prestamos'
+      fullPath: '/rrhh/prestamos/'
+      preLoaderRoute: typeof AuthenticatedRrhhPrestamosIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/rrhh/prestamos-terceros/': {
@@ -1697,26 +1676,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRrhhPrestamosTercerosIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/rrhh/prestamos/': {
-      id: '/_authenticated/rrhh/prestamos/'
-      path: '/rrhh/prestamos'
-      fullPath: '/rrhh/prestamos/'
-      preLoaderRoute: typeof AuthenticatedRrhhPrestamosIndexRouteImport
+    '/_authenticated/rrhh/empleados/': {
+      id: '/_authenticated/rrhh/empleados/'
+      path: '/rrhh/empleados'
+      fullPath: '/rrhh/empleados/'
+      preLoaderRoute: typeof AuthenticatedRrhhEmpleadosIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_portal-estudiante/portal-estudiante/programas/$id': {
-      id: '/_portal-estudiante/portal-estudiante/programas/$id'
-      path: '/portal-estudiante/programas/$id'
-      fullPath: '/portal-estudiante/programas/$id'
-      preLoaderRoute: typeof PortalEstudiantePortalEstudianteProgramasIdRouteImport
-      parentRoute: typeof PortalEstudianteRouteRoute
+    '/_authenticated/legal/documentos/': {
+      id: '/_authenticated/legal/documentos/'
+      path: '/legal/documentos'
+      fullPath: '/legal/documentos/'
+      preLoaderRoute: typeof AuthenticatedLegalDocumentosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_portal/portal/expedientes/$id': {
-      id: '/_portal/portal/expedientes/$id'
-      path: '/portal/expedientes/$id'
-      fullPath: '/portal/expedientes/$id'
-      preLoaderRoute: typeof PortalPortalExpedientesIdRouteImport
-      parentRoute: typeof PortalRouteRoute
+    '/api/public/solicitud-pago-transporte/$id': {
+      id: '/api/public/solicitud-pago-transporte/$id'
+      path: '/$id'
+      fullPath: '/api/public/solicitud-pago-transporte/$id'
+      preLoaderRoute: typeof ApiPublicSolicitudPagoTransporteIdRouteImport
+      parentRoute: typeof ApiPublicSolicitudPagoTransporteRoute
     }
     '/api/public/recibo-pago/$id': {
       id: '/api/public/recibo-pago/$id'
@@ -1725,12 +1704,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicReciboPagoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/solicitud-pago-transporte/$id': {
-      id: '/api/public/solicitud-pago-transporte/$id'
-      path: '/$id'
-      fullPath: '/api/public/solicitud-pago-transporte/$id'
-      preLoaderRoute: typeof ApiPublicSolicitudPagoTransporteIdRouteImport
-      parentRoute: typeof ApiPublicSolicitudPagoTransporteRoute
+    '/_portal/portal/expedientes/$id': {
+      id: '/_portal/portal/expedientes/$id'
+      path: '/portal/expedientes/$id'
+      fullPath: '/portal/expedientes/$id'
+      preLoaderRoute: typeof PortalPortalExpedientesIdRouteImport
+      parentRoute: typeof PortalRouteRoute
+    }
+    '/_portal-estudiante/portal-estudiante/programas/$id': {
+      id: '/_portal-estudiante/portal-estudiante/programas/$id'
+      path: '/portal-estudiante/programas/$id'
+      fullPath: '/portal-estudiante/programas/$id'
+      preLoaderRoute: typeof PortalEstudiantePortalEstudianteProgramasIdRouteImport
+      parentRoute: typeof PortalEstudianteRouteRoute
+    }
+    '/_authenticated/rrhh/empleados/$id': {
+      id: '/_authenticated/rrhh/empleados/$id'
+      path: '/rrhh/empleados/$id'
+      fullPath: '/rrhh/empleados/$id'
+      preLoaderRoute: typeof AuthenticatedRrhhEmpleadosIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/facturacion_/pendientes': {
+      id: '/_authenticated/admin/facturacion_/pendientes'
+      path: '/admin/facturacion/pendientes'
+      fullPath: '/admin/facturacion/pendientes'
+      preLoaderRoute: typeof AuthenticatedAdminFacturacionPendientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
