@@ -75,8 +75,9 @@
   .expedientes-listado-toolbar { grid-template-columns: 548px 456px 348px; gap: 8px; }
   .expedientes-listado-filtros { display: grid; grid-template-columns: 148px 228px 228px 180px 528px; gap: 12px; padding: 8px 12px; }
   .expedientes-listado-filtros > * { width: 100%; min-width: 0; max-width: none; }
-  .expedientes-listado-tabla { table-layout: fixed; width: 1366px; min-width: 1366px; }
-  .expedientes-listado-tabla :is(th,td) { white-space: normal; overflow-wrap: anywhere; }
+  .expedientes-listado-tabla { table-layout: fixed; width: 1466px; min-width: 1466px; }
+  .expedientes-listado-tabla :is(th,td) { white-space: normal; word-break: normal; overflow-wrap: normal; vertical-align: top; }
+  .expedientes-listado-tabla th button { max-width: 100%; white-space: normal; word-break: normal; overflow-wrap: normal; }
   .expedientes-listado-tabla .truncate { white-space: normal; overflow: visible; text-overflow: clip; }
   .expediente-new-header { grid-template-columns: 88px 700px 548px; gap: 8px; }
   .expediente-new-scanners { display: grid; grid-template-columns: repeat(3, 240px); gap: 8px; }

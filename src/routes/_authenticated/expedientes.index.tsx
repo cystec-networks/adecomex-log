@@ -348,7 +348,7 @@ function Expedientes() {
   const { data: plazosReg } = usePlazosRegimen();
   const ExpedienteRow = ({ e }: { e: any }) => (
     <tr key={e.id} className={`hover:bg-muted/30 transition-colors ${rowHighlight(e)}`}>
-      <td className="px-2 py-1 align-middle whitespace-nowrap">
+      <td className="px-2 py-1 align-top whitespace-nowrap">
         <Link
           to="/expedientes/$id"
           params={{ id: e.id }}
@@ -358,32 +358,32 @@ function Expedientes() {
           {e.numero}
         </Link>
       </td>
-      <td className="px-2 py-1 align-middle whitespace-nowrap text-foreground/90">
+      <td className="px-2 py-1 align-top whitespace-nowrap text-foreground/90">
         {(() => {
           const end = (e.expediente_endosos ?? []).find((x: any) => x.activo && x.endosado);
           return end ? (
             <span className="inline-flex max-w-full items-start gap-1">
-              <TruncatedCell value={e.clientes?.nombre} wrap />
+              <TruncatedCell value={e.clientes?.nombre} maxClass="max-w-full" wrap />
               <span title={`Endosado a: ${end.endosado.nombre}`} aria-label={`Endosado a ${end.endosado.nombre}`} className="shrink-0 text-amber-600">
                 <Repeat2 className="h-3.5 w-3.5" />
               </span>
             </span>
-          ) : <TruncatedCell value={e.clientes?.nombre} wrap />;
+          ) : <TruncatedCell value={e.clientes?.nombre} maxClass="max-w-full" wrap />;
         })()}
       </td>
-      <td className="px-2 py-1 align-middle text-muted-foreground text-xs whitespace-nowrap">
+      <td className="px-2 py-1 align-top text-muted-foreground text-xs whitespace-nowrap">
         <MercanciaCell items={e.mercancia_items} />
       </td>
-      <td className="px-2 py-1 align-middle text-right tabular-nums text-muted-foreground text-xs whitespace-nowrap">
+      <td className="px-2 py-1 align-top text-right tabular-nums text-muted-foreground text-xs whitespace-nowrap">
         <TruncatedCell value={e.numero_dua} maxClass="max-w-full" wrap />
       </td>
-      <td className="px-2 py-1 align-middle text-muted-foreground whitespace-nowrap">
+      <td className="px-2 py-1 align-top text-muted-foreground whitespace-nowrap">
         <TruncatedCell value={e.bl_awb} maxClass="max-w-full" wrap />
       </td>
-      <td className="px-2 py-1 align-middle text-right tabular-nums text-muted-foreground whitespace-nowrap">
+      <td className="px-2 py-1 align-top text-right tabular-nums text-muted-foreground whitespace-nowrap">
         {(() => { const d = parseLocalDate(e.fecha_compromiso); return d ? d.toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"; })()}
       </td>
-      <td className="px-2 py-1 align-middle text-center whitespace-nowrap w-12 min-w-12">
+      <td className="px-2 py-1 align-top text-center whitespace-nowrap w-12 min-w-12">
         {(() => {
           const d = diasRestantes(e);
           if (!d) return <span className="text-muted-foreground">—</span>;
@@ -596,7 +596,7 @@ function Expedientes() {
                     </section>)}
                   </div>
                   <table className="expedientes-listado-tabla w-full text-[13px] border-separate border-spacing-0">
-                    <colgroup className="expedientes-listado-columnas">{[120, 200, 220, 150, 150, 100, 56, 100, 130, 100, 40].map((width, i) => <col key={i} width={width} />)}</colgroup>
+                    <colgroup className="expedientes-listado-columnas">{[140, 220, 260, 150, 150, 100, 56, 100, 130, 120, 40].map((width, i) => <col key={i} width={width} />)}</colgroup>
                     <thead className="sticky-table-header bg-muted/30 border-b [&_th]:top-[33px]">
                       <tr>
                         <Th k="numero" className="px-2 whitespace-nowrap">Expediente</Th>
