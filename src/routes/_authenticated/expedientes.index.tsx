@@ -470,7 +470,8 @@ function Expedientes() {
         </div>
       </td>
 
-      <td className="px-1 py-1 align-middle text-right whitespace-nowrap">
+      <td className="expedientes-row-actions px-1 py-1 align-middle text-right whitespace-nowrap">
+        <div className="expedientes-action-icons">
         <RastreosEnvioMenu variant="icon" className="h-7 w-7" />
         <WhatsAppButton
           phone={e.clientes?.telefono}
@@ -507,6 +508,7 @@ function Expedientes() {
         >
           <Trash2 className="h-4 w-4" />
         </Button>
+        </div>
       </td>
     </tr>
   );
@@ -570,7 +572,7 @@ function Expedientes() {
           {filtered.length === 0 && (
             <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin expedientes. Crea uno con "Nuevo Expediente" o súbelo por OCR.</div>
           )}
-          <div className="overflow-auto h-full">
+          <div className="expedientes-table-scroll overflow-auto h-full">
             {gruposVisibles.map((g) => {
               const rows = grupos[g];
               if (rows.length === 0) return null;
@@ -609,7 +611,7 @@ function Expedientes() {
                         <Th k="puerto_arribo" className="px-2 whitespace-nowrap">Puerto</Th>
                         <Th k="numero_vuce" className="px-2 whitespace-nowrap">Permiso VUCE</Th>
                         <Th k="estado" className="px-2 whitespace-nowrap">Estado</Th>
-                        <th className="px-1 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"></th>
+                        <th aria-label="Acciones" className="expedientes-row-actions px-1 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"></th>
                       </tr>
                     </thead>
 

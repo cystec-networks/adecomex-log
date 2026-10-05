@@ -33,7 +33,13 @@
   .expediente-touch-tabs { display: none; }
   .expediente-desktop, .expedientes-listado { width: 1400px; min-width: 1400px; max-width: 1400px; margin-inline: 0; }
   .expediente-desktop { padding: 0; }
-  .expedientes-listado { padding: 16px; }
+  main:has(> .expedientes-listado) { overflow-x: hidden; }
+  .expedientes-listado { padding: 16px; width: 100%; min-width: 0; max-width: 1400px; }
+  .expedientes-resultados { min-width: 0; }
+  .expedientes-table-scroll { width: 100%; overflow: auto; }
+  .expedientes-listado-tabla .expedientes-row-actions { position: sticky; right: 0; z-index: 5; vertical-align: middle; background: var(--card); border-left: 1px solid var(--border); }
+  .expedientes-listado-tabla th.expedientes-row-actions { z-index: 25; }
+  .expedientes-action-icons { display: flex; flex-direction: column; align-items: center; gap: 0; }
   .expediente-header-container { padding: 8px 24px; }
   .expediente-header-grid { grid-template-columns: 88px 172px 320px 192px 548px; grid-template-areas: "back number state save menus"; gap: 8px; }
   .expediente-header-state { grid-template-columns: 52px 220px 32px; margin: 0; }
