@@ -438,7 +438,7 @@
   }
   :is(h1, h2, [data-text-role="key"]) { font-size: var(--text-key) !important; line-height: 1.4; }
   :is(h3, h4, h5, h6, [data-text-role="section"]) { font-size: var(--text-section) !important; line-height: 1.4; }
-  [data-slot="badge"] { font-size: var(--text-dense) !important; }
+  [data-slot="badge"], .expediente-presentation-pill { font-size: var(--text-aux) !important; font-weight: 400 !important; }
   :is([role="alert"], .expediente-header-alerta) :is(span, div, p) { font-size: inherit !important; }
   .expediente-numero { font-size: var(--text-section) !important; }
   h1.expediente-numero { font-size: var(--text-key) !important; }
@@ -504,3 +504,9 @@
     display: none !important;
   }
 }
+
+/* Barra de herramientas compartida del Expediente (Nuevo, Detalle, Listado) */
+.expediente-toolbar { display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; }
+.expediente-toolbar > button { height: 2rem; flex-shrink: 0; }
+/* Listado: celdas con texto completo en varias líneas */
+.expedientes-listado-tabla td:has(> .truncate-wrap), .expedientes-listado-tabla td:has(.truncate-wrap) { white-space: normal; vertical-align: top; }

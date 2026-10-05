@@ -13,7 +13,7 @@ import { parseLocalDate, fmtLocalDate, hoyRD } from "@/lib/dates";
 
 /** Píldora compacta alineada con el tratamiento visual del badge de Estado del encabezado. */
 const pill = (tono: string) =>
-  `expediente-presentation-pill inline-grid h-7 items-center whitespace-nowrap rounded-md border px-2 text-xs font-medium ${tono}`;
+  `expediente-presentation-pill inline-grid h-6 items-center whitespace-nowrap rounded-md border px-1.5 text-aux font-normal ${tono}`;
 const TONO_NEUTRO = "border-border bg-muted/50 text-foreground";
 const TONO_ALERTA = "border-warning/40 bg-warning/10 text-warning";
 const TONO_ERROR = "border-destructive/40 bg-destructive/10 text-destructive";
