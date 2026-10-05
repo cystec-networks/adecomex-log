@@ -10,7 +10,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronRight, Repeat2, Trash2, AlarmClock, AlertTriangle, Clock, Plus, Copy } from "lucide-react";
+import { ChevronRight, Repeat2, Trash2, AlarmClock, AlertTriangle, Clock, Plus, Copy, Columns3 } from "lucide-react";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { Toggle } from "@/components/ui/toggle";
 import { WhatsAppButton } from "@/components/whatsapp-button";
@@ -58,6 +58,7 @@ function Expedientes() {
   const [etaFilter, setEtaFilter] = useState(etaParam ? String(etaParam) : "all");
   const [toTrash, setToTrash] = useState<{ id: string; numero: string } | null>(null);
   const [soloUrgentes, setSoloUrgentes] = useState(false);
+  const [masColumnas, setMasColumnas] = useState(false);
   const [colapsados, setColapsados] = useState<Record<string, boolean>>(() => {
     try {
       const raw = localStorage.getItem("expedientes-grupos-colapsados");
@@ -533,7 +534,7 @@ function Expedientes() {
         </Button>
       </div>
 
-      <Card className="overflow-hidden flex-1 min-h-0 flex flex-col">
+      <Card className="expedientes-resultados overflow-hidden flex-1 min-h-0 flex flex-col">
         <CardHeader className="expedientes-listado-filtros flex-row items-center gap-2 flex-wrap p-2 px-3 shrink-0">
           <CardTitle className="text-xs font-medium text-muted-foreground flex-1 min-w-[100px] min-w-0">{filtered.length} expedientes</CardTitle>
           <Select value={estado} onValueChange={setEstado}>
@@ -565,6 +566,7 @@ function Expedientes() {
             <span className="text-xs">Solo urgentes ETA</span>
           </Toggle>
           <Input placeholder="Buscar por BL/AWB, expediente, cliente, mercancía o contenedor..." value={q} onChange={(e) => setQ(e.target.value)} className="min-w-0 flex-1 max-w-xs h-8" />
+          <Button className="expedientes-tablet-columns" size="sm" variant="outline" aria-expanded={masColumnas} onClick={() => setMasColumnas(v => !v)}><Columns3 className="h-4 w-4" />{masColumnas ? "Columnas esenciales" : "Ver más columnas"}</Button>
         </CardHeader>
         <CardContent className="p-0 flex-1 min-h-0">
           {filtered.length === 0 && (
@@ -580,7 +582,22 @@ function Expedientes() {
                     <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">{grupoLabel[g]}</span>
                     <Badge variant="secondary" className="text-[10px]">{rows.length}</Badge>
                   </div>
-                  <table className="expedientes-listado-tabla w-full text-[13px] border-separate border-spacing-0">
+                  <div className="expedientes-mobile-cards">
+                    {[
+                      { key: "digitar_g1", label: "Por Procesar", entries: rows.filter((e: any) => ESTADO_GRUPO_1.includes(e.estado)) },
+                      { key: "en_transito", label: "En Tránsito", entries: rows.filter((e: any) => e.estado === "en_transito") },
+                      { key: "despachado_g3", label: "Despachado / Entregado", entries: rows.filter((e: any) => ESTADO_GRUPO_3.includes(e.estado)) },
+                      { key: "facturados", label: "Facturados", entries: rows.filter((e: any) => e.estado === "facturar") },
+                    ].filter(section => section.entries.length > 0).map(section => <section key={section.key}>
+                      <Button variant="ghost" className="w-full justify-start" aria-expanded={!colapsados[section.key]} onClick={() => toggleGrupo(section.key)}><ChevronRight className={`h-4 w-4 ${colapsados[section.key] ? "" : "rotate-90"}`} />{section.label} ({section.entries.length})</Button>
+                      {!colapsados[section.key] && section.entries.sort(cmp).map((e: any) => <Link key={e.id} to="/expedientes/$id" params={{ id: e.id }} className="expediente-mobile-card border border-border rounded-lg bg-card p-3 grid gap-3 focus-visible:outline-2 focus-visible:outline-ring" aria-label={`Abrir expediente ${e.numero}`}>
+                        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2"><span className="expediente-numero break-words">{e.numero}</span><span>{estadoBadge(e.estado)}</span></div>
+                        <div className="font-medium break-words">{e.clientes?.nombre ?? "—"}</div>
+                        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 items-center"><span className="text-muted-foreground">ETA: {parseLocalDate(e.fecha_compromiso)?.toLocaleDateString("es-DO") ?? "—"}</span><ChevronRight className="h-5 w-5 shrink-0" /></div>
+                      </Link>)}
+                    </section>)}
+                  </div>
+                  <table data-show-columns={masColumnas} className="expedientes-listado-tabla w-full text-[13px] border-separate border-spacing-0">
                     <colgroup className="expedientes-listado-columnas">{[10, 12, 11, 10, 11, 8, 5, 7, 9, 9, 8].map((width, i) => <col key={i} width={`${width}%`} />)}</colgroup>
                     <thead className="sticky-table-header bg-muted/30 border-b [&_th]:top-[33px]">
                       <tr>

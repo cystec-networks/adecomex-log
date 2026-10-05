@@ -31,6 +31,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { AdecomexFlowLogo } from "@/components/adecomex-flow-logo";
+import { AdaptiveTables } from "@/components/adaptive-tables";
 
 type SubItem = {
   to: string;
@@ -487,6 +488,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </header>
           <main className="flex-1 overflow-auto">
             {children}
+            <AdaptiveTables />
           </main>
         </div>
       </div>
