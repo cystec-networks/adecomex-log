@@ -19,10 +19,7 @@ En el volante de solicitud de pago, resolver primero el número del transporte v
 
 El PDF de preliquidación de expediente y cotización comparte el generador horizontal con resumen CIF, Impuestos y Servicios DGA; mantenerlo centralizado evita diferencias entre ambas impresiones.
 
-Use explicit responsive grid slots for the expediente header; menu visibility follows the window breakpoint rather than sidebar-reduced container width, while available-width queries compact desktop controls and keep narrow layouts accessible.
-Reserve intrinsic grid widths for the expediente save and menu groups, with nonshrinking buttons and consistent action gaps; flexible state space must absorb width changes rather than letting right-aligned menus overlap adjacent actions.
-
-Use space-between across all present desktop header fields, flatten the arrival wrapper for equal gaps, preserve intrinsic client and BL/AWB widths, and group the shrinkable presentation badge with its edit control; container-based icon/date fallback preserves full tooltip details.
+Use exactly two presentation modes for Expediente detail, creation and listing: a fixed pixel canvas and fixed field/table/header/tab tracks at viewport widths >=1024px, and an independent touch card layout below 1024px. Horizontal scrolling accommodates the desktop canvas; never measure available width to redistribute controls or hide tabs, and wrap long display values inside their fixed cells instead of truncating them.
 
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
 - Presentation deadline uses catalogo_regimenes.dias_habiles_presentar with optional expedientes.plazo_presentar_override; expedientes.sla_dias is deprecated — resolve via src/lib/plazo-presentacion.ts. In the header, require real arrival and a configured regime (never ETA), show business days relative to today, and classify overdue by the calendar date so weekends cannot hide expiration.
@@ -30,7 +27,7 @@ Use space-between across all present desktop header fields, flatten the arrival 
 - Use the shared state ordering to replace the deadline from verification onward with compliance based on existing fecha_presentado; omit compliance when its date or deadline is missing, never fabricate historical dates.
 - Open the existing Endoso section via a parent-owned request counter from both header document menus, preserving a single form and its current persistence logic.
 - Render the inspection header selector from TabInfo through a portal into the parent-owned header slot; both selectors use the same draft and save permissions, retaining canal_riesgo storage for legacy compatibility.
-- Scope desktop adaptation to Expedientes wrappers: use available-width container queries for form grids, preserve header identity and deadline priorities, and contain dense table scrolling locally so other modules remain unchanged.
+- Scope the fixed desktop canvas to Expedientes wrappers, preserve header identity and deadline priorities, and keep table scrolling local where needed so unrelated modules remain unchanged.
 - Keep compact control height and section spacing scoped to the expediente tab body; typography follows the global role scale, with critical identifiers and alerts retaining higher hierarchy.
 - Define the reading scale once in global CSS theme tokens and screen-only semantic role rules; legacy text-size utilities must not reduce operational data below the dense role, and generated PDFs retain their independent print typography.
-- Apply adaptive table presentation in the app shell to native and shared read-only tables, preserving original controls and row semantics; editable matrices retain local scrolling to preserve column alignment. Expedientes uses explicit mobile record links and a tablet column toggle with existing filters and groups.
+- Apply touch table presentation below 1024px in the app shell to native and shared read-only tables, preserving controls and row semantics; editable matrices retain local scrolling. Expedientes uses explicit mobile record links with existing filters and groups, and fixed pixel columns on desktop.
