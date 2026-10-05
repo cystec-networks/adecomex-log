@@ -801,7 +801,7 @@ function DetalleExpediente() {
           {(
             <div className={isNuevo ? "hidden items-center gap-1.5 md:flex md:flex-wrap" : "hidden md:contents"}>
               {!isNuevo && <div className="expediente-header-save"><ControlesGuardadoHeader expedienteId={id} compacto /></div>}
-              <div className={isNuevo ? "flex items-center gap-1.5" : "expediente-header-menus flex min-w-0 flex-wrap items-center gap-1.5"}>
+              <div className={isNuevo ? "expediente-toolbar" : "expediente-toolbar expediente-header-menus flex min-w-0 flex-wrap items-center gap-1.5"}>
               <Button
                 variant="outline"
                 size="icon"
@@ -1930,11 +1930,11 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
   const BotonesAccion = () => !isNuevo ? null : (
     <div
-      className="print:hidden sticky z-10 -mx-1 flex flex-wrap items-center justify-end gap-2 rounded-md border bg-background px-2 py-2 shadow-md"
+      className="print:hidden sticky z-10 -mx-1 flex flex-wrap items-center justify-end gap-2 rounded-md border bg-background px-2 py-1 shadow-sm"
       style={{ top: "calc(var(--exp-header-h, 0px) + 4px)" }}
     >
-      <Button variant="outline" onClick={() => nav({ to: "/expedientes" })}>Cancelar</Button>
-      <Button onClick={intentarCrear} disabled={crear.isPending}>
+      <Button variant="outline" size="sm" onClick={() => nav({ to: "/expedientes" })}>Cancelar</Button>
+      <Button size="sm" onClick={intentarCrear} disabled={crear.isPending}>
         <Check className="h-4 w-4 mr-1" /><span key={crear.isPending ? "p" : "i"}>{crear.isPending ? "Creando…" : "Crear expediente"}</span>
       </Button>
     </div>

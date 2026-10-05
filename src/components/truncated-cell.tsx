@@ -4,13 +4,15 @@ export function TruncatedCell({
   value,
   className = "",
   maxClass = "max-w-[160px]",
+  wrap = false,
 }: {
   value: string | null;
   className?: string;
   maxClass?: string;
+  wrap?: boolean;
 }) {
   return (
-    <span title={value ?? undefined} className={`block truncate ${maxClass} ${className}`}>
+    <span title={value ?? undefined} className={`block ${wrap ? "truncate-wrap whitespace-normal break-words" : "truncate"} ${maxClass} ${className}`}>
       {value ?? "—"}
     </span>
   );

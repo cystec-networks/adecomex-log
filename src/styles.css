@@ -438,11 +438,11 @@
   }
   :is(h1, h2, [data-text-role="key"]) { font-size: var(--text-key) !important; line-height: 1.4; }
   :is(h3, h4, h5, h6, [data-text-role="section"]) { font-size: var(--text-section) !important; line-height: 1.4; }
-  [data-slot="badge"] { font-size: var(--text-dense) !important; }
+  [data-slot="badge"], .expediente-presentation-pill { font-size: var(--text-aux) !important; font-weight: 400 !important; }
   :is([role="alert"], .expediente-header-alerta) :is(span, div, p) { font-size: inherit !important; }
   .expediente-numero { font-size: var(--text-section) !important; }
   h1.expediente-numero { font-size: var(--text-key) !important; }
-  :is([role="alert"], .expediente-header-alerta, .expediente-header-state, .expediente-presentation-pill) { font-size: var(--text-section) !important; }
+  :is([role="alert"], .expediente-header-alerta, .expediente-header-state) { font-size: var(--text-section) !important; }
   .expediente-header-state :is(label, [role="combobox"]) { font-size: var(--text-section) !important; }
   .expediente-presentation-pill :is(span, div) { font-size: inherit !important; }
   .expediente-readonly-field { font-size: var(--text-form) !important; }
@@ -504,3 +504,10 @@
     display: none !important;
   }
 }
+
+/* Barra de herramientas compartida del Expediente (Nuevo, Detalle, Listado) */
+.expediente-toolbar { display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; }
+.expediente-toolbar > button { height: 2rem; flex-shrink: 0; padding-inline: 0.5rem; gap: 0.25rem; font-size: var(--text-dense); }
+.expediente-toolbar > button svg { margin-inline: 0; width: 1rem; height: 1rem; }
+/* Listado: celdas con texto completo en varias líneas */
+.expedientes-listado-tabla td:has(> .truncate-wrap), .expedientes-listado-tabla td:has(.truncate-wrap) { white-space: normal; vertical-align: top; }
