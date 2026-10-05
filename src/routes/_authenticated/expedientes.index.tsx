@@ -271,7 +271,7 @@ function Expedientes() {
       facturar: "bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900",
     };
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${variants[estadoRaw ?? ""] ?? variants.digitar}`}>
+      <span data-slot="badge" className={`inline-flex items-center px-2 py-0 leading-4 rounded-full text-aux font-normal border ${variants[estadoRaw ?? ""] ?? variants.digitar}`}>
         {label}
       </span>
     );
