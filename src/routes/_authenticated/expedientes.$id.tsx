@@ -24,7 +24,7 @@ import {
   DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical, Printer, Repeat2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday, hoyRD, hoyRDISO } from "@/lib/dates";
@@ -1040,11 +1040,13 @@ function DetalleExpediente() {
           </div>
         )}
       </div>
-        <TabsList className="mt-1.5 flex h-auto max-w-full flex-nowrap justify-start overflow-x-auto md:mt-1 md:flex-wrap">
-          {tabOrder.map((key) => {
-            const label = TAB_LABELS[key];
-            if (!label) return null;
-            return (
+        <TabsOverflowRow
+          tabOrder={tabOrder.filter((k) => TAB_LABELS[k])}
+          labels={TAB_LABELS}
+          active={tabActiva}
+          onSelect={setTabActiva}
+          disabledKey={(k) => isNuevo && k !== "info"}
+          renderTrigger={(key) => (
               <TabsTrigger
                 key={key}
                 value={key}
@@ -1071,11 +1073,11 @@ function DetalleExpediente() {
                 className="cursor-grab active:cursor-grabbing"
                 title={isNuevo && key !== "info" ? "Disponible después de crear el Expediente." : "Arrastra para reordenar"}
               >
-                {label}
+                {TAB_LABELS[key]}
               </TabsTrigger>
-            );
-          })}
-        </TabsList>
+          )}
+        />
+
         {isNuevo && (
           <p className="text-xs text-muted-foreground mt-1">Disponible después de crear el Expediente.</p>
         )}
@@ -6283,6 +6285,81 @@ function CampoHeader({ etiqueta, valor, largo, className }: { etiqueta: string; 
           <span className="text-muted-foreground">{etiqueta}:</span> <span className="font-medium">{texto}</span>
         </PopoverContent>
       </Popover>
+    </div>
+  );
+}
+
+const TAB_MEASURE_CLS = "inline-flex items-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium";
+
+function TabsOverflowRow({
+  tabOrder, labels, active, onSelect, disabledKey, renderTrigger,
+}: {
+  tabOrder: string[];
+  labels: Record<string, string>;
+  active: string;
+  onSelect: (k: string) => void;
+  disabledKey: (k: string) => boolean;
+  renderTrigger: (k: string) => React.ReactNode;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState(tabOrder.length);
+
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    const measure = measureRef.current;
+    if (!wrap || !measure) return;
+    const calc = () => {
+      const items = Array.from(measure.children) as HTMLElement[];
+      const widths = items.slice(0, tabOrder.length).map((el) => el.offsetWidth);
+      const moreW = (items[tabOrder.length]?.offsetWidth ?? 80);
+      const avail = wrap.clientWidth - 8; // padding de la lista
+      const total = widths.reduce((a, b) => a + b, 0);
+      if (total <= avail) { setVisibleCount(tabOrder.length); return; }
+      let acc = 0, n = 0;
+      for (const w of widths) { if (acc + w + moreW > avail) break; acc += w; n++; }
+      setVisibleCount(Math.max(1, n));
+    };
+    calc();
+    const ro = new ResizeObserver(calc);
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, [tabOrder, labels]);
+
+  let visibles = tabOrder.slice(0, visibleCount);
+  let ocultas = tabOrder.slice(visibleCount);
+  // Si la pestaña activa cayó en "Más", se muestra temporalmente en la fila visible.
+  if (ocultas.includes(active) && visibles.length > 0) {
+    const desplazada = visibles[visibles.length - 1];
+    visibles = [...visibles.slice(0, -1), active];
+    ocultas = [desplazada, ...ocultas.filter((k) => k !== active)];
+  }
+
+  return (
+    <div ref={wrapRef} className="relative mt-1.5 w-full min-w-0 md:mt-1">
+      <div ref={measureRef} aria-hidden className="pointer-events-none invisible absolute left-0 top-0 flex h-0 overflow-hidden whitespace-nowrap">
+        {tabOrder.map((k) => <span key={k} className={TAB_MEASURE_CLS}>{labels[k]}</span>)}
+        <span className={TAB_MEASURE_CLS}>Más <ChevronDown className="ml-1 h-3.5 w-3.5" /></span>
+      </div>
+      <TabsList className="flex h-auto max-w-full flex-nowrap justify-start overflow-hidden">
+        {visibles.map((k) => renderTrigger(k))}
+        {ocultas.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="inline-flex items-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium hover:text-foreground" aria-label="Más pestañas">
+                Más <ChevronDown className="ml-1 h-3.5 w-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {ocultas.map((k) => (
+                <DropdownMenuItem key={k} disabled={disabledKey(k)} onSelect={() => onSelect(k)}>
+                  {labels[k]}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </TabsList>
     </div>
   );
 }
