@@ -9,6 +9,7 @@ import { ETAPAS_LOGISTICA, ESTADO_LOGISTICA_LABEL, estadoLogisticaClass } from "
 import { fmtLocalDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { TitleHelp } from "@/components/title-help";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -88,7 +89,7 @@ function LogisticaIndex() {
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><h1 className="font-display text-2xl font-bold">Logística</h1><p className="text-sm text-muted-foreground">Carga marítima y aérea desde origen hasta República Dominicana.</p></div>
+        <div><div className="flex min-w-0 items-center gap-1"><h1 className="font-display text-2xl font-bold">Logística</h1><TitleHelp text="Carga marítima y aérea desde origen hasta República Dominicana." /></div></div>
         {canEdit && <Button asChild><Link to="/logistica/$id" params={{ id: "nuevo" }}><Plus className="h-4 w-4 mr-1" />Nueva Operación</Link></Button>}
       </div>
       <Card>
