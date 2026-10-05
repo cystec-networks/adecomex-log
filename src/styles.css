@@ -416,7 +416,7 @@
     font-size: var(--text-dense) !important;
   }
   :is([class*="text-[13px]"], [class*="text-[0.8rem]"]) { font-size: var(--text-form) !important; }
-  p[class*="text-[11px]"] { font-size: var(--text-aux) !important; }
+  .recharts-wrapper text, .recharts-tooltip-wrapper { font-size: var(--text-dense) !important; }
   :is(label, input, textarea, select, [role="combobox"], [role="option"], [role="tab"], [role="menuitem"]) {
     font-size: var(--text-form) !important;
     line-height: 1.5;
@@ -445,6 +445,7 @@
   :is([role="alert"], .expediente-header-alerta, .expediente-header-state, .expediente-presentation-pill) { font-size: var(--text-section) !important; }
   .expediente-header-state :is(label, [role="combobox"]) { font-size: var(--text-section) !important; }
   .expediente-presentation-pill :is(span, div) { font-size: inherit !important; }
+  .expediente-readonly-field { font-size: var(--text-form) !important; }
 }
 
 #lovable-badge {
