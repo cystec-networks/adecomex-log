@@ -418,7 +418,7 @@ function Expedientes() {
         })()}
       </td>
       <td className="px-2 py-1 align-middle text-muted-foreground text-xs whitespace-nowrap">
-        <TruncatedCell value={e.puerto_arribo} maxClass="max-w-full" />
+        <TruncatedCell value={e.puerto_arribo} maxClass="max-w-full" wrap />
       </td>
       <td className="px-2 py-1 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
         <TruncatedCell value={e.numero_vuce} maxClass="max-w-full" wrap />
