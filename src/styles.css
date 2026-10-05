@@ -232,6 +232,19 @@
   --text-7xl: var(--text-key);
   --text-8xl: var(--text-key);
   --text-9xl: var(--text-key);
+  --text-xs--line-height: 1rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base--line-height: 1.25rem;
+  --text-lg--line-height: 1.25rem;
+  --text-xl--line-height: 1.5rem;
+  --text-2xl--line-height: 1.5rem;
+  --text-3xl--line-height: 1.5rem;
+  --text-4xl--line-height: 1.5rem;
+  --text-5xl--line-height: 1.5rem;
+  --text-6xl--line-height: 1.5rem;
+  --text-7xl--line-height: 1.5rem;
+  --text-8xl--line-height: 1.5rem;
+  --text-9xl--line-height: 1.5rem;
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-display: "Manrope", "Inter", sans-serif;
 
@@ -397,9 +410,19 @@
 
 /* Screen-only roles: never alter generated document/PDF typography. */
 @media screen {
+  /* Normalize existing arbitrary utilities centrally, including responsive ones.
+     Use the safe dense minimum: muted color does not imply nonoperational data. */
+  :is([class*="text-[9px]"], [class*="text-[10px]"], [class*="text-[10.5px]"], [class*="text-[11px]"]) {
+    font-size: var(--text-dense) !important;
+  }
+  :is([class*="text-[13px]"], [class*="text-[0.8rem]"]) { font-size: var(--text-form) !important; }
+  p[class*="text-[11px]"] { font-size: var(--text-aux) !important; }
   :is(label, input, textarea, select, [role="combobox"], [role="option"], [role="tab"], [role="menuitem"]) {
     font-size: var(--text-form) !important;
     line-height: 1.5;
+  }
+  :is(label, [role="combobox"], [role="option"], [role="tab"], [role="menuitem"]) :is(span, div, p) {
+    font-size: inherit !important;
   }
   :is(input, textarea)::placeholder,
   [role="combobox"][data-placeholder],
@@ -415,6 +438,8 @@
   }
   :is(h1, h2, [data-text-role="key"]) { font-size: var(--text-key) !important; line-height: 1.4; }
   :is(h3, h4, h5, h6, [data-text-role="section"]) { font-size: var(--text-section) !important; line-height: 1.4; }
+  [data-slot="badge"] { font-size: var(--text-dense) !important; }
+  :is([role="alert"], .expediente-header-alerta) :is(span, div, p) { font-size: inherit !important; }
   .expediente-numero { font-size: var(--text-section) !important; }
   h1.expediente-numero { font-size: var(--text-key) !important; }
   :is([role="alert"], .expediente-header-alerta, .expediente-header-state, .expediente-presentation-pill) { font-size: var(--text-section) !important; }
