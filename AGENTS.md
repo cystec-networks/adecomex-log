@@ -21,7 +21,7 @@ Use explicit responsive grid slots and reserved action widths for the expediente
 
 Keep the new-expediente header in two fixed action rows; render the form-owned submit controls into its header slot through a React portal to preserve validation and avoid a separate floating panel.
 
-Scope detail-header presentation to its dedicated class; use equal flexible slots for present logistics fields and wrapping operational identifiers so long values never overflow or alter other screens. Keep presentation editing grouped with its value and preserve its calculation logic.
+Scope detail-header presentation to its dedicated class; logistics and operational identifiers share the same fixed-width grid tracks and gaps, with arrival and presentation grouped in one track and client label/value kept together, to avoid whitespace and misalignment. Preserve wrapping identifiers and presentation calculation logic.
 
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
 - Presentation deadline uses catalogo_regimenes.dias_habiles_presentar with optional expedientes.plazo_presentar_override; expedientes.sla_dias is deprecated — resolve via src/lib/plazo-presentacion.ts. In the header, require real arrival and a configured regime (never ETA), show business days relative to today, and classify overdue by the calendar date so weekends cannot hide expiration.
