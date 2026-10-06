@@ -30,3 +30,4 @@ Scope detail-header presentation to its dedicated class; logistics and operation
 - Open the existing Endoso section via a parent-owned request counter from both header document menus, preserving a single form and its current persistence logic.
 - Keep additional detail warnings in a pure evaluator with separately scoped query hooks; read invoice links and active reception incidents as authoritative evidence to avoid unrelated client debt and recomputing unpersisted reception tolerances.
 - Use the shared expediente alert evaluator for list and detail short/long text; keep PIN timestamp countdown separate from business-day presentation deadlines, and batch list evidence reads to avoid per-row requests.
+- Group simultaneous PIN and presentation warnings into one list-only deadline entry with both short descriptions; preserve the independent clocks and full detail warnings to avoid hiding payment or legal deadlines.

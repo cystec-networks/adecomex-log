@@ -5,12 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronRight, Repeat2, Trash2, AlarmClock, Plus, Copy } from "lucide-react";
+import { ChevronRight, Repeat2, Trash2, AlarmClock, Plus, Copy, AlertTriangle } from "lucide-react";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { Toggle } from "@/components/ui/toggle";
 import { WhatsAppButton } from "@/components/whatsapp-button";
@@ -30,6 +31,14 @@ import { daysFromToday, habilesRestantesPlazo } from "@/lib/dates";
 type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 
 export const Route = createFileRoute("/_authenticated/expedientes/")({
+  head: () => ({ meta: [
+    { title: "Todos los Expedientes | ADECOMEX" },
+    { name: "description", content: "Listado y seguimiento de expedientes aduanales de ADECOMEX." },
+    { property: "og:title", content: "Todos los Expedientes | ADECOMEX" },
+    { property: "og:description", content: "Listado y seguimiento de expedientes aduanales de ADECOMEX." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   validateSearch: (s: Record<string, unknown>): { tipo?: TipoFilter; estado?: string; eta?: number } => {
     const t = s.tipo;
     const tipo = t === "importacion" || t === "exportacion" || t === "facturados" || t === "todos" ? t : undefined;
@@ -437,15 +446,36 @@ function Expedientes() {
           })()}
         </div>
       </td>
-      <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
-        <div className="flex items-center justify-center gap-1 whitespace-nowrap [&>div]:text-[11px] [&>div]:whitespace-nowrap">
-          {alertasExpedienteCompartidas(e, plazosReg, datosAlertasListado?.[e.id]).map(alerta => (
-            <Badge key={alerta.id} variant={alerta.tone === "danger" ? "destructive" : "outline"}
-              title={alerta.larga} aria-label={alerta.larga} className="text-[11px] whitespace-nowrap tabular-nums">
-              {alerta.corta}
-            </Badge>
-          ))}
-        </div>
+      <td className="w-14 min-w-14 max-w-14 px-2 py-1 align-middle text-center whitespace-nowrap">
+        {(() => {
+          const alertas = alertasExpedienteCompartidas(e, plazosReg, datosAlertasListado?.[e.id]);
+          const pin = alertas.find(a => a.id === "pin-dga");
+          const presentacion = alertas.find(a => a.id === "presentacion");
+          // Group deadline warnings for this compact view without changing either clock.
+          const visibles = pin && presentacion
+            ? alertas.filter(a => a.id !== "pin-dga").map(a => a.id === "presentacion"
+              ? { ...a, corta: `Vencimiento: PIN ${pin.corta}; ${a.corta}` } : a)
+            : alertas;
+          if (!visibles.length) return null;
+          return (
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" aria-label={`${visibles.length} alertas activas`}
+                    className="h-6 w-10 gap-1 p-0 text-[11px] text-muted-foreground tabular-nums">
+                    <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
+                    <span>{visibles.length}</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs border bg-popover text-popover-foreground">
+                  <ul className="space-y-1 text-[11px]">
+                    {visibles.map(a => <li key={a.id}>{a.corta}</li>)}
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        })()}
       </td>
 
       <td className="px-1 py-1 align-middle text-right whitespace-nowrap">
@@ -577,7 +607,7 @@ function Expedientes() {
                         <Th k="puerto_arribo" className="px-2 whitespace-nowrap">Puerto</Th>
                         <Th k="numero_vuce" className="px-2 whitespace-nowrap">Permiso VUCE</Th>
                         <Th k="estado" className="px-2 whitespace-nowrap">Estado</Th>
-                        <th className="px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Alerta</th>
+                        <th className="w-14 min-w-14 max-w-14 px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Alerta</th>
                         <th className="px-1 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"></th>
                       </tr>
                     </thead>

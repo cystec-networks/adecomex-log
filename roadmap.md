@@ -1,4 +1,5 @@
 - [x] Marcar los campos obligatorios de Declaración, llegada, origen y pesos.
+- [ ] Compactar Alerta a ícono y contador, agrupar vencimientos en el listado y comprobar tooltip, ancho fijo y filas uniformes.
 - [x] Unificar las fuentes de alertas del listado y detalle, conservando PIN DGA en tiempo calendario y presentación en días hábiles; textos cortos/largos, 10 pruebas y comparación real de BIOQUIMICA, 116 filas uniformes.
 - [x] Exigir llegada real, país de origen y pesos positivos antes de Presentado en pantalla y base de datos.
 - [x] Verificar el bloqueo y los asteriscos en el Expediente.
