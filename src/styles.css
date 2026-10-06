@@ -68,9 +68,11 @@
   }
 }
 /* Entre 1280 y 1699 el menú lateral va en iconos (colapso automático en
-   app-shell.tsx); "Volver" queda como ícono para dar sitio a la toolbar. */
+   app-shell.tsx): se esconde el texto "Volver" y la etiqueta "Estado:" para
+   que quepan los botones completos de la toolbar en una sola línea. */
 @media (min-width: 1280px) and (max-width: 1699px) {
   .expediente-header-back span { display: none; }
+  .expediente-header-estado-label { display: none; }
 }
 /* Filas de datos con posiciones fijas: el largo de un valor nunca mueve a sus vecinos. */
 .expediente-info-fila2, .expediente-info-fila3 {
