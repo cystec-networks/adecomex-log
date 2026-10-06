@@ -563,38 +563,6 @@ function Expedientes() {
       </div>
 
       <Card className="overflow-hidden flex-1 min-h-0 flex flex-col">
-        <CardHeader className="flex-row items-center gap-2 flex-wrap p-2 px-3 shrink-0">
-          <CardTitle className="text-xs font-medium text-muted-foreground flex-1 min-w-[100px] min-w-0">{filtered.length} expedientes</CardTitle>
-          <Select value={estado} onValueChange={setEstado}>
-            <SelectTrigger className="w-40 h-8 text-[13px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos los estados</SelectItem>
-              {estado.includes(",") && <SelectItem value={estado}>Estados del Dashboard</SelectItem>}
-              {ESTADO_ORDEN.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={etaFilter} onValueChange={(v) => {
-            setEtaFilter(v);
-            navigate({ search: (prev) => ({ ...prev, eta: v === "7" ? 7 : undefined }) });
-          }}>
-            <SelectTrigger className="w-40 h-8 text-[13px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Cualquier ETA</SelectItem>
-              <SelectItem value="7">Por llegar (≤7 días)</SelectItem>
-            </SelectContent>
-          </Select>
-          <Toggle
-            pressed={soloUrgentes}
-            onPressedChange={setSoloUrgentes}
-            size="sm"
-            className="data-[state=on]:bg-orange-100 data-[state=on]:text-orange-700 dark:data-[state=on]:bg-orange-950/40 dark:data-[state=on]:text-orange-300 gap-1.5"
-            title="Filtrar expedientes urgentes: plazo legal de presentación (5 días hábiles desde la llegada real) o ETA a menos de 3 días"
-          >
-            <AlarmClock className="h-3.5 w-3.5" />
-            <span className="text-xs">Solo urgentes ETA</span>
-          </Toggle>
-          <Input placeholder="Buscar por BL/AWB, expediente, cliente, mercancía o contenedor..." value={q} onChange={(e) => setQ(e.target.value)} className="min-w-0 flex-1 max-w-xs h-8 text-[13px]" />
-        </CardHeader>
         <CardContent className="p-0 flex-1 min-h-0">
           {filtered.length === 0 && (
             <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin expedientes. Crea uno con "Nuevo Expediente" o súbelo por OCR.</div>
