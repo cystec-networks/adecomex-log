@@ -58,12 +58,12 @@
 @media (min-width: 1280px) and (max-width: 1699px) {
   .expediente-header-grid { grid-template-columns: auto max-content 11rem auto minmax(0, 1fr); column-gap: 0.25rem; }
   .expediente-header-menus button svg.lucide-chevron-down { display: none; }
-}
-@media (min-width: 1280px) and (max-width: 1365px) {
-  .expediente-header-state > label { display: none; }
   .expediente-header-container .exp-lbl-full { display: none; }
   .expediente-header-container .exp-lbl-short { display: inline; }
   .expediente-header-back svg { margin-right: 0; }
+}
+@media (min-width: 1280px) and (max-width: 1365px) {
+  .expediente-header-state > label { display: none; }
 }
 /* Filas de datos con posiciones fijas: el largo de un valor nunca mueve a sus vecinos. */
 .expediente-info-fila2, .expediente-info-fila3 {
