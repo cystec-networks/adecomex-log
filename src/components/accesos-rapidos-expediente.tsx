@@ -97,7 +97,7 @@ export function RastreosEnvioItems() {
 
 type Variant = "button" | "icon";
 
-export function HerramientasDgaVuceMenu({ variant = "button", className }: { variant?: Variant; className?: string }) {
+export function HerramientasDgaVuceMenu({ variant = "button", className, compacto }: { variant?: Variant; className?: string; compacto?: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -114,7 +114,10 @@ export function HerramientasDgaVuceMenu({ variant = "button", className }: { var
           </Button>
         ) : (
           <Button variant="outline" size="sm" className={className}>
-            <ShieldCheck className="h-4 w-4 mr-1" /> <span className="exp-lbl-full">Herramientas DGA/VUCE</span><span className="exp-lbl-short">DGA/VUCE</span>
+            <ShieldCheck className="h-4 w-4 mr-1" />
+            {compacto
+              ? <span>DGA/VUCE</span>
+              : <><span className="exp-lbl-full">Herramientas DGA/VUCE</span><span className="exp-lbl-short">DGA/VUCE</span></>}
             <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
           </Button>
         )}
@@ -126,7 +129,7 @@ export function HerramientasDgaVuceMenu({ variant = "button", className }: { var
   );
 }
 
-export function RastreosEnvioMenu({ variant = "button", className }: { variant?: Variant; className?: string }) {
+export function RastreosEnvioMenu({ variant = "button", className, compacto }: { variant?: Variant; className?: string; compacto?: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -143,7 +146,10 @@ export function RastreosEnvioMenu({ variant = "button", className }: { variant?:
           </Button>
         ) : (
           <Button variant="outline" size="sm" className={className}>
-            <Ship className="h-4 w-4 mr-1" /> <span className="exp-lbl-full">Rastreos de Envío</span><span className="exp-lbl-short">Rastreos</span>
+            <Ship className="h-4 w-4 mr-1" />
+            {compacto
+              ? <span>Rastreos</span>
+              : <><span className="exp-lbl-full">Rastreos de Envío</span><span className="exp-lbl-short">Rastreos</span></>}
             <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
           </Button>
         )}
