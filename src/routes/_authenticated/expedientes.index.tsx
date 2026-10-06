@@ -518,19 +518,19 @@ function Expedientes() {
             </Button>
           </div>
         </div>
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="flex gap-1 rounded-md border p-0.5 bg-card">
-            <Link to="/expedientes" search={{ tipo: "todos", estado: estadoParam, eta: etaParam }} className={`px-2.5 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos <Badge variant="secondary" className="text-[10px] h-4 px-1">{countAll}</Badge></Link>
-            <Link to="/expedientes" search={{ tipo: "importacion", estado: estadoParam, eta: etaParam }} className={`px-2.5 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
-            <Link to="/expedientes" search={{ tipo: "exportacion", estado: estadoParam, eta: etaParam }} className={`px-2.5 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
-            <Link to="/expedientes" search={{ tipo: "facturados", estado: estadoParam, eta: etaParam }} className={`px-2.5 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
+        <div className="flex items-center justify-between gap-1 flex-wrap">
+          <div className="flex items-center gap-1 min-w-0">
+            <div className="flex gap-0.5 rounded-md border p-0.5 bg-card">
+            <Link to="/expedientes" search={{ tipo: "todos", estado: estadoParam, eta: etaParam }} className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos <Badge variant="secondary" className="text-[10px] h-4 px-1">{countAll}</Badge></Link>
+            <Link to="/expedientes" search={{ tipo: "importacion", estado: estadoParam, eta: etaParam }} className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
+            <Link to="/expedientes" search={{ tipo: "exportacion", estado: estadoParam, eta: etaParam }} className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
+            <Link to="/expedientes" search={{ tipo: "facturados", estado: estadoParam, eta: etaParam }} className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
             </div>
-            <span className="text-[13px] text-muted-foreground whitespace-nowrap shrink-0">{filtered.length} expedientes</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">{filtered.length} expedientes</span>
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap justify-end min-w-0">
+          <div className="flex items-center gap-1 flex-wrap justify-end min-w-0">
             <Select value={estado} onValueChange={setEstado}>
-              <SelectTrigger className="w-40 h-8 text-[13px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[140px] px-2 h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos los estados</SelectItem>
                 {estado.includes(",") && <SelectItem value={estado}>Estados del Dashboard</SelectItem>}
@@ -541,7 +541,7 @@ function Expedientes() {
               setEtaFilter(v);
               navigate({ search: (prev) => ({ ...prev, eta: v === "7" ? 7 : undefined }) });
             }}>
-              <SelectTrigger className="w-40 h-8 text-[13px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[120px] px-2 h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Cualquier ETA</SelectItem>
                 <SelectItem value="7">Por llegar (≤7 días)</SelectItem>
@@ -551,13 +551,13 @@ function Expedientes() {
               pressed={soloUrgentes}
               onPressedChange={setSoloUrgentes}
               size="sm"
-              className="data-[state=on]:bg-orange-100 data-[state=on]:text-orange-700 dark:data-[state=on]:bg-orange-950/40 dark:data-[state=on]:text-orange-300 gap-1.5"
+              className="px-2 data-[state=on]:bg-orange-100 data-[state=on]:text-orange-700 dark:data-[state=on]:bg-orange-950/40 dark:data-[state=on]:text-orange-300 gap-1.5"
               title="Filtrar expedientes urgentes: plazo legal de presentación (5 días hábiles desde la llegada real) o ETA a menos de 3 días"
             >
               <AlarmClock className="h-3.5 w-3.5" />
               <span className="text-xs">Solo urgentes ETA</span>
             </Toggle>
-            <Input placeholder="Buscar por BL/AWB, expediente, cliente, mercancía o contenedor..." value={q} onChange={(e) => setQ(e.target.value)} className="min-w-0 flex-1 max-w-xs h-8 text-[13px]" />
+            <Input placeholder="Buscar por BL/AWB, expediente, cliente, mercancía o contenedor..." value={q} onChange={(e) => setQ(e.target.value)} className="min-w-[120px] flex-1 max-w-xs h-8 text-[13px]" />
           </div>
         </div>
       </div>
