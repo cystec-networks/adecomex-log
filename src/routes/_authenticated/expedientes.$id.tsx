@@ -733,7 +733,7 @@ function DetalleExpediente() {
           {isNuevo ? (
             <div className="expediente-nuevo-title min-w-0">
               <h1 className="font-display whitespace-nowrap text-lg font-bold md:text-xl">Nuevo Expediente</h1>
-              <p className="text-xs text-muted-foreground md:text-sm">
+              <p className="expediente-nuevo-subtitle">
                 Completa los campos a mano, o escanea el BL y/o la factura comercial para autollenarlos. El número se genera automáticamente.
               </p>
             </div>
@@ -1056,7 +1056,7 @@ function DetalleExpediente() {
                   });
 
                 }}
-                className="cursor-grab active:cursor-grabbing"
+                className="cursor-grab text-[13px] active:cursor-grabbing"
                 title={isNuevo && key !== "info" ? "Disponible después de crear el Expediente." : "Arrastra para reordenar"}
               >
                 {label}
