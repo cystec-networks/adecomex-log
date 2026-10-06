@@ -1,4 +1,5 @@
 - [x] Marcar los campos obligatorios de Declaración, llegada, origen y pesos.
+- [ ] Unificar las fuentes de alertas del listado y detalle, conservando PIN DGA en tiempo calendario y presentación en días hábiles; textos cortos/largos y verificación real.
 - [x] Exigir llegada real, país de origen y pesos positivos antes de Presentado en pantalla y base de datos.
 - [x] Verificar el bloqueo y los asteriscos en el Expediente.
 - [x] Ocultar los ocho pasos acordados del Checklist de Despacho sin borrar su historial y ajustar el progreso y los avisos.

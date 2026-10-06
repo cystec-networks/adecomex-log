@@ -18,20 +18,20 @@ export function alertasAdicionalesExpediente({ expediente, permisos = [], factur
   facturas?: Factura[];
   incidencias?: Incidencia[];
   tieneRecepcion?: boolean;
-}): string[] {
+}, formato: "corta" | "larga" = "larga"): string[] {
   const alertas: string[] = [];
   const proximos = permisos.filter((p) => {
     if (!["solicitado", "en_tramite"].includes(p.estado)) return false;
     const dias = daysFromToday(p.fecha_vencimiento);
     return dias >= 0 && dias <= REMINDER_CONFIG.permisoPorVencerDias;
   });
-  if (proximos.length) alertas.push(`Permiso VUCE por vencer: ${proximos.length} (próximos ${REMINDER_CONFIG.permisoPorVencerDias} días)`);
+  if (proximos.length) alertas.push(formato === "corta" ? `VUCE por vencer: ${proximos.length}` : `Permiso VUCE por vencer: ${proximos.length} (próximos ${REMINDER_CONFIG.permisoPorVencerDias} días)`);
 
   const enMora = facturas.filter((f) => {
     const pagado = f.cxc_pagos.reduce((sum, p) => sum + Number(p.monto || 0), 0);
     return daysFromToday(f.fecha_vencimiento_pago) < 0 && Number(f.monto_total) > 0 && pagado <= 0;
   });
-  if (enMora.length) alertas.push(`Factura en mora: ${enMora.length} sin pago registrado`);
+  if (enMora.length) alertas.push(formato === "corta" ? `Mora: ${enMora.length}` : `Factura en mora: ${enMora.length} sin pago registrado`);
 
   // La incidencia conserva la evaluación realizada al recibir, incluida la
   // tolerancia elegida en ese momento (no se guarda en recepciones).
@@ -39,7 +39,7 @@ export function alertasAdicionalesExpediente({ expediente, permisos = [], factur
     i.tipo === "Diferencia de peso/cantidad" && ["abierta", "en_gestion"].includes(i.estado)) : [];
   if (discrepancias.length) {
     const critica = discrepancias.some((i) => i.severidad === "critica");
-    alertas.push(`Discrepancia de Recepción${critica ? " crítica" : ""}: ${discrepancias.length} pendiente(s)`);
+    alertas.push(formato === "corta" ? `Recepción${critica ? " crítica" : ""}: ${discrepancias.length}` : `Discrepancia de Recepción${critica ? " crítica" : ""}: ${discrepancias.length} pendiente(s)`);
   }
 
   const etapa = estadoIndex(expediente.estado);
@@ -51,6 +51,6 @@ export function alertasAdicionalesExpediente({ expediente, permisos = [], factur
     (diasLlegada < 0 && etapa < estadoIndex("manifestado")) ||
     (diasLlegada <= -REMINDER_CONFIG.expedienteInactivoDias && etapa < estadoIndex("presentar"))
   );
-  if (atrasada) alertas.push(`Etapa estancada: ${ESTADO_LABEL[expediente.estado]} · ${diasLlegada < 0 ? `llegada hace ${Math.abs(diasLlegada)} días` : `llegada en ${diasLlegada} días`}`);
+  if (atrasada) alertas.push(formato === "corta" ? "Etapa estancada" : `Etapa estancada: ${ESTADO_LABEL[expediente.estado]} · ${diasLlegada < 0 ? `llegada hace ${Math.abs(diasLlegada)} días` : `llegada en ${diasLlegada} días`}`);
   return alertas;
 }
