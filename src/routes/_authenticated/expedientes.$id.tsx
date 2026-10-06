@@ -991,7 +991,7 @@ function DetalleExpediente() {
         {!isNuevo && (
         <div className="expediente-info-fila3">
           <div className="flex h-8 min-w-0 items-center gap-1.5">
-            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Etapa Operativa:</Label>
+            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Etapa :</Label>
             <span className="text-xs font-medium md:text-sm">{hitosDone} de {hitosTotal}</span>
           </div>
           <CampoHeader etiqueta="Declaración DUA" valor={expData.numero_dua} largo />
