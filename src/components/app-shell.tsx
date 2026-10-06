@@ -40,17 +40,19 @@ const ANCHO_MENU_ICONOS = 1700;
 
 function AutoColapsoMenuLateral() {
   const { setOpen } = useSidebar();
+  const setOpenRef = useRef(setOpen);
+  setOpenRef.current = setOpen;
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${ANCHO_MENU_ICONOS - 1}px)`);
     let antes = mq.matches;
-    if (antes) setOpen(false);
+    if (antes) setOpenRef.current(false);
     const alCambiar = () => {
-      if (mq.matches && !antes) setOpen(false);
+      if (mq.matches && !antes) setOpenRef.current(false);
       antes = mq.matches;
     };
     mq.addEventListener("change", alCambiar);
     return () => mq.removeEventListener("change", alCambiar);
-  }, [setOpen]);
+  }, []);
   return null;
 }
 
