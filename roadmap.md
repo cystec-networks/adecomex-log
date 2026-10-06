@@ -16,3 +16,4 @@
 - [x] Corregir el título de Nuevo Expediente, fijar sus dos filas de acciones y verificar con captura a 1366×768.
 - [x] Uniformar exclusivamente el encabezado del Detalle: texto máximo 13 px, Estado completo, acciones del mismo alto, logística equitativa e identificadores sin truncar; verificar en expediente real.
 - [x] Distribuir ambas filas del detalle con flex y reunir alertas activas en rojo debajo de Descripción, sin cambiar pestañas ni otras pantallas; verificado en expedientes reales con y sin alertas a 1366, 1920 y 1055 px.
+- [ ] Ampliar alertas del detalle con permisos VUCE próximos, factura en mora, discrepancias de recepción y etapa estancada; verificar aislamiento por expediente sin modificar el resto del encabezado.
