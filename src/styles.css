@@ -167,23 +167,18 @@
   .expediente-detalle-header .expediente-header-grid { grid-template-columns: auto max-content max-content max-content minmax(0, 1fr); column-gap: 0.75rem; }
 }
 @container expediente-header (min-width: 700px) {
-  /* Tabla compartida: una sola grilla para las dos filas de datos; columnas al ancho
-     de su contenido y el sobrante repartido entre ellas (edge-to-edge). */
+  /* Cada fila distribuye su propio espacio según el contenido de sus campos. */
   .expediente-detalle-header .expediente-info-tabla {
-    display: grid;
-    grid-template-columns: repeat(4, auto);
-    justify-content: space-between;
-    column-gap: 0.75rem;
-    row-gap: 0;
-    align-items: baseline;
+    display: block;
     min-width: 0;
   }
-  .expediente-detalle-header :is(.expediente-info-fila2, .expediente-info-fila3) { display: contents; }
-  /* Tope solo para valores muy largos: conservan el wrap sin empujar a los vecinos. */
-  .expediente-detalle-header .expediente-info-tabla .expediente-header-cliente { max-width: 16rem; }
-  .expediente-detalle-header .expediente-info-tabla .expediente-header-arrival { max-width: 15rem; }
-  .expediente-detalle-header .expediente-info-tabla .expediente-header-valor-largo { max-width: 15rem; }
-  .expediente-detalle-header .expediente-info-fila3 > span { grid-column: 1 / -1; justify-self: start; }
+  .expediente-detalle-header :is(.expediente-info-fila2, .expediente-info-fila3) { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.75rem; }
+  .expediente-detalle-header :is(.expediente-info-fila2, .expediente-info-fila3) > div { flex: 0 1 auto; min-width: 0; }
+  .expediente-detalle-header .expediente-header-arrival { display: contents; }
+  .expediente-detalle-header .expediente-header-valor-largo { white-space: normal; overflow-wrap: anywhere; }
+}
+@container expediente-header (min-width: 900px) {
+  .expediente-detalle-header :is(.expediente-info-fila2, .expediente-info-fila3) { flex-wrap: nowrap; }
 }
 
 @theme inline {

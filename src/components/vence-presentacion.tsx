@@ -19,7 +19,7 @@ const TONO_ALERTA = "border-warning/40 bg-warning/10 text-warning";
 const TONO_ERROR = "border-destructive/40 bg-destructive/10 text-destructive";
 const TONO_OK = "border-success/40 bg-success/10 text-success";
 
-export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean }) {
+export function VencePresentacion({ exp, canEdit, informativo = false }: { exp: any; canEdit: boolean; informativo?: boolean }) {
   const qc = useQueryClient();
   const { data: plazos } = usePlazosRegimen();
   const { dias, esOverride } = plazoEfectivo(exp, plazos);
@@ -47,14 +47,14 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
         ? "el día del vencimiento"
         : `${diferencia} ${unidad} antes del vencimiento`;
     const fecha = fmtLocalDate(exp.fecha_presentacion_real);
-    const compacto = `Presentado: ${fecha} ${tarde ? "⚠" : "✓"} (${diferencia === 0 ? "0d" : `${tarde ? "+" : "-"}${diferencia}d`})`;
+    const compacto = `Presentado: ${fecha}${informativo ? "" : ` ${tarde ? "⚠" : "✓"}`} (${diferencia === 0 ? "0d" : `${tarde ? "+" : "-"}${diferencia}d`})`;
     const completo = `Presentado: ${fecha} (${detalle}). Fecha real de presentación capturada en Información General.`;
     return <span className="expediente-presentation-slot">
       <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
-      <span className={pill(tarde ? TONO_ALERTA : TONO_OK)} title={completo} aria-label={completo}>
+      <span className={informativo ? "expediente-presentation-info" : pill(tarde ? TONO_ALERTA : TONO_OK)} title={completo} aria-label={completo}>
         <span className="expediente-presentation-content">
           <span className="expediente-presentation-full"><span className="expediente-presentation-label">Presentado:</span>{compacto.slice(compacto.indexOf(":") + 1)}</span>
-          <span className="expediente-presentation-short">{tarde ? <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}{fecha}</span>
+          {!informativo && <span className="expediente-presentation-short">{tarde ? <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}{fecha}</span>}
         </span>
       </span>
     </span>;
@@ -86,10 +86,10 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
 
   return (<span className="expediente-presentation-slot">
     <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
-    <span className={pill(tono)} title={completo} aria-label={completo}>
+    <span className={informativo ? "expediente-presentation-info" : pill(tono)} title={completo} aria-label={completo}>
       <span className="expediente-presentation-content">
-        <span className="expediente-presentation-full"><span className="expediente-presentation-label">{vencido ? "Venció:" : "Vence:"}</span>{compacto.slice(compacto.indexOf(":") + 1)}</span>
-        <span className="expediente-presentation-short">{vencido ? <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}{fecha}</span>
+        <span className="expediente-presentation-full"><span className="expediente-presentation-label">{informativo ? "Vence:" : vencido ? "Venció:" : "Vence:"}</span>{informativo ? ` ${fecha}` : compacto.slice(compacto.indexOf(":") + 1)}</span>
+        {!informativo && <span className="expediente-presentation-short">{vencido ? <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}{fecha}</span>}
       </span>
     </span>
     {canEdit && exp?.id && (
