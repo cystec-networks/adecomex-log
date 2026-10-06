@@ -67,6 +67,8 @@ import { usePlazosRegimen, plazoEfectivo, diasRegimen, venceEn, habilesRestantes
 import { unitFob, loadBrokerConfig } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
+import { alertasAdicionalesExpediente } from "@/lib/alertas-expediente";
+import { useDatosAlertasExpediente } from "@/lib/use-alertas-expediente";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
@@ -599,6 +601,7 @@ function DetalleExpediente() {
   });
 
   const hitosDone = (hitosHeader ?? []).filter((h) => h.estado === "completado" || h.estado === "no_aplica").length;
+  const datosAlertas = useDatosAlertasExpediente(id, exp?.cliente_id ?? null, exp?.factura_ecf_id ?? null, !isNuevo && !!exp);
   const hitosTotal = hitosHeader?.length ?? 0;
   const permisosNumeros = (permisosHeader ?? []).map((p: any) => p.numero).filter(Boolean).join(", ");
 
@@ -758,6 +761,11 @@ function DetalleExpediente() {
     }
     const permisosPendientes = (permisosHeader ?? []).filter((p) => p.estado !== "aprobado");
     if (permisosPendientes.length) alertasHeader.push(`Permisos pendientes de aprobación: ${permisosPendientes.length}`);
+    alertasHeader.push(...alertasAdicionalesExpediente({
+      expediente: expData,
+      permisos: permisosHeader,
+      ...datosAlertas,
+    }));
   }
 
   return (
