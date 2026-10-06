@@ -13,4 +13,4 @@
 - [x] Mover Agregar endoso a Documentos y Reportes, con divisor e ícono propios, y comprobar ambos accesos.
 - [x] Corregir el aviso del header: solo llegada real y régimen configurado, días restantes desde hoy y alerta de vencimiento; conservar cumplimiento y verificar sin cambiar datos.
 - [x] Reemplazar ETA por Llegada con días de tránsito desde Cargado cuando haya llegada real, quitar el campo duplicado y verificar la secuencia en escritorio y celular.
-- [ ] Corregir el título de Nuevo Expediente, fijar sus dos filas de acciones y verificar con captura a 1366×768.
+- [x] Corregir el título de Nuevo Expediente, fijar sus dos filas de acciones y verificar con captura a 1366×768.
