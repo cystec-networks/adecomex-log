@@ -63,8 +63,7 @@ import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { PortadaExpedienteButton } from "@/components/portada-expediente-button";
 import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado, fechasDespachoFaltantes } from "@/lib/estados-expediente";
-import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
-import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
+import { usePlazosRegimen, plazoEfectivo, diasRegimen, venceEn, habilesRestantes, diasHabilesEntre } from "@/lib/plazo-presentacion";
 import { VencePresentacion } from "@/components/vence-presentacion";
 import { unitFob, loadBrokerConfig } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
@@ -581,9 +580,23 @@ function DetalleExpediente() {
   });
 
   const { data: permisosHeader } = useQuery({
-    queryKey: ["expediente-permisos-header", id],
+    queryKey: ["permisos-por-expediente", id],
     enabled: !isNuevo,
-    queryFn: async () => (await supabase.from("permisos").select("numero").eq("expediente_id", id).is("eliminado_en", null)).data ?? [],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("permisos").select("*").eq("expediente_id", id).is("eliminado_en", null).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: documentosHeader } = useQuery({
+    queryKey: ["documentos", id],
+    enabled: !isNuevo,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("documentos").select("*").eq("expediente_id", id).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
   });
 
   const hitosDone = (hitosHeader ?? []).filter((h) => h.estado === "completado" || h.estado === "no_aplica").length;
@@ -712,6 +725,41 @@ function DetalleExpediente() {
   if (!isNuevo && !exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
   const expData: any = isNuevo ? EXPEDIENTE_VACIO : exp;
+  const alertasHeader: string[] = [];
+  if (!isNuevo) {
+    const { dias } = plazoEfectivo(expData, plazosReg);
+    const vencimiento = expData.fecha_llegada_real && dias && diasRegimen(expData.regimen_aduanero, plazosReg)
+      ? venceEn(expData.fecha_llegada_real, dias) : null;
+    const posterior = estadoIndex(expData.estado) >= estadoIndex("verificar");
+    const presentado = expData.fecha_presentacion_real ? parseLocalDate(expData.fecha_presentacion_real) : null;
+    if (vencimiento && presentado && !isNaN(presentado.getTime())) {
+      if (presentado > vencimiento) alertasHeader.push(`Presentación fuera de plazo (${Math.abs(diasHabilesEntre(presentado, vencimiento))} días hábiles de retraso)`);
+    } else if (vencimiento && !posterior) {
+      const restantes = Math.abs(habilesRestantes(vencimiento));
+      const unidad = restantes === 1 ? "día hábil" : "días hábiles";
+      alertasHeader.push(vencimiento < hoyRD()
+        ? `Plazo de presentación vencido desde ${fmtLocalDate(vencimiento.toISOString().slice(0, 10))} (${restantes} ${unidad} transcurridos)`
+        : restantes === 0 ? "Vence hoy el plazo de presentación" : `Vence en ${restantes} ${unidad}`);
+    }
+    if (posterior && !expData.fecha_presentacion_real) alertasHeader.push("Falta capturar la fecha de presentación");
+    if (documentosHeader) {
+      const faltantes = ["Factura comercial", "Bill of Lading"].filter((tipo) =>
+        !documentosHeader.some((d) => d.tipo === tipo && d.storage_path?.trim()));
+      if (faltantes.length) alertasHeader.push(`Documentos pendientes: ${faltantes.join(", ")}`);
+      const ultimos = new Map<string, (typeof documentosHeader)[number]>();
+      for (const d of documentosHeader) {
+        const previo = ultimos.get(d.tipo);
+        if (!previo || new Date(d.fecha_recepcion ?? d.created_at).getTime() >= new Date(previo.fecha_recepcion ?? previo.created_at).getTime()) ultimos.set(d.tipo, d);
+      }
+      for (const d of ultimos.values()) {
+        if (["pendiente", "observado", "vencido"].includes(d.estado) && !faltantes.includes(d.tipo)) {
+          alertasHeader.push(`${d.tipo}: ${DOC_ESTADO_STYLE[d.estado]?.label.toLowerCase()}`);
+        }
+      }
+    }
+    const permisosPendientes = (permisosHeader ?? []).filter((p) => p.estado !== "aprobado");
+    if (permisosPendientes.length) alertasHeader.push(`Permisos pendientes de aprobación: ${permisosPendientes.length}`);
+  }
 
   return (
     <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
@@ -984,7 +1032,7 @@ function DetalleExpediente() {
               </span>
           </div>
           )}
-          <VencePresentacion exp={expData} canEdit={canEditExpediente} />
+           <VencePresentacion exp={expData} canEdit={canEditExpediente} informativo />
           </div>
            <CampoHeader etiqueta="Puerto" valor={expData.puerto_arribo} largo className="expediente-header-puerto" />
         </div>
@@ -997,26 +1045,6 @@ function DetalleExpediente() {
           <CampoHeader etiqueta="N.º de despacho" valor={expData.numero_igra} />
           <CampoHeader etiqueta="N.º de permiso" valor={permisosNumeros} largo />
 
-          {(() => {
-            const a = alertaDeclaracionTardia({ ...expData, sla_dias: plazoEfectivo(expData, plazosReg).dias });
-            if (!a) return <span className="hidden xl:block" aria-hidden="true" />;
-            const cls = a.tone === "danger"
-              ? "border-destructive/40 bg-destructive/10 text-destructive"
-              : a.tone === "warning"
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                : "border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-400";
-            const txt = a.tone === "danger"
-              ? (a.diasRestantes === 0 ? "⚠ Multa hoy (Ley 168-21)" : `⚠ Vencido hace ${Math.abs(a.diasRestantes)} día(s) hábiles`)
-              : `${a.diasRestantes} día(s) hábiles para declarar (Ley 168-21)`;
-            return (
-              <span
-                title="Ley 168-21: 5 días laborables desde el arribo para presentar la declaración"
-                className={`inline-flex min-w-0 items-center justify-center truncate rounded border px-2 py-0.5 text-xs font-medium md:col-span-2 xl:col-span-1 ${cls}`}
-              >
-                {txt}
-              </span>
-            );
-          })()}
         </div>
         </div>
         )}
@@ -1026,6 +1054,11 @@ function DetalleExpediente() {
             <span className="line-clamp-3 min-w-0 break-words text-xs font-medium leading-5 md:text-sm" title={expData.descripcion_mercancia ?? "—"}>
               {expData.descripcion_mercancia || "—"}
             </span>
+          </div>
+        )}
+        {!isNuevo && alertasHeader.length > 0 && (
+          <div className="expediente-header-alertas mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-0 text-destructive" role="status" aria-label="Alertas del expediente">
+            {alertasHeader.map((alerta) => <span key={alerta} className="break-words">{alerta}</span>)}
           </div>
         )}
       </div>
