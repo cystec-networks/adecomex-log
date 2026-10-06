@@ -30,7 +30,7 @@ import type { ReactNode, ComponentType } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AdecomexFlowLogo } from "@/components/adecomex-flow-logo";
 
 /* Por debajo de este ancho el menú lateral se recoge solo a iconos: la toolbar
