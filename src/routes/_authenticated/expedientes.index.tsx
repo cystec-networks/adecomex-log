@@ -418,6 +418,9 @@ function Expedientes() {
       <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
         <div className="flex items-center justify-center gap-1 whitespace-nowrap">
           {estadoBadge(e.estado)}
+          {e.liq_siga_fecha_pago && (
+            <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} compacto />
+          )}
           {e.estado === "verificar" && (() => {
             const fv = fechaVerificacion(e);
             if (!fv) return null;
@@ -433,7 +436,7 @@ function Expedientes() {
       </td>
       <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
         <div className="flex items-center justify-center gap-1 whitespace-nowrap [&>div]:text-[11px] [&>div]:whitespace-nowrap">
-          {(e.liq_siga_termino_at || e.liq_siga_fecha_pago) && (
+          {e.liq_siga_termino_at && !e.liq_siga_fecha_pago && (
             <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} compacto />
           )}
           {(() => {
