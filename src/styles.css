@@ -47,13 +47,15 @@
 }
 /* La toolbar completa se rige por el ancho de la VENTANA (≥1280px), no por el
    contenedor: desde 1280px el layout compacto conserva la toolbar visible sin
-   menú de desbordamiento. El Estado cede hasta 9rem antes de desbordar. */
+   menú de desbordamiento. La toolbar reclama su ancho natural y el Estado cede
+   hasta 9rem antes de desbordar. */
 @media (min-width: 1280px) {
   .expediente-header-grid {
-    grid-template-columns: auto max-content minmax(9rem, 18rem) auto minmax(0, 1fr);
+    grid-template-columns: auto max-content minmax(9rem, 18rem) auto minmax(min-content, 1fr);
     grid-template-areas: "back number state save menus";
   }
   .expediente-header-menus { display: flex; flex-wrap: nowrap; }
+  .expediente-header-menus > button { white-space: nowrap; }
   .expediente-header-more { display: none; }
 }
 /* Entre 1280 y 1699 el menú lateral va en iconos (colapso automático en
