@@ -725,7 +725,7 @@ function DetalleExpediente() {
           upd();
           new ResizeObserver(upd).observe(el);
         }}
-        className={cn("expediente-header-container sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6", isNuevo && "expediente-nuevo-header")}
+        className={cn("expediente-header-container sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6", isNuevo ? "expediente-nuevo-header" : "expediente-detalle-header")}
       >
         <div className="space-y-1.5 md:space-y-2">
         <div className={isNuevo ? "expediente-nuevo-grid" : "expediente-header-grid"}>
@@ -908,6 +908,7 @@ function DetalleExpediente() {
         {!isNuevo && (
         <div className="expediente-info-fila2">
           <div className="expediente-header-cliente flex min-w-0 items-center gap-1.5">
+          <span className="whitespace-nowrap text-muted-foreground">Cliente:</span>
           {expData.clientes ? (
             <Popover>
               <PopoverTrigger asChild>
@@ -993,9 +994,9 @@ function DetalleExpediente() {
             <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Etapa Operativa:</Label>
             <span className="text-xs font-medium md:text-sm">{hitosDone} de {hitosTotal}</span>
           </div>
-          <CampoHeader etiqueta="Declaración DUA" valor={expData.numero_dua} />
+          <CampoHeader etiqueta="Declaración DUA" valor={expData.numero_dua} largo />
           <CampoHeader etiqueta="N.º de despacho" valor={expData.numero_igra} />
-          <CampoHeader etiqueta="N.º de permiso" valor={permisosNumeros} />
+          <CampoHeader etiqueta="N.º de permiso" valor={permisosNumeros} largo />
 
           {(() => {
             const a = alertaDeclaracionTardia({ ...expData, sla_dias: plazoEfectivo(expData, plazosReg).dias });

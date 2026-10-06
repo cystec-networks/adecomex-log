@@ -125,6 +125,51 @@
   .expediente-info-fila3 { grid-template-columns: repeat(4, minmax(0, 1fr)) max-content; }
 }
 
+/* Detail-only presentation: fixed slots, complete values and neutral utility controls. */
+.expediente-detalle-header {
+  --header-value: oklch(0.22 0 0);
+  --header-label: oklch(0.55 0 0);
+  font-size: 13px;
+}
+.dark .expediente-detalle-header { --header-value: var(--foreground); --header-label: var(--muted-foreground); }
+.expediente-detalle-header :is(h1, button, a, label, span) { font-size: 13px; }
+.expediente-detalle-header .text-muted-foreground { color: var(--header-label); }
+.expediente-detalle-header .exp-lbl-full { display: none; }
+.expediente-detalle-header .exp-lbl-short { display: inline; }
+.expediente-detalle-header .expediente-header-back { width: 2rem; padding-inline: 0; }
+.expediente-detalle-header .expediente-header-back svg { margin-right: 0; }
+.expediente-detalle-header .expediente-header-state { margin-inline-start: 0; grid-template-columns: auto minmax(9.5rem, 1fr) 2rem; }
+.expediente-detalle-header .expediente-header-state > label { display: block; }
+.expediente-detalle-header .expediente-header-state [data-slot="select-value"] { overflow: visible; white-space: nowrap; }
+.expediente-detalle-header .expediente-header-save > div { border-left: 0; padding-left: 0; }
+.expediente-detalle-header :is(.expediente-header-save, .expediente-header-menus) button { height: 2rem; }
+.expediente-detalle-header .expediente-header-save button[aria-label="Editar"] { width: auto; min-width: 5rem; background: var(--primary-deep); color: var(--primary-foreground); }
+.expediente-detalle-header .expediente-header-menus { justify-content: space-between; gap: 0.5rem; }
+.expediente-detalle-header :is(.expediente-header-menus, .expediente-header-save) button[data-slot="button"][data-variant="outline"] { background: var(--background); color: var(--header-value); }
+.expediente-detalle-header .expediente-header-menus button { background: var(--background); color: var(--header-value); }
+.expediente-detalle-header :is(.expediente-header-menus, .expediente-header-save) button:hover { filter: brightness(0.97); }
+.expediente-detalle-header .expediente-header-menus svg.lucide-chevron-down { display: none; }
+.expediente-detalle-header .expediente-info-fila2 { overflow: visible; align-items: start; gap: 0.75rem; }
+.expediente-detalle-header .expediente-header-cliente { align-items: baseline; flex-wrap: wrap; }
+.expediente-detalle-header .expediente-header-cliente > button { white-space: normal; overflow-wrap: anywhere; color: var(--header-value); font-weight: 500; text-decoration: none; }
+.expediente-detalle-header .expediente-header-arrival { display: contents; }
+.expediente-detalle-header :is(.expediente-header-valor-largo, .expediente-info-fila2 .font-medium, .expediente-info-fila3 .font-medium) { white-space: normal; overflow-wrap: anywhere; color: var(--header-value); }
+.expediente-detalle-header :is(.expediente-info-fila2, .expediente-info-fila3) > div { height: auto; min-height: 2rem; align-items: baseline; }
+.expediente-detalle-header .expediente-presentation-slot { min-width: 0; width: auto; align-items: baseline; }
+.expediente-detalle-header .expediente-presentation-slot > .expediente-presentation-pill { flex: 1 1 0; width: auto; min-width: 0; height: auto; min-height: 2rem; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--header-value); white-space: normal; }
+.expediente-detalle-header .expediente-presentation-full { display: inline; overflow: visible; white-space: normal; overflow-wrap: anywhere; }
+.expediente-detalle-header .expediente-presentation-short { display: none; }
+.expediente-detalle-header .expediente-presentation-label { color: var(--header-label); font-weight: 400; }
+.expediente-detalle-header .expediente-info-fila3 .truncate { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+@media (min-width: 1280px) {
+  .expediente-detalle-header .expediente-header-grid { grid-template-columns: auto max-content max-content max-content minmax(0, 1fr); column-gap: 0.75rem; }
+}
+@container expediente-header (min-width: 700px) {
+  .expediente-detalle-header .expediente-info-fila2 { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 0.85fr); }
+  .expediente-detalle-header .expediente-info-fila3 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .expediente-detalle-header .expediente-info-fila3 > span { grid-column: 1 / -1; justify-self: start; }
+}
+
 @theme inline {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-display: "Manrope", "Inter", sans-serif;
