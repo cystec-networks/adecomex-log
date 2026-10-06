@@ -432,7 +432,7 @@ function Expedientes() {
         </div>
       </td>
       <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
-        <div className="flex items-center justify-center gap-1 whitespace-nowrap [&_[data-slot=badge]]:text-[11px] [&_[data-slot=badge]]:whitespace-nowrap">
+        <div className="flex items-center justify-center gap-1 whitespace-nowrap [&>div]:text-[11px] [&>div]:whitespace-nowrap">
           {(e.liq_siga_termino_at || e.liq_siga_fecha_pago) && (
             <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} compacto />
           )}
