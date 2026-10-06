@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical, Printer, Repeat2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday, hoyRD, hoyRDISO } from "@/lib/dates";
 import { calcImpuestosLinea } from "@/lib/impuestos";
@@ -404,6 +405,7 @@ function DetalleExpediente() {
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const [tabActiva, setTabActiva] = useState("info");
+  const [nuevoAccionesHost, setNuevoAccionesHost] = useState<HTMLDivElement | null>(null);
   const [solicitudEndoso, setSolicitudEndoso] = useState(0);
   const abrirEndoso = () => {
     setTabActiva("info");
@@ -723,14 +725,14 @@ function DetalleExpediente() {
           upd();
           new ResizeObserver(upd).observe(el);
         }}
-        className="expediente-header-container sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6"
+        className={cn("expediente-header-container sticky top-0 z-20 border-b bg-background px-3 pb-2 pt-2 md:px-6", isNuevo && "expediente-nuevo-header")}
       >
         <div className="space-y-1.5 md:space-y-2">
-        <div className={isNuevo ? "grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:flex md:flex-wrap md:gap-3" : "expediente-header-grid"}>
+        <div className={isNuevo ? "expediente-nuevo-grid" : "expediente-header-grid"}>
           <Button variant="ghost" size="sm" asChild className="expediente-header-back shrink-0 px-2 md:px-3"><Link to="/expedientes"><ArrowLeft className="h-4 w-4 md:mr-1" /><span className="hidden md:inline exp-lbl-full">Volver</span></Link></Button>
           {isNuevo ? (
-            <div className="min-w-0 flex-1">
-              <h1 className="font-display truncate text-lg font-bold md:text-xl">Nuevo Expediente</h1>
+            <div className="expediente-nuevo-title min-w-0">
+              <h1 className="font-display whitespace-nowrap text-lg font-bold md:text-xl">Nuevo Expediente</h1>
               <p className="truncate text-xs text-muted-foreground md:text-sm">
                 Completa los campos a mano, o escanea el BL y/o la factura comercial para autollenarlos. El número se genera automáticamente.
               </p>
@@ -763,7 +765,7 @@ function DetalleExpediente() {
             </div>
           )}
           {isNuevo && (
-            <div className="flex items-center gap-2">
+            <div className="expediente-nuevo-scan flex items-center gap-2">
               <EscanearBlButton onExtracted={(res) => { blRes.current = res; void aplicarCombinado(); toast.success("BL procesado — revisa y ajusta los campos"); }} />
               <EscanearFacturaExpButton onExtracted={(res) => { facRes.current = res; void aplicarCombinado(); toast.success("Factura procesada — revisa y ajusta los campos"); }} />
               <NuevoDesdeXmlButton
@@ -780,13 +782,16 @@ function DetalleExpediente() {
                   });
                 }}
               />
+              <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" disabled={duplicarMut.isPending} onClick={() => duplicarMut.mutate()} title="Duplicar expediente" aria-label="Duplicar expediente">
+                <Copy className="h-4 w-4" />
+              </Button>
             </div>
           )}
           {(
-            <div className={isNuevo ? "hidden items-center gap-1.5 md:flex md:flex-wrap" : "hidden md:contents"}>
+            <div className={isNuevo ? "contents" : "hidden md:contents"}>
               {!isNuevo && <div className="expediente-header-save"><ControlesGuardadoHeader expedienteId={id} /></div>}
-              <div className={isNuevo ? "flex items-center gap-1.5" : "expediente-header-menus flex min-w-0 flex-wrap items-center gap-1.5"}>
-              <Button
+              <div className={isNuevo ? "expediente-nuevo-menus flex items-center gap-1.5" : "expediente-header-menus flex min-w-0 flex-wrap items-center gap-1.5"}>
+              {!isNuevo && <Button
                 variant="outline"
                 size="icon"
                 className="h-8 w-8 shrink-0"
@@ -795,7 +800,7 @@ function DetalleExpediente() {
                 title="Duplicar expediente"
               >
                 <Copy className="h-4 w-4" />
-              </Button>
+              </Button>}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="px-2" title="Documentos y Reportes">
@@ -833,6 +838,7 @@ function DetalleExpediente() {
               </DropdownMenu>
               <HerramientasDgaVuceMenu className="px-2" />
               <RastreosEnvioMenu className="px-2" />
+              {isNuevo && <div ref={setNuevoAccionesHost} className="expediente-nuevo-submit flex shrink-0 items-center gap-2 print:hidden" />}
               </div>
             </div>
           )}
@@ -1082,6 +1088,7 @@ function DetalleExpediente() {
             ocrAplicado={ocrAplicado}
             tipoParam={tipoParam}
             solicitudEndoso={solicitudEndoso}
+            nuevoAccionesHost={nuevoAccionesHost}
           />
           </div>
         </TabsContent>
@@ -1262,7 +1269,7 @@ function normalizarCamposExportacion(payload: any) {
   });
 }
 
-function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null, tipoParam = "", solicitudEndoso = 0 }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null; tipoParam?: string; solicitudEndoso?: number }) {
+function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null, tipoParam = "", solicitudEndoso = 0, nuevoAccionesHost = null }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null; tipoParam?: string; solicitudEndoso?: number; nuevoAccionesHost?: HTMLDivElement | null }) {
   const qc = useQueryClient();
   const nav = useNavigate();
   const editable = (canEdit && modoEdicion) || isNuevo;
@@ -1908,16 +1915,13 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     return () => { window.removeEventListener("exp-guardar", onSave); window.removeEventListener("exp-editar", onEdit); };
   });
 
-  const BotonesAccion = () => !isNuevo ? null : (
-    <div
-      className="print:hidden sticky z-10 -mx-1 flex flex-wrap items-center justify-end gap-2 rounded-md border bg-background px-2 py-2 shadow-md"
-      style={{ top: "calc(var(--exp-header-h, 0px) + 4px)" }}
-    >
-      <Button variant="outline" onClick={() => nav({ to: "/expedientes" })}>Cancelar</Button>
-      <Button onClick={intentarCrear} disabled={crear.isPending}>
-        <Check className="h-4 w-4 mr-1" /><span key={crear.isPending ? "p" : "i"}>{crear.isPending ? "Creando…" : "Crear expediente"}</span>
+  const BotonesAccion = () => !isNuevo || !nuevoAccionesHost ? null : createPortal(
+    <>
+      <Button size="sm" variant="outline" onClick={() => nav({ to: "/expedientes" })}>Cancelar</Button>
+      <Button size="sm" onClick={intentarCrear} disabled={crear.isPending}>
+        <Check className="h-4 w-4 mr-1" /><span key={crear.isPending ? "p" : "i"}>{crear.isPending ? "Creando…" : "Crear Expediente"}</span>
       </Button>
-    </div>
+    </>, nuevoAccionesHost
   );
 
   return (

@@ -65,6 +65,21 @@
 @media (min-width: 1280px) and (max-width: 1365px) {
   .expediente-header-state > label { display: none; }
 }
+.expediente-nuevo-grid {
+  display: grid;
+  grid-template-columns: auto minmax(max-content, 1fr) max-content;
+  grid-template-areas: "back title scan" "menus menus menus";
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+}
+.expediente-nuevo-title { grid-area: title; }
+.expediente-nuevo-title > p { max-width: 24rem; }
+.expediente-nuevo-scan { grid-area: scan; flex-wrap: nowrap; }
+.expediente-nuevo-menus { grid-area: menus; flex-wrap: nowrap; }
+.expediente-nuevo-submit { margin-left: auto; }
+.expediente-nuevo-header .exp-lbl-full { display: inline; }
+.expediente-nuevo-header .exp-lbl-short { display: none; }
 /* Filas de datos con posiciones fijas: el largo de un valor nunca mueve a sus vecinos. */
 .expediente-info-fila2, .expediente-info-fila3 {
   display: grid; min-width: 0; column-gap: 0.75rem; row-gap: 0.125rem;

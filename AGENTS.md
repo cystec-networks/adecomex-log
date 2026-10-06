@@ -19,6 +19,8 @@ El PDF de preliquidación de expediente y cotización comparte el generador hori
 
 Use explicit responsive grid slots and reserved action widths for the expediente header; desktop controls stay on one row, with secondary menus consolidated into More actions when the container cannot fit them, while mobile keeps accessible rows.
 
+Keep the new-expediente header in two fixed action rows; render the form-owned submit controls into its header slot through a React portal to preserve validation and avoid a separate floating panel.
+
 Use space-between across all present desktop header fields, flatten the arrival wrapper for equal gaps, preserve intrinsic client and BL/AWB widths, and group the shrinkable presentation badge with its edit control; container-based icon/date fallback preserves full tooltip details.
 
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
