@@ -727,7 +727,7 @@ function DetalleExpediente() {
       >
         <div className="space-y-1.5 md:space-y-2">
         <div className={isNuevo ? "grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:flex md:flex-wrap md:gap-3" : "expediente-header-grid"}>
-          <Button variant="ghost" size="sm" asChild className="expediente-header-back shrink-0 px-2 md:px-3"><Link to="/expedientes"><ArrowLeft className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Volver</span></Link></Button>
+          <Button variant="ghost" size="sm" asChild className="expediente-header-back shrink-0 px-2 md:px-3"><Link to="/expedientes"><ArrowLeft className="h-4 w-4 md:mr-1" /><span className="hidden md:inline exp-lbl-full">Volver</span></Link></Button>
           {isNuevo ? (
             <div className="min-w-0 flex-1">
               <h1 className="font-display truncate text-lg font-bold md:text-xl">Nuevo Expediente</h1>
@@ -798,8 +798,8 @@ function DetalleExpediente() {
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="px-2">
-                    <FileOutput className="h-4 w-4 mr-1" /> Documentos y Reportes
+                  <Button variant="outline" size="sm" className="px-2" title="Documentos y Reportes">
+                    <FileOutput className="h-4 w-4 mr-1" /> <span className="exp-lbl-full">Documentos y Reportes</span><span className="exp-lbl-short">Documentos</span>
                     <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
                   </Button>
                 </DropdownMenuTrigger>
