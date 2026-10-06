@@ -64,7 +64,6 @@ import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { PortadaExpedienteButton } from "@/components/portada-expediente-button";
 import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado, fechasDespachoFaltantes } from "@/lib/estados-expediente";
 import { usePlazosRegimen, plazoEfectivo, diasRegimen, venceEn, habilesRestantes, diasHabilesEntre } from "@/lib/plazo-presentacion";
-import { VencePresentacion } from "@/components/vence-presentacion";
 import { unitFob, loadBrokerConfig } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
@@ -1032,7 +1031,6 @@ function DetalleExpediente() {
               </span>
           </div>
           )}
-           <VencePresentacion exp={expData} canEdit={canEditExpediente} informativo />
           </div>
            <CampoHeader etiqueta="Puerto" valor={expData.puerto_arribo} largo className="expediente-header-puerto" />
         </div>
