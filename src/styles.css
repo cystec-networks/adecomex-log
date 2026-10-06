@@ -73,7 +73,8 @@
   gap: 0.5rem;
   overflow-x: auto;
 }
-.expediente-nuevo-title { grid-area: title; }
+.expediente-nuevo-title { grid-area: title; min-width: 0; }
+.expediente-nuevo-subtitle { font-size: 12px; color: oklch(0.55 0.02 250); line-height: 1.4; }
 .expediente-nuevo-scan { grid-area: scan; flex-wrap: nowrap; }
 /* Fila 2 justificada: utilidades repartidas, Cancelar/Crear agrupados al cierre. */
 .expediente-nuevo-menus { grid-area: menus; flex-wrap: nowrap; justify-content: space-between; }
