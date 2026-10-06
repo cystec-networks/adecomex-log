@@ -1,6 +1,15 @@
-import { describe, expect, test } from "bun:test";
+import { describe, it as test } from "node:test";
+import assert from "node:assert/strict";
 import { alertasAdicionalesExpediente } from "./alertas-expediente";
 import { hoyRD, hoyRDISO } from "./dates";
+
+function expect(actual: unknown) {
+  return {
+    toEqual: (expected: unknown) => assert.deepEqual(actual, expected),
+    toContain: (expected: string) => assert.ok(typeof actual === "string" && actual.includes(expected)),
+    toHaveLength: (expected: number) => assert.ok(Array.isArray(actual) && actual.length === expected),
+  };
+}
 
 function fecha(dias: number) {
   const d = hoyRD();
