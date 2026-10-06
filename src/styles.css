@@ -56,7 +56,8 @@
 }
 /* 1280–1699px: barra completa con etiquetas cortas (texto completo en tooltip). */
 @media (min-width: 1280px) and (max-width: 1699px) {
-  .expediente-header-grid { grid-template-columns: auto max-content 12.5rem auto minmax(0, 1fr); }
+  .expediente-header-grid { grid-template-columns: auto max-content 11rem auto minmax(0, 1fr); column-gap: 0.25rem; }
+  .expediente-header-container .exp-lbl-short + svg { display: none; }
   .expediente-header-container .exp-lbl-full { display: none; }
   .expediente-header-container .exp-lbl-short { display: inline; }
   .expediente-header-back svg { margin-right: 0; }
