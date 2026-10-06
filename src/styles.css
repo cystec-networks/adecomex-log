@@ -45,7 +45,10 @@
   }
   .expediente-header-state { margin-inline-start: 0.75rem; }
 }
-@container expediente-header (min-width: 1250px) {
+/* La toolbar completa se rige por el ancho de la VENTANA (≥1280px), no por el
+   contenedor: en 1366×768 el menú lateral deja el header ~1078px y el layout
+   compacto debe conservar la toolbar visible sin menú de desbordamiento. */
+@media (min-width: 1280px) {
   .expediente-header-grid {
     grid-template-columns: auto max-content 18rem auto minmax(0, 1fr);
     grid-template-areas: "back number state save menus";
