@@ -13,10 +13,12 @@ export function BadgeVigencia({
   fecha,
   umbralAmarillo = 15,
   conHora = false,
+  compacto = false,
 }: {
   fecha: string | null | undefined;
   umbralAmarillo?: number;
   conHora?: boolean;
+  compacto?: boolean;
 }) {
   if (!fecha) return <span className="text-muted-foreground">—</span>;
 
@@ -35,7 +37,7 @@ export function BadgeVigencia({
       const horas = Math.floor(-ms / 3600000);
       return (
         <Badge title={fmtFull} className="bg-rose-100 text-rose-700 border-rose-200">
-          {horas < 24 ? `Vencido hace ${horas} h` : `Vencido hace ${Math.floor(horas / 24)} d`}
+          {compacto ? `Venció ${horas < 24 ? `${Math.round(-ms / 3600000)}h` : `${Math.floor(horas / 24)}d`}` : horas < 24 ? `Vencido hace ${horas} h` : `Vencido hace ${Math.floor(horas / 24)} d`}
         </Badge>
       );
     }
@@ -44,7 +46,7 @@ export function BadgeVigencia({
       const minutos = Math.floor((ms % 3600000) / 60000);
       return (
         <Badge title={fmtFull} className="bg-amber-100 text-amber-700 border-amber-200">
-          Vence en {horasRest} h {minutos} min
+          {compacto ? `Vence ${Math.round(ms / 3600000)}h` : `Vence en ${horasRest} h ${minutos} min`}
         </Badge>
       );
     }
@@ -56,7 +58,7 @@ export function BadgeVigencia({
         : "bg-emerald-100 text-emerald-700 border-emerald-200";
     return (
       <Badge title={fmtFull} className={cls}>
-        Vence en {dias} d {resto} h
+        {compacto ? `Vence ${dias}d` : `Vence en ${dias} d ${resto} h`}
       </Badge>
     );
   }
@@ -80,9 +82,11 @@ export function BadgeVigencia({
 export function BadgeVigenciaPinDga({
   terminoAt,
   fechaPago,
+  compacto = false,
 }: {
   terminoAt: string | null | undefined;
   fechaPago?: string | null;
+  compacto?: boolean;
 }) {
   if (fechaPago) {
     // Fecha de pago es solo fecha: se compara contra el fin de ese día local.
@@ -93,12 +97,12 @@ export function BadgeVigenciaPinDga({
     const tarde = limite && !isNaN(limite.getTime()) && !isNaN(pago.getTime()) && pago.getTime() > limite.getTime();
     return tarde ? (
       <Badge className="bg-amber-100 text-amber-700 border-amber-200" title="El pago se registró después del vencimiento del PIN">
-        Pagado fuera de vigencia
+        {compacto ? "Pago tardío" : "Pagado fuera de vigencia"}
       </Badge>
     ) : (
       <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Pagado</Badge>
     );
   }
   if (!terminoAt) return null;
-  return <BadgeVigencia fecha={terminoAt} conHora />;
+  return <BadgeVigencia fecha={terminoAt} conHora compacto={compacto} />;
 }
