@@ -10,7 +10,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronRight, Repeat2, Trash2, AlarmClock, AlertTriangle, Clock, Plus, Copy } from "lucide-react";
+import { ChevronRight, Repeat2, Trash2, AlarmClock, Plus, Copy } from "lucide-react";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { Toggle } from "@/components/ui/toggle";
 import { WhatsAppButton } from "@/components/whatsapp-button";
