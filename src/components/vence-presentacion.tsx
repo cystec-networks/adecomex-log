@@ -53,7 +53,7 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
       <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
       <span className={pill(tarde ? TONO_ALERTA : TONO_OK)} title={completo} aria-label={completo}>
         <span className="expediente-presentation-content">
-          <span className="expediente-presentation-full">{compacto}</span>
+          <span className="expediente-presentation-full"><span className="expediente-presentation-label">Presentado:</span>{compacto.slice(compacto.indexOf(":") + 1)}</span>
           <span className="expediente-presentation-short">{tarde ? <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}{fecha}</span>
         </span>
       </span>
@@ -88,7 +88,7 @@ export function VencePresentacion({ exp, canEdit }: { exp: any; canEdit: boolean
     <span className="expediente-header-arrival-separator text-muted-foreground" aria-hidden="true">·</span>
     <span className={pill(tono)} title={completo} aria-label={completo}>
       <span className="expediente-presentation-content">
-        <span className="expediente-presentation-full">{compacto}</span>
+        <span className="expediente-presentation-full"><span className="expediente-presentation-label">{vencido ? "Venció:" : "Vence:"}</span>{compacto.slice(compacto.indexOf(":") + 1)}</span>
         <span className="expediente-presentation-short">{vencido ? <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}{fecha}</span>
       </span>
     </span>

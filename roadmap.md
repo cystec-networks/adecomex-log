@@ -14,3 +14,4 @@
 - [x] Corregir el aviso del header: solo llegada real y régimen configurado, días restantes desde hoy y alerta de vencimiento; conservar cumplimiento y verificar sin cambiar datos.
 - [x] Reemplazar ETA por Llegada con días de tránsito desde Cargado cuando haya llegada real, quitar el campo duplicado y verificar la secuencia en escritorio y celular.
 - [x] Corregir el título de Nuevo Expediente, fijar sus dos filas de acciones y verificar con captura a 1366×768.
+- [x] Uniformar exclusivamente el encabezado del Detalle: texto máximo 13 px, Estado completo, acciones del mismo alto, logística equitativa e identificadores sin truncar; verificar en expediente real.
