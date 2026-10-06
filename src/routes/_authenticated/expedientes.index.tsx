@@ -323,7 +323,7 @@ function Expedientes() {
     const colapsado = !!colapsados[groupKey];
     return (
       <tr className="bg-muted/40 cursor-pointer hover:bg-muted/60" onClick={() => toggleGrupo(groupKey)}>
-        <td colSpan={11} className="py-2 px-4">
+        <td colSpan={12} className="py-2 px-4">
           <div className="flex items-center gap-3">
             <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${colapsado ? "" : "rotate-90"}`} />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
@@ -416,13 +416,8 @@ function Expedientes() {
         {e.numero_vuce ?? "—"}
       </td>
       <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
-        <div className="flex flex-col items-center gap-0.5">
+        <div className="flex items-center justify-center gap-1 whitespace-nowrap">
           {estadoBadge(e.estado)}
-          {(e.liq_siga_termino_at || e.liq_siga_fecha_pago) && (
-            <div className="scale-90 origin-top">
-              <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} />
-            </div>
-          )}
           {e.estado === "verificar" && (() => {
             const fv = fechaVerificacion(e);
             if (!fv) return null;
@@ -434,6 +429,13 @@ function Expedientes() {
               </span>
             );
           })()}
+        </div>
+      </td>
+      <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
+        <div className="flex items-center justify-center gap-1 whitespace-nowrap [&_[data-slot=badge]]:text-[11px] [&_[data-slot=badge]]:whitespace-nowrap">
+          {(e.liq_siga_termino_at || e.liq_siga_fecha_pago) && (
+            <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} compacto />
+          )}
           {(() => {
             const a = alertaDeclaracionTardia({ ...e, sla_dias: plazoEfectivo(e, plazosReg).dias });
             if (!a) return null;
@@ -449,10 +451,10 @@ function Expedientes() {
                 : "text-blue-600 dark:text-blue-400";
             const Icon = a.tone === "danger" ? AlertTriangle : Clock;
             const text = a.tone === "danger"
-              ? (a.diasRestantes < 0 ? "Vencido" : "Vence hoy")
-              : `${a.diasRestantes} día(s) hábiles`;
+              ? (a.diasRestantes < 0 ? `Venció ${Math.abs(a.diasRestantes)}d` : "Vence hoy")
+              : `Vence ${a.diasRestantes}d`;
             return (
-              <span title={title} aria-label={title} className={`inline-flex items-center gap-1 text-[10px] tabular-nums ${cls}`}>
+              <span title={title} aria-label={title} className={`inline-flex items-center gap-1 text-[11px] whitespace-nowrap tabular-nums ${cls}`}>
                 <Icon className="mt-0.5 h-3 w-3" />
                 <span>{text}</span>
               </span>
@@ -590,6 +592,7 @@ function Expedientes() {
                         <Th k="puerto_arribo" className="px-2 whitespace-nowrap">Puerto</Th>
                         <Th k="numero_vuce" className="px-2 whitespace-nowrap">Permiso VUCE</Th>
                         <Th k="estado" className="px-2 whitespace-nowrap">Estado</Th>
+                        <th className="px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Alerta</th>
                         <th className="px-1 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"></th>
                       </tr>
                     </thead>
