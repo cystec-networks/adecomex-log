@@ -515,12 +515,15 @@ function Expedientes() {
           <Link to="/expedientes" search={{ tipo: "importacion", estado: estadoParam, eta: etaParam }} className={`px-2.5 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
           <Link to="/expedientes" search={{ tipo: "exportacion", estado: estadoParam, eta: etaParam }} className={`px-2.5 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
           <Link to="/expedientes" search={{ tipo: "facturados", estado: estadoParam, eta: etaParam }} className={`px-2.5 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
+          </div>
         </div>
-        <HerramientasDgaVuceMenu />
-        <RastreosEnvioMenu />
-        <Button size="sm" asChild>
-          <Link to="/expedientes/$id" params={{ id: "nuevo" }} search={{ nuevo: "", solicitud: "", tipo: tipo === "exportacion" ? "exportacion" : "" }}><Plus className="h-4 w-4 mr-1" />{tipo === "exportacion" ? "Nuevo Expediente de Exportación" : "Nuevo Expediente"}</Link>
-        </Button>
+        <div className="expediente-nuevo-menus flex items-center">
+          <HerramientasDgaVuceMenu />
+          <RastreosEnvioMenu />
+          <Button size="sm" asChild>
+            <Link to="/expedientes/$id" params={{ id: "nuevo" }} search={{ nuevo: "", solicitud: "", tipo: tipo === "exportacion" ? "exportacion" : "" }}><Plus className="h-4 w-4 mr-1" />{tipo === "exportacion" ? "Nuevo Expediente de Exportación" : "Nuevo Expediente"}</Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="overflow-hidden flex-1 min-h-0 flex flex-col">
