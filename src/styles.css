@@ -132,7 +132,7 @@
   font-size: 13px;
 }
 .dark .expediente-detalle-header { --header-value: var(--foreground); --header-label: var(--muted-foreground); }
-.expediente-detalle-header :is(h1, button, a, label, span) { font-size: 13px; }
+.expediente-detalle-header * { font-size: 13px; }
 .expediente-detalle-header .text-muted-foreground { color: var(--header-label); }
 .expediente-detalle-header .exp-lbl-full { display: none; }
 .expediente-detalle-header .exp-lbl-short { display: inline; }
@@ -165,7 +165,9 @@
   .expediente-detalle-header .expediente-header-grid { grid-template-columns: auto max-content max-content max-content minmax(0, 1fr); column-gap: 0.75rem; }
 }
 @container expediente-header (min-width: 700px) {
-  .expediente-detalle-header .expediente-info-fila2 { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 0.85fr); }
+  .expediente-detalle-header .expediente-info-fila2 { display: flex; justify-content: space-between; }
+  .expediente-detalle-header .expediente-info-fila2 > :not(.expediente-header-arrival),
+  .expediente-detalle-header .expediente-header-arrival > * { flex: 1 1 0; min-width: 0; }
   .expediente-detalle-header .expediente-info-fila3 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .expediente-detalle-header .expediente-info-fila3 > span { grid-column: 1 / -1; justify-self: start; }
 }
