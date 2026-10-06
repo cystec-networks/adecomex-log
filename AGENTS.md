@@ -29,3 +29,4 @@ Scope detail-header presentation to its dedicated class; logistics and operation
 - Use the shared state ordering to replace the deadline from verification onward with compliance based on existing fecha_presentado; omit compliance when its date or deadline is missing, never fabricate historical dates.
 - Open the existing Endoso section via a parent-owned request counter from both header document menus, preserving a single form and its current persistence logic.
 - Keep additional detail warnings in a pure evaluator with separately scoped query hooks; read invoice links and active reception incidents as authoritative evidence to avoid unrelated client debt and recomputing unpersisted reception tolerances.
+- Use the shared expediente alert evaluator for list and detail short/long text; keep PIN timestamp countdown separate from business-day presentation deadlines, and batch list evidence reads to avoid per-row requests.

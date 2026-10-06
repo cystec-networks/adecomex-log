@@ -63,11 +63,11 @@ import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { PortadaExpedienteButton } from "@/components/portada-expediente-button";
 import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado, fechasDespachoFaltantes } from "@/lib/estados-expediente";
-import { usePlazosRegimen, plazoEfectivo, diasRegimen, venceEn, habilesRestantes, diasHabilesEntre } from "@/lib/plazo-presentacion";
+import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
 import { unitFob, loadBrokerConfig } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
-import { alertasAdicionalesExpediente } from "@/lib/alertas-expediente";
+import { alertasExpedienteCompartidas } from "@/lib/alertas-expediente-compartidas";
 import { useDatosAlertasExpediente } from "@/lib/use-alertas-expediente";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
@@ -727,46 +727,9 @@ function DetalleExpediente() {
   if (!isNuevo && !exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
   const expData: any = isNuevo ? EXPEDIENTE_VACIO : exp;
-  const alertasHeader: string[] = [];
-  if (!isNuevo) {
-    const { dias } = plazoEfectivo(expData, plazosReg);
-    const vencimiento = expData.fecha_llegada_real && dias && diasRegimen(expData.regimen_aduanero, plazosReg)
-      ? venceEn(expData.fecha_llegada_real, dias) : null;
-    const posterior = estadoIndex(expData.estado) >= estadoIndex("verificar");
-    const presentado = expData.fecha_presentacion_real ? parseLocalDate(expData.fecha_presentacion_real) : null;
-    if (vencimiento && presentado && !isNaN(presentado.getTime())) {
-      if (presentado > vencimiento) alertasHeader.push(`Presentación fuera de plazo (${Math.abs(diasHabilesEntre(presentado, vencimiento))} días hábiles de retraso)`);
-    } else if (vencimiento && !posterior) {
-      const restantes = Math.abs(habilesRestantes(vencimiento));
-      const unidad = restantes === 1 ? "día hábil" : "días hábiles";
-      alertasHeader.push(vencimiento < hoyRD()
-        ? `Plazo de presentación vencido desde ${fmtLocalDate(vencimiento.toISOString().slice(0, 10))} (${restantes} ${unidad} transcurridos)`
-        : restantes === 0 ? "Vence hoy el plazo de presentación" : `Vence en ${restantes} ${unidad}`);
-    }
-    if (posterior && !expData.fecha_presentacion_real) alertasHeader.push("Falta capturar la fecha de presentación");
-    if (documentosHeader) {
-      const faltantes = ["Factura comercial", "Bill of Lading"].filter((tipo) =>
-        !documentosHeader.some((d) => d.tipo === tipo && d.storage_path?.trim()));
-      if (faltantes.length) alertasHeader.push(`Documentos pendientes: ${faltantes.join(", ")}`);
-      const ultimos = new Map<string, (typeof documentosHeader)[number]>();
-      for (const d of documentosHeader) {
-        const previo = ultimos.get(d.tipo);
-        if (!previo || new Date(d.fecha_recepcion ?? d.created_at).getTime() >= new Date(previo.fecha_recepcion ?? previo.created_at).getTime()) ultimos.set(d.tipo, d);
-      }
-      for (const d of ultimos.values()) {
-        if (["pendiente", "observado", "vencido"].includes(d.estado) && !faltantes.includes(d.tipo)) {
-          alertasHeader.push(`${d.tipo}: ${DOC_ESTADO_STYLE[d.estado]?.label.toLowerCase()}`);
-        }
-      }
-    }
-    const permisosPendientes = (permisosHeader ?? []).filter((p) => p.estado !== "aprobado");
-    if (permisosPendientes.length) alertasHeader.push(`Permisos pendientes de aprobación: ${permisosPendientes.length}`);
-    alertasHeader.push(...alertasAdicionalesExpediente({
-      expediente: expData,
-      permisos: permisosHeader,
-      ...datosAlertas,
-    }));
-  }
+  const alertasHeader = isNuevo ? [] : alertasExpedienteCompartidas(expData, plazosReg, {
+    ...datosAlertas, permisos: permisosHeader, documentos: documentosHeader,
+  }).map(alerta => alerta.larga);
 
   return (
     <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>

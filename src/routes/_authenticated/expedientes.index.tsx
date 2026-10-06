@@ -22,6 +22,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
+import { alertasExpedienteCompartidas } from "@/lib/alertas-expediente-compartidas";
+import { useDatosAlertasListado } from "@/lib/use-alertas-expediente";
 import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
 import { daysFromToday, habilesRestantesPlazo } from "@/lib/dates";
 
@@ -72,7 +74,7 @@ function Expedientes() {
     queryKey: ["expedientes"],
     queryFn: async () => (await supabase
       .from("expedientes")
-      .select("id,numero,estado,bl_awb,factura_comercial,fecha_compromiso,fecha_llegada_real,created_at,updated_at,medio_transporte,naviera,suplidor,pais_origen,pais_procedencia,incoterm,puerto_salida,puerto_arribo,numero_dua,numero_vuce,numero_igra,descripcion_mercancia,numeros_contenedores,numero_certificado_origen,tipo_operacion,tipo_carga,regimen_aduanero,plazo_presentar_override,observaciones,total_fob,total_cif,liq_siga_numero,liq_siga_termino_at,liq_siga_fecha_pago, clientes(nombre,telefono,email), expediente_endosos(activo, endosado:clientes!expediente_endosos_consignatario_endosado_id_fkey(nombre)), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento), mercancia_items(item_no, detalle_producto, deleted_at)")
+      .select("id,cliente_id,factura_ecf_id,fecha_presentacion_real,numero,estado,bl_awb,factura_comercial,fecha_compromiso,fecha_llegada_real,created_at,updated_at,medio_transporte,naviera,suplidor,pais_origen,pais_procedencia,incoterm,puerto_salida,puerto_arribo,numero_dua,numero_vuce,numero_igra,descripcion_mercancia,numeros_contenedores,numero_certificado_origen,tipo_operacion,tipo_carga,regimen_aduanero,plazo_presentar_override,observaciones,total_fob,total_cif,liq_siga_numero,liq_siga_termino_at,liq_siga_fecha_pago, clientes(nombre,telefono,email), expediente_endosos(activo, endosado:clientes!expediente_endosos_consignatario_endosado_id_fkey(nombre)), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento), mercancia_items(item_no, detalle_producto, deleted_at)")
       .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
   });
@@ -337,6 +339,7 @@ function Expedientes() {
   };
 
   const { data: plazosReg } = usePlazosRegimen();
+  const { data: datosAlertasListado } = useDatosAlertasListado(data ?? []);
   const ExpedienteRow = ({ e }: { e: any }) => (
     <tr key={e.id} className={`hover:bg-muted/30 transition-colors ${rowHighlight(e)}`}>
       <td className="px-2 py-1 align-middle whitespace-nowrap">
@@ -436,33 +439,12 @@ function Expedientes() {
       </td>
       <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
         <div className="flex items-center justify-center gap-1 whitespace-nowrap [&>div]:text-[11px] [&>div]:whitespace-nowrap">
-          {e.liq_siga_termino_at && !e.liq_siga_fecha_pago && (
-            <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} compacto />
-          )}
-          {(() => {
-            const a = alertaDeclaracionTardia({ ...e, sla_dias: plazoEfectivo(e, plazosReg).dias });
-            if (!a) return null;
-            const title =
-              `Ley 168-21: ${plazoEfectivo(e, plazosReg).dias} días laborables desde el arribo para presentar la declaración. ` +
-              (a.tone === "danger"
-                ? (a.diasRestantes === 0 ? "Vence hoy." : `Vencido hace ${Math.abs(a.diasRestantes)} día(s) hábiles.`)
-                : `Quedan ${a.diasRestantes} día(s) hábiles para declarar.`);
-            const cls = a.tone === "danger"
-              ? "text-destructive"
-              : a.tone === "warning"
-                ? "text-amber-600 dark:text-amber-400"
-                : "text-blue-600 dark:text-blue-400";
-            const Icon = a.tone === "danger" ? AlertTriangle : Clock;
-            const text = a.tone === "danger"
-              ? (a.diasRestantes < 0 ? `Venció ${Math.abs(a.diasRestantes)}d` : "Vence hoy")
-              : `Vence ${a.diasRestantes}d`;
-            return (
-              <span title={title} aria-label={title} className={`inline-flex items-center gap-1 text-[11px] whitespace-nowrap tabular-nums ${cls}`}>
-                <Icon className="mt-0.5 h-3 w-3" />
-                <span>{text}</span>
-              </span>
-            );
-          })()}
+          {alertasExpedienteCompartidas(e, plazosReg, datosAlertasListado?.[e.id]).map(alerta => (
+            <Badge key={alerta.id} variant={alerta.tone === "danger" ? "destructive" : "outline"}
+              title={alerta.larga} aria-label={alerta.larga} className="text-[11px] whitespace-nowrap tabular-nums">
+              {alerta.corta}
+            </Badge>
+          ))}
         </div>
       </td>
 
