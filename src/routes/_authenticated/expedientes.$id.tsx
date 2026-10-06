@@ -906,6 +906,7 @@ function DetalleExpediente() {
         </div>
 
         {!isNuevo && (
+        <div className="expediente-info-tabla">
         <div className="expediente-info-fila2">
           <div className="expediente-header-cliente flex min-w-0 items-center gap-1.5">
           <span className="whitespace-nowrap text-muted-foreground">Cliente:</span>
