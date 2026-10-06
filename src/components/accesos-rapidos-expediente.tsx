@@ -114,7 +114,7 @@ export function HerramientasDgaVuceMenu({ variant = "button", className }: { var
           </Button>
         ) : (
           <Button variant="outline" size="sm" className={className}>
-            <ShieldCheck className="h-4 w-4 mr-1" /> Herramientas DGA/VUCE
+            <ShieldCheck className="h-4 w-4 mr-1" /> <span className="exp-lbl-full">Herramientas DGA/VUCE</span><span className="exp-lbl-short">DGA/VUCE</span>
             <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
           </Button>
         )}
@@ -143,7 +143,7 @@ export function RastreosEnvioMenu({ variant = "button", className }: { variant?:
           </Button>
         ) : (
           <Button variant="outline" size="sm" className={className}>
-            <Ship className="h-4 w-4 mr-1" /> Rastreos de Envío
+            <Ship className="h-4 w-4 mr-1" /> <span className="exp-lbl-full">Rastreos de Envío</span><span className="exp-lbl-short">Rastreos</span>
             <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
           </Button>
         )}
