@@ -906,6 +906,7 @@ function DetalleExpediente() {
         </div>
 
         {!isNuevo && (
+        <div className="expediente-info-tabla">
         <div className="expediente-info-fila2">
           <div className="expediente-header-cliente flex min-w-0 items-center gap-1.5">
           <span className="whitespace-nowrap text-muted-foreground">Cliente:</span>
@@ -987,8 +988,6 @@ function DetalleExpediente() {
           </div>
            <CampoHeader etiqueta="Puerto" valor={expData.puerto_arribo} largo className="expediente-header-puerto" />
         </div>
-        )}
-        {!isNuevo && (
         <div className="expediente-info-fila3">
           <div className="flex h-8 min-w-0 items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Etapa :</Label>
@@ -1018,6 +1017,7 @@ function DetalleExpediente() {
               </span>
             );
           })()}
+        </div>
         </div>
         )}
         {!isNuevo && (
