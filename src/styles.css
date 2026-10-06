@@ -46,15 +46,33 @@
   .expediente-header-state { margin-inline-start: 0.75rem; }
 }
 /* La toolbar completa se rige por el ancho de la VENTANA (≥1280px), no por el
-   contenedor: en 1366×768 el menú lateral deja el header ~1078px y el layout
-   compacto debe conservar la toolbar visible sin menú de desbordamiento. */
+   contenedor: desde 1280px el layout compacto conserva la toolbar visible sin
+   menú de desbordamiento. La toolbar reclama su ancho natural y el Estado cede
+   hasta 9rem antes de desbordar. Si el usuario expandió el menú lateral en el
+   rango 1280–1699 y el header no alcanza, vuelve el menú "⋮" (container query). */
 @media (min-width: 1280px) {
   .expediente-header-grid {
-    grid-template-columns: auto max-content 18rem auto minmax(0, 1fr);
-    grid-template-areas: "back number state save menus";
+    grid-template-columns: auto max-content minmax(9rem, 18rem) auto auto;
+    grid-template-areas: "back number state save more";
   }
-  .expediente-header-menus { display: flex; flex-wrap: nowrap; }
-  .expediente-header-more { display: none; }
+  .expediente-header-menus { display: none; }
+  .expediente-header-more { display: inline-flex; justify-self: end; }
+  @container expediente-header (min-width: 1176px) {
+    .expediente-header-grid {
+      grid-template-columns: auto max-content minmax(9rem, 18rem) auto minmax(min-content, 1fr);
+      grid-template-areas: "back number state save menus";
+    }
+    .expediente-header-menus { display: flex; flex-wrap: nowrap; }
+    .expediente-header-menus > button { white-space: nowrap; }
+    .expediente-header-more { display: none; }
+  }
+}
+/* Entre 1280 y 1699 el menú lateral va en iconos (colapso automático en
+   app-shell.tsx): se esconde el texto "Volver" y la etiqueta "Estado:" para
+   que quepan los botones completos de la toolbar en una sola línea. */
+@media (min-width: 1280px) and (max-width: 1699px) {
+  .expediente-header-back span { display: none; }
+  .expediente-header-estado-label { display: none; }
 }
 /* Filas de datos con posiciones fijas: el largo de un valor nunca mueve a sus vecinos. */
 .expediente-info-fila2, .expediente-info-fila3 {

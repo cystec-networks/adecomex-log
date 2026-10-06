@@ -742,7 +742,7 @@ function DetalleExpediente() {
           )}
           {!isNuevo && (
             <div className="expediente-header-state grid min-w-0 grid-cols-[auto_minmax(0,1fr)_2rem] items-center gap-1.5">
-              <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
+              <Label className="expediente-header-estado-label mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
               <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
                 <SelectTrigger aria-label="Estado del expediente" className="h-8 w-full min-w-0 text-xs text-foreground disabled:opacity-100 [&>svg]:shrink-0 [&>svg]:opacity-100 md:text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>

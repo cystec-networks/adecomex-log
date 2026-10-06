@@ -28,9 +28,33 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import type { ReactNode, ComponentType } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AdecomexFlowLogo } from "@/components/adecomex-flow-logo";
+
+/* Por debajo de este ancho el menú lateral se recoge solo a iconos: la toolbar
+   del Expediente (~660px) más Volver/número/Estado/Editar no caben en 2 líneas
+   con el menú a ancho completo. El usuario puede expandirlo manualmente. */
+const ANCHO_MENU_ICONOS = 1700;
+
+function AutoColapsoMenuLateral() {
+  const { setOpen } = useSidebar();
+  const setOpenRef = useRef(setOpen);
+  setOpenRef.current = setOpen;
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${ANCHO_MENU_ICONOS - 1}px)`);
+    let antes = mq.matches;
+    if (antes) setOpenRef.current(false);
+    const alCambiar = () => {
+      if (mq.matches && !antes) setOpenRef.current(false);
+      antes = mq.matches;
+    };
+    mq.addEventListener("change", alCambiar);
+    return () => mq.removeEventListener("change", alCambiar);
+  }, []);
+  return null;
+}
 
 type SubItem = {
   to: string;
@@ -490,6 +514,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </main>
         </div>
       </div>
+      <AutoColapsoMenuLateral />
     </SidebarProvider>
   );
 }
