@@ -1018,6 +1018,7 @@ function DetalleExpediente() {
             );
           })()}
         </div>
+        </div>
         )}
         {!isNuevo && (
           <div className="mt-1 grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-1.5">
