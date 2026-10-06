@@ -153,16 +153,16 @@
 .expediente-detalle-header .expediente-header-cliente { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; }
 .expediente-detalle-header .expediente-header-cliente > button { white-space: normal; word-break: normal; overflow-wrap: break-word; hyphens: none; color: var(--header-value); font-weight: 500; text-decoration: none; }
 .expediente-detalle-header .expediente-header-arrival { display: flex; align-items: baseline; gap: 0.375rem; padding-bottom: 0; }
-.expediente-detalle-header :is(.expediente-header-valor-largo, .expediente-info-fila2 .font-medium, .expediente-info-fila3 .font-medium) { white-space: normal; overflow-wrap: anywhere; color: var(--header-value); }
+.expediente-detalle-header :is(.expediente-header-valor-largo, .expediente-info-fila2 .font-medium, .expediente-info-fila3 .font-medium) { white-space: normal; word-break: normal; overflow-wrap: break-word; hyphens: none; color: var(--header-value); }
 .expediente-detalle-header :is(.expediente-info-fila2, .expediente-info-fila3) > div { height: auto; min-height: 0; padding-block: 0; align-items: baseline; }
 .expediente-detalle-header .expediente-header-cliente > button { min-height: 0; line-height: inherit; }
 .expediente-detalle-header .expediente-header-arrival > div { height: auto; min-height: 0; }
 .expediente-detalle-header .expediente-presentation-slot { min-width: 0; width: auto; align-items: baseline; }
 .expediente-detalle-header .expediente-presentation-slot > .expediente-presentation-pill { flex: 1 1 0; width: auto; min-width: 0; height: auto; min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--header-value); white-space: normal; }
-.expediente-detalle-header .expediente-presentation-full { display: inline; overflow: visible; white-space: normal; overflow-wrap: anywhere; }
+.expediente-detalle-header .expediente-presentation-full { display: inline; overflow: visible; white-space: normal; word-break: normal; overflow-wrap: break-word; hyphens: none; }
 .expediente-detalle-header .expediente-presentation-short { display: none; }
 .expediente-detalle-header .expediente-presentation-label { color: var(--header-label); font-weight: 400; }
-.expediente-detalle-header .expediente-info-fila3 .truncate { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.expediente-detalle-header .expediente-info-fila3 .truncate { white-space: normal; overflow: visible; text-overflow: clip; word-break: normal; overflow-wrap: break-word; hyphens: none; }
 @media (min-width: 1280px) {
   .expediente-detalle-header .expediente-header-grid { grid-template-columns: auto max-content max-content max-content minmax(0, 1fr); column-gap: 0.75rem; }
 }
@@ -175,7 +175,7 @@
   .expediente-detalle-header :is(.expediente-info-fila2, .expediente-info-fila3) { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.75rem; }
   .expediente-detalle-header :is(.expediente-info-fila2, .expediente-info-fila3) > div { flex: 0 1 auto; min-width: 0; }
   .expediente-detalle-header .expediente-header-arrival { display: contents; }
-  .expediente-detalle-header .expediente-header-valor-largo { white-space: normal; overflow-wrap: anywhere; }
+  .expediente-detalle-header .expediente-header-valor-largo { white-space: normal; word-break: normal; overflow-wrap: break-word; hyphens: none; }
 }
 @container expediente-header (min-width: 900px) {
   .expediente-detalle-header :is(.expediente-info-fila2, .expediente-info-fila3) { flex-wrap: nowrap; }
