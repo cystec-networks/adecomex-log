@@ -27,8 +27,11 @@ import { useMyProfile, useMyRoles, ROLE_LABELS } from "@/lib/auth-hooks";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import type { ReactNode, ComponentType } from "react";
-import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+
+import { toast } from "sonner";
+import { useEffect, useState } from "react";
+import { AdecomexFlowLogo } from "@/components/adecomex-flow-logo";
 
 /* Por debajo de este ancho el menú lateral se recoge solo a iconos: la toolbar
    del Expediente (~660px) más Volver/número/Estado/Editar no caben en 2 líneas
@@ -50,9 +53,6 @@ function AutoColapsoMenuLateral() {
   }, [setOpen]);
   return null;
 }
-import { toast } from "sonner";
-import { useEffect, useState } from "react";
-import { AdecomexFlowLogo } from "@/components/adecomex-flow-logo";
 
 type SubItem = {
   to: string;
