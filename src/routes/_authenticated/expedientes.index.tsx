@@ -504,12 +504,13 @@ function Expedientes() {
 
   return (
     <div className="p-3 md:p-4 space-y-3 max-w-[1600px] mx-auto h-full flex flex-col">
-      <div className="flex items-center gap-3 flex-wrap shrink-0">
-        <div className="flex-1 min-w-[200px] min-w-0">
-          <h1 className="font-display text-lg font-bold leading-tight truncate">Expedientes · {tipoLabel}</h1>
-          <p className="text-xs text-muted-foreground hidden xl:block truncate">Expedientes aduanales agrupados por tipo de solicitud.</p>
-        </div>
-        <div className="flex gap-1 rounded-md border p-0.5 bg-card">
+      <div className="space-y-2 shrink-0">
+        <div className="flex items-end justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <h1 className="font-display text-lg font-bold leading-tight truncate">Expedientes · {tipoLabel}</h1>
+            <p className="expediente-nuevo-subtitle">Expedientes aduanales agrupados por tipo de solicitud.</p>
+          </div>
+          <div className="flex gap-1 rounded-md border p-0.5 bg-card">
           <Link to="/expedientes" search={{ tipo: "todos", estado: estadoParam, eta: etaParam }} className={`px-2.5 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos <Badge variant="secondary" className="text-[10px] h-4 px-1">{countAll}</Badge></Link>
           <Link to="/expedientes" search={{ tipo: "importacion", estado: estadoParam, eta: etaParam }} className={`px-2.5 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
           <Link to="/expedientes" search={{ tipo: "exportacion", estado: estadoParam, eta: etaParam }} className={`px-2.5 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
