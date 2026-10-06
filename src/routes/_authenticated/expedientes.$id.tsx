@@ -733,7 +733,7 @@ function DetalleExpediente() {
           {isNuevo ? (
             <div className="expediente-nuevo-title min-w-0">
               <h1 className="font-display whitespace-nowrap text-lg font-bold md:text-xl">Nuevo Expediente</h1>
-              <p className="truncate text-xs text-muted-foreground md:text-sm">
+              <p className="text-xs text-muted-foreground md:text-sm">
                 Completa los campos a mano, o escanea el BL y/o la factura comercial para autollenarlos. El número se genera automáticamente.
               </p>
             </div>
@@ -766,6 +766,9 @@ function DetalleExpediente() {
           )}
           {isNuevo && (
             <div className="expediente-nuevo-scan flex items-center gap-2">
+              <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" disabled={duplicarMut.isPending} onClick={() => duplicarMut.mutate()} title="Duplicar expediente" aria-label="Duplicar expediente">
+                <Copy className="h-4 w-4" />
+              </Button>
               <EscanearBlButton onExtracted={(res) => { blRes.current = res; void aplicarCombinado(); toast.success("BL procesado — revisa y ajusta los campos"); }} />
               <EscanearFacturaExpButton onExtracted={(res) => { facRes.current = res; void aplicarCombinado(); toast.success("Factura procesada — revisa y ajusta los campos"); }} />
               <NuevoDesdeXmlButton
