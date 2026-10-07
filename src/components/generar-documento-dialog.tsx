@@ -154,6 +154,14 @@ export function GenerarDocumentoButton({ exp }: { exp: any }) {
   const descargar = async () => {
     if (!previewRef.current || !plantilla) return;
     try {
+      if (/dr[\s-]?cafta/i.test(plantilla.nombre)) {
+        const { buildCertificadoOrigenPdf } = await import("@/lib/pdf-certificado-origen");
+        const pdf = await buildCertificadoOrigenPdf(previewRef.current);
+        pdf.save(`${plantilla.nombre}_${exp.numero ?? "documento"}.pdf`);
+        const tipo = tipoChecklist(plantilla.nombre);
+        if (tipo) setPreguntaTipo(tipo);
+        return;
+      }
       const html2canvas = (await import("html2canvas-pro")).default;
       const { default: jsPDF } = await import("jspdf");
       const pdf = new jsPDF({ unit: "mm", format: "letter", orientation: "portrait" });
