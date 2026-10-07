@@ -743,7 +743,6 @@ function DetalleExpediente() {
   // Consignatario efectivo del encabezado: endosado si hay endoso activo; si no, el cliente original.
   const { data: endosoHeader } = useEndosoActivo(isNuevo ? undefined : id);
   const clienteEfectivoHeader = endosoHeader?.endosado ?? null;
-  const clienteHeader = clienteEfectivoHeader ?? expData.clientes;
 
   if (!isNuevo && !exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
