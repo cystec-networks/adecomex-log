@@ -747,6 +747,7 @@ function DetalleExpediente() {
   if (!isNuevo && !exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
   const expData: any = isNuevo ? EXPEDIENTE_VACIO : exp;
+  const clienteHeader = clienteEfectivoHeader ?? expData.clientes;
   const alertasHeader = isNuevo ? [] : alertasExpedienteCompartidas(expData, plazosReg, {
     ...datosAlertas, permisos: permisosHeader, documentos: documentosHeader,
   }).map(alerta => alerta.larga);
