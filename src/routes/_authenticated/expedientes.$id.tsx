@@ -740,6 +740,11 @@ function DetalleExpediente() {
     onError: (e: any) => toast.error(e.message ?? "No se pudo duplicar el expediente"),
   });
 
+  // Consignatario efectivo del encabezado: endosado si hay endoso activo; si no, el cliente original.
+  const { data: endosoHeader } = useEndosoActivo(isNuevo ? undefined : id);
+  const clienteEfectivoHeader = endosoHeader?.endosado ?? null;
+  const clienteHeader = clienteEfectivoHeader ?? expData.clientes;
+
   if (!isNuevo && !exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
   const expData: any = isNuevo ? EXPEDIENTE_VACIO : exp;

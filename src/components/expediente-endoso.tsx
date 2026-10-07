@@ -19,7 +19,7 @@ export type EndosoActivo = {
   fecha_endoso: string | null;
   documento_id: string | null;
   observaciones: string | null;
-  endosado: { id: string; nombre: string; rnc: string | null } | null;
+  endosado: { id: string; nombre: string; rnc: string | null; contacto: string | null; email: string | null; telefono: string | null; direccion: string | null } | null;
   original: { id: string; nombre: string } | null;
   documento: { id: string; storage_path: string | null; tipo: string } | null;
 };
@@ -32,7 +32,7 @@ export function useEndosoActivo(expedienteId: string | undefined) {
       if (!expedienteId) return null;
       const { data, error } = await supabase
         .from("expediente_endosos")
-        .select("*, endosado:clientes!expediente_endosos_consignatario_endosado_id_fkey(id,nombre,rnc), original:clientes!expediente_endosos_consignatario_original_id_fkey(id,nombre), documento:documentos(id,storage_path,tipo)")
+        .select("*, endosado:clientes!expediente_endosos_consignatario_endosado_id_fkey(id,nombre,rnc,contacto,email,telefono,direccion), original:clientes!expediente_endosos_consignatario_original_id_fkey(id,nombre), documento:documentos(id,storage_path,tipo)")
         .eq("expediente_id", expedienteId)
         .eq("activo", true)
         .maybeSingle();
