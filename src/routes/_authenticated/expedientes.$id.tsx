@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { EndosoBadge, EndosoSection } from "@/components/expediente-endoso";
+import { EndosoSection, useEndosoActivo } from "@/components/expediente-endoso";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -949,31 +949,32 @@ function DetalleExpediente() {
         <div className="expediente-info-fila2">
           <div className="expediente-header-cliente flex min-w-0 items-center gap-1.5">
           <span className="whitespace-nowrap text-muted-foreground">Cliente:</span>
-          {expData.clientes ? (
+          <div className="flex min-w-0 flex-col items-start justify-center">
+          {clienteHeader ? (
             <Popover>
               <PopoverTrigger asChild>
-                <Button type="button" variant="link" className="h-auto min-h-8 min-w-0 justify-start p-0 text-left text-sm font-semibold text-foreground underline decoration-dotted underline-offset-2" title={expData.clientes.nombre}>
-                  {expData.clientes.nombre}
+                <Button type="button" variant="link" className="h-auto min-h-8 min-w-0 justify-start p-0 text-left text-sm font-semibold text-foreground underline decoration-dotted underline-offset-2" title={clienteHeader.nombre}>
+                  {clienteHeader.nombre}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[min(22rem,calc(100vw-2rem))] p-0 border-none bg-transparent shadow-none z-50" side="bottom" align="start" sideOffset={8}>
                 <div className="rounded-md border bg-background shadow-lg px-3 py-2 text-xs space-y-0.5">
-                  <div><span className="text-muted-foreground">RNC:</span> {expData.clientes.rnc ?? "—"}</div>
-                  <div><span className="text-muted-foreground">Contacto:</span> {expData.clientes.contacto ?? "—"}</div>
-                  <div><span className="text-muted-foreground">Email:</span> {(expData.clientes as any).email ?? "—"}</div>
-                  <div><span className="text-muted-foreground">Teléfono:</span> {expData.clientes.telefono ?? "—"}</div>
-                  <div><span className="text-muted-foreground">Dirección:</span> {(expData.clientes as any).direccion ?? "—"}</div>
+                  <div><span className="text-muted-foreground">RNC:</span> {clienteHeader.rnc ?? "—"}</div>
+                  <div><span className="text-muted-foreground">Contacto:</span> {clienteHeader.contacto ?? "—"}</div>
+                  <div><span className="text-muted-foreground">Email:</span> {(clienteHeader as any).email ?? "—"}</div>
+                  <div><span className="text-muted-foreground">Teléfono:</span> {clienteHeader.telefono ?? "—"}</div>
+                  <div><span className="text-muted-foreground">Dirección:</span> {(clienteHeader as any).direccion ?? "—"}</div>
                   <div className="mt-2 flex items-center gap-1 border-t pt-2">
                     <WhatsAppButton
-                      phone={expData.clientes.telefono}
-                      clientName={expData.clientes.nombre}
+                      phone={clienteHeader.telefono}
+                      clientName={clienteHeader.nombre}
                       recordType="Expediente"
                       recordNumber={expData.numero}
                       variant="icon"
                     />
                     <EmailButton
-                      email={(expData.clientes as any).email}
-                      clientName={expData.clientes.nombre}
+                      email={(clienteHeader as any).email}
+                      clientName={clienteHeader.nombre}
                       recordType="Expediente"
                       recordNumber={expData.numero}
                       variant="icon"
@@ -990,7 +991,12 @@ function DetalleExpediente() {
           ) : (
             <span className="flex h-8 items-center truncate text-sm text-muted-foreground">Sin cliente</span>
           )}
-          <EndosoBadge expedienteId={id} originalNombre={expData.clientes?.nombre} />
+          {clienteEfectivoHeader && (
+            <span className="expediente-cliente-original max-w-full" title={`Consignatario original: ${endosoHeader?.original?.nombre ?? "—"}`}>
+              Originalmente: {endosoHeader?.original?.nombre ?? "—"}
+            </span>
+          )}
+          </div>
           </div>
           <CampoHeader etiqueta="BL/AWB" valor={expData.bl_awb} largo className="expediente-header-bl" />
           <div className="expediente-header-arrival">
