@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { Download, FileSignature, Save } from "lucide-react";
 import { resolverPlantilla } from "@/lib/plantillas-campos";
+import { conConsignatarioEfectivo } from "@/lib/consignatario-efectivo";
 
 const CHECKLIST_MAP: Record<string, string> = {
   "factura comercial": "Factura comercial",
@@ -109,14 +110,23 @@ export function GenerarDocumentoButton({ exp }: { exp: any }) {
     },
   });
 
+  // Importador = consignatario efectivo (endosado si hay endoso activo).
+  const { data: expEfectivo } = useQuery({
+    queryKey: ["consignatario-efectivo-doc", exp?.id, exp?.cliente_id],
+    enabled: open && !!exp?.id,
+    staleTime: 0,
+    queryFn: () => conConsignatarioEfectivo(exp),
+  });
+
   const plantilla = plantillas?.find((p: any) => p.id === plantillaId);
 
   useEffect(() => {
     if (!plantilla) { setHtml(""); return; }
     if (cargandoGuardado) return;
     if (guardado?.html_resuelto) { setHtml(guardado.html_resuelto); return; }
-    setHtml(resolverPlantilla(plantilla.contenido_html ?? "", exp, items ?? [], terceros ?? {}));
-  }, [plantillaId, items, plantilla, exp, terceros, guardado, cargandoGuardado]);
+    if (!expEfectivo) return;
+    setHtml(resolverPlantilla(plantilla.contenido_html ?? "", expEfectivo, items ?? [], terceros ?? {}));
+  }, [plantillaId, items, plantilla, expEfectivo, terceros, guardado, cargandoGuardado]);
 
   useEffect(() => {
     if (!open) { setPlantillaId(""); setHtml(""); }
