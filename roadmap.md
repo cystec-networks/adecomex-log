@@ -1,4 +1,5 @@
 - [x] Marcar los campos obligatorios de Declaración, llegada, origen y pesos.
+- [ ] Renombrar Tipo de Inspección, conservar históricos y verificar selector compartido en Declaración y encabezado.
 - [x] Exportar DR-CAFTA con texto vectorial: certificado USA de 2 páginas, 13.98 KB; DGA 7.06 KB; casillas y anexos revisados visualmente sin cortes nuevos, texto extraíble y ediciones conservadas, sin imágenes incrustadas.
 - [x] Compactar Alerta a ícono y contador, agrupar vencimientos en el listado y comprobar tooltip: 116 filas de 36 px, columna de 56 px y sin errores en pantalla.
 - [x] Unificar las fuentes de alertas del listado y detalle, conservando PIN DGA en tiempo calendario y presentación en días hábiles; textos cortos/largos, 10 pruebas y comparación real de BIOQUIMICA, 116 filas uniformes.

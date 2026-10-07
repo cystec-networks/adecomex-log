@@ -100,6 +100,20 @@ const SUG_INCOTERM = ["EXW", "FCA", "FAS", "FOB", "CFR", "CIF", "CPT", "CIP", "D
 const SUG_PUERTO_SALIDA = ["Shanghai", "Ningbo", "Shenzhen", "Hong Kong", "Busan", "Kaohsiung", "Miami", "Port Everglades", "Jacksonville", "Houston", "New York", "Valencia", "Barcelona", "Algeciras", "Rotterdam", "Hamburgo", "Amberes", "Cartagena", "Manzanillo (PA)", "Balboa"];
 const SUG_PUERTO_ARRIBO = ["Puerto Multimodal Caucedo", "Puerto de Haina Oriental", "Puerto de Haina Occidental", "Puerto de Río Haina", "Puerto de Boca Chica", "Puerto de Manzanillo", "Puerto Plata", "AILA (Las Américas)", "AIC (Cibao)", "AIP (Punta Cana)", "Aeropuerto La Isabela"];
 const SUG_PREFERENCIA = ["DR-CAFTA", "EPA (Unión Europea)", "ALADI", "SGP", "Ninguna"];
+const TIPOS_INSPECCION = ["Despacho Expreso", "Verificación Visual", "Verificación Full", "Verificación Nevera", "Verificación Depósito", "Descarga en Puerto"];
+
+function TipoInspeccionSelector({ value, onChange, disabled, header = false }: { value: string; onChange: (value: string) => void; disabled: boolean; header?: boolean }) {
+  return (
+    <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
+      <SelectTrigger aria-label={header ? "Tipo de Inspección en encabezado" : "Tipo de Inspección"} className={header ? "h-8 w-auto min-w-0 gap-1.5 px-2 font-medium text-foreground disabled:opacity-100 [&>span]:line-clamp-none [&>span]:whitespace-normal [&>span]:break-normal" : undefined}>
+        <SelectValue placeholder={header ? "—" : "Selecciona tipo de inspección"}>{value || undefined}</SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {TIPOS_INSPECCION.map((tipo) => <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  );
+}
 
 const searchSchema = z.object({
   nuevo: fallback(z.string(), "").default(""),
@@ -406,6 +420,7 @@ function DetalleExpediente() {
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const [tabActiva, setTabActiva] = useState("info");
   const [nuevoAccionesHost, setNuevoAccionesHost] = useState<HTMLDivElement | null>(null);
+  const [inspeccionHost, setInspeccionHost] = useState<HTMLDivElement | null>(null);
   const [solicitudEndoso, setSolicitudEndoso] = useState(0);
   const abrirEndoso = () => {
     setTabActiva("info");
@@ -1012,6 +1027,12 @@ function DetalleExpediente() {
           </div>
           <CampoHeader etiqueta="Declaración DUA" valor={expData.numero_dua} largo />
           <CampoHeader etiqueta="N.º de despacho" valor={expData.numero_igra} />
+          <div className="flex min-h-8 min-w-0 items-center gap-1.5">
+            <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Tipo de Inspección:</Label>
+            <div ref={setInspeccionHost} className="min-w-0">
+              {tabActiva !== "info" && <span className="text-xs font-medium text-foreground md:text-sm">{expData.canal_riesgo || "—"}</span>}
+            </div>
+          </div>
           <CampoHeader etiqueta="N.º de permiso" valor={permisosNumeros} largo />
 
         </div>
@@ -1092,6 +1113,7 @@ function DetalleExpediente() {
             tipoParam={tipoParam}
             solicitudEndoso={solicitudEndoso}
             nuevoAccionesHost={nuevoAccionesHost}
+            inspeccionHost={inspeccionHost}
           />
           </div>
         </TabsContent>
@@ -1272,7 +1294,7 @@ function normalizarCamposExportacion(payload: any) {
   });
 }
 
-function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null, tipoParam = "", solicitudEndoso = 0, nuevoAccionesHost = null }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null; tipoParam?: string; solicitudEndoso?: number; nuevoAccionesHost?: HTMLDivElement | null }) {
+function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null, tipoParam = "", solicitudEndoso = 0, nuevoAccionesHost = null, inspeccionHost = null }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null; tipoParam?: string; solicitudEndoso?: number; nuevoAccionesHost?: HTMLDivElement | null; inspeccionHost?: HTMLDivElement | null }) {
   const qc = useQueryClient();
   const nav = useNavigate();
   const editable = (canEdit && modoEdicion) || isNuevo;
@@ -2266,13 +2288,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             ) : null;
           })()}
           <div className="grid gap-1.5">
-            <Label>Canal de riesgo</Label>
-            <Select value={form.canal_riesgo || undefined} onValueChange={(v) => set("canal_riesgo", v)} disabled={!editable}>
-              <SelectTrigger><SelectValue placeholder="Selecciona canal" /></SelectTrigger>
-              <SelectContent>
-                {["Verde","Amarillo","Rojo"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Label>Tipo de Inspección</Label>
+            <TipoInspeccionSelector value={form.canal_riesgo} onChange={(v) => set("canal_riesgo", v)} disabled={!editable} />
+            {inspeccionHost && createPortal(
+              <TipoInspeccionSelector header value={form.canal_riesgo} onChange={(v) => set("canal_riesgo", v)} disabled={!editable} />,
+              inspeccionHost,
+            )}
           </div>
       </Section>
 
