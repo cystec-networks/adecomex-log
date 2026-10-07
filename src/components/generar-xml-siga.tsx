@@ -1,3 +1,4 @@
+import { conConsignatarioEfectivo, notaEndosoRemark } from "@/lib/consignatario-efectivo";
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,13 +40,13 @@ export function GenerarXmlSigaButton({ expedienteId }: { expedienteId: string })
     {
       const e: any = (await supabase.from("expedientes").select("*, clientes(*)").eq("id", expedienteId).maybeSingle()).data;
       if (!e) return e;
-      // Endoso activo: el Importador/Consignatario declarado es el cliente endosado.
-      const { data: endoso } = await supabase
-        .from("expediente_endosos")
-        .select("endosado:clientes!expediente_endosos_consignatario_endosado_id_fkey(*)")
-        .eq("expediente_id", expedienteId).eq("activo", true).maybeSingle();
-      const endosado = (endoso as any)?.endosado;
-      return endosado ? { ...e, clientes: endosado, cliente_original: e.clientes } : e;
+      // Consignatario efectivo: con endoso activo, el Importador es el endosado
+      // y el Remark lleva la nota de trazabilidad del consignatario original.
+      const ef = await conConsignatarioEfectivo(e);
+      if (!(ef as any).cliente_original) return ef;
+      const nota = notaEndosoRemark((ef as any).cliente_original);
+      const obs = (e.observaciones ?? "").trim();
+      return { ...ef, observaciones: obs ? `${obs} | ${nota}` : nota };
     },
   });
 

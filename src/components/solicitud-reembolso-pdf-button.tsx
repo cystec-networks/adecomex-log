@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { conConsignatarioEfectivo } from "@/lib/consignatario-efectivo";
 import { useQuery } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
 import { toast } from "sonner";
@@ -51,7 +52,7 @@ export function SolicitudReembolsoPdfButton({ exp }: { exp: any }) {
           .order("fecha", { ascending: true }),
         supabase
           .from("expedientes")
-          .select("numero, bl_awb, descripcion_mercancia, clientes(nombre, rnc, direccion)")
+          .select("id, numero, bl_awb, descripcion_mercancia, clientes(nombre, rnc, direccion)")
           .eq("id", exp.id)
           .maybeSingle(),
         fetchDatosBancariosReembolso(),
@@ -77,7 +78,7 @@ export function SolicitudReembolsoPdfButton({ exp }: { exp: any }) {
         );
       }
 
-      const expData: any = expRes.data ?? {};
+      const expData: any = expRes.data ? await conConsignatarioEfectivo(expRes.data as any) : {};
       const numeroExp = expData.numero ?? exp.numero ?? "";
       const doc = await buildSolicitudReembolsoPdf({
         numeroDocumento: `REEBGVEXP-${numeroExp || "SIN NUMERO"}`,

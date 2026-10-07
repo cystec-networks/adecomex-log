@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday, hoyRD, hoyRDISO } from "@/lib/dates";
 import { calcImpuestosLinea } from "@/lib/impuestos";
 import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
+import { conConsignatarioEfectivo, fetchConsignatarioEfectivo } from "@/lib/consignatario-efectivo";
 import { ImpuestosSuspCtx, useImpuestosSusp, useEstadoSuspensivo, esRegimenSuspensivo } from "@/lib/impuestos";
 import { SolicitudReembolsoPdfButton } from "@/components/solicitud-reembolso-pdf-button";
 import { ReembolsoEstadoControl } from "@/components/reembolso-estado-control";
@@ -3436,6 +3437,13 @@ function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; to
     queryKey: ["expediente", expedienteId],
     queryFn: async () => (await supabase.from("expedientes").select("*").eq("id", expedienteId).maybeSingle()).data,
   });
+  // Facturas NUEVAS se emiten al consignatario efectivo (endosado si hay endoso activo).
+  // Las ya emitidas no se tocan.
+  const { data: clienteEfectivo } = useQuery({
+    queryKey: ["consignatario-efectivo-factura", expedienteId, (exp as any)?.cliente_id],
+    enabled: !!exp,
+    queryFn: async () => (await fetchConsignatarioEfectivo(expedienteId, { id: (exp as any)?.cliente_id ?? null })).cliente,
+  });
   const link = useMutation({
     mutationFn: async (fid: string | null) => {
       const prevFid = (exp as any)?.factura_ecf_id ?? null;
@@ -3463,7 +3471,7 @@ function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; to
           value={(exp as any)?.factura_ecf_id ?? null}
           onChange={(id: string | null) => link.mutate(id)}
           preload={{
-            cliente_id: (exp as any)?.cliente_id ?? null,
+            cliente_id: clienteEfectivo?.id ?? (exp as any)?.cliente_id ?? null,
             monto_total: totalFact,
           }}
         />
@@ -5460,7 +5468,7 @@ function PreLiquidacionPdfButton({ exp }: { exp: any }) {
     ]);
 
     const list = itemsRes.data ?? [];
-    const expData: any = expRes.data ? { ...exp, ...expRes.data } : exp;
+    const expData: any = await conConsignatarioEfectivo(expRes.data ? { ...exp, ...expRes.data } : exp);
     const contenedoresList = (contRes.data ?? []).map((c: any) => ({
       item_no: c.item_no,
       numero: c.numero_contenedor,
@@ -5620,7 +5628,8 @@ function LiquidacionFinalPdfButton({
     const numeroExp = exp.numero ?? "—";
     doc.text(numeroExp, M + doc.getTextWidth(expLabel), 70);
     doc.setFont("helvetica", "normal"); doc.setTextColor(100);
-    doc.text(`   |   Cliente: ${exp.clientes?.nombre ?? "—"}`, M + doc.getTextWidth(expLabel) + doc.getTextWidth(numeroExp), 70);
+    const clienteEf = (await fetchConsignatarioEfectivo(exp.id, exp.clientes ?? null)).cliente;
+    doc.text(`   |   Cliente: ${clienteEf?.nombre ?? "—"}${clienteEf?.rnc ? ` (RNC ${clienteEf.rnc})` : ""}`, M + doc.getTextWidth(expLabel) + doc.getTextWidth(numeroExp), 70);
     doc.text(
       `Generado: ${new Date().toLocaleString("es-DO")}   |   Usuario: ${user?.email ?? "—"}`,
       M,
