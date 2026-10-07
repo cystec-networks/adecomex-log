@@ -1952,6 +1952,10 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   return (
     <div className="space-y-5">
       <BotonesAccion />
+      {inspeccionHost && createPortal(
+        <TipoInspeccionSelector header value={form.canal_riesgo} onChange={(v) => set("canal_riesgo", v)} disabled={!editable} />,
+        inspeccionHost,
+      )}
 
       {hasSolicitud && (
         <Section id="datos-solicitud-original" className="bg-muted/30 border-dashed" title={
@@ -2290,10 +2294,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           <div className="grid gap-1.5">
             <Label>Tipo de Inspección</Label>
             <TipoInspeccionSelector value={form.canal_riesgo} onChange={(v) => set("canal_riesgo", v)} disabled={!editable} />
-            {inspeccionHost && createPortal(
-              <TipoInspeccionSelector header value={form.canal_riesgo} onChange={(v) => set("canal_riesgo", v)} disabled={!editable} />,
-              inspeccionHost,
-            )}
           </div>
       </Section>
 
