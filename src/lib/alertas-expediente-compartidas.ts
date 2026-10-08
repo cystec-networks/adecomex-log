@@ -1,5 +1,5 @@
 import { fmtLocalDate, hoyRD, parseLocalDate } from "./dates";
-import { estadoIndex } from "./estados-expediente";
+import { estadoIndex, fechasDespachoFaltantes } from "./estados-expediente";
 import { diasRegimen, plazoEfectivo, venceEn, habilesRestantes, diasHabilesEntre, type PlazoRegimen } from "./plazo-presentacion";
 import { alertasAdicionalesExpediente } from "./alertas-expediente";
 
@@ -11,6 +11,13 @@ export type ExpedienteAlertas = DatosAdicionales["expediente"] & {
 };
 type Documento = { tipo: string; estado: string; storage_path: string | null; fecha_recepcion: string | null; created_at: string };
 export type DatosAlertasCompartidas = Omit<DatosAdicionales, "expediente"> & { documentos?: Documento[] };
+
+/** Avisos preventivos exclusivos del detalle; reutilizan los requisitos de despacho. */
+export function alertasFechasDespacho(exp: { estado: string; liq_siga_fecha_pago?: string | null; fecha_aprobacion_despacho?: string | null }): string[] {
+  const etapa = estadoIndex(exp.estado);
+  if (etapa < 0 || etapa >= estadoIndex("despachado")) return [];
+  return fechasDespachoFaltantes(exp).map(texto => texto.charAt(0).toUpperCase() + texto.slice(1));
+}
 
 /** PIN DGA: reloj calendario; nunca sustituye al plazo legal en días hábiles. */
 export function alertaPinDga(exp: Pick<ExpedienteAlertas, "liq_siga_termino_at" | "liq_siga_fecha_pago">, ahora = Date.now()): AlertaExpediente | null {

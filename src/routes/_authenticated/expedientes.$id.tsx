@@ -16,7 +16,7 @@ import { EndosoSection, useEndosoActivo } from "@/components/expediente-endoso";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -68,7 +68,7 @@ import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
 import { unitFob, loadBrokerConfig } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
-import { alertasExpedienteCompartidas } from "@/lib/alertas-expediente-compartidas";
+import { alertasExpedienteCompartidas, alertasFechasDespacho } from "@/lib/alertas-expediente-compartidas";
 import { useDatosAlertasExpediente } from "@/lib/use-alertas-expediente";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
@@ -423,6 +423,17 @@ function DetalleExpediente() {
   const [nuevoAccionesHost, setNuevoAccionesHost] = useState<HTMLDivElement | null>(null);
   const [inspeccionHost, setInspeccionHost] = useState<HTMLDivElement | null>(null);
   const [solicitudEndoso, setSolicitudEndoso] = useState(0);
+  const [despachoDialog, setDespachoDialog] = useState<{ faltantes: string[]; puedeForzar: boolean } | null>(null);
+  const [justificacionDespacho, setJustificacionDespacho] = useState("");
+  const resolverDespacho = useRef<((motivo: string | null) => void) | null>(null);
+  const cerrarDespachoDialog = (motivo: string | null) => {
+    const resolver = resolverDespacho.current;
+    resolverDespacho.current = null;
+    setDespachoDialog(null);
+    setJustificacionDespacho("");
+    resolver?.(motivo);
+  };
+  useEffect(() => () => { resolverDespacho.current?.(null); }, []);
   const abrirEndoso = () => {
     setTabActiva("info");
     setSolicitudEndoso((v) => v + 1);
@@ -670,8 +681,12 @@ function DetalleExpediente() {
         const faltanFechas = fechasDespachoFaltantes(exp);
         if (faltanFechas.length) {
           const bloqueo = "No se puede despachar:\n- " + faltanFechas.join("\n- ");
+          const motivo = await new Promise<string | null>((resolve) => {
+            resolverDespacho.current = resolve;
+            setJustificacionDespacho("");
+            setDespachoDialog({ faltantes: faltanFechas, puedeForzar: esAdminDespacho });
+          });
           if (!esAdminDespacho) throw new Error(bloqueo);
-          const motivo = window.prompt(`${bloqueo}\n\nComo Administrador puedes forzar el despacho. Escribe la justificación obligatoria (quedará en Auditoría):`);
           if (!motivo || !motivo.trim()) throw new Error(bloqueo);
           forzarDespacho = motivo.trim();
         }
@@ -750,7 +765,7 @@ function DetalleExpediente() {
   const clienteHeader = clienteEfectivoHeader ?? expData.clientes;
   const alertasHeader = isNuevo ? [] : alertasExpedienteCompartidas(expData, plazosReg, {
     ...datosAlertas, permisos: permisosHeader, documentos: documentosHeader,
-  }).map(alerta => alerta.larga);
+  }).map(alerta => alerta.larga).concat(alertasFechasDespacho(expData));
 
   return (
     <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
@@ -784,7 +799,7 @@ function DetalleExpediente() {
           {!isNuevo && (
             <div className="expediente-header-state grid min-w-0 grid-cols-[auto_minmax(0,1fr)_2rem] items-center gap-1.5">
               <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
-              <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion)}>
+              <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion) || updateEstado.isPending}>
                 <SelectTrigger aria-label="Estado del expediente" className="h-8 w-full min-w-0 text-xs text-foreground disabled:opacity-100 [&>svg]:shrink-0 [&>svg]:opacity-100 md:text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ESTADO_ORDEN.map((e) => (
@@ -1151,6 +1166,37 @@ function DetalleExpediente() {
       </div>
       </Tabs>
       </ImpuestosSuspCtx.Provider>
+      <Dialog open={!!despachoDialog} onOpenChange={(open) => { if (!open) cerrarDespachoDialog(null); }}>
+        <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>No se puede despachar</DialogTitle>
+            <DialogDescription>Faltan los siguientes requisitos del Expediente:</DialogDescription>
+          </DialogHeader>
+          <ul className="list-disc space-y-2 pl-5 text-sm text-destructive">
+            {despachoDialog?.faltantes.map((faltante) => <li key={faltante}>{faltante}</li>)}
+          </ul>
+          {despachoDialog?.puedeForzar && (
+            <form className="space-y-4" onSubmit={(event) => {
+              event.preventDefault();
+              const motivo = justificacionDespacho.trim();
+              if (motivo) cerrarDespachoDialog(motivo);
+            }}>
+              <p className="text-sm text-muted-foreground">Como Administrador puedes forzar el despacho. Escribe la justificación obligatoria (quedará en Auditoría):</p>
+              <div className="space-y-2">
+                <Label htmlFor="justificacion-despacho">Justificación obligatoria</Label>
+                <Textarea id="justificacion-despacho" required value={justificacionDespacho} onChange={(event) => setJustificacionDespacho(event.target.value)} rows={3} />
+              </div>
+              <DialogFooter className="gap-2">
+                <Button type="button" variant="outline" onClick={() => cerrarDespachoDialog(null)}>Cancelar</Button>
+                <Button type="submit" disabled={!justificacionDespacho.trim()}><ShieldCheck className="mr-2 h-4 w-4" />Forzar despacho</Button>
+              </DialogFooter>
+            </form>
+          )}
+          {despachoDialog && !despachoDialog.puedeForzar && (
+            <DialogFooter><Button variant="outline" onClick={() => cerrarDespachoDialog(null)}>Cerrar</Button></DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
