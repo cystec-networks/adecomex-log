@@ -351,6 +351,13 @@
       "when": 1791490002174,
       "tag": "0049_restringir_lectura_settings_y_catalogos_dga",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1791490904319,
+      "tag": "0050_restringir_lectura_catalogos_medios",
+      "breakpoints": true
     }
   ]
 }
