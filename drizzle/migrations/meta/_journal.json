@@ -358,6 +358,13 @@
       "when": 1791490904319,
       "tag": "0050_restringir_lectura_catalogos_medios",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1791492151420,
+      "tag": "0051_deprecar_columnas_sin_uso",
+      "breakpoints": true
     }
   ]
 }

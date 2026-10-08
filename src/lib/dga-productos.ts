@@ -33,7 +33,7 @@ export type DgaProducto = {
 
 // Encabezados reales del reporte de la DGA. El matching es tolerante:
 // se ignoran tildes, mayúsculas, puntuación, espacios extra y las palabras "de"/"del".
-export const COLUMN_ALIASES: Record<string, string[]> = {
+const COLUMN_ALIASES: Record<string, string[]> = {
   codigo_producto: ["Código de Producto", "Código Producto", "Codigo", "Product Code", "Cod Producto"],
   partida_arancelaria: ["Partida Arancelaria", "Partida", "HS Code", "Código Arancelario"],
   nombre_producto: ["Nombre de Producto", "Nombre Producto", "Producto", "Nombre", "Descripción"],
@@ -61,7 +61,7 @@ const ALIAS_KEYS: Record<string, string[]> = Object.fromEntries(
   Object.entries(COLUMN_ALIASES).map(([f, a]) => [f, a.map(headerKey)]),
 );
 
-export function mapRow(row: Record<string, any>) {
+function mapRow(row: Record<string, any>) {
   const normalized: Record<string, any> = {};
   for (const [k, v] of Object.entries(row)) normalized[headerKey(k)] = v;
   const out: Record<string, string | null> = {};

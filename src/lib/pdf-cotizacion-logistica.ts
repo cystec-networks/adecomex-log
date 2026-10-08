@@ -223,8 +223,3 @@ export async function buildCotizacionLogisticaPdf(input: CotizacionLogisticaInpu
 
   return doc;
 }
-
-export async function generarPdfCotizacionLogistica(input: CotizacionLogisticaInput): Promise<Blob> {
-  const doc = await buildCotizacionLogisticaPdf(input);
-  return doc.output("blob");
-}

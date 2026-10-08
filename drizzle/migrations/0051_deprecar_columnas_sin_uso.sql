@@ -1,0 +1,9 @@
+COMMENT ON COLUMN public.expedientes.sin_codigo_dga IS 'DEPRECATED: sin uso en la aplicación; pendiente de eliminar';
+COMMENT ON COLUMN public.expedientes.tipo_despacho_codigo IS 'DEPRECATED: sin uso en la aplicación; pendiente de eliminar';
+COMMENT ON COLUMN public.etapas.evidencia_path IS 'DEPRECATED: sin uso en la aplicación; pendiente de eliminar';
+COMMENT ON COLUMN public.incidencias.accion_correctiva IS 'DEPRECATED: sin uso en la aplicación; pendiente de eliminar';
+COMMENT ON COLUMN public.inscripcion_cuotas.fecha_pagada IS 'DEPRECATED: sin uso en la aplicación; pendiente de eliminar';
+COMMENT ON COLUMN public.envios_dgii.fecha_enviado IS 'DEPRECATED: sin uso en la aplicación; pendiente de eliminar';
+COMMENT ON COLUMN public.catalogo_tasas_arancelarias.verificado_por IS 'DEPRECATED: sin uso en la aplicación; pendiente de eliminar';
+COMMENT ON COLUMN public.catalogo_tasas_arancelarias.verificado_at IS 'DEPRECATED: sin uso en la aplicación; pendiente de eliminar';
+COMMENT ON COLUMN public.catalogo_tasas_arancelarias.origen_nota IS 'DEPRECATED: sin uso en la aplicación; pendiente de eliminar';

@@ -35,7 +35,7 @@ export const OFICIO_CONFIG_DEFAULT: OficioConfig = {
   email: "adecomex@claro.net.do",
 };
 
-export function parseOficioConfig(raw: string | null | undefined): OficioConfig {
+function parseOficioConfig(raw: string | null | undefined): OficioConfig {
   if (!raw) return { ...OFICIO_CONFIG_DEFAULT };
   try {
     const parsed = JSON.parse(raw) as Partial<OficioConfig>;
@@ -60,7 +60,7 @@ export const esc = (s: unknown) =>
 
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 /** Formato de la carta modelo: "23 de Septiembre del 2026." */
-export function fechaLarga(d = new Date()) {
+function fechaLarga(d = new Date()) {
   return `${d.getDate()} de ${MESES[d.getMonth()]} del ${d.getFullYear()}.`;
 }
 

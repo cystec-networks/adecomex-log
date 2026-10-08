@@ -27,28 +27,6 @@ export function fmtLocalDateShort(s: string | null | undefined, fallback = "—"
   return fmtLocalDate(s, { day: "2-digit", month: "2-digit", year: "2-digit" }, fallback);
 }
 
-// Días calendario que faltan para la fecha límite resultante de contar
-// `plazoDias` días hábiles (lunes a viernes) desde `fechaInicio`.
-// Positivo = aún queda tiempo; 0 = vence hoy; negativo = ya venció.
-// No contempla feriados de RD.
-export function diasHabilesRestantes(
-  fechaInicio: string | null | undefined,
-  plazoDias: number,
-): number {
-  const inicio = parseLocalDate(fechaInicio);
-  if (isNaN(inicio.getTime())) return Infinity;
-  inicio.setHours(0, 0, 0, 0);
-  const cursor = new Date(inicio);
-  let dias = 0;
-  while (dias < plazoDias) {
-    cursor.setDate(cursor.getDate() + 1);
-    const dow = cursor.getDay();
-    if (dow !== 0 && dow !== 6) dias++;
-  }
-  const hoy = hoyRD();
-  return Math.round((cursor.getTime() - hoy.getTime()) / 86400000);
-}
-
 // Días HÁBILES que faltan desde hoy hasta la fecha límite resultante de contar
 // `plazoDias` días hábiles desde `fechaInicio`.
 // Positivo = aún quedan días hábiles; 0 = vence hoy; negativo = vencido.
@@ -91,7 +69,7 @@ export function daysFromToday(s: string | null | undefined): number {
 
 // "Hoy" según República Dominicana (America/Santo_Domingo), sin depender del
 // huso del navegador ni de UTC: evita el salto de día a medianoche UTC.
-export const TZ_RD = "America/Santo_Domingo";
+const TZ_RD = "America/Santo_Domingo";
 export function hoyRDISO(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: TZ_RD, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 }

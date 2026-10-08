@@ -381,8 +381,3 @@ export async function buildBlHijoPdf(input: BlHijoInput) {
 
   return doc;
 }
-
-export async function generarPdfBlHijo(input: BlHijoInput): Promise<Blob> {
-  const doc = await buildBlHijoPdf(input);
-  return doc.output("blob");
-}

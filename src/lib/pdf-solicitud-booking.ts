@@ -242,8 +242,3 @@ export async function buildSolicitudBookingPdf(input: SolicitudBookingInput) {
 
   return doc;
 }
-
-export async function generarPdfSolicitudBooking(input: SolicitudBookingInput): Promise<Blob> {
-  const doc = await buildSolicitudBookingPdf(input);
-  return doc.output("blob");
-}
