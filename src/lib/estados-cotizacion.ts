@@ -9,7 +9,7 @@ export const COTIZACION_ESTADOS = [
 
 export type CotizacionEstado = (typeof COTIZACION_ESTADOS)[number];
 
-export const COTIZACION_ESTADO_LABEL: Record<string, string> = {
+const COTIZACION_ESTADO_LABEL: Record<string, string> = {
   solicitada: "Solicitada",
   en_proceso: "En Proceso",
   cotizada: "Cotizada",

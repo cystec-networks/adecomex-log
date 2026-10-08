@@ -33,7 +33,7 @@ type Ctx = {
 };
 
 /** Devuelve el mensaje del requisito faltante para entrar a `paso`, o null si se cumple. */
-export function requisitoFaltante(paso: string, ctx: Ctx): string | null {
+function requisitoFaltante(paso: string, ctx: Ctx): string | null {
   const vacio = (v: any) => !v || String(v).trim() === "";
   switch (paso) {
     case "en_transito":

@@ -6,7 +6,7 @@
  */
 import { fmtLocalDate } from "@/lib/dates";
 
-export const EMPRESA = {
+const EMPRESA = {
   nombre: "ADECOMEX SRL",
   lineas: [
     "OFICINA COMERCIAL: AVENIDA CAONABO 85E",

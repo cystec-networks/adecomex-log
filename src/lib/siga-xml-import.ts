@@ -77,7 +77,7 @@ export type XmlDuaResultado = {
 export class XmlDuaError extends Error {}
 
 /** Inversa de personCode(): "RNC214130594181" → "130594181". */
-export function idDesdePersonCode(code: string, countryCode = "214"): string {
+function idDesdePersonCode(code: string, countryCode = "214"): string {
   let c = String(code ?? "").trim().toUpperCase();
   if (!c) return "";
   const m = /^(RNC|CED|PAS|TID|TAX)(.*)$/.exec(c);

@@ -4,7 +4,7 @@
 import { personCode, type ValidationIssue } from "@/lib/siga-xml";
 
 /** RNC de ADECOMEX usado como solicitante del certificado */
-export const APPLICANT_CODE = "RNC214130481301";
+const APPLICANT_CODE = "RNC214130481301";
 
 export type CertMaps = {
   /** codigo -> nombre de catalogo_tratamientos_certificado */

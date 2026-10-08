@@ -9,7 +9,7 @@ export const ORDEN_ESTADOS = [
 
 export type OrdenEstado = (typeof ORDEN_ESTADOS)[number];
 
-export const ORDEN_ESTADO_LABEL: Record<string, string> = {
+const ORDEN_ESTADO_LABEL: Record<string, string> = {
   abierta: "Abierta",
   en_transito: "En Tránsito",
   declarada: "Declarada",

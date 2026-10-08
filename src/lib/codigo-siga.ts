@@ -26,25 +26,10 @@ const KEYWORDS: Record<string, string[]> = {
 
 export const normalizar = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-/** null = no hay palabras clave definidas para el tipo (no se valida). */
-export function coincideContenido(tipo: string, texto: string): boolean | null {
-  const kws = KEYWORDS[tipo];
-  if (!kws) return null;
-  const t = normalizar(texto);
-  return kws.some((k) => t.includes(normalizar(k)));
-}
-
 export async function sha256File(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
   const h = await crypto.subtle.digest("SHA-256", buf);
   return Array.from(new Uint8Array(h)).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-export async function fileToBase64(file: File): Promise<string> {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  let bin = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  return btoa(bin);
 }
 
 /** Siguiente código consecutivo por Expediente y prefijo (documentos + permisos). */

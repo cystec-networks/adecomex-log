@@ -29,7 +29,7 @@ export type BrokerConfig = {
 
 const BROKER_KEY = "adecomex.siga.broker";
 
-export const DEFAULT_BROKER: BrokerConfig = {
+const DEFAULT_BROKER: BrokerConfig = {
   brokerCompanyCode: "130481301",
   brokerEmployeeCode: "072-08",
   brokerRnc: "130481301",
@@ -132,7 +132,7 @@ export function personCode(id?: string | null, countryCode = "214", defaultPrefi
 }
 
 /** Limpia una cédula/RNC dejando solo dígitos y letras (sin guiones ni espacios) */
-export function cleanId(id?: string | null): string {
+function cleanId(id?: string | null): string {
   return id ? String(id).trim().replace(/[-\s.]/g, "") : "";
 }
 
@@ -154,7 +154,7 @@ export const RDOC = {
 } as const;
 
 /** Estado del producto por defecto en SIGA (IC04-001 = Nuevo) */
-export const ESTADO_PRODUCTO_NUEVO = "IC04-001";
+const ESTADO_PRODUCTO_NUEVO = "IC04-001";
 
 /** Comodín oficial de SIGA para suplidor extranjero sin código registrado */
 export const SUPPLIER_NO_ASIGNADO = { code: "999999999999", name: "*** NO ASIGNADO ***" } as const;
@@ -192,7 +192,7 @@ export function resolveRegimenCode(exp: any, regimenMap?: Record<string, string>
 }
 
 /** Método de transporte: traduce exp.medio_transporte (texto) al código de catalogo_metodos_transporte */
-export function resolveTransportMethodCode(exp: any, map?: Record<string, string>): string {
+function resolveTransportMethodCode(exp: any, map?: Record<string, string>): string {
   if (exp?.metodo_transporte_codigo) return String(exp.metodo_transporte_codigo);
   const nombre = normNombre(exp?.medio_transporte);
   if (!nombre) return "";
@@ -200,7 +200,7 @@ export function resolveTransportMethodCode(exp: any, map?: Record<string, string
 }
 
 /** Acuerdo comercial: traduce exp.acuerdo_comercial (texto) al código de catalogo_acuerdos */
-export function resolveAgreementCode(exp: any, map?: Record<string, string>): string {
+function resolveAgreementCode(exp: any, map?: Record<string, string>): string {
   if (exp?.acuerdo_codigo) return String(exp.acuerdo_codigo);
   const nombre = normNombre(exp?.acuerdo_comercial);
   if (!nombre || nombre === "n/a" || nombre === "ninguno") return "";
@@ -607,7 +607,7 @@ const TIPO_TRANSPORTE_MANIFIESTO: Record<string, string> = {
 };
 
 /** Código SIGA de tipo de transporte de una operación logística */
-export function resolveManifestTransportType(op: any): string {
+function resolveManifestTransportType(op: any): string {
   if (op?.transport_type_code) return String(op.transport_type_code);
   const t = normNombre(op?.tipo);
   return TIPO_TRANSPORTE_MANIFIESTO[t] ?? "";
@@ -775,7 +775,7 @@ function parteManifiesto(op: any, pre: "Consignor" | "Consignee" | "Notify", nat
 // Se omite por completo ManifestVehicle (no aplica al negocio).
 
 /** Número de BL Hijo (HouseBLNo) de una operación logística. */
-export function houseBlNoDe(op: any): string {
+function houseBlNoDe(op: any): string {
   return op?.bl_hijo_numero || "";
 }
 
