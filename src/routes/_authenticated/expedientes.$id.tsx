@@ -63,7 +63,7 @@ import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { PortadaExpedienteButton } from "@/components/portada-expediente-button";
-import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado, fechasDespachoFaltantes } from "@/lib/estados-expediente";
+import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado, fechasDespachoFaltantes, checksForzables, calcularEtapa } from "@/lib/estados-expediente";
 import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
 import { unitFob, loadBrokerConfig } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
@@ -423,7 +423,7 @@ function DetalleExpediente() {
   const [nuevoAccionesHost, setNuevoAccionesHost] = useState<HTMLDivElement | null>(null);
   const [inspeccionHost, setInspeccionHost] = useState<HTMLDivElement | null>(null);
   const [solicitudEndoso, setSolicitudEndoso] = useState(0);
-  const [despachoDialog, setDespachoDialog] = useState<{ faltantes: string[]; puedeForzar: boolean } | null>(null);
+  const [despachoDialog, setDespachoDialog] = useState<{ faltantes: string[]; puedeForzar: boolean; titulo?: string } | null>(null);
   const [justificacionDespacho, setJustificacionDespacho] = useState("");
   const resolverDespacho = useRef<((motivo: string | null) => void) | null>(null);
   const cerrarDespachoDialog = (motivo: string | null) => {
@@ -627,9 +627,8 @@ function DetalleExpediente() {
     },
   });
 
-  const hitosDone = (hitosHeader ?? []).filter((h) => h.estado === "completado" || h.estado === "no_aplica").length;
+  const etapa = calcularEtapa({ hitos: hitosHeader ?? [], documentos: documentosHeader ?? [], permisos: permisosHeader ?? [], checklist: CHECKLIST_DOCUMENTOS_BASE });
   const datosAlertas = useDatosAlertasExpediente(id, exp?.cliente_id ?? null, exp?.factura_ecf_id ?? null, !isNuevo && !!exp);
-  const hitosTotal = hitosHeader?.length ?? 0;
   const permisosNumeros = (permisosHeader ?? []).map((p: any) => p.numero).filter(Boolean).join(", ");
 
 
@@ -647,25 +646,26 @@ function DetalleExpediente() {
             : "No se puede regresar el expediente a un estado anterior.",
         );
       }
-      const { count: gastos } = await supabase
-        .from("gastos")
-        .select("id", { count: "exact", head: true })
-        .eq("expediente_id", id)
-        .is("deleted_at", null);
-      const msg = validarAvanceEstado(actual, estado, {
+      const [{ count: gastos }, docsRes, hitoRes, permsRes] = await Promise.all([
+        supabase.from("gastos").select("id", { count: "exact", head: true }).eq("expediente_id", id).is("deleted_at", null),
+        supabase.from("documentos").select("tipo, estado, storage_path").eq("expediente_id", id),
+        supabase.from("expediente_hitos").select("estado").eq("expediente_id", id).eq("hito_codigo", "factura_venta_enviada"),
+        supabase.from("permisos").select("numero, tipo, estado").eq("expediente_id", id).is("eliminado_en", null).neq("estado", "aprobado"),
+      ]);
+      const docs = docsRes.data ?? [];
+      const ctx = {
         exp,
         tieneGastos: (gastos ?? 0) > 0,
         tieneFactura: !!(exp as any)?.factura_ecf_id,
-      });
+        documentos: docs,
+        facturaVentaEnviada: (hitoRes.data ?? []).some((h: any) => h.estado === "completado" || h.estado === "no_aplica"),
+        permisosPendientes: permsRes.data ?? [],
+      };
+      const msg = validarAvanceEstado(actual, estado, ctx);
       if (msg) throw new Error(msg);
       let forzarDespacho: string | null = null;
       if (estadoIndex(actual) < estadoIndex("presentar") && estadoIndex(estado) >= estadoIndex("presentar")) {
-        const { data: docs } = await supabase
-          .from("documentos")
-          .select("tipo, storage_path")
-          .eq("expediente_id", id)
-          .in("tipo", ["Factura comercial", "Bill of Lading"]);
-        const tiene = (t: string) => (docs ?? []).some((d: any) => d.tipo === t && d.storage_path && String(d.storage_path).trim() !== "");
+        const tiene = (t: string) => docs.some((d: any) => d.tipo === t && d.storage_path && String(d.storage_path).trim() !== "");
         const fac = tiene("Factura comercial");
         const bl = tiene("Bill of Lading");
         if (!fac || !bl) {
@@ -677,46 +677,20 @@ function DetalleExpediente() {
           forzarDespacho = motivo.trim();
         }
       }
-      if (estadoIndex(actual) < estadoIndex("despachado") && estadoIndex(estado) >= estadoIndex("despachado")) {
-        const faltanFechas = fechasDespachoFaltantes(exp);
-        if (faltanFechas.length) {
-          const bloqueo = "No se puede despachar:\n- " + faltanFechas.join("\n- ");
-          const motivo = await new Promise<string | null>((resolve) => {
-            resolverDespacho.current = resolve;
-            setJustificacionDespacho("");
-            setDespachoDialog({ faltantes: faltanFechas, puedeForzar: esAdminDespacho });
-          });
-          if (!esAdminDespacho) throw new Error(bloqueo);
-          if (!motivo || !motivo.trim()) throw new Error(bloqueo);
-          forzarDespacho = motivo.trim();
-        }
-        const { data: perms } = await supabase
-          .from("permisos")
-          .select("numero, tipo, estado")
-          .eq("expediente_id", id)
-          .is("eliminado_en", null)
-          .neq("estado", "aprobado");
-        if (perms && perms.length > 0) {
-          const p: any = perms[0];
-          const bloqueo = `No se puede despachar este Expediente: tiene ${perms.length} permiso(s) sin aprobar (ej. ${p.numero || p.tipo} (${p.tipo}) - Estado: ${String(p.estado).replace("_", " ")}). Todos los permisos asociados deben estar Aprobados antes de despachar.`;
-          if (!puedeForzarRegreso) throw new Error(bloqueo);
-          const motivo = window.prompt(`${bloqueo}\n\nComo Administración/Operaciones puedes forzar el despacho por excepción justificada. Escribe el motivo (quedará en Auditoría):`);
-          if (!motivo || !motivo.trim()) throw new Error(bloqueo);
-          forzarDespacho = motivo.trim();
-        }
-      }
-      if (
-        estadoIndex(actual) < estadoIndex("entregado") &&
-        estadoIndex(estado) >= estadoIndex("entregado") &&
-        !(exp as any)?.factura_ecf_id
-      ) {
-        const bloqueo = "No se puede marcar como Entregado este Expediente: falta vincular la Factura E-CF (DGII).";
-        if (!puedeForzarRegreso) throw new Error(bloqueo);
-        if (!forzarDespacho) {
-          const motivo = window.prompt(`${bloqueo}\n\nComo Administración/Operaciones puedes forzar el paso por excepción justificada. Escribe el motivo (quedará en Auditoría):`);
-          if (!motivo || !motivo.trim()) throw new Error(bloqueo);
-          forzarDespacho = motivo.trim();
-        }
+      const cruzaDespacho = estadoIndex(actual) < estadoIndex("despachado") && estadoIndex(estado) >= estadoIndex("despachado");
+      const faltanFechas = cruzaDespacho ? fechasDespachoFaltantes(exp) : [];
+      const faltantes = [...faltanFechas, ...checksForzables(actual, estado, ctx)];
+      if (faltantes.length) {
+        const bloqueo = "No se puede cambiar el estado:\n- " + faltantes.join("\n- ");
+        const soloDespacho = faltantes.length === faltanFechas.length;
+        const motivo = await new Promise<string | null>((resolve) => {
+          resolverDespacho.current = resolve;
+          setJustificacionDespacho("");
+          setDespachoDialog({ faltantes, puedeForzar: esAdminDespacho, titulo: soloDespacho ? "No se puede despachar" : "No se puede cambiar el estado" });
+        });
+        if (!esAdminDespacho) throw new Error(bloqueo);
+        if (!motivo || !motivo.trim()) throw new Error(bloqueo);
+        forzarDespacho = motivo.trim();
       }
       const { error } = await supabase
         .from("expedientes")
@@ -1050,7 +1024,7 @@ function DetalleExpediente() {
         <div className="expediente-info-fila3">
           <div className="flex h-8 min-w-0 items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Etapa :</Label>
-            <span className="text-xs font-medium md:text-sm">{hitosDone} de {hitosTotal}</span>
+            <span className="text-xs font-medium md:text-sm" title="Hitos del Checklist de Despacho + documentos del Checklist de Recepción recibidos + permisos aprobados (sin contar «No aplica»)">{etapa.cumplidos} de {etapa.total}</span>
           </div>
           <CampoHeader etiqueta="Declaración DUA" valor={expData.numero_dua} largo />
           <CampoHeader etiqueta="N.º de despacho" valor={expData.numero_igra} />
@@ -1169,7 +1143,7 @@ function DetalleExpediente() {
       <Dialog open={!!despachoDialog} onOpenChange={(open) => { if (!open) cerrarDespachoDialog(null); }}>
         <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>No se puede despachar</DialogTitle>
+            <DialogTitle>{despachoDialog?.titulo ?? "No se puede cambiar el estado"}</DialogTitle>
             <DialogDescription>Faltan los siguientes requisitos del Expediente:</DialogDescription>
           </DialogHeader>
           <ul className="list-disc space-y-2 pl-5 text-sm text-destructive">
@@ -1181,14 +1155,14 @@ function DetalleExpediente() {
               const motivo = justificacionDespacho.trim();
               if (motivo) cerrarDespachoDialog(motivo);
             }}>
-              <p className="text-sm text-muted-foreground">Como Administrador puedes forzar el despacho. Escribe la justificación obligatoria (quedará en Auditoría):</p>
+              <p className="text-sm text-muted-foreground">Como Administrador puedes forzar el cambio. Escribe la justificación obligatoria (quedará en Auditoría):</p>
               <div className="space-y-2">
                 <Label htmlFor="justificacion-despacho">Justificación obligatoria</Label>
                 <Textarea id="justificacion-despacho" required value={justificacionDespacho} onChange={(event) => setJustificacionDespacho(event.target.value)} rows={3} />
               </div>
               <DialogFooter className="gap-2">
                 <Button type="button" variant="outline" onClick={() => cerrarDespachoDialog(null)}>Cancelar</Button>
-                <Button type="submit" disabled={!justificacionDespacho.trim()}><ShieldCheck className="mr-2 h-4 w-4" />Forzar despacho</Button>
+                <Button type="submit" disabled={!justificacionDespacho.trim()}><ShieldCheck className="mr-2 h-4 w-4" />{despachoDialog?.titulo === "No se puede despachar" ? "Forzar despacho" : "Forzar cambio"}</Button>
               </DialogFooter>
             </form>
           )}
