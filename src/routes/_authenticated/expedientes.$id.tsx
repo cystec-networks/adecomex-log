@@ -670,12 +670,13 @@ function DetalleExpediente() {
       if (faltantes.length) {
         const bloqueo = "No se puede cambiar el estado:\n- " + faltantes.join("\n- ");
         const soloDespacho = faltantes.length === faltanFechas.length;
+        const puedeForzar = esAdminDespacho || (puedeForzarRegreso && faltantes.every((f) => f.startsWith("Falta adjuntar ")));
         const motivo = await new Promise<string | null>((resolve) => {
           resolverDespacho.current = resolve;
           setJustificacionDespacho("");
-          setDespachoDialog({ faltantes, puedeForzar: esAdminDespacho, titulo: soloDespacho ? "No se puede despachar" : "No se puede cambiar el estado" });
+          setDespachoDialog({ faltantes, puedeForzar, titulo: soloDespacho ? "No se puede despachar" : "No se puede cambiar el estado" });
         });
-        if (!esAdminDespacho) throw new Error(bloqueo);
+        if (!puedeForzar) throw new Error(bloqueo);
         if (!motivo || !motivo.trim()) throw new Error(bloqueo);
         forzarDespacho = motivo.trim();
       }
@@ -1142,7 +1143,7 @@ function DetalleExpediente() {
               const motivo = justificacionDespacho.trim();
               if (motivo) cerrarDespachoDialog(motivo);
             }}>
-              <p className="text-sm text-muted-foreground">Como Administrador puedes forzar el cambio. Escribe la justificación obligatoria (quedará en Auditoría):</p>
+              <p className="text-sm text-muted-foreground">Tu rol permite forzar este cambio. Escribe la justificación obligatoria (quedará en Auditoría):</p>
               <div className="space-y-2">
                 <Label htmlFor="justificacion-despacho">Justificación obligatoria</Label>
                 <Textarea id="justificacion-despacho" required value={justificacionDespacho} onChange={(event) => setJustificacionDespacho(event.target.value)} rows={3} />
