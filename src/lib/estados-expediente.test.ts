@@ -24,3 +24,8 @@ test("Etapa descuenta «No aplica» del numerador y del denominador", () => {
   const r = calcularEtapa({ hitos: [{ estado: "completado" }, { estado: "no_aplica" }, { estado: "pendiente" }], documentos: [{ tipo: "A", estado: "recibido" }], permisos: [{ estado: "aprobado" }, { estado: "solicitado" }], checklist: ["A", "B"] });
   assert.deepEqual(r, { cumplidos: 3, total: 6 });
 });
+test("Presentado exige Factura comercial y BL adjuntos", () => {
+  assert.equal(checksForzables("manifestado", "presentar", { exp: {}, documentos: [] }).length, 1);
+  const docs = [{ tipo: "Factura comercial", estado: "recibido", storage_path: "a.pdf" }, { tipo: "Bill of Lading", estado: "recibido", storage_path: "b.pdf" }];
+  assert.equal(checksForzables("manifestado", "presentar", { exp: {}, documentos: docs }).length, 0);
+});
