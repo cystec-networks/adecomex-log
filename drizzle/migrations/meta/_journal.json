@@ -372,6 +372,13 @@
       "when": 1791493556312,
       "tag": "0052_desactivar_avance_orden_por_etapa",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1791494241441,
+      "tag": "0053_archivar_tabla_etapas",
+      "breakpoints": true
     }
   ]
 }
