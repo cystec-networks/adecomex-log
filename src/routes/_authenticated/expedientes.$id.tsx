@@ -664,19 +664,6 @@ function DetalleExpediente() {
       const msg = validarAvanceEstado(actual, estado, ctx);
       if (msg) throw new Error(msg);
       let forzarDespacho: string | null = null;
-      if (estadoIndex(actual) < estadoIndex("presentar") && estadoIndex(estado) >= estadoIndex("presentar")) {
-        const tiene = (t: string) => docs.some((d: any) => d.tipo === t && d.storage_path && String(d.storage_path).trim() !== "");
-        const fac = tiene("Factura comercial");
-        const bl = tiene("Bill of Lading");
-        if (!fac || !bl) {
-          const falta = !fac && !bl ? "Factura comercial y Bill of Lading" : !fac ? "Factura comercial" : "Bill of Lading";
-          const bloqueo = `No se puede marcar como Presentado: falta adjuntar ${falta}.`;
-          if (!puedeForzarRegreso) throw new Error(bloqueo);
-          const motivo = window.prompt(`${bloqueo}\n\nComo Administración/Operaciones puedes forzar el paso por excepción justificada. Escribe el motivo (quedará en Auditoría):`);
-          if (!motivo || !motivo.trim()) throw new Error(bloqueo);
-          forzarDespacho = motivo.trim();
-        }
-      }
       const cruzaDespacho = estadoIndex(actual) < estadoIndex("despachado") && estadoIndex(estado) >= estadoIndex("despachado");
       const faltanFechas = cruzaDespacho ? fechasDespachoFaltantes(exp) : [];
       const faltantes = [...faltanFechas, ...checksForzables(actual, estado, ctx)];

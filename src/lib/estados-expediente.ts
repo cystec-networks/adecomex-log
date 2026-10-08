@@ -104,7 +104,7 @@ const docRecibido = (docs: { tipo: string; estado: string }[], tipo: string) =>
 
 type CtxForzable = {
   exp: any;
-  documentos?: { tipo: string; estado: string }[];
+  documentos?: { tipo: string; estado: string; storage_path?: string | null }[];
   facturaVentaEnviada?: boolean;
   permisosPendientes?: { numero?: string | null; tipo: string | null; estado: string }[];
 };
@@ -120,6 +120,9 @@ export function checksForzables(desde: string, hasta: string, ctx: CtxForzable):
     if (paso === "en_transito") {
       const faltan = DOCS_CORE_RECEPCION.filter((t) => !docRecibido(ctx.documentos ?? [], t));
       if (faltan.length) out.push(`Checklist de Recepción incompleto: ${faltan.join(", ")}`);
+    } else if (paso === "presentar") {
+      const faltan = ["Factura comercial", "Bill of Lading"].filter((t) => !(ctx.documentos ?? []).some((d) => d.tipo === t && String(d.storage_path ?? "").trim()));
+      if (faltan.length) out.push(`Falta adjuntar ${faltan.join(" y ")} para Presentado`);
     } else if (paso === "verificar" && !String(ctx.exp?.canal_riesgo ?? "").trim()) {
       out.push("Falta definir el Tipo de Inspección (sección Declaración)");
     } else if (paso === "despachado" && ctx.permisosPendientes?.length) {
