@@ -93,11 +93,8 @@ export function validarAvanceEstado(desde: string, hasta: string, ctx: Ctx): str
   return null;
 }
 
-/** Documentos core del Checklist de Recepción exigidos para pasar a En Tránsito (igual que el trigger). */
-export const DOCS_CORE_RECEPCION = [
-  "Factura comercial", "Bill of Lading", "Lista de empaque",
-  "Certificado de origen", "Certificado Sanitario/Fitosanitario", "Certificado de análisis",
-] as const;
+/** Documentos del Checklist de Recepción que bloquean el paso a En Tránsito (igual que el trigger); el resto es informativo. */
+export const DOCS_CORE_RECEPCION = ["Factura comercial", "Bill of Lading"] as const;
 
 const docRecibido = (docs: { tipo: string; estado: string }[], tipo: string) =>
   docs.some((d) => d.tipo === tipo && (d.estado === "recibido" || d.estado === "aprobado"));
