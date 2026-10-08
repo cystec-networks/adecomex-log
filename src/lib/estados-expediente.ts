@@ -106,7 +106,7 @@ type CtxForzable = {
   exp: any;
   documentos?: { tipo: string; estado: string }[];
   facturaVentaEnviada?: boolean;
-  permisosPendientes?: { numero?: string | null; tipo: string; estado: string }[];
+  permisosPendientes?: { numero?: string | null; tipo: string | null; estado: string }[];
 };
 
 /** Requisitos que solo un Administrador puede forzar con justificación; se listan todos los pasos saltados. */
