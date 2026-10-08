@@ -1,4 +1,4 @@
-- [ ] Sustituir el aviso nativo por modal de fechas DGA con justificación y añadir alertas preventivas del detalle; conservar permisos y Auditoría, verificar sin despachar expedientes reales.
+- [x] Sustituir el aviso nativo de fechas DGA por modal centrado con justificación y alertas preventivas del detalle; permisos y Auditoría intactos, 13 pruebas aprobadas y comprobación en 202610I351 de bloqueo por vacío/espacios, confirmación habilitada con motivo y cancelación sin modificar estado.
 - [x] Marcar los campos obligatorios de Declaración, llegada, origen y pesos.
 - [x] Renombrar Tipo de Inspección: seis opciones, selector sincronizado en Declaración y encabezado, guardado verificado y valor histórico Rojo comprobado sin migraciones ni desbordamiento.
 - [x] Exportar DR-CAFTA con texto vectorial: certificado USA de 2 páginas, 13.98 KB; DGA 7.06 KB; casillas y anexos revisados visualmente sin cortes nuevos, texto extraíble y ediciones conservadas, sin imágenes incrustadas.
