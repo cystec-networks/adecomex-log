@@ -34,3 +34,4 @@ Scope detail-header presentation to its dedicated class; logistics and operation
 - Export DR-CAFTA certificates from the resolved editable preview using native jsPDF text and vector borders, measuring existing cell and text positions to preserve official layouts and annexes without rasterization or losing saved edits.
 - Keep inspection type in the existing canal_riesgo storage field; portal the form-owned selector into the detail header so both editors share draft state and the existing save validation without migrating historical values.
 - Resolve the effective consignee (active endorsement, else original client) via src/lib/consignatario-efectivo.ts in every expediente document generator and new-invoice preload; issued invoices stay frozen.
+- Resolve the dispatch-date modal asynchronously within the existing state mutation and reuse fechasDespachoFaltantes for detail-only preventive alerts, preserving permission checks and audit payloads.

@@ -1,7 +1,22 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { alertaPinDga, alertasExpedienteCompartidas } from "./alertas-expediente-compartidas";
+import { alertaPinDga, alertasExpedienteCompartidas, alertasFechasDespacho } from "./alertas-expediente-compartidas";
 import { hoyRDISO } from "./dates";
+
+test("despacho requiere la fecha de pago del PIN aun con aprobación capturada", () => {
+  const exp = { estado: "verificar", fecha_aprobacion_despacho: "2026-10-08", liq_siga_fecha_pago: null };
+  assert.equal(alertasFechasDespacho(exp).length, 1);
+  assert.equal(alertasFechasDespacho({ ...exp, liq_siga_fecha_pago: "2026-10-08" }).length, 0);
+});
+test("despacho requiere la fecha de aprobación aun con pago del PIN capturado", () => {
+  const exp = { estado: "verificar", liq_siga_fecha_pago: "2026-10-08", fecha_aprobacion_despacho: null };
+  assert.equal(alertasFechasDespacho(exp).length, 1);
+  assert.equal(alertasFechasDespacho({ ...exp, fecha_aprobacion_despacho: "2026-10-08" }).length, 0);
+});
+test("avisos preventivos de despacho son independientes y no reaparecen después del despacho", () => {
+  assert.equal(alertasFechasDespacho({ estado: "verificar" }).length, 2);
+  for (const estado of ["despachado", "entregado", "facturar"]) assert.equal(alertasFechasDespacho({ estado }).length, 0);
+});
 
 test("PIN: las dos formas usan la misma fecha y horas calendario", () => {
   const ahora = Date.parse("2026-10-06T21:49:00Z");
