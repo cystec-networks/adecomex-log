@@ -76,10 +76,6 @@ export function requisitoFaltante(paso: string, ctx: Ctx): string | null {
       return !ctx.tieneGastos
         ? "No se puede pasar a Entregado: no hay gastos operativos registrados en el expediente."
         : null;
-    case "facturar":
-      return !ctx.tieneFactura
-        ? "No se puede pasar a Facturado: no hay una factura e-CF vinculada al expediente."
-        : null;
     default:
       return null;
   }
@@ -95,6 +91,61 @@ export function validarAvanceEstado(desde: string, hasta: string, ctx: Ctx): str
     if (msg) return msg;
   }
   return null;
+}
+
+/** Documentos core del Checklist de Recepción exigidos para pasar a En Tránsito (igual que el trigger). */
+export const DOCS_CORE_RECEPCION = [
+  "Factura comercial", "Bill of Lading", "Lista de empaque",
+  "Certificado de origen", "Certificado Sanitario/Fitosanitario", "Certificado de análisis",
+] as const;
+
+const docRecibido = (docs: { tipo: string; estado: string }[], tipo: string) =>
+  docs.some((d) => d.tipo === tipo && (d.estado === "recibido" || d.estado === "aprobado"));
+
+type CtxForzable = {
+  exp: any;
+  documentos?: { tipo: string; estado: string }[];
+  facturaVentaEnviada?: boolean;
+  permisosPendientes?: { numero?: string | null; tipo: string; estado: string }[];
+};
+
+/** Requisitos que solo un Administrador puede forzar con justificación; se listan todos los pasos saltados. */
+export function checksForzables(desde: string, hasta: string, ctx: CtxForzable): string[] {
+  const i0 = estadoIndex(desde);
+  const i1 = estadoIndex(hasta);
+  if (i0 < 0 || i1 <= i0) return [];
+  const out: string[] = [];
+  for (let i = i0 + 1; i <= i1; i++) {
+    const paso = ESTADO_ORDEN[i];
+    if (paso === "en_transito") {
+      const faltan = DOCS_CORE_RECEPCION.filter((t) => !docRecibido(ctx.documentos ?? [], t));
+      if (faltan.length) out.push(`Checklist de Recepción incompleto: ${faltan.join(", ")}`);
+    } else if (paso === "verificar" && !String(ctx.exp?.canal_riesgo ?? "").trim()) {
+      out.push("Falta definir el Tipo de Inspección (sección Declaración)");
+    } else if (paso === "despachado" && ctx.permisosPendientes?.length) {
+      const p = ctx.permisosPendientes[0];
+      out.push(`${ctx.permisosPendientes.length} permiso(s) sin aprobar (ej. ${p.numero || p.tipo} - ${p.estado})`);
+    } else if (paso === "entregado" && !ctx.facturaVentaEnviada) {
+      out.push("Falta marcar «Factura de venta enviada al cliente» (Seguimiento Operativo)");
+    } else if (paso === "facturar" && !ctx.exp?.factura_ecf_id) {
+      out.push("No hay una factura e-CF vinculada al expediente");
+    }
+  }
+  return out;
+}
+
+/** Etapa X de N: hitos activos + documentos del checklist recibidos + permisos aprobados; «No aplica» no cuenta. */
+export function calcularEtapa({ hitos, documentos, permisos, checklist }: {
+  hitos: { estado: string }[];
+  documentos: { tipo: string; estado: string }[];
+  permisos: { estado: string }[];
+  checklist: readonly string[];
+}): { cumplidos: number; total: number } {
+  const hitosAplican = hitos.filter((h) => h.estado !== "no_aplica");
+  const cumplidos = hitosAplican.filter((h) => h.estado === "completado").length
+    + checklist.filter((t) => docRecibido(documentos, t)).length
+    + permisos.filter((p) => p.estado === "aprobado").length;
+  return { cumplidos, total: hitosAplican.length + checklist.length + permisos.length };
 }
 
 /** Fechas DGA requeridas para despachar (forzable solo por Administrador con justificación). */
