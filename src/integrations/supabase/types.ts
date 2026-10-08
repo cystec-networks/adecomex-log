@@ -7171,6 +7171,7 @@ export type Database = {
         Args: { _dias_tomados_ultimo_anio: number; _fecha_ingreso: string }
         Returns: number
       }
+      expediente_docs_core_faltantes: { Args: { _id: string }; Returns: string }
       expirar_cotizaciones_vencidas: { Args: never; Returns: number }
       immutable_unaccent: { Args: { "": string }; Returns: string }
       listar_encargados_logistica: {
