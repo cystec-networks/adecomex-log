@@ -23,4 +23,4 @@
 - [x] Distribuir ambas filas del detalle con flex y reunir alertas activas en rojo debajo de Descripción, sin cambiar pestañas ni otras pantallas; verificado en expedientes reales con y sin alertas a 1366, 1920 y 1055 px.
 - [x] Ampliar alertas del detalle con permisos VUCE próximos, factura en mora, discrepancias de recepción y etapa estancada; verificado en dos expedientes reales y cuatro condiciones simuladas sin escribir datos, con seis pruebas de casos positivos/negativos.- [x] Compactar el header de Todos los Expedientes a dos filas: título + DGA/VUCE, Rastreos y Nuevo Expediente arriba; pestañas, contador y filtros abajo en una sola línea; verificado a 1366 y 1920 px.
 
-- [ ] Checks por transición de Estado (modal con forzado admin + Auditoría), Etapa X de N de solo lectura, retirar TabTimeline — pendiente: reporte de condiciones combinadas aprobado por el usuario
+- [x] Checks por transición de Estado, Etapa X de N de solo lectura (TabTimeline ya no existía)
