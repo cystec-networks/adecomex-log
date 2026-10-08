@@ -4,8 +4,10 @@ import { checksForzables, calcularEtapa, DOCS_CORE_RECEPCION } from "./estados-e
 
 const todosDocs = DOCS_CORE_RECEPCION.map((tipo) => ({ tipo, estado: "recibido" }));
 
-test("En Tránsito exige el Checklist de Recepción completo", () => {
+test("En Tránsito exige solo Factura comercial y BL", () => {
   assert.equal(checksForzables("digitar", "en_transito", { exp: {}, documentos: [] }).length, 1);
+  assert.equal(checksForzables("digitar", "en_transito", { exp: {}, documentos: [{ tipo: "Factura comercial", estado: "recibido" }] }).length, 1);
+  assert.equal(checksForzables("digitar", "en_transito", { exp: {}, documentos: [{ tipo: "Bill of Lading", estado: "recibido" }] }).length, 1);
   assert.equal(checksForzables("digitar", "en_transito", { exp: {}, documentos: todosDocs }).length, 0);
 });
 test("Verificado exige Tipo de Inspección; un valor antiguo cuenta", () => {
