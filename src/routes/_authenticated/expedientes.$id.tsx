@@ -310,7 +310,6 @@ function refrescarExpediente(qc: ReturnType<typeof useQueryClient>, id: string) 
   qc.invalidateQueries({ queryKey: ["expediente", id] });
   qc.invalidateQueries({ queryKey: ["expedientes"] });
   qc.invalidateQueries({ queryKey: ["expedientes-hist"] });
-  qc.invalidateQueries({ queryKey: ["etapas", id] });
   qc.invalidateQueries({ queryKey: ["mercancia-items", id] });
   qc.invalidateQueries({ queryKey: ["documentos", id] });
   qc.invalidateQueries({ queryKey: ["incidencias", id] });

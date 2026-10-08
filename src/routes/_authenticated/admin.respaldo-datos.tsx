@@ -44,7 +44,6 @@ const TABLAS: string[] = [
   "mercancia_items",
   "documentos",
   "documentos_generados",
-  "etapas",
   "incidencias",
   "permisos",
   "calculos_pre_liquidacion",
