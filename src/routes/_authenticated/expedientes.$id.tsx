@@ -63,12 +63,12 @@ import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { PortadaExpedienteButton } from "@/components/portada-expediente-button";
-import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado, fechasDespachoFaltantes, checksForzables, calcularEtapa } from "@/lib/estados-expediente";
+import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado, fechasDespachoFaltantes, checksForzables, calcularEtapa, pendientesSiguienteEstado } from "@/lib/estados-expediente";
 import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
 import { unitFob, loadBrokerConfig } from "@/lib/siga-xml";
 import { useMyRoles, useCurrentUser } from "@/lib/auth-hooks";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
-import { alertasExpedienteCompartidas, alertasFechasDespacho } from "@/lib/alertas-expediente-compartidas";
+import { alertasExpedienteCompartidas } from "@/lib/alertas-expediente-compartidas";
 import { useDatosAlertasExpediente } from "@/lib/use-alertas-expediente";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
@@ -626,6 +626,18 @@ function DetalleExpediente() {
     },
   });
 
+  const { data: avanceHeader } = useQuery({
+    queryKey: ["expediente-avance-header", id],
+    enabled: !isNuevo,
+    queryFn: async () => {
+      const [{ count }, hitoRes] = await Promise.all([
+        supabase.from("gastos").select("id", { count: "exact", head: true }).eq("expediente_id", id).is("deleted_at", null),
+        supabase.from("expediente_hitos").select("estado").eq("expediente_id", id).eq("hito_codigo", "factura_venta_enviada"),
+      ]);
+      return { tieneGastos: (count ?? 0) > 0, facturaVentaEnviada: (hitoRes.data ?? []).some((h: any) => h.estado === "completado" || h.estado === "no_aplica") };
+    },
+  });
+
   const etapa = calcularEtapa({ hitos: hitosHeader ?? [], documentos: documentosHeader ?? [], permisos: permisosHeader ?? [], checklist: CHECKLIST_DOCUMENTOS_BASE });
   const datosAlertas = useDatosAlertasExpediente(id, exp?.cliente_id ?? null, exp?.factura_ecf_id ?? null, !isNuevo && !!exp);
   const permisosNumeros = (permisosHeader ?? []).map((p: any) => p.numero).filter(Boolean).join(", ");
@@ -726,7 +738,12 @@ function DetalleExpediente() {
   const clienteHeader = clienteEfectivoHeader ?? expData.clientes;
   const alertasHeader = isNuevo ? [] : alertasExpedienteCompartidas(expData, plazosReg, {
     ...datosAlertas, permisos: permisosHeader, documentos: documentosHeader,
-  }).map(alerta => alerta.larga).concat(alertasFechasDespacho(expData));
+  }).map(alerta => alerta.larga);
+  const pendientesAvance = isNuevo || !avanceHeader ? [] : pendientesSiguienteEstado(expData.estado, {
+    exp: expData, tieneGastos: avanceHeader.tieneGastos, tieneFactura: !!expData.factura_ecf_id,
+    documentos: documentosHeader ?? [], facturaVentaEnviada: avanceHeader.facturaVentaEnviada,
+    permisosPendientes: (permisosHeader ?? []).filter((p: any) => p.estado !== "aprobado"),
+  }).pendientes;
 
   return (
     <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
@@ -1034,8 +1051,15 @@ function DetalleExpediente() {
             </span>
           </div>
         )}
+        {!isNuevo && pendientesAvance.length > 0 && (
+          <div className="expediente-header-alertas mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-0 text-destructive" role="status" aria-label="Pendientes para avanzar">
+            <span className="font-semibold">Pendientes para avanzar:</span>
+            {pendientesAvance.map((p) => <span key={p} className="break-words">{p}</span>)}
+          </div>
+        )}
         {!isNuevo && alertasHeader.length > 0 && (
-          <div className="expediente-header-alertas mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-0 text-destructive" role="status" aria-label="Alertas del expediente">
+          <div className="expediente-header-alertas mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-0 text-destructive" role="status" aria-label="Avisos del expediente">
+            <span className="font-semibold">Avisos:</span>
             {alertasHeader.map((alerta) => <span key={alerta} className="break-words">{alerta}</span>)}
           </div>
         )}
