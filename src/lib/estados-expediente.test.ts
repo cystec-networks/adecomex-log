@@ -33,18 +33,16 @@ test("Presentado exige Factura comercial y BL adjuntos", () => {
 });
 
 import { pendientesSiguienteEstado } from "./estados-expediente";
-describe("pendientesSiguienteEstado", () => {
-  it("En Tránsito solo pide la Fecha de Llegada Real, sin PIN ni despacho", () => {
-    const r = pendientesSiguienteEstado("en_transito", { exp: { estado: "en_transito" }, tieneGastos: false, tieneFactura: false });
-    expect(r.siguiente).toBe("manifestado");
-    expect(r.pendientes).toEqual(["Falta la Fecha de Llegada Real (Información General)"]);
-  });
-  it("Presentado lista todos los faltantes juntos", () => {
-    const r = pendientesSiguienteEstado("manifestado", { exp: { fecha_llegada_real: "2026-10-01" }, tieneGastos: false, tieneFactura: false, documentos: [] });
-    expect(r.pendientes.length).toBe(5);
-  });
-  it("Verificado incluye PIN y Fecha de Aprobación", () => {
-    const r = pendientesSiguienteEstado("verificar", { exp: { numero_igra: "1", numero_dua: "1", regimen_aduanero: "1", liq_siga_numero: "1" }, tieneGastos: true, tieneFactura: false });
-    expect(r.pendientes.some((p) => p.includes("PIN"))).toBe(true);
-  });
+test("En Tránsito solo pide la Fecha de Llegada Real, sin PIN ni despacho", () => {
+  const r = pendientesSiguienteEstado("en_transito", { exp: { estado: "en_transito" }, tieneGastos: false, tieneFactura: false });
+  assert.equal(r.siguiente, "manifestado");
+  assert.deepEqual(r.pendientes, ["Falta la Fecha de Llegada Real (Información General)"]);
+});
+test("Presentado lista todos los faltantes juntos", () => {
+  const r = pendientesSiguienteEstado("manifestado", { exp: { fecha_llegada_real: "2026-10-01" }, tieneGastos: false, tieneFactura: false, documentos: [] });
+  assert.equal(r.pendientes.length, 5);
+});
+test("Verificado incluye PIN de DGA", () => {
+  const r = pendientesSiguienteEstado("verificar", { exp: { numero_igra: "1", numero_dua: "1", regimen_aduanero: "1", liq_siga_numero: "1" }, tieneGastos: true, tieneFactura: false });
+  assert.ok(r.pendientes.some((p) => p.includes("PIN")));
 });
