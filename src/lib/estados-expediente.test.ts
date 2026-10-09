@@ -31,3 +31,20 @@ test("Presentado exige Factura comercial y BL adjuntos", () => {
   const docs = [{ tipo: "Factura comercial", estado: "recibido", storage_path: "a.pdf" }, { tipo: "Bill of Lading", estado: "recibido", storage_path: "b.pdf" }];
   assert.equal(checksForzables("manifestado", "presentar", { exp: {}, documentos: docs }).length, 0);
 });
+
+import { pendientesSiguienteEstado } from "./estados-expediente";
+describe("pendientesSiguienteEstado", () => {
+  it("En Tránsito solo pide la Fecha de Llegada Real, sin PIN ni despacho", () => {
+    const r = pendientesSiguienteEstado("en_transito", { exp: { estado: "en_transito" }, tieneGastos: false, tieneFactura: false });
+    expect(r.siguiente).toBe("manifestado");
+    expect(r.pendientes).toEqual(["Falta la Fecha de Llegada Real (Información General)"]);
+  });
+  it("Presentado lista todos los faltantes juntos", () => {
+    const r = pendientesSiguienteEstado("manifestado", { exp: { fecha_llegada_real: "2026-10-01" }, tieneGastos: false, tieneFactura: false, documentos: [] });
+    expect(r.pendientes.length).toBe(5);
+  });
+  it("Verificado incluye PIN y Fecha de Aprobación", () => {
+    const r = pendientesSiguienteEstado("verificar", { exp: { numero_igra: "1", numero_dua: "1", regimen_aduanero: "1", liq_siga_numero: "1" }, tieneGastos: true, tieneFactura: false });
+    expect(r.pendientes.some((p) => p.includes("PIN"))).toBe(true);
+  });
+});
