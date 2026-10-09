@@ -32,54 +32,43 @@ type Ctx = {
   tieneFactura: boolean;
 };
 
-/** Devuelve el mensaje del requisito faltante para entrar a `paso`, o null si se cumple. */
-function requisitoFaltante(paso: string, ctx: Ctx): string | null {
+/** Devuelve todos los mensajes de requisitos faltantes para entrar a `paso` (mismo orden que el modal). */
+function requisitosFaltantes(paso: string, ctx: Ctx): string[] {
   const vacio = (v: any) => !v || String(v).trim() === "";
+  const out: string[] = [];
+  const e = ctx.exp;
   switch (paso) {
     case "en_transito":
-      return vacio(ctx.exp?.bl_awb)
-        ? "No se puede pasar a En Tránsito: falta el BL / AWB / Guía (Información General)."
-        : null;
+      if (vacio(e?.bl_awb)) out.push("No se puede pasar a En Tránsito: falta el BL / AWB / Guía (Información General).");
+      break;
     case "manifestado":
-      return !ctx.exp?.fecha_llegada_real
-        ? "No se puede pasar a Manifestado: falta la Fecha de Llegada Real (Información General)."
-        : null;
+      if (!e?.fecha_llegada_real) out.push("No se puede pasar a Manifestado: falta la Fecha de Llegada Real (Información General).");
+      break;
     case "presentar":
-      if (!ctx.exp?.fecha_llegada_real)
-        return "No se puede pasar a Presentado: falta la Fecha de Llegada Real (Información General).";
-      if (vacio(ctx.exp?.pais_origen))
-        return "No se puede pasar a Presentado: falta el País de Origen (Datos de importación).";
-      if (ctx.exp?.peso_neto == null || Number(ctx.exp.peso_neto) <= 0)
-        return "No se puede pasar a Presentado: falta el Peso Neto (Descripción de mercancía).";
-      if (ctx.exp?.peso_bruto == null || Number(ctx.exp.peso_bruto) <= 0)
-        return "No se puede pasar a Presentado: falta el Peso Bruto (Descripción de mercancía).";
-      return vacio(ctx.exp?.numero_dua)
-        ? "No se puede pasar a Presentado: falta la Declaración DUA (sección Declaración)."
-        : null;
+      if (!e?.fecha_llegada_real) out.push("No se puede pasar a Presentado: falta la Fecha de Llegada Real (Información General).");
+      if (vacio(e?.pais_origen)) out.push("No se puede pasar a Presentado: falta el País de Origen (Datos de importación).");
+      if (e?.peso_neto == null || Number(e.peso_neto) <= 0) out.push("No se puede pasar a Presentado: falta el Peso Neto (Descripción de mercancía).");
+      if (e?.peso_bruto == null || Number(e.peso_bruto) <= 0) out.push("No se puede pasar a Presentado: falta el Peso Bruto (Descripción de mercancía).");
+      if (vacio(e?.numero_dua)) out.push("No se puede pasar a Presentado: falta la Declaración DUA (sección Declaración).");
+      break;
     case "verificar":
-      return vacio(ctx.exp?.numero_igra)
-        ? "No se puede pasar a Verificado: falta el Número de despacho (sección Declaración)."
-        : null;
+      if (vacio(e?.numero_igra)) out.push("No se puede pasar a Verificado: falta el Número de despacho (sección Declaración).");
+      break;
     case "despachado":
-      if (vacio(ctx.exp?.numero_igra))
-        return "No se puede despachar este Expediente: falta capturar el Número de despacho.";
-      if (vacio(ctx.exp?.numero_dua))
-        return "No se puede despachar este Expediente: falta capturar la Declaración DUA.";
-      if (vacio(ctx.exp?.regimen_aduanero))
-        return "No se puede despachar este Expediente: falta seleccionar el Régimen Aduanero.";
-      if (vacio(ctx.exp?.liq_siga_numero))
-        return "No se puede pasar a Despachado: falta el N.º Liquidación SIGA (Resultado oficial DGA).";
-      return !ctx.tieneGastos
-        ? "No se puede pasar a Despachado: no hay gastos operativos registrados en el expediente."
-        : null;
+      if (vacio(e?.numero_igra)) out.push("No se puede despachar este Expediente: falta capturar el Número de despacho.");
+      if (vacio(e?.numero_dua)) out.push("No se puede despachar este Expediente: falta capturar la Declaración DUA.");
+      if (vacio(e?.regimen_aduanero)) out.push("No se puede despachar este Expediente: falta seleccionar el Régimen Aduanero.");
+      if (vacio(e?.liq_siga_numero)) out.push("No se puede pasar a Despachado: falta el N.º Liquidación SIGA (Resultado oficial DGA).");
+      if (!ctx.tieneGastos) out.push("No se puede pasar a Despachado: no hay gastos operativos registrados en el expediente.");
+      break;
     case "entregado":
-      return !ctx.tieneGastos
-        ? "No se puede pasar a Entregado: no hay gastos operativos registrados en el expediente."
-        : null;
-    default:
-      return null;
+      if (!ctx.tieneGastos) out.push("No se puede pasar a Entregado: no hay gastos operativos registrados en el expediente.");
+      break;
   }
+  return out;
 }
+
+const requisitoFaltante = (paso: string, ctx: Ctx): string | null => requisitosFaltantes(paso, ctx)[0] ?? null;
 
 /** Valida el avance desde `desde` hasta `hasta`, revisando cada paso intermedio. */
 export function validarAvanceEstado(desde: string, hasta: string, ctx: Ctx): string | null {
@@ -155,4 +144,15 @@ export function fechasDespachoFaltantes(exp: any): string[] {
   if (vacio(exp?.liq_siga_fecha_pago)) f.push("falta la Fecha de pago del PIN de DGA (Resultado oficial DGA)");
   if (vacio(exp?.fecha_aprobacion_despacho)) f.push("falta la Fecha de Aprobación del Número de despacho (Documentos oficiales ante DGA y VUCE)");
   return f;
+}
+
+/** Pendientes solo de la transición inmediata (estado actual → siguiente), con las mismas reglas del modal. */
+export function pendientesSiguienteEstado(estado: string, ctx: Ctx & CtxForzable): { siguiente: string | null; pendientes: string[] } {
+  const i = estadoIndex(estado);
+  const siguiente = i >= 0 && i < ESTADO_ORDEN.length - 1 ? ESTADO_ORDEN[i + 1] : null;
+  if (!siguiente) return { siguiente: null, pendientes: [] };
+  const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+  const duros = requisitosFaltantes(siguiente, ctx).map((m) => cap(m.replace(/^No se puede [^:]+:\s*/, "").replace(/\.$/, "")));
+  const fechas = siguiente === "despachado" ? fechasDespachoFaltantes(ctx.exp).map(cap) : [];
+  return { siguiente, pendientes: [...duros, ...fechas, ...checksForzables(estado, siguiente, ctx)] };
 }
