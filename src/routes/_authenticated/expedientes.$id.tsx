@@ -2565,6 +2565,15 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                       {fmt(cif)}
                     </div>
                   </div>
+                  <div className="grid gap-1.5">
+                    <Label className="flex items-center gap-1.5">
+                      Servicio Aduanero (US$)
+                      <span className="text-xs text-muted-foreground font-normal">🔒 calculado</span>
+                    </Label>
+                    <div className="h-9 px-3 rounded-md border bg-muted/50 flex items-center text-sm font-semibold tabular-nums">
+                      {fmt(servicioAd.servicioUsd)}
+                    </div>
+                  </div>
                   {esExportacion && (
                     <div className="grid gap-1.5 md:col-span-2">
                       <Label>Régimen (Exportación)</Label>
@@ -2630,18 +2639,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                       </Button>
                     }
                   />
-                  <div className="grid gap-1.5">
-                    <Label className="flex items-center gap-1.5">
-                      Servicio Aduanero (US$)
-                      <span className="text-xs text-muted-foreground font-normal">🔒 calculado</span>
-                    </Label>
-                    <div className="h-9 px-3 rounded-md border bg-muted/50 flex items-center text-sm font-semibold tabular-nums">
-                      {fmt(servicioAd.servicioUsd)}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground leading-tight">
-                      Más Formulario DUA: RD$ {FORMULARIO_DUA_RD.toFixed(2)} (cargo fijo).
-                    </p>
-                  </div>
 
                 </div>
               </div>
