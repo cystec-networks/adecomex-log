@@ -10,14 +10,16 @@ import { OFICIO_RECTIFICACION } from "@/lib/oficios";
 export const PAQUETE_TIPO_DOCUMENTO = "Paquete Rectificación Técnica";
 
 /** Orden fijo del paquete. `tipos` = tipos de documento aceptados (el primero es el oficial). */
-const ORDEN: { etiqueta: string; tipos: string[] }[] = [
+const ORDEN: { etiqueta: string; tipos: string[]; grupo?: string }[] = [
   { etiqueta: "Oficio de Rectificación Técnica", tipos: [OFICIO_RECTIFICACION.tipoDocumento] },
   { etiqueta: "Declaración Única Aduanera (DUA)", tipos: ["Declaración Única Aduanera (DUA)", "DUA"] },
   { etiqueta: "Reporte de Liquidación de Impuestos", tipos: ["Reporte de Liquidación de Impuestos"] },
   { etiqueta: "Conocimiento de embarque (BL)", tipos: ["Bill of Lading"] },
   { etiqueta: "Factura comercial", tipos: ["Factura comercial"] },
   { etiqueta: "Certificado de origen", tipos: ["Certificado de origen"] },
-  { etiqueta: "Certificado Sanitario/Análisis", tipos: ["Certificado Sanitario/Fitosanitario", "Certificado de análisis", "Certificado sanitario", "Certificado fitosanitario"] },
+  // Sanitario y análisis se incluyen ambos si existen; basta con uno de los dos.
+  { etiqueta: "Certificado Sanitario/Fitosanitario", tipos: ["Certificado Sanitario/Fitosanitario", "Certificado sanitario", "Certificado fitosanitario"], grupo: "sanitario-analisis" },
+  { etiqueta: "Certificado de análisis", tipos: ["Certificado de análisis"], grupo: "sanitario-analisis" },
 ];
 
 const esPdf = (p?: string | null) => !!p && p.toLowerCase().endsWith(".pdf");
@@ -38,10 +40,18 @@ export function PaqueteRectificacionButton({ expedienteId }: { expedienteId: str
       const docs = docsRes.data ?? [];
       const faltan: string[] = [];
       const rutas: string[] = [];
+      const gruposFaltantes = new Map<string, string[]>();
+      const gruposPresentes = new Set<string>();
       for (const item of ORDEN) {
         const d = item.tipos.map((t) => docs.find((x) => x.tipo === t && esPdf(x.storage_path))).find(Boolean);
-        if (d) rutas.push(d.storage_path!);
+        if (d) {
+          rutas.push(d.storage_path!);
+          if (item.grupo) gruposPresentes.add(item.grupo);
+        } else if (item.grupo) gruposFaltantes.set(item.grupo, [...(gruposFaltantes.get(item.grupo) ?? []), item.etiqueta]);
         else faltan.push(item.etiqueta);
+      }
+      for (const [grupo, etiquetas] of gruposFaltantes) {
+        if (!gruposPresentes.has(grupo)) faltan.push(etiquetas.join(" o "));
       }
       const permisos = (permRes.data ?? []).filter((p) => esPdf(p.documento_url));
       const permiso =
