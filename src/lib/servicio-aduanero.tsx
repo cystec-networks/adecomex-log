@@ -182,8 +182,8 @@ export function ServicioAduaneroFields({
             <thead className="bg-muted/50">
               <tr>
                 <th className="px-2 py-2 text-left w-10">#</th>
-                <th className="px-2 py-2 text-left w-[44%]">Tipo de despacho</th>
-                <th className="px-2 py-2 text-left">Cantidad</th>
+                <th className="px-2 py-2 text-left w-[48%]">Tipo de despacho</th>
+                <th className="px-2 py-2 text-left w-[26%]">Cantidad</th>
                 <th className="px-2 py-2 text-right">Subtotal US$</th>
                 {!disabled && <th className="px-2 py-2 w-10"></th>}
               </tr>
@@ -192,7 +192,7 @@ export function ServicioAduaneroFields({
               {rows.map((f, i) => {
                 const tarifa = tarifas.find((t) => t.unidad === f.tipo_despacho);
                 return (
-                  <tr key={i} className="border-t align-top">
+                  <tr key={i} className="border-t align-middle">
                     <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
                     <td className="px-2 py-1">
                       <Select
