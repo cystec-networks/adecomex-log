@@ -30,7 +30,7 @@ const REGIMENES = [
   "Perfeccionamiento activo",
   "Otros",
 ];
-const PREFERENCIAS = ["Ninguna", "DR-CAFTA", "EPA", "ALADI", "Otros"];
+const PREFERENCIAS = ["Ninguna", "DR-CAFTA", "EPA"];
 const ESTADOS = ["digitar", "presentar", "verificar", "facturar", "despachado"];
 const AGRUPAR_POR = [
   { v: "cliente", l: "Cliente" },

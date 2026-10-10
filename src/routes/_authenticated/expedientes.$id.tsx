@@ -100,7 +100,7 @@ const SUG_PAIS = ["China", "Estados Unidos", "España", "México", "Colombia", "
 const SUG_INCOTERM = ["EXW", "FCA", "FAS", "FOB", "CFR", "CIF", "CPT", "CIP", "DAP", "DPU", "DDP"];
 const SUG_PUERTO_SALIDA = ["Shanghai", "Ningbo", "Shenzhen", "Hong Kong", "Busan", "Kaohsiung", "Miami", "Port Everglades", "Jacksonville", "Houston", "New York", "Valencia", "Barcelona", "Algeciras", "Rotterdam", "Hamburgo", "Amberes", "Cartagena", "Manzanillo (PA)", "Balboa"];
 const SUG_PUERTO_ARRIBO = ["Puerto Multimodal Caucedo", "Puerto de Haina Oriental", "Puerto de Haina Occidental", "Puerto de Río Haina", "Puerto de Boca Chica", "Puerto de Manzanillo", "Puerto Plata", "AILA (Las Américas)", "AIC (Cibao)", "AIP (Punta Cana)", "Aeropuerto La Isabela"];
-const SUG_PREFERENCIA = ["DR-CAFTA", "EPA (Unión Europea)", "ALADI", "SGP", "Ninguna"];
+const SUG_PREFERENCIA = ["DR-CAFTA", "EPA", "Ninguna"];
 const TIPOS_INSPECCION = ["Despacho Expreso", "Verificación Visual", "Verificación Full", "Verificación Nevera", "Verificación Depósito", "Descarga en Puerto"];
 
 function TipoInspeccionSelector({ value, onChange, disabled, header = false }: { value: string; onChange: (value: string) => void; disabled: boolean; header?: boolean }) {
