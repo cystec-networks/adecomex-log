@@ -53,7 +53,7 @@ export function AplicarCertificadoPartidas({ expedienteId, numeroCertificado, pr
     const a = (t.acuerdo_preferencial || "").trim().toLowerCase();
     const p = preferenciaComercial.trim().toLowerCase();
     if (!a || !p) return null;
-    return a === p || p.includes(a) || a.includes(p) ? Number(t.pct_gravamen_preferencial) : null;
+    return a === p ? Number(t.pct_gravamen_preferencial) : null;
   };
 
   useEffect(() => {
