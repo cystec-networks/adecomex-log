@@ -2307,10 +2307,32 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               />
             </div>
           )}
-          <AutoField label="Preferencia comercial" value={form.preferencia_comercial} onChange={(v) => set("preferencia_comercial", v)} suggestion={sug.preferencia_comercial ?? []} disabled={!editable} />
+          <div className="grid gap-1.5">
+            <Label>Acuerdo Comercial</Label>
+            <Select
+              value={form.acuerdo_codigo || "__none__"}
+              onValueChange={(v) => {
+                // Única fuente editable; la Preferencia comercial interna se deriva del nombre del catálogo.
+                if (v === "__none__") {
+                  setForm((f) => ({ ...f, acuerdo_codigo: "", acuerdo_comercial: "", preferencia_comercial: "Ninguna" }));
+                  return;
+                }
+                const a = (acuerdosComerciales ?? []).find((x: any) => x.codigo === v);
+                setForm((f) => ({ ...f, acuerdo_codigo: v, acuerdo_comercial: a?.nombre ?? "", preferencia_comercial: a?.nombre ?? "" }));
+              }}
+              disabled={!editable}
+            >
+              <SelectTrigger><SelectValue placeholder="Sin acuerdo" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Sin acuerdo</SelectItem>
+                {(acuerdosComerciales ?? []).map((a: any) => (
+                  <SelectItem key={a.codigo} value={a.codigo}>{a.codigo} - {a.nombre}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           {(() => {
-            const p = (form.preferencia_comercial || "").trim().toLowerCase();
-            const showCert = p !== "" && p !== "ninguna" && p !== "no aplica" && p !== "n/a";
+            const showCert = !!(form.acuerdo_codigo || "").trim();
             return showCert ? (
               <div className="grid gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
                 <Label>N° Certificado de Origen</Label>
@@ -2325,7 +2347,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                     <AplicarCertificadoPartidas
                       expedienteId={exp.id}
                       numeroCertificado={form.numero_certificado_origen}
-                      preferenciaComercial={form.preferencia_comercial || ""}
+                      preferenciaComercial={form.acuerdo_comercial || ""}
                       disabled={!editable || !(form.numero_certificado_origen || "").trim()}
                     />
                   )}
@@ -2454,7 +2476,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               seguro={Number(form.seguro) || 0}
               flete={Number(form.flete) || 0}
               otros={Number(form.otros) || 0}
-              preferenciaComercial={form.preferencia_comercial || ""}
+              preferenciaComercial={form.acuerdo_comercial || ""}
               tasaCambioUsada={exp.tasa_cambio_usada}
               paisOrigen={form.pais_origen || ""}
               paisOrigenCodigo={form.pais_origen_codigo || ""}
@@ -2560,29 +2582,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                       </Select>
                     </div>
                   )}
-                  <div className="grid gap-1.5 md:col-span-2">
-                    <Label>Acuerdo Comercial <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-                     <Select
-                       value={form.acuerdo_codigo || "__none__"}
-                       onValueChange={(v) => {
-                         if (v === "__none__") {
-                           setForm((f) => ({ ...f, acuerdo_codigo: "", acuerdo_comercial: "" }));
-                           return;
-                         }
-                         const a = (acuerdosComerciales ?? []).find((x: any) => x.codigo === v);
-                         setForm((f) => ({ ...f, acuerdo_codigo: v, acuerdo_comercial: a?.nombre ?? "" }));
-                       }}
-                       disabled={!editable}
-                     >
-                       <SelectTrigger><SelectValue placeholder="N/A / Ninguno" /></SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="__none__">N/A / Ninguno</SelectItem>
-                         {(acuerdosComerciales ?? []).map((a: any) => (
-                           <SelectItem key={a.codigo} value={a.codigo}>{a.codigo} · {a.nombre}</SelectItem>
-                         ))}
-                       </SelectContent>
-                     </Select>
-                  </div>
                   {isNuevo && (
                     <div id="tasa-oficial-nuevo" className="grid gap-1.5">
                       <Label><ReqMark />Tasa Oficial DGA (RD$ por US$1)</Label>
@@ -4253,7 +4252,8 @@ function pickPctFromTasa(
   const hasPref = tasa.pct_gravamen_preferencial != null;
   const acuerdo = (tasa.acuerdo_preferencial || "").trim().toLowerCase();
   const prefExp = (preferenciaComercial || "").trim().toLowerCase();
-  const match = hasPref && acuerdo && prefExp && (acuerdo === prefExp || prefExp.includes(acuerdo) || acuerdo.includes(prefExp));
+  // Coincidencia exacta con el nombre del catálogo de Acuerdos (sin mayúsculas).
+  const match = hasPref && acuerdo && prefExp && acuerdo === prefExp;
   if (match) return { pct: Number(tasa.pct_gravamen_preferencial), usedPreferencial: true };
   if (tasa.pct_gravamen != null) return { pct: Number(tasa.pct_gravamen), usedPreferencial: false };
   return { pct: null, usedPreferencial: false };

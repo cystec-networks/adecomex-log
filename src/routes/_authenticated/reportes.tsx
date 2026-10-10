@@ -95,7 +95,7 @@ function ReportesPage() {
       if (tipo !== "todos" && detectTipo(e) !== tipo) return false;
       if (estado !== "todos" && e.estado !== estado) return false;
       if (regimen !== "todos" && (e.regimen_aduanero ?? "") !== regimen) return false;
-      if (pref !== "todas" && (e.preferencia_comercial ?? "Ninguna") !== pref) return false;
+      if (pref !== "todas" && ((e.acuerdo_comercial || "Ninguna")) !== pref) return false;
       const dateField = fechaBase === "eta" ? e.fecha_compromiso : e.created_at;
       const parseField = (v: string) => fechaBase === "eta" ? parseLocalDate(v) : new Date(v);
       if (desde && dateField && parseField(dateField) < parseLocalDate(desde)) return false;
@@ -126,7 +126,7 @@ function ReportesPage() {
       let key = "—";
       if (agrupar === "cliente") key = e.clientes?.nombre ?? "Sin cliente";
       else if (agrupar === "regimen") key = e.regimen_aduanero ?? "Sin régimen";
-      else if (agrupar === "preferencia") key = e.preferencia_comercial ?? "Ninguna";
+      else if (agrupar === "preferencia") key = (e.acuerdo_comercial || "Ninguna");
       else if (agrupar === "estado") key = e.estado ?? "—";
       else if (agrupar === "periodo") {
         const d = fechaBase === "eta" ? e.fecha_compromiso : e.created_at;
@@ -185,7 +185,7 @@ function ReportesPage() {
           g.key, e.numero, e.clientes?.nombre ?? "", e.bl_awb ?? "",
           e.puerto_arribo ?? "", e.pais_origen ?? "",
           fmtLocalDate(e.fecha_compromiso, undefined, ""),
-          e.regimen_aduanero ?? "", e.preferencia_comercial ?? "Ninguna",
+          e.regimen_aduanero ?? "", (e.acuerdo_comercial || "Ninguna"),
           e.numero_certificado_origen ?? "", e.numeros_contenedores ?? "",
           Number(e.total_fob) || 0, Number(e.seguro) || 0, Number(e.flete) || 0,
           Number(e.otros) || 0, Number(e.total_cif) || 0, pesoDe(e), e.estado ?? "",
@@ -274,7 +274,7 @@ function ReportesPage() {
           e.puerto_arribo ?? "—",
           fmtLocalDate(e.fecha_compromiso),
           e.regimen_aduanero ?? "—",
-          e.preferencia_comercial ?? "Ninguna",
+          (e.acuerdo_comercial || "Ninguna"),
           fmtNum(Number(e.total_fob) || 0),
           fmtNum(Number(e.total_cif) || 0),
           e.estado ?? "—",
@@ -513,7 +513,7 @@ function GroupCard({ group, agrupar }: { group: any; agrupar: string }) {
 
 function ExpedienteRow({ e, items, showCliente }: { e: any; items: any[]; showCliente: boolean }) {
   const [expanded, setExpanded] = useState(false);
-  const pref = e.preferencia_comercial ?? "Ninguna";
+  const pref = (e.acuerdo_comercial || "Ninguna");
   return (
     <>
       <tr className="border-t hover:bg-muted/20">
