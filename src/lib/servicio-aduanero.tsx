@@ -178,13 +178,13 @@ export function ServicioAduaneroFields({
         <p className="text-sm text-muted-foreground">Sin tipos de despacho registrados.</p>
       ) : (
         <div className="overflow-x-auto rounded-md border">
-          <table className="w-full text-sm">
+          <table className="w-full table-fixed text-sm">
             <thead className="bg-muted/50">
               <tr>
                 <th className="px-2 py-2 text-left w-10">#</th>
-                <th className="px-2 py-2 text-left">Tipo de despacho</th>
-                <th className="px-2 py-2 text-left w-48">Cantidad</th>
-                <th className="px-2 py-2 text-right w-36">Subtotal US$</th>
+                <th className="px-2 py-2 text-left w-[44%]">Tipo de despacho</th>
+                <th className="px-2 py-2 text-left">Cantidad</th>
+                <th className="px-2 py-2 text-right">Subtotal US$</th>
                 {!disabled && <th className="px-2 py-2 w-10"></th>}
               </tr>
             </thead>
