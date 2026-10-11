@@ -5890,7 +5890,7 @@ function LiquidacionFinalPdfButton({
         ["Servicio Aduanero", nf(servicioAduaneroUsdPdf)],
         ["Formulario DUA (RD$258.26 fijo)", tasaCambio > 0 ? nf(FORMULARIO_DUA_RD / tasaCambio) : "s/t"],
         ["ISC Real Total", nf(t.iReal)],
-        ["Gastos del Producto (USD)", nf(gastosAdicionalesUSD)],
+        ["Costo de Mercancía (USD, sin Servicio Aduanero)", nf(gastosProductoSoloUSD)],
         ["INVERSIÓN TOTAL", nf(t.inv)],
       ],
       theme: "grid",
