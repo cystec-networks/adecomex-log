@@ -219,11 +219,13 @@ const TIPOS_INCIDENCIA = [
 ];
 
 // Costo de mercancía (Liquidación): cargos físicos del contenedor/mercancía.
-// Servicio Aduanero NO va aquí: vive como fila automática en Gastos operativos del expediente.
+// Servicio Aduanero (pago a la DGA) sí va aquí: fila automática + concepto manual de respaldo.
 const CONCEPTOS_COSTO_ADICIONALES = [
-  "Gestión Aduanal", "Almacenaje", "Demora de contenedor", "Uso de Chasis", "Flete Terrestre", "Cargos Locales",
+  "Gestión Aduanal", "Tasa Servicio Aduanero", "Almacenaje", "Demora de contenedor", "Uso de Chasis", "Flete Terrestre", "Cargos Locales",
   "Cargos THC", "Gastos en Puerto", "Declaración Única Aduanera", "Otros",
 ];
+/** Conceptos de Costo de mercancía que abren en US$ al crear una fila nueva. */
+const CONCEPTOS_COSTO_USD_DEFAULT = ["Cargos THC", "Cargos Locales"];
 const CONCEPTOS_COSTO = [
   "Flete internacional","Seguro","Gastos portuarios","Manejo de terminal","Honorarios",
   "Aranceles","ITBIS","Transporte local","Otros",
@@ -1151,7 +1153,7 @@ function DetalleExpediente() {
         <TabsContent value="recepcion"><TabRecepcion expedienteId={id} /></TabsContent>
         <TabsContent value="inc"><TabIncidencias expedienteId={id} /></TabsContent>
         <TabsContent value="cost"><TabCostos expedienteId={id} exp={expData} /></TabsContent>
-        <TabsContent value="costprod"><TabCostosProducto expedienteId={id} /></TabsContent>
+        <TabsContent value="costprod"><TabCostosProducto expedienteId={id} exp={expData} /></TabsContent>
         <TabsContent value="aud"><TabAuditoria expedienteId={id} /></TabsContent>
         </>
         )}
@@ -3318,12 +3320,13 @@ function CostosExpedienteCard({ expedienteId, canEdit }: { expedienteId: string;
   );
 }
 
-function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
+function TabCostosProducto({ expedienteId, exp }: { expedienteId: string; exp?: any }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const emptyForm = { concepto: CONCEPTOS_COSTO_ADICIONALES[0], monto_real: 0, observaciones: "" };
-  const [f, setF] = useState<{ concepto: string; monto_real: number; observaciones: string }>(emptyForm);
+  const monedaDefault = (concepto: string) => (CONCEPTOS_COSTO_USD_DEFAULT.includes(concepto) ? "USD" : "DOP");
+  const emptyForm = { concepto: CONCEPTOS_COSTO_ADICIONALES[0], monto_real: 0, moneda: monedaDefault(CONCEPTOS_COSTO_ADICIONALES[0]), observaciones: "" };
+  const [f, setF] = useState<{ concepto: string; monto_real: number; moneda: string; observaciones: string }>(emptyForm);
 
   const { data: filasServ = [] } = useFilasServicioAduanero(expedienteId);
   const { data: tarifas = [] } = useTarifasServicioAduanero();
@@ -3335,7 +3338,7 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload = { concepto: f.concepto, monto_real: f.monto_real, observaciones: f.observaciones || null };
+      const payload = { concepto: f.concepto, monto_real: f.monto_real, moneda: f.moneda, observaciones: f.observaciones || null };
       if (editingId) {
         const { error } = await supabase.from("costos_producto").update(payload).eq("id", editingId);
         if (error) throw error;
@@ -3370,14 +3373,17 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
   const openNew = () => { setEditingId(null); setF(emptyForm); setOpen(true); };
   const openEdit = (c: any) => {
     setEditingId(c.id);
-    setF({ concepto: c.concepto, monto_real: Number(c.monto_real ?? 0), observaciones: c.observaciones ?? "" });
+    setF({ concepto: c.concepto, moneda: c.moneda ?? "DOP", monto_real: Number(c.monto_real ?? 0), observaciones: c.observaciones ?? "" });
     setOpen(true);
   };
 
   const servicioUsd = totalServicioUsd(filasServ, tarifas);
   const manuales = (costos ?? []) as any[];
-  const totalReal = totalCostoMercanciaRd(manuales.filter((c) => (c.moneda ?? "DOP") === "DOP"), servicioUsd);
-  const totalUsd = servicioUsd + totalCostoMercanciaRd(manuales.filter((c) => c.moneda === "USD"), servicioUsd);
+  const tasa = Number(exp?.tasa_cambio_usada) || 0;
+  const servicioRd = tasa > 0 ? servicioUsd * tasa : 0;
+  const totalReal = totalCostoMercanciaRd(manuales.filter((c) => (c.moneda ?? "DOP") === "DOP"), servicioUsd) + servicioRd;
+  const totalUsd = totalCostoMercanciaRd(manuales.filter((c) => c.moneda === "USD"), servicioUsd);
+  const servicioSinTasa = servicioUsd > 0 && tasa <= 0;
   const fmt = (n: number) => new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
   const fmtUsd = (n: number) => `US$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -3388,8 +3394,8 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total RD$</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalReal)}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total US$</div><div className="text-2xl font-display font-bold mt-1">{fmtUsd(totalUsd)}</div>{servicioUsd > 0 && <div className="text-xs text-muted-foreground mt-1">Incluye Servicio Aduanero {fmtUsd(servicioUsd)}</div>}</CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total RD$</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalReal)}</div>{servicioRd > 0 && <div className="text-xs text-muted-foreground mt-1">Incluye Servicio Aduanero {fmt(servicioRd)}</div>}{servicioSinTasa && <div className="text-xs text-destructive mt-1">Falta la tasa de cambio: Servicio Aduanero ({fmtUsd(servicioUsd)}) no se suma</div>}</CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total US$</div><div className="text-2xl font-display font-bold mt-1">{fmtUsd(totalUsd)}</div></CardContent></Card>
       </div>
 
       <Card>
@@ -3401,12 +3407,20 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
               <DialogHeader><DialogTitle>{editingId ? "Editar costo de producto" : "Nuevo costo de producto"}</DialogTitle></DialogHeader>
               <div className="grid gap-3">
                 <div className="grid gap-1.5"><Label>Concepto</Label>
-                  <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v })}>
+                  <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v, ...(editingId ? {} : { moneda: monedaDefault(v) }) })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{(CONCEPTOS_COSTO_ADICIONALES.includes(f.concepto) ? CONCEPTOS_COSTO_ADICIONALES : [f.concepto, ...CONCEPTOS_COSTO_ADICIONALES]).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div className="grid gap-1.5"><Label>Monto real (DOP)</Label><Input type="number" step="0.01" value={f.monto_real} onChange={(e) => setF({ ...f, monto_real: Number(e.target.value) })} /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-1.5"><Label>Monto real</Label><Input type="number" step="0.01" value={f.monto_real} onChange={(e) => setF({ ...f, monto_real: Number(e.target.value) })} /></div>
+                  <div className="grid gap-1.5"><Label>Moneda</Label>
+                    <Select value={f.moneda} onValueChange={(v) => setF({ ...f, moneda: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="DOP">RD$</SelectItem><SelectItem value="USD">US$</SelectItem></SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 <div className="grid gap-1.5"><Label>Observaciones</Label><Input value={f.observaciones} onChange={(e) => setF({ ...f, observaciones: e.target.value })} /></div>
               </div>
               <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
@@ -3428,7 +3442,10 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
                     </div>
                   </td>
                   <td className="text-muted-foreground">Tipos de despacho (Detalle de Mercancía)</td>
-                  <td className="text-right tabular-nums">{fmtUsd(servicioUsd)}</td>
+                  <td className="text-right tabular-nums">
+                    <div>{tasa > 0 ? fmt(servicioRd) : "—"}</div>
+                    <div className="text-[11px] text-muted-foreground">{fmtUsd(servicioUsd)}{tasa > 0 ? ` × tasa ${tasa.toLocaleString("en-US", { maximumFractionDigits: 4 })}` : " · sin tasa de cambio"}</div>
+                  </td>
                   <td />
                 </tr>
               )}
@@ -6049,17 +6066,19 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
     queryFn: async () =>
       (await supabase
         .from("costos_producto")
-        .select("concepto, monto_real")
+        .select("concepto, monto_real, moneda")
         .eq("expediente_id", exp.id)).data ?? [],
   });
   // Servicio Aduanero (pago a la DGA) es costo de mercancía: suma al costo por unidad.
   const { data: filasServLiq = [] } = useFilasServicioAduanero(exp.id);
   const { data: tarifasLiq = [] } = useTarifasServicioAduanero();
   const servicioLiqUsd = totalServicioUsd(filasServLiq, tarifasLiq);
-  const gastosAdicionales = totalCostoMercanciaRd(costosAdic as any[], servicioLiqUsd);
+  const filasAdic = (costosAdic ?? []) as any[];
+  const gastosAdicionales = totalCostoMercanciaRd(filasAdic.filter((c) => c.moneda !== "USD"), servicioLiqUsd);
+  const gastosAdicionalesUsdDirecto = totalCostoMercanciaRd(filasAdic.filter((c) => c.moneda === "USD"), servicioLiqUsd);
   const tasaCambio = Number(exp.tasa_cambio_usada) || 0;
   const faltaTasa = gastosAdicionales > 0 && tasaCambio <= 0;
-  const gastosAdicionalesUSD = (tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0) + servicioLiqUsd;
+  const gastosAdicionalesUSD = (tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0) + servicioLiqUsd + gastosAdicionalesUsdDirecto;
 
   const { data: almacenes } = useQuery({
     queryKey: ["almacenes-activos"],
