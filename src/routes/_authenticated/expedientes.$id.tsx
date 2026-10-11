@@ -5286,7 +5286,7 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
         </div>
       </div>
 
-      {/* PIN pago Almacenaje */}
+      {/* PIN pago Almacenaje / Contenedor: solo seguimiento. El monto se registra en Costos del expediente. */}
       <div className="grid gap-3 md:grid-cols-4 mt-3">
         <div className="grid gap-1.5">
           <Label>PIN pago Almacenaje</Label>
@@ -5298,23 +5298,9 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
           </Select>
         </div>
         <div className="grid gap-1.5">
-          <Label>Monto a pagar (RD$)</Label>
-          <Input type="text" inputMode="decimal" className="tabular-nums" placeholder="0.00" disabled={disabled}
-            value={form.pin_almacenaje_monto ?? ""}
-            onChange={(e) => { const v = e.target.value.replace(/[^\d.]/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("pin_almacenaje_monto", v); }} />
-        </div>
-        <div className="grid gap-1.5">
           <Label>Fecha de Registro</Label>
           <Input type="date" value={form.pin_almacenaje_fecha_registro || ""} onChange={(e) => set("pin_almacenaje_fecha_registro", e.target.value)} disabled={disabled} />
         </div>
-        <div className="grid gap-1.5">
-          <Label>Fecha de pago</Label>
-          <Input type="date" value={form.pin_almacenaje_fecha_pago || ""} onChange={(e) => set("pin_almacenaje_fecha_pago", e.target.value)} disabled={disabled} />
-        </div>
-      </div>
-
-      {/* PIN pago Contenedor */}
-      <div className="grid gap-3 md:grid-cols-4 mt-3">
         <div className="grid gap-1.5">
           <Label>PIN pago Contenedor</Label>
           <Select value={form.pin_contenedor || undefined} onValueChange={(v) => set("pin_contenedor", v)} disabled={disabled}>
@@ -5325,20 +5311,11 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
           </Select>
         </div>
         <div className="grid gap-1.5">
-          <Label>Monto a pagar (RD$)</Label>
-          <Input type="text" inputMode="decimal" className="tabular-nums" placeholder="0.00" disabled={disabled}
-            value={form.pin_contenedor_monto ?? ""}
-            onChange={(e) => { const v = e.target.value.replace(/[^\d.]/g, ""); if (v === "" || /^\d*\.?\d{0,2}$/.test(v)) set("pin_contenedor_monto", v); }} />
-        </div>
-        <div className="grid gap-1.5">
           <Label>Fecha de Registro</Label>
           <Input type="date" value={form.pin_contenedor_fecha_registro || ""} onChange={(e) => set("pin_contenedor_fecha_registro", e.target.value)} disabled={disabled} />
         </div>
-        <div className="grid gap-1.5">
-          <Label>Fecha de pago</Label>
-          <Input type="date" value={form.pin_contenedor_fecha_pago || ""} onChange={(e) => set("pin_contenedor_fecha_pago", e.target.value)} disabled={disabled} />
-        </div>
       </div>
+      <p className="text-[11px] text-muted-foreground mt-1">El monto pagado de Almacenaje y Contenedor se registra en «Costos del expediente», al final de la ficha.</p>
 
       {/* Cotejo de envío de valores */}
       <div className="flex items-center gap-3 mt-3">
