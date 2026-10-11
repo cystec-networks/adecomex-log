@@ -3400,7 +3400,7 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
                 <div className="grid gap-1.5"><Label>Concepto</Label>
                   <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{CONCEPTOS_COSTO_ADICIONALES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    <SelectContent>{(CONCEPTOS_COSTO_ADICIONALES.includes(f.concepto) ? CONCEPTOS_COSTO_ADICIONALES : [f.concepto, ...CONCEPTOS_COSTO_ADICIONALES]).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
