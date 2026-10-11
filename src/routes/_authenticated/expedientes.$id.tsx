@@ -216,13 +216,15 @@ const TIPOS_INCIDENCIA = [
   "Retención en aduana","Inspección física","Retraso de naviera","Cargo adicional","Dirección incorrecta","Otro",
 ];
 
+// Costo de mercancía (Liquidación): cargos físicos del contenedor/mercancía.
+// Servicio Aduanero NO va aquí: vive como fila automática en Gastos operativos del expediente.
 const CONCEPTOS_COSTO_ADICIONALES = [
   "Gestión Aduanal", "Almacenaje", "Demora de contenedor", "Uso de Chasis", "Flete Terrestre", "Cargos Locales",
-  "Gastos en Puerto", "Tasa Servicio Aduanero", "Declaración Única Aduanera", "Otros",
+  "Cargos THC", "Gastos en Puerto", "Declaración Única Aduanera", "Otros",
 ];
 const CONCEPTOS_COSTO = [
   "Flete internacional","Seguro","Gastos portuarios","Manejo de terminal","Honorarios",
-  "Aranceles","ITBIS","Transporte local","Almacenaje","Contenedor","Otros",
+  "Aranceles","ITBIS","Transporte local","Otros",
 ];
 
 const CONCEPTOS_FACTURA = [
@@ -3138,7 +3140,7 @@ function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
         <CotizacionServiciosExpedienteButton exp={exp} />
       </div>
       <LiquidacionSection expedienteId={expedienteId} />
-      <p className="text-xs text-muted-foreground">Los costos del expediente se registran al final de la Ficha General.</p>
+      <p className="text-xs text-muted-foreground">Los gastos operativos del expediente se registran al final de la Ficha General.</p>
     </div>
   );
 }
@@ -3164,7 +3166,7 @@ function CostosExpedienteCard({ expedienteId, canEdit }: { expedienteId: string;
   const { data: transportes = [] } = useQuery({
     queryKey: ["costos-transportes", expedienteId],
     queryFn: async () =>
-      (await supabase.from("transportes").select("id, numero_viaje, tipo, transportista, costo_viaje, flete_moneda")
+      (await supabase.from("transportes").select("id, numero_viaje, tipo, transportista, costo_viaje, flete_moneda, factura_costo_numero, factura_costo_fecha")
         .eq("expediente_id", expedienteId).is("eliminado_en", null).order("created_at")).data ?? [],
   });
 
@@ -3214,6 +3216,8 @@ function CostosExpedienteCard({ expedienteId, canEdit }: { expedienteId: string;
       key: `auto-tr-${t.id}`, concepto: "Transporte",
       detalle: [t.numero_viaje, t.transportista].filter(Boolean).join(" · ") || undefined,
       monto: Number(t.costo_viaje), moneda: t.flete_moneda ?? "DOP", auto: true,
+      fecha: t.factura_costo_fecha ?? null,
+      referencia: t.factura_costo_numero ? `Fact. costo ${t.factura_costo_numero}` : null,
     })),
     ...(costos ?? []).map((c: any) => ({
       key: c.id, id: c.id, concepto: c.concepto, monto: Number(c.monto_real ?? 0), moneda: c.moneda ?? "DOP",
@@ -3227,7 +3231,7 @@ function CostosExpedienteCard({ expedienteId, canEdit }: { expedienteId: string;
   return (
     <Card className="mt-6">
       <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costos del expediente</CardTitle>
+        <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Gastos operativos del expediente</CardTitle>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
           {canEdit && <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar</Button>}
           <DialogContent>
@@ -3387,7 +3391,7 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costos del producto</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costo de mercancía (para Liquidación)</CardTitle>
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
             <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar</Button>
             <DialogContent>
@@ -3396,7 +3400,7 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
                 <div className="grid gap-1.5"><Label>Concepto</Label>
                   <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{CONCEPTOS_COSTO_ADICIONALES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    <SelectContent>{(CONCEPTOS_COSTO_ADICIONALES.includes(f.concepto) ? CONCEPTOS_COSTO_ADICIONALES : [f.concepto, ...CONCEPTOS_COSTO_ADICIONALES]).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -5355,7 +5359,7 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
         </div>
       </div>
 
-      {/* PIN pago Almacenaje / Contenedor: solo seguimiento. El monto se registra en Costos del expediente. */}
+      {/* PIN pago Almacenaje / Contenedor: solo seguimiento. El monto se registra en Costo de mercancía. */}
       <div className="grid gap-3 md:grid-cols-4 mt-3">
         <div className="grid gap-1.5">
           <Label>PIN pago Almacenaje</Label>
@@ -5384,7 +5388,7 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
           <Input type="date" value={form.pin_contenedor_fecha_registro || ""} onChange={(e) => set("pin_contenedor_fecha_registro", e.target.value)} disabled={disabled} />
         </div>
       </div>
-      <p className="text-[11px] text-muted-foreground mt-1">El monto pagado de Almacenaje y Contenedor se registra en «Costos del expediente», al final de la ficha.</p>
+      <p className="text-[11px] text-muted-foreground mt-1">El monto pagado de Almacenaje y Demora de contenedor se registra en «Costo de mercancía (para Liquidación)», pestaña Costos.</p>
 
       {/* Cotejo de envío de valores */}
       <div className="flex items-center gap-3 mt-3">

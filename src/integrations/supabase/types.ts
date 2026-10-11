@@ -7135,6 +7135,7 @@ export type Database = {
           margen_real: number | null
           numero: string | null
           total_costos_reales: number | null
+          total_costos_usd: number | null
           total_facturado: number | null
           total_gastos: number | null
         }
