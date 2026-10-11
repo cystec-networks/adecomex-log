@@ -89,6 +89,8 @@ import {
   servicioAduaneroDeExpediente,
   useServicioAduaneroTotales,
   useFilasServicioAduanero,
+  useTarifasServicioAduanero,
+  totalServicioUsd,
   guardarFilasServicioAduanero,
   type FilaServicio,
 } from "@/lib/servicio-aduanero";
@@ -220,7 +222,7 @@ const CONCEPTOS_COSTO_ADICIONALES = [
 ];
 const CONCEPTOS_COSTO = [
   "Flete internacional","Seguro","Gastos portuarios","Manejo de terminal","Honorarios",
-  "Aranceles","ITBIS","Transporte local","Otros",
+  "Aranceles","ITBIS","Transporte local","Almacenaje","Contenedor","Otros",
 ];
 
 const CONCEPTOS_FACTURA = [
@@ -1128,6 +1130,7 @@ function DetalleExpediente() {
             inspeccionHost={inspeccionHost}
           />
           </div>
+          {!isNuevo && <CostosExpedienteCard expedienteId={id} canEdit={canEditExpediente} />}
         </TabsContent>
         {!isNuevo && (
         <>
@@ -1759,6 +1762,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         if (eCont) throw eCont;
       }
       await guardarFilasServicioAduanero(exp.id, filasServicioAduanero);
+      qc.invalidateQueries({ queryKey: ["expediente-servicio-aduanero", exp.id] });
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: exp.id, accion: "editado" });
 
     },
@@ -3128,35 +3132,61 @@ function RentabilidadCard({ expedienteId }: { expedienteId: string }) {
 }
 
 function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end" title="Genera una pre-factura desde este expediente y conviértela en la factura e-CF definitiva.">
+        <CotizacionServiciosExpedienteButton exp={exp} />
+      </div>
+      <LiquidacionSection expedienteId={expedienteId} />
+      <p className="text-xs text-muted-foreground">Los costos del expediente se registran al final de la Ficha General.</p>
+    </div>
+  );
+}
 
+type FilaCosto = {
+  key: string; id?: string; concepto: string; detalle?: string; monto: number; moneda: string;
+  fecha?: string | null; referencia?: string | null; auto: boolean;
+};
+
+function CostosExpedienteCard({ expedienteId, canEdit }: { expedienteId: string; canEdit: boolean }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const emptyForm = { concepto: CONCEPTOS_COSTO[0], monto_estimado: 0, monto_real: 0 };
-  const [f, setF] = useState<{ concepto: string; monto_estimado: number; monto_real: number }>(emptyForm);
+  const emptyForm = { concepto: CONCEPTOS_COSTO[0], monto_real: "", moneda: "DOP", fecha_pago: "", referencia: "" };
+  const [f, setF] = useState(emptyForm);
 
   const { data: costos } = useQuery({
     queryKey: ["costos", expedienteId],
     queryFn: async () => (await supabase.from("costos").select("*").eq("expediente_id", expedienteId).order("created_at")).data ?? [],
   });
+  const { data: filasServ = [] } = useFilasServicioAduanero(expedienteId);
+  const { data: tarifas = [] } = useTarifasServicioAduanero();
+  const { data: transportes = [] } = useQuery({
+    queryKey: ["costos-transportes", expedienteId],
+    queryFn: async () =>
+      (await supabase.from("transportes").select("id, numero_viaje, tipo, transportista, costo_viaje, flete_moneda")
+        .eq("expediente_id", expedienteId).is("eliminado_en", null).order("created_at")).data ?? [],
+  });
 
   const save = useMutation({
     mutationFn: async () => {
-      if (editingId) {
-        const { error } = await supabase.from("costos").update({ concepto: f.concepto, monto_estimado: f.monto_estimado, monto_real: f.monto_real }).eq("id", editingId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("costos").insert({ expediente_id: expedienteId, ...f });
-        if (error) throw error;
-      }
+      const monto = Number(f.monto_real);
+      if (!Number.isFinite(monto) || monto <= 0) throw new Error("Indica un monto mayor que cero");
+      const payload = {
+        concepto: f.concepto, monto_real: monto, moneda: f.moneda as "DOP" | "USD" | "EUR",
+        fecha_pago: f.fecha_pago || null, referencia: f.referencia.trim() || null,
+      };
+      const { error } = editingId
+        ? await supabase.from("costos").update(payload).eq("id", editingId)
+        : await supabase.from("costos").insert({ expediente_id: expedienteId, monto_estimado: 0, ...payload });
+      if (error) throw error;
     },
     onSuccess: () => {
       toast.success(editingId ? "Costo actualizado" : "Costo registrado");
       qc.invalidateQueries({ queryKey: ["costos", expedienteId] });
-      setOpen(false);
-      setEditingId(null);
-      setF(emptyForm);
+      setOpen(false); setEditingId(null); setF(emptyForm);
     },
+    onError: (e: any) => toast.error(e.message),
   });
 
   const del = useMutation({
@@ -3170,79 +3200,118 @@ function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
   const openNew = () => { setEditingId(null); setF(emptyForm); setOpen(true); };
   const openEdit = (c: any) => {
     setEditingId(c.id);
-    setF({ concepto: c.concepto, monto_estimado: Number(c.monto_estimado ?? 0), monto_real: Number(c.monto_real ?? 0) });
+    setF({
+      concepto: c.concepto, monto_real: c.monto_real != null ? String(c.monto_real) : "", moneda: c.moneda ?? "DOP",
+      fecha_pago: c.fecha_pago ?? "", referencia: c.referencia ?? "",
+    });
     setOpen(true);
   };
 
-  const totalEst = (costos ?? []).reduce((s: number, c: any) => s + Number(c.monto_estimado || 0), 0);
-  const totalReal = (costos ?? []).reduce((s: number, c: any) => s + Number(c.monto_real || 0), 0);
-
-  const fmt = (n: number) => new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
+  const servicioUsd = totalServicioUsd(filasServ, tarifas);
+  const filas: FilaCosto[] = [
+    ...(servicioUsd > 0 ? [{ key: "auto-servicio", concepto: "Servicio Aduanero", detalle: "Detalle de Mercancía", monto: servicioUsd, moneda: "USD", auto: true }] : []),
+    ...(transportes as any[]).filter((t) => Number(t.costo_viaje) > 0).map((t) => ({
+      key: `auto-tr-${t.id}`, concepto: "Transporte",
+      detalle: [t.numero_viaje, t.transportista].filter(Boolean).join(" · ") || undefined,
+      monto: Number(t.costo_viaje), moneda: t.flete_moneda ?? "DOP", auto: true,
+    })),
+    ...(costos ?? []).map((c: any) => ({
+      key: c.id, id: c.id, concepto: c.concepto, monto: Number(c.monto_real ?? 0), moneda: c.moneda ?? "DOP",
+      fecha: c.fecha_pago, referencia: c.referencia, auto: false,
+    })),
+  ];
+  const subtotales = filas.reduce<Record<string, number>>((acc, r) => { acc[r.moneda] = (acc[r.moneda] ?? 0) + r.monto; return acc; }, {});
+  const fmt = (n: number, m: string) =>
+    `${m === "USD" ? "US$" : m === "EUR" ? "€" : "RD$"} ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
-    <div className="space-y-4">
-      {void totalEst}{void totalReal}
-
-
-      <div className="flex justify-end" title="Genera una pre-factura desde este expediente y conviértela en la factura e-CF definitiva.">
-        <CotizacionServiciosExpedienteButton exp={exp} />
-      </div>
-
-      <LiquidacionSection expedienteId={expedienteId} />
-
-
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costos del expediente</CardTitle>
-          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
-            <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar</Button>
-            <DialogContent>
-              <DialogHeader><DialogTitle>{editingId ? "Editar costo" : "Nuevo costo"}</DialogTitle></DialogHeader>
-              <div className="grid gap-3">
-                <div className="grid gap-1.5"><Label>Concepto</Label>
-                  <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v })}>
+    <Card className="mt-6">
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costos del expediente</CardTitle>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
+          {canEdit && <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar</Button>}
+          <DialogContent>
+            <DialogHeader><DialogTitle>{editingId ? "Editar costo" : "Nuevo costo"}</DialogTitle></DialogHeader>
+            <div className="grid gap-3">
+              <div className="grid gap-1.5"><Label>Concepto</Label>
+                <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(CONCEPTOS_COSTO.includes(f.concepto) ? CONCEPTOS_COSTO : [f.concepto, ...CONCEPTOS_COSTO]).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-[1fr_110px] gap-3">
+                <div className="grid gap-1.5"><Label>Monto real</Label>
+                  <Input type="number" step="0.01" min="0" value={f.monto_real} onChange={(e) => setF({ ...f, monto_real: e.target.value })} className="tabular-nums" /></div>
+                <div className="grid gap-1.5"><Label>Moneda</Label>
+                  <Select value={f.moneda} onValueChange={(v) => setF({ ...f, moneda: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{CONCEPTOS_COSTO.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    <SelectContent>{["DOP", "USD", "EUR"].map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="grid gap-1.5"><Label>Monto estimado (DOP)</Label><Input type="number" step="0.01" value={f.monto_estimado} onChange={(e) => setF({ ...f, monto_estimado: Number(e.target.value) })} /></div>
-                  <div className="grid gap-1.5"><Label>Monto real (DOP)</Label><Input type="number" step="0.01" value={f.monto_real} onChange={(e) => setF({ ...f, monto_real: Number(e.target.value) })} /></div>
-                </div>
               </div>
-              <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </CardHeader>
-        <CardContent className="p-0 overflow-auto max-h-[70vh]">
-          <table className="w-full text-sm">
-            <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
-              <tr><th className="text-left px-4 py-2">Concepto</th><th className="text-right">Estimado</th><th className="text-right">Real</th><th className="text-right">Δ</th><th className="text-right pr-4 w-24">Acciones</th></tr>
-            </thead>
-            <tbody>
-              {(costos ?? []).map((c: any) => {
-                const diff = Number(c.monto_real) - Number(c.monto_estimado);
-                return (
-                  <tr key={c.id} className="border-b last:border-0">
-                    <td className="px-4 py-2">{c.concepto}</td>
-                    <td className="text-right">{fmt(Number(c.monto_estimado))}</td>
-                    <td className="text-right">{fmt(Number(c.monto_real))}</td>
-                    <td className={`text-right ${diff > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(diff)}</td>
-                    <td className="text-right pr-4">
-                      <div className="inline-flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(c)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("¿Eliminar este costo?")) del.mutate(c.id); }} title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {(!costos || costos.length === 0) && <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Sin costos registrados.</td></tr>}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
-    </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1.5"><Label>Fecha de pago (opcional)</Label>
+                  <Input type="date" value={f.fecha_pago} onChange={(e) => setF({ ...f, fecha_pago: e.target.value })} /></div>
+                <div className="grid gap-1.5"><Label>Referencia / N.º (opcional)</Label>
+                  <Input value={f.referencia} onChange={(e) => setF({ ...f, referencia: e.target.value })} placeholder="PIN, recibo…" /></div>
+              </div>
+            </div>
+            <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent className="p-0 overflow-auto">
+        <table className="w-full text-[13px]">
+          <thead className="text-xs text-muted-foreground border-b bg-muted/30">
+            <tr>
+              <th className="text-left px-4 py-2">Concepto</th>
+              <th className="text-right px-2">Monto</th>
+              <th className="text-left px-2">Fecha</th>
+              <th className="text-left px-2">Referencia</th>
+              <th className="text-right pr-4 w-24">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filas.map((r) => (
+              <tr key={r.key} className={`border-b last:border-0 ${r.auto ? "bg-muted/20" : ""}`}>
+                <td className="px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    <span>{r.concepto}</span>
+                    {r.auto && <Badge variant="secondary" className="text-[11px] font-normal" title="Se calcula desde otra sección; no se edita aquí">Automático</Badge>}
+                  </div>
+                  {r.detalle && <div className="text-[11px] text-muted-foreground">{r.detalle}</div>}
+                </td>
+                <td className="text-right px-2 tabular-nums">{fmt(r.monto, r.moneda)}</td>
+                <td className="px-2">{r.fecha ? fmtLocalDate(r.fecha) : "—"}</td>
+                <td className="px-2">{r.referencia || "—"}</td>
+                <td className="text-right pr-4">
+                  {!r.auto && canEdit && (
+                    <div className="inline-flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit((costos ?? []).find((c: any) => c.id === r.id))} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("¿Eliminar este costo?")) del.mutate(r.id!); }} title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+            {filas.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Sin costos registrados.</td></tr>}
+          </tbody>
+          {filas.length > 0 && (
+            <tfoot>
+              {Object.entries(subtotales).map(([m, v]) => (
+                <tr key={m} className="border-t bg-muted/40 font-semibold">
+                  <td className="px-4 py-2">Subtotal {m === "DOP" ? "RD$" : m === "USD" ? "US$" : m}</td>
+                  <td className="text-right px-2 tabular-nums">{fmt(v, m)}</td>
+                  <td colSpan={3} />
+                </tr>
+              ))}
+            </tfoot>
+          )}
+        </table>
+      </CardContent>
+    </Card>
   );
 }
 
