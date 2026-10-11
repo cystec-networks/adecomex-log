@@ -224,6 +224,8 @@ const CONCEPTOS_COSTO_ADICIONALES = [
   "Gestión Aduanal", "Almacenaje", "Demora de contenedor", "Uso de Chasis", "Flete Terrestre", "Cargos Locales",
   "Cargos THC", "Gastos en Puerto", "Declaración Única Aduanera", "Otros",
 ];
+/** Conceptos de Costo de mercancía que abren en US$ al crear una fila nueva. */
+const CONCEPTOS_COSTO_USD_DEFAULT = ["Cargos THC", "Cargos Locales"];
 const CONCEPTOS_COSTO = [
   "Flete internacional","Seguro","Gastos portuarios","Manejo de terminal","Honorarios",
   "Aranceles","ITBIS","Transporte local","Otros",
@@ -3401,7 +3403,7 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
               <DialogHeader><DialogTitle>{editingId ? "Editar costo de producto" : "Nuevo costo de producto"}</DialogTitle></DialogHeader>
               <div className="grid gap-3">
                 <div className="grid gap-1.5"><Label>Concepto</Label>
-                  <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v })}>
+                  <Select value={f.concepto} onValueChange={(v) => setF({ ...f, concepto: v, ...(editingId ? {} : { moneda: monedaDefault(v) }) })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{(CONCEPTOS_COSTO_ADICIONALES.includes(f.concepto) ? CONCEPTOS_COSTO_ADICIONALES : [f.concepto, ...CONCEPTOS_COSTO_ADICIONALES]).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
