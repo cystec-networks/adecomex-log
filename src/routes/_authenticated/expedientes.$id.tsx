@@ -222,14 +222,13 @@ const TIPOS_INCIDENCIA = [
 // Servicio Aduanero (pago a la DGA) sí va aquí: fila automática + concepto manual de respaldo.
 const CONCEPTOS_COSTO_ADICIONALES = [
   "Gestión Aduanal", "Tasa Servicio Aduanero", "Almacenaje", "Demora de contenedor", "Uso de Chasis", "Flete Terrestre", "Cargos Locales",
-  "Cargos THC", "Gastos en Puerto", "Declaración Única Aduanera", "Otros",
+  "Cargos THC", "Gastos en Puerto", "Declaración Única Aduanera", "Transporte local", "Otros",
 ];
 /** Conceptos de Costo de mercancía que abren en US$ al crear una fila nueva. */
 const CONCEPTOS_COSTO_USD_DEFAULT = ["Cargos THC", "Cargos Locales"];
-const CONCEPTOS_COSTO = [
-  "Flete internacional","Seguro","Gastos portuarios","Manejo de terminal","Honorarios",
-  "Aranceles","ITBIS","Transporte local","Otros",
-];
+// Gastos operativos del expediente: solo Honorarios de terceros (+ fila automática de Transporte).
+// Flete/Seguro (CIF), Aranceles (gravamen) e ITBIS (crédito fiscal) no se capturan como costo; filas viejas se conservan.
+const CONCEPTOS_COSTO = ["Honorarios de terceros"];
 
 const CONCEPTOS_FACTURA = [
   "Honorarios","Transporte","Gestión aduanal","Reembolso de gastos","Servicios adicionales","Otros",
