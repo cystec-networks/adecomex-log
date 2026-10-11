@@ -3140,7 +3140,7 @@ function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
         <CotizacionServiciosExpedienteButton exp={exp} />
       </div>
       <LiquidacionSection expedienteId={expedienteId} />
-      <p className="text-xs text-muted-foreground">Los costos del expediente se registran al final de la Ficha General.</p>
+      <p className="text-xs text-muted-foreground">Los gastos operativos del expediente se registran al final de la Ficha General.</p>
     </div>
   );
 }
@@ -3231,7 +3231,7 @@ function CostosExpedienteCard({ expedienteId, canEdit }: { expedienteId: string;
   return (
     <Card className="mt-6">
       <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costos del expediente</CardTitle>
+        <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Gastos operativos del expediente</CardTitle>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
           {canEdit && <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar</Button>}
           <DialogContent>
@@ -3391,7 +3391,7 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costos del producto</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costo de mercancía (para Liquidación)</CardTitle>
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
             <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar</Button>
             <DialogContent>
@@ -5359,7 +5359,7 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
         </div>
       </div>
 
-      {/* PIN pago Almacenaje / Contenedor: solo seguimiento. El monto se registra en Costos del expediente. */}
+      {/* PIN pago Almacenaje / Contenedor: solo seguimiento. El monto se registra en Costo de mercancía. */}
       <div className="grid gap-3 md:grid-cols-4 mt-3">
         <div className="grid gap-1.5">
           <Label>PIN pago Almacenaje</Label>
@@ -5388,7 +5388,7 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
           <Input type="date" value={form.pin_contenedor_fecha_registro || ""} onChange={(e) => set("pin_contenedor_fecha_registro", e.target.value)} disabled={disabled} />
         </div>
       </div>
-      <p className="text-[11px] text-muted-foreground mt-1">El monto pagado de Almacenaje y Contenedor se registra en «Costos del expediente», al final de la ficha.</p>
+      <p className="text-[11px] text-muted-foreground mt-1">El monto pagado de Almacenaje y Demora de contenedor se registra en «Costo de mercancía (para Liquidación)», pestaña Costos.</p>
 
       {/* Cotejo de envío de valores */}
       <div className="flex items-center gap-3 mt-3">
