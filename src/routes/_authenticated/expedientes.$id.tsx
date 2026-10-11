@@ -1135,7 +1135,7 @@ function DetalleExpediente() {
             inspeccionHost={inspeccionHost}
           />
           </div>
-          {!isNuevo && <CostosExpedienteCard expedienteId={id} canEdit={canEditExpediente} />}
+          {!isNuevo && <div className="mt-4"><TabCostosProducto expedienteId={id} exp={expData} /></div>}
         </TabsContent>
         {!isNuevo && (
         <>
@@ -1151,7 +1151,7 @@ function DetalleExpediente() {
         <TabsContent value="transportes"><TabTransportesExp expedienteId={id} /></TabsContent>
         <TabsContent value="recepcion"><TabRecepcion expedienteId={id} /></TabsContent>
         <TabsContent value="inc"><TabIncidencias expedienteId={id} /></TabsContent>
-        <TabsContent value="cost"><TabCostos expedienteId={id} exp={expData} /></TabsContent>
+        <TabsContent value="cost"><TabCostos expedienteId={id} exp={expData} canEdit={canEditExpediente} /></TabsContent>
         <TabsContent value="costprod"><TabCostosProducto expedienteId={id} exp={expData} /></TabsContent>
         <TabsContent value="aud"><TabAuditoria expedienteId={id} /></TabsContent>
         </>
@@ -3136,14 +3136,14 @@ function RentabilidadCard({ expedienteId }: { expedienteId: string }) {
   );
 }
 
-function TabCostos({ expedienteId, exp }: { expedienteId: string; exp: any }) {
+function TabCostos({ expedienteId, exp, canEdit }: { expedienteId: string; exp: any; canEdit: boolean }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end" title="Genera una pre-factura desde este expediente y conviértela en la factura e-CF definitiva.">
         <CotizacionServiciosExpedienteButton exp={exp} />
       </div>
       <LiquidacionSection expedienteId={expedienteId} />
-      <p className="text-xs text-muted-foreground">Los gastos operativos del expediente se registran al final de la Ficha General.</p>
+      <CostosExpedienteCard expedienteId={expedienteId} canEdit={canEdit} />
     </div>
   );
 }
