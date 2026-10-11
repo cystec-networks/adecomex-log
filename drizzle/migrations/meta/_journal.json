@@ -386,6 +386,13 @@
       "when": 1791740080845,
       "tag": "0054_costos_unificados",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1791744162024,
+      "tag": "0055_rentabilidad_por_moneda",
+      "breakpoints": true
     }
   ]
 }
