@@ -5297,7 +5297,7 @@ function PinesDesdeCostos({ expedienteId }: { expedienteId?: string }) {
     return <div><span className="font-medium">{etiqueta}:</span> <span className={rs.length ? "" : "text-muted-foreground"}>{texto}</span></div>;
   };
   return (
-    <div className="mt-3 rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
+    <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
       {linea("Almacenaje", "Almacenaje")}
       {linea("Contenedor", "Demora de contenedor")}
       <div className="text-[11px] text-muted-foreground">Solo lectura — se registra en «Costo de mercancía (para Liquidación)», pestaña Costos.</div>
@@ -5382,7 +5382,7 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
             placeholder="0.00" className="tabular-nums" disabled={disabled} />
         </div>
       </div>
-      <div className="grid gap-3 md:grid-cols-3 mt-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1.25fr_1.25fr_0.9fr] mt-3 items-start">
         <div className="grid gap-1.5">
           <Label>PIN pago DGA</Label>
           <Input value={form.liq_siga_pin_pago || ""} onChange={(e) => set("liq_siga_pin_pago", e.target.value)} placeholder="PIN de pago" disabled={disabled} />
@@ -5402,12 +5402,12 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
           />
         </div>
         <div className="grid gap-1.5">
-          <div className="flex items-center gap-2">
-            <Label>Fecha de Término (vigencia del PIN)</Label>
-            <BadgeVigenciaPinDga terminoAt={localInputToIso(form.liq_siga_termino_at)} fechaPago={form.liq_siga_fecha_pago || null} />
-          </div>
+          <Label title="Vigencia del PIN: 96 horas exactas desde la fecha de registro. Editable.">Fecha de Término</Label>
           <Input type="datetime-local" value={form.liq_siga_termino_at || ""} onChange={(e) => set("liq_siga_termino_at", e.target.value)} disabled={disabled} />
-          <div className="text-[11px] text-muted-foreground">96 horas exactas desde la fecha de registro. Editable.</div>
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+            <BadgeVigenciaPinDga terminoAt={localInputToIso(form.liq_siga_termino_at)} fechaPago={form.liq_siga_fecha_pago || null} />
+            <span>Vigencia: registro + 96 h. Editable.</span>
+          </div>
         </div>
         <div className="grid gap-1.5">
           <Label>Fecha de pago</Label>
@@ -5416,10 +5416,9 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
       </div>
 
       {/* PIN pago Almacenaje / Contenedor: solo lectura desde Costo de mercancía (columnas pin_* se conservan, ya no se editan aquí). */}
-      <PinesDesdeCostos expedienteId={exp?.id} />
-
+      <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
       {/* Cotejo de envío de valores */}
-      <div className="flex items-center gap-3 mt-3">
+      <div className="flex items-center gap-3">
         <Switch
           id="valores-enviados"
           checked={!!form.valores_enviados}
@@ -5435,6 +5434,8 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
             {new Date(form.valores_enviados_at).toLocaleString("es-DO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
           </span>
         )}
+      </div>
+      <div className="flex-1 min-w-[280px]"><PinesDesdeCostos expedienteId={exp?.id} /></div>
       </div>
       <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
         {estimadoRd != null && (
