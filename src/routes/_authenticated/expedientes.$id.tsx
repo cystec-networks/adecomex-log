@@ -91,6 +91,8 @@ import {
   useFilasServicioAduanero,
   useTarifasServicioAduanero,
   totalServicioUsd,
+  totalCostoMercanciaRd,
+  filaReemplazadaPorServicio,
   guardarFilasServicioAduanero,
   type FilaServicio,
 } from "@/lib/servicio-aduanero";
