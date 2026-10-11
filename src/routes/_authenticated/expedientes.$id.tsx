@@ -3322,8 +3322,8 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const emptyForm = { concepto: CONCEPTOS_COSTO_ADICIONALES[0], monto_estimado: 0, monto_real: 0, observaciones: "" };
-  const [f, setF] = useState<{ concepto: string; monto_estimado: number; monto_real: number; observaciones: string }>(emptyForm);
+  const emptyForm = { concepto: CONCEPTOS_COSTO_ADICIONALES[0], monto_real: 0, observaciones: "" };
+  const [f, setF] = useState<{ concepto: string; monto_real: number; observaciones: string }>(emptyForm);
 
   const { data: filasServ = [] } = useFilasServicioAduanero(expedienteId);
   const { data: tarifas = [] } = useTarifasServicioAduanero();
@@ -3335,7 +3335,7 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload = { concepto: f.concepto, monto_estimado: f.monto_estimado, monto_real: f.monto_real, observaciones: f.observaciones || null };
+      const payload = { concepto: f.concepto, monto_real: f.monto_real, observaciones: f.observaciones || null };
       if (editingId) {
         const { error } = await supabase.from("costos_producto").update(payload).eq("id", editingId);
         if (error) throw error;
@@ -3370,13 +3370,14 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
   const openNew = () => { setEditingId(null); setF(emptyForm); setOpen(true); };
   const openEdit = (c: any) => {
     setEditingId(c.id);
-    setF({ concepto: c.concepto, monto_estimado: Number(c.monto_estimado ?? 0), monto_real: Number(c.monto_real ?? 0), observaciones: c.observaciones ?? "" });
+    setF({ concepto: c.concepto, monto_real: Number(c.monto_real ?? 0), observaciones: c.observaciones ?? "" });
     setOpen(true);
   };
 
   const servicioUsd = totalServicioUsd(filasServ, tarifas);
-  const totalEst = (costos ?? []).reduce((s: number, c: any) => s + Number(c.monto_estimado || 0), 0);
-  const totalReal = totalCostoMercanciaRd(costos as any[], servicioUsd);
+  const manuales = (costos ?? []) as any[];
+  const totalReal = totalCostoMercanciaRd(manuales.filter((c) => (c.moneda ?? "DOP") === "DOP"), servicioUsd);
+  const totalUsd = servicioUsd + totalCostoMercanciaRd(manuales.filter((c) => c.moneda === "USD"), servicioUsd);
   const fmt = (n: number) => new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
   const fmtUsd = (n: number) => `US$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -3386,10 +3387,9 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
         Estos costos son de la mercancía (incluido el Servicio Aduanero que se paga a la DGA), no del servicio de gestión aduanal — no afectan el margen del servicio.
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total estimado</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalEst)}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total real (RD$)</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalReal)}</div>{servicioUsd > 0 && <div className="text-xs text-muted-foreground mt-1">+ Servicio Aduanero {fmtUsd(servicioUsd)}</div>}</CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Diferencia</div><div className={`text-2xl font-display font-bold mt-1 ${totalReal - totalEst > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(totalReal - totalEst)}</div></CardContent></Card>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total RD$</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalReal)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total US$</div><div className="text-2xl font-display font-bold mt-1">{fmtUsd(totalUsd)}</div>{servicioUsd > 0 && <div className="text-xs text-muted-foreground mt-1">Incluye Servicio Aduanero {fmtUsd(servicioUsd)}</div>}</CardContent></Card>
       </div>
 
       <Card>
@@ -3406,10 +3406,7 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
                     <SelectContent>{(CONCEPTOS_COSTO_ADICIONALES.includes(f.concepto) ? CONCEPTOS_COSTO_ADICIONALES : [f.concepto, ...CONCEPTOS_COSTO_ADICIONALES]).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="grid gap-1.5"><Label>Monto estimado (DOP)</Label><Input type="number" step="0.01" value={f.monto_estimado} onChange={(e) => setF({ ...f, monto_estimado: Number(e.target.value) })} /></div>
-                  <div className="grid gap-1.5"><Label>Monto real (DOP)</Label><Input type="number" step="0.01" value={f.monto_real} onChange={(e) => setF({ ...f, monto_real: Number(e.target.value) })} /></div>
-                </div>
+                <div className="grid gap-1.5"><Label>Monto real (DOP)</Label><Input type="number" step="0.01" value={f.monto_real} onChange={(e) => setF({ ...f, monto_real: Number(e.target.value) })} /></div>
                 <div className="grid gap-1.5"><Label>Observaciones</Label><Input value={f.observaciones} onChange={(e) => setF({ ...f, observaciones: e.target.value })} /></div>
               </div>
               <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
@@ -3419,7 +3416,7 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
         <CardContent className="p-0 overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">
             <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
-              <tr><th className="text-left px-4 py-2">Concepto</th><th className="text-left">Observaciones</th><th className="text-right">Estimado</th><th className="text-right">Real</th><th className="text-right">Δ</th><th className="text-right pr-4 w-24">Acciones</th></tr>
+              <tr><th className="text-left px-4 py-2">Concepto</th><th className="text-left">Observaciones</th><th className="text-right">Monto real</th><th className="text-right pr-4 w-24">Acciones</th></tr>
             </thead>
             <tbody>
               {servicioUsd > 0 && (
@@ -3431,14 +3428,11 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
                     </div>
                   </td>
                   <td className="text-muted-foreground">Tipos de despacho (Detalle de Mercancía)</td>
-                  <td className="text-right">—</td>
                   <td className="text-right tabular-nums">{fmtUsd(servicioUsd)}</td>
-                  <td className="text-right">—</td>
                   <td />
                 </tr>
               )}
               {(costos ?? []).map((c: any) => {
-                const diff = Number(c.monto_real) - Number(c.monto_estimado);
                 const reemp = filaReemplazadaPorServicio(c.concepto, servicioUsd);
                 return (
                   <tr key={c.id} className={`border-b last:border-0 ${reemp ? "text-muted-foreground" : ""}`}>
@@ -3449,9 +3443,7 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
                       </div>
                     </td>
                     <td className="text-muted-foreground">{c.observaciones ?? "—"}</td>
-                    <td className="text-right">{fmt(Number(c.monto_estimado))}</td>
-                    <td className="text-right">{fmt(Number(c.monto_real))}</td>
-                    <td className={`text-right ${diff > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(diff)}</td>
+                    <td className="text-right tabular-nums">{c.moneda === "USD" ? fmtUsd(Number(c.monto_real)) : fmt(Number(c.monto_real))}</td>
                     <td className="text-right pr-4">
                       <div className="inline-flex gap-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(c)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
@@ -3461,7 +3453,7 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
                   </tr>
                 );
               })}
-              {(!costos || costos.length === 0) && servicioUsd <= 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Sin costos de producto registrados.</td></tr>}
+              {(!costos || costos.length === 0) && servicioUsd <= 0 && <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">Sin costos de producto registrados.</td></tr>}
             </tbody>
           </table>
         </CardContent>
