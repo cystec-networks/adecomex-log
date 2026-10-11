@@ -343,7 +343,7 @@ function RentabilidadExpedientesPanel() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("v_rentabilidad_expediente" as any)
-        .select("expediente_id,numero,estado,total_facturado,total_costos_reales,total_costos_usd,total_gastos,margen_real,margen_pct");
+        .select("expediente_id,numero,estado,total_facturado,total_costos_reales,total_gastos,margen_real,margen_pct");
       if (error) throw error;
       return (data ?? []) as any[];
     },
@@ -373,8 +373,7 @@ function RentabilidadExpedientesPanel() {
                     <th className="text-left py-2">Expediente</th>
                     <th className="text-left">Estado</th>
                     <th className="text-right">Facturado</th>
-                    <th className="text-right">Costos RD$</th>
-                    <th className="text-right">Costos US$</th>
+                    <th className="text-right">Gastos operativos</th>
                     <th className="text-right">Gastos</th>
                     <th className="text-right" title="Margen del servicio (no incluye costo de mercancía reembolsable)">Margen del servicio</th>
                     <th className="text-right">%</th>
@@ -387,7 +386,6 @@ function RentabilidadExpedientesPanel() {
                       <td className="text-xs text-muted-foreground">{r.estado}</td>
                       <td className="text-right tabular-nums">{fmtRD(Number(r.total_facturado))}</td>
                       <td className="text-right tabular-nums">{fmtRD(Number(r.total_costos_reales))}</td>
-                      <td className="text-right tabular-nums">{Number(r.total_costos_usd) ? `US$ ${Number(r.total_costos_usd).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</td>
                       <td className="text-right tabular-nums">{fmtRD(Number(r.total_gastos))}</td>
                       <td className="text-right tabular-nums font-semibold text-destructive">{fmtRD(Number(r.margen_real))}</td>
                       <td className="text-right tabular-nums text-destructive">{r.margen_pct == null ? "—" : `${Number(r.margen_pct).toFixed(1)}%`}</td>
@@ -403,7 +401,7 @@ function RentabilidadExpedientesPanel() {
       <Card>
         <CardHeader>
           <CardTitle>Top 10 expedientes por margen del servicio</CardTitle>
-          <CardDescription>Expedientes con facturación registrada, ordenados por margen del servicio en RD$ (facturado − gastos operativos RD$ − gastos). No incluye costo de mercancía reembolsable; los costos en US$ se muestran aparte, sin convertir.</CardDescription>
+          <CardDescription>Expedientes con facturación registrada, ordenados por margen del servicio en RD$ (facturado − gastos operativos − gastos). No incluye costo de mercancía (Servicio Aduanero, Almacenaje, etc.).</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -419,8 +417,7 @@ function RentabilidadExpedientesPanel() {
                     <th className="text-left">Expediente</th>
                     <th className="text-left">Estado</th>
                     <th className="text-right">Facturado</th>
-                    <th className="text-right">Costos RD$</th>
-                    <th className="text-right">Costos US$</th>
+                    <th className="text-right">Gastos operativos</th>
                     <th className="text-right">Gastos</th>
                     <th className="text-right" title="Margen del servicio (no incluye costo de mercancía reembolsable)">Margen del servicio</th>
                     <th className="text-right">%</th>
@@ -437,7 +434,6 @@ function RentabilidadExpedientesPanel() {
                         <td className="text-xs text-muted-foreground">{r.estado}</td>
                         <td className="text-right tabular-nums">{fmtRD(Number(r.total_facturado))}</td>
                         <td className="text-right tabular-nums">{fmtRD(Number(r.total_costos_reales))}</td>
-                      <td className="text-right tabular-nums">{Number(r.total_costos_usd) ? `US$ ${Number(r.total_costos_usd).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</td>
                         <td className="text-right tabular-nums">{fmtRD(Number(r.total_gastos))}</td>
                         <td className={`text-right tabular-nums font-semibold ${tone}`}>{fmtRD(m)}</td>
                         <td className={`text-right tabular-nums ${tone}`}>{r.margen_pct == null ? "—" : `${Number(r.margen_pct).toFixed(1)}%`}</td>

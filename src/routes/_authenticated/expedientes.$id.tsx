@@ -3161,8 +3161,6 @@ function CostosExpedienteCard({ expedienteId, canEdit }: { expedienteId: string;
     queryKey: ["costos", expedienteId],
     queryFn: async () => (await supabase.from("costos").select("*").eq("expediente_id", expedienteId).order("created_at")).data ?? [],
   });
-  const { data: filasServ = [] } = useFilasServicioAduanero(expedienteId);
-  const { data: tarifas = [] } = useTarifasServicioAduanero();
   const { data: transportes = [] } = useQuery({
     queryKey: ["costos-transportes", expedienteId],
     queryFn: async () =>
