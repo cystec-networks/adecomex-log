@@ -5282,6 +5282,29 @@ function AvisoRegimenSuspensivo({ expedienteId }: { expedienteId: string }) {
   );
 }
 
+function PinesDesdeCostos({ expedienteId }: { expedienteId?: string }) {
+  const { data: filas = [] } = useQuery({
+    queryKey: ["costos_producto", expedienteId],
+    enabled: !!expedienteId,
+    queryFn: async () =>
+      (await supabase.from("costos_producto").select("*").eq("expediente_id", expedienteId!).order("created_at")).data ?? [],
+  });
+  const linea = (etiqueta: string, concepto: string) => {
+    const rs = (filas as any[]).filter((c) => c.concepto === concepto);
+    const texto = rs.length
+      ? rs.map((c) => (c.observaciones ? String(c.observaciones).replace(" · Pagado", ", pagado") : "registrado")).join("; ")
+      : "Sin registro en Costos";
+    return <div><span className="font-medium">{etiqueta}:</span> <span className={rs.length ? "" : "text-muted-foreground"}>{texto}</span></div>;
+  };
+  return (
+    <div className="mt-3 rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
+      {linea("Almacenaje", "Almacenaje")}
+      {linea("Contenedor", "Demora de contenedor")}
+      <div className="text-[11px] text-muted-foreground">Solo lectura — se registra en «Costo de mercancía (para Liquidación)», pestaña Costos.</div>
+    </div>
+  );
+}
+
 function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabled = false }: { exp: any; form: any; set: (k: string, v: any) => void; servicioAduaneroUsd?: number; disabled?: boolean }) {
   const susp = useImpuestosSusp();
   const tc = useTasaCambioForExpediente(exp);
@@ -5392,36 +5415,8 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
         </div>
       </div>
 
-      {/* PIN pago Almacenaje / Contenedor: solo seguimiento. El monto se registra en Costo de mercancía. */}
-      <div className="grid gap-3 md:grid-cols-4 mt-3">
-        <div className="grid gap-1.5">
-          <Label>PIN pago Almacenaje</Label>
-          <Select value={form.pin_almacenaje || undefined} onValueChange={(v) => set("pin_almacenaje", v)} disabled={disabled}>
-            <SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger>
-            <SelectContent>
-              {OPCIONES_PIN_ALMACENAJE.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Fecha de Registro</Label>
-          <Input type="date" value={form.pin_almacenaje_fecha_registro || ""} onChange={(e) => set("pin_almacenaje_fecha_registro", e.target.value)} disabled={disabled} />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>PIN pago Contenedor</Label>
-          <Select value={form.pin_contenedor || undefined} onValueChange={(v) => set("pin_contenedor", v)} disabled={disabled}>
-            <SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger>
-            <SelectContent>
-              {OPCIONES_PIN_CONTENEDOR.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Fecha de Registro</Label>
-          <Input type="date" value={form.pin_contenedor_fecha_registro || ""} onChange={(e) => set("pin_contenedor_fecha_registro", e.target.value)} disabled={disabled} />
-        </div>
-      </div>
-      <p className="text-[11px] text-muted-foreground mt-1">El monto pagado de Almacenaje y Demora de contenedor se registra en «Costo de mercancía (para Liquidación)», pestaña Costos.</p>
+      {/* PIN pago Almacenaje / Contenedor: solo lectura desde Costo de mercancía (columnas pin_* se conservan, ya no se editan aquí). */}
+      <PinesDesdeCostos expedienteId={exp?.id} />
 
       {/* Cotejo de envío de valores */}
       <div className="flex items-center gap-3 mt-3">
