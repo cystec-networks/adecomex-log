@@ -216,13 +216,15 @@ const TIPOS_INCIDENCIA = [
   "Retención en aduana","Inspección física","Retraso de naviera","Cargo adicional","Dirección incorrecta","Otro",
 ];
 
+// Costo de mercancía (Liquidación): cargos físicos del contenedor/mercancía.
+// Servicio Aduanero NO va aquí: vive como fila automática en Gastos operativos del expediente.
 const CONCEPTOS_COSTO_ADICIONALES = [
   "Gestión Aduanal", "Almacenaje", "Demora de contenedor", "Uso de Chasis", "Flete Terrestre", "Cargos Locales",
-  "Gastos en Puerto", "Tasa Servicio Aduanero", "Declaración Única Aduanera", "Otros",
+  "Cargos THC", "Gastos en Puerto", "Declaración Única Aduanera", "Otros",
 ];
 const CONCEPTOS_COSTO = [
   "Flete internacional","Seguro","Gastos portuarios","Manejo de terminal","Honorarios",
-  "Aranceles","ITBIS","Transporte local","Almacenaje","Contenedor","Otros",
+  "Aranceles","ITBIS","Transporte local","Otros",
 ];
 
 const CONCEPTOS_FACTURA = [
@@ -3164,7 +3166,7 @@ function CostosExpedienteCard({ expedienteId, canEdit }: { expedienteId: string;
   const { data: transportes = [] } = useQuery({
     queryKey: ["costos-transportes", expedienteId],
     queryFn: async () =>
-      (await supabase.from("transportes").select("id, numero_viaje, tipo, transportista, costo_viaje, flete_moneda")
+      (await supabase.from("transportes").select("id, numero_viaje, tipo, transportista, costo_viaje, flete_moneda, factura_costo_numero, factura_costo_fecha")
         .eq("expediente_id", expedienteId).is("eliminado_en", null).order("created_at")).data ?? [],
   });
 
@@ -3214,6 +3216,8 @@ function CostosExpedienteCard({ expedienteId, canEdit }: { expedienteId: string;
       key: `auto-tr-${t.id}`, concepto: "Transporte",
       detalle: [t.numero_viaje, t.transportista].filter(Boolean).join(" · ") || undefined,
       monto: Number(t.costo_viaje), moneda: t.flete_moneda ?? "DOP", auto: true,
+      fecha: t.factura_costo_fecha ?? null,
+      referencia: t.factura_costo_numero ? `Fact. costo ${t.factura_costo_numero}` : null,
     })),
     ...(costos ?? []).map((c: any) => ({
       key: c.id, id: c.id, concepto: c.concepto, monto: Number(c.monto_real ?? 0), moneda: c.moneda ?? "DOP",
