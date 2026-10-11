@@ -3209,9 +3209,8 @@ function CostosExpedienteCard({ expedienteId, canEdit }: { expedienteId: string;
     setOpen(true);
   };
 
-  const servicioUsd = totalServicioUsd(filasServ, tarifas);
+  // Servicio Aduanero es costo de mercancía (pago a la DGA): vive en «Costo de mercancía», no aquí.
   const filas: FilaCosto[] = [
-    ...(servicioUsd > 0 ? [{ key: "auto-servicio", concepto: "Servicio Aduanero", detalle: "Detalle de Mercancía", monto: servicioUsd, moneda: "USD", auto: true }] : []),
     ...(transportes as any[]).filter((t) => Number(t.costo_viaje) > 0).map((t) => ({
       key: `auto-tr-${t.id}`, concepto: "Transporte",
       detalle: [t.numero_viaje, t.transportista].filter(Boolean).join(" · ") || undefined,
@@ -3326,6 +3325,8 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
   const emptyForm = { concepto: CONCEPTOS_COSTO_ADICIONALES[0], monto_estimado: 0, monto_real: 0, observaciones: "" };
   const [f, setF] = useState<{ concepto: string; monto_estimado: number; monto_real: number; observaciones: string }>(emptyForm);
 
+  const { data: filasServ = [] } = useFilasServicioAduanero(expedienteId);
+  const { data: tarifas = [] } = useTarifasServicioAduanero();
   const { data: costos } = useQuery({
     queryKey: ["costos_producto", expedienteId],
     queryFn: async () =>
@@ -3373,19 +3374,21 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
     setOpen(true);
   };
 
+  const servicioUsd = totalServicioUsd(filasServ, tarifas);
   const totalEst = (costos ?? []).reduce((s: number, c: any) => s + Number(c.monto_estimado || 0), 0);
-  const totalReal = (costos ?? []).reduce((s: number, c: any) => s + Number(c.monto_real || 0), 0);
+  const totalReal = totalCostoMercanciaRd(costos as any[], servicioUsd);
   const fmt = (n: number) => new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
+  const fmtUsd = (n: number) => `US$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <div className="space-y-4">
       <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm">
-        Estos costos son del producto/mercancía, no del servicio de gestión aduanal — no afectan la rentabilidad del servicio en la Ficha de Finanzas.
+        Estos costos son de la mercancía (incluido el Servicio Aduanero que se paga a la DGA), no del servicio de gestión aduanal — no afectan el margen del servicio.
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total estimado</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalEst)}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total real</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalReal)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total real (RD$)</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalReal)}</div>{servicioUsd > 0 && <div className="text-xs text-muted-foreground mt-1">+ Servicio Aduanero {fmtUsd(servicioUsd)}</div>}</CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Diferencia</div><div className={`text-2xl font-display font-bold mt-1 ${totalReal - totalEst > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(totalReal - totalEst)}</div></CardContent></Card>
       </div>
 
@@ -3419,11 +3422,32 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
               <tr><th className="text-left px-4 py-2">Concepto</th><th className="text-left">Observaciones</th><th className="text-right">Estimado</th><th className="text-right">Real</th><th className="text-right">Δ</th><th className="text-right pr-4 w-24">Acciones</th></tr>
             </thead>
             <tbody>
+              {servicioUsd > 0 && (
+                <tr className="border-b bg-muted/20">
+                  <td className="px-4 py-2">
+                    <div className="flex items-center gap-2">
+                      <span>Servicio Aduanero</span>
+                      <Badge variant="secondary" className="text-[11px] font-normal" title="Se calcula desde los tipos de despacho en Detalle de Mercancía; no se edita aquí">Automático</Badge>
+                    </div>
+                  </td>
+                  <td className="text-muted-foreground">Tipos de despacho (Detalle de Mercancía)</td>
+                  <td className="text-right">—</td>
+                  <td className="text-right tabular-nums">{fmtUsd(servicioUsd)}</td>
+                  <td className="text-right">—</td>
+                  <td />
+                </tr>
+              )}
               {(costos ?? []).map((c: any) => {
                 const diff = Number(c.monto_real) - Number(c.monto_estimado);
+                const reemp = filaReemplazadaPorServicio(c.concepto, servicioUsd);
                 return (
-                  <tr key={c.id} className="border-b last:border-0">
-                    <td className="px-4 py-2">{c.concepto}</td>
+                  <tr key={c.id} className={`border-b last:border-0 ${reemp ? "text-muted-foreground" : ""}`}>
+                    <td className="px-4 py-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={reemp ? "line-through" : ""}>{c.concepto}</span>
+                        {reemp && <Badge variant="outline" className="text-[11px] font-normal">Reemplazada por la fila automática — no se suma</Badge>}
+                      </div>
+                    </td>
                     <td className="text-muted-foreground">{c.observaciones ?? "—"}</td>
                     <td className="text-right">{fmt(Number(c.monto_estimado))}</td>
                     <td className="text-right">{fmt(Number(c.monto_real))}</td>
@@ -3437,7 +3461,7 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
                   </tr>
                 );
               })}
-              {(!costos || costos.length === 0) && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Sin costos de producto registrados.</td></tr>}
+              {(!costos || costos.length === 0) && servicioUsd <= 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Sin costos de producto registrados.</td></tr>}
             </tbody>
           </table>
         </CardContent>
