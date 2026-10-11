@@ -5653,12 +5653,14 @@ function LiquidacionFinalPdfButton({
   list,
   calcFila,
   gastosAdicionales,
+  servicioUsd,
   tasaCambio,
 }: {
   exp: any;
   list: any[];
   calcFila: (it: any) => any;
   gastosAdicionales: number;
+  servicioUsd: number;
   tasaCambio: number;
 }) {
   const { user } = useCurrentUser();
@@ -5792,8 +5794,10 @@ function LiquidacionFinalPdfButton({
     const fleteExp = Number(exp.flete) || 0;
     const otrosExp = Number(exp.otros) || 0;
     const totalFobExp = list.reduce((s, it) => s + (Number(it.valor_fob) || 0), 0);
-    const gastosAdicionalesUSD = tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0;
-    const servicioAduaneroUsdPdf = await servicioAduaneroDeExpediente(exp);
+    const servicioAduaneroUsdPdf = servicioUsd;
+    // Desglose por unidad: Costo de mercancía + Servicio Aduanero (igual que en pantalla).
+    const gastosAdicionalesUSD = (tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0) + servicioUsd;
+    const gastosProductoSoloUSD = tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0;
 
     const td = { cant: 0, fob: 0, seg: 0, fle: 0, otr: 0, cif: 0, gr: 0, ir: 0, gp: 0, cu: 0 };
     const bodyDesglose = list.map((it) => {
@@ -5901,18 +5905,28 @@ function LiquidacionFinalPdfButton({
     autoTable(doc, {
       startY: summaryStartY,
       pageBreak: "avoid",
-      head: [["Costos del Producto", "DOP", "USD"]],
-      body: cp.length
-        ? cp.map((c) => [
-            c.concepto ?? "—",
-            nf(Number(c.monto_real) || 0),
-            tasaCambio > 0 ? nf((Number(c.monto_real) || 0) / tasaCambio) : "s/t",
-          ])
+      head: [["Costo de Mercancía", "DOP", "USD"]],
+      body: (cp.length || servicioUsd > 0)
+        ? [
+            ...(servicioUsd > 0 ? [[
+              "Servicio Aduanero (automático)",
+              tasaCambio > 0 ? nf(servicioUsd * tasaCambio) : "s/t",
+              nf(servicioUsd),
+            ]] : []),
+            ...cp.map((c) => {
+              const reemp = filaReemplazadaPorServicio(c.concepto, servicioUsd);
+              return [
+                `${c.concepto ?? "—"}${reemp ? " (reemplazada, no se suma)" : ""}`,
+                nf(Number(c.monto_real) || 0),
+                tasaCambio > 0 ? nf((Number(c.monto_real) || 0) / tasaCambio) : "s/t",
+              ];
+            }),
+          ]
         : [["Sin costos registrados", "—", "—"]],
       foot: [[
         "TOTAL",
-        nf(gastosAdicionales),
-        tasaCambio > 0 ? nf(gastosAdicionales / tasaCambio) : "s/t",
+        tasaCambio > 0 ? nf(gastosAdicionales + servicioUsd * tasaCambio) : nf(gastosAdicionales),
+        tasaCambio > 0 ? nf(gastosAdicionales / tasaCambio + servicioUsd) : "s/t",
       ]],
       theme: "grid",
       headStyles: sHead,
@@ -6019,13 +6033,17 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
     queryFn: async () =>
       (await supabase
         .from("costos_producto")
-        .select("monto_real")
+        .select("concepto, monto_real")
         .eq("expediente_id", exp.id)).data ?? [],
   });
-  const gastosAdicionales = (costosAdic ?? []).reduce((s: number, c: any) => s + (Number(c.monto_real) || 0), 0);
+  // Servicio Aduanero (pago a la DGA) es costo de mercancía: suma al costo por unidad.
+  const { data: filasServLiq = [] } = useFilasServicioAduanero(exp.id);
+  const { data: tarifasLiq = [] } = useTarifasServicioAduanero();
+  const servicioLiqUsd = totalServicioUsd(filasServLiq, tarifasLiq);
+  const gastosAdicionales = totalCostoMercanciaRd(costosAdic as any[], servicioLiqUsd);
   const tasaCambio = Number(exp.tasa_cambio_usada) || 0;
   const faltaTasa = gastosAdicionales > 0 && tasaCambio <= 0;
-  const gastosAdicionalesUSD = tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0;
+  const gastosAdicionalesUSD = (tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0) + servicioLiqUsd;
 
   const { data: almacenes } = useQuery({
     queryKey: ["almacenes-activos"],
@@ -6166,6 +6184,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             list={list}
             calcFila={calcFila}
             gastosAdicionales={gastosAdicionales}
+            servicioUsd={servicioLiqUsd}
             tasaCambio={tasaCambio}
           />
           {finalizado && isAdmin && !reabierto && (
@@ -6199,7 +6218,8 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             <div className="text-sm font-semibold tabular-nums">
               DOP {nf(gastosAdicionales)}{" "}
               <span className="text-muted-foreground font-normal">
-                ({faltaTasa ? "sin tasa" : `USD ${nf(gastosAdicionalesUSD)}`})
+                ({faltaTasa ? "sin tasa" : `USD ${nf(gastosAdicionalesUSD)}`}
+                {servicioLiqUsd > 0 ? ` · incl. Servicio Aduanero USD ${nf(servicioLiqUsd)}` : ""})
               </span>
             </div>
           </div>
