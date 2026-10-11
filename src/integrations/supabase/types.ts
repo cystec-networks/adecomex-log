@@ -1447,10 +1447,13 @@ export type Database = {
           estado_cobro: string
           estado_facturacion: string
           expediente_id: string
+          fecha_pago: string | null
           id: string
+          moneda: Database["public"]["Enums"]["moneda"]
           monto_estimado: number
           monto_real: number
           observaciones: string | null
+          referencia: string | null
         }
         Insert: {
           concepto: string
@@ -1458,10 +1461,13 @@ export type Database = {
           estado_cobro?: string
           estado_facturacion?: string
           expediente_id: string
+          fecha_pago?: string | null
           id?: string
+          moneda?: Database["public"]["Enums"]["moneda"]
           monto_estimado?: number
           monto_real?: number
           observaciones?: string | null
+          referencia?: string | null
         }
         Update: {
           concepto?: string
@@ -1469,10 +1475,13 @@ export type Database = {
           estado_cobro?: string
           estado_facturacion?: string
           expediente_id?: string
+          fecha_pago?: string | null
           id?: string
+          moneda?: Database["public"]["Enums"]["moneda"]
           monto_estimado?: number
           monto_real?: number
           observaciones?: string | null
+          referencia?: string | null
         }
         Relationships: [
           {
