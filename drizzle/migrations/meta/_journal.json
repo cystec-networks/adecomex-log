@@ -393,6 +393,13 @@
       "when": 1791744162024,
       "tag": "0055_rentabilidad_por_moneda",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1791745188465,
+      "tag": "0056_rentabilidad_sin_servicio_aduanero",
+      "breakpoints": true
     }
   ]
 }

@@ -91,6 +91,8 @@ import {
   useFilasServicioAduanero,
   useTarifasServicioAduanero,
   totalServicioUsd,
+  totalCostoMercanciaRd,
+  filaReemplazadaPorServicio,
   guardarFilasServicioAduanero,
   type FilaServicio,
 } from "@/lib/servicio-aduanero";
@@ -3161,8 +3163,6 @@ function CostosExpedienteCard({ expedienteId, canEdit }: { expedienteId: string;
     queryKey: ["costos", expedienteId],
     queryFn: async () => (await supabase.from("costos").select("*").eq("expediente_id", expedienteId).order("created_at")).data ?? [],
   });
-  const { data: filasServ = [] } = useFilasServicioAduanero(expedienteId);
-  const { data: tarifas = [] } = useTarifasServicioAduanero();
   const { data: transportes = [] } = useQuery({
     queryKey: ["costos-transportes", expedienteId],
     queryFn: async () =>
@@ -3209,9 +3209,8 @@ function CostosExpedienteCard({ expedienteId, canEdit }: { expedienteId: string;
     setOpen(true);
   };
 
-  const servicioUsd = totalServicioUsd(filasServ, tarifas);
+  // Servicio Aduanero es costo de mercancía (pago a la DGA): vive en «Costo de mercancía», no aquí.
   const filas: FilaCosto[] = [
-    ...(servicioUsd > 0 ? [{ key: "auto-servicio", concepto: "Servicio Aduanero", detalle: "Detalle de Mercancía", monto: servicioUsd, moneda: "USD", auto: true }] : []),
     ...(transportes as any[]).filter((t) => Number(t.costo_viaje) > 0).map((t) => ({
       key: `auto-tr-${t.id}`, concepto: "Transporte",
       detalle: [t.numero_viaje, t.transportista].filter(Boolean).join(" · ") || undefined,
@@ -3326,6 +3325,8 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
   const emptyForm = { concepto: CONCEPTOS_COSTO_ADICIONALES[0], monto_estimado: 0, monto_real: 0, observaciones: "" };
   const [f, setF] = useState<{ concepto: string; monto_estimado: number; monto_real: number; observaciones: string }>(emptyForm);
 
+  const { data: filasServ = [] } = useFilasServicioAduanero(expedienteId);
+  const { data: tarifas = [] } = useTarifasServicioAduanero();
   const { data: costos } = useQuery({
     queryKey: ["costos_producto", expedienteId],
     queryFn: async () =>
@@ -3373,19 +3374,21 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
     setOpen(true);
   };
 
+  const servicioUsd = totalServicioUsd(filasServ, tarifas);
   const totalEst = (costos ?? []).reduce((s: number, c: any) => s + Number(c.monto_estimado || 0), 0);
-  const totalReal = (costos ?? []).reduce((s: number, c: any) => s + Number(c.monto_real || 0), 0);
+  const totalReal = totalCostoMercanciaRd(costos as any[], servicioUsd);
   const fmt = (n: number) => new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
+  const fmtUsd = (n: number) => `US$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <div className="space-y-4">
       <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm">
-        Estos costos son del producto/mercancía, no del servicio de gestión aduanal — no afectan la rentabilidad del servicio en la Ficha de Finanzas.
+        Estos costos son de la mercancía (incluido el Servicio Aduanero que se paga a la DGA), no del servicio de gestión aduanal — no afectan el margen del servicio.
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total estimado</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalEst)}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total real</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalReal)}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total real (RD$)</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalReal)}</div>{servicioUsd > 0 && <div className="text-xs text-muted-foreground mt-1">+ Servicio Aduanero {fmtUsd(servicioUsd)}</div>}</CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Diferencia</div><div className={`text-2xl font-display font-bold mt-1 ${totalReal - totalEst > 0 ? "text-destructive" : "text-[var(--success)]"}`}>{fmt(totalReal - totalEst)}</div></CardContent></Card>
       </div>
 
@@ -3419,11 +3422,32 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
               <tr><th className="text-left px-4 py-2">Concepto</th><th className="text-left">Observaciones</th><th className="text-right">Estimado</th><th className="text-right">Real</th><th className="text-right">Δ</th><th className="text-right pr-4 w-24">Acciones</th></tr>
             </thead>
             <tbody>
+              {servicioUsd > 0 && (
+                <tr className="border-b bg-muted/20">
+                  <td className="px-4 py-2">
+                    <div className="flex items-center gap-2">
+                      <span>Servicio Aduanero</span>
+                      <Badge variant="secondary" className="text-[11px] font-normal" title="Se calcula desde los tipos de despacho en Detalle de Mercancía; no se edita aquí">Automático</Badge>
+                    </div>
+                  </td>
+                  <td className="text-muted-foreground">Tipos de despacho (Detalle de Mercancía)</td>
+                  <td className="text-right">—</td>
+                  <td className="text-right tabular-nums">{fmtUsd(servicioUsd)}</td>
+                  <td className="text-right">—</td>
+                  <td />
+                </tr>
+              )}
               {(costos ?? []).map((c: any) => {
                 const diff = Number(c.monto_real) - Number(c.monto_estimado);
+                const reemp = filaReemplazadaPorServicio(c.concepto, servicioUsd);
                 return (
-                  <tr key={c.id} className="border-b last:border-0">
-                    <td className="px-4 py-2">{c.concepto}</td>
+                  <tr key={c.id} className={`border-b last:border-0 ${reemp ? "text-muted-foreground" : ""}`}>
+                    <td className="px-4 py-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={reemp ? "line-through" : ""}>{c.concepto}</span>
+                        {reemp && <Badge variant="outline" className="text-[11px] font-normal">Reemplazada por la fila automática — no se suma</Badge>}
+                      </div>
+                    </td>
                     <td className="text-muted-foreground">{c.observaciones ?? "—"}</td>
                     <td className="text-right">{fmt(Number(c.monto_estimado))}</td>
                     <td className="text-right">{fmt(Number(c.monto_real))}</td>
@@ -3437,7 +3461,7 @@ function TabCostosProducto({ expedienteId }: { expedienteId: string }) {
                   </tr>
                 );
               })}
-              {(!costos || costos.length === 0) && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Sin costos de producto registrados.</td></tr>}
+              {(!costos || costos.length === 0) && servicioUsd <= 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Sin costos de producto registrados.</td></tr>}
             </tbody>
           </table>
         </CardContent>
@@ -5653,12 +5677,14 @@ function LiquidacionFinalPdfButton({
   list,
   calcFila,
   gastosAdicionales,
+  servicioUsd,
   tasaCambio,
 }: {
   exp: any;
   list: any[];
   calcFila: (it: any) => any;
   gastosAdicionales: number;
+  servicioUsd: number;
   tasaCambio: number;
 }) {
   const { user } = useCurrentUser();
@@ -5792,8 +5818,10 @@ function LiquidacionFinalPdfButton({
     const fleteExp = Number(exp.flete) || 0;
     const otrosExp = Number(exp.otros) || 0;
     const totalFobExp = list.reduce((s, it) => s + (Number(it.valor_fob) || 0), 0);
-    const gastosAdicionalesUSD = tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0;
-    const servicioAduaneroUsdPdf = await servicioAduaneroDeExpediente(exp);
+    const servicioAduaneroUsdPdf = servicioUsd;
+    // Desglose por unidad: Costo de mercancía + Servicio Aduanero (igual que en pantalla).
+    const gastosAdicionalesUSD = (tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0) + servicioUsd;
+    const gastosProductoSoloUSD = tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0;
 
     const td = { cant: 0, fob: 0, seg: 0, fle: 0, otr: 0, cif: 0, gr: 0, ir: 0, gp: 0, cu: 0 };
     const bodyDesglose = list.map((it) => {
@@ -5886,7 +5914,7 @@ function LiquidacionFinalPdfButton({
         ["Servicio Aduanero", nf(servicioAduaneroUsdPdf)],
         ["Formulario DUA (RD$258.26 fijo)", tasaCambio > 0 ? nf(FORMULARIO_DUA_RD / tasaCambio) : "s/t"],
         ["ISC Real Total", nf(t.iReal)],
-        ["Gastos del Producto (USD)", nf(gastosAdicionalesUSD)],
+        ["Costo de Mercancía (USD, sin Servicio Aduanero)", nf(gastosProductoSoloUSD)],
         ["INVERSIÓN TOTAL", nf(t.inv)],
       ],
       theme: "grid",
@@ -5901,18 +5929,28 @@ function LiquidacionFinalPdfButton({
     autoTable(doc, {
       startY: summaryStartY,
       pageBreak: "avoid",
-      head: [["Costos del Producto", "DOP", "USD"]],
-      body: cp.length
-        ? cp.map((c) => [
-            c.concepto ?? "—",
-            nf(Number(c.monto_real) || 0),
-            tasaCambio > 0 ? nf((Number(c.monto_real) || 0) / tasaCambio) : "s/t",
-          ])
+      head: [["Costo de Mercancía", "DOP", "USD"]],
+      body: (cp.length || servicioUsd > 0)
+        ? [
+            ...(servicioUsd > 0 ? [[
+              "Servicio Aduanero (automático)",
+              tasaCambio > 0 ? nf(servicioUsd * tasaCambio) : "s/t",
+              nf(servicioUsd),
+            ]] : []),
+            ...cp.map((c) => {
+              const reemp = filaReemplazadaPorServicio(c.concepto, servicioUsd);
+              return [
+                `${c.concepto ?? "—"}${reemp ? " (reemplazada, no se suma)" : ""}`,
+                nf(Number(c.monto_real) || 0),
+                tasaCambio > 0 ? nf((Number(c.monto_real) || 0) / tasaCambio) : "s/t",
+              ];
+            }),
+          ]
         : [["Sin costos registrados", "—", "—"]],
       foot: [[
         "TOTAL",
-        nf(gastosAdicionales),
-        tasaCambio > 0 ? nf(gastosAdicionales / tasaCambio) : "s/t",
+        tasaCambio > 0 ? nf(gastosAdicionales + servicioUsd * tasaCambio) : nf(gastosAdicionales),
+        tasaCambio > 0 ? nf(gastosAdicionales / tasaCambio + servicioUsd) : "s/t",
       ]],
       theme: "grid",
       headStyles: sHead,
@@ -6019,13 +6057,17 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
     queryFn: async () =>
       (await supabase
         .from("costos_producto")
-        .select("monto_real")
+        .select("concepto, monto_real")
         .eq("expediente_id", exp.id)).data ?? [],
   });
-  const gastosAdicionales = (costosAdic ?? []).reduce((s: number, c: any) => s + (Number(c.monto_real) || 0), 0);
+  // Servicio Aduanero (pago a la DGA) es costo de mercancía: suma al costo por unidad.
+  const { data: filasServLiq = [] } = useFilasServicioAduanero(exp.id);
+  const { data: tarifasLiq = [] } = useTarifasServicioAduanero();
+  const servicioLiqUsd = totalServicioUsd(filasServLiq, tarifasLiq);
+  const gastosAdicionales = totalCostoMercanciaRd(costosAdic as any[], servicioLiqUsd);
   const tasaCambio = Number(exp.tasa_cambio_usada) || 0;
   const faltaTasa = gastosAdicionales > 0 && tasaCambio <= 0;
-  const gastosAdicionalesUSD = tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0;
+  const gastosAdicionalesUSD = (tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0) + servicioLiqUsd;
 
   const { data: almacenes } = useQuery({
     queryKey: ["almacenes-activos"],
@@ -6166,6 +6208,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             list={list}
             calcFila={calcFila}
             gastosAdicionales={gastosAdicionales}
+            servicioUsd={servicioLiqUsd}
             tasaCambio={tasaCambio}
           />
           {finalizado && isAdmin && !reabierto && (
@@ -6199,7 +6242,8 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             <div className="text-sm font-semibold tabular-nums">
               DOP {nf(gastosAdicionales)}{" "}
               <span className="text-muted-foreground font-normal">
-                ({faltaTasa ? "sin tasa" : `USD ${nf(gastosAdicionalesUSD)}`})
+                ({faltaTasa ? "sin tasa" : `USD ${nf(gastosAdicionalesUSD)}`}
+                {servicioLiqUsd > 0 ? ` · incl. Servicio Aduanero USD ${nf(servicioLiqUsd)}` : ""})
               </span>
             </div>
           </div>

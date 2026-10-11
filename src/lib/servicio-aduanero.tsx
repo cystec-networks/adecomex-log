@@ -271,3 +271,5 @@ export async function servicioAduaneroDeExpediente(exp: any): Promise<number> {
     return s + (t ? (Number(t.tarifa_usd) || 0) * (Number(f.cantidad) || 0) : 0);
   }, 0);
 }
+
+export { CONCEPTO_TASA_SERVICIO, filaReemplazadaPorServicio, totalCostoMercanciaRd } from "./costo-mercancia";
