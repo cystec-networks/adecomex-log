@@ -400,6 +400,13 @@
       "when": 1791745188465,
       "tag": "0056_rentabilidad_sin_servicio_aduanero",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1791770337154,
+      "tag": "0057_margen_servicio_solo_viaje_y_honorarios",
+      "breakpoints": true
     }
   ]
 }
