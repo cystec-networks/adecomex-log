@@ -1,9 +1,17 @@
 /** Concepto manual de Costo de mercancía que la fila automática de Servicio Aduanero reemplaza. */
 export const CONCEPTO_TASA_SERVICIO = "Tasa Servicio Aduanero";
 
-/** La fila manual queda reemplazada (no se suma) cuando la automática tiene monto. */
+/** Concepto manual retirado: el Formulario DUA ahora se suma siempre de forma automática. */
+export const CONCEPTO_DUA_MANUAL = "Declaración Única Aduanera";
+
+/** Cargo fijo del Formulario DUA (RD$), sumado automáticamente al costo de mercancía. */
+export const FORMULARIO_DUA_RD = 258.26;
+
+/** La fila manual queda reemplazada (no se suma) cuando hay una fila automática equivalente. */
 export function filaReemplazadaPorServicio(concepto: string | null | undefined, servicioUsd: number): boolean {
-  return servicioUsd > 0 && String(concepto ?? "").trim() === CONCEPTO_TASA_SERVICIO;
+  const c = String(concepto ?? "").trim();
+  if (c === CONCEPTO_DUA_MANUAL) return true;
+  return servicioUsd > 0 && c === CONCEPTO_TASA_SERVICIO;
 }
 
 /** Total en RD$ de Costo de mercancía que sí se suma, excluyendo filas reemplazadas por la automática. */
