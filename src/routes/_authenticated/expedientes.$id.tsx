@@ -5626,18 +5626,24 @@ function LiquidacionFinalPdfButton({
 
     const margenTotal = t.venta - t.inv;
     const margenPct = t.venta > 0 ? (margenTotal / t.venta) * 100 : 0;
+    // El Costo Unit. Real es la base para fijar el precio: sin precio de venta cargado no se calcula margen.
+    const hayVenta = t.venta > 0;
+    const headMain = [
+      "Descripción", "País de Origen", "Cantidad", "Gravamen Est. (RD$)", "Gravamen Real (RD$)", "ISC Est. (RD$)", "ISC Real (RD$)",
+      "ITBIS Est. (RD$)", "ITBIS Real (RD$)", "Costo Unit. Real", "Costo de Venta", "Margen Unit.", "% Margen",
+    ];
+    const footMain = [
+      "TOTALES", "", nf(t.cant), rd(t.gEst), rd(t.gReal), rd(t.iEst), rd(t.iReal),
+      rd(t.tEst), rd(t.tReal), "", "", nf(margenTotal), `${margenPct.toFixed(1)}%`,
+    ];
+    const nCols = hayVenta ? 13 : 10;
+    const destacado = { fillColor: [254, 243, 199] as [number, number, number], textColor: 20, fontStyle: "bold" as const, fontSize: 8 };
 
     autoTable(doc, {
       startY: 106,
-      head: [[
-        "Descripción", "País de Origen", "Cantidad", "Gravamen Est. (RD$)", "Gravamen Real (RD$)", "ISC Est. (RD$)", "ISC Real (RD$)",
-        "ITBIS Est. (RD$)", "ITBIS Real (RD$)", "Costo Unit. Real", "Costo de Venta", "Margen Unit.", "% Margen",
-      ]],
-      body,
-      foot: [[
-        "TOTALES", "", nf(t.cant), rd(t.gEst), rd(t.gReal), rd(t.iEst), rd(t.iReal),
-        rd(t.tEst), rd(t.tReal), "", "", nf(margenTotal), `${margenPct.toFixed(1)}%`,
-      ]],
+      head: [headMain.slice(0, nCols)],
+      body: body.map((r) => r.slice(0, nCols)),
+      foot: [footMain.slice(0, nCols)],
       theme: "grid",
       headStyles: { fillColor: [30, 58, 138], fontSize: 7 },
       bodyStyles: { fontSize: 6.8 },
@@ -5646,8 +5652,11 @@ function LiquidacionFinalPdfButton({
         0: { cellWidth: 130 }, 1: { cellWidth: 50 },
         2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" },
         5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" },
-        8: { halign: "right" }, 9: { halign: "right" }, 10: { halign: "right" },
+        8: { halign: "right" }, 9: { halign: "right", ...destacado }, 10: { halign: "right" },
         11: { halign: "right" }, 12: { halign: "right" },
+      },
+      didParseCell: (d: any) => {
+        if (d.column.index === 9 && d.section === "head") { d.cell.styles.fillColor = [180, 83, 9]; d.cell.styles.fontSize = 7.5; }
       },
       margin: { left: M, right: M },
     });
@@ -5805,11 +5814,16 @@ function LiquidacionFinalPdfButton({
       startY: summaryStartY,
       pageBreak: "avoid",
       head: [["Resumen final (US$)", ""]],
-      body: [
-        ["Inversión total", nf(t.inv)],
-        ["Valor de venta esperado", nf(t.venta)],
-        ["Margen esperado total", `${nf(margenTotal)} (${margenPct.toFixed(1)}%)`],
-      ],
+      body: hayVenta
+        ? [
+            ["Inversión total", nf(t.inv)],
+            ["Valor de venta esperado", nf(t.venta)],
+            ["Margen esperado total", `${nf(margenTotal)} (${margenPct.toFixed(1)}%)`],
+          ]
+        : [
+            ["Inversión total", nf(t.inv)],
+            [{ content: "Precio de venta aún no asignado — este costo real es la base para fijarlo.", colSpan: 2, styles: { fontStyle: "italic", textColor: 80, halign: "left" } }],
+          ],
       theme: "grid",
       headStyles: sHead,
       bodyStyles: sStyles,
