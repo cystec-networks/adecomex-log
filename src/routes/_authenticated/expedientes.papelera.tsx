@@ -17,7 +17,7 @@ import { fmtLocalDate } from "@/lib/dates";
 import { fmtRD } from "@/lib/facturas-ecf";
 import { useMyRoles } from "@/lib/auth-hooks";
 
-type Kind = "expedientes" | "solicitudes" | "permisos" | "transportes" | "cotizaciones" | "ordenes" | "facturas_ecf" | "operaciones_logistica";
+type Kind = "expedientes" | "solicitudes" | "permisos" | "transportes" | "cotizaciones" | "ordenes" | "facturas_ecf" | "operaciones_logistica" | "gastos";
 
 export const Route = createFileRoute("/_authenticated/expedientes/papelera")({
   component: Papelera,
@@ -113,12 +113,21 @@ function Papelera() {
       .order("eliminado_en", { ascending: false })).data ?? [],
   });
 
+  const gastos = useQuery({
+    queryKey: ["papelera-gastos"],
+    enabled: !!isAdmin,
+    queryFn: async () => (await supabase
+      .from("gastos")
+      .select("id, concepto, monto, fecha, deleted_at, expedientes(numero)")
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false })).data ?? [],
+  });
+
   const restoreMut = useMutation({
     mutationFn: async ({ kind, id }: { kind: Kind; id: string }) => {
-      const { error } = await supabase
-        .from(kind)
-        .update({ eliminado_en: null, eliminado_por: null })
-        .eq("id", id);
+      const { error } = kind === "gastos"
+        ? await supabase.from("gastos").update({ deleted_at: null, deleted_by: null }).eq("id", id)
+        : await supabase.from(kind).update({ eliminado_en: null, eliminado_por: null }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: (_d, vars) => {
@@ -131,6 +140,7 @@ function Papelera() {
         ordenes: "Orden restaurada",
         facturas_ecf: "Factura restaurada",
         operaciones_logistica: "Operación logística restaurada",
+        gastos: "Gasto restaurado",
       };
 
       toast.success(label[vars.kind]);
@@ -184,6 +194,7 @@ function Papelera() {
   const ordRows = ordenes.data ?? [];
   const facRows = facturas.data ?? [];
   const logRows = operacionesLogistica.data ?? [];
+  const gasRows = gastos.data ?? [];
 
 
   return (
@@ -207,6 +218,7 @@ function Papelera() {
           <TabsTrigger value="ordenes">Órdenes ({ordRows.length})</TabsTrigger>
           <TabsTrigger value="facturas_ecf">Facturas ({facRows.length})</TabsTrigger>
           <TabsTrigger value="operaciones_logistica">Logística ({logRows.length})</TabsTrigger>
+          <TabsTrigger value="gastos">Gastos ({gasRows.length})</TabsTrigger>
 
         </TabsList>
 
@@ -600,6 +612,52 @@ function Papelera() {
                         </td>
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="gastos">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Gastos eliminados: {gasRows.length}</CardTitle></CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              {gasRows.length === 0 ? (
+                <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin gastos en papelera.</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-muted-foreground border-b bg-muted/20">
+                    <tr>
+                      <th className="text-left px-4 py-2">Expediente</th>
+                      <th className="text-left">Concepto</th>
+                      <th className="text-right">Monto</th>
+                      <th className="text-left pl-4">Fecha</th>
+                      <th className="text-left">Eliminado el</th>
+                      <th className="text-right px-4 py-2">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {gasRows.map((g: any) => {
+                      const etiqueta = `${g.concepto ?? "Gasto"} · ${g.expedientes?.numero ?? ""}`;
+                      return (
+                        <tr key={g.id} className="border-b last:border-0 hover:bg-muted/40">
+                          <td className="px-4 py-2 expediente-numero">{g.expedientes?.numero ?? "—"}</td>
+                          <td>{g.concepto ?? "—"}</td>
+                          <td className="text-right tabular-nums">{fmtRD(Number(g.monto || 0))}</td>
+                          <td className="pl-4">{g.fecha ? fmtLocalDate(g.fecha) : "—"}</td>
+                          <td className="text-xs text-muted-foreground">{g.deleted_at ? new Date(g.deleted_at).toLocaleString("es-DO") : "—"}</td>
+                          <td className="px-4 py-2 text-right whitespace-nowrap">
+                            <Button variant="ghost" size="sm" onClick={() => setToRestore({ kind: "gastos", id: g.id, numero: etiqueta })}>
+                              <RotateCcw className="h-4 w-4 mr-1" /> Restaurar
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                              onClick={() => { setToDelete({ kind: "gastos", id: g.id, numero: etiqueta }); setConfirmText(""); }}>
+                              <Trash2 className="h-4 w-4 mr-1" /> Eliminar
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
