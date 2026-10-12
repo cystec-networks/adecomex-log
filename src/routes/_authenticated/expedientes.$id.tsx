@@ -6142,8 +6142,128 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
           El Costo Unitario Real incluye FOB + prorrateo de flete, seguro y otros + Gravamen e ISC reales + prorrateo de
           gastos adicionales. El ITBIS no se incluye por ser crédito fiscal recuperable.
         </p>
+        {list.length > 0 && (
+          <ResultadosLiquidacionView
+            r={calcularResultadosLiquidacion({
+              exp, list, calcFila, gastosAdicionales, servicioUsd: servicioLiqUsd, tasaCambio, costosProducto: filasAdic,
+            })}
+            tasaCambio={tasaCambio}
+          />
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+/** Vista en pantalla de los resultados; usa exactamente el mismo cálculo que el PDF. */
+function ResultadosLiquidacionView({ r, tasaCambio }: { r: ReturnType<typeof calcularResultadosLiquidacion>; tasaCambio: number }) {
+  const nf = (n: number | null | undefined) =>
+    n == null ? "—" : n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const rd = (usd: number | null | undefined) => (usd == null || !tasaCambio || tasaCambio <= 0 ? "—" : nf(usd * tasaCambio));
+  const t = r.totales;
+  const th = "py-1.5 px-2 text-right font-medium";
+  const td = "py-1.5 px-2 text-right tabular-nums";
+  return (
+    <div className="mt-6 border-t pt-4 space-y-4">
+      <div>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-primary">Resultados de la Liquidación</h3>
+        <p className="text-[11px] text-muted-foreground">Mismos datos del PDF, actualizados al momento.</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b text-muted-foreground">
+              <th className="py-1.5 pr-2 text-left font-medium">Producto</th>
+              <th className={th}>Cantidad</th>
+              <th className={th}>CIF Unit. (RD$)</th>
+              <th className={th}>Gravamen Real (RD$)</th>
+              <th className={th}>ISC Real (RD$)</th>
+              <th className={th}>ITBIS Real (RD$)</th>
+              <th className={`${th} bg-accent text-accent-foreground`}>Costo Unit. Real (US$)</th>
+              {r.hayVenta && <><th className={th}>Costo de Venta</th><th className={th}>Margen Unit.</th><th className={th}>% Margen</th></>}
+            </tr>
+          </thead>
+          <tbody>
+            {r.productos.map((p, i) => (
+              <tr key={i} className="border-b last:border-0">
+                <td className="py-1.5 pr-2 max-w-[220px] truncate">{p.descripcion}</td>
+                <td className={td}>{nf(p.c.cant)}</td>
+                <td className={td}>{rd(p.cifUnit)}</td>
+                <td className={td}>{rd(p.c.gr)}</td>
+                <td className={td}>{rd(p.c.ir)}</td>
+                <td className={td}>{rd(p.c.tr)}</td>
+                <td className={`${td} font-semibold bg-accent/50`}>{nf(p.c.costoUnit)}</td>
+                {r.hayVenta && <>
+                  <td className={td}>{nf(p.c.cv)}</td>
+                  <td className={td}>{nf(p.margenUnit)}</td>
+                  <td className={td}>{p.pct == null ? "—" : `${p.pct.toFixed(1)}%`}</td>
+                </>}
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t font-semibold">
+              <td className="py-1.5 pr-2">TOTALES</td>
+              <td className={td}>{nf(t.cant)}</td>
+              <td className={td}></td>
+              <td className={td}>{rd(t.gReal)}</td>
+              <td className={td}>{rd(t.iReal)}</td>
+              <td className={td}>{rd(t.tReal)}</td>
+              <td className={td}></td>
+              {r.hayVenta && <><td className={td}></td><td className={td}>{nf(r.margenTotal)}</td><td className={td}>{r.margenPct.toFixed(1)}%</td></>}
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-md border p-3">
+          <div className="text-xs font-semibold mb-2">Componentes de la Inversión (US$)</div>
+          {([
+            ["FOB Total", r.componentes.fobTotal],
+            ["Seguro Total", r.componentes.seguro],
+            ["Flete Total", r.componentes.flete],
+            ["Otros Total", r.componentes.otros],
+            ["Gravamen Real Total", r.componentes.gravamenReal],
+            ["Servicio Aduanero", r.componentes.servicioUsd],
+            ["Formulario DUA (RD$258.26 fijo)", tasaCambio > 0 ? FORMULARIO_DUA_RD / tasaCambio : null],
+            ["ISC Real Total", r.componentes.iscReal],
+            ["Costo de Mercancía (sin Servicio Aduanero)", r.componentes.costoMercanciaUsd],
+          ] as [string, number | null][]).map(([k, v]) => (
+            <div key={k} className="flex justify-between text-xs py-0.5"><span className="text-muted-foreground">{k}</span><span className="tabular-nums">{v == null ? "s/t" : nf(v)}</span></div>
+          ))}
+          <div className="flex justify-between text-xs pt-1 mt-1 border-t font-semibold"><span>INVERSIÓN TOTAL</span><span className="tabular-nums">{nf(r.componentes.inversionTotal)}</span></div>
+        </div>
+        <div className="rounded-md border p-3">
+          <div className="text-xs font-semibold mb-2 grid grid-cols-[1fr_auto_auto] gap-3"><span>Costo de Mercancía</span><span className="text-right w-20">DOP</span><span className="text-right w-20">USD</span></div>
+          {r.costosMercancia.length === 0 ? (
+            <div className="text-xs text-muted-foreground">Sin costos registrados</div>
+          ) : r.costosMercancia.map((c, i) => (
+            <div key={i} className={`grid grid-cols-[1fr_auto_auto] gap-3 text-xs py-0.5 ${c.reemplazada ? "text-muted-foreground line-through" : ""}`}>
+              <span className="truncate">{c.concepto}{c.reemplazada ? " (reemplazada)" : ""}</span>
+              <span className="text-right w-20 tabular-nums">{c.dop == null ? "s/t" : nf(c.dop)}</span>
+              <span className="text-right w-20 tabular-nums">{c.usd == null ? "s/t" : nf(c.usd)}</span>
+            </div>
+          ))}
+          <div className="grid grid-cols-[1fr_auto_auto] gap-3 text-xs pt-1 mt-1 border-t font-semibold">
+            <span>TOTAL</span>
+            <span className="text-right w-20 tabular-nums">{nf(r.costosTotal.dop)}</span>
+            <span className="text-right w-20 tabular-nums">{r.costosTotal.usd == null ? "s/t" : nf(r.costosTotal.usd)}</span>
+          </div>
+        </div>
+        <div className="rounded-md border p-3">
+          <div className="text-xs font-semibold mb-2">Resumen final (US$)</div>
+          <div className="flex justify-between text-xs py-0.5"><span className="text-muted-foreground">Inversión total</span><span className="tabular-nums font-semibold">{nf(t.inv)}</span></div>
+          {r.hayVenta ? (
+            <>
+              <div className="flex justify-between text-xs py-0.5"><span className="text-muted-foreground">Valor de venta esperado</span><span className="tabular-nums">{nf(t.venta)}</span></div>
+              <div className="flex justify-between text-xs py-0.5"><span className="text-muted-foreground">Margen esperado total</span><span className="tabular-nums">{nf(r.margenTotal)} ({r.margenPct.toFixed(1)}%)</span></div>
+            </>
+          ) : (
+            <p className="text-xs italic text-muted-foreground mt-1">Precio de venta aún no asignado — este costo real es la base para fijarlo.</p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
