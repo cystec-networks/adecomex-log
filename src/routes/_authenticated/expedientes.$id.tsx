@@ -6042,12 +6042,9 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
           <p className="text-sm text-muted-foreground">El expediente no tiene ítems de mercancía.</p>
         ) : (
           <>
-          <div className={`mb-3 rounded-md border px-3 py-2 flex items-start justify-between gap-3 flex-wrap ${faltaTasa ? "border-destructive/50 bg-destructive/10" : "bg-muted/40"}`}>
+          <div className={`mb-3 rounded-md border px-3 py-2 flex items-center justify-between gap-3 flex-wrap ${faltaTasa ? "border-destructive/50 bg-destructive/10" : "bg-muted/40"}`}>
             <div>
               <div className="text-xs font-medium">Gastos adicionales prorrateados (Costos del Producto)</div>
-              <div className="text-[11px] text-muted-foreground">
-                Suma de los montos reales de «Costo de mercancía» ({CONCEPTOS_COSTO_ADICIONALES.join(", ")}, y también Flete internacional o Seguro cuando se carguen), más el Servicio Aduanero y el Formulario DUA (RD${FORMULARIO_DUA_RD.toFixed(2)}) automáticos. Flete internacional y Seguro aquí son solo costos ADICIONALES al Flete Total y Seguro Total del Expediente — no los corrigen ni reemplazan; cargarlos para eso los sumaría dos veces. Aranceles e ITBIS nunca se cargan aquí: se capturan por producto (Gravamen Real / ITBIS Real) y el ITBIS no forma parte del costo real. Se convierten a USD con la tasa del expediente y se prorratean por línea según su participación en el FOB total.
-              </div>
               {faltaTasa && (
                 <div className="text-[11px] font-medium text-destructive mt-1">
                   Falta la tasa de cambio del Expediente — estos gastos no se están sumando al Costo Unit. Real.
@@ -6153,6 +6150,10 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             Completa Gravamen Real, ISC Real, ITBIS Real en todos los productos y selecciona un almacén para poder finalizar.
           </p>
         )}
+        <div className="mt-3 text-[11px] text-muted-foreground">
+          <span className="font-medium">Gastos adicionales prorrateados (Costos del Producto): </span>
+          Suma de los montos reales de «Costo de mercancía» ({CONCEPTOS_COSTO_ADICIONALES.join(", ")}, y también Flete internacional o Seguro cuando se carguen), más el Servicio Aduanero y el Formulario DUA (RD${FORMULARIO_DUA_RD.toFixed(2)}) automáticos. Flete internacional y Seguro aquí son solo costos ADICIONALES al Flete Total y Seguro Total del Expediente — no los corrigen ni reemplazan; cargarlos para eso los sumaría dos veces. Aranceles e ITBIS nunca se cargan aquí: se capturan por producto (Gravamen Real / ITBIS Real) y el ITBIS no forma parte del costo real. Se convierten a USD con la tasa del expediente y se prorratean por línea según su participación en el FOB total.
+        </div>
         <p className="mt-3 text-[11px] text-muted-foreground">
           El Costo Unitario Real incluye FOB + prorrateo de flete, seguro y otros + Gravamen e ISC reales + prorrateo de
           gastos adicionales. El ITBIS no se incluye por ser crédito fiscal recuperable.
