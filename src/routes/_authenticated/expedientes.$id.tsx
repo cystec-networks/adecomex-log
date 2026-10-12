@@ -6012,6 +6012,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             gastosAdicionales={gastosAdicionales}
             servicioUsd={servicioLiqUsd}
             tasaCambio={tasaCambio}
+            costosProducto={filasAdic}
           />
           {finalizado && isAdmin && !reabierto && (
             <Button variant="outline" size="sm" onClick={() => setReabierto(true)}>Reabrir liquidación</Button>
