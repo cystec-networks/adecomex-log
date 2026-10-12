@@ -24,3 +24,5 @@
 - [x] Ampliar alertas del detalle con permisos VUCE próximos, factura en mora, discrepancias de recepción y etapa estancada; verificado en dos expedientes reales y cuatro condiciones simuladas sin escribir datos, con seis pruebas de casos positivos/negativos.- [x] Compactar el header de Todos los Expedientes a dos filas: título + DGA/VUCE, Rastreos y Nuevo Expediente arriba; pestañas, contador y filtros abajo en una sola línea; verificado a 1366 y 1920 px.
 
 - [x] Checks por transición de Estado, Etapa X de N de solo lectura (TabTimeline ya no existía)
+
+- [ ] (Futuro, no implementar aún) Reclasificar los 27 gastos de reembolso: agregar «Es reembolso» en Costo de mercancía y que PDF/reporte de Reembolsos lean de ahí.
