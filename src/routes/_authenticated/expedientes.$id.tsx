@@ -5984,7 +5984,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
 
   const completo = !!almacenId && list.length > 0 && list.every((it) => {
     const c = calcFila(it);
-    return c.gr != null && c.ir != null && c.tr != null && c.cv != null;
+    return c.gr != null && c.ir != null && c.tr != null;
   });
 
   const Diff = ({ real, est }: { real: number | null; est: number }) => {
@@ -5993,6 +5993,18 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
     const cls = d > 0 ? "text-destructive font-medium" : "text-emerald-600 font-medium";
     return <span className={cls}>{d > 0 ? "+" : ""}{nf(d)}</span>;
   };
+
+  // Tras finalizar, el Costo de Venta se sigue pudiendo cargar sin reabrir la liquidación.
+  const guardarVenta = useMutation({
+    mutationFn: async ({ itemId, valor }: { itemId: string; valor: number | null }) => {
+      const { error: e1 } = await supabase.from("mercancia_items").update({ costo_venta_unitario: valor } as any).eq("id", itemId);
+      if (e1) throw e1;
+      const { error: e2 } = await (supabase.from("almacen_stock" as any) as any).update({ costo_venta_unitario: valor }).eq("mercancia_item_id", itemId);
+      if (e2) throw e2;
+    },
+    onSuccess: () => { toast.success("Costo de Venta guardado"); qc.invalidateQueries({ queryKey: ["mercancia-items", exp.id] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   const finalizar = useMutation({
     mutationFn: async () => {
@@ -6168,9 +6180,17 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
                     <td className="py-2 px-2 text-right"><Diff real={c.tr} est={c.est.itbis} /></td>
                     <td className="py-2 px-2 text-right font-medium">{nf(c.costoUnit)}</td>
                     <td className="py-2 pl-2 text-right">
-                      {editable ? (
+                      {editable || (finalizado && canEdit) ? (
                         <Input className="h-8 w-24 text-right" type="number" step="0.01" value={val(it, "costo_venta_unitario")}
-                          onChange={(e) => setVal(it.id, "costo_venta_unitario", e.target.value)} />
+                          onChange={(e) => setVal(it.id, "costo_venta_unitario", e.target.value)}
+                          onBlur={() => {
+                            if (editable) return;
+                            const d = draft[it.id]?.costo_venta_unitario;
+                            if (d === undefined) return;
+                            const nuevo = d === "" ? null : Number(d);
+                            const actual = it.costo_venta_unitario == null ? null : Number(it.costo_venta_unitario);
+                            if (nuevo !== actual) guardarVenta.mutate({ itemId: it.id, valor: nuevo });
+                          }} />
                       ) : nf(c.cv)}
                     </td>
                   </tr>
@@ -6182,7 +6202,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
         )}
         {editable && !completo && list.length > 0 && (
           <p className="mt-3 text-xs text-muted-foreground">
-            Completa Gravamen Real, ISC Real, ITBIS Real y Costo de Venta en todos los productos para poder finalizar.
+            Completa Gravamen Real, ISC Real, ITBIS Real en todos los productos y selecciona un almacén para poder finalizar.
           </p>
         )}
         <p className="mt-3 text-[11px] text-muted-foreground">
