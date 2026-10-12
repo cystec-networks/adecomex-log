@@ -223,7 +223,7 @@ const TIPOS_INCIDENCIA = [
 // Servicio Aduanero (pago a la DGA) sí va aquí: fila automática + concepto manual de respaldo.
 const CONCEPTOS_COSTO_ADICIONALES = [
   "Gestión Aduanal", "Tasa Servicio Aduanero", "Almacenaje", "Demora de contenedor", "Uso de Chasis", "Flete Terrestre", "Cargos Locales",
-  "Cargos THC", "Gastos en Puerto", "Declaración Única Aduanera", "Transporte local", "Otros",
+  "Cargos THC", "Gastos en Puerto", "Comisiones Bancarias", "Transporte local", "Otros",
 ];
 /** Conceptos de Costo de mercancía que abren en US$ al crear una fila nueva. */
 const CONCEPTOS_COSTO_USD_DEFAULT = ["Cargos THC", "Cargos Locales"];

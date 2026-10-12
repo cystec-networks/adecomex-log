@@ -16,7 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 /** Cargo fijo del Formulario DUA en pesos dominicanos (monto oficial SIGA). */
-export const FORMULARIO_DUA_RD = 258.26;
+export { FORMULARIO_DUA_RD } from "./costo-mercancia";
+import { FORMULARIO_DUA_RD } from "./costo-mercancia";
 
 export type TarifaServicio = { id: string; tipo_despacho: string; unidad: string; tarifa_usd: number };
 

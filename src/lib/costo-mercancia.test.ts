@@ -19,3 +19,9 @@ describe("Costo de mercancía y Servicio Aduanero automático", () => {
     assert.equal(filaReemplazadaPorServicio("Cargos Locales", 147.07), false);
   });
 });
+
+describe("Formulario DUA automático", () => {
+  test("la fila manual 'Declaración Única Aduanera' nunca se suma (evita doble conteo)", () => {
+    assert.equal(totalCostoMercanciaRd([{ concepto: "Declaración Única Aduanera", monto_real: 258.26 }, { concepto: "Otros", monto_real: 100 }], 0), 100);
+  });
+});
