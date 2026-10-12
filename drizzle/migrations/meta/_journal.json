@@ -407,6 +407,13 @@
       "when": 1791770337154,
       "tag": "0057_margen_servicio_solo_viaje_y_honorarios",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1791771348146,
+      "tag": "0058_margen_transporte_manual_respaldo",
+      "breakpoints": true
     }
   ]
 }
