@@ -5508,6 +5508,7 @@ function LiquidacionFinalPdfButton({
   gastosAdicionales,
   servicioUsd,
   tasaCambio,
+  costosProducto,
 }: {
   exp: any;
   list: any[];
@@ -5515,22 +5516,13 @@ function LiquidacionFinalPdfButton({
   gastosAdicionales: number;
   servicioUsd: number;
   tasaCambio: number;
+  costosProducto: any[];
 }) {
   const { user } = useCurrentUser();
   const qcLiq = useQueryClient();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const docRef = useRef<any>(null);
   const fileNameRef = useRef<string>("LiquidacionFinal.pdf");
-
-  const { data: costosProducto } = useQuery({
-    queryKey: ["costos-producto-pdf", exp.id],
-    queryFn: async () =>
-      (await supabase
-        .from("costos_producto")
-        .select("concepto, monto_real")
-        .eq("expediente_id", exp.id)
-        .order("created_at")).data ?? [],
-  });
 
   const cerrarPreview = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl.split("#")[0]);
@@ -5598,36 +5590,17 @@ function LiquidacionFinalPdfButton({
     }
     doc.setFont("helvetica", "normal"); doc.setTextColor(0);
 
-    const t = { cant: 0, gEst: 0, gReal: 0, iEst: 0, iReal: 0, tEst: 0, tReal: 0, inv: 0, venta: 0 };
-    const body = list.map((it) => {
-      const c = calcFila(it);
-      const cv = c.cv ?? 0;
-      const margenUnit = cv - c.costoUnit;
-      const pct = cv > 0 ? (margenUnit / cv) * 100 : 0;
-      t.cant += c.cant;
-      t.gEst += c.est.gravamen; t.gReal += c.gr ?? 0;
-      t.iEst += c.est.selectivo; t.iReal += c.ir ?? 0;
-      t.tEst += c.est.itbis; t.tReal += c.tr ?? 0;
-      t.inv += c.costoUnit * c.cant;
-      t.venta += cv * c.cant;
-      return [
-        it.detalle_producto ?? "—",
-        (it as any).pais_origen || exp.pais_origen || "—",
-        nf(c.cant),
-        rd(c.est.gravamen), rd(c.gr),
-        rd(c.est.selectivo), rd(c.ir),
-        rd(c.est.itbis), rd(c.tr),
-        nf(c.costoUnit),
-        c.cv == null ? "—" : nf(c.cv),
-        c.cv == null ? "—" : nf(margenUnit),
-        c.cv == null ? "—" : `${pct.toFixed(1)}%`,
-      ];
-    });
-
-    const margenTotal = t.venta - t.inv;
-    const margenPct = t.venta > 0 ? (margenTotal / t.venta) * 100 : 0;
-    // El Costo Unit. Real es la base para fijar el precio: sin precio de venta cargado no se calcula margen.
-    const hayVenta = t.venta > 0;
+    const r = calcularResultadosLiquidacion({ exp, list, calcFila, gastosAdicionales, servicioUsd, tasaCambio, costosProducto });
+    const t = r.totales;
+    const { margenTotal, margenPct, hayVenta } = r;
+    const body = r.productos.map(({ c, descripcion, pais, margenUnit, pct }) => [
+      descripcion, pais, nf(c.cant),
+      rd(c.est.gravamen), rd(c.gr), rd(c.est.selectivo), rd(c.ir), rd(c.est.itbis), rd(c.tr),
+      nf(c.costoUnit),
+      c.cv == null ? "—" : nf(c.cv),
+      margenUnit == null ? "—" : nf(margenUnit),
+      pct == null ? "—" : `${pct.toFixed(1)}%`,
+    ]);
     const headMain = [
       "Descripción", "País de Origen", "Cantidad", "Gravamen Est. (RD$)", "Gravamen Real (RD$)", "ISC Est. (RD$)", "ISC Real (RD$)",
       "ITBIS Est. (RD$)", "ITBIS Real (RD$)", "Costo Unit. Real", "Costo de Venta", "Margen Unit.", "% Margen",
@@ -5662,40 +5635,12 @@ function LiquidacionFinalPdfButton({
     });
 
     // --- Desglose del Costo Unitario Real por componente ---
-    const seguroExp = Number(exp.seguro) || 0;
-    const fleteExp = Number(exp.flete) || 0;
-    const otrosExp = Number(exp.otros) || 0;
-    const totalFobExp = list.reduce((s, it) => s + (Number(it.valor_fob) || 0), 0);
-    const servicioAduaneroUsdPdf = servicioUsd;
-    // Desglose por unidad: Costo de mercancía + Servicio Aduanero (igual que en pantalla).
-    const gastosAdicionalesUSD = (tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0) + servicioUsd;
-    const gastosProductoSoloUSD = tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0;
-
-    const td = { cant: 0, fob: 0, seg: 0, fle: 0, otr: 0, cif: 0, gr: 0, ir: 0, gp: 0, cu: 0 };
-    const bodyDesglose = list.map((it) => {
-      const c = calcFila(it);
-      const cant = c.cant;
-      const fob = c.fob;
-      const share = totalFobExp > 0 ? fob / totalFobExp : 0;
-      const segL = seguroExp * share;
-      const fleL = fleteExp * share;
-      const otrL = otrosExp * share;
-      const gpL = gastosAdicionalesUSD * share;
-      const u = (n: number) => (cant > 0 ? n / cant : 0);
-      td.cant += cant; td.fob += fob; td.seg += segL; td.fle += fleL; td.otr += otrL;
-      td.cif += c.est.cifLinea; td.gr += c.gr ?? 0; td.ir += c.ir ?? 0; td.gp += gpL;
-      td.cu += c.costoUnit * cant;
-      return [
-        it.detalle_producto ?? "—",
-        nf(cant),
-        nf(u(fob)), nf(u(segL)), nf(u(fleL)), nf(u(otrL)),
-        rd(u(c.est.cifLinea)),
-        c.gr == null ? "—" : rd(u(c.gr)),
-        c.ir == null ? "—" : rd(u(c.ir)),
-        nf(u(gpL)),
-        nf(c.costoUnit),
-      ];
-    });
+    const td = r.totalesDesglose;
+    const bodyDesglose = r.desglose.map((d) => [
+      d.descripcion, nf(d.cant), nf(d.fobU), nf(d.segU), nf(d.fleU), nf(d.otrU),
+      rd(d.cifU), d.grU == null ? "—" : rd(d.grU), d.irU == null ? "—" : rd(d.irU),
+      nf(d.gpU), nf(d.costoUnit),
+    ]);
 
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 12,
@@ -5723,15 +5668,13 @@ function LiquidacionFinalPdfButton({
       margin: { left: M, right: M },
     });
 
-    const cp = (costosProducto ?? []) as any[];
-
     // --- Summary block: 3 tables side-by-side, always trying to fit on page 1 ---
     const COL_W = 250;
     const GAP = 14;
     let summaryStartY = (doc as any).lastAutoTable.finalY + 10;
     const availH = pageH - 40 - summaryStartY;
     // tallest block is the costos table: header + rows + footer
-    const maxRows = Math.max(8, (cp.length || 1) + 1);
+    const maxRows = Math.max(8, (r.costosMercancia.length || 1) + 1);
     // shrink typography progressively so the block fits in the remaining space
     let fs = 8;
     let cellPad = 3;
@@ -5754,16 +5697,16 @@ function LiquidacionFinalPdfButton({
       pageBreak: "avoid",
       head: [["Componentes de la Inversión (US$)", ""]],
       body: [
-        ["FOB Total", nf(Number(exp.total_fob) || totalFobExp)],
-        ["Seguro Total", nf(seguroExp)],
-        ["Flete Total", nf(fleteExp)],
-        ["Otros Total", nf(otrosExp)],
-        ["Gravamen Real Total", nf(t.gReal)],
-        ["Servicio Aduanero", nf(servicioAduaneroUsdPdf)],
+        ["FOB Total", nf(r.componentes.fobTotal)],
+        ["Seguro Total", nf(r.componentes.seguro)],
+        ["Flete Total", nf(r.componentes.flete)],
+        ["Otros Total", nf(r.componentes.otros)],
+        ["Gravamen Real Total", nf(r.componentes.gravamenReal)],
+        ["Servicio Aduanero", nf(r.componentes.servicioUsd)],
         ["Formulario DUA (RD$258.26 fijo)", tasaCambio > 0 ? nf(FORMULARIO_DUA_RD / tasaCambio) : "s/t"],
-        ["ISC Real Total", nf(t.iReal)],
-        ["Costo de Mercancía (USD, sin Servicio Aduanero)", nf(gastosProductoSoloUSD)],
-        ["INVERSIÓN TOTAL", nf(t.inv)],
+        ["ISC Real Total", nf(r.componentes.iscReal)],
+        ["Costo de Mercancía (USD, sin Servicio Aduanero)", nf(r.componentes.costoMercanciaUsd)],
+        ["INVERSIÓN TOTAL", nf(r.componentes.inversionTotal)],
       ],
       theme: "grid",
       headStyles: sHead,
@@ -5778,27 +5721,17 @@ function LiquidacionFinalPdfButton({
       startY: summaryStartY,
       pageBreak: "avoid",
       head: [["Costo de Mercancía", "DOP", "USD"]],
-      body: (cp.length || servicioUsd > 0)
-        ? [
-            ...(servicioUsd > 0 ? [[
-              "Servicio Aduanero (automático)",
-              tasaCambio > 0 ? nf(servicioUsd * tasaCambio) : "s/t",
-              nf(servicioUsd),
-            ]] : []),
-            ...cp.map((c) => {
-              const reemp = filaReemplazadaPorServicio(c.concepto, servicioUsd);
-              return [
-                `${c.concepto ?? "—"}${reemp ? " (reemplazada, no se suma)" : ""}`,
-                nf(Number(c.monto_real) || 0),
-                tasaCambio > 0 ? nf((Number(c.monto_real) || 0) / tasaCambio) : "s/t",
-              ];
-            }),
-          ]
+      body: r.costosMercancia.length
+        ? r.costosMercancia.map((c) => [
+            `${c.concepto}${c.reemplazada ? " (reemplazada, no se suma)" : ""}`,
+            c.dop == null ? "s/t" : nf(c.dop),
+            c.usd == null ? "s/t" : nf(c.usd),
+          ])
         : [["Sin costos registrados", "—", "—"]],
       foot: [[
         "TOTAL",
-        tasaCambio > 0 ? nf(gastosAdicionales + servicioUsd * tasaCambio) : nf(gastosAdicionales),
-        tasaCambio > 0 ? nf(gastosAdicionales / tasaCambio + servicioUsd) : "s/t",
+        nf(r.costosTotal.dop),
+        r.costosTotal.usd == null ? "s/t" : nf(r.costosTotal.usd),
       ]],
       theme: "grid",
       headStyles: sHead,
