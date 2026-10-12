@@ -3206,7 +3206,7 @@ function TabCostosProducto({ expedienteId, exp }: { expedienteId: string; exp?: 
   const manuales = (costos ?? []) as any[];
   const tasa = Number(exp?.tasa_cambio_usada) || 0;
   const servicioRd = tasa > 0 ? servicioUsd * tasa : 0;
-  const totalReal = totalCostoMercanciaRd(manuales.filter((c) => (c.moneda ?? "DOP") === "DOP"), servicioUsd) + servicioRd;
+  const totalReal = totalCostoMercanciaRd(manuales.filter((c) => (c.moneda ?? "DOP") === "DOP"), servicioUsd) + servicioRd + FORMULARIO_DUA_RD;
   const totalUsd = totalCostoMercanciaRd(manuales.filter((c) => c.moneda === "USD"), servicioUsd);
   const servicioSinTasa = servicioUsd > 0 && tasa <= 0;
   const fmt = (n: number) => new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
@@ -3274,6 +3274,17 @@ function TabCostosProducto({ expedienteId, exp }: { expedienteId: string; exp?: 
                   <td />
                 </tr>
               )}
+              <tr className="border-b bg-muted/20">
+                <td className="px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    <span>Formulario DUA</span>
+                    <Badge variant="secondary" className="text-[11px] font-normal" title="Cargo fijo que se suma solo; no se carga a mano">Automático</Badge>
+                  </div>
+                </td>
+                <td className="text-muted-foreground">Cargo fijo</td>
+                <td className="text-right tabular-nums">{fmt(FORMULARIO_DUA_RD)}</td>
+                <td />
+              </tr>
               {(costos ?? []).map((c: any) => {
                 const reemp = filaReemplazadaPorServicio(c.concepto, servicioUsd);
                 return (
@@ -3295,7 +3306,7 @@ function TabCostosProducto({ expedienteId, exp }: { expedienteId: string; exp?: 
                   </tr>
                 );
               })}
-              {(!costos || costos.length === 0) && servicioUsd <= 0 && <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">Sin costos de producto registrados.</td></tr>}
+              {false && <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">Sin costos de producto registrados.</td></tr>}
             </tbody>
           </table>
         </CardContent>
@@ -5857,7 +5868,8 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
   const gastosAdicionalesUsdDirecto = totalCostoMercanciaRd(filasAdic.filter((c) => c.moneda === "USD"), servicioLiqUsd);
   const tasaCambio = Number(exp.tasa_cambio_usada) || 0;
   const faltaTasa = gastosAdicionales > 0 && tasaCambio <= 0;
-  const gastosAdicionalesUSD = (tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0) + servicioLiqUsd + gastosAdicionalesUsdDirecto;
+  // Formulario DUA (cargo fijo) se suma automáticamente al costo real, como el Servicio Aduanero.
+  const gastosAdicionalesUSD = (tasaCambio > 0 ? (gastosAdicionales + FORMULARIO_DUA_RD) / tasaCambio : 0) + servicioLiqUsd + gastosAdicionalesUsdDirecto;
 
   const { data: almacenes } = useQuery({
     queryKey: ["almacenes-activos"],
@@ -6034,7 +6046,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             <div>
               <div className="text-xs font-medium">Gastos adicionales prorrateados (Costos del Producto)</div>
               <div className="text-[11px] text-muted-foreground">
-                Suma de los montos reales registrados en la ficha "Costos del Producto" ({CONCEPTOS_COSTO_ADICIONALES.join(", ")}). Se convierten a USD con la tasa del expediente y se prorratean por línea según su participación en el FOB total.
+                Suma de los montos reales de «Costo de mercancía» ({CONCEPTOS_COSTO_ADICIONALES.join(", ")}, y también Flete internacional o Seguro cuando se carguen), más el Servicio Aduanero y el Formulario DUA (RD${FORMULARIO_DUA_RD.toFixed(2)}) automáticos. Flete internacional y Seguro aquí son solo costos ADICIONALES al Flete Total y Seguro Total del Expediente — no los corrigen ni reemplazan; cargarlos para eso los sumaría dos veces. Aranceles e ITBIS nunca se cargan aquí: se capturan por producto (Gravamen Real / ITBIS Real) y el ITBIS no forma parte del costo real. Se convierten a USD con la tasa del expediente y se prorratean por línea según su participación en el FOB total.
               </div>
               {faltaTasa && (
                 <div className="text-[11px] font-medium text-destructive mt-1">

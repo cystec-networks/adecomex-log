@@ -1,4 +1,4 @@
-import { filaReemplazadaPorServicio } from "@/lib/costo-mercancia";
+import { filaReemplazadaPorServicio, FORMULARIO_DUA_RD } from "@/lib/costo-mercancia";
 
 /** Fila calculada por producto (la produce calcFila de la sección Liquidación Final). */
 export type FilaCalc = {
@@ -57,7 +57,9 @@ export function calcularResultadosLiquidacion(args: {
   const flete = Number(exp.flete) || 0;
   const otros = Number(exp.otros) || 0;
   const totalFob = list.reduce((s, it) => s + (Number(it.valor_fob) || 0), 0);
-  const gastosAdicionalesUSD = (tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0) + servicioUsd;
+  // Formulario DUA: cargo fijo automático, se suma igual que el Servicio Aduanero.
+  const duaUsd = tasaCambio > 0 ? FORMULARIO_DUA_RD / tasaCambio : 0;
+  const gastosAdicionalesUSD = (tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0) + servicioUsd + duaUsd;
   const gastosProductoSoloUSD = tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0;
 
   const td = { cant: 0, fob: 0, seg: 0, fle: 0, otr: 0, cif: 0, gr: 0, ir: 0, gp: 0, cu: 0 };
@@ -84,6 +86,7 @@ export function calcularResultadosLiquidacion(args: {
     ...(servicioUsd > 0
       ? [{ concepto: "Servicio Aduanero (automático)", dop: tasaCambio > 0 ? servicioUsd * tasaCambio : null, usd: servicioUsd as number | null, reemplazada: false }]
       : []),
+    { concepto: "Formulario DUA (automático)", dop: FORMULARIO_DUA_RD as number | null, usd: tasaCambio > 0 ? duaUsd : null, reemplazada: false },
     ...costosProducto.map((c) => {
       const m = Number(c.monto_real) || 0;
       return {
@@ -95,8 +98,8 @@ export function calcularResultadosLiquidacion(args: {
     }),
   ];
   const costosTotal = {
-    dop: tasaCambio > 0 ? gastosAdicionales + servicioUsd * tasaCambio : gastosAdicionales,
-    usd: tasaCambio > 0 ? gastosAdicionales / tasaCambio + servicioUsd : null,
+    dop: (tasaCambio > 0 ? gastosAdicionales + servicioUsd * tasaCambio : gastosAdicionales) + FORMULARIO_DUA_RD,
+    usd: tasaCambio > 0 ? gastosAdicionales / tasaCambio + servicioUsd + duaUsd : null,
   };
 
   return {
