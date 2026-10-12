@@ -1,3 +1,4 @@
+import { calcularResultadosLiquidacion } from "@/lib/liquidacion-final";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { sha256File, prefijoSiga, siguienteCodigoSiga, validarNombreSiga, nombreArchivo } from "@/lib/codigo-siga";
@@ -5508,6 +5509,7 @@ function LiquidacionFinalPdfButton({
   gastosAdicionales,
   servicioUsd,
   tasaCambio,
+  costosProducto,
 }: {
   exp: any;
   list: any[];
@@ -5515,22 +5517,13 @@ function LiquidacionFinalPdfButton({
   gastosAdicionales: number;
   servicioUsd: number;
   tasaCambio: number;
+  costosProducto: any[];
 }) {
   const { user } = useCurrentUser();
   const qcLiq = useQueryClient();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const docRef = useRef<any>(null);
   const fileNameRef = useRef<string>("LiquidacionFinal.pdf");
-
-  const { data: costosProducto } = useQuery({
-    queryKey: ["costos-producto-pdf", exp.id],
-    queryFn: async () =>
-      (await supabase
-        .from("costos_producto")
-        .select("concepto, monto_real")
-        .eq("expediente_id", exp.id)
-        .order("created_at")).data ?? [],
-  });
 
   const cerrarPreview = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl.split("#")[0]);
@@ -5598,36 +5591,17 @@ function LiquidacionFinalPdfButton({
     }
     doc.setFont("helvetica", "normal"); doc.setTextColor(0);
 
-    const t = { cant: 0, gEst: 0, gReal: 0, iEst: 0, iReal: 0, tEst: 0, tReal: 0, inv: 0, venta: 0 };
-    const body = list.map((it) => {
-      const c = calcFila(it);
-      const cv = c.cv ?? 0;
-      const margenUnit = cv - c.costoUnit;
-      const pct = cv > 0 ? (margenUnit / cv) * 100 : 0;
-      t.cant += c.cant;
-      t.gEst += c.est.gravamen; t.gReal += c.gr ?? 0;
-      t.iEst += c.est.selectivo; t.iReal += c.ir ?? 0;
-      t.tEst += c.est.itbis; t.tReal += c.tr ?? 0;
-      t.inv += c.costoUnit * c.cant;
-      t.venta += cv * c.cant;
-      return [
-        it.detalle_producto ?? "—",
-        (it as any).pais_origen || exp.pais_origen || "—",
-        nf(c.cant),
-        rd(c.est.gravamen), rd(c.gr),
-        rd(c.est.selectivo), rd(c.ir),
-        rd(c.est.itbis), rd(c.tr),
-        nf(c.costoUnit),
-        c.cv == null ? "—" : nf(c.cv),
-        c.cv == null ? "—" : nf(margenUnit),
-        c.cv == null ? "—" : `${pct.toFixed(1)}%`,
-      ];
-    });
-
-    const margenTotal = t.venta - t.inv;
-    const margenPct = t.venta > 0 ? (margenTotal / t.venta) * 100 : 0;
-    // El Costo Unit. Real es la base para fijar el precio: sin precio de venta cargado no se calcula margen.
-    const hayVenta = t.venta > 0;
+    const r = calcularResultadosLiquidacion({ exp, list, calcFila, gastosAdicionales, servicioUsd, tasaCambio, costosProducto });
+    const t = r.totales;
+    const { margenTotal, margenPct, hayVenta } = r;
+    const body = r.productos.map(({ c, descripcion, pais, margenUnit, pct }) => [
+      descripcion, pais, nf(c.cant),
+      rd(c.est.gravamen), rd(c.gr), rd(c.est.selectivo), rd(c.ir), rd(c.est.itbis), rd(c.tr),
+      nf(c.costoUnit),
+      c.cv == null ? "—" : nf(c.cv),
+      margenUnit == null ? "—" : nf(margenUnit),
+      pct == null ? "—" : `${pct.toFixed(1)}%`,
+    ]);
     const headMain = [
       "Descripción", "País de Origen", "Cantidad", "Gravamen Est. (RD$)", "Gravamen Real (RD$)", "ISC Est. (RD$)", "ISC Real (RD$)",
       "ITBIS Est. (RD$)", "ITBIS Real (RD$)", "Costo Unit. Real", "Costo de Venta", "Margen Unit.", "% Margen",
@@ -5662,40 +5636,12 @@ function LiquidacionFinalPdfButton({
     });
 
     // --- Desglose del Costo Unitario Real por componente ---
-    const seguroExp = Number(exp.seguro) || 0;
-    const fleteExp = Number(exp.flete) || 0;
-    const otrosExp = Number(exp.otros) || 0;
-    const totalFobExp = list.reduce((s, it) => s + (Number(it.valor_fob) || 0), 0);
-    const servicioAduaneroUsdPdf = servicioUsd;
-    // Desglose por unidad: Costo de mercancía + Servicio Aduanero (igual que en pantalla).
-    const gastosAdicionalesUSD = (tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0) + servicioUsd;
-    const gastosProductoSoloUSD = tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0;
-
-    const td = { cant: 0, fob: 0, seg: 0, fle: 0, otr: 0, cif: 0, gr: 0, ir: 0, gp: 0, cu: 0 };
-    const bodyDesglose = list.map((it) => {
-      const c = calcFila(it);
-      const cant = c.cant;
-      const fob = c.fob;
-      const share = totalFobExp > 0 ? fob / totalFobExp : 0;
-      const segL = seguroExp * share;
-      const fleL = fleteExp * share;
-      const otrL = otrosExp * share;
-      const gpL = gastosAdicionalesUSD * share;
-      const u = (n: number) => (cant > 0 ? n / cant : 0);
-      td.cant += cant; td.fob += fob; td.seg += segL; td.fle += fleL; td.otr += otrL;
-      td.cif += c.est.cifLinea; td.gr += c.gr ?? 0; td.ir += c.ir ?? 0; td.gp += gpL;
-      td.cu += c.costoUnit * cant;
-      return [
-        it.detalle_producto ?? "—",
-        nf(cant),
-        nf(u(fob)), nf(u(segL)), nf(u(fleL)), nf(u(otrL)),
-        rd(u(c.est.cifLinea)),
-        c.gr == null ? "—" : rd(u(c.gr)),
-        c.ir == null ? "—" : rd(u(c.ir)),
-        nf(u(gpL)),
-        nf(c.costoUnit),
-      ];
-    });
+    const td = r.totalesDesglose;
+    const bodyDesglose = r.desglose.map((d) => [
+      d.descripcion, nf(d.cant), nf(d.fobU), nf(d.segU), nf(d.fleU), nf(d.otrU),
+      rd(d.cifU), d.grU == null ? "—" : rd(d.grU), d.irU == null ? "—" : rd(d.irU),
+      nf(d.gpU), nf(d.costoUnit),
+    ]);
 
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 12,
@@ -5723,15 +5669,13 @@ function LiquidacionFinalPdfButton({
       margin: { left: M, right: M },
     });
 
-    const cp = (costosProducto ?? []) as any[];
-
     // --- Summary block: 3 tables side-by-side, always trying to fit on page 1 ---
     const COL_W = 250;
     const GAP = 14;
     let summaryStartY = (doc as any).lastAutoTable.finalY + 10;
     const availH = pageH - 40 - summaryStartY;
     // tallest block is the costos table: header + rows + footer
-    const maxRows = Math.max(8, (cp.length || 1) + 1);
+    const maxRows = Math.max(8, (r.costosMercancia.length || 1) + 1);
     // shrink typography progressively so the block fits in the remaining space
     let fs = 8;
     let cellPad = 3;
@@ -5754,16 +5698,16 @@ function LiquidacionFinalPdfButton({
       pageBreak: "avoid",
       head: [["Componentes de la Inversión (US$)", ""]],
       body: [
-        ["FOB Total", nf(Number(exp.total_fob) || totalFobExp)],
-        ["Seguro Total", nf(seguroExp)],
-        ["Flete Total", nf(fleteExp)],
-        ["Otros Total", nf(otrosExp)],
-        ["Gravamen Real Total", nf(t.gReal)],
-        ["Servicio Aduanero", nf(servicioAduaneroUsdPdf)],
+        ["FOB Total", nf(r.componentes.fobTotal)],
+        ["Seguro Total", nf(r.componentes.seguro)],
+        ["Flete Total", nf(r.componentes.flete)],
+        ["Otros Total", nf(r.componentes.otros)],
+        ["Gravamen Real Total", nf(r.componentes.gravamenReal)],
+        ["Servicio Aduanero", nf(r.componentes.servicioUsd)],
         ["Formulario DUA (RD$258.26 fijo)", tasaCambio > 0 ? nf(FORMULARIO_DUA_RD / tasaCambio) : "s/t"],
-        ["ISC Real Total", nf(t.iReal)],
-        ["Costo de Mercancía (USD, sin Servicio Aduanero)", nf(gastosProductoSoloUSD)],
-        ["INVERSIÓN TOTAL", nf(t.inv)],
+        ["ISC Real Total", nf(r.componentes.iscReal)],
+        ["Costo de Mercancía (USD, sin Servicio Aduanero)", nf(r.componentes.costoMercanciaUsd)],
+        ["INVERSIÓN TOTAL", nf(r.componentes.inversionTotal)],
       ],
       theme: "grid",
       headStyles: sHead,
@@ -5778,27 +5722,17 @@ function LiquidacionFinalPdfButton({
       startY: summaryStartY,
       pageBreak: "avoid",
       head: [["Costo de Mercancía", "DOP", "USD"]],
-      body: (cp.length || servicioUsd > 0)
-        ? [
-            ...(servicioUsd > 0 ? [[
-              "Servicio Aduanero (automático)",
-              tasaCambio > 0 ? nf(servicioUsd * tasaCambio) : "s/t",
-              nf(servicioUsd),
-            ]] : []),
-            ...cp.map((c) => {
-              const reemp = filaReemplazadaPorServicio(c.concepto, servicioUsd);
-              return [
-                `${c.concepto ?? "—"}${reemp ? " (reemplazada, no se suma)" : ""}`,
-                nf(Number(c.monto_real) || 0),
-                tasaCambio > 0 ? nf((Number(c.monto_real) || 0) / tasaCambio) : "s/t",
-              ];
-            }),
-          ]
+      body: r.costosMercancia.length
+        ? r.costosMercancia.map((c) => [
+            `${c.concepto}${c.reemplazada ? " (reemplazada, no se suma)" : ""}`,
+            c.dop == null ? "s/t" : nf(c.dop),
+            c.usd == null ? "s/t" : nf(c.usd),
+          ])
         : [["Sin costos registrados", "—", "—"]],
       foot: [[
         "TOTAL",
-        tasaCambio > 0 ? nf(gastosAdicionales + servicioUsd * tasaCambio) : nf(gastosAdicionales),
-        tasaCambio > 0 ? nf(gastosAdicionales / tasaCambio + servicioUsd) : "s/t",
+        nf(r.costosTotal.dop),
+        r.costosTotal.usd == null ? "s/t" : nf(r.costosTotal.usd),
       ]],
       theme: "grid",
       headStyles: sHead,
@@ -5911,7 +5845,8 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
       (await supabase
         .from("costos_producto")
         .select("concepto, monto_real, moneda")
-        .eq("expediente_id", exp.id)).data ?? [],
+        .eq("expediente_id", exp.id)
+        .order("created_at")).data ?? [],
   });
   // Servicio Aduanero (pago a la DGA) es costo de mercancía: suma al costo por unidad.
   const { data: filasServLiq = [] } = useFilasServicioAduanero(exp.id);
@@ -6077,6 +6012,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             gastosAdicionales={gastosAdicionales}
             servicioUsd={servicioLiqUsd}
             tasaCambio={tasaCambio}
+            costosProducto={filasAdic}
           />
           {finalizado && isAdmin && !reabierto && (
             <Button variant="outline" size="sm" onClick={() => setReabierto(true)}>Reabrir liquidación</Button>
@@ -6209,8 +6145,128 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
           El Costo Unitario Real incluye FOB + prorrateo de flete, seguro y otros + Gravamen e ISC reales + prorrateo de
           gastos adicionales. El ITBIS no se incluye por ser crédito fiscal recuperable.
         </p>
+        {list.length > 0 && (
+          <ResultadosLiquidacionView
+            r={calcularResultadosLiquidacion({
+              exp, list, calcFila, gastosAdicionales, servicioUsd: servicioLiqUsd, tasaCambio, costosProducto: filasAdic,
+            })}
+            tasaCambio={tasaCambio}
+          />
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+/** Vista en pantalla de los resultados; usa exactamente el mismo cálculo que el PDF. */
+function ResultadosLiquidacionView({ r, tasaCambio }: { r: ReturnType<typeof calcularResultadosLiquidacion>; tasaCambio: number }) {
+  const nf = (n: number | null | undefined) =>
+    n == null ? "—" : n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const rd = (usd: number | null | undefined) => (usd == null || !tasaCambio || tasaCambio <= 0 ? "—" : nf(usd * tasaCambio));
+  const t = r.totales;
+  const th = "py-1.5 px-2 text-right font-medium";
+  const td = "py-1.5 px-2 text-right tabular-nums";
+  return (
+    <div className="mt-6 border-t pt-4 space-y-4">
+      <div>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-primary">Resultados de la Liquidación</h3>
+        <p className="text-[11px] text-muted-foreground">Mismos datos del PDF, actualizados al momento.</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b text-muted-foreground">
+              <th className="py-1.5 pr-2 text-left font-medium">Producto</th>
+              <th className={th}>Cantidad</th>
+              <th className={th}>CIF Unit. (RD$)</th>
+              <th className={th}>Gravamen Real (RD$)</th>
+              <th className={th}>ISC Real (RD$)</th>
+              <th className={th}>ITBIS Real (RD$)</th>
+              <th className={`${th} bg-accent text-accent-foreground`}>Costo Unit. Real (US$)</th>
+              {r.hayVenta && <><th className={th}>Costo de Venta</th><th className={th}>Margen Unit.</th><th className={th}>% Margen</th></>}
+            </tr>
+          </thead>
+          <tbody>
+            {r.productos.map((p, i) => (
+              <tr key={i} className="border-b last:border-0">
+                <td className="py-1.5 pr-2 max-w-[220px] truncate">{p.descripcion}</td>
+                <td className={td}>{nf(p.c.cant)}</td>
+                <td className={td}>{rd(p.cifUnit)}</td>
+                <td className={td}>{rd(p.c.gr)}</td>
+                <td className={td}>{rd(p.c.ir)}</td>
+                <td className={td}>{rd(p.c.tr)}</td>
+                <td className={`${td} font-semibold bg-accent/50`}>{nf(p.c.costoUnit)}</td>
+                {r.hayVenta && <>
+                  <td className={td}>{nf(p.c.cv)}</td>
+                  <td className={td}>{nf(p.margenUnit)}</td>
+                  <td className={td}>{p.pct == null ? "—" : `${p.pct.toFixed(1)}%`}</td>
+                </>}
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t font-semibold">
+              <td className="py-1.5 pr-2">TOTALES</td>
+              <td className={td}>{nf(t.cant)}</td>
+              <td className={td}></td>
+              <td className={td}>{rd(t.gReal)}</td>
+              <td className={td}>{rd(t.iReal)}</td>
+              <td className={td}>{rd(t.tReal)}</td>
+              <td className={td}></td>
+              {r.hayVenta && <><td className={td}></td><td className={td}>{nf(r.margenTotal)}</td><td className={td}>{r.margenPct.toFixed(1)}%</td></>}
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-md border p-3">
+          <div className="text-xs font-semibold mb-2">Componentes de la Inversión (US$)</div>
+          {([
+            ["FOB Total", r.componentes.fobTotal],
+            ["Seguro Total", r.componentes.seguro],
+            ["Flete Total", r.componentes.flete],
+            ["Otros Total", r.componentes.otros],
+            ["Gravamen Real Total", r.componentes.gravamenReal],
+            ["Servicio Aduanero", r.componentes.servicioUsd],
+            ["Formulario DUA (RD$258.26 fijo)", tasaCambio > 0 ? FORMULARIO_DUA_RD / tasaCambio : null],
+            ["ISC Real Total", r.componentes.iscReal],
+            ["Costo de Mercancía (sin Servicio Aduanero)", r.componentes.costoMercanciaUsd],
+          ] as [string, number | null][]).map(([k, v]) => (
+            <div key={k} className="flex justify-between text-xs py-0.5"><span className="text-muted-foreground">{k}</span><span className="tabular-nums">{v == null ? "s/t" : nf(v)}</span></div>
+          ))}
+          <div className="flex justify-between text-xs pt-1 mt-1 border-t font-semibold"><span>INVERSIÓN TOTAL</span><span className="tabular-nums">{nf(r.componentes.inversionTotal)}</span></div>
+        </div>
+        <div className="rounded-md border p-3">
+          <div className="text-xs font-semibold mb-2 grid grid-cols-[1fr_auto_auto] gap-3"><span>Costo de Mercancía</span><span className="text-right w-20">DOP</span><span className="text-right w-20">USD</span></div>
+          {r.costosMercancia.length === 0 ? (
+            <div className="text-xs text-muted-foreground">Sin costos registrados</div>
+          ) : r.costosMercancia.map((c, i) => (
+            <div key={i} className={`grid grid-cols-[1fr_auto_auto] gap-3 text-xs py-0.5 ${c.reemplazada ? "text-muted-foreground line-through" : ""}`}>
+              <span className="truncate">{c.concepto}{c.reemplazada ? " (reemplazada)" : ""}</span>
+              <span className="text-right w-20 tabular-nums">{c.dop == null ? "s/t" : nf(c.dop)}</span>
+              <span className="text-right w-20 tabular-nums">{c.usd == null ? "s/t" : nf(c.usd)}</span>
+            </div>
+          ))}
+          <div className="grid grid-cols-[1fr_auto_auto] gap-3 text-xs pt-1 mt-1 border-t font-semibold">
+            <span>TOTAL</span>
+            <span className="text-right w-20 tabular-nums">{nf(r.costosTotal.dop)}</span>
+            <span className="text-right w-20 tabular-nums">{r.costosTotal.usd == null ? "s/t" : nf(r.costosTotal.usd)}</span>
+          </div>
+        </div>
+        <div className="rounded-md border p-3">
+          <div className="text-xs font-semibold mb-2">Resumen final (US$)</div>
+          <div className="flex justify-between text-xs py-0.5"><span className="text-muted-foreground">Inversión total</span><span className="tabular-nums font-semibold">{nf(t.inv)}</span></div>
+          {r.hayVenta ? (
+            <>
+              <div className="flex justify-between text-xs py-0.5"><span className="text-muted-foreground">Valor de venta esperado</span><span className="tabular-nums">{nf(t.venta)}</span></div>
+              <div className="flex justify-between text-xs py-0.5"><span className="text-muted-foreground">Margen esperado total</span><span className="tabular-nums">{nf(r.margenTotal)} ({r.margenPct.toFixed(1)}%)</span></div>
+            </>
+          ) : (
+            <p className="text-xs italic text-muted-foreground mt-1">Precio de venta aún no asignado — este costo real es la base para fijarlo.</p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
