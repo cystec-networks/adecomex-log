@@ -5844,7 +5844,8 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
       (await supabase
         .from("costos_producto")
         .select("concepto, monto_real, moneda")
-        .eq("expediente_id", exp.id)).data ?? [],
+        .eq("expediente_id", exp.id)
+        .order("created_at")).data ?? [],
   });
   // Servicio Aduanero (pago a la DGA) es costo de mercancía: suma al costo por unidad.
   const { data: filasServLiq = [] } = useFilasServicioAduanero(exp.id);
