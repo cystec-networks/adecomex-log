@@ -5517,6 +5517,7 @@ function LiquidacionFinalPdfButton({
   tasaCambio: number;
 }) {
   const { user } = useCurrentUser();
+  const qcLiq = useQueryClient();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const docRef = useRef<any>(null);
   const fileNameRef = useRef<string>("LiquidacionFinal.pdf");
@@ -5541,6 +5542,15 @@ function LiquidacionFinalPdfButton({
     if (list.length === 0) {
       toast.error("El expediente no tiene ítems de mercancía.");
       return;
+    }
+    // Al generar la Liquidación Final se congela la tasa: un ajuste posterior del catálogo no debe mover el costo por unidad.
+    if (!exp.tasa_cambio_congelada && tasaCambio > 0) {
+      const { error: eTasa } = await supabase
+        .from("expedientes")
+        .update({ tasa_cambio_congelada: true, tasa_cambio_usada: tasaCambio })
+        .eq("id", exp.id);
+      if (eTasa) { toast.error(`No se pudo congelar la tasa de cambio: ${eTasa.message}`); return; }
+      qcLiq.invalidateQueries({ queryKey: ["expediente", exp.id] });
     }
     const { jsPDF } = await import("jspdf");
     const autoTable = (await import("jspdf-autotable")).default;
