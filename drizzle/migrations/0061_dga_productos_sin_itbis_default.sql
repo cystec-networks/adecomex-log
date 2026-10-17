@@ -1,0 +1,1 @@
+ALTER TABLE public.dga_productos_historico ALTER COLUMN pct_itbis DROP DEFAULT;
