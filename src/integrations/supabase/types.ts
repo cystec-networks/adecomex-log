@@ -367,7 +367,7 @@ export type Database = {
       catalogo_arancelario: {
         Row: {
           activo: boolean
-          capitulo: number
+          capitulo: number | null
           capitulo_titulo: string
           codigo: string
           codigo_partida: string
@@ -386,7 +386,7 @@ export type Database = {
         }
         Insert: {
           activo?: boolean
-          capitulo: number
+          capitulo?: number | null
           capitulo_titulo: string
           codigo: string
           codigo_partida: string
@@ -405,7 +405,7 @@ export type Database = {
         }
         Update: {
           activo?: boolean
-          capitulo?: number
+          capitulo?: number | null
           capitulo_titulo?: string
           codigo?: string
           codigo_partida?: string
@@ -7244,7 +7244,7 @@ export type Database = {
       expediente_docs_core_faltantes: { Args: { _id: string }; Returns: string }
       expirar_cotizaciones_vencidas: { Args: never; Returns: number }
       immutable_unaccent: { Args: { "": string }; Returns: string }
-      importar_catalogo_arancelario: { Args: { _filas: Json }; Returns: number }
+      importar_catalogo_arancelario: { Args: { _filas: Json }; Returns: Json }
       listar_encargados_logistica: {
         Args: never
         Returns: {
