@@ -35,7 +35,7 @@ function ConsultaArancelaria() {
   const [pagina, setPagina] = useState(0);
   const [detalle, setDetalle] = useState<Arancel | null>(null);
   useEffect(() => { const t = setTimeout(() => { setDebounced(q); setPagina(0); }, 250); return () => clearTimeout(t); }, [q]);
-  const { data, isFetching, error } = useQuery(arancelConsultaOptions(debounced, capitulo, seccion, pagina));
+  const { data, isFetching, error, refetch } = useQuery(arancelConsultaOptions(debounced, capitulo, seccion, pagina));
   const { data: roles } = useMyRoles();
   const rows = data?.rows ?? [];
   const count = data?.count ?? 0;
@@ -47,11 +47,11 @@ function ConsultaArancelaria() {
     <div className="text-xs text-muted-foreground">Arancel de Aduanas · República Dominicana · Ley 14-93 y modificaciones · 7ma Enmienda SA 2022</div>
     <div className="flex flex-wrap gap-2 items-center">
       <div className="relative flex-1 min-w-56"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input aria-label="Buscar código o descripción" placeholder="Código o descripción de mercancía…" value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" /></div>
-      <Select value={capitulo} onValueChange={(v) => { setCapitulo(v); setPagina(0); }}><SelectTrigger aria-label="Filtrar capítulo" className="w-40"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="todos">Todos los capítulos</SelectItem>{Array.from({ length: 97 }, (_, i) => <SelectItem key={i + 1} value={String(i + 1)}>Capítulo {String(i + 1).padStart(2, "0")}</SelectItem>)}</SelectContent></Select>
-      <Select value={seccion} onValueChange={(v) => { setSeccion(v); setPagina(0); }}><SelectTrigger aria-label="Filtrar sección" className="w-40"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="todas">Todas las secciones</SelectItem>{SECCIONES_ARANCEL.map((s) => <SelectItem key={s} value={s}>Sección {s}</SelectItem>)}</SelectContent></Select>
+      <Select value={capitulo} onValueChange={(v) => { setCapitulo(v); setPagina(0); }}><SelectTrigger aria-label="Filtrar capítulo" className="w-48"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="todos">Todos los capítulos</SelectItem>{Array.from({ length: 97 }, (_, i) => <SelectItem key={i + 1} value={String(i + 1)}>Capítulo {String(i + 1).padStart(2, "0")}</SelectItem>)}</SelectContent></Select>
+      <Select value={seccion} onValueChange={(v) => { setSeccion(v); setPagina(0); }}><SelectTrigger aria-label="Filtrar sección" className="w-48"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="todas">Todas las secciones</SelectItem>{SECCIONES_ARANCEL.map((s) => <SelectItem key={s} value={s}>Sección {s}</SelectItem>)}</SelectContent></Select>
       {isFetching && <Loader2 aria-label="Buscando" className="h-4 w-4 animate-spin text-muted-foreground" />}
     </div>
-    {error && <p role="alert" className="text-sm text-destructive">No se pudo consultar el catálogo. <Button variant="link" onClick={() => void inicial.refetch()}>Reintentar</Button></p>}
+    {error && <p role="alert" className="text-sm text-destructive">No se pudo consultar el catálogo. <Button variant="link" onClick={() => void refetch()}>Reintentar</Button></p>}
     <div className="overflow-x-auto border-y">
       <table className="w-full min-w-[720px] text-xs">
         <thead className="bg-muted text-muted-foreground"><tr><th className="text-left px-3 py-2">Código</th><th className="text-left px-3 py-2">Descripción</th><th className="text-right px-3 py-2 whitespace-nowrap">Gravamen %</th><th className="text-center px-3 py-2 whitespace-nowrap">Exento ITBIS</th><th className="text-center px-3 py-2">Capítulo</th></tr></thead>

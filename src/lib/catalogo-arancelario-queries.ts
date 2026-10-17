@@ -9,8 +9,10 @@ export const arancelConsultaOptions = (q = "", capitulo = "todos", seccion = "to
     const term = sanitizeSearchTerm(q);
     if (term) {
       const codigo = q.replace(/[^0-9.]/g, "");
+      const digitos = codigo.replace(/\./g, "");
+      const puntos = digitos.length <= 4 ? digitos : `${digitos.slice(0, 4)}${digitos.slice(4).replace(/(..)/g, ".$1")}${digitos.length % 2 ? `.${digitos.slice(-1)}` : ""}`;
       query = /^\d[\d.\s]*$/.test(q.trim())
-        ? query.or(`codigo.ilike.${codigo}%,codigo.ilike.${codigo.replace(/\./g, "")}%,codigo_partida.ilike.${codigo.replace(/\./g, "")}%`)
+        ? query.or(`codigo.ilike.${codigo}%,codigo.ilike.${digitos}%,codigo.ilike.${puntos}%,codigo_partida.ilike.${digitos}%`)
         : query.ilike("descripcion", patronSinTildes(term));
     }
     if (capitulo !== "todos") query = query.eq("capitulo", Number(capitulo));
