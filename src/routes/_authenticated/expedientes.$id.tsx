@@ -48,6 +48,7 @@ import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { DepositoDestinoField } from "@/components/deposito-destino-field";
 import { DgaCombobox } from "@/components/dga-combobox";
 import { DgaProductoSearch } from "@/components/dga-producto-search";
+import { ArancelProductoAviso } from "@/components/arancel-producto-aviso";
 import { normalizarNombre, patronSinTildes } from "@/lib/search-filter";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -4717,6 +4718,7 @@ function MercanciaItemsBlock({
 
             <div className="md:col-span-2 border-t pt-3 mt-1">
               <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Impuestos de la línea</div>
+              <ArancelProductoAviso codigo={f.codigo_arancelario} />
               <div className="grid gap-3 md:grid-cols-4">
                 <div className="grid gap-1.5">
                   <Label>% Gravamen</Label>
