@@ -428,6 +428,13 @@
       "when": 1792257557998,
       "tag": "0060_arancel_importacion_lotes_conteo",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1792260171073,
+      "tag": "0061_dga_productos_sin_itbis_default",
+      "breakpoints": true
     }
   ]
 }
