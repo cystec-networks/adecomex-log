@@ -364,6 +364,66 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_arancelario: {
+        Row: {
+          activo: boolean
+          capitulo: number
+          capitulo_titulo: string
+          codigo: string
+          codigo_partida: string
+          created_at: string
+          descripcion: string
+          es_hoja: boolean
+          exento_itbis: boolean | null
+          gravamen_pct: number | null
+          id: string
+          nivel: number
+          notas_legales: string | null
+          requiere_permiso: boolean
+          seccion: string
+          updated_at: string
+          vigente_desde: string
+        }
+        Insert: {
+          activo?: boolean
+          capitulo: number
+          capitulo_titulo: string
+          codigo: string
+          codigo_partida: string
+          created_at?: string
+          descripcion: string
+          es_hoja: boolean
+          exento_itbis?: boolean | null
+          gravamen_pct?: number | null
+          id?: string
+          nivel: number
+          notas_legales?: string | null
+          requiere_permiso?: boolean
+          seccion: string
+          updated_at?: string
+          vigente_desde?: string
+        }
+        Update: {
+          activo?: boolean
+          capitulo?: number
+          capitulo_titulo?: string
+          codigo?: string
+          codigo_partida?: string
+          created_at?: string
+          descripcion?: string
+          es_hoja?: boolean
+          exento_itbis?: boolean | null
+          gravamen_pct?: number | null
+          id?: string
+          nivel?: number
+          notas_legales?: string | null
+          requiere_permiso?: boolean
+          seccion?: string
+          updated_at?: string
+          vigente_desde?: string
+        }
+        Relationships: []
+      }
       catalogo_areas: {
         Row: {
           codigo: string
@@ -7184,6 +7244,7 @@ export type Database = {
       expediente_docs_core_faltantes: { Args: { _id: string }; Returns: string }
       expirar_cotizaciones_vencidas: { Args: never; Returns: number }
       immutable_unaccent: { Args: { "": string }; Returns: string }
+      importar_catalogo_arancelario: { Args: { _filas: Json }; Returns: number }
       listar_encargados_logistica: {
         Args: never
         Returns: {
