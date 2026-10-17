@@ -81,6 +81,8 @@ const GROUPS: Group[] = [
       { to: "/cotizaciones/calculadora", label: "Calculadora Rápida", icon: Calculator },
       { to: "/copiloto", label: "Copiloto IA", icon: Bot,
         match: (p) => p.startsWith("/copiloto") },
+      { to: "/consulta-arancelaria", label: "Consulta Arancelaria", icon: BookOpen,
+        match: (p) => p === "/consulta-arancelaria" },
     ],
   },
 

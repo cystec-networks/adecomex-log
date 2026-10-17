@@ -3,6 +3,9 @@ import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeBusqueda, parseDgaXlsx } from "@/lib/dga-productos";
+import { arancelCodigoOptions } from "@/lib/catalogo-arancelario-queries";
+import { tasasSugeridasArancel, resolverTasaProducto } from "@/lib/catalogo-arancelario";
+import { ArancelProductoAviso } from "@/components/arancel-producto-aviso";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +57,8 @@ function CatalogoProductosDgaPage() {
   const [subiendo, setSubiendo] = useState(false);
   const [borrar, setBorrar] = useState<string | null>(null);
   const [editar, setEditar] = useState<any | null>(null);
+  const { data: arancel } = useQuery({ ...arancelCodigoOptions(editar?.partida_arancelaria ?? ""), enabled: Boolean(editar?.partida_arancelaria) });
+  const sugeridas = arancel ? tasasSugeridasArancel(arancel) : { gravamen: null, itbis: null };
 
   const { data: total } = useQuery({
     queryKey: ["dga-productos-count"],
@@ -235,7 +240,7 @@ function CatalogoProductosDgaPage() {
                       ...r,
                       pct_gravamen: r.pct_gravamen != null ? String(r.pct_gravamen) : "",
                       pct_isc: r.pct_isc != null ? String(r.pct_isc) : "",
-                      pct_itbis: r.pct_itbis != null ? String(r.pct_itbis) : "18",
+                      pct_itbis: r.pct_itbis != null ? String(r.pct_itbis) : "",
                       aplica_isc: !!r.aplica_isc,
                     })}>
                       <Pencil className="h-3.5 w-3.5" />
@@ -267,6 +272,7 @@ function CatalogoProductosDgaPage() {
                 <Label>Partida arancelaria</Label>
                 <Input value={editar.partida_arancelaria ?? ""} onChange={(e) => setEditar({ ...editar, partida_arancelaria: e.target.value })} />
               </div>
+              <div className="md:col-span-2"><ArancelProductoAviso codigo={editar.partida_arancelaria ?? ""} /></div>
               <div className="grid gap-1.5">
                 <Label>Unidad</Label>
                 <Input value={editar.unidad ?? ""} onChange={(e) => setEditar({ ...editar, unidad: e.target.value })} />
@@ -293,10 +299,11 @@ function CatalogoProductosDgaPage() {
                 <p className="text-[11px] text-muted-foreground mb-3">
                   Si defines estas tasas, tendrán <b>prioridad</b> sobre el auto-aprendizaje por código arancelario y quedarán bloqueadas al elegir el producto en un expediente.
                 </p>
+                {arancel && <p className="text-xs text-muted-foreground mb-3">Sugerencia del arancel {arancel.codigo}: Gravamen {sugeridas.gravamen == null ? "sin dato" : `${sugeridas.gravamen}%`} · ITBIS {sugeridas.itbis == null ? "sin dato" : `${sugeridas.itbis}%`}. Las tasas manuales mantienen prioridad.</p>}
                 <div className="grid gap-3 md:grid-cols-4">
                   <div className="grid gap-1.5">
                     <Label>Gravamen (%)</Label>
-                    <Input type="text" inputMode="decimal" placeholder="0" value={editar.pct_gravamen}
+                    <Input type="text" inputMode="decimal" placeholder="0" value={resolverTasaProducto(editar.pct_gravamen, sugeridas.gravamen)}
                       onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setEditar({ ...editar, pct_gravamen: v }); }} />
                   </div>
                   <div className="grid gap-1.5">
@@ -315,7 +322,7 @@ function CatalogoProductosDgaPage() {
                   )}
                   <div className="grid gap-1.5">
                     <Label>ITBIS (%)</Label>
-                    <Input type="text" inputMode="decimal" placeholder="18" value={editar.pct_itbis}
+                    <Input type="text" inputMode="decimal" placeholder="18" value={resolverTasaProducto(editar.pct_itbis, sugeridas.itbis)}
                       onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setEditar({ ...editar, pct_itbis: v }); }} />
                   </div>
                 </div>

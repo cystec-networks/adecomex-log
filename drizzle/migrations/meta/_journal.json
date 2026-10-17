@@ -414,6 +414,13 @@
       "when": 1791771348146,
       "tag": "0058_margen_transporte_manual_respaldo",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1792255477825,
+      "tag": "0059_catalogo_arancelario_estructura_consulta_importacion",
+      "breakpoints": true
     }
   ]
 }
