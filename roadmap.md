@@ -26,3 +26,4 @@
 - [x] Checks por transición de Estado, Etapa X de N de solo lectura (TabTimeline ya no existía)
 
 - [ ] (Futuro, no implementar aún) Reclasificar los 27 gastos de reembolso: agregar «Es reembolso» en Costo de mercancía y que PDF/reporte de Reembolsos lean de ahí.
+- [ ] Crear estructura vacía y consulta del Catálogo Arancelario, integración de sugerencias en productos e importación administrativa; verificar sin cargar partidas.
