@@ -10,7 +10,7 @@ export const arancelConsultaOptions = (q = "", capitulo = "todos", seccion = "to
     if (term) {
       const codigo = q.replace(/[^0-9.]/g, "");
       const digitos = codigo.replace(/\./g, "");
-      const puntos = digitos.length <= 4 ? digitos : `${digitos.slice(0, 4)}${digitos.slice(4).replace(/(..)/g, ".$1")}${digitos.length % 2 ? `.${digitos.slice(-1)}` : ""}`;
+      const puntos = digitos.length <= 4 ? digitos : `${digitos.slice(0, 4)}.${digitos.slice(4).match(/.{1,2}/g)?.join(".") ?? ""}`;
       query = /^\d[\d.\s]*$/.test(q.trim())
         ? query.or(`codigo.ilike.${codigo}%,codigo.ilike.${digitos}%,codigo.ilike.${puntos}%,codigo_partida.ilike.${digitos}%`)
         : query.ilike("descripcion", patronSinTildes(term));
