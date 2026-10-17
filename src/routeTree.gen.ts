@@ -21,6 +21,7 @@ import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedBienvenidaRouteImport } from './routes/_authenticated/bienvenida'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
+import { Route as AuthenticatedConsultaArancelariaRouteImport } from './routes/_authenticated/consulta-arancelaria'
 import { Route as AuthenticatedCopilotoRouteImport } from './routes/_authenticated/copiloto'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedMiCuentaRouteImport } from './routes/_authenticated/mi-cuenta'
@@ -155,6 +156,12 @@ const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedConsultaArancelariaRoute =
+  AuthenticatedConsultaArancelariaRouteImport.update({
+    id: '/consulta-arancelaria',
+    path: '/consulta-arancelaria',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCopilotoRoute = AuthenticatedCopilotoRouteImport.update({
   id: '/copiloto',
   path: '/copiloto',
@@ -597,6 +604,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/bienvenida': typeof AuthenticatedBienvenidaRoute
   '/clientes': typeof AuthenticatedClientesRoute
+  '/consulta-arancelaria': typeof AuthenticatedConsultaArancelariaRoute
   '/copiloto': typeof AuthenticatedCopilotoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/mi-cuenta': typeof AuthenticatedMiCuentaRoute
@@ -682,6 +690,7 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/bienvenida': typeof AuthenticatedBienvenidaRoute
   '/clientes': typeof AuthenticatedClientesRoute
+  '/consulta-arancelaria': typeof AuthenticatedConsultaArancelariaRoute
   '/copiloto': typeof AuthenticatedCopilotoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/mi-cuenta': typeof AuthenticatedMiCuentaRoute
@@ -771,6 +780,7 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/bienvenida': typeof AuthenticatedBienvenidaRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
+  '/_authenticated/consulta-arancelaria': typeof AuthenticatedConsultaArancelariaRoute
   '/_authenticated/copiloto': typeof AuthenticatedCopilotoRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/mi-cuenta': typeof AuthenticatedMiCuentaRoute
@@ -858,6 +868,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/bienvenida'
     | '/clientes'
+    | '/consulta-arancelaria'
     | '/copiloto'
     | '/dashboard'
     | '/mi-cuenta'
@@ -943,6 +954,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/bienvenida'
     | '/clientes'
+    | '/consulta-arancelaria'
     | '/copiloto'
     | '/dashboard'
     | '/mi-cuenta'
@@ -1031,6 +1043,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/bienvenida'
     | '/_authenticated/clientes'
+    | '/_authenticated/consulta-arancelaria'
     | '/_authenticated/copiloto'
     | '/_authenticated/dashboard'
     | '/_authenticated/mi-cuenta'
@@ -1212,6 +1225,13 @@ declare module '@tanstack/react-router' {
       path: '/clientes'
       fullPath: '/clientes'
       preLoaderRoute: typeof AuthenticatedClientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/consulta-arancelaria': {
+      id: '/_authenticated/consulta-arancelaria'
+      path: '/consulta-arancelaria'
+      fullPath: '/consulta-arancelaria'
+      preLoaderRoute: typeof AuthenticatedConsultaArancelariaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/copiloto': {
@@ -1738,6 +1758,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBienvenidaRoute: typeof AuthenticatedBienvenidaRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
+  AuthenticatedConsultaArancelariaRoute: typeof AuthenticatedConsultaArancelariaRoute
   AuthenticatedCopilotoRoute: typeof AuthenticatedCopilotoRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedMiCuentaRoute: typeof AuthenticatedMiCuentaRoute
@@ -1800,6 +1821,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBienvenidaRoute: AuthenticatedBienvenidaRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
+  AuthenticatedConsultaArancelariaRoute: AuthenticatedConsultaArancelariaRoute,
   AuthenticatedCopilotoRoute: AuthenticatedCopilotoRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedMiCuentaRoute: AuthenticatedMiCuentaRoute,
