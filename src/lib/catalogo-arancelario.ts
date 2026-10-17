@@ -14,7 +14,7 @@ export const filaArancelSchema = z.object({
   codigo: z.string().trim().regex(/^\d{4}(?:\.\d{2}){0,3}$|^\d{6}$|^\d{8}$|^\d{10}$/),
   codigo_partida: z.string().trim().regex(/^\d{4}$/),
   descripcion: z.string().trim().min(1),
-  capitulo: z.coerce.number().int().min(1).max(97),
+  capitulo: z.preprocess(nullable, z.coerce.number().int().min(1).max(97).nullable()),
   capitulo_titulo: z.string().trim().min(1),
   seccion: z.enum(SECCIONES_ARANCEL),
   gravamen_pct: z.preprocess(nullable, z.coerce.number().min(0).max(100).nullable()),
@@ -28,21 +28,32 @@ export const filaArancelSchema = z.object({
 }).refine((r) => r.codigo.replace(/\./g, "").startsWith(r.codigo_partida), { message: "La partida no coincide con el código", path: ["codigo_partida"] });
 export type FilaArancel = z.output<typeof filaArancelSchema>;
 
-export function validarFilasArancel(filas: Record<string, unknown>[]): FilaArancel[] {
+export type ResultadoValidacionArancel = { filas: FilaArancel[]; errores: { fila: number; mensaje: string }[] };
+
+export function validarFilasArancel(filas: Record<string, unknown>[]): ResultadoValidacionArancel {
   if (!filas.length) throw new Error("El archivo no contiene filas.");
   if (filas.length > 20000) throw new Error("Divide el archivo en bloques de hasta 20000 filas.");
   const codigos = new Set<string>();
-  return filas.map((fila, i) => {
+  const validas: FilaArancel[] = [];
+  const errores: { fila: number; mensaje: string }[] = [];
+  filas.forEach((fila, i) => {
     const parsed = filaArancelSchema.safeParse(fila);
-    if (!parsed.success) throw new Error(`Fila ${i + 2}: ${parsed.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; ")}`);
+    if (!parsed.success) {
+      errores.push({ fila: i + 2, mensaje: parsed.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join("; ") });
+      return;
+    }
     const clave = parsed.data.codigo.replace(/\./g, "");
-    if (codigos.has(clave)) throw new Error(`Fila ${i + 2}: código duplicado ${parsed.data.codigo}.`);
+    if (codigos.has(clave)) {
+      errores.push({ fila: i + 2, mensaje: `código duplicado ${parsed.data.codigo}` });
+      return;
+    }
     codigos.add(clave);
-    return parsed.data;
+    validas.push(parsed.data);
   });
+  return { filas: validas, errores };
 }
 
-export async function leerCsvArancel(file: File): Promise<FilaArancel[]> {
+export async function leerCsvArancel(file: File): Promise<ResultadoValidacionArancel> {
   if (file.size > 20 * 1024 * 1024) throw new Error("El archivo supera 20 MB.");
   const XLSX = await import("xlsx");
   const workbook = XLSX.read(await file.text(), { type: "string", raw: true });

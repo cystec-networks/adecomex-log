@@ -11,6 +11,7 @@ describe("Sugerencias oficiales sin reemplazar overrides", () => {
 describe("CSV sin pérdida de códigos ni nulos", () => {
   const fila = { codigo: "0709.60.13", codigo_partida: "0709", descripcion: "Dato de prueba, no se importa", capitulo: "7", capitulo_titulo: "Prueba", seccion: "II", gravamen_pct: "", exento_itbis: "", nivel: "3", es_hoja: "true" };
   it("preserva ceros iniciales y defaults", () => { const r = filaArancelSchema.parse(fila); assert.equal(r.codigo_partida, "0709"); assert.equal(r.vigente_desde, "2022-01-01"); assert.equal(r.activo, true); assert.equal(r.gravamen_pct, null); assert.equal(r.exento_itbis, null); });
-  it("rechaza duplicados antes de cualquier escritura", () => assert.throws(() => validarFilasArancel([fila, fila]), /duplicado/));
-  it("rechaza partida distinta", () => assert.equal(filaArancelSchema.safeParse({ ...fila, codigo_partida: "0801" }).success, false));
+  it("capitulo vacío se guarda como nulo", () => assert.equal(filaArancelSchema.parse({ ...fila, capitulo: "" }).capitulo, null));
+  it("omite duplicados y reporta la fila sin detener la validación", () => { const r = validarFilasArancel([fila, fila]); assert.equal(r.filas.length, 1); assert.equal(r.errores.length, 1); assert.match(r.errores[0].mensaje, /duplicado/); });
+  it("omite filas inválidas y sigue con las demás", () => { const r = validarFilasArancel([{ ...fila, codigo_partida: "0801" }, fila]); assert.equal(r.filas.length, 1); assert.equal(r.errores.length, 1); assert.equal(r.errores[0].fila, 2); });
 });

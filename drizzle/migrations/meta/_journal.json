@@ -421,6 +421,13 @@
       "when": 1792255477825,
       "tag": "0059_catalogo_arancelario_estructura_consulta_importacion",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1792257557998,
+      "tag": "0060_arancel_importacion_lotes_conteo",
+      "breakpoints": true
     }
   ]
 }
