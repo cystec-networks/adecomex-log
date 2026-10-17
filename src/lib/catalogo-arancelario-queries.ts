@@ -35,3 +35,20 @@ export const arancelCodigoOptions = (codigo: string) => queryOptions({
     return data?.find((r) => r.codigo === codigo.trim()) ?? data?.[0] ?? null;
   },
 });
+export const arancelPuntos = (digitos: string) => `${digitos.slice(0, 4)}${digitos.slice(4).replace(/(..)/g, ".$1")}`;
+
+/** Lookup en lote: devuelve mapa dígitos → fila del arancel (para listados). */
+export const arancelPorCodigosOptions = (codigos: string[]) => {
+  const digitos = [...new Set(codigos.map((c) => (c ?? "").replace(/[^0-9]/g, "")).filter((d) => [4, 6, 8, 10].includes(d.length)))].sort();
+  return queryOptions({
+    queryKey: ["catalogo-arancelario", "lote", digitos],
+    enabled: digitos.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("catalogo_arancelario").select("codigo,gravamen_pct,exento_itbis").eq("activo", true).in("codigo", [...digitos, ...digitos.map(arancelPuntos)]);
+      if (error) throw error;
+      const mapa: Record<string, { codigo: string; gravamen_pct: number | null; exento_itbis: boolean | null }> = {};
+      for (const r of data ?? []) mapa[r.codigo.replace(/\./g, "")] = r as any;
+      return mapa;
+    },
+  });
+};

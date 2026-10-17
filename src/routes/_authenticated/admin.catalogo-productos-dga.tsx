@@ -3,8 +3,8 @@ import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeBusqueda, parseDgaXlsx } from "@/lib/dga-productos";
-import { arancelCodigoOptions } from "@/lib/catalogo-arancelario-queries";
-import { tasasSugeridasArancel, resolverTasaProducto } from "@/lib/catalogo-arancelario";
+import { arancelCodigoOptions, arancelPorCodigosOptions } from "@/lib/catalogo-arancelario-queries";
+import { tasasSugeridasArancel } from "@/lib/catalogo-arancelario";
 import { ArancelProductoAviso } from "@/components/arancel-producto-aviso";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -80,6 +80,14 @@ function CatalogoProductosDgaPage() {
     },
   });
 
+  const { data: arancelLote = {} } = useQuery(arancelPorCodigosOptions(rows.map((r: any) => r.partida_arancelaria ?? "")));
+  const celdaTasa = (manual: any, partida: string | null, campo: "gravamen" | "itbis") => {
+    if (manual != null) return <span className="font-semibold" title="Tasa manual">{Number(manual)}%</span>;
+    const a = arancelLote[(partida ?? "").replace(/[^0-9]/g, "")];
+    const v = a ? tasasSugeridasArancel(a)[campo] : null;
+    return v == null ? "—" : <span className="italic text-muted-foreground" title={`Sugerida por arancel ${a!.codigo}`}>{v}% <span className="text-[10px]">(arancel)</span></span>;
+  };
+
   const eliminar = useMutation({
     mutationFn: async (codigo: string) => {
       const { error } = await supabase.from("dga_productos_historico").delete().eq("codigo_producto", codigo);
@@ -116,6 +124,7 @@ function CatalogoProductosDgaPage() {
     },
     onSuccess: () => {
       toast.success("Producto actualizado");
+      qc.invalidateQueries({ queryKey: ["dga-productos"] });
       setEditar(null);
       qc.invalidateQueries({ queryKey: ["dga-productos-list"] });
     },
@@ -232,9 +241,9 @@ function CatalogoProductosDgaPage() {
                   <td className="px-2 py-2 text-xs">{r.pais || "—"}</td>
                   <td className="px-2 py-2 text-xs">{r.regimen || "—"}</td>
                   <td className="px-2 py-2 text-xs">{r.estado || "—"}</td>
-                  <td className="px-2 py-2 text-xs text-right tabular-nums bg-amber-50/40">{r.pct_gravamen != null ? `${Number(r.pct_gravamen)}%` : "—"}</td>
+                  <td className="px-2 py-2 text-xs text-right tabular-nums bg-amber-50/40">{celdaTasa(r.pct_gravamen, r.partida_arancelaria, "gravamen")}</td>
                   <td className="px-2 py-2 text-xs text-right tabular-nums bg-amber-50/40">{r.aplica_isc && r.pct_isc != null ? `${Number(r.pct_isc)}%` : "—"}</td>
-                  <td className="px-2 py-2 text-xs text-right tabular-nums bg-amber-50/40">{r.pct_itbis != null ? `${Number(r.pct_itbis)}%` : "—"}</td>
+                  <td className="px-2 py-2 text-xs text-right tabular-nums bg-amber-50/40">{celdaTasa(r.pct_itbis, r.partida_arancelaria, "itbis")}</td>
                   <td className="px-2 py-2 text-right whitespace-nowrap">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditar({
                       ...r,
@@ -303,7 +312,7 @@ function CatalogoProductosDgaPage() {
                 <div className="grid gap-3 md:grid-cols-4">
                   <div className="grid gap-1.5">
                     <Label>Gravamen (%)</Label>
-                    <Input type="text" inputMode="decimal" placeholder="0" value={resolverTasaProducto(editar.pct_gravamen, sugeridas.gravamen)}
+                    <Input type="text" inputMode="decimal" placeholder={sugeridas.gravamen == null ? "Sin tasa" : `${sugeridas.gravamen} (arancel)`} value={editar.pct_gravamen}
                       onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setEditar({ ...editar, pct_gravamen: v }); }} />
                   </div>
                   <div className="grid gap-1.5">
@@ -322,7 +331,7 @@ function CatalogoProductosDgaPage() {
                   )}
                   <div className="grid gap-1.5">
                     <Label>ITBIS (%)</Label>
-                    <Input type="text" inputMode="decimal" placeholder="18" value={resolverTasaProducto(editar.pct_itbis, sugeridas.itbis)}
+                    <Input type="text" inputMode="decimal" placeholder={sugeridas.itbis == null ? "Sin tasa" : `${sugeridas.itbis} (arancel)`} value={editar.pct_itbis}
                       onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setEditar({ ...editar, pct_itbis: v }); }} />
                   </div>
                 </div>
