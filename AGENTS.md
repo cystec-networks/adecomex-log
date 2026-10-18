@@ -36,3 +36,4 @@ Scope detail-header presentation to its dedicated class; logistics and operation
 - Resolve the effective consignee (active endorsement, else original client) via src/lib/consignatario-efectivo.ts in every expediente document generator and new-invoice preload; issued invoices stay frozen.
 - Resolve the dispatch-date modal asynchronously within the existing state mutation and reuse fechasDespachoFaltantes for detail-only preventive alerts, preserving permission checks and audit payloads.
 - Centralize product-entry suggestions in buscarSugerenciasProducto/resolverSugerenciasProducto, never historical calculations or Real values. Keep tariff CSV imports in the authenticated staff-checked server function and atomic invoker RPC, without writing product overrides.
+- Keep chapter notes in a separate read-only query/panel and admin-only invoker import, so tariff suggestions and the main importer remain unchanged.

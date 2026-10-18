@@ -6,6 +6,8 @@ import { arancelConsultaOptions } from "@/lib/catalogo-arancelario-queries";
 import { SECCIONES_ARANCEL } from "@/lib/catalogo-arancelario";
 import { useMyRoles } from "@/lib/auth-hooks";
 import { ImportarArancelDialog } from "@/components/importar-arancel-dialog";
+import { ImportarNotasCapituloDialog } from "@/components/importar-notas-capitulo-dialog";
+import { NotasCapituloPanel } from "@/components/notas-capitulo-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +36,7 @@ function ConsultaArancelaria() {
   const [seccion, setSeccion] = useState("todas");
   const [pagina, setPagina] = useState(0);
   const [detalle, setDetalle] = useState<Arancel | null>(null);
+  const [notasCapitulo, setNotasCapitulo] = useState<number | null>(null);
   useEffect(() => { const t = setTimeout(() => { setDebounced(q); setPagina(0); }, 250); return () => clearTimeout(t); }, [q]);
   const { data, isFetching, error, refetch } = useQuery(arancelConsultaOptions(debounced, capitulo, seccion, pagina));
   const { data: roles } = useMyRoles();
@@ -42,12 +45,13 @@ function ConsultaArancelaria() {
   return <div className="p-4 md:p-6 space-y-4">
     <header className="flex flex-wrap items-center justify-between gap-3 border-b pb-3">
       <h1 className="text-base font-semibold flex items-center gap-2"><BookOpen className="h-5 w-5" />Consulta Arancelaria</h1>
-      {roles?.includes("admin") && <ImportarArancelDialog />}
+      {roles?.includes("admin") && <div className="flex flex-wrap gap-2"><ImportarArancelDialog /><ImportarNotasCapituloDialog /></div>}
     </header>
     <div className="text-xs text-muted-foreground">Arancel de Aduanas · República Dominicana · Ley 14-93 y modificaciones · 7ma Enmienda SA 2022</div>
     <div className="flex flex-wrap gap-2 items-center">
       <div className="relative flex-1 min-w-56"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input aria-label="Buscar código o descripción" placeholder="Código o descripción de mercancía…" value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" /></div>
       <Select value={capitulo} onValueChange={(v) => { setCapitulo(v); setPagina(0); }}><SelectTrigger aria-label="Filtrar capítulo" className="w-48"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="todos">Todos los capítulos</SelectItem>{Array.from({ length: 97 }, (_, i) => <SelectItem key={i + 1} value={String(i + 1)}>Capítulo {String(i + 1).padStart(2, "0")}</SelectItem>)}</SelectContent></Select>
+      {capitulo !== "todos" && <Button variant="outline" aria-label="Ver notas del Capítulo" onClick={() => setNotasCapitulo(Number(capitulo))}><BookOpen className="h-4 w-4 mr-2" />Ver notas del Capítulo</Button>}
       <Select value={seccion} onValueChange={(v) => { setSeccion(v); setPagina(0); }}><SelectTrigger aria-label="Filtrar sección" className="w-48"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="todas">Todas las secciones</SelectItem>{SECCIONES_ARANCEL.map((s) => <SelectItem key={s} value={s}>Sección {s}</SelectItem>)}</SelectContent></Select>
       {isFetching && <Loader2 aria-label="Buscando" className="h-4 w-4 animate-spin text-muted-foreground" />}
     </div>
@@ -63,6 +67,7 @@ function ConsultaArancelaria() {
       </table>
     </div>
     <footer className="flex items-center justify-between gap-3 text-xs text-muted-foreground"><span>{count} partidas · {count ? pagina * 100 + 1 : 0}–{Math.min((pagina + 1) * 100, count)}</span><div className="flex gap-1"><Button variant="outline" size="icon" aria-label="Página anterior" disabled={!pagina || isFetching} onClick={() => setPagina((p) => p - 1)}><ChevronLeft className="h-4 w-4" /></Button><Button variant="outline" size="icon" aria-label="Página siguiente" disabled={(pagina + 1) * 100 >= count || isFetching} onClick={() => setPagina((p) => p + 1)}><ChevronRight className="h-4 w-4" /></Button></div></footer>
+    {notasCapitulo !== null && <NotasCapituloPanel capitulo={notasCapitulo} onClose={() => setNotasCapitulo(null)} />}
     <Sheet open={Boolean(detalle)} onOpenChange={(v) => { if (!v) setDetalle(null); }}><SheetContent className="w-full sm:max-w-xl overflow-y-auto">
       {detalle && <><SheetHeader><SheetTitle className="text-base font-mono">{detalle.codigo}</SheetTitle><SheetDescription className="text-sm text-foreground">{detalle.descripcion}</SheetDescription></SheetHeader>
         {detalle.requiere_permiso && <Badge variant="destructive" className="mt-4"><AlertTriangle className="h-3.5 w-3.5 mr-1" />Requiere permiso</Badge>}
