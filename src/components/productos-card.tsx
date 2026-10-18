@@ -12,6 +12,8 @@ import { DgaProductoSearch } from "@/components/dga-producto-search";
 import { DgaCombobox } from "@/components/dga-combobox";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { buscarSugerenciasProducto } from "@/lib/catalogo-arancelario-queries";
+import { resolverTasaProducto } from "@/lib/catalogo-arancelario";
 
 export type ProductosTabla = "cotizacion_productos" | "orden_productos" | "solicitud_productos";
 
@@ -27,20 +29,8 @@ const emptyForm = {
   product_code: "", cod_marca: "", marca: "", cod_modelo: "", modelo: "", especificaciones: "",
   estado_producto_codigo: "",
   pais_origen: "", pais_origen_codigo: "",
-  pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "18",
+  pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "",
 };
-
-/** Busca la tasa oficial del código arancelario para prellenar impuestos. */
-async function buscarTasa(codigo: string) {
-  const c = (codigo || "").trim();
-  if (!c) return null;
-  const { data } = await supabase
-    .from("catalogo_tasas_arancelarias")
-    .select("codigo_arancelario,pct_gravamen,aplica_isc,pct_isc,pct_itbis")
-    .eq("codigo_arancelario", c)
-    .maybeSingle();
-  return data as any;
-}
 
 export function ProductosCard({
   tabla,
@@ -180,7 +170,7 @@ export function ProductosCard({
       pct_gravamen: it.pct_gravamen != null ? String(it.pct_gravamen) : "",
       aplica_isc: !!it.aplica_isc,
       pct_isc: it.pct_isc != null ? String(it.pct_isc) : "",
-      pct_itbis: it.pct_itbis != null ? String(it.pct_itbis) : "18",
+      pct_itbis: it.pct_itbis != null ? String(it.pct_itbis) : "",
     });
     setOpen(true);
   };
@@ -255,6 +245,7 @@ export function ProductosCard({
             <DgaProductoSearch
               onSelect={async (p, reusarCodigo) => {
                 const partida = (p.partida_arancelaria ?? "").trim();
+                const tasas = await buscarSugerenciasProducto(qc, partida, p);
                 setF((prev) => ({
                   ...prev,
                   product_code: reusarCodigo ? (p.codigo_producto ?? "") : "",
@@ -266,33 +257,24 @@ export function ProductosCard({
                   modelo: p.modelo ?? "",
                   especificaciones: p.especificaciones ?? "",
                   unidad_medida: prev.unidad_medida || (p.unidad ?? ""),
-                  pct_gravamen: p.pct_gravamen != null ? String(p.pct_gravamen) : prev.pct_gravamen,
-                  aplica_isc: p.aplica_isc != null ? !!p.aplica_isc : prev.aplica_isc,
-                  pct_isc: p.pct_isc != null ? String(p.pct_isc) : prev.pct_isc,
-                  pct_itbis: p.pct_itbis != null ? String(p.pct_itbis) : prev.pct_itbis,
+                  pct_gravamen: p.pct_gravamen != null ? String(p.pct_gravamen) : resolverTasaProducto(prev.pct_gravamen, tasas.pct_gravamen === "" ? null : Number(tasas.pct_gravamen)),
+                  aplica_isc: p.aplica_isc ?? (prev.aplica_isc || tasas.aplica_isc),
+                  pct_isc: p.pct_isc != null ? String(p.pct_isc) : resolverTasaProducto(prev.pct_isc, tasas.pct_isc === "" ? null : Number(tasas.pct_isc)),
+                  pct_itbis: p.pct_itbis != null ? String(p.pct_itbis) : resolverTasaProducto(prev.pct_itbis, tasas.pct_itbis === "" ? null : Number(tasas.pct_itbis)),
                 }));
                 toast.success(reusarCodigo ? "Producto copiado con su ProductCode" : "Datos copiados del histórico");
-                // Si el histórico no trae tasas, se buscan en el catálogo arancelario oficial.
-                if (p.pct_gravamen == null && partida) {
-                  const t = await buscarTasa(partida);
-                  if (t) {
-                    setF((prev) => ({
-                      ...prev,
-                      pct_gravamen: prev.pct_gravamen === "" && t.pct_gravamen != null ? String(t.pct_gravamen) : prev.pct_gravamen,
-                      aplica_isc: prev.aplica_isc || !!t.aplica_isc,
-                      pct_isc: prev.pct_isc === "" && t.pct_isc != null ? String(t.pct_isc) : prev.pct_isc,
-                      pct_itbis: t.pct_itbis != null ? String(t.pct_itbis) : prev.pct_itbis,
-                    }));
-                    toast.info("Impuestos cargados del catálogo arancelario");
-                  }
-                }
+
               }}
             />
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             <div className="grid gap-1.5">
               <Label>Código Arancelario</Label>
-              <Input value={f.codigo_arancelario} onChange={(e) => setF({ ...f, codigo_arancelario: e.target.value })} placeholder="0402.10.90" />
+              <Input value={f.codigo_arancelario} onChange={(e) => setF({ ...f, codigo_arancelario: e.target.value })} onBlur={async () => {
+                const codigo = f.codigo_arancelario;
+                const tasas = await buscarSugerenciasProducto(qc, codigo, { ...f, aplica_isc: f.aplica_isc ? true : undefined });
+                setF((prev) => prev.codigo_arancelario !== codigo ? prev : ({ ...prev, pct_gravamen: prev.pct_gravamen || tasas.pct_gravamen, pct_itbis: prev.pct_itbis || tasas.pct_itbis, aplica_isc: prev.aplica_isc || tasas.aplica_isc, pct_isc: prev.pct_isc || tasas.pct_isc }));
+              }} placeholder="0402.10.90" />
             </div>
             <div className="grid gap-1.5">
               <Label>Unidad de Medida</Label>
@@ -332,13 +314,14 @@ export function ProductosCard({
                     onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) setF({ ...f, pct_gravamen: v }); }}
                     onBlur={async () => {
                       if (f.pct_gravamen !== "" || !f.codigo_arancelario.trim()) return;
-                      const t = await buscarTasa(f.codigo_arancelario);
-                      if (t) setF((prev) => ({
+                      const codigo = f.codigo_arancelario;
+                      const tasas = await buscarSugerenciasProducto(qc, codigo, { ...f, aplica_isc: f.aplica_isc ? true : undefined });
+                      setF((prev) => prev.codigo_arancelario !== codigo ? prev : ({
                         ...prev,
-                        pct_gravamen: t.pct_gravamen != null ? String(t.pct_gravamen) : prev.pct_gravamen,
-                        aplica_isc: prev.aplica_isc || !!t.aplica_isc,
-                        pct_isc: t.pct_isc != null ? String(t.pct_isc) : prev.pct_isc,
-                        pct_itbis: t.pct_itbis != null ? String(t.pct_itbis) : prev.pct_itbis,
+                        pct_gravamen: prev.pct_gravamen || tasas.pct_gravamen,
+                        aplica_isc: prev.aplica_isc || tasas.aplica_isc,
+                        pct_isc: prev.pct_isc || tasas.pct_isc,
+                        pct_itbis: prev.pct_itbis || tasas.pct_itbis,
                       }));
                     }} />
                 </div>

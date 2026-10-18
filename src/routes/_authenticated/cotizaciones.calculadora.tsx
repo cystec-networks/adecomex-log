@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { DgaProductoSearch } from "@/components/dga-producto-search";
 import { toast } from "sonner";
+import { buscarSugerenciasProducto } from "@/lib/catalogo-arancelario-queries";
 import {
   ServicioAduaneroFields,
   totalServicioUsd,
@@ -88,7 +89,7 @@ const VACIO: Escenario = {
   seguroReal: false,
   seguro: "",
   pctGravamen: "",
-  pctItbis: "18",
+  pctItbis: "",
   servicioFilas: [],
   pctGastos: "",
   regimen: "Despacho a Consumo",
@@ -290,6 +291,7 @@ function ColumnaEscenario({
   onChange: (e: Escenario) => void;
   onQuitar?: () => void;
 }) {
+  const qc = useQueryClient();
   const r = calcular(esc, tarifas);
 
   const tasa = num(esc.tasa);
@@ -326,15 +328,16 @@ function ColumnaEscenario({
   const elegirProducto = async (p: import("@/lib/dga-productos").DgaProducto) => {
     const partida = (p.partida_arancelaria ?? "").trim();
     const str = (n: number | null | undefined) => (n != null ? String(n) : "");
+    const tasas = await buscarSugerenciasProducto(qc, partida, p);
     setBorrador((b) => ({
       ...b,
       producto: p.nombre_producto ?? b.producto,
       codigo: partida || b.codigo,
       unidad: p.unidad ?? b.unidad,
       pais: b.pais || (p.pais ?? ""),
-      pctGravamen: str(p.pct_gravamen),
-      pctIsc: p.aplica_isc ? str(p.pct_isc) : "",
-      pctItbis: str(p.pct_itbis),
+      pctGravamen: tasas.pct_gravamen,
+      pctIsc: tasas.pct_isc,
+      pctItbis: tasas.pct_itbis,
       pctGravPref: "",
       acuerdoPref: "",
     }));
@@ -347,9 +350,6 @@ function ColumnaEscenario({
     if (!data) return;
     setBorrador((b) => ({
       ...b,
-      pctGravamen: b.pctGravamen || str(data.pct_gravamen),
-      pctIsc: b.pctIsc || (data.aplica_isc ? str(data.pct_isc) : ""),
-      pctItbis: b.pctItbis || str(data.pct_itbis),
       pctGravPref: str(data.pct_gravamen_preferencial),
       acuerdoPref: data.acuerdo_preferencial ?? "",
     }));
@@ -431,7 +431,19 @@ function ColumnaEscenario({
               <div className="grid gap-1 col-span-2"><Label className="text-[11px]">Producto</Label>
                 <Input value={borrador.producto} onChange={(ev) => setB("producto", ev.target.value)} /></div>
               <div className="grid gap-1"><Label className="text-[11px]">Código arancelario</Label>
-                <Input value={borrador.codigo ?? ""} onChange={(ev) => setB("codigo", ev.target.value)} /></div>
+                <Input value={borrador.codigo ?? ""} onChange={(ev) => setB("codigo", ev.target.value)} onBlur={async (ev) => {
+                  const codigo = ev.target.value.trim();
+                  if (!codigo) return;
+                  const tasas = await buscarSugerenciasProducto(qc, codigo, {
+                    pct_gravamen: borrador.pctGravamen, pct_itbis: borrador.pctItbis,
+                    aplica_isc: borrador.pctIsc ? Number(borrador.pctIsc) > 0 : undefined,
+                    pct_isc: borrador.pctIsc,
+                  });
+                  setBorrador((b) => b.codigo?.trim() !== codigo ? b : ({
+                    ...b, pctGravamen: b.pctGravamen || tasas.pct_gravamen,
+                    pctItbis: b.pctItbis || tasas.pct_itbis, pctIsc: b.pctIsc || tasas.pct_isc,
+                  }));
+                }} /></div>
               <div className="grid gap-1"><Label className="text-[11px]">País origen</Label>
                 <Input value={borrador.pais ?? ""} onChange={(ev) => setB("pais", ev.target.value)} /></div>
               <div className="grid gap-1"><Label className="text-[11px]">Cantidad</Label>
@@ -447,7 +459,7 @@ function ColumnaEscenario({
               <div className="grid gap-1"><Label className="text-[11px]">% Selectivo (ISC)</Label>
                 <Input type="number" step="0.01" min="0" value={borrador.pctIsc ?? ""} placeholder="0" onChange={(ev) => setB("pctIsc", ev.target.value)} /></div>
               <div className="grid gap-1"><Label className="text-[11px]">% ITBIS</Label>
-                <Input type="number" step="0.01" min="0" value={borrador.pctItbis ?? ""} placeholder={esc.pctItbis || "18"} onChange={(ev) => setB("pctItbis", ev.target.value)} /></div>
+                <Input type="number" step="0.01" min="0" value={borrador.pctItbis ?? ""} placeholder={esc.pctItbis || "Sin dato"} onChange={(ev) => setB("pctItbis", ev.target.value)} /></div>
               <div className="grid gap-1"><Label className="text-[11px]">% Grav. preferencial</Label>
                 <Input type="number" step="0.01" min="0" value={borrador.pctGravPref ?? ""} placeholder="Sin registrar" onChange={(ev) => setB("pctGravPref", ev.target.value)} /></div>
             </div>
@@ -489,7 +501,7 @@ function ColumnaEscenario({
                           {res?.sinTasaPref && <span className="ml-1 text-[10px] text-muted-foreground" title="No hay tasa preferencial registrada para este código y acuerdo; se usa el gravamen general.">(sin pref.)</span>}
                         </td>
                         <td className="p-2 text-right">{(l.pctIsc ?? "").trim() ? `${l.pctIsc}%` : "—"}</td>
-                        <td className="p-2 text-right">{(l.pctItbis ?? "").trim() ? l.pctItbis : esc.pctItbis || 18}%</td>
+                        <td className="p-2 text-right">{(l.pctItbis ?? "").trim() || esc.pctItbis ? `${l.pctItbis || esc.pctItbis}%` : "—"}</td>
                         <td className="p-2 text-right whitespace-nowrap">
                           <Button variant="ghost" size="icon" title="Modificar" onClick={() => modificar(i)}><Pencil className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="icon" title="Borrar" onClick={() => borrar(i)}><Trash2 className="h-4 w-4" /></Button>
