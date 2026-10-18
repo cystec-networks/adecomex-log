@@ -58,7 +58,7 @@ function ConsultaArancelaria() {
     {error && <p role="alert" className="text-sm text-destructive">No se pudo consultar el catálogo. <Button variant="link" onClick={() => void refetch()}>Reintentar</Button></p>}
     <div className="overflow-x-auto border-y">
       <table className="w-full min-w-[720px] text-xs">
-        <thead className="bg-muted text-muted-foreground"><tr><th className="text-left px-3 py-2">Código</th><th className="text-left px-3 py-2">Descripción</th><th className="text-right px-3 py-2 whitespace-nowrap">Gravamen %</th><th className="text-center px-3 py-2 whitespace-nowrap">Exento ITBIS</th><th className="text-center px-3 py-2">Capítulo</th></tr></thead>
+        <thead className="bg-muted text-muted-foreground"><tr><th className="text-left px-3 py-2">Código</th><th className="text-left px-3 py-2">Descripción</th><th className="text-right px-3 py-2 whitespace-nowrap">Gravamen %</th><th className="text-center px-3 py-2 whitespace-nowrap">ITBIS</th><th className="text-center px-3 py-2">Capítulo</th></tr></thead>
         <tbody>{rows.map((r) => <tr key={r.id} className="border-t hover:bg-accent/50 cursor-pointer" onClick={() => setDetalle(r)}>
           <td className="px-3 py-2 whitespace-nowrap"><Button variant="link" className="h-auto p-0 text-xs font-mono" onClick={(e) => { e.stopPropagation(); setDetalle(r); }}>{r.codigo}</Button></td>
           <td className="py-2 pr-3"><div className={`flex items-start gap-2 ${["pl-3", "pl-6", "pl-9", "pl-12", "pl-16"][Math.min(4, Math.max(0, r.nivel))]}`}><span className={r.es_hoja ? "" : "font-semibold"}>{r.descripcion}</span>{r.requiere_permiso && <AlertTriangle aria-label="Requiere permiso" className="h-4 w-4 shrink-0 text-destructive" />}</div></td>
