@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import { calcularResultadosLiquidacion, type FilaCalc } from "./liquidacion-final";
 
 const calcFila = (): FilaCalc => ({
@@ -29,11 +30,11 @@ describe("calcularResultadosLiquidacion con costos en US$", () => {
       costosProducto: [{ concepto: "Cargos THC", monto_real: 500, moneda: "USD" }],
     });
     const fila = r.costosMercancia.find((c) => c.concepto === "Cargos THC")!;
-    expect(fila.usd).toBe(500);
-    expect(fila.dop).toBe(30000);
-    expect(r.costosTotal.usd).toBeCloseTo(500 + 258.26 / 60);
-    expect(r.costosTotal.dop).toBeCloseTo(30000 + 258.26);
-    expect(r.componentes.costoMercanciaUsd).toBe(500);
+    assert.equal(fila.usd, 500);
+    assert.equal(fila.dop, 30000);
+    assert.ok(Math.abs(r.costosTotal.usd! - (500 + 258.26 / 60)) < 0.01);
+    assert.ok(Math.abs(r.costosTotal.dop - (30000 + 258.26)) < 0.01);
+    assert.equal(r.componentes.costoMercanciaUsd, 500);
   });
 
   it("una fila en DOP sigue comportándose como antes", () => {
@@ -43,8 +44,8 @@ describe("calcularResultadosLiquidacion con costos en US$", () => {
       costosProducto: [{ concepto: "Manejo", monto_real: 6000, moneda: "DOP" }],
     });
     const fila = r.costosMercancia.find((c) => c.concepto === "Manejo")!;
-    expect(fila.dop).toBe(6000);
-    expect(fila.usd).toBe(100);
-    expect(r.componentes.costoMercanciaUsd).toBe(100);
+    assert.equal(fila.dop, 6000);
+    assert.equal(fila.usd, 100);
+    assert.equal(r.componentes.costoMercanciaUsd, 100);
   });
 });
