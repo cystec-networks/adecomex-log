@@ -1,4 +1,4 @@
-- [ ] Preparar notas legales por capítulo: estructura vacía, importación administrativa CSV y panel de lectura desde Consulta Arancelaria; preservar funciones actuales y verificar sin cargar ejemplos.
+- [x] Preparar notas legales por capítulo: estructura vacía, importación administrativa CSV y panel de lectura desde Consulta Arancelaria; 18 pruebas aprobadas, título del capítulo y validación CSV comprobados con sesión real, sin guardar ejemplos. Importación completa pendiente del archivo oficial del usuario.
 - [x] Sustituir el aviso nativo de fechas DGA por modal centrado con justificación y alertas preventivas del detalle; permisos y Auditoría intactos, 13 pruebas aprobadas y comprobación en 202610I351 de bloqueo por vacío/espacios, confirmación habilitada con motivo y cancelación sin modificar estado.
 - [x] Marcar los campos obligatorios de Declaración, llegada, origen y pesos.
 - [x] Renombrar Tipo de Inspección: seis opciones, selector sincronizado en Declaración y encabezado, guardado verificado y valor histórico Rojo comprobado sin migraciones ni desbordamiento.
