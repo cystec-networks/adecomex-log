@@ -12,8 +12,8 @@ describe("Prioridad de sugerencias en las tres pantallas", () => {
     const r = resolverSugerenciasProducto({ pct_gravamen: 0, pct_itbis: 18, aplica_isc: true, pct_isc: 5 }, cebollas, viejo);
     assert.deepEqual(r, { pct_gravamen: "0", pct_itbis: "18", aplica_isc: true, pct_isc: "5" });
   });
-  it("ITBIS oficial sin dato queda vacío aunque el historial tenga 18", () => {
-    assert.equal(resolverSugerenciasProducto({}, { gravamen_pct: 8, exento_itbis: null }, viejo).pct_itbis, "");
+  it("ITBIS oficial sin marca de exento sugiere la tasa general 18%", () => {
+    assert.equal(resolverSugerenciasProducto({}, { gravamen_pct: 8, exento_itbis: null }, viejo).pct_itbis, "18");
   });
   it("solo una partida ausente usa el autoaprendizaje, incluido ISC", () => {
     assert.deepEqual(resolverSugerenciasProducto({}, null, viejo), { pct_gravamen: "8", pct_itbis: "18", aplica_isc: true, pct_isc: "10" });
@@ -28,7 +28,7 @@ describe("Sugerencias oficiales sin reemplazar overrides", () => {
   it("mantiene una tasa manual positiva", () => assert.equal(resolverTasaProducto("8", 20), "8"));
   it("sugiere gravamen solo en campo vacío", () => assert.equal(resolverTasaProducto("", 20), "20"));
   it("ITBIS exento sugiere cero", () => assert.equal(tasasSugeridasArancel({ gravamen_pct: 20, exento_itbis: true }).itbis, 0));
-  it("ITBIS en blanco no inventa un valor", () => assert.equal(tasasSugeridasArancel({ gravamen_pct: null, exento_itbis: null }).itbis, null));
+  it("ITBIS sin marca de exento sugiere la tasa general 18%", () => assert.equal(tasasSugeridasArancel({ gravamen_pct: null, exento_itbis: null }).itbis, 18));
 });
 describe("CSV sin pérdida de códigos ni nulos", () => {
   const fila = { codigo: "0709.60.13", codigo_partida: "0709", descripcion: "Dato de prueba, no se importa", capitulo: "7", capitulo_titulo: "Prueba", seccion: "II", gravamen_pct: "", exento_itbis: "", nivel: "3", es_hoja: "true" };
