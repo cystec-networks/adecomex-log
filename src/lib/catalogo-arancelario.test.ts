@@ -1,6 +1,28 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { filaArancelSchema, resolverTasaProducto, tasasSugeridasArancel, validarFilasArancel } from "./catalogo-arancelario";
+import { filaArancelSchema, resolverTasaProducto, resolverSugerenciasProducto, tasasSugeridasArancel, validarFilasArancel } from "./catalogo-arancelario";
+describe("Prioridad de sugerencias en las tres pantallas", () => {
+  const cebollas = { gravamen_pct: 25, exento_itbis: true };
+  const viejo = { pct_gravamen: 8, pct_itbis: 18, aplica_isc: true, pct_isc: 10 };
+  it("0703.10.11 usa 25% y 0% oficiales en vez del historial", () => {
+    const r = resolverSugerenciasProducto({}, cebollas, viejo);
+    assert.equal(r.pct_gravamen, "25"); assert.equal(r.pct_itbis, "0");
+  });
+  it("respeta tasas manuales guardadas, incluido cero e ISC", () => {
+    const r = resolverSugerenciasProducto({ pct_gravamen: 0, pct_itbis: 18, aplica_isc: true, pct_isc: 5 }, cebollas, viejo);
+    assert.deepEqual(r, { pct_gravamen: "0", pct_itbis: "18", aplica_isc: true, pct_isc: "5" });
+  });
+  it("ITBIS oficial sin dato queda vacío aunque el historial tenga 18", () => {
+    assert.equal(resolverSugerenciasProducto({}, { gravamen_pct: 8, exento_itbis: null }, viejo).pct_itbis, "");
+  });
+  it("solo una partida ausente usa el autoaprendizaje, incluido ISC", () => {
+    assert.deepEqual(resolverSugerenciasProducto({}, null, viejo), { pct_gravamen: "8", pct_itbis: "18", aplica_isc: true, pct_isc: "10" });
+  });
+  it("sin fuentes no inventa 18 ni un gravamen", () => {
+    const r = resolverSugerenciasProducto({}, null, null);
+    assert.equal(r.pct_itbis, ""); assert.equal(r.pct_gravamen, "");
+  });
+});
 describe("Sugerencias oficiales sin reemplazar overrides", () => {
   it("mantiene el cero manual por encima del gravamen sugerido", () => assert.equal(resolverTasaProducto(0, 20), "0"));
   it("mantiene una tasa manual positiva", () => assert.equal(resolverTasaProducto("8", 20), "8"));

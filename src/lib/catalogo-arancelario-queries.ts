@@ -1,6 +1,19 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeSearchTerm, patronSinTildes } from "@/lib/search-filter";
+import type { QueryClient } from "@tanstack/react-query";
+import { resolverSugerenciasProducto, type TasasProducto } from "@/lib/catalogo-arancelario";
+
+export async function buscarSugerenciasProducto(qc: QueryClient, codigo: string, manual: TasasProducto = {}) {
+  const arancel = await qc.fetchQuery(arancelCodigoOptions(codigo));
+  let historial = null;
+  if (!arancel && codigo.trim()) {
+    const { data, error } = await supabase.from("catalogo_tasas_arancelarias").select("pct_gravamen,aplica_isc,pct_isc,pct_itbis").eq("codigo_arancelario", codigo.trim()).maybeSingle();
+    if (error) throw error;
+    historial = data;
+  }
+  return resolverSugerenciasProducto(manual, arancel, historial);
+}
 
 export const arancelConsultaOptions = (q = "", capitulo = "todos", seccion = "todas", pagina = 0) => queryOptions({
   queryKey: ["catalogo-arancelario", "consulta", q, capitulo, seccion, pagina],

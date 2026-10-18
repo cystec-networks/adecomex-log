@@ -48,6 +48,7 @@ import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { DepositoDestinoField } from "@/components/deposito-destino-field";
 import { DgaCombobox } from "@/components/dga-combobox";
 import { DgaProductoSearch } from "@/components/dga-producto-search";
+import { buscarSugerenciasProducto } from "@/lib/catalogo-arancelario-queries";
 import { ArancelProductoAviso } from "@/components/arancel-producto-aviso";
 import { normalizarNombre, patronSinTildes } from "@/lib/search-filter";
 import {
@@ -4262,7 +4263,7 @@ function MercanciaItemsBlock({
   const emptyForm = {
     codigo_arancelario: "", detalle_producto: "", unidad_medida: "", unidad_codigo: "",
     cantidad: "", peso: "", valor_fob: "",
-    pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "18", itbis_proindustria: false as boolean,
+    pct_gravamen: "", aplica_isc: false as boolean, pct_isc: "", pct_itbis: "", itbis_proindustria: false as boolean,
     product_code: "", cod_marca: "", marca: "", cod_modelo: "", modelo: "", especificaciones: "",
     estado_producto_codigo: "",
     product_year: "", tiene_certificado_origen: false as boolean, certificado_origen_numero: "",
@@ -4429,7 +4430,7 @@ function MercanciaItemsBlock({
       pct_gravamen: it.pct_gravamen != null ? String(it.pct_gravamen) : "",
       aplica_isc: !!it.aplica_isc,
       pct_isc: it.pct_isc != null ? String(it.pct_isc) : "",
-      pct_itbis: it.pct_itbis != null ? String(it.pct_itbis) : "18",
+      pct_itbis: it.pct_itbis != null ? String(it.pct_itbis) : "",
       itbis_proindustria: !!it.itbis_proindustria,
       product_code: it.product_code ?? "",
       cod_marca: it.cod_marca ?? "",
@@ -4457,19 +4458,13 @@ function MercanciaItemsBlock({
   const onCodigoBlur = async (codigo: string) => {
     const c = (codigo || "").trim();
     if (!c || tasaBloqueada) return;
-    // buscar en tasas ya cargadas
-    let tasa = tasaByCodigo.get(c);
-    if (!tasa) {
-      const { data } = await supabase.from("catalogo_tasas_arancelarias").select("*").eq("codigo_arancelario", c).maybeSingle();
-      tasa = data;
-    }
-    if (!tasa) return;
-    const { pct } = pickPctFromTasa(tasa, preferenciaComercial);
-    setF((prev) => ({
+    const tasa = await buscarSugerenciasProducto(qc, c, { ...f, aplica_isc: f.aplica_isc ? true : undefined });
+    setF((prev) => prev.codigo_arancelario.trim() !== c ? prev : ({
       ...prev,
-      pct_gravamen: prev.pct_gravamen === "" && pct != null ? String(pct) : prev.pct_gravamen,
-      aplica_isc: prev.aplica_isc || !!tasa.aplica_isc,
-      pct_isc: prev.pct_isc === "" && tasa.aplica_isc && tasa.pct_isc != null ? String(tasa.pct_isc) : prev.pct_isc,
+      pct_gravamen: prev.pct_gravamen || tasa.pct_gravamen,
+      aplica_isc: prev.aplica_isc || tasa.aplica_isc,
+      pct_isc: prev.pct_isc || tasa.pct_isc,
+      pct_itbis: prev.itbis_proindustria ? "9" : (prev.pct_itbis || tasa.pct_itbis),
     }));
   };
 
@@ -4601,10 +4596,11 @@ function MercanciaItemsBlock({
           <DialogHeader><DialogTitle>{editingId ? "Editar ítem" : "Nuevo ítem"}</DialogTitle></DialogHeader>
           <div className="rounded-md border bg-muted/30 p-3">
             <DgaProductoSearch
-              onSelect={(p, reusarCodigo) => {
+              onSelect={async (p, reusarCodigo) => {
+                const partida = (p.partida_arancelaria ?? "").trim();
+                const tasas = await buscarSugerenciasProducto(qc, partida, p);
                 // Solo se bloquean las tasas cuando el producto del catálogo trae
-                // gravamen o ISC propios. El ITBIS por sí solo (18% por defecto en
-                // todo el catálogo) no constituye una tasa fija verificada.
+                // gravamen o ISC propios. Las sugerencias oficiales no se bloquean.
                 const tieneTasaFija =
                   p.pct_gravamen != null || (p.aplica_isc === true && p.pct_isc != null);
                 setF((prev) => ({
@@ -4618,14 +4614,10 @@ function MercanciaItemsBlock({
                   modelo: p.modelo ?? "",
                   especificaciones: p.especificaciones ?? "",
                   unidad_medida: prev.unidad_medida || (p.unidad ?? ""),
-                  ...(tieneTasaFija
-                    ? {
-                        pct_gravamen: p.pct_gravamen != null ? String(p.pct_gravamen) : prev.pct_gravamen,
-                        aplica_isc: !!p.aplica_isc,
-                        pct_isc: p.aplica_isc && p.pct_isc != null ? String(p.pct_isc) : "",
-                        pct_itbis: prev.itbis_proindustria ? "9" : (p.pct_itbis != null ? String(p.pct_itbis) : prev.pct_itbis),
-                      }
-                    : {}),
+                  pct_gravamen: p.pct_gravamen != null ? String(p.pct_gravamen) : (prev.pct_gravamen || tasas.pct_gravamen),
+                  aplica_isc: p.aplica_isc ?? (prev.aplica_isc || tasas.aplica_isc),
+                  pct_isc: p.pct_isc != null ? String(p.pct_isc) : (prev.pct_isc || tasas.pct_isc),
+                  pct_itbis: prev.itbis_proindustria ? "9" : (p.pct_itbis != null ? String(p.pct_itbis) : (prev.pct_itbis || tasas.pct_itbis)),
                 }));
                 setTasaBloqueada(tieneTasaFija);
                 // Si el histórico trae país, intenta mapearlo al catálogo DGA de países.
@@ -4750,7 +4742,7 @@ function MercanciaItemsBlock({
                 <div className="grid gap-1.5 sm:col-span-2">
                   <div className="flex items-center gap-2">
                     <Switch id="itbis-proindustria" checked={!!f.itbis_proindustria}
-                      onCheckedChange={(v) => setF({ ...f, itbis_proindustria: v, pct_itbis: v ? "9" : "18" })} />
+                      onCheckedChange={(v) => setF({ ...f, itbis_proindustria: v, pct_itbis: v ? "9" : "" })} />
                     <Label htmlFor="itbis-proindustria" className="cursor-pointer">ITBIS Reducido — PROINDUSTRIA (9%)</Label>
                   </div>
                   {f.itbis_proindustria && Number(f.pct_gravamen || 0) > 0 && (
@@ -4769,7 +4761,7 @@ function MercanciaItemsBlock({
                   </button>
                 </p>
               ) : (
-                <p className="text-[11px] text-muted-foreground mt-2">Por defecto 18%. Solo editar si aplica una excepción.</p>
+                <p className="text-[11px] text-muted-foreground mt-2">Sugerencia: tasa del producto, Arancel oficial y, solo si no hay partida oficial, historial. ITBIS sin dato queda vacío.</p>
               )}
               <AlertDialog open={confirmarDesbloqueo} onOpenChange={setConfirmarDesbloqueo}>
                 <AlertDialogContent>

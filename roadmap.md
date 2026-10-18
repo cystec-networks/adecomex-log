@@ -26,4 +26,5 @@
 - [x] Checks por transición de Estado, Etapa X de N de solo lectura (TabTimeline ya no existía)
 
 - [ ] (Futuro, no implementar aún) Reclasificar los 27 gastos de reembolso: agregar «Es reembolso» en Costo de mercancía y que PDF/reporte de Reembolsos lean de ahí.
+- [x] Unificar sugerencias manual → Arancel → historial en Productos, formulario de ítem y Calculadora; 14 pruebas aprobadas y cebollas 0703.10.11 verificadas en las tres pantallas con 25%/0%, sin consultar historial ni guardar cambios en valores Real o liquidaciones finalizadas.
 - [x] Crear estructura vacía y Consulta Arancelaria en Comercial, sugerencias en productos con tasas manuales prioritarias, aviso de permisos e importación administrativa atómica; 8 pruebas aprobadas y consulta/CSV inválido comprobados con sesión real, sin cargar partidas. La importación completa y las sugerencias con datos reales esperan el CSV del usuario.

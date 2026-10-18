@@ -69,3 +69,28 @@ export function tasasSugeridasArancel(arancel: { gravamen_pct: number | null; ex
 export function resolverTasaProducto(manual: unknown, sugerida: number | null): string {
   return manual != null && String(manual) !== "" ? String(manual) : sugerida == null ? "" : String(sugerida);
 }
+
+export type TasasProducto = {
+  pct_gravamen?: number | string | null;
+  aplica_isc?: boolean | null;
+  pct_isc?: number | string | null;
+  pct_itbis?: number | string | null;
+};
+
+/** Solo sugerencias: nunca aplicar este resolver a importes Real ni a cálculos históricos. */
+export function resolverSugerenciasProducto(
+  manual: TasasProducto,
+  arancel: { gravamen_pct: number | null; exento_itbis: boolean | null } | null,
+  historial: TasasProducto | null,
+) {
+  const sugerida: TasasProducto = arancel
+    ? { pct_gravamen: arancel.gravamen_pct, pct_itbis: arancel.exento_itbis === true ? 0 : null }
+    : historial ?? {};
+  const aplicaIsc = manual.aplica_isc ?? sugerida.aplica_isc ?? false;
+  return {
+    pct_gravamen: resolverTasaProducto(manual.pct_gravamen, sugerida.pct_gravamen == null ? null : Number(sugerida.pct_gravamen)),
+    aplica_isc: aplicaIsc,
+    pct_isc: aplicaIsc ? resolverTasaProducto(manual.pct_isc, sugerida.pct_isc == null ? null : Number(sugerida.pct_isc)) : "",
+    pct_itbis: resolverTasaProducto(manual.pct_itbis, sugerida.pct_itbis == null ? null : Number(sugerida.pct_itbis)),
+  };
+}
