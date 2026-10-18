@@ -5506,6 +5506,7 @@ function LiquidacionFinalPdfButton({
   list,
   calcFila,
   gastosAdicionales,
+  gastosAdicionalesUsdDirecto,
   servicioUsd,
   tasaCambio,
   costosProducto,
@@ -5514,6 +5515,7 @@ function LiquidacionFinalPdfButton({
   list: any[];
   calcFila: (it: any) => any;
   gastosAdicionales: number;
+  gastosAdicionalesUsdDirecto: number;
   servicioUsd: number;
   tasaCambio: number;
   costosProducto: any[];
@@ -5590,7 +5592,7 @@ function LiquidacionFinalPdfButton({
     }
     doc.setFont("helvetica", "normal"); doc.setTextColor(0);
 
-    const r = calcularResultadosLiquidacion({ exp, list, calcFila, gastosAdicionales, servicioUsd, tasaCambio, costosProducto });
+    const r = calcularResultadosLiquidacion({ exp, list, calcFila, gastosAdicionales, gastosAdicionalesUsdDirecto, servicioUsd, tasaCambio, costosProducto });
     const t = r.totales;
     const { margenTotal, margenPct, hayVenta } = r;
     const body = r.productos.map(({ c, descripcion, pais, margenUnit, pct }) => [
@@ -6010,6 +6012,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             list={list}
             calcFila={calcFila}
             gastosAdicionales={gastosAdicionales}
+            gastosAdicionalesUsdDirecto={gastosAdicionalesUsdDirecto}
             servicioUsd={servicioLiqUsd}
             tasaCambio={tasaCambio}
             costosProducto={filasAdic}
@@ -6149,7 +6152,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
         {list.length > 0 && (
           <ResultadosLiquidacionView
             r={calcularResultadosLiquidacion({
-              exp, list, calcFila, gastosAdicionales, servicioUsd: servicioLiqUsd, tasaCambio, costosProducto: filasAdic,
+              exp, list, calcFila, gastosAdicionales, gastosAdicionalesUsdDirecto, servicioUsd: servicioLiqUsd, tasaCambio, costosProducto: filasAdic,
             })}
             tasaCambio={tasaCambio}
           />
