@@ -62,8 +62,9 @@ export async function leerCsvArancel(file: File): Promise<ResultadoValidacionAra
   return validarFilasArancel(XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "", raw: true }));
 }
 
+/** ITBIS sugerido: exento=true → 0%; sin marca (vacío) significa no exento → tasa general 18%. */
 export function tasasSugeridasArancel(arancel: { gravamen_pct: number | null; exento_itbis: boolean | null }) {
-  return { gravamen: arancel.gravamen_pct, itbis: arancel.exento_itbis === true ? 0 : arancel.exento_itbis === false ? 18 : null };
+  return { gravamen: arancel.gravamen_pct, itbis: arancel.exento_itbis === true ? 0 : 18 };
 }
 
 export function resolverTasaProducto(manual: unknown, sugerida: number | null): string {
@@ -84,7 +85,7 @@ export function resolverSugerenciasProducto(
   historial: TasasProducto | null,
 ) {
   const sugerida: TasasProducto = arancel
-    ? { pct_gravamen: arancel.gravamen_pct, pct_itbis: arancel.exento_itbis === true ? 0 : null }
+    ? { pct_gravamen: arancel.gravamen_pct, pct_itbis: arancel.exento_itbis === true ? 0 : 18 }
     : historial ?? {};
   const aplicaIsc = manual.aplica_isc ?? sugerida.aplica_isc ?? false;
   return {
