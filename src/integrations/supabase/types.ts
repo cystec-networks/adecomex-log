@@ -337,6 +337,24 @@ export type Database = {
         }
         Relationships: []
       }
+      capitulo_notas: {
+        Row: {
+          capitulo: number
+          notas_texto: string
+          vigente_desde: string
+        }
+        Insert: {
+          capitulo: number
+          notas_texto: string
+          vigente_desde?: string
+        }
+        Update: {
+          capitulo?: number
+          notas_texto?: string
+          vigente_desde?: string
+        }
+        Relationships: []
+      }
       catalogo_acuerdos: {
         Row: {
           codigo: string
@@ -7244,6 +7262,7 @@ export type Database = {
       expediente_docs_core_faltantes: { Args: { _id: string }; Returns: string }
       expirar_cotizaciones_vencidas: { Args: never; Returns: number }
       immutable_unaccent: { Args: { "": string }; Returns: string }
+      importar_capitulo_notas: { Args: { _filas: Json }; Returns: Json }
       importar_catalogo_arancelario: { Args: { _filas: Json }; Returns: Json }
       listar_encargados_logistica: {
         Args: never

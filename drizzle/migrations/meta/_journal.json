@@ -435,6 +435,13 @@
       "when": 1792260171073,
       "tag": "0061_dga_productos_sin_itbis_default",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1792289518599,
+      "tag": "0062_capitulo_notas_consulta_importacion",
+      "breakpoints": true
     }
   ]
 }
