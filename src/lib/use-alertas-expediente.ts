@@ -30,7 +30,9 @@ export function useDatosAlertasListado(expedientes: VinculoExpediente[]) {
           documentos: (documentos.data ?? []).filter(d => d.expediente_id === e.id),
           tieneRecepcion: (recepciones.data ?? []).some(r => r.expediente_id === e.id),
           incidencias: (incidencias.data ?? []).filter(i => i.expediente_id === e.id),
-          facturas: (facturas.data ?? []).filter(f => propias.has(f.id) && (!e.cliente_id || f.cliente_id === e.cliente_id)),
+          // Las facturas ya vienen acotadas a las vinculadas al expediente; no filtrar por cliente,
+          // porque con endoso la factura se emite al consignatario endosado, no al cliente original.
+          facturas: (facturas.data ?? []).filter(f => propias.has(f.id)),
         }];
       }));
     },
@@ -47,11 +49,11 @@ export function useDatosAlertasExpediente(id: string, clienteId: string | null, 
       if (vinculoError) throw vinculoError;
       const ids = [...new Set([facturaId, ...(vinculadas ?? []).map((f) => f.factura_ecf_id)].filter((v): v is string => !!v))];
       if (!ids.length) return [];
-      let query = supabase.from("facturas_ecf")
+      // Sin filtro por cliente: con endoso la factura se emite al consignatario endosado,
+      // y los ids ya vienen de las facturas vinculadas a este expediente.
+      const { data, error } = await supabase.from("facturas_ecf")
         .select("id, fecha_vencimiento_pago, monto_total, cxc_pagos(monto)")
         .in("id", ids).is("eliminado_en", null).neq("estado", "anulada");
-      if (clienteId) query = query.eq("cliente_id", clienteId);
-      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },

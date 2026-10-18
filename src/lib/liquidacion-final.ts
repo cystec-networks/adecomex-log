@@ -22,11 +22,14 @@ export function calcularResultadosLiquidacion(args: {
   calcFila: (it: any) => FilaCalc;
   /** Costo de mercancía en RD$ que se suma (ya excluye filas reemplazadas). */
   gastosAdicionales: number;
+  /** Costo de mercancía capturado directamente en US$ (filas con moneda USD). */
+  gastosAdicionalesUsdDirecto?: number;
   servicioUsd: number;
   tasaCambio: number;
-  costosProducto: { concepto?: string | null; monto_real?: number | string | null }[];
+  costosProducto: { concepto?: string | null; monto_real?: number | string | null; moneda?: string | null }[];
 }) {
   const { exp, list, calcFila, gastosAdicionales, servicioUsd, tasaCambio, costosProducto } = args;
+  const gastosUsdDirecto = args.gastosAdicionalesUsdDirecto ?? 0;
   const t = { cant: 0, gEst: 0, gReal: 0, iEst: 0, iReal: 0, tEst: 0, tReal: 0, inv: 0, venta: 0 };
   const productos = list.map((it) => {
     const c = calcFila(it);
@@ -59,8 +62,8 @@ export function calcularResultadosLiquidacion(args: {
   const totalFob = list.reduce((s, it) => s + (Number(it.valor_fob) || 0), 0);
   // Formulario DUA: cargo fijo automático, se suma igual que el Servicio Aduanero.
   const duaUsd = tasaCambio > 0 ? FORMULARIO_DUA_RD / tasaCambio : 0;
-  const gastosAdicionalesUSD = (tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0) + servicioUsd + duaUsd;
-  const gastosProductoSoloUSD = tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0;
+  const gastosAdicionalesUSD = (tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0) + servicioUsd + duaUsd + gastosUsdDirecto;
+  const gastosProductoSoloUSD = (tasaCambio > 0 ? gastosAdicionales / tasaCambio : 0) + gastosUsdDirecto;
 
   const td = { cant: 0, fob: 0, seg: 0, fle: 0, otr: 0, cif: 0, gr: 0, ir: 0, gp: 0, cu: 0 };
   const desglose = productos.map(({ it, c }) => {
@@ -89,17 +92,18 @@ export function calcularResultadosLiquidacion(args: {
     { concepto: "Formulario DUA (automático)", dop: FORMULARIO_DUA_RD as number | null, usd: tasaCambio > 0 ? duaUsd : null, reemplazada: false },
     ...costosProducto.map((c) => {
       const m = Number(c.monto_real) || 0;
+      const esUsd = c.moneda === "USD";
       return {
         concepto: c.concepto ?? "—",
-        dop: m as number | null,
-        usd: tasaCambio > 0 ? m / tasaCambio : null,
+        dop: (esUsd ? (tasaCambio > 0 ? m * tasaCambio : null) : m) as number | null,
+        usd: (esUsd ? m : tasaCambio > 0 ? m / tasaCambio : null) as number | null,
         reemplazada: filaReemplazadaPorServicio(c.concepto, servicioUsd),
       };
     }),
   ];
   const costosTotal = {
-    dop: (tasaCambio > 0 ? gastosAdicionales + servicioUsd * tasaCambio : gastosAdicionales) + FORMULARIO_DUA_RD,
-    usd: tasaCambio > 0 ? gastosAdicionales / tasaCambio + servicioUsd + duaUsd : null,
+    dop: (tasaCambio > 0 ? gastosAdicionales + (servicioUsd + gastosUsdDirecto) * tasaCambio : gastosAdicionales) + FORMULARIO_DUA_RD,
+    usd: tasaCambio > 0 ? gastosAdicionales / tasaCambio + servicioUsd + duaUsd + gastosUsdDirecto : null,
   };
 
   return {
