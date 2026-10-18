@@ -3485,15 +3485,8 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
     },
   });
 
-  // Expedientes que ya tenían e-CF vinculada antes de esta función: crear su fila de cobro una vez.
-  const autoSyncHecho = useRef(false);
-  useEffect(() => {
-    if (!ecfVinculada || autoSyncHecho.current) return;
-    autoSyncHecho.current = true;
-    sincronizarCobroDesdeEcf(expedienteId, ecfVinculada.id, null)
-      .then((m) => { if (m) qc.invalidateQueries({ queryKey: ["facturas", expedienteId] }); })
-      .catch((e) => toast.error(e.message));
-  }, [ecfVinculada, facturas, expedienteId, qc]);
+  // La sincronización de renglones de cobro solo ocurre cuando el usuario vincula/cambia la e-CF
+  // (mutación link de FacturaEcfBlock); nunca de forma automática al abrir esta ficha.
 
   const save = useMutation({
     mutationFn: async () => {
@@ -4193,8 +4186,9 @@ function pickPctFromTasa(
   const hasPref = tasa.pct_gravamen_preferencial != null;
   const acuerdo = (tasa.acuerdo_preferencial || "").trim().toLowerCase();
   const prefExp = (preferenciaComercial || "").trim().toLowerCase();
-  // Coincidencia exacta con el nombre del catálogo de Acuerdos (sin mayúsculas).
-  const match = hasPref && acuerdo && prefExp && acuerdo === prefExp;
+  // Coincidencia con el nombre del catálogo de Acuerdos, tolerante a etiquetas históricas
+  // (ej. "EPA (Unión Europea)" guardado antes de existir el catálogo de acuerdos).
+  const match = hasPref && acuerdo && prefExp && (acuerdo === prefExp || prefExp.includes(acuerdo) || acuerdo.includes(prefExp));
   if (match) return { pct: Number(tasa.pct_gravamen_preferencial), usedPreferencial: true };
   if (tasa.pct_gravamen != null) return { pct: Number(tasa.pct_gravamen), usedPreferencial: false };
   return { pct: null, usedPreferencial: false };
