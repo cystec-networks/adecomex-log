@@ -2667,16 +2667,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                   disabled={!editable}
                 />
               </div>
-
-              <div className="md:col-span-2 lg:col-span-3">
-                <ResultadoOficialBlock
-                  exp={exp}
-                  form={form}
-                  set={set}
-                  servicioAduaneroUsd={servicioAd.servicioUsd}
-                  disabled={!editable}
-                />
-              </div>
             </>
           )}
 
