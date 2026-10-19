@@ -10,3 +10,11 @@ export function elegirCandidatoReal(indice: unknown, confianza: unknown, candida
   return candidato && codigo ? { ...candidato, codigo } : null;
 }
 export const NO_DETERMINADA = "Partida no determinada automáticamente — revisar manualmente";
+export function eleccionesPorLinea(raw: unknown): unknown[] {
+  if (Array.isArray(raw)) return raw.map((r) => {
+    if (r && typeof r === "object" && "elecciones" in r && Array.isArray(r.elecciones)) return r.elecciones[0];
+    return r;
+  });
+  if (raw && typeof raw === "object" && "elecciones" in raw && Array.isArray(raw.elecciones)) return raw.elecciones;
+  return [];
+}
