@@ -28,7 +28,7 @@ import {
   DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical, Printer, Repeat2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday, hoyRD, hoyRDISO } from "@/lib/dates";
@@ -741,6 +741,8 @@ function DetalleExpediente() {
   // Consignatario efectivo del encabezado: endosado si hay endoso activo; si no, el cliente original.
   const { data: endosoHeader } = useEndosoActivo(isNuevo ? undefined : id);
   const clienteEfectivoHeader = endosoHeader?.endosado ?? null;
+  // Borrador de la pestaña Liquidación, compartido con la pestaña Costos (Resumen de Importación).
+  const [liqDraft, setLiqDraft] = useState<Record<string, Record<string, string>>>({});
 
   if (!isNuevo && !exp) return <div className="p-8 text-center text-muted-foreground">Cargando…</div>;
 
@@ -1146,7 +1148,7 @@ function DetalleExpediente() {
         </TabsContent>
 
         
-        <TabsContent value="liqfinal"><LiquidacionFinalSection exp={expData} /></TabsContent>
+        <TabsContent value="liqfinal"><LiquidacionFinalSection exp={expData} draft={liqDraft} setDraft={setLiqDraft} /></TabsContent>
         <TabsContent value="docs"><TabDocumentos expedienteId={id} /></TabsContent>
 
         <TabsContent value="permisos"><TabPermisosExp expedienteId={id} /></TabsContent>
@@ -1154,7 +1156,7 @@ function DetalleExpediente() {
         <TabsContent value="recepcion"><TabRecepcion expedienteId={id} /></TabsContent>
         <TabsContent value="inc"><TabIncidencias expedienteId={id} /></TabsContent>
         <TabsContent value="cost"><TabCostos expedienteId={id} exp={expData} canEdit={canEditExpediente} /></TabsContent>
-        <TabsContent value="costprod"><TabCostosProducto expedienteId={id} exp={expData} /></TabsContent>
+        <TabsContent value="costprod"><TabCostosProducto expedienteId={id} exp={expData} liqDraft={liqDraft} /></TabsContent>
         <TabsContent value="aud"><TabAuditoria expedienteId={id} /></TabsContent>
         </>
         )}
@@ -3150,7 +3152,7 @@ function TabCostos({ expedienteId, exp, canEdit }: { expedienteId: string; exp: 
   );
 }
 
-function TabCostosProducto({ expedienteId, exp }: { expedienteId: string; exp?: any }) {
+function TabCostosProducto({ expedienteId, exp, liqDraft }: { expedienteId: string; exp?: any; liqDraft: Record<string, Record<string, string>> }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -3165,10 +3167,11 @@ function TabCostosProducto({ expedienteId, exp }: { expedienteId: string; exp?: 
     queryFn: async () =>
       (await supabase.from("costos_producto").select("*").eq("expediente_id", expedienteId).order("created_at")).data ?? [],
   });
+  // Mismos ítems que la pestaña Liquidación (misma llave de caché): incluye los campos del Estimado.
   const { data: itemsImp } = useQuery({
-    queryKey: ["mercancia-items-impuestos", expedienteId],
+    queryKey: ["mercancia-items", expedienteId],
     queryFn: async () =>
-      (await supabase.from("mercancia_items").select("gravamen_real,isc_real,itbis_real").eq("expediente_id", expedienteId).is("deleted_at", null)).data ?? [],
+      (await supabase.from("mercancia_items").select("id,valor_fob,pct_gravamen,aplica_isc,pct_isc,pct_itbis,gravamen_real,isc_real,itbis_real").eq("expediente_id", expedienteId).is("deleted_at", null).order("item_no")).data ?? [],
   });
 
   const save = useMutation({
@@ -3224,7 +3227,29 @@ function TabCostosProducto({ expedienteId, exp }: { expedienteId: string; exp?: 
 
   // ===== Resumen de Importación (solo lectura) =====
   // Los impuestos Real se guardan en US$; en pantalla se muestran en RD$ con la tasa del expediente.
-  const resumen = resumenImportacion({ filas: (itemsImp ?? []) as any[], tasa, costoMercanciaRd: totalReal });
+  // Lee el mismo dato en vivo que «Resultados de la Liquidación»: borrador en edición,
+  // precarga con el Estimado de la línea cuando no hay valor guardado, o el valor guardado.
+  const susp = useImpuestosSusp();
+  const listImp = (itemsImp ?? []) as any[];
+  const totalFobImp = listImp.reduce((s: number, it: any) => s + (Number(it.valor_fob) || 0), 0);
+  const estLineaImp = (it: any) =>
+    calcImpuestosLinea(Number(it.valor_fob) || 0, totalFobImp, Number(exp?.seguro) || 0, Number(exp?.flete) || 0, Number(exp?.otros) || 0, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis, susp.suspendido);
+  const impuestoRealEfectivo = (it: any, campo: string) => {
+    const d = liqDraft[it.id]?.[campo];
+    if (d !== undefined) return d;
+    const guardado = it[campo];
+    if (guardado == null || guardado === "") {
+      const precargado = valorRealInicial(campo, guardado, estLineaImp(it));
+      if (precargado !== null) return precargado;
+    }
+    return guardado == null ? "" : String(guardado);
+  };
+  const filasResumen = listImp.map((it: any) => ({
+    gravamen_real: impuestoRealEfectivo(it, "gravamen_real"),
+    isc_real: impuestoRealEfectivo(it, "isc_real"),
+    itbis_real: impuestoRealEfectivo(it, "itbis_real"),
+  }));
+  const resumen = resumenImportacion({ filas: filasResumen, tasa, costoMercanciaRd: totalReal });
   const celdaImpuesto = (i: { capturado: boolean; rd: number }) =>
     !i.capturado ? (
       <span className="text-sm text-muted-foreground">Pendiente de Liquidación</span>
@@ -5873,7 +5898,7 @@ function LiquidacionFinalPdfButton({
 // ---------------------------------------------------------------------------
 // Liquidación Final por producto → entrada a Almacén
 // ---------------------------------------------------------------------------
-function LiquidacionFinalSection({ exp }: { exp: any }) {
+function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Record<string, Record<string, string>>; setDraft: Dispatch<SetStateAction<Record<string, Record<string, string>>>> }) {
   const susp = useImpuestosSusp();
   const qc = useQueryClient();
   const { user } = useCurrentUser();
@@ -5935,7 +5960,6 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
   const [reabierto, setReabierto] = useState(false);
   const editable = canEdit && (!finalizado || reabierto);
 
-  const [draft, setDraft] = useState<Record<string, Record<string, string>>>({});
   // Estimado de la línea: la misma fórmula de la ficha Generales (calcImpuestosLinea).
   const estLinea = (it: any) =>
     calcImpuestosLinea(
