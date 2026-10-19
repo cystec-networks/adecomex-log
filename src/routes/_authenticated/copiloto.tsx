@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { classifyArancel } from "@/lib/ai-arancel.functions";
-import { ClasificarFacturaLote } from "@/components/clasificar-factura-lote";
+import { useClasificarFactura } from "@/components/clasificar-factura-lote";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +28,7 @@ const SUGERENCIAS = [
 
 function Copiloto() {
   const fn = useServerFn(classifyArancel);
+  const factura = useClasificarFactura();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -117,10 +118,11 @@ function Copiloto() {
             <Button onClick={() => send(input)} disabled={!input.trim() || ask.isPending}>
               <Send className="h-4 w-4" />
             </Button>
+            {factura.boton}
           </div>
         </div>
       </Card>
-      <ClasificarFacturaLote />
+      {factura.tabla}
     </div>
   );
 }
