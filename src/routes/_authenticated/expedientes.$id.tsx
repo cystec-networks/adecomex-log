@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ImporteLiquidacionInput } from "@/components/importe-liquidacion-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -6103,32 +6104,32 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
                     <td className="py-2 px-2 text-right text-muted-foreground">{nf(c.est.gravamen)}</td>
                     <td className="py-2 px-2 text-right">
                       {editable ? (
-                        <Input className="h-8 w-24 text-right" type="number" step="0.01" value={val(it, "gravamen_real")}
-                          onChange={(e) => setVal(it.id, "gravamen_real", e.target.value)} />
+                        <ImporteLiquidacionInput aria-label={`Grav. Real línea ${it.item_no}`} value={val(it, "gravamen_real")}
+                          onValueChange={(v) => setVal(it.id, "gravamen_real", v)} />
                       ) : nf(c.gr)}
                     </td>
                     <td className="py-2 px-2 text-right"><Diff real={c.gr} est={c.est.gravamen} /></td>
                     <td className="py-2 px-2 text-right text-muted-foreground">{nf(c.est.selectivo)}</td>
                     <td className="py-2 px-2 text-right">
                       {editable ? (
-                        <Input className="h-8 w-24 text-right" type="number" step="0.01" value={val(it, "isc_real")}
-                          onChange={(e) => setVal(it.id, "isc_real", e.target.value)} />
+                        <ImporteLiquidacionInput aria-label={`ISC Real línea ${it.item_no}`} value={val(it, "isc_real")}
+                          onValueChange={(v) => setVal(it.id, "isc_real", v)} />
                       ) : nf(c.ir)}
                     </td>
                     <td className="py-2 px-2 text-right"><Diff real={c.ir} est={c.est.selectivo} /></td>
                     <td className="py-2 px-2 text-right text-muted-foreground">{nf(c.est.itbis)}</td>
                     <td className="py-2 px-2 text-right">
                       {editable ? (
-                        <Input className="h-8 w-24 text-right" type="number" step="0.01" value={val(it, "itbis_real")}
-                          onChange={(e) => setVal(it.id, "itbis_real", e.target.value)} />
+                        <ImporteLiquidacionInput aria-label={`ITBIS Real línea ${it.item_no}`} value={val(it, "itbis_real")}
+                          onValueChange={(v) => setVal(it.id, "itbis_real", v)} />
                       ) : nf(c.tr)}
                     </td>
                     <td className="py-2 px-2 text-right"><Diff real={c.tr} est={c.est.itbis} /></td>
                     <td className="py-2 px-2 text-right font-medium">{nf(c.costoUnit)}</td>
                     <td className="py-2 pl-2 text-right">
                       {editable || (finalizado && canEdit) ? (
-                        <Input className="h-8 w-24 text-right" type="number" step="0.01" value={val(it, "costo_venta_unitario")}
-                          onChange={(e) => setVal(it.id, "costo_venta_unitario", e.target.value)}
+                        <ImporteLiquidacionInput aria-label={`Costo de Venta línea ${it.item_no}`} value={val(it, "costo_venta_unitario")}
+                          onValueChange={(v) => setVal(it.id, "costo_venta_unitario", v)}
                           onBlur={() => {
                             if (editable) return;
                             const d = draft[it.id]?.costo_venta_unitario;
