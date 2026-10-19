@@ -1,5 +1,6 @@
 import { calcularResultadosLiquidacion, valorRealInicial } from "@/lib/liquidacion-final";
 import { impuestoPantallaRd, impuestoEditadoUsd } from "@/lib/liquidacion-moneda";
+import { resumenImportacion } from "@/lib/resumen-importacion";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { sha256File, prefijoSiga, siguienteCodigoSiga, validarNombreSiga, nombreArchivo } from "@/lib/codigo-siga";
@@ -3164,6 +3165,11 @@ function TabCostosProducto({ expedienteId, exp }: { expedienteId: string; exp?: 
     queryFn: async () =>
       (await supabase.from("costos_producto").select("*").eq("expediente_id", expedienteId).order("created_at")).data ?? [],
   });
+  const { data: itemsImp } = useQuery({
+    queryKey: ["mercancia-items-impuestos", expedienteId],
+    queryFn: async () =>
+      (await supabase.from("mercancia_items").select("gravamen_real,isc_real,itbis_real").eq("expediente_id", expedienteId).is("deleted_at", null)).data ?? [],
+  });
 
   const save = useMutation({
     mutationFn: async () => {
@@ -3216,6 +3222,18 @@ function TabCostosProducto({ expedienteId, exp }: { expedienteId: string; exp?: 
   const fmt = (n: number) => new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
   const fmtUsd = (n: number) => `US$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+  // ===== Resumen de Importación (solo lectura) =====
+  // Los impuestos Real se guardan en US$; en pantalla se muestran en RD$ con la tasa del expediente.
+  const resumen = resumenImportacion({ filas: (itemsImp ?? []) as any[], tasa, costoMercanciaRd: totalReal });
+  const celdaImpuesto = (i: { capturado: boolean; rd: number }) =>
+    !i.capturado ? (
+      <span className="text-sm text-muted-foreground">Pendiente de Liquidación</span>
+    ) : resumen.sinTasa ? (
+      <span className="text-sm text-muted-foreground">—</span>
+    ) : (
+      <div className="text-base font-display font-bold tabular-nums">{fmt(i.rd)}</div>
+    );
+
   return (
     <div className="space-y-4">
       <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm">
@@ -3226,6 +3244,33 @@ function TabCostosProducto({ expedienteId, exp }: { expedienteId: string; exp?: 
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total RD$</div><div className="text-2xl font-display font-bold mt-1">{fmt(totalReal)}</div>{servicioRd > 0 && <div className="text-xs text-muted-foreground mt-1">Incluye Servicio Aduanero {fmt(servicioRd)}</div>}{servicioSinTasa && <div className="text-xs text-destructive mt-1">Falta la tasa de cambio: Servicio Aduanero ({fmtUsd(servicioUsd)}) no se suma</div>}</CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total US$</div><div className="text-2xl font-display font-bold mt-1">{fmtUsd(totalUsd)}</div></CardContent></Card>
       </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2"><Scale className="h-4 w-4" />Resumen de Importación</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div><div className="text-xs text-muted-foreground">Gravamen Real (total)</div>{celdaImpuesto(resumen.gravamen)}</div>
+          <div><div className="text-xs text-muted-foreground">ISC Real (total)</div>{celdaImpuesto(resumen.isc)}</div>
+          <div>
+            <div className="text-xs text-muted-foreground">ITBIS Real (total)</div>
+            {celdaImpuesto(resumen.itbis)}
+            <div className="text-[11px] text-muted-foreground">(crédito fiscal, no es costo)</div>
+          </div>
+          <div><div className="text-xs text-muted-foreground">Costo de mercancía</div><div className="text-base font-display font-bold tabular-nums">{fmt(totalReal)}</div></div>
+          <div>
+            <div className="text-xs text-muted-foreground">Total general de la importación</div>
+            {resumen.totalGeneral != null ? (
+              <div className="text-base font-display font-bold tabular-nums">{fmt(resumen.totalGeneral)}</div>
+            ) : resumen.sinTasa ? (
+              <span className="text-sm text-muted-foreground">—</span>
+            ) : (
+              <span className="text-sm text-muted-foreground">Pendiente de Liquidación</span>
+            )}
+            <div className="text-[11px] text-muted-foreground">Gravamen + ISC + Costo de mercancía (sin ITBIS)</div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">
