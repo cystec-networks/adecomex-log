@@ -3277,6 +3277,8 @@ function TabCostosProducto({ expedienteId, exp }: { expedienteId: string; exp?: 
             <div className="text-xs text-muted-foreground">Total general de la importación</div>
             {totalGeneralImportacion != null ? (
               <div className="text-base font-display font-bold tabular-nums">{fmt(totalGeneralImportacion)}</div>
+            ) : impuestosSinTasa ? (
+              <span className="text-sm text-muted-foreground">—</span>
             ) : (
               <span className="text-sm text-muted-foreground">Pendiente de Liquidación</span>
             )}
