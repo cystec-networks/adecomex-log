@@ -3164,6 +3164,11 @@ function TabCostosProducto({ expedienteId, exp }: { expedienteId: string; exp?: 
     queryFn: async () =>
       (await supabase.from("costos_producto").select("*").eq("expediente_id", expedienteId).order("created_at")).data ?? [],
   });
+  const { data: itemsImp } = useQuery({
+    queryKey: ["mercancia-items-impuestos", expedienteId],
+    queryFn: async () =>
+      (await supabase.from("mercancia_items").select("gravamen_real,isc_real,itbis_real").eq("expediente_id", expedienteId).is("deleted_at", null)).data ?? [],
+  });
 
   const save = useMutation({
     mutationFn: async () => {
