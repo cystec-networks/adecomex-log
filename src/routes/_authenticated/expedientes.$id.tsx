@@ -3,7 +3,7 @@ import { impuestoPantallaRd, impuestoEditadoUsd } from "@/lib/liquidacion-moneda
 import { resumenImportacion } from "@/lib/resumen-importacion";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { sha256File, prefijoSiga, siguienteCodigoSiga, validarNombreSiga, nombreArchivo } from "@/lib/codigo-siga";
+import { sha256File, prefijoSiga, prefijosAceptados, siguienteCodigoSiga, validarNombreSiga, nombreArchivo } from "@/lib/codigo-siga";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -2737,7 +2737,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       return;
     }
     if (file) {
-      const v = validarNombreSiga(file.name, prefijoSiga(tipo));
+      const v = validarNombreSiga(file.name, prefijosAceptados(tipo));
       if (!v.ok) { toast.error(v.error, { duration: 8000 }); return; }
       if (v.advertencia) toast.warning(v.advertencia, { duration: 8000 });
     }
