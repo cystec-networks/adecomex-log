@@ -11,9 +11,19 @@ import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { lazy, Suspense } from "react";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HistorialCopiloto } from "@/components/historial-copiloto";
+
 const ReactMarkdown = lazy(() => import("react-markdown"));
 
 export const Route = createFileRoute("/_authenticated/copiloto")({
+  head: () => ({ meta: [
+    { title: "Copiloto arancelario | ADECOMEX" },
+    { name: "description", content: "Clasifica facturas y mercancías, guarda el historial y descarga los resultados en Excel en ADECOMEX." },
+    { property: "og:title", content: "Copiloto arancelario | ADECOMEX" },
+    { property: "og:description", content: "Clasificación de facturas, historial y exportación Excel en ADECOMEX." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
   component: Copiloto,
 });
 
@@ -66,6 +76,9 @@ function Copiloto() {
         </p>
       </div>
 
+      <Tabs defaultValue="copiloto" className="flex-1 min-h-0">
+        <TabsList><TabsTrigger value="copiloto">Copiloto</TabsTrigger><TabsTrigger value="historial">Historial</TabsTrigger></TabsList>
+        <TabsContent value="copiloto" forceMount className="data-[state=inactive]:hidden space-y-4">
       <Card className="flex-1 flex flex-col min-h-[500px]">
         <CardHeader className="border-b py-3">
           <CardTitle className="text-sm text-muted-foreground">Conversación</CardTitle>
@@ -123,6 +136,9 @@ function Copiloto() {
         </div>
       </Card>
       {factura.tabla}
+        </TabsContent>
+        <TabsContent value="historial"><Suspense fallback={<Loader2 className="h-4 w-4 animate-spin" />}><HistorialCopiloto /></Suspense></TabsContent>
+      </Tabs>
     </div>
   );
 }
