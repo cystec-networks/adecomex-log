@@ -3261,6 +3261,31 @@ function TabCostosProducto({ expedienteId, exp }: { expedienteId: string; exp?: 
       </div>
 
       <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2"><Scale className="h-4 w-4" />Resumen de Importación</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div><div className="text-xs text-muted-foreground">Gravamen Real (total)</div>{celdaImpuesto(impGravamen)}</div>
+          <div><div className="text-xs text-muted-foreground">ISC Real (total)</div>{celdaImpuesto(impIsc)}</div>
+          <div>
+            <div className="text-xs text-muted-foreground">ITBIS Real (total)</div>
+            {celdaImpuesto(impItbis)}
+            <div className="text-[11px] text-muted-foreground">(crédito fiscal, no es costo)</div>
+          </div>
+          <div><div className="text-xs text-muted-foreground">Costo de mercancía</div><div className="text-base font-display font-bold tabular-nums">{fmt(totalReal)}</div></div>
+          <div>
+            <div className="text-xs text-muted-foreground">Total general de la importación</div>
+            {totalGeneralImportacion != null ? (
+              <div className="text-base font-display font-bold tabular-nums">{fmt(totalGeneralImportacion)}</div>
+            ) : (
+              <span className="text-sm text-muted-foreground">Pendiente de Liquidación</span>
+            )}
+            <div className="text-[11px] text-muted-foreground">Gravamen + ISC + Costo de mercancía (sin ITBIS)</div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costo de mercancía (para Liquidación)</CardTitle>
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
