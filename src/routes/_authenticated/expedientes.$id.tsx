@@ -2372,6 +2372,17 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           </div>
       </Section>
 
+      {/* Resultado oficial DGA: tarjeta propia e independiente, justo después de 3. Declaración. */}
+      {!isNuevo && (
+        <ResultadoOficialBlock
+          exp={exp}
+          form={form}
+          set={set}
+          servicioAduaneroUsd={servicioAd.servicioUsd}
+          disabled={!editable}
+        />
+      )}
+
       <Section id="descripcion-mercancia" title="4. Descripción de mercancía" subtitle="Detalle físico y clasificación de la carga">
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
             <Label>Descripción</Label>
@@ -2663,16 +2674,6 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                   seguro={Number(form.seguro) || 0}
                   flete={Number(form.flete) || 0}
                   otros={Number(form.otros) || 0}
-                  servicioAduaneroUsd={servicioAd.servicioUsd}
-                  disabled={!editable}
-                />
-              </div>
-
-              <div className="md:col-span-2 lg:col-span-3">
-                <ResultadoOficialBlock
-                  exp={exp}
-                  form={form}
-                  set={set}
                   servicioAduaneroUsd={servicioAd.servicioUsd}
                   disabled={!editable}
                 />
