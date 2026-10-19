@@ -59,6 +59,7 @@ export async function clasificarConCatalogo(supabase: SupabaseClient<Database>, 
     { role: "user", content: JSON.stringify(descripciones.map((descripcion, i) => ({ descripcion, producto: interpretado.data.lineas[i]?.producto, candidatos: candidatos[i]?.map((c, indice) => ({ indice, descripcion: c.descripcion, contexto: c.contexto })) }))) },
   ] });
   const parsed = seleccion.safeParse(parsear(elegido));
+  console.info("[copiloto-selection]", JSON.stringify({ selection: parsear(elegido), counts: candidatos.map((c) => c.length), cultures: candidatos.map((c) => c.findIndex((r) => r.codigo === "3002.90.10")) }));
   return interpretado.data.lineas.map((l, i) => {
     const validada = eleccionSchema.safeParse(parsed.success ? parsed.data.elecciones[i] : null);
     const e = validada.success ? validada.data : undefined;
