@@ -9,7 +9,8 @@ const Modelo = "google/gemini-2.5-flash";
 const interpretacion = z.object({ lineas: z.array(z.object({
   producto: z.boolean(), terminos: z.array(z.string()).max(8), capitulos: z.array(z.number().int().min(1).max(97)).max(2),
 })) });
-const seleccion = z.object({ elecciones: z.array(z.object({ indice: z.number().int().nullable(), confianza: z.enum(["alta", "baja"]), explicacion: z.string() })) });
+const eleccionSchema = z.object({ indice: z.number().int().nullable(), confianza: z.enum(["alta", "baja"]), explicacion: z.string().nullish() });
+const seleccion = z.object({ elecciones: z.array(z.unknown()) });
 function parsear(raw: string): unknown {
   try { return JSON.parse(raw); } catch {
     const json = raw.match(/\{[\s\S]*\}/)?.[0];
@@ -59,7 +60,8 @@ export async function clasificarConCatalogo(supabase: SupabaseClient<Database>, 
   ] });
   const parsed = seleccion.safeParse(parsear(elegido));
   return interpretado.data.lineas.map((l, i) => {
-    const e = parsed.success ? parsed.data.elecciones[i] : undefined;
+    const validada = eleccionSchema.safeParse(parsed.success ? parsed.data.elecciones[i] : null);
+    const e = validada.success ? validada.data : undefined;
     const arancel = l.producto ? elegirCandidatoReal(e?.indice, e?.confianza, candidatos[i] ?? []) : null;
     return { producto: l.producto, arancel, explicacion: arancel ? (e?.explicacion ?? "").replace(/\b\d{4}(?:\.\d{2}){1,3}\b|\b\d{8,10}\b/g, "").slice(0, 500) : "" };
   });
