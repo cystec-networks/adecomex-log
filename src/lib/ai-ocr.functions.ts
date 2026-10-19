@@ -148,3 +148,46 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
           : null,
     };
   });
+
+export type OcrLineaFactura = { descripcion: string; cantidad: number | null; unidad: string | null };
+
+/** Mismo extractor OCR (modelo y canal), devolviendo las líneas de producto de la factura. */
+export const extractLineasFactura = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => Input.parse(data))
+  .handler(async ({ data }): Promise<{ lineas: OcrLineaFactura[] }> => {
+    const dataUrl = `data:${data.mime};base64,${data.base64}`;
+    const isPdf = data.mime === "application/pdf";
+    const raw = await callGateway({
+      model: "google/gemini-2.5-flash",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "Eres un asistente de operaciones aduanales en República Dominicana. Extraes las líneas de producto de facturas comerciales. " +
+            "Devuelve ÚNICAMENTE un objeto JSON {\"lineas\":[{\"descripcion\":string,\"cantidad\":number|null,\"unidad\":string|null}]}, una entrada por cada línea de producto, en el orden del documento. " +
+            "'descripcion' tal como aparece en la factura (sin traducir). Si una línea es ilegible deja descripcion vacía pero inclúyela. No inventes datos.",
+        },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Extrae las líneas de producto de esta factura." },
+            isPdf
+              ? { type: "file", file: { filename: data.filename, file_data: dataUrl } }
+              : { type: "image_url", image_url: { url: dataUrl } },
+          ],
+        },
+      ],
+    });
+    let parsed: any = {};
+    try { parsed = JSON.parse(raw); } catch { const m = raw.match(/\{[\s\S]*\}/); if (m) parsed = JSON.parse(m[0]); }
+    const arr = Array.isArray(parsed?.lineas) ? parsed.lineas : [];
+    return {
+      lineas: arr.slice(0, 200).map((l: any) => ({
+        descripcion: String(l?.descripcion ?? "").trim(),
+        cantidad: l?.cantidad != null && l.cantidad !== "" && !isNaN(Number(l.cantidad)) ? Number(l.cantidad) : null,
+        unidad: l?.unidad ? String(l.unidad).trim() : null,
+      })),
+    };
+  });
