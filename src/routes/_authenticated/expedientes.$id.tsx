@@ -2372,6 +2372,17 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           </div>
       </Section>
 
+      {/* Resultado oficial DGA: tarjeta propia e independiente, justo después de 3. Declaración. */}
+      {!isNuevo && (
+        <ResultadoOficialBlock
+          exp={exp}
+          form={form}
+          set={set}
+          servicioAduaneroUsd={servicioAd.servicioUsd}
+          disabled={!editable}
+        />
+      )}
+
       <Section id="descripcion-mercancia" title="4. Descripción de mercancía" subtitle="Detalle físico y clasificación de la carga">
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
             <Label>Descripción</Label>
