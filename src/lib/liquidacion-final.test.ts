@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { calcularResultadosLiquidacion, type FilaCalc } from "./liquidacion-final";
+import { calcularResultadosLiquidacion, valorRealInicial, type FilaCalc } from "./liquidacion-final";
 
 const calcFila = (): FilaCalc => ({
   fob: 1000,
@@ -47,5 +47,38 @@ describe("calcularResultadosLiquidacion con costos en US$", () => {
     assert.equal(fila.dop, 6000);
     assert.equal(fila.usd, 100);
     assert.equal(r.componentes.costoMercanciaUsd, 100);
+  });
+});
+
+const EST = { gravamen: 250.128, selectivo: 45.004, itbis: 54.017 };
+
+describe("valorRealInicial — precarga de Grav./ISC/ITBIS Real", () => {
+  it("sin valor guardado, cada campo Real arranca con su columna Est redondeada a centavos", () => {
+    assert.equal(valorRealInicial("gravamen_real", null, EST), "250.13");
+    assert.equal(valorRealInicial("isc_real", null, EST), "45");
+    assert.equal(valorRealInicial("itbis_real", null, EST), "54.02");
+  });
+
+  it("la precarga deja la columna Dif. en 0.00", () => {
+    const pares = [
+      ["gravamen_real", "gravamen"],
+      ["isc_real", "selectivo"],
+      ["itbis_real", "itbis"],
+    ] as const;
+    for (const [campo, clave] of pares) {
+      const v = Number(valorRealInicial(campo, null, EST));
+      const d = Number((v - EST[clave]).toFixed(2)) || 0; // misma normalización que la columna Dif.
+      assert.equal(d, 0);
+    }
+  });
+
+  it("un monto ya guardado (incluido 0) no se sobrescribe", () => {
+    assert.equal(valorRealInicial("gravamen_real", 0, EST), null);
+    assert.equal(valorRealInicial("gravamen_real", 300, EST), null);
+    assert.equal(valorRealInicial("itbis_real", "18", EST), null);
+  });
+
+  it("Costo de Venta no se precarga nunca", () => {
+    assert.equal(valorRealInicial("costo_venta_unitario", null, EST), null);
   });
 });
