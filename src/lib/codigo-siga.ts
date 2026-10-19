@@ -49,13 +49,31 @@ export async function siguienteCodigoSiga(expedienteId: string, prefijo: Prefijo
 
 const PREFIJOS: PrefijoSiga[] = ["FAC", "DOE", "CEO", "PER", "OTD"];
 
-/** Valida el nombre del archivo contra el prefijo SIGA esperado. */
-export function validarNombreSiga(nombre: string, esperado: PrefijoSiga):
+/** Tipos que admiten DOS prefijos SIGA válidos: cualquiera de los dos es correcto. */
+const PREFIJOS_ALT: Record<string, PrefijoSiga[]> = {
+  "Permiso VUCE previo": ["PER", "OTD"],
+  "Certificado Sanitario/Fitosanitario": ["PER", "OTD"],
+  "Certificado sanitario": ["PER", "OTD"],
+  "Certificado fitosanitario": ["PER", "OTD"],
+  "Certificado de análisis": ["PER", "OTD"],
+};
+
+/** Prefijos SIGA aceptados para un tipo de documento (uno, o dos en los tres tipos indicados). */
+export function prefijosAceptados(tipo: string | null | undefined): PrefijoSiga[] {
+  return PREFIJOS_ALT[tipo ?? ""] ?? [prefijoSiga(tipo)];
+}
+
+const listarPrefijos = (ps: PrefijoSiga[]) =>
+  ps.length === 1 ? `${ps[0]}-` : `${ps.slice(0, -1).join(", ")}- u ${ps[ps.length - 1]}-`;
+
+/** Valida el nombre del archivo contra los prefijos SIGA esperados (uno o dos). */
+export function validarNombreSiga(nombre: string, esperado: PrefijoSiga | PrefijoSiga[]):
   { ok: true; advertencia?: string } | { ok: false; error: string } {
+  const aceptados = Array.isArray(esperado) ? esperado : [esperado];
   const n = nombre.toUpperCase();
-  if (n.includes(`${esperado}-`)) return { ok: true };
+  if (aceptados.some((p) => n.includes(`${p}-`))) return { ok: true };
   if (PREFIJOS.some((p) => n.includes(`${p}-`)))
-    return { ok: false, error: `El nombre del archivo no corresponde al tipo de documento esperado (se espera prefijo ${esperado}-). Verifica que estás subiendo el documento correcto.` };
+    return { ok: false, error: `El nombre del archivo no corresponde al tipo de documento esperado (se espera prefijo ${listarPrefijos(aceptados)}). Verifica que estás subiendo el documento correcto.` };
   return { ok: true, advertencia: "Este archivo no tiene el prefijo de codificación SIGA (FAC-, DOE-, CEO-, PER-, OTD-). Se recomienda renombrarlo antes de subirlo a SIGA." };
 }
 
