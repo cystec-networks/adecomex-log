@@ -37,4 +37,4 @@ Scope detail-header presentation to its dedicated class; logistics and operation
 - Resolve the dispatch-date modal asynchronously within the existing state mutation and reuse fechasDespachoFaltantes for detail-only preventive alerts, preserving permission checks and audit payloads.
 - Centralize product-entry suggestions in buscarSugerenciasProducto/resolverSugerenciasProducto, never historical calculations or Real values. Keep tariff CSV imports in the authenticated staff-checked server function and atomic invoker RPC, without writing product overrides.
 - Keep chapter notes in a separate read-only query/panel and admin-only invoker import, so tariff suggestions and the main importer remain unchanged.
-- Use ImporteLiquidacionInput/react-number-format for settlement amounts; unformatted drafts preserve calculations and persistence.
+- Use ImporteLiquidacionInput and liquidacion-moneda for formatted tax editing; preserve USD drafts, calculations, inventory and PDF.
