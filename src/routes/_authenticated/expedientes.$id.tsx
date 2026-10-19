@@ -1135,7 +1135,6 @@ function DetalleExpediente() {
             inspeccionHost={inspeccionHost}
           />
           </div>
-          {!isNuevo && <div className="mt-4"><TabCostosProducto expedienteId={id} exp={expData} /></div>}
         </TabsContent>
         {!isNuevo && (
         <>
