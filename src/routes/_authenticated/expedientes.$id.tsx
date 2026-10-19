@@ -3221,6 +3221,34 @@ function TabCostosProducto({ expedienteId, exp }: { expedienteId: string; exp?: 
   const fmt = (n: number) => new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n);
   const fmtUsd = (n: number) => `US$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+  // ===== Resumen de Importación (solo lectura) =====
+  // Los impuestos Real se guardan en US$; en pantalla se muestran en RD$ con la tasa del expediente.
+  const filasImp = (itemsImp ?? []) as any[];
+  const sumaImpuestoRd = (campo: string) => {
+    const vals = filasImp
+      .map((it) => it?.[campo])
+      .filter((v) => v != null && v !== "")
+      .map((v) => Number(v))
+      .filter((n) => Number.isFinite(n));
+    const capturado = vals.length > 0;
+    const rd = vals.reduce((s, v) => s + (impuestoPantallaRd(v, tasa) ?? 0), 0);
+    return { capturado, rd };
+  };
+  const impGravamen = sumaImpuestoRd("gravamen_real");
+  const impIsc = sumaImpuestoRd("isc_real");
+  const impItbis = sumaImpuestoRd("itbis_real");
+  const impuestosSinTasa = tasa <= 0 && (impGravamen.capturado || impIsc.capturado || impItbis.capturado);
+  const impuestosPendientes = !impGravamen.capturado || !impIsc.capturado;
+  const totalGeneralImportacion = impuestosPendientes || impuestosSinTasa ? null : impGravamen.rd + impIsc.rd + totalReal;
+  const celdaImpuesto = (i: { capturado: boolean; rd: number }) =>
+    !i.capturado ? (
+      <span className="text-sm text-muted-foreground">Pendiente de Liquidación</span>
+    ) : impuestosSinTasa ? (
+      <span className="text-sm text-muted-foreground">—</span>
+    ) : (
+      <div className="text-base font-display font-bold tabular-nums">{fmt(i.rd)}</div>
+    );
+
   return (
     <div className="space-y-4">
       <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm">
