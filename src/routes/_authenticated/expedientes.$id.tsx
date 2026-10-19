@@ -6086,78 +6086,64 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             </Select>
             {!almacenId && <span className="text-[11px] text-muted-foreground">Requerido para finalizar la liquidación.</span>}
           </div>
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b text-left text-muted-foreground">
-                <th className="py-2 pr-2">Descripción</th>
-                <th className="py-2 px-2 text-right">Cantidad</th>
-                <th className="py-2 px-2 text-right">Grav. Est. (RD$)</th>
-                <th className="py-2 px-2 text-right">Grav. Real (RD$)</th>
-                <th className="py-2 px-2 text-right">Dif. (RD$)</th>
-                <th className="py-2 px-2 text-right">ISC Est. (RD$)</th>
-                <th className="py-2 px-2 text-right">ISC Real (RD$)</th>
-                <th className="py-2 px-2 text-right">Dif. (RD$)</th>
-                <th className="py-2 px-2 text-right">ITBIS Est. (RD$)</th>
-                <th className="py-2 px-2 text-right">ITBIS Real (RD$)</th>
-                <th className="py-2 px-2 text-right">Dif. (RD$)</th>
-                <th className="py-2 px-2 text-right">Costo Unit. Real (US$)</th>
-                <th className="py-2 pl-2 text-right">Costo de Venta (US$)</th>
-              </tr>
-            </thead>
-            <tbody>
+          <div className="space-y-3 text-xs">
               {list.map((it) => {
                 const c = calcFila(it);
+                const bloques = [
+                  { label: "Gravamen", campo: "gravamen_real", est: c.est.gravamen, real: c.gr },
+                  { label: "ISC", campo: "isc_real", est: c.est.selectivo, real: c.ir },
+                  { label: "ITBIS", campo: "itbis_real", est: c.est.itbis, real: c.tr },
+                ];
                 return (
-                  <tr key={it.id} className="border-b last:border-0">
-                    <td className="py-2 pr-2 max-w-[220px]">
-                      <div className="font-medium truncate">{it.detalle_producto ?? "—"}</div>
-                      <div className="text-muted-foreground">{it.codigo_arancelario ?? "—"}</div>
-                    </td>
-                    <td className="py-2 px-2 text-right">{nf(c.cant)} {it.unidad_medida ?? ""}</td>
-                    <td className="py-2 px-2 text-right text-muted-foreground">{nf(rd(Number(c.est.gravamen.toFixed(2))))}</td>
-                    <td className="py-2 px-2 text-right">
-                      {editable && tasaValida ? (
-                        <ImporteLiquidacionInput aria-label={`Grav. Real línea ${it.item_no}`} value={valRd(it, "gravamen_real")}
-                          onValueChange={(v) => setValRd(it.id, "gravamen_real", v)} />
-                      ) : nf(rd(c.gr))}
-                    </td>
-                    <td className="py-2 px-2 text-right"><Diff real={rd(c.gr)} est={rd(Number(c.est.gravamen.toFixed(2))) ?? 0} /></td>
-                    <td className="py-2 px-2 text-right text-muted-foreground">{nf(rd(Number(c.est.selectivo.toFixed(2))))}</td>
-                    <td className="py-2 px-2 text-right">
-                      {editable && tasaValida ? (
-                        <ImporteLiquidacionInput aria-label={`ISC Real línea ${it.item_no}`} value={valRd(it, "isc_real")}
-                          onValueChange={(v) => setValRd(it.id, "isc_real", v)} />
-                      ) : nf(rd(c.ir))}
-                    </td>
-                    <td className="py-2 px-2 text-right"><Diff real={rd(c.ir)} est={rd(Number(c.est.selectivo.toFixed(2))) ?? 0} /></td>
-                    <td className="py-2 px-2 text-right text-muted-foreground">{nf(rd(Number(c.est.itbis.toFixed(2))))}</td>
-                    <td className="py-2 px-2 text-right">
-                      {editable && tasaValida ? (
-                        <ImporteLiquidacionInput aria-label={`ITBIS Real línea ${it.item_no}`} value={valRd(it, "itbis_real")}
-                          onValueChange={(v) => setValRd(it.id, "itbis_real", v)} />
-                      ) : nf(rd(c.tr))}
-                    </td>
-                    <td className="py-2 px-2 text-right"><Diff real={rd(c.tr)} est={rd(Number(c.est.itbis.toFixed(2))) ?? 0} /></td>
-                    <td className="py-2 px-2 text-right font-medium">{nf(c.costoUnit)}</td>
-                    <td className="py-2 pl-2 text-right">
-                      {editable || (finalizado && canEdit) ? (
-                        <ImporteLiquidacionInput aria-label={`Costo de Venta línea ${it.item_no}`} value={val(it, "costo_venta_unitario")}
-                          onValueChange={(v) => setVal(it.id, "costo_venta_unitario", v)}
-                          onBlur={() => {
-                            if (editable) return;
-                            const d = draft[it.id]?.costo_venta_unitario;
-                            if (d === undefined) return;
-                            const nuevo = d === "" ? null : Number(d);
-                            const actual = it.costo_venta_unitario == null ? null : Number(it.costo_venta_unitario);
-                            if (nuevo !== actual) guardarVenta.mutate({ itemId: it.id, valor: nuevo });
-                          }} />
-                      ) : nf(c.cv)}
-                    </td>
-                  </tr>
+                  <div key={it.id} className="rounded-md border p-3">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2 border-b pb-2 mb-2">
+                      <div className="min-w-0">
+                        <div className="font-medium text-[13px]">{it.detalle_producto ?? "—"}</div>
+                        <div className="text-muted-foreground">{it.codigo_arancelario ?? "—"}</div>
+                      </div>
+                      <div className="text-right tabular-nums"><span className="text-muted-foreground">Cantidad: </span>{nf(c.cant)} {it.unidad_medida ?? ""}</div>
+                    </div>
+                    <div className="space-y-1.5">
+                      {bloques.map((b) => (
+                        <div key={b.campo} className="grid grid-cols-[110px_1fr_auto_1fr] items-center gap-x-3 gap-y-1">
+                          <div className="font-medium">{b.label} (RD$)</div>
+                          <div className="text-right tabular-nums"><span className="text-muted-foreground">Est. </span>{nf(rd(Number(b.est.toFixed(2))))}</div>
+                          <div className="flex items-center justify-end gap-1">
+                            <span className="text-muted-foreground">Real</span>
+                            {editable && tasaValida ? (
+                              <ImporteLiquidacionInput aria-label={`${b.label === "Gravamen" ? "Grav." : b.label} Real línea ${it.item_no}`} value={valRd(it, b.campo)}
+                                onValueChange={(v) => setValRd(it.id, b.campo, v)} />
+                            ) : <span className="tabular-nums">{nf(rd(b.real))}</span>}
+                          </div>
+                          <div className="text-right tabular-nums"><span className="text-muted-foreground">Dif. </span><Diff real={rd(b.real)} est={rd(Number(b.est.toFixed(2))) ?? 0} /></div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 pt-2 border-t grid grid-cols-2 gap-3">
+                      <div>
+                        <div className="text-muted-foreground">Costo Unit. Real (US$)</div>
+                        <div className="font-medium tabular-nums h-8 flex items-center">{nf(c.costoUnit)}</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground">Costo de Venta (US$)</div>
+                        {editable || (finalizado && canEdit) ? (
+                          <ImporteLiquidacionInput aria-label={`Costo de Venta línea ${it.item_no}`} value={val(it, "costo_venta_unitario")}
+                            onValueChange={(v) => setVal(it.id, "costo_venta_unitario", v)}
+                            onBlur={() => {
+                              if (editable) return;
+                              const d = draft[it.id]?.costo_venta_unitario;
+                              if (d === undefined) return;
+                              const nuevo = d === "" ? null : Number(d);
+                              const actual = it.costo_venta_unitario == null ? null : Number(it.costo_venta_unitario);
+                              if (nuevo !== actual) guardarVenta.mutate({ itemId: it.id, valor: nuevo });
+                            }} />
+                        ) : <div className="tabular-nums h-8 flex items-center">{nf(c.cv)}</div>}
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
+          </div>
           </>
         )}
         {editable && !completo && list.length > 0 && (
@@ -6165,6 +6151,8 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             Completa Gravamen Real, ISC Real, ITBIS Real en todos los productos y selecciona un almacén para poder finalizar.
           </p>
         )}
+        <details className="mt-3 rounded-md border px-3 py-2 group">
+          <summary className="cursor-pointer select-none text-xs font-medium">ℹ️ Cómo se calcula esto</summary>
         <div className="mt-3 space-y-3 text-[11px] text-muted-foreground">
           <div>
             <p className="font-bold">Gastos adicionales prorrateados (Costos del Producto)</p>
@@ -6179,6 +6167,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             <p>Incluye FOB + prorrateo de flete, seguro y otros + Gravamen e ISC reales + prorrateo de gastos adicionales (todo en US$). El ITBIS no se incluye, por ser crédito fiscal recuperable.</p>
           </div>
         </div>
+        </details>
         {list.length > 0 && (
           <ResultadosLiquidacionView
             r={calcularResultadosLiquidacion({
