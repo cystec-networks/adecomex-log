@@ -1,4 +1,5 @@
 import { calcularResultadosLiquidacion, valorRealInicial } from "@/lib/liquidacion-final";
+import { impuestoPantallaRd, impuestoEditadoUsd } from "@/lib/liquidacion-moneda";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { sha256File, prefijoSiga, siguienteCodigoSiga, validarNombreSiga, nombreArchivo } from "@/lib/codigo-siga";
@@ -5913,6 +5914,18 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
   const setVal = (id: string, campo: string, v: string) =>
     setDraft((p) => ({ ...p, [id]: { ...(p[id] ?? {}), [campo]: v } }));
 
+  // Adaptación exclusivamente visual: PDF, inventario y persistencia siguen usando US$.
+  const tasaValida = Number.isFinite(tasaCambio) && tasaCambio > 0;
+  const rd = (usd: number | null) => impuestoPantallaRd(usd, tasaCambio);
+  const valRd = (it: any, campo: string) => {
+    const monto = rd(num(it, campo));
+    return monto == null ? "" : String(monto);
+  };
+  const setValRd = (id: string, campo: string, monto: string) => {
+    const usd = impuestoEditadoUsd(monto, tasaCambio);
+    if (usd !== null) setVal(id, campo, usd);
+  };
+
   const nf = (n: number | null) =>
     n == null ? "—" : n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -6078,17 +6091,17 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
               <tr className="border-b text-left text-muted-foreground">
                 <th className="py-2 pr-2">Descripción</th>
                 <th className="py-2 px-2 text-right">Cantidad</th>
-                <th className="py-2 px-2 text-right">Grav. Est.</th>
-                <th className="py-2 px-2 text-right">Grav. Real</th>
-                <th className="py-2 px-2 text-right">Dif.</th>
-                <th className="py-2 px-2 text-right">ISC Est.</th>
-                <th className="py-2 px-2 text-right">ISC Real</th>
-                <th className="py-2 px-2 text-right">Dif.</th>
-                <th className="py-2 px-2 text-right">ITBIS Est.</th>
-                <th className="py-2 px-2 text-right">ITBIS Real</th>
-                <th className="py-2 px-2 text-right">Dif.</th>
-                <th className="py-2 px-2 text-right">Costo Unit. Real</th>
-                <th className="py-2 pl-2 text-right">Costo de Venta</th>
+                <th className="py-2 px-2 text-right">Grav. Est. (RD$)</th>
+                <th className="py-2 px-2 text-right">Grav. Real (RD$)</th>
+                <th className="py-2 px-2 text-right">Dif. (RD$)</th>
+                <th className="py-2 px-2 text-right">ISC Est. (RD$)</th>
+                <th className="py-2 px-2 text-right">ISC Real (RD$)</th>
+                <th className="py-2 px-2 text-right">Dif. (RD$)</th>
+                <th className="py-2 px-2 text-right">ITBIS Est. (RD$)</th>
+                <th className="py-2 px-2 text-right">ITBIS Real (RD$)</th>
+                <th className="py-2 px-2 text-right">Dif. (RD$)</th>
+                <th className="py-2 px-2 text-right">Costo Unit. Real (US$)</th>
+                <th className="py-2 pl-2 text-right">Costo de Venta (US$)</th>
               </tr>
             </thead>
             <tbody>
@@ -6101,30 +6114,30 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
                       <div className="text-muted-foreground">{it.codigo_arancelario ?? "—"}</div>
                     </td>
                     <td className="py-2 px-2 text-right">{nf(c.cant)} {it.unidad_medida ?? ""}</td>
-                    <td className="py-2 px-2 text-right text-muted-foreground">{nf(c.est.gravamen)}</td>
+                    <td className="py-2 px-2 text-right text-muted-foreground">{nf(rd(Number(c.est.gravamen.toFixed(2))))}</td>
                     <td className="py-2 px-2 text-right">
-                      {editable ? (
-                        <ImporteLiquidacionInput aria-label={`Grav. Real línea ${it.item_no}`} value={val(it, "gravamen_real")}
-                          onValueChange={(v) => setVal(it.id, "gravamen_real", v)} />
-                      ) : nf(c.gr)}
+                      {editable && tasaValida ? (
+                        <ImporteLiquidacionInput aria-label={`Grav. Real línea ${it.item_no}`} value={valRd(it, "gravamen_real")}
+                          onValueChange={(v) => setValRd(it.id, "gravamen_real", v)} />
+                      ) : nf(rd(c.gr))}
                     </td>
-                    <td className="py-2 px-2 text-right"><Diff real={c.gr} est={c.est.gravamen} /></td>
-                    <td className="py-2 px-2 text-right text-muted-foreground">{nf(c.est.selectivo)}</td>
+                    <td className="py-2 px-2 text-right"><Diff real={rd(c.gr)} est={rd(Number(c.est.gravamen.toFixed(2))) ?? 0} /></td>
+                    <td className="py-2 px-2 text-right text-muted-foreground">{nf(rd(Number(c.est.selectivo.toFixed(2))))}</td>
                     <td className="py-2 px-2 text-right">
-                      {editable ? (
-                        <ImporteLiquidacionInput aria-label={`ISC Real línea ${it.item_no}`} value={val(it, "isc_real")}
-                          onValueChange={(v) => setVal(it.id, "isc_real", v)} />
-                      ) : nf(c.ir)}
+                      {editable && tasaValida ? (
+                        <ImporteLiquidacionInput aria-label={`ISC Real línea ${it.item_no}`} value={valRd(it, "isc_real")}
+                          onValueChange={(v) => setValRd(it.id, "isc_real", v)} />
+                      ) : nf(rd(c.ir))}
                     </td>
-                    <td className="py-2 px-2 text-right"><Diff real={c.ir} est={c.est.selectivo} /></td>
-                    <td className="py-2 px-2 text-right text-muted-foreground">{nf(c.est.itbis)}</td>
+                    <td className="py-2 px-2 text-right"><Diff real={rd(c.ir)} est={rd(Number(c.est.selectivo.toFixed(2))) ?? 0} /></td>
+                    <td className="py-2 px-2 text-right text-muted-foreground">{nf(rd(Number(c.est.itbis.toFixed(2))))}</td>
                     <td className="py-2 px-2 text-right">
-                      {editable ? (
-                        <ImporteLiquidacionInput aria-label={`ITBIS Real línea ${it.item_no}`} value={val(it, "itbis_real")}
-                          onValueChange={(v) => setVal(it.id, "itbis_real", v)} />
-                      ) : nf(c.tr)}
+                      {editable && tasaValida ? (
+                        <ImporteLiquidacionInput aria-label={`ITBIS Real línea ${it.item_no}`} value={valRd(it, "itbis_real")}
+                          onValueChange={(v) => setValRd(it.id, "itbis_real", v)} />
+                      ) : nf(rd(c.tr))}
                     </td>
-                    <td className="py-2 px-2 text-right"><Diff real={c.tr} est={c.est.itbis} /></td>
+                    <td className="py-2 px-2 text-right"><Diff real={rd(c.tr)} est={rd(Number(c.est.itbis.toFixed(2))) ?? 0} /></td>
                     <td className="py-2 px-2 text-right font-medium">{nf(c.costoUnit)}</td>
                     <td className="py-2 pl-2 text-right">
                       {editable || (finalizado && canEdit) ? (
@@ -6152,14 +6165,20 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
             Completa Gravamen Real, ISC Real, ITBIS Real en todos los productos y selecciona un almacén para poder finalizar.
           </p>
         )}
-        <div className="mt-3 text-[11px] text-muted-foreground">
-          <span className="font-medium">Gastos adicionales prorrateados (Costos del Producto): </span>
-          Suma de los montos reales de «Costo de mercancía» ({CONCEPTOS_COSTO_ADICIONALES.join(", ")}, y también Flete internacional o Seguro cuando se carguen), más el Servicio Aduanero y el Formulario DUA (RD${FORMULARIO_DUA_RD.toFixed(2)}) automáticos. Flete internacional y Seguro aquí son solo costos ADICIONALES al Flete Total y Seguro Total del Expediente — no los corrigen ni reemplazan; cargarlos para eso los sumaría dos veces. Aranceles e ITBIS nunca se cargan aquí: se capturan por producto (Gravamen Real / ITBIS Real) y el ITBIS no forma parte del costo real. Se convierten a USD con la tasa del expediente y se prorratean por línea según su participación en el FOB total.
+        <div className="mt-3 space-y-3 text-[11px] text-muted-foreground">
+          <div>
+            <p className="font-bold">Gastos adicionales prorrateados (Costos del Producto)</p>
+            <p>Suma de los montos reales de «Costo de mercancía» (Gestión Aduanal, Tasa Servicio Aduanero, Almacenaje, Demora de contenedor, Uso de Chasis, Flete Terrestre, Cargos Locales, Cargos THC, Gastos en Puerto, Comisiones Bancarias, Transporte local, Otros), más el Servicio Aduanero y el Formulario DUA (RD$258.26) automáticos. Se convierte a US$ con la tasa del expediente y se prorratea por línea según su participación en el FOB total.</p>
+          </div>
+          <div>
+            <p className="font-bold">Flete internacional y Seguro aquí son costos ADICIONALES</p>
+            <p>No corrigen ni reemplazan el Flete Total/Seguro Total ya capturados a nivel del Expediente — cargarlos aquí para ese fin los sumaría dos veces. Aranceles e ITBIS nunca se cargan en "Costo de mercancía": se capturan por producto arriba (Gravamen Real / ITBIS Real).</p>
+          </div>
+          <div>
+            <p className="font-bold">Costo Unitario Real</p>
+            <p>Incluye FOB + prorrateo de flete, seguro y otros + Gravamen e ISC reales + prorrateo de gastos adicionales (todo en US$). El ITBIS no se incluye, por ser crédito fiscal recuperable.</p>
+          </div>
         </div>
-        <p className="mt-3 text-[11px] text-muted-foreground">
-          El Costo Unitario Real incluye FOB + prorrateo de flete, seguro y otros + Gravamen e ISC reales + prorrateo de
-          gastos adicionales. El ITBIS no se incluye por ser crédito fiscal recuperable.
-        </p>
         {list.length > 0 && (
           <ResultadosLiquidacionView
             r={calcularResultadosLiquidacion({
