@@ -1518,6 +1518,30 @@ export type Database = {
         }
         Relationships: []
       }
+      copiloto_clasificaciones: {
+        Row: {
+          archivo: string
+          created_at: string
+          created_by: string
+          id: string
+          lineas: Json
+        }
+        Insert: {
+          archivo: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          lineas: Json
+        }
+        Update: {
+          archivo?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          lineas?: Json
+        }
+        Relationships: []
+      }
       costos: {
         Row: {
           concepto: string

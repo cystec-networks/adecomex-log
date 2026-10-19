@@ -15,7 +15,7 @@ El identificador visible de un expediente usa la clase compartida `expediente-nu
 
 En el volante de solicitud de pago, resolver primero el número del transporte vinculado y luego el TR reservado en la solicitud; un viaje puede tener varios controles TF, que siguen siendo secundarios para conciliación.
 
-El PDF de preliquidación de expediente y cotización comparte el generador horizontal con resumen CIF, Impuestos y Servicios DGA; mantenerlo centralizado evita diferencias entre ambas impresiones.
+Use the shared preliquidation PDF for expediente and quote to prevent divergent summaries.
 
 Use explicit responsive grid slots and reserved action widths for the expediente header; desktop controls stay on one row, with secondary menus consolidated into More actions when the container cannot fit them, while mobile keeps accessible rows.
 
@@ -25,7 +25,7 @@ Scope detail-header presentation to its dedicated class; logistics and operation
 
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
 - Presentation deadline uses catalogo_regimenes.dias_habiles_presentar with optional expedientes.plazo_presentar_override; expedientes.sla_dias is deprecated — resolve via src/lib/plazo-presentacion.ts. In the header, require real arrival and a configured regime (never ETA), show business days relative to today, and classify overdue by the calendar date so weekends cannot hide expiration.
-- In the sticky header, show ETA until real arrival exists, then show real arrival with calendar transit days from loading; keep presentation status immediately after it and omit the duplicate transit field from General Information to preserve a single chronological summary. Mount the deadline override popover content only while open to prevent overlap with the read-only indicator.
+- In the sticky header, show ETA until arrival, then arrival with calendar transit days; follow with presentation status and omit duplicate transit. Mount deadline override content only while open to avoid overlap.
 - Use the shared state ordering to replace the deadline from verification onward with compliance based on existing fecha_presentado; omit compliance when its date or deadline is missing, never fabricate historical dates.
 - Open the existing Endoso section via a parent-owned request counter from both header document menus, preserving a single form and its current persistence logic.
 - Evaluate detail warnings with scoped evidence queries; invoice links and persisted reception incidents prevent unrelated debt alerts and recomputed tolerances.
@@ -38,3 +38,5 @@ Scope detail-header presentation to its dedicated class; logistics and operation
 - Centralize product-entry suggestions in buscarSugerenciasProducto/resolverSugerenciasProducto, never historical calculations or Real values. Keep tariff CSV imports in the authenticated staff-checked server function and atomic invoker RPC, without writing product overrides.
 - Keep chapter notes in a separate read-only query/panel and admin-only invoker import, so tariff suggestions and the main importer remain unchanged.
 - Use ImporteLiquidacionInput and liquidacion-moneda for formatted tax editing; preserve USD drafts, calculations, inventory and PDF.
+
+- Store Copiloto results as immutable staff-readable snapshots without order links; share the table/export to avoid recalculation. Normalize only zero padding against tariff leaves, never infer subdivisions with different taxes.
