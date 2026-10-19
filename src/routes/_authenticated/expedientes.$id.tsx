@@ -5888,10 +5888,21 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
   const editable = canEdit && (!finalizado || reabierto);
 
   const [draft, setDraft] = useState<Record<string, Record<string, string>>>({});
+  // Estimado de la línea: la misma fórmula de la ficha Generales (calcImpuestosLinea).
+  const estLinea = (it: any) =>
+    calcImpuestosLinea(
+      Number(it.valor_fob) || 0, totalFob, seguro, flete, otros,
+      it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis, susp.suspendido,
+    );
   const val = (it: any, campo: string) => {
     const d = draft[it.id]?.[campo];
     if (d !== undefined) return d;
     const v = it[campo];
+    if (v == null || v === "") {
+      // Sin monto guardado, Grav./ISC/ITBIS Real arrancan con su columna «Est»; el usuario puede editarlos.
+      const precargado = valorRealInicial(campo, v, estLinea(it));
+      if (precargado !== null) return precargado;
+    }
     return v == null ? "" : String(v);
   };
   const num = (it: any, campo: string) => {
@@ -5906,7 +5917,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
 
   const calcFila = (it: any) => {
     const fob = Number(it.valor_fob) || 0;
-    const est = calcImpuestosLinea(fob, totalFob, seguro, flete, otros, it.pct_gravamen, it.aplica_isc, it.pct_isc, it.pct_itbis, susp.suspendido);
+    const est = estLinea(it);
     const cant = Number(it.cantidad) || 0;
     const shareLinea = totalFob > 0 ? fob / totalFob : 0;
     const gastosAdicLinea = gastosAdicionalesUSD * shareLinea;
@@ -5925,7 +5936,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
 
   const Diff = ({ real, est }: { real: number | null; est: number }) => {
     if (real == null) return <span className="text-muted-foreground">—</span>;
-    const d = real - est;
+    const d = Number((real - est).toFixed(2)); // diferencia en centavos: la precarga igual a «Est» da 0.00 exacto
     const cls = d > 0 ? "text-destructive font-medium" : "text-emerald-600 font-medium";
     return <span className={cls}>{d > 0 ? "+" : ""}{nf(d)}</span>;
   };
