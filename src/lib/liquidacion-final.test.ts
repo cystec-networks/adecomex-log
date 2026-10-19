@@ -67,7 +67,8 @@ describe("valorRealInicial — precarga de Grav./ISC/ITBIS Real", () => {
     ] as const;
     for (const [campo, clave] of pares) {
       const v = Number(valorRealInicial(campo, null, EST));
-      assert.equal(Number((v - EST[clave]).toFixed(2)), 0);
+      const d = Number((v - EST[clave]).toFixed(2)) || 0; // misma normalización que la columna Dif.
+      assert.equal(d, 0);
     }
   });
 

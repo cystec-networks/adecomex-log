@@ -5936,7 +5936,7 @@ function LiquidacionFinalSection({ exp }: { exp: any }) {
 
   const Diff = ({ real, est }: { real: number | null; est: number }) => {
     if (real == null) return <span className="text-muted-foreground">—</span>;
-    const d = Number((real - est).toFixed(2)); // diferencia en centavos: la precarga igual a «Est» da 0.00 exacto
+    const d = Number((real - est).toFixed(2)) || 0; // diferencia en centavos: la precarga igual a «Est» da 0.00 exacto
     const cls = d > 0 ? "text-destructive font-medium" : "text-emerald-600 font-medium";
     return <span className={cls}>{d > 0 ? "+" : ""}{nf(d)}</span>;
   };
