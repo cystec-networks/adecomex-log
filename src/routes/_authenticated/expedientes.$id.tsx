@@ -1,4 +1,4 @@
-import { calcularResultadosLiquidacion } from "@/lib/liquidacion-final";
+import { calcularResultadosLiquidacion, valorRealInicial } from "@/lib/liquidacion-final";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { sha256File, prefijoSiga, siguienteCodigoSiga, validarNombreSiga, nombreArchivo } from "@/lib/codigo-siga";

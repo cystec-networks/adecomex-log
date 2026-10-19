@@ -12,6 +12,31 @@ export type FilaCalc = {
   costoUnit: number;
 };
 
+/** Campos «Real» de la pestaña Liquidación y la columna «Est» que los precarga. */
+export const CAMPO_REAL_DESDE_EST: Record<string, "gravamen" | "selectivo" | "itbis"> = {
+  gravamen_real: "gravamen",
+  isc_real: "selectivo",
+  itbis_real: "itbis",
+};
+
+/**
+ * Valor inicial de un campo «Real» (Grav. Real, ISC Real, ITBIS Real) cuando la línea
+ * aún no tiene un monto guardado: se precarga con su columna «Est» correspondiente,
+ * redondeado a centavos. Devuelve null cuando no corresponde precargar —ya hay valor
+ * guardado (incluido 0)— o cuando el campo no es uno de los tres (p. ej. Costo de Venta).
+ */
+export function valorRealInicial(
+  campo: string,
+  valorGuardado: number | string | null | undefined,
+  est: { gravamen: number; selectivo: number; itbis: number },
+): string | null {
+  const clave = CAMPO_REAL_DESDE_EST[campo];
+  if (!clave) return null;
+  if (valorGuardado != null && valorGuardado !== "") return null;
+  const n = Number(est[clave]);
+  return Number.isFinite(n) ? String(Number(n.toFixed(2))) : null;
+}
+
 /**
  * Resultados de la Liquidación Final. Única fuente para el PDF y la vista en pantalla,
  * para que ambos muestren siempre los mismos números.
