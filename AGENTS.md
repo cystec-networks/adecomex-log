@@ -39,4 +39,4 @@ Scope detail-header presentation to its dedicated class; logistics and operation
 - Keep chapter notes in a separate read-only query/panel and admin-only invoker import, so tariff suggestions and the main importer remain unchanged.
 - Use ImporteLiquidacionInput and liquidacion-moneda for formatted tax editing; preserve USD drafts, calculations, inventory and PDF.
 
-- Store Copiloto results as immutable staff-readable snapshots without order links; share the table/export to avoid recalculation. Normalize only zero padding against tariff leaves, never infer subdivisions with different taxes.
+- Keep Copiloto snapshots immutable, staff-readable and order-independent; share table/export without recalculation. Interpret descriptions, search real tariff candidates server-side and validate selected eight-digit leaf indices; never generate codes from memory.
