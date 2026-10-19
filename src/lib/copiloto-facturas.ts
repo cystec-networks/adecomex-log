@@ -3,7 +3,7 @@ import { z } from "zod";
 export const filaClasificacionSchema = z.object({
   descripcion: z.string(), cantidad: z.number().nullable(), unidad: z.string().nullable(),
   partida: z.string().nullable(), gravamen: z.number().nullable(), itbis: z.number().nullable(),
-  enArancel: z.boolean(), insuficiente: z.boolean(),
+  enArancel: z.boolean(), insuficiente: z.boolean(), noProducto: z.boolean().optional(),
 });
 export type FilaClasificacion = z.infer<typeof filaClasificacionSchema>;
 export type ArancelClasificacion = { codigo: string; gravamen_pct: number | null; exento_itbis: boolean | null; es_hoja: boolean };

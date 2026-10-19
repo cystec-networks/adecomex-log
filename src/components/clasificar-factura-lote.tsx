@@ -5,8 +5,8 @@ import { toast } from "sonner";
 import { FileUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TablaClasificacionFactura } from "@/components/tabla-clasificacion-factura";
-import { arancelCopilotoOptions, guardarClasificacion } from "@/lib/copiloto-facturas-queries";
-import { resolverArancelCopiloto, type FilaClasificacion } from "@/lib/copiloto-facturas";
+import { guardarClasificacion } from "@/lib/copiloto-facturas-queries";
+import { type FilaClasificacion } from "@/lib/copiloto-facturas";
 import { extractLineasFactura } from "@/lib/ai-ocr.functions";
 import { classifyArancelLote } from "@/lib/ai-arancel.functions";
 import { tasasSugeridasArancel } from "@/lib/catalogo-arancelario";
@@ -40,16 +40,16 @@ export function useClasificarFactura() {
       });
       if (!lineas.length) throw new Error("No se encontraron líneas de producto en la factura.");
       const validas = lineas.map((l, i) => ({ l, i })).filter(({ l }) => l.descripcion.length >= MIN_DESC);
-      const partidas: (string | null)[] = lineas.map(() => null);
+      const resultados: Awaited<ReturnType<typeof clasificar>>["resultados"] = [];
       for (let k = 0; k < validas.length; k += 50) {
         const lote = validas.slice(k, k + 50);
         const res = await clasificar({ data: { descripciones: lote.map(({ l }) => l.descripcion) } });
-        lote.forEach(({ i }, j) => (partidas[i] = res.partidas[j] ?? null));
+        lote.forEach(({ i }, j) => { const r = res.resultados[j]; if (r) resultados[i] = r; });
       }
-      const arancel = await qc.fetchQuery(arancelCopilotoOptions(partidas.filter((p): p is string => Boolean(p))));
       return lineas.map<Fila>((l, i) => {
-        const p = partidas[i];
-        const a = p ? resolverArancelCopiloto(p, arancel) : null;
+        const r = resultados[i];
+        const a = r?.arancel ?? null;
+        const p = a?.codigo ?? null;
         const t = a ? tasasSugeridasArancel(a) : null;
         return {
           ...l,
@@ -58,6 +58,7 @@ export function useClasificarFactura() {
           itbis: t?.itbis ?? null,
           enArancel: Boolean(a),
           insuficiente: l.descripcion.length < MIN_DESC,
+          noProducto: r?.producto === false,
         };
       });
     },

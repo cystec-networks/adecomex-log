@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { NO_DETERMINADA } from "@/lib/copiloto-candidatos";
 import { Copy, Download, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -44,11 +45,9 @@ export function TablaClasificacionFactura({ archivo, filas, pendiente = false, o
             <td className="p-2">{f.descripcion || <span className="text-muted-foreground">(sin descripción)</span>}
               {(f.cantidad != null || f.unidad) && <div className="text-[11px] text-muted-foreground">{[f.cantidad, f.unidad].filter((x) => x != null).join(" ")}</div>}
             </td>
-            <td className="p-2 font-mono whitespace-nowrap">{f.insuficiente ? <span className="font-sans text-muted-foreground">Descripción insuficiente — clasifica manualmente abajo</span> : f.partida ? <>
-              {f.partida}{!f.enArancel && <div className="font-sans text-[11px] text-muted-foreground">No encontrada en el Arancel</div>}
-            </> : <span className="font-sans text-muted-foreground">Sin sugerencia</span>}</td>
+            <td className="p-2 font-mono">{f.partida && f.enArancel ? <span className="whitespace-nowrap">{f.partida}</span> : <span className="font-sans text-muted-foreground">{f.noProducto || (f.noProducto == null && !f.insuficiente && !f.partida) ? "Sin sugerencia" : NO_DETERMINADA}</span>}</td>
             <td className="p-2 text-right tabular-nums">{pct(f.gravamen)}</td><td className="p-2 text-right tabular-nums">{pct(f.itbis)}</td>
-            <td className="p-2">{f.partida && <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Copiar partida ${f.partida}`} onClick={async () => {
+            <td className="p-2">{f.partida && f.enArancel && <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Copiar partida ${f.partida}`} onClick={async () => {
               if (!f.partida) return;
               try { await navigator.clipboard.writeText(f.partida); toast.success(`Partida ${f.partida} copiada`); } catch { toast.error("No se pudo copiar la partida"); }
             }}><Copy className="h-3.5 w-3.5" /></Button>}</td>

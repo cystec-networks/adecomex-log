@@ -72,7 +72,7 @@ function Copiloto() {
           <Sparkles className="h-5 w-5 text-accent" /> Copiloto arancelario
         </h1>
         <p className="text-sm text-muted-foreground">
-          Sugiere partidas a 10 dígitos según el Arancel de Aduanas de República Dominicana. Clasificación referencial — validación final por la DGA.
+          Sugiere partidas a 8 dígitos según el Arancel de Aduanas de República Dominicana. Clasificación referencial — validación final por la DGA.
         </p>
       </div>
 
