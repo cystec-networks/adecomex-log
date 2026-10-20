@@ -134,7 +134,7 @@ export function DgaCombobox({
             className="w-full min-w-0 justify-between overflow-hidden font-normal h-9"
           >
             <span className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
-              <BadgeAeropuerto codigo={codigo} compacto />
+              <BadgeAeropuerto codigo={codigo} compacto soloIcono />
               <span className={cn("min-w-0 flex-1 truncate text-left", !display && "text-muted-foreground")}>
                 {display || placeholder}
               </span>
