@@ -262,7 +262,7 @@ function Expedientes() {
   const countExp = (data ?? []).filter((e: any) => detectTipo(e) === "exportacion").length;
   const countFact = (data ?? []).filter((e: any) => detectTipo(e) === "facturados").length;
 
-  const estadoBadge = (estadoRaw: string | null) => {
+  const estadoBadge = (estadoRaw: string | null, combinarCon?: { texto: string; titulo?: string }) => {
     const label = ESTADO_LABEL[estadoRaw ?? ""] ?? (estadoRaw ?? "");
     const variants: Record<string, string> = {
       digitar: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
@@ -275,8 +275,11 @@ function Expedientes() {
       facturar: "bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900",
     };
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${variants[estadoRaw ?? ""] ?? variants.digitar}`}>
-        {label}
+      <span
+        title={combinarCon ? `${label} · ${combinarCon.titulo ?? combinarCon.texto}` : undefined}
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border whitespace-nowrap ${variants[estadoRaw ?? ""] ?? variants.digitar}`}
+      >
+        {combinarCon ? `${label} · ${combinarCon.texto}` : label}
       </span>
     );
   };
