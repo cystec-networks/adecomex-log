@@ -1,6 +1,6 @@
 import { it } from "node:test";
 import assert from "node:assert/strict";
-import { codigoOchoDigitos, elegirCandidatoReal, eleccionesPorLinea, naturalezaChoozit, candidatosManuales } from "./copiloto-candidatos";
+import { codigoOchoDigitos, elegirCandidatoReal, eleccionesPorLinea, eleccionesAlineadas, naturalezaChoozit, candidatosManuales } from "./copiloto-candidatos";
 const cultivo = { codigo: "3002.90.10", descripcion: "Cultivos de microorganismos", contexto: "", gravamen_pct: 0, exento_itbis: true };
 it("CHOOZIT puede elegir solo 3002.90.10 entre candidatos reales", () => assert.equal(elegirCandidatoReal(0, "alta", [cultivo])?.codigo, "3002.90.10"));
 it("rechaza un código inventado en vez de un índice", () => assert.equal(elegirCandidatoReal("3002.40.00.00", "alta", [cultivo]), null));
@@ -17,3 +17,12 @@ it("limita a tres alternativas reales en orden, rechazando índices inválidos y
   assert.deepEqual(candidatosManuales([2, 2, 99, "3002.40.00.00", 1, 0, 3], reales).map((c) => c.codigo), ["9027.90.90", "9027.90.10", "3002.90.10"]);
 });
 it("sin alternativas relevantes no fuerza resultados del capítulo", () => assert.deepEqual(candidatosManuales([], [cultivo]), []));
+it("una omisión de CHOOZIT no desplaza la respuesta del electrodo ni de portes", () => {
+  const electrodo = { linea: 6, indice: null, confianza: "baja", alternativas: [2] };
+  const portes = { linea: 7, indice: null, confianza: "baja", alternativas: [] };
+  const resultados = eleccionesAlineadas({ elecciones: [{ linea: 0, indice: 0 }, electrodo, portes] }, 8);
+  assert.equal(resultados[1], undefined);
+  assert.equal(resultados[6], electrodo);
+  assert.equal(resultados[7], portes);
+  assert.deepEqual(eleccionesAlineadas({ elecciones: [{ indice: 0 }] }, 8), []);
+});

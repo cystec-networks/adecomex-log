@@ -13,6 +13,15 @@ export const NO_DETERMINADA = "Partida no determinada automáticamente — revis
 export function naturalezaChoozit(descripcion: string) {
   return /\bchoozit\b/i.test(descripcion) ? "Cultivos de microorganismos" : null;
 }
+export function eleccionesAlineadas(raw: unknown, cantidad: number): unknown[] {
+  const elecciones = eleccionesPorLinea(raw);
+  const indexadas = elecciones.every((e) => e && typeof e === "object" && "linea" in e);
+  if (!indexadas) return elecciones.length === cantidad ? elecciones : [];
+  return Array.from({ length: cantidad }, (_, i) => {
+    const coinciden = elecciones.filter((e) => e && typeof e === "object" && "linea" in e && e.linea === i);
+    return coinciden.length === 1 ? coinciden[0] : undefined;
+  });
+}
 export function candidatosManuales(indices: unknown, candidatos: CandidatoArancel[]) {
   if (!Array.isArray(indices)) return [];
   const vistos = new Set<string>();
