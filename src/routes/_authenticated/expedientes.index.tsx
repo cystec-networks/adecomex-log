@@ -27,6 +27,7 @@ import { alertasExpedienteCompartidas } from "@/lib/alertas-expediente-compartid
 import { useDatosAlertasListado } from "@/lib/use-alertas-expediente";
 import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
 import { daysFromToday, habilesRestantesPlazo } from "@/lib/dates";
+import { BadgeAeropuerto } from "@/components/badge-aeropuerto";
 
 type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 
@@ -83,7 +84,7 @@ function Expedientes() {
     queryKey: ["expedientes"],
     queryFn: async () => (await supabase
       .from("expedientes")
-      .select("id,cliente_id,factura_ecf_id,fecha_presentacion_real,numero,estado,bl_awb,factura_comercial,fecha_compromiso,fecha_llegada_real,created_at,updated_at,medio_transporte,naviera,suplidor,pais_origen,pais_procedencia,incoterm,puerto_salida,puerto_arribo,numero_dua,numero_vuce,numero_igra,descripcion_mercancia,numeros_contenedores,numero_certificado_origen,tipo_operacion,tipo_carga,regimen_aduanero,plazo_presentar_override,observaciones,total_fob,total_cif,liq_siga_numero,liq_siga_termino_at,liq_siga_fecha_pago, clientes(nombre,telefono,email), expediente_endosos(activo, endosado:clientes!expediente_endosos_consignatario_endosado_id_fkey(nombre)), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento), mercancia_items(item_no, detalle_producto, deleted_at)")
+      .select("id,cliente_id,factura_ecf_id,fecha_presentacion_real,numero,estado,bl_awb,factura_comercial,fecha_compromiso,fecha_llegada_real,created_at,updated_at,medio_transporte,naviera,suplidor,pais_origen,pais_procedencia,incoterm,puerto_salida,puerto_arribo,puerto_arribo_codigo,numero_dua,numero_vuce,numero_igra,descripcion_mercancia,numeros_contenedores,numero_certificado_origen,tipo_operacion,tipo_carga,regimen_aduanero,plazo_presentar_override,observaciones,total_fob,total_cif,liq_siga_numero,liq_siga_termino_at,liq_siga_fecha_pago, clientes(nombre,telefono,email), expediente_endosos(activo, endosado:clientes!expediente_endosos_consignatario_endosado_id_fkey(nombre)), solicitudes(tipo_operacion), expediente_hitos(hito_codigo, fecha_programada, fecha_cumplimiento), mercancia_items(item_no, detalle_producto, deleted_at)")
       .is("eliminado_en", null)
       .order("created_at", { ascending: false })).data ?? [],
   });
@@ -422,7 +423,10 @@ function Expedientes() {
         })()}
       </td>
       <td className="px-2 py-1 align-middle text-muted-foreground text-xs whitespace-nowrap">
-        {e.puerto_arribo ?? "—"}
+        <span className="inline-flex items-center gap-1.5">
+          {e.puerto_arribo ?? "—"}
+          <BadgeAeropuerto codigo={e.puerto_arribo_codigo} compacto />
+        </span>
       </td>
       <td className="px-2 py-1 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
         {e.numero_vuce ?? "—"}

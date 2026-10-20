@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { BadgeAeropuerto } from "@/components/badge-aeropuerto";
 
 export type DgaTable = "dga_paises" | "dga_puertos" | "dga_areas";
 
@@ -132,8 +133,11 @@ export function DgaCombobox({
             disabled={disabled}
             className="w-full min-w-0 justify-between overflow-hidden font-normal h-9"
           >
-            <span className={cn("min-w-0 flex-1 truncate text-left", !display && "text-muted-foreground")}>
-              {display || placeholder}
+            <span className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+              <BadgeAeropuerto codigo={codigo} compacto soloIcono />
+              <span className={cn("min-w-0 flex-1 truncate text-left", !display && "text-muted-foreground")}>
+                {display || placeholder}
+              </span>
             </span>
             <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
           </Button>
@@ -164,7 +168,10 @@ export function DgaCombobox({
                 )}
               >
                 <div className="min-w-0">
-                  <div className="font-medium truncate">{cfg.label(r)}</div>
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <div className="font-medium truncate">{cfg.label(r)}</div>
+                    <BadgeAeropuerto codigo={r.codigo} compacto />
+                  </div>
                   <div className="text-[11px] text-muted-foreground tabular-nums truncate">{cfg.sub(r)}</div>
                 </div>
                 {codigo === r.codigo && <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />}

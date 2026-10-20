@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { BadgeAeropuerto } from "@/components/badge-aeropuerto";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -253,7 +254,12 @@ function Papelera() {
                         <td className="text-xs">{e.numero_dua ?? "—"}</td>
                         <td className="text-muted-foreground">{e.bl_awb ?? "—"}</td>
                         <td>{fmtLocalDate(e.fecha_compromiso)}</td>
-                        <td className="text-xs">{e.puerto_arribo ?? "—"}</td>
+                        <td className="text-xs">
+                          <span className="inline-flex items-center gap-1.5">
+                            {e.puerto_arribo ?? "—"}
+                            <BadgeAeropuerto codigo={e.puerto_arribo_codigo} compacto />
+                          </span>
+                        </td>
                         <td><Badge variant="outline">{e.estado?.replace("_"," ")}</Badge></td>
                         <td className="text-xs text-muted-foreground">{e.eliminado_en ? new Date(e.eliminado_en).toLocaleString("es-DO") : "—"}</td>
                         <td className="px-4 py-2 text-right whitespace-nowrap">
