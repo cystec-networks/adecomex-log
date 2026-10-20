@@ -52,6 +52,7 @@ import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
 import { DepositoDestinoField } from "@/components/deposito-destino-field";
 import { DgaCombobox } from "@/components/dga-combobox";
 import { DgaProductoSearch } from "@/components/dga-producto-search";
+import { datosProductoHistorico } from "@/lib/dga-productos";
 import { buscarSugerenciasProducto } from "@/lib/catalogo-arancelario-queries";
 import { ArancelProductoAviso } from "@/components/arancel-producto-aviso";
 import { normalizarNombre, patronSinTildes } from "@/lib/search-filter";
@@ -4678,19 +4679,8 @@ function MercanciaItemsBlock({
                   p.pct_gravamen != null || (p.aplica_isc === true && p.pct_isc != null);
                 setF((prev) => ({
                   ...prev,
-                  product_code: reusarCodigo ? (p.codigo_producto ?? "") : "",
-                  codigo_arancelario: prev.codigo_arancelario || (p.partida_arancelaria ?? ""),
-                  detalle_producto: prev.detalle_producto || (p.nombre_producto ?? ""),
-                  cod_marca: p.cod_marca ?? "",
-                  marca: p.marca ?? "",
-                  cod_modelo: p.cod_modelo ?? "",
-                  modelo: p.modelo ?? "",
-                  especificaciones: p.especificaciones ?? "",
-                  unidad_medida: prev.unidad_medida || (p.unidad ?? ""),
-                  pct_gravamen: p.pct_gravamen != null ? String(p.pct_gravamen) : (prev.pct_gravamen || tasas.pct_gravamen),
-                  aplica_isc: p.aplica_isc ?? (prev.aplica_isc || tasas.aplica_isc),
-                  pct_isc: p.pct_isc != null ? String(p.pct_isc) : (prev.pct_isc || tasas.pct_isc),
-                  pct_itbis: prev.itbis_proindustria ? "9" : (p.pct_itbis != null ? String(p.pct_itbis) : (prev.pct_itbis || tasas.pct_itbis)),
+                  ...datosProductoHistorico(p, reusarCodigo, tasas),
+                  pct_itbis: prev.itbis_proindustria ? "9" : tasas.pct_itbis,
                 }));
                 setTasaBloqueada(tieneTasaFija);
                 // Si el histórico trae país, intenta mapearlo al catálogo DGA de países.

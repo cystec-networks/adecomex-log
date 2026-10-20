@@ -35,7 +35,7 @@ Scope detail-header presentation to its dedicated class; logistics and operation
 - Keep inspection type in the existing canal_riesgo storage field; portal the form-owned selector into the detail header so both editors share draft state and the existing save validation without migrating historical values.
 - Resolve the effective consignee (active endorsement, else original client) via src/lib/consignatario-efectivo.ts in every expediente document generator and new-invoice preload; issued invoices stay frozen.
 - Resolve the dispatch-date modal asynchronously within the existing state mutation and reuse fechasDespachoFaltantes for detail-only preventive alerts, preserving permission checks and audit payloads.
-- Centralize product-entry suggestions in buscarSugerenciasProducto/resolverSugerenciasProducto, never historical calculations or Real values. Keep tariff CSV imports in the authenticated staff-checked server function and atomic invoker RPC, without writing product overrides.
+- Share entry suggestions via buscarSugerenciasProducto/resolverSugerenciasProducto (not historical/Real); explicit DGA selections use datosProductoHistorico. Tariff CSV uses staff-checked server import and atomic invoker RPC; no product override writes.
 - Keep chapter notes in a separate read-only query/panel and admin-only invoker import, so tariff suggestions and the main importer remain unchanged.
 - Use ImporteLiquidacionInput and liquidacion-moneda for formatted tax editing; preserve USD drafts, calculations, inventory and PDF.
 

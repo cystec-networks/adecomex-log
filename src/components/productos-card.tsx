@@ -13,7 +13,7 @@ import { DgaCombobox } from "@/components/dga-combobox";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { buscarSugerenciasProducto } from "@/lib/catalogo-arancelario-queries";
-import { resolverTasaProducto } from "@/lib/catalogo-arancelario";
+import { datosProductoHistorico } from "@/lib/dga-productos";
 
 export type ProductosTabla = "cotizacion_productos" | "orden_productos" | "solicitud_productos";
 
@@ -248,19 +248,7 @@ export function ProductosCard({
                 const tasas = await buscarSugerenciasProducto(qc, partida, p);
                 setF((prev) => ({
                   ...prev,
-                  product_code: reusarCodigo ? (p.codigo_producto ?? "") : "",
-                  codigo_arancelario: prev.codigo_arancelario || partida,
-                  detalle_producto: prev.detalle_producto || (p.nombre_producto ?? ""),
-                  cod_marca: p.cod_marca ?? "",
-                  marca: p.marca ?? "",
-                  cod_modelo: p.cod_modelo ?? "",
-                  modelo: p.modelo ?? "",
-                  especificaciones: p.especificaciones ?? "",
-                  unidad_medida: prev.unidad_medida || (p.unidad ?? ""),
-                  pct_gravamen: p.pct_gravamen != null ? String(p.pct_gravamen) : resolverTasaProducto(prev.pct_gravamen, tasas.pct_gravamen === "" ? null : Number(tasas.pct_gravamen)),
-                  aplica_isc: p.aplica_isc ?? (prev.aplica_isc || tasas.aplica_isc),
-                  pct_isc: p.pct_isc != null ? String(p.pct_isc) : resolverTasaProducto(prev.pct_isc, tasas.pct_isc === "" ? null : Number(tasas.pct_isc)),
-                  pct_itbis: p.pct_itbis != null ? String(p.pct_itbis) : resolverTasaProducto(prev.pct_itbis, tasas.pct_itbis === "" ? null : Number(tasas.pct_itbis)),
+                  ...datosProductoHistorico(p, reusarCodigo, tasas),
                 }));
                 toast.success(reusarCodigo ? "Producto copiado con su ProductCode" : "Datos copiados del histórico");
 
