@@ -27,6 +27,7 @@ import { alertasExpedienteCompartidas } from "@/lib/alertas-expediente-compartid
 import { useDatosAlertasListado } from "@/lib/use-alertas-expediente";
 import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
 import { daysFromToday, habilesRestantesPlazo } from "@/lib/dates";
+import { BadgeAeropuerto } from "@/components/badge-aeropuerto";
 
 type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 
