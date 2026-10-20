@@ -435,9 +435,6 @@ function Expedientes() {
       </td>
       <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
         {(() => {
-          const pinCorta = e.liq_siga_fecha_pago
-            ? etiquetaPinDgaCompacta(e.liq_siga_termino_at, e.liq_siga_fecha_pago)
-            : null;
           const fv = e.estado === "verificar" ? fechaVerificacion(e) : null;
           const m = fv ? String(fv).match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
           const fechaVer = m
@@ -448,20 +445,15 @@ function Expedientes() {
               {fechaVer}
             </span>
           ) : null;
+          // Solo el estado del flujo; el dato de pago se consulta en la ficha.
           return (
             <div className="exp-estado-celda">
               <span className="exp-estado-doble">
                 {estadoBadge(e.estado)}
-                {pinCorta &&
-                  (pinCorta.texto === "Pago tardío" ? (
-                    <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} compacto />
-                  ) : (
-                    pinDiscreto(pinCorta)
-                  ))}
                 {etiquetaVer}
               </span>
               <span className="exp-estado-unica">
-                {estadoBadge(e.estado, pinCorta ?? undefined)}
+                {estadoBadge(e.estado)}
                 {etiquetaVer}
               </span>
             </div>
