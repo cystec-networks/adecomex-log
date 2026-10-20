@@ -337,7 +337,7 @@ function Expedientes() {
   const EstadoDivider = ({ label, groupKey, count }: { label: string; groupKey: string; count: number }) => {
     const colapsado = !!colapsados[groupKey];
     return (
-      <tr className="bg-muted/40 cursor-pointer hover:bg-muted/60" onClick={() => toggleGrupo(groupKey)}>
+      <tr className="exp-fila-grupo bg-muted/40 cursor-pointer hover:bg-muted/60" onClick={() => toggleGrupo(groupKey)}>
         <td colSpan={12} className="py-2 px-4">
           <div className="flex items-center gap-3">
             <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${colapsado ? "" : "rotate-90"}`} />
@@ -604,7 +604,7 @@ function Expedientes() {
           {filtered.length === 0 && (
             <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin expedientes. Crea uno con "Nuevo Expediente" o súbelo por OCR.</div>
           )}
-          <div className="overflow-auto h-full">
+          <div className="expedientes-tabla-wrap overflow-auto h-full">
             {gruposVisibles.map((g) => {
               const rows = grupos[g];
               if (rows.length === 0) return null;
@@ -614,7 +614,7 @@ function Expedientes() {
                     <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">{grupoLabel[g]}</span>
                     <Badge variant="secondary" className="text-[10px]">{rows.length}</Badge>
                   </div>
-                  <table className="w-full text-[13px] border-separate border-spacing-0">
+                  <table className="expedientes-tabla w-full text-[13px] border-separate border-spacing-0">
                     <thead className="sticky-table-header bg-muted/30 border-b [&_th]:top-[33px]">
                       <tr>
                         <Th k="numero" className="px-2 whitespace-nowrap">Expediente</Th>
