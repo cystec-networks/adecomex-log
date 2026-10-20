@@ -1,3 +1,4 @@
+import { construirObservaciones, contenedoresValidos, estructuraVacia, normalizarRemarkSiga, TIPOS_CARGA_OBS, type ObservacionesEstructura } from "@/lib/observaciones-expediente";
 import { calcularResultadosLiquidacion, valorRealInicial } from "@/lib/liquidacion-final";
 import { impuestoPantallaRd, impuestoEditadoUsd } from "@/lib/liquidacion-moneda";
 import { resumenImportacion } from "@/lib/resumen-importacion";
