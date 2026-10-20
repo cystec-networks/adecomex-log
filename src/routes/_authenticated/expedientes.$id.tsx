@@ -1,4 +1,4 @@
-import { construirObservaciones, contenedoresValidos, estructuraVacia, normalizarRemarkSiga, TIPOS_CARGA_OBS, type ObservacionesEstructura } from "@/lib/observaciones-expediente";
+import { construirObservaciones, contenedoresValidos, contenedoresDesdeTabla, descripcionBorrador, tipoCargaPorDefecto, estructuraVacia, normalizarRemarkSiga, TIPOS_CARGA_OBS, type ObservacionesEstructura } from "@/lib/observaciones-expediente";
 import { calcularResultadosLiquidacion, valorRealInicial } from "@/lib/liquidacion-final";
 import { impuestoPantallaRd, impuestoEditadoUsd } from "@/lib/liquidacion-moneda";
 import { resumenImportacion } from "@/lib/resumen-importacion";
@@ -1214,14 +1214,33 @@ function aplicarObservaciones(payload: any, numero?: string | null) {
   return payload;
 }
 
-function ObservacionesEstructuradas({ form, numero, onChange, disabled }: { form: any; numero: string; onChange: (v: ObservacionesEstructura) => void; disabled: boolean }) {
+function ObservacionesEstructuradas({ form, numero, onChange, disabled, contenedores = [], productos = [] }: { form: any; numero: string; onChange: (v: ObservacionesEstructura) => void; disabled: boolean; contenedores?: Array<{ numero?: string; tipo?: string }>; productos?: any[] }) {
   const guardada = form.observaciones_estructura as ObservacionesEstructura | null;
-  const e: ObservacionesEstructura = {
-    tipo_carga: guardada?.tipo_carga ?? (TIPOS_CARGA_OBS.find((t) => t.toUpperCase() === String(form.tipo_carga ?? "").trim().toUpperCase()) ?? ""),
-    contenedores: guardada?.contenedores ?? "",
-    descripcion: guardada?.descripcion ?? "",
-    embarcador: guardada?.embarcador ?? (form.suplidor ?? ""),
+  const conts = contenedores.filter((c) => (c.numero ?? "").trim() || (c.tipo ?? "").trim());
+  const sug: ObservacionesEstructura = {
+    tipo_carga: TIPOS_CARGA_OBS.find((t) => t.toUpperCase() === String(form.tipo_carga ?? "").trim().toUpperCase()) ?? tipoCargaPorDefecto(conts.length),
+    contenedores: contenedoresDesdeTabla(conts),
+    descripcion: descripcionBorrador(productos),
+    embarcador: form.suplidor ?? "",
   };
+  const e: ObservacionesEstructura = {
+    tipo_carga: guardada?.tipo_carga ?? sug.tipo_carga,
+    contenedores: guardada?.contenedores ?? sug.contenedores,
+    descripcion: guardada?.descripcion ?? sug.descripcion,
+    embarcador: guardada?.embarcador ?? sug.embarcador,
+  };
+  // Valores sugeridos: se persisten al editar y se siguen actualizando hasta que el usuario modifique algo.
+  const autoRef = useRef<string | null>(null);
+  const sugJson = JSON.stringify(sug);
+  const guardadaJson = guardada ? JSON.stringify(guardada) : null;
+  useEffect(() => {
+    if (disabled || (!guardada && String(form.observaciones ?? "").trim())) return;
+    if (guardadaJson && guardadaJson !== autoRef.current) return;
+    if (guardadaJson === sugJson) return;
+    autoRef.current = sugJson;
+    onChange(JSON.parse(sugJson));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disabled, guardadaJson, sugJson]);
   const upd = (k: keyof ObservacionesEstructura, v: string) => onChange({ ...e, [k]: v });
   const contOk = contenedoresValidos(e.contenedores);
   const legado = estructuraVacia(guardada) && String(form.observaciones ?? "").trim();
@@ -1239,7 +1258,7 @@ function ObservacionesEstructuradas({ form, numero, onChange, disabled }: { form
         </div>
         <div className="grid gap-1">
           <span className="text-[11px] text-muted-foreground">Contenedores</span>
-          <Input value={e.contenedores} placeholder="2X40" onChange={(ev) => upd("contenedores", ev.target.value.toUpperCase())} disabled={disabled} aria-invalid={!contOk} className={contOk ? "" : "border-destructive"} />
+          <Input value={e.contenedores} placeholder="2X40 o 1X40 + 1X20" onChange={(ev) => upd("contenedores", ev.target.value.toUpperCase())} disabled={disabled} aria-invalid={!contOk} className={contOk ? "" : "border-destructive"} />
         </div>
         <div className="grid gap-1">
           <span className="text-[11px] text-muted-foreground">&nbsp;</span>
@@ -1250,7 +1269,7 @@ function ObservacionesEstructuradas({ form, numero, onChange, disabled }: { form
           <Input value={e.descripcion} placeholder="3,840 fundas de leche descremada en polvo" onChange={(ev) => upd("descripcion", ev.target.value)} disabled={disabled} />
         </div>
       </div>
-      {!contOk && <p className="text-[11px] text-destructive">Formato esperado: cantidad X tamaño (ej. 2X40, 1X20).</p>}
+      {!contOk && <p className="text-[11px] text-destructive">Formato esperado: cantidad X tamaño (ej. 2X40, 1X20 o 1X40 + 1X20).</p>}
       <div className="grid gap-2 md:grid-cols-3">
         <div className="grid gap-1">
           <span className="text-[11px] text-muted-foreground">Embarcador / Suplidor</span>
@@ -2771,6 +2790,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             numero={isNuevo ? (form.numero || "") : (exp?.numero ?? "")}
             onChange={(v) => set("observaciones_estructura", v)}
             disabled={!editable}
+            contenedores={contenedores}
+            productos={isNuevo ? productosNuevos : (mercItems ?? [])}
           />
       </Section>
 

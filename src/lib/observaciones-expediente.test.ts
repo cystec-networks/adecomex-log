@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { construirObservaciones, contenedoresValidos, normalizarRemarkSiga } from "./observaciones-expediente";
+import { construirObservaciones, contenedoresValidos, normalizarRemarkSiga, contenedoresDesdeTabla, tipoCargaPorDefecto, descripcionBorrador } from "./observaciones-expediente";
 import { buildImportDUAXml } from "./siga-xml";
 
 const ej = { tipo_carga: "FCL", contenedores: "4x40", descripcion: "3,840 fundas de leche descremada en polvo", embarcador: "Melkweg Holland BV" };
@@ -33,5 +33,21 @@ describe("observaciones estructuradas", () => {
     const decl = xml.split("<ImpDeclarationProduct>")[0];
     assert.ok((decl).includes("<Remark>FCL STC: X, EMB.: A &amp; B NANDU</Remark>"));
     assert.ok((xml).includes("<Remark>Leche &amp; más</Remark>"));
+  });
+  it("contenedores mixtos y únicos desde la tabla", () => {
+    assert.equal(contenedoresDesdeTabla([{ tipo: "40'" }, { tipo: "20 DRY" }]), "1X40 + 1X20");
+    assert.equal(contenedoresDesdeTabla([{ tipo: "40" }, { tipo: "40" }]), "2X40");
+    assert.equal(contenedoresDesdeTabla([{ tipo: "" }]), "");
+    assert.equal(contenedoresValidos("1X40 + 1X20"), true);
+  });
+  it("tipo de carga por defecto", () => {
+    assert.equal(tipoCargaPorDefecto(2), "FCL");
+    assert.equal(tipoCargaPorDefecto(0), "LCL");
+  });
+  it("borrador usa el producto de mayor FOB", () => {
+    assert.equal(descripcionBorrador([{ detalle_producto: "A", valor_fob: 10 }, { detalle_producto: "Leche", valor_fob: 90 }]), "Leche");
+  });
+  it("texto con contenedores mixtos", () => {
+    assert.ok(construirObservaciones({ tipo_carga: "FCL", contenedores: "1x40+1x20" }).startsWith("FCL 1X40 + 1X20"));
   });
 });
