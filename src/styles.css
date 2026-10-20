@@ -360,6 +360,9 @@
    altura uniforme en todas las filas. */
 .expedientes-tabla-wrap { container: exp-tabla / inline-size; }
 .expedientes-tabla tbody tr:not(.exp-fila-grupo) > td { height: 2rem; }
+/* Columna Puerto: la más compacta posible (solo texto, sin ícono de aeropuerto). */
+.expedientes-tabla .exp-puerto-col,
+.expedientes-tabla td.exp-puerto-celda { padding-inline: 0.25rem; }
 .expedientes-tabla .exp-estado-celda {
   display: flex; align-items: center; justify-content: center; min-width: 0;
 }

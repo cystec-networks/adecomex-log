@@ -26,8 +26,6 @@ import { alertasExpedienteCompartidas } from "@/lib/alertas-expediente-compartid
 import { useDatosAlertasListado } from "@/lib/use-alertas-expediente";
 import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
 import { daysFromToday, habilesRestantesPlazo } from "@/lib/dates";
-import { BadgeAeropuerto } from "@/components/badge-aeropuerto";
-import { nombreAeropuertoDga } from "@/lib/aeropuertos-dga";
 
 type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 
@@ -424,25 +422,10 @@ function Expedientes() {
           );
         })()}
       </td>
-      <td className="px-2 py-1 align-middle text-muted-foreground text-xs whitespace-nowrap">
-        {(() => {
-          // Ancho contenido: nombres largos se truncan (tooltip con el nombre
-          // completo y, si aplica, la indicación de aeropuerto).
-          const nombreAero = nombreAeropuertoDga(e.puerto_arribo_codigo);
-          const titulo = nombreAero
-            ? `Puerto de arribo: ${e.puerto_arribo ?? "—"} · Aeropuerto: ${nombreAero}`
-            : e.puerto_arribo
-              ? `Puerto de arribo: ${e.puerto_arribo}`
-              : undefined;
-          return (
-            <span className="inline-flex items-center gap-1.5 min-w-0">
-              <span title={titulo} className="block max-w-[6rem] truncate">
-                {e.puerto_arribo ?? "—"}
-              </span>
-              <BadgeAeropuerto codigo={e.puerto_arribo_codigo} soloIcono />
-            </span>
-          );
-        })()}
+      <td className="exp-puerto-celda px-2 py-1 align-middle text-muted-foreground text-xs whitespace-nowrap">
+        {/* Texto plano del puerto, al ancho justo de los nombres cortos; los
+            largos se truncan con el nombre completo en el tooltip (criterio CLIENTE). */}
+        <TruncatedCell value={e.puerto_arribo} maxClass="max-w-[5rem]" />
       </td>
       <td className="px-2 py-1 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
         {e.numero_vuce ?? "—"}
@@ -632,7 +615,7 @@ function Expedientes() {
                         <Th k="bl_awb" className="px-2 whitespace-nowrap">BL / AWB</Th>
                         <Th k="fecha_compromiso" className="px-2 whitespace-nowrap">ETA</Th>
                         <th className="px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap w-12 min-w-12">Días</th>
-                        <Th k="puerto_arribo" className="px-2 whitespace-nowrap">Puerto</Th>
+                        <Th k="puerto_arribo" className="px-2 whitespace-nowrap exp-puerto-col">Puerto</Th>
                         <Th k="numero_vuce" className="px-2 whitespace-nowrap">Permiso VUCE</Th>
                         <Th k="estado" className="px-2 whitespace-nowrap">Estado</Th>
                         <th className="w-14 min-w-14 max-w-14 px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Alerta</th>
