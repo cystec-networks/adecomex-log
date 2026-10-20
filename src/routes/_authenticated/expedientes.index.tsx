@@ -452,7 +452,7 @@ function Expedientes() {
           return (
             <div className="exp-estado-celda">
               <span className="exp-estado-doble">
-                {estadoBadge(e.estado, pinCorta ?? undefined)}
+                {estadoBadge(e.estado)}
                 {pinCorta && (
                   <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} compacto />
                 )}
