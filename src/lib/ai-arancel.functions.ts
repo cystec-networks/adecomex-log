@@ -24,7 +24,9 @@ export const classifyArancel = createServerFn({ method: "POST" })
     const [r] = await clasificarConCatalogo(context.supabase, context.userId, [descripcion]);
     const reply = r?.arancel
       ? `**${r.arancel.codigo}** — ${r.arancel.descripcion}\n\n${r.explicacion}\n\nClasificación referencial — validación final por la DGA.`
-      : r?.producto === false ? "Sin sugerencia" : NO_DETERMINADA;
+      : r?.producto === false ? "Sin sugerencia" : r?.candidatos?.length
+        ? `**Posibles partidas — requiere confirmación manual**\n\n${r.candidatos.map((c) => `- **${c.codigo}** — ${c.descripcion}`).join("\n")}`
+        : NO_DETERMINADA;
     return { reply };
   });
 

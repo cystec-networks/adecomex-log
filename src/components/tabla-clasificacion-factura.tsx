@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { descargarExcelClasificacion, excelClasificacion, type FilaClasificacion } from "@/lib/copiloto-facturas";
 
-export function TablaClasificacionFactura({ archivo, filas, pendiente = false, onGuardar, guardado = false }: {
-  archivo: string; filas: FilaClasificacion[]; pendiente?: boolean; onGuardar?: () => Promise<unknown>; guardado?: boolean;
+export function TablaClasificacionFactura({ archivo, filas, pendiente = false, onGuardar, guardado = false, onElegir }: {
+  archivo: string; filas: FilaClasificacion[]; pendiente?: boolean; onGuardar?: () => Promise<unknown>; guardado?: boolean; onElegir?: (indice: number, codigo: string) => void;
 }) {
   const [excel, setExcel] = useState<Blob | null>(null);
   useEffect(() => {
@@ -45,7 +45,13 @@ export function TablaClasificacionFactura({ archivo, filas, pendiente = false, o
             <td className="p-2">{f.descripcion || <span className="text-muted-foreground">(sin descripción)</span>}
               {(f.cantidad != null || f.unidad) && <div className="text-[11px] text-muted-foreground">{[f.cantidad, f.unidad].filter((x) => x != null).join(" ")}</div>}
             </td>
-            <td className="p-2 font-mono">{f.partida && f.enArancel ? <span className="whitespace-nowrap">{f.partida}</span> : <span className="font-sans text-muted-foreground">{f.noProducto || (f.noProducto == null && !f.insuficiente && !f.partida) ? "Sin sugerencia" : NO_DETERMINADA}</span>}</td>
+            <td className="p-2 font-mono">{f.partida && f.enArancel ? <span className="whitespace-nowrap">{f.partida}</span> : !f.noProducto && f.candidatos?.length ? <div className="font-sans min-w-64 space-y-2">
+              <div className="text-[11px] font-semibold text-muted-foreground">Posibles partidas — requiere confirmación manual</div>
+              <ol className="space-y-2">{f.candidatos.map((c) => <li key={c.codigo} className="flex items-start gap-2">
+                {onElegir ? <Button type="button" variant="outline" size="sm" className="font-mono shrink-0" disabled={guardar.isPending} onClick={() => onElegir(i, c.codigo)} aria-label={`Elegir partida ${c.codigo} para ${f.descripcion}`}>{c.codigo}</Button> : <span className="font-mono whitespace-nowrap">{c.codigo}</span>}
+                <span className="text-xs" title={c.descripcion}>{c.descripcion.length > 160 ? `${c.descripcion.slice(0, 157)}…` : c.descripcion}</span>
+              </li>)}</ol>
+            </div> : <span className="font-sans text-muted-foreground">{f.noProducto || (f.noProducto == null && !f.insuficiente && !f.partida) ? "Sin sugerencia" : NO_DETERMINADA}</span>}</td>
             <td className="p-2 text-right tabular-nums">{pct(f.gravamen)}</td><td className="p-2 text-right tabular-nums">{pct(f.itbis)}</td>
             <td className="p-2">{f.partida && f.enArancel && <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Copiar partida ${f.partida}`} onClick={async () => {
               if (!f.partida) return;

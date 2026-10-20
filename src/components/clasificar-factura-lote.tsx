@@ -6,7 +6,7 @@ import { FileUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TablaClasificacionFactura } from "@/components/tabla-clasificacion-factura";
 import { guardarClasificacion } from "@/lib/copiloto-facturas-queries";
-import { type FilaClasificacion } from "@/lib/copiloto-facturas";
+import { confirmarCandidato, type FilaClasificacion } from "@/lib/copiloto-facturas";
 import { extractLineasFactura } from "@/lib/ai-ocr.functions";
 import { classifyArancelLote } from "@/lib/ai-arancel.functions";
 import { tasasSugeridasArancel } from "@/lib/catalogo-arancelario";
@@ -59,6 +59,7 @@ export function useClasificarFactura() {
           enArancel: Boolean(a),
           insuficiente: l.descripcion.length < MIN_DESC,
           noProducto: r?.producto === false,
+          candidatos: r?.candidatos ?? [],
         };
       });
     },
@@ -92,6 +93,7 @@ export function useClasificarFactura() {
 
   const tabla = (run.isPending || filas) && (
     <TablaClasificacionFactura archivo={archivo} filas={filas ?? []} pendiente={run.isPending} guardado={guardado}
+      onElegir={!guardado ? (i, codigo) => setFilas((actual) => actual?.map((fila, j) => j === i ? confirmarCandidato(fila, codigo) : fila) ?? null) : undefined}
       onGuardar={async () => {
         if (!filas) return;
         await guardarClasificacion(archivo, filas);

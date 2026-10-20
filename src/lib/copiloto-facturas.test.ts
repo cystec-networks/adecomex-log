@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { resolverArancelCopiloto, columnasExcelClasificacion, filaClasificacionSchema } from "./copiloto-facturas";
+import { resolverArancelCopiloto, columnasExcelClasificacion, filaClasificacionSchema, confirmarCandidato } from "./copiloto-facturas";
 
 describe("Coincidencias del Copiloto con el arancel nacional", () => {
   const vacuna = { codigo: "3002.41.00", gravamen_pct: 0, exento_itbis: true, es_hoja: true };
@@ -13,6 +13,15 @@ describe("Coincidencias del Copiloto con el arancel nacional", () => {
   it("mantiene sin sugerencia una línea sin partida", () => assert.equal(resolverArancelCopiloto("", [vacuna]), null));
 });
 describe("Instantánea y Excel", () => {
+  it("preserva alternativas en historial y confirma solo un candidato ofrecido sin cambiar el original", () => {
+    const fila = filaClasificacionSchema.parse({ descripcion: "Electrodo HANNA", cantidad: 1, unidad: null, partida: null, gravamen: null, itbis: null, enArancel: false, insuficiente: false, candidatos: [{ codigo: "9027.90.90", descripcion: "Los demás", gravamen_pct: 0, exento_itbis: null }] });
+    assert.deepEqual(filaClasificacionSchema.parse(JSON.parse(JSON.stringify(fila))).candidatos, fila.candidatos);
+    assert.equal(confirmarCandidato(fila, "3002.40.00.00"), fila);
+    const elegido = confirmarCandidato(fila, "9027.90.90");
+    assert.deepEqual([elegido.partida, elegido.gravamen, elegido.itbis], ["9027.90.90", 0, 18]);
+    assert.equal(fila.partida, null);
+    assert.equal(confirmarCandidato({ ...fila, noProducto: true }, "9027.90.90").partida, null);
+  });
   it("conserva descripción, partida y tasas numéricas incluyendo cero y vacío", () => {
     const fila = filaClasificacionSchema.parse({ descripcion: "Producto", cantidad: 1, unidad: null, partida: "3002.41.00.00", gravamen: 0, itbis: null, enArancel: true, insuficiente: false });
     assert.deepEqual(columnasExcelClasificacion([fila]), [["Producto", "3002.41.00.00", 0, null]]);

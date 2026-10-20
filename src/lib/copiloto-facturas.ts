@@ -4,9 +4,16 @@ export const filaClasificacionSchema = z.object({
   descripcion: z.string(), cantidad: z.number().nullable(), unidad: z.string().nullable(),
   partida: z.string().nullable(), gravamen: z.number().nullable(), itbis: z.number().nullable(),
   enArancel: z.boolean(), insuficiente: z.boolean(), noProducto: z.boolean().optional(),
+  candidatos: z.array(z.object({ codigo: z.string().regex(/^\d{4}\.\d{2}\.\d{2}$/), descripcion: z.string(), gravamen_pct: z.number().nullable(), exento_itbis: z.boolean().nullable() })).max(3).optional(),
 });
 export type FilaClasificacion = z.infer<typeof filaClasificacionSchema>;
 export type ArancelClasificacion = { codigo: string; gravamen_pct: number | null; exento_itbis: boolean | null; es_hoja: boolean };
+
+export function confirmarCandidato(fila: FilaClasificacion, codigo: string): FilaClasificacion {
+  const candidato = fila.candidatos?.find((c) => c.codigo === codigo);
+  if (!candidato || fila.noProducto || fila.partida) return fila;
+  return { ...fila, partida: candidato.codigo, gravamen: candidato.gravamen_pct, itbis: candidato.exento_itbis === true ? 0 : 18, enArancel: true };
+}
 
 export function candidatosCodigoCopiloto(codigo: string) {
   let d = codigo.replace(/[^0-9]/g, "");
