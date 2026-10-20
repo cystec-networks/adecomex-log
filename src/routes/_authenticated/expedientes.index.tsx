@@ -11,14 +11,13 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronRight, Repeat2, Trash2, AlarmClock, Plus, Copy, AlertTriangle, Check } from "lucide-react";
+import { ChevronRight, Repeat2, Trash2, AlarmClock, Plus, Copy, AlertTriangle } from "lucide-react";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { Toggle } from "@/components/ui/toggle";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { HerramientasDgaVuceMenu, RastreosEnvioMenu } from "@/components/accesos-rapidos-expediente";
 import { EmailButton } from "@/components/email-button";
 import { TruncatedCell } from "@/components/truncated-cell";
-import { BadgeVigenciaPinDga, etiquetaPinDgaCompacta } from "@/components/badge-vigencia";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
@@ -28,6 +27,7 @@ import { useDatosAlertasListado } from "@/lib/use-alertas-expediente";
 import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
 import { daysFromToday, habilesRestantesPlazo } from "@/lib/dates";
 import { BadgeAeropuerto } from "@/components/badge-aeropuerto";
+import { nombreAeropuertoDga } from "@/lib/aeropuertos-dga";
 
 type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
 
@@ -262,7 +262,7 @@ function Expedientes() {
   const countExp = (data ?? []).filter((e: any) => detectTipo(e) === "exportacion").length;
   const countFact = (data ?? []).filter((e: any) => detectTipo(e) === "facturados").length;
 
-  const estadoBadge = (estadoRaw: string | null, combinarCon?: { texto: string; titulo?: string }) => {
+  const estadoBadge = (estadoRaw: string | null) => {
     const label = ESTADO_LABEL[estadoRaw ?? ""] ?? (estadoRaw ?? "");
     const variants: Record<string, string> = {
       digitar: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
@@ -276,35 +276,12 @@ function Expedientes() {
     };
     return (
       <span
-        title={combinarCon ? `${label} · ${combinarCon.titulo ?? combinarCon.texto}` : undefined}
         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border whitespace-nowrap ${variants[estadoRaw ?? ""] ?? variants.digitar}`}
       >
-        {combinarCon ? (
-          <>
-            {label}
-            {/* El dato de pago va más liviano para no competir con el estado del flujo. */}
-            <span className="ml-1 inline-flex items-center gap-1 text-[10px] font-normal opacity-75">
-              <span>·</span>
-              {combinarCon.texto === "Pagado" && <Check className="h-2.5 w-2.5" />}
-              <span>{combinarCon.texto}</span>
-            </span>
-          </>
-        ) : label}
+        {label}
       </span>
     );
   };
-
-  // «Pagado» es información complementaria: pastilla con borde, sin relleno,
-  // texto menor y palomita. El estado del expediente sigue dominando la celda.
-  const pinDiscreto = (pin: { texto: string; titulo?: string }) => (
-    <span
-      title={pin.titulo}
-      className="inline-flex items-center gap-0.5 rounded-full border border-emerald-300/70 px-1.5 py-px text-[10px] font-medium leading-tight whitespace-nowrap text-emerald-700/90 dark:border-emerald-700/70 dark:text-emerald-300/90"
-    >
-      <Check className="h-2.5 w-2.5" />
-      {pin.texto}
-    </span>
-  );
 
   const rowHighlight = (e: any) => {
     const dias = e.fecha_compromiso ? daysFromToday(e.fecha_compromiso) : null;
@@ -448,19 +425,30 @@ function Expedientes() {
         })()}
       </td>
       <td className="px-2 py-1 align-middle text-muted-foreground text-xs whitespace-nowrap">
-        <span className="inline-flex items-center gap-1.5">
-          {e.puerto_arribo ?? "—"}
-          <BadgeAeropuerto codigo={e.puerto_arribo_codigo} soloIcono />
-        </span>
+        {(() => {
+          // Ancho contenido: nombres largos se truncan (tooltip con el nombre
+          // completo y, si aplica, la indicación de aeropuerto).
+          const nombreAero = nombreAeropuertoDga(e.puerto_arribo_codigo);
+          const titulo = nombreAero
+            ? `Puerto de arribo: ${e.puerto_arribo ?? "—"} · Aeropuerto: ${nombreAero}`
+            : e.puerto_arribo
+              ? `Puerto de arribo: ${e.puerto_arribo}`
+              : undefined;
+          return (
+            <span className="inline-flex items-center gap-1.5 min-w-0">
+              <span title={titulo} className="block max-w-[6rem] truncate">
+                {e.puerto_arribo ?? "—"}
+              </span>
+              <BadgeAeropuerto codigo={e.puerto_arribo_codigo} soloIcono />
+            </span>
+          );
+        })()}
       </td>
       <td className="px-2 py-1 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
         {e.numero_vuce ?? "—"}
       </td>
       <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
         {(() => {
-          const pinCorta = e.liq_siga_fecha_pago
-            ? etiquetaPinDgaCompacta(e.liq_siga_termino_at, e.liq_siga_fecha_pago)
-            : null;
           const fv = e.estado === "verificar" ? fechaVerificacion(e) : null;
           const m = fv ? String(fv).match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
           const fechaVer = m
@@ -471,20 +459,15 @@ function Expedientes() {
               {fechaVer}
             </span>
           ) : null;
+          // Solo el estado del flujo; el dato de pago se consulta en la ficha.
           return (
             <div className="exp-estado-celda">
               <span className="exp-estado-doble">
                 {estadoBadge(e.estado)}
-                {pinCorta &&
-                  (pinCorta.texto === "Pago tardío" ? (
-                    <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} compacto />
-                  ) : (
-                    pinDiscreto(pinCorta)
-                  ))}
                 {etiquetaVer}
               </span>
               <span className="exp-estado-unica">
-                {estadoBadge(e.estado, pinCorta ?? undefined)}
+                {estadoBadge(e.estado)}
                 {etiquetaVer}
               </span>
             </div>
