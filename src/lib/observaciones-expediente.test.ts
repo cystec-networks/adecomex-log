@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import { construirObservaciones, contenedoresValidos, normalizarRemarkSiga } from "./observaciones-expediente";
 import { buildImportDUAXml } from "./siga-xml";
 
@@ -6,22 +7,22 @@ const ej = { tipo_carga: "FCL", contenedores: "4x40", descripcion: "3,840 fundas
 
 describe("observaciones estructuradas", () => {
   it("coincide con el ejemplo real", () => {
-    expect(normalizarRemarkSiga(construirObservaciones(ej, "20263993", "202609I322"))).toBe(
+    assert.equal(normalizarRemarkSiga(construirObservaciones(ej, "20263993", "202609I322")), 
       "FCL 4X40 STC: 3,840 FUNDAS DE LECHE DESCREMADA EN POLVO, EMB.: MELKWEG HOLLAND BV, FACTURA 20263993, EXP.: 202609I322.",
     );
   });
   it("sin embarcador no deja comas dobles", () => {
-    expect(construirObservaciones({ ...ej, embarcador: "  " }, "F1", "E1")).toBe(
+    assert.equal(construirObservaciones({ ...ej, embarcador: "  " }, "F1", "E1"), 
       "FCL 4X40 STC: 3,840 fundas de leche descremada en polvo, FACTURA F1, EXP.: E1.",
     );
   });
   it("quita tildes, Ñ y saltos de línea", () => {
-    expect(normalizarRemarkSiga("Piñas\nacción  café")).toBe("PINAS ACCION CAFE");
+    assert.equal(normalizarRemarkSiga("Piñas\nacción  café"), "PINAS ACCION CAFE");
   });
   it("valida NxTT", () => {
-    expect(contenedoresValidos("2X40")).toBe(true);
-    expect(contenedoresValidos("1x20")).toBe(true);
-    expect(contenedoresValidos("dos de 40")).toBe(false);
+    assert.equal(contenedoresValidos("2X40"), true);
+    assert.equal(contenedoresValidos("1x20"), true);
+    assert.equal(contenedoresValidos("dos de 40"), false);
   });
   it("Remark va en ImpDeclaration, normalizado y escapado", () => {
     const xml = buildImportDUAXml(
@@ -30,7 +31,7 @@ describe("observaciones estructuradas", () => {
       {} as any,
     );
     const decl = xml.split("<ImpDeclarationProduct>")[0];
-    expect(decl).toContain("<Remark>FCL STC: X, EMB.: A &amp; B NANDU</Remark>");
-    expect(xml).toContain("<Remark>Leche &amp; más</Remark>");
+    assert.ok((decl).includes("<Remark>FCL STC: X, EMB.: A &amp; B NANDU</Remark>");
+    assert.ok((xml).includes("<Remark>Leche &amp; más</Remark>");
   });
 });
