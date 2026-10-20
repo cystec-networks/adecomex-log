@@ -1217,19 +1217,30 @@ function aplicarObservaciones(payload: any, numero?: string | null) {
 function ObservacionesEstructuradas({ form, numero, onChange, disabled, contenedores = [], productos = [] }: { form: any; numero: string; onChange: (v: ObservacionesEstructura) => void; disabled: boolean; contenedores?: Array<{ numero?: string; tipo?: string }>; productos?: any[] }) {
   const guardada = form.observaciones_estructura as ObservacionesEstructura | null;
   const conts = contenedores.filter((c) => (c.numero ?? "").trim() || (c.tipo ?? "").trim());
-  const e: ObservacionesEstructura = {
-    tipo_carga: guardada?.tipo_carga ?? (TIPOS_CARGA_OBS.find((t) => t.toUpperCase() === String(form.tipo_carga ?? "").trim().toUpperCase()) ?? tipoCargaPorDefecto(conts.length)),
-    contenedores: guardada?.contenedores ?? contenedoresDesdeTabla(conts),
-    descripcion: guardada?.descripcion ?? descripcionBorrador(productos),
-    embarcador: guardada?.embarcador ?? (form.suplidor ?? ""),
+  const sug: ObservacionesEstructura = {
+    tipo_carga: TIPOS_CARGA_OBS.find((t) => t.toUpperCase() === String(form.tipo_carga ?? "").trim().toUpperCase()) ?? tipoCargaPorDefecto(conts.length),
+    contenedores: contenedoresDesdeTabla(conts),
+    descripcion: descripcionBorrador(productos),
+    embarcador: form.suplidor ?? "",
   };
-  // Persistir las sugerencias iniciales al editar (solo si no hay estructura ni observación antigua).
-  const sugerida = JSON.stringify(e);
+  const e: ObservacionesEstructura = {
+    tipo_carga: guardada?.tipo_carga ?? sug.tipo_carga,
+    contenedores: guardada?.contenedores ?? sug.contenedores,
+    descripcion: guardada?.descripcion ?? sug.descripcion,
+    embarcador: guardada?.embarcador ?? sug.embarcador,
+  };
+  // Valores sugeridos: se persisten al editar y se siguen actualizando hasta que el usuario modifique algo.
+  const autoRef = useRef<string | null>(null);
+  const sugJson = JSON.stringify(sug);
+  const guardadaJson = guardada ? JSON.stringify(guardada) : null;
   useEffect(() => {
-    if (disabled || guardada || String(form.observaciones ?? "").trim()) return;
-    onChange(JSON.parse(sugerida));
+    if (disabled || (!guardada && String(form.observaciones ?? "").trim())) return;
+    if (guardadaJson && guardadaJson !== autoRef.current) return;
+    if (guardadaJson === sugJson) return;
+    autoRef.current = sugJson;
+    onChange(JSON.parse(sugJson));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [disabled, guardada, sugerida]);
+  }, [disabled, guardadaJson, sugJson]);
   const upd = (k: keyof ObservacionesEstructura, v: string) => onChange({ ...e, [k]: v });
   const contOk = contenedoresValidos(e.contenedores);
   const legado = estructuraVacia(guardada) && String(form.observaciones ?? "").trim();
