@@ -283,7 +283,7 @@ function Expedientes() {
           <>
             {label}
             {/* El dato de pago va más liviano para no competir con el estado del flujo. */}
-            <span className="ml-1 inline-flex items-center gap-1 font-normal opacity-75">
+            <span className="ml-1 inline-flex items-center gap-1 text-[10px] font-normal opacity-75">
               <span>·</span>
               {combinarCon.texto === "Pagado" && <Check className="h-2.5 w-2.5" />}
               <span>{combinarCon.texto}</span>
