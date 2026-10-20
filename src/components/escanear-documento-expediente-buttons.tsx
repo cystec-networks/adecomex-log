@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { extractSolicitudFromDocument, type OcrExtraction } from "@/lib/ai-ocr.functions";
+import { classifyArancelLote } from "@/lib/ai-arancel.functions";
+import { prepararProductosFactura } from "@/lib/factura-expediente-arancel";
+import { buscarSugerenciasProducto } from "@/lib/catalogo-arancelario-queries";
 
 function EscanearDocumentoButton({
   onExtracted,
@@ -15,14 +18,18 @@ function EscanearDocumentoButton({
   title,
   size = "sm",
   campos,
+  sugerirPartidas = false,
 }: {
   onExtracted: (data: OcrExtraction) => void;
   label: string;
   title: string;
   size?: "sm" | "default";
   campos: Array<{ label: string; key: keyof OcrExtraction }>;
+  sugerirPartidas?: boolean;
 }) {
   const extractFn = useServerFn(extractSolicitudFromDocument);
+  const clasificar = useServerFn(classifyArancelLote);
+  const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [data, setData] = useState<OcrExtraction | null>(null);
@@ -35,9 +42,15 @@ function EscanearDocumentoButton({
       const bytes = new Uint8Array(buf);
       let binary = "";
       for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-      return await extractFn({
-        data: { filename: file.name, mime: file.type || "application/pdf", base64: btoa(binary) },
+      const res = await extractFn({
+        data: { filename: file.name, mime: file.type || "application/pdf", base64: btoa(binary), ...(sugerirPartidas ? { lineas_factura: true } : {}) },
       });
+      if (sugerirPartidas && res.lineas_factura?.length) {
+        res.productos_factura = await prepararProductosFactura(res.lineas_factura,
+          (descripciones) => clasificar({ data: { descripciones } }),
+          (codigo, manual) => buscarSugerenciasProducto(qc, codigo, manual));
+      }
+      return res;
     },
     onSuccess: (res) => {
       setData(res);
@@ -186,6 +199,7 @@ export function EscanearFacturaButton({
       size={size}
       label="Escanear Factura"
       title="Escanear factura comercial"
+      sugerirPartidas
       campos={[
         { label: "Cliente", key: "cliente" },
         { label: "Suplidor", key: "suplidor" },
