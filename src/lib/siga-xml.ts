@@ -1,3 +1,4 @@
+import { normalizarRemarkSiga } from "./observaciones-expediente";
 // Generador de XML SIGA (ImportDUA) para la DGA - República Dominicana
 // Replica EXACTAMENTE la estructura del esquema oficial
 // http://aduanas.gob.do/XSD/ImportClearance/ImportDUA.xsd
@@ -316,7 +317,7 @@ export function buildImportDUAXml(
     T("TotalCIF", num(exp.total_cif)),
     T("TotalWeight", num(exp.peso_bruto)),
     T("NetWeight", num(exp.peso_neto ?? exp.peso_bruto)),
-    T("Remark", exp.observaciones),
+    T("Remark", normalizarRemarkSiga(exp.observaciones)),
   ].join("\n");
 
   // SIGA rechaza el suplidor sin código: usa el comodín oficial cuando no se conoce el RNC.
@@ -474,7 +475,7 @@ export function buildExportDUAXml(
     T("OtherValue", num(exp.otros)),
     T("TotalCIF", num(exp.total_cif)),
     T("TotalWeight", num(exp.peso_bruto)),
-    T("Remark", exp.observaciones),
+    T("Remark", normalizarRemarkSiga(exp.observaciones)),
     T("SZCIFValue", num(exp.zf_valor_cif)),
     T("SZMaterialsValue", num(exp.zf_valor_materiales)),
     T("SZSalaryValue", num(exp.zf_valor_salario)),

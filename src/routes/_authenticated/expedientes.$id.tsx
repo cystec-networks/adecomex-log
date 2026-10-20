@@ -1,3 +1,4 @@
+import { construirObservaciones, contenedoresValidos, estructuraVacia, normalizarRemarkSiga, TIPOS_CARGA_OBS, type ObservacionesEstructura } from "@/lib/observaciones-expediente";
 import { calcularResultadosLiquidacion, valorRealInicial } from "@/lib/liquidacion-final";
 import { impuestoPantallaRd, impuestoEditadoUsd } from "@/lib/liquidacion-moneda";
 import { resumenImportacion } from "@/lib/resumen-importacion";
@@ -1202,6 +1203,77 @@ function DetalleExpediente() {
 }
 
 /** Asterisco rojo para campos obligatorios. */
+/** Genera observaciones (normalizadas para SIGA) desde la estructura; texto antiguo intacto si está vacía. */
+function aplicarObservaciones(payload: any, numero?: string | null) {
+  const e = payload.observaciones_estructura as ObservacionesEstructura | null;
+  if (estructuraVacia(e)) {
+    payload.observaciones_estructura = null;
+    return payload;
+  }
+  payload.observaciones = normalizarRemarkSiga(construirObservaciones(e!, payload.factura_comercial, numero)) || null;
+  return payload;
+}
+
+function ObservacionesEstructuradas({ form, numero, onChange, disabled }: { form: any; numero: string; onChange: (v: ObservacionesEstructura) => void; disabled: boolean }) {
+  const guardada = form.observaciones_estructura as ObservacionesEstructura | null;
+  const e: ObservacionesEstructura = {
+    tipo_carga: guardada?.tipo_carga ?? (TIPOS_CARGA_OBS.find((t) => t.toUpperCase() === String(form.tipo_carga ?? "").trim().toUpperCase()) ?? ""),
+    contenedores: guardada?.contenedores ?? "",
+    descripcion: guardada?.descripcion ?? "",
+    embarcador: guardada?.embarcador ?? (form.suplidor ?? ""),
+  };
+  const upd = (k: keyof ObservacionesEstructura, v: string) => onChange({ ...e, [k]: v });
+  const contOk = contenedoresValidos(e.contenedores);
+  const legado = estructuraVacia(guardada) && String(form.observaciones ?? "").trim();
+  const texto = construirObservaciones(e, form.factura_comercial, numero);
+  return (
+    <div className="grid gap-2 md:col-span-2 lg:col-span-3 rounded-md border p-3">
+      <Label>Observaciones</Label>
+      <div className="grid gap-2 md:grid-cols-[140px_110px_auto_1fr]">
+        <div className="grid gap-1">
+          <span className="text-[11px] text-muted-foreground">Tipo de carga</span>
+          <Select value={e.tipo_carga || undefined} onValueChange={(v) => upd("tipo_carga", v)} disabled={disabled}>
+            <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+            <SelectContent>{TIPOS_CARGA_OBS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-1">
+          <span className="text-[11px] text-muted-foreground">Contenedores</span>
+          <Input value={e.contenedores} placeholder="2X40" onChange={(ev) => upd("contenedores", ev.target.value.toUpperCase())} disabled={disabled} aria-invalid={!contOk} className={contOk ? "" : "border-destructive"} />
+        </div>
+        <div className="grid gap-1">
+          <span className="text-[11px] text-muted-foreground">&nbsp;</span>
+          <span className="h-9 flex items-center px-2 rounded-md bg-muted text-[13px] font-medium">STC:</span>
+        </div>
+        <div className="grid gap-1">
+          <span className="text-[11px] text-muted-foreground">Cantidad y descripción de la carga</span>
+          <Input value={e.descripcion} placeholder="3,840 fundas de leche descremada en polvo" onChange={(ev) => upd("descripcion", ev.target.value)} disabled={disabled} />
+        </div>
+      </div>
+      {!contOk && <p className="text-[11px] text-destructive">Formato esperado: cantidad X tamaño (ej. 2X40, 1X20).</p>}
+      <div className="grid gap-2 md:grid-cols-3">
+        <div className="grid gap-1">
+          <span className="text-[11px] text-muted-foreground">Embarcador / Suplidor</span>
+          <Input value={e.embarcador} onChange={(ev) => upd("embarcador", ev.target.value)} disabled={disabled} />
+        </div>
+        <div className="grid gap-1">
+          <span className="text-[11px] text-muted-foreground">N.º de factura (de Factura comercial)</span>
+          <Input value={form.factura_comercial ?? ""} readOnly disabled />
+        </div>
+        <div className="grid gap-1">
+          <span className="text-[11px] text-muted-foreground">N.º de expediente</span>
+          <Input value={numero || "Se asigna al crear"} readOnly disabled />
+        </div>
+      </div>
+      <div className="grid gap-1">
+        <span className="text-[11px] text-muted-foreground">Texto generado (se envía a SIGA en mayúsculas y sin tildes)</span>
+        <p className="text-[12px] rounded-md bg-muted/50 px-2 py-1.5 min-h-8">{texto || "—"}</p>
+        {legado && <p className="text-[11px] text-muted-foreground">Observación anterior (se conserva hasta completar los campos): {String(form.observaciones)}</p>}
+      </div>
+    </div>
+  );
+}
+
 function ReqMark() {
   return <span className="text-destructive mr-0.5">*</span>;
 }
@@ -1323,6 +1395,7 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     cantidad_despacho: d.cantidad_despacho ?? "",
     tipo_operacion: d.tipo_operacion ?? (tipoDefault === "exportacion" ? "Exportación" : ""),
     tipo_carga: d.tipo_carga ?? "",
+    observaciones_estructura: (d.observaciones_estructura ?? null) as ObservacionesEstructura | null,
     contacto_solicitud: d.contacto_solicitud ?? "",
     // --- Exportación (SIGA) ---
     buyer_codigo: d.buyer_codigo ?? "",
@@ -1757,6 +1830,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           throw new Error(`El número de permiso "${form.numero_vuce}" ya fue utilizado en el Expediente ${conflicto.numero}.`);
         }
       }
+      aplicarObservaciones(payload, exp.numero);
       const { error } = await supabase.from("expedientes").update(payload).eq("id", exp.id);
       if (error) throw error;
       await supabase.from("expediente_contenedores").delete().eq("expediente_id", exp.id);
@@ -1897,8 +1971,13 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         }
       }
 
+      aplicarObservaciones(payload, payload.numero);
       const { data, error } = await supabase.from("expedientes").insert(payload).select().single();
       if (error) throw error;
+      if (!estructuraVacia(payload.observaciones_estructura) && data?.numero && !payload.numero) {
+        const obs = aplicarObservaciones({ ...payload }, data.numero).observaciones;
+        await supabase.from("expedientes").update({ observaciones: obs }).eq("id", data.id);
+      }
 
       if (productosNuevos.length) {
         const { error: eProd } = await supabase.from("mercancia_items").insert(
@@ -2687,10 +2766,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             </>
           )}
 
-          <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
-            <Label>Observaciones</Label>
-            <Textarea rows={3} value={form.observaciones} onChange={(e) => set("observaciones", e.target.value)} disabled={!editable} />
-          </div>
+          <ObservacionesEstructuradas
+            form={form}
+            numero={isNuevo ? (form.numero || "") : (exp?.numero ?? "")}
+            onChange={(v) => set("observaciones_estructura", v)}
+            disabled={!editable}
+          />
       </Section>
 
     </div>

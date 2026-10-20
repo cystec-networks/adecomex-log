@@ -3441,6 +3441,7 @@ export type Database = {
           numero_vuce: string | null
           numeros_contenedores: string | null
           observaciones: string | null
+          observaciones_estructura: Json | null
           orden_id: string | null
           otros: number | null
           pais_origen: string | null
@@ -3573,6 +3574,7 @@ export type Database = {
           numero_vuce?: string | null
           numeros_contenedores?: string | null
           observaciones?: string | null
+          observaciones_estructura?: Json | null
           orden_id?: string | null
           otros?: number | null
           pais_origen?: string | null
@@ -3705,6 +3707,7 @@ export type Database = {
           numero_vuce?: string | null
           numeros_contenedores?: string | null
           observaciones?: string | null
+          observaciones_estructura?: Json | null
           orden_id?: string | null
           otros?: number | null
           pais_origen?: string | null
