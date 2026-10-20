@@ -425,10 +425,24 @@ function Expedientes() {
         })()}
       </td>
       <td className="px-2 py-1 align-middle text-muted-foreground text-xs whitespace-nowrap">
-        <span className="inline-flex items-center gap-1.5">
-          {e.puerto_arribo ?? "—"}
-          <BadgeAeropuerto codigo={e.puerto_arribo_codigo} soloIcono />
-        </span>
+        {(() => {
+          // Ancho contenido: nombres largos se truncan (tooltip con el nombre
+          // completo y, si aplica, la indicación de aeropuerto).
+          const nombreAero = nombreAeropuertoDga(e.puerto_arribo_codigo);
+          const titulo = nombreAero
+            ? `Puerto de arribo: ${e.puerto_arribo ?? "—"} · Aeropuerto: ${nombreAero}`
+            : e.puerto_arribo
+              ? `Puerto de arribo: ${e.puerto_arribo}`
+              : undefined;
+          return (
+            <span className="inline-flex items-center gap-1.5 min-w-0">
+              <span title={titulo} className="block max-w-[6rem] truncate">
+                {e.puerto_arribo ?? "—"}
+              </span>
+              <BadgeAeropuerto codigo={e.puerto_arribo_codigo} soloIcono />
+            </span>
+          );
+        })()}
       </td>
       <td className="px-2 py-1 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
         {e.numero_vuce ?? "—"}
