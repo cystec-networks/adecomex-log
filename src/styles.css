@@ -369,9 +369,8 @@
   gap: 0.25rem; min-width: 0;
 }
 .expedientes-tabla .exp-estado-unica { display: none; }
-/* Columna angosta: estado y vigencia en una sola pill combinada «Estado · Vigencia». */
-.expedientes-tabla .exp-estado-celda { max-width: 12rem; }
-@container exp-tabla (max-width: 170px) {
+/* Área de tabla angosta: estado y vigencia en una sola pill «Estado · Vigencia». */
+@container exp-tabla (max-width: 900px) {
   .expedientes-tabla .exp-estado-doble { display: none; }
   .expedientes-tabla .exp-estado-unica {
     display: inline-flex; align-items: center; justify-content: center;
