@@ -31,7 +31,7 @@ describe("observaciones estructuradas", () => {
       {} as any,
     );
     const decl = xml.split("<ImpDeclarationProduct>")[0];
-    assert.ok((decl).includes("<Remark>FCL STC: X, EMB.: A &amp; B NANDU</Remark>");
-    assert.ok((xml).includes("<Remark>Leche &amp; más</Remark>");
+    assert.ok((decl).includes("<Remark>FCL STC: X, EMB.: A &amp; B NANDU</Remark>"));
+    assert.ok((xml).includes("<Remark>Leche &amp; más</Remark>"));
   });
 });
