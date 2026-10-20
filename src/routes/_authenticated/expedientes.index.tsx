@@ -18,7 +18,7 @@ import { WhatsAppButton } from "@/components/whatsapp-button";
 import { HerramientasDgaVuceMenu, RastreosEnvioMenu } from "@/components/accesos-rapidos-expediente";
 import { EmailButton } from "@/components/email-button";
 import { TruncatedCell } from "@/components/truncated-cell";
-import { BadgeVigenciaPinDga } from "@/components/badge-vigencia";
+import { BadgeVigenciaPinDga, etiquetaPinDgaCompacta } from "@/components/badge-vigencia";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
@@ -262,7 +262,7 @@ function Expedientes() {
   const countExp = (data ?? []).filter((e: any) => detectTipo(e) === "exportacion").length;
   const countFact = (data ?? []).filter((e: any) => detectTipo(e) === "facturados").length;
 
-  const estadoBadge = (estadoRaw: string | null) => {
+  const estadoBadge = (estadoRaw: string | null, combinarCon?: { texto: string; titulo?: string }) => {
     const label = ESTADO_LABEL[estadoRaw ?? ""] ?? (estadoRaw ?? "");
     const variants: Record<string, string> = {
       digitar: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
@@ -275,8 +275,11 @@ function Expedientes() {
       facturar: "bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900",
     };
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${variants[estadoRaw ?? ""] ?? variants.digitar}`}>
-        {label}
+      <span
+        title={combinarCon ? `${label} · ${combinarCon.titulo ?? combinarCon.texto}` : undefined}
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border whitespace-nowrap ${variants[estadoRaw ?? ""] ?? variants.digitar}`}
+      >
+        {combinarCon ? `${label} · ${combinarCon.texto}` : label}
       </span>
     );
   };
@@ -334,7 +337,7 @@ function Expedientes() {
   const EstadoDivider = ({ label, groupKey, count }: { label: string; groupKey: string; count: number }) => {
     const colapsado = !!colapsados[groupKey];
     return (
-      <tr className="bg-muted/40 cursor-pointer hover:bg-muted/60" onClick={() => toggleGrupo(groupKey)}>
+      <tr className="exp-fila-grupo bg-muted/40 cursor-pointer hover:bg-muted/60" onClick={() => toggleGrupo(groupKey)}>
         <td colSpan={12} className="py-2 px-4">
           <div className="flex items-center gap-3">
             <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${colapsado ? "" : "rotate-90"}`} />
@@ -425,30 +428,43 @@ function Expedientes() {
       <td className="px-2 py-1 align-middle text-muted-foreground text-xs whitespace-nowrap">
         <span className="inline-flex items-center gap-1.5">
           {e.puerto_arribo ?? "—"}
-          <BadgeAeropuerto codigo={e.puerto_arribo_codigo} compacto />
+          <BadgeAeropuerto codigo={e.puerto_arribo_codigo} soloIcono />
         </span>
       </td>
       <td className="px-2 py-1 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
         {e.numero_vuce ?? "—"}
       </td>
       <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
-        <div className="flex items-center justify-center gap-1 whitespace-nowrap">
-          {estadoBadge(e.estado)}
-          {e.liq_siga_fecha_pago && (
-            <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} compacto />
-          )}
-          {e.estado === "verificar" && (() => {
-            const fv = fechaVerificacion(e);
-            if (!fv) return null;
-            const m = String(fv).match(/^(\d{4})-(\d{2})-(\d{2})/);
-            const label = m ? `${m[3]}/${m[2]}` : new Date(fv).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit" });
-            return (
-              <span title="Fecha programada de verificación" className="text-[10px] text-muted-foreground tabular-nums">
-                {label}
+        {(() => {
+          const pinCorta = e.liq_siga_fecha_pago
+            ? etiquetaPinDgaCompacta(e.liq_siga_termino_at, e.liq_siga_fecha_pago)
+            : null;
+          const fv = e.estado === "verificar" ? fechaVerificacion(e) : null;
+          const m = fv ? String(fv).match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
+          const fechaVer = m
+            ? `${m[3]}/${m[2]}`
+            : fv ? new Date(fv).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit" }) : null;
+          const etiquetaVer = fv && fechaVer ? (
+            <span title="Fecha programada de verificación" className="text-[10px] text-muted-foreground tabular-nums">
+              {fechaVer}
+            </span>
+          ) : null;
+          return (
+            <div className="exp-estado-celda">
+              <span className="exp-estado-doble">
+                {estadoBadge(e.estado)}
+                {pinCorta && (
+                  <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} compacto />
+                )}
+                {etiquetaVer}
               </span>
-            );
-          })()}
-        </div>
+              <span className="exp-estado-unica">
+                {estadoBadge(e.estado, pinCorta ?? undefined)}
+                {etiquetaVer}
+              </span>
+            </div>
+          );
+        })()}
       </td>
       <td className="w-14 min-w-14 max-w-14 px-2 py-1 align-middle text-center whitespace-nowrap">
         {(() => {
@@ -588,7 +604,7 @@ function Expedientes() {
           {filtered.length === 0 && (
             <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin expedientes. Crea uno con "Nuevo Expediente" o súbelo por OCR.</div>
           )}
-          <div className="overflow-auto h-full">
+          <div className="expedientes-tabla-wrap overflow-auto h-full">
             {gruposVisibles.map((g) => {
               const rows = grupos[g];
               if (rows.length === 0) return null;
@@ -598,7 +614,7 @@ function Expedientes() {
                     <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">{grupoLabel[g]}</span>
                     <Badge variant="secondary" className="text-[10px]">{rows.length}</Badge>
                   </div>
-                  <table className="w-full text-[13px] border-separate border-spacing-0">
+                  <table className="expedientes-tabla w-full text-[13px] border-separate border-spacing-0">
                     <thead className="sticky-table-header bg-muted/30 border-b [&_th]:top-[33px]">
                       <tr>
                         <Th k="numero" className="px-2 whitespace-nowrap">Expediente</Th>
