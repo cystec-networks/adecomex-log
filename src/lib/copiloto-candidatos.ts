@@ -10,6 +10,19 @@ export function elegirCandidatoReal(indice: unknown, confianza: unknown, candida
   return candidato && codigo ? { ...candidato, codigo } : null;
 }
 export const NO_DETERMINADA = "Partida no determinada automáticamente — revisar manualmente";
+export function naturalezaChoozit(descripcion: string) {
+  return /\bchoozit\b/i.test(descripcion) ? "Cultivos de microorganismos" : null;
+}
+export function candidatosManuales(indices: unknown, candidatos: CandidatoArancel[]) {
+  if (!Array.isArray(indices)) return [];
+  const vistos = new Set<string>();
+  return indices.flatMap((indice) => {
+    const real = elegirCandidatoReal(indice, "alta", candidatos);
+    if (!real || vistos.has(real.codigo)) return [];
+    vistos.add(real.codigo);
+    return [real];
+  }).slice(0, 3);
+}
 export function eleccionesPorLinea(raw: unknown): unknown[] {
   if (Array.isArray(raw)) return raw.map((r) => {
     if (r && typeof r === "object" && "elecciones" in r && Array.isArray(r.elecciones)) return r.elecciones[0];
