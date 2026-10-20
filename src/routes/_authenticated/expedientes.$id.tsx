@@ -414,7 +414,7 @@ export type OcrAplicado = {
   campos: Record<string, any>;
   contenedores: OcrExtraction["contenedores"];
   cliente: string | null;
-  /** Solo desde XML: líneas de mercancía, cliente por RNC y reemplazo total de campos. */
+  /** Líneas desde XML o factura escaneada; solo XML reemplaza todos los campos. */
   productos?: any[];
   clienteId?: string | null;
   desdeXml?: boolean;
@@ -477,7 +477,7 @@ function DetalleExpediente() {
   const ocrSeq = useRef(0);
   const [ocrAplicado, setOcrAplicado] = useState<OcrAplicado | null>(null);
 
-  const aplicarCombinado = async () => {
+  const aplicarCombinado = async (productosFactura?: OcrExtraction["productos_factura"]) => {
     const res = combinarOcr(blRes.current, facRes.current);
     const [pOrigen, pProced, ptSalida, ptArribo] = await Promise.all([
       resolverContraCatalogo("dga_paises", "pais", res.pais_origen),
@@ -496,6 +496,7 @@ function DetalleExpediente() {
       seq: ocrSeq.current,
       cliente: res.cliente ?? null,
       contenedores: res.contenedores ?? null,
+      productos: productosFactura,
       campos: {
         bl_awb: res.bl,
         factura_comercial: res.factura_comercial ?? res.numero_documento,
@@ -814,7 +815,7 @@ function DetalleExpediente() {
                 <Copy className="h-4 w-4" />
               </Button>
               <EscanearBlButton onExtracted={(res) => { blRes.current = res; void aplicarCombinado(); toast.success("BL procesado — revisa y ajusta los campos"); }} />
-              <EscanearFacturaExpButton onExtracted={(res) => { facRes.current = res; void aplicarCombinado(); toast.success("Factura procesada — revisa y ajusta los campos"); }} />
+              <EscanearFacturaExpButton onExtracted={(res) => { facRes.current = res; void aplicarCombinado(res.productos_factura); toast.success("Factura procesada — revisa y ajusta los campos"); }} />
               <NuevoDesdeXmlButton
                 onAplicar={(d) => {
                   ocrSeq.current += 1;
@@ -1900,7 +1901,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (productosNuevos.length) {
         const { error: eProd } = await supabase.from("mercancia_items").insert(
           productosNuevos.map((p: any, i: number) => {
-            const { id: _localId, item_no: _no, ...resto } = p;
+            const { id: _localId, item_no: _no, codigo_sugerido_ia: _sugeridoIa, ...resto } = p;
             return { ...resto, expediente_id: data.id, item_no: i + 1 };
           }),
         );
@@ -4581,6 +4582,11 @@ function MercanciaItemsBlock({
                       <td className="px-2 py-2 tabular-nums font-mono text-xs">
                         <div className="flex items-center gap-1">
                           <span>{it.codigo_arancelario || "—"}</span>
+                          {local && it.codigo_sugerido_ia && it.codigo_arancelario === it.codigo_sugerido_ia && (
+                            <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                              <span tabIndex={0} aria-label="Código sugerido por IA — verificar antes de declarar" className="inline-flex text-warning"><AlertTriangle className="h-3.5 w-3.5" /></span>
+                            </TooltipTrigger><TooltipContent>Código sugerido por IA — verificar antes de declarar</TooltipContent></Tooltip></TooltipProvider>
+                          )}
                           {unverifiedHint && (
                             <span title="Tasa sugerida por historial; aún no verificada por Administrador." className="inline-flex">
                               <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
@@ -4713,6 +4719,9 @@ function MercanciaItemsBlock({
                 onBlur={(e) => onCodigoBlur(e.target.value)}
                 placeholder="0402.10.90"
               />
+              {local && items.find((it) => it.id === editingId)?.codigo_sugerido_ia === f.codigo_arancelario && f.codigo_arancelario && (
+                <span className="text-[11px] flex items-center gap-1 text-warning"><AlertTriangle className="h-3 w-3" />Código sugerido por IA — verificar antes de declarar</span>
+              )}
               {(() => {
                 const c = (f.codigo_arancelario || "").trim();
                 const t = c ? tasaByCodigo.get(c) : null;

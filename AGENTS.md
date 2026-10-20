@@ -39,4 +39,4 @@ Scope detail-header presentation to its dedicated class; logistics and operation
 - Keep chapter notes in a separate read-only query/panel and admin-only invoker import, so tariff suggestions and the main importer remain unchanged.
 - Use ImporteLiquidacionInput and liquidacion-moneda for formatted tax editing; preserve USD drafts, calculations, inventory and PDF.
 
-- Copiloto uses real eight-digit leaf indices and ranked manual alternatives; never invent codes. Normalize known product nature independently of references. Manual choices change only unsaved results; share immutable staff-readable snapshots/table/export without recalculation.
+- Copiloto selects real eight-digit leaves, normalizes nature, and ranks manual alternatives. OCR reuses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.

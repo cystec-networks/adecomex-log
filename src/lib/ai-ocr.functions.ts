@@ -2,11 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { callGateway } from "./ai-gateway.server";
+import type { LineaFacturaExpediente } from "./factura-expediente-arancel";
 
 const Input = z.object({
   filename: z.string(),
   mime: z.string(),
   base64: z.string().min(20),
+  lineas_factura: z.boolean().optional(),
 });
 
 export type OcrContenedor = { numero: string; sello1: string | null; sello2: string | null; tipo: string | null };
@@ -40,6 +42,8 @@ export type OcrExtraction = {
   agente_entrega: string | null;
   tipo_carga: string | null;
   tipo_carga_confianza: "alta" | "media" | null;
+  lineas_factura?: LineaFacturaExpediente[];
+  productos_factura?: Awaited<ReturnType<typeof import("./factura-expediente-arancel").prepararProductosFactura>>;
 };
 
 export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
@@ -48,7 +52,7 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<OcrExtraction> => {
     const dataUrl = `data:${data.mime};base64,${data.base64}`;
 
-    const system =
+    let system =
       "Eres un asistente de operaciones aduanales en República Dominicana. " +
       "Extraes datos de documentos de importación (BL, factura comercial, packing list, AWB). " +
       "Devuelve ÚNICAMENTE un objeto JSON con las claves exactas: cliente, bl, suplidor, numero_documento, productos, fecha_cargado, eta, naviera, buque, peso_bruto_kg, puerto_arribo, contenedores, medio_transporte, puerto_salida, pais_origen, pais_procedencia, incoterm, factura_comercial, descripcion_mercancia, peso_neto_kg. " +
@@ -74,6 +78,7 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
       "Usa null cuando el dato no aparezca. Las fechas en formato YYYY-MM-DD si es posible. 'productos' como resumen breve (máx 300 caracteres).";
 
 
+    if (data.lineas_factura) system += " Agrega lineas_factura: arreglo de cada línea de mercancía en orden con {descripcion, codigo_arancelario, cantidad, unidad, valor_fob, peso}. Extrae descripción completa y valores del documento; codigo_arancelario SOLO si aparece explícitamente para esa línea, nunca clasifiques ni inventes códigos. valor_fob es el importe de la línea, no precio unitario. Datos ausentes null. No agregues flete, seguro ni cargos como mercancías. No cambies los totales de cabecera.";
     const isPdf = data.mime === "application/pdf";
     const raw = await callGateway({
       model: "google/gemini-2.5-flash",
@@ -142,6 +147,11 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
       notify_party: parsed.notify_party ?? null,
       agente_entrega: parsed.agente_entrega ?? null,
       tipo_carga: parsed.tipo_carga ?? null,
+      ...(data.lineas_factura ? { lineas_factura: Array.isArray(parsed.lineas_factura) ? parsed.lineas_factura.slice(0, 200).map((l) => ({
+        descripcion: String(l.descripcion ?? "").trim(), codigo_arancelario: l.codigo_arancelario ? String(l.codigo_arancelario).trim() : null,
+        cantidad: num(l.cantidad), unidad: l.unidad ? String(l.unidad).trim() : null,
+        valor_fob: num(l.valor_fob), peso: num(l.peso),
+      })) : [] } : {}),
       tipo_carga_confianza:
         parsed.tipo_carga_confianza === "alta" || parsed.tipo_carga_confianza === "media"
           ? parsed.tipo_carga_confianza
