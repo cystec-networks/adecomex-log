@@ -435,23 +435,36 @@ function Expedientes() {
         {e.numero_vuce ?? "—"}
       </td>
       <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
-        <div className="flex items-center justify-center gap-1 whitespace-nowrap">
-          {estadoBadge(e.estado)}
-          {e.liq_siga_fecha_pago && (
-            <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} compacto />
-          )}
-          {e.estado === "verificar" && (() => {
-            const fv = fechaVerificacion(e);
-            if (!fv) return null;
-            const m = String(fv).match(/^(\d{4})-(\d{2})-(\d{2})/);
-            const label = m ? `${m[3]}/${m[2]}` : new Date(fv).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit" });
-            return (
-              <span title="Fecha programada de verificación" className="text-[10px] text-muted-foreground tabular-nums">
-                {label}
+        {(() => {
+          const pinCorta = e.liq_siga_fecha_pago
+            ? etiquetaPinDgaCompacta(e.liq_siga_termino_at, e.liq_siga_fecha_pago)
+            : null;
+          const fv = e.estado === "verificar" ? fechaVerificacion(e) : null;
+          const m = fv ? String(fv).match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
+          const fechaVer = m
+            ? `${m[3]}/${m[2]}`
+            : fv ? new Date(fv).toLocaleDateString("es-DO", { day: "2-digit", month: "2-digit" }) : null;
+          const etiquetaVer = fv && fechaVer ? (
+            <span title="Fecha programada de verificación" className="text-[10px] text-muted-foreground tabular-nums">
+              {fechaVer}
+            </span>
+          ) : null;
+          return (
+            <div className="exp-estado-celda">
+              <span className="exp-estado-doble">
+                {estadoBadge(e.estado, pinCorta ?? undefined)}
+                {pinCorta && (
+                  <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} compacto />
+                )}
+                {etiquetaVer}
               </span>
-            );
-          })()}
-        </div>
+              <span className="exp-estado-unica">
+                {estadoBadge(e.estado, pinCorta ?? undefined)}
+                {etiquetaVer}
+              </span>
+            </div>
+          );
+        })()}
       </td>
       <td className="w-14 min-w-14 max-w-14 px-2 py-1 align-middle text-center whitespace-nowrap">
         {(() => {
