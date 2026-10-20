@@ -11,7 +11,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronRight, Repeat2, Trash2, AlarmClock, Plus, Copy, AlertTriangle } from "lucide-react";
+import { ChevronRight, Repeat2, Trash2, AlarmClock, Plus, Copy, AlertTriangle, Check } from "lucide-react";
 import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { Toggle } from "@/components/ui/toggle";
 import { WhatsAppButton } from "@/components/whatsapp-button";
@@ -279,10 +279,32 @@ function Expedientes() {
         title={combinarCon ? `${label} · ${combinarCon.titulo ?? combinarCon.texto}` : undefined}
         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border whitespace-nowrap ${variants[estadoRaw ?? ""] ?? variants.digitar}`}
       >
-        {combinarCon ? `${label} · ${combinarCon.texto}` : label}
+        {combinarCon ? (
+          <>
+            {label}
+            {/* El dato de pago va más liviano para no competir con el estado del flujo. */}
+            <span className="ml-1 inline-flex items-center gap-1 text-[10px] font-normal opacity-75">
+              <span>·</span>
+              {combinarCon.texto === "Pagado" && <Check className="h-2.5 w-2.5" />}
+              <span>{combinarCon.texto}</span>
+            </span>
+          </>
+        ) : label}
       </span>
     );
   };
+
+  // «Pagado» es información complementaria: pastilla con borde, sin relleno,
+  // texto menor y palomita. El estado del expediente sigue dominando la celda.
+  const pinDiscreto = (pin: { texto: string; titulo?: string }) => (
+    <span
+      title={pin.titulo}
+      className="inline-flex items-center gap-0.5 rounded-full border border-emerald-300/70 px-1.5 py-px text-[10px] font-medium leading-tight whitespace-nowrap text-emerald-700/90 dark:border-emerald-700/70 dark:text-emerald-300/90"
+    >
+      <Check className="h-2.5 w-2.5" />
+      {pin.texto}
+    </span>
+  );
 
   const rowHighlight = (e: any) => {
     const dias = e.fecha_compromiso ? daysFromToday(e.fecha_compromiso) : null;
@@ -453,9 +475,12 @@ function Expedientes() {
             <div className="exp-estado-celda">
               <span className="exp-estado-doble">
                 {estadoBadge(e.estado)}
-                {pinCorta && (
-                  <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} compacto />
-                )}
+                {pinCorta &&
+                  (pinCorta.texto === "Pago tardío" ? (
+                    <BadgeVigenciaPinDga terminoAt={e.liq_siga_termino_at} fechaPago={e.liq_siga_fecha_pago} compacto />
+                  ) : (
+                    pinDiscreto(pinCorta)
+                  ))}
                 {etiquetaVer}
               </span>
               <span className="exp-estado-unica">
