@@ -370,7 +370,7 @@
 }
 .expedientes-tabla .exp-estado-unica { display: none; }
 /* Área de tabla angosta: estado y vigencia en una sola pill «Estado · Vigencia». */
-@container exp-tabla (max-width: 900px) {
+@container exp-tabla (max-width: 750px) {
   .expedientes-tabla .exp-estado-doble { display: none; }
   .expedientes-tabla .exp-estado-unica {
     display: inline-flex; align-items: center; justify-content: center;
