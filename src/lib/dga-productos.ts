@@ -75,6 +75,28 @@ function mapRow(row: Record<string, any>) {
   return out;
 }
 
+/** Selección explícita: reemplaza identidad y tasas; nunca incluye cantidad, peso ni FOB. */
+export function datosProductoHistorico(
+  producto: DgaProducto,
+  reusarCodigo: boolean,
+  tasas: { pct_gravamen: string; aplica_isc: boolean; pct_isc: string; pct_itbis: string },
+) {
+  return {
+    product_code: reusarCodigo ? producto.codigo_producto : "",
+    codigo_arancelario: (producto.partida_arancelaria ?? "").trim(),
+    detalle_producto: producto.nombre_producto ?? "",
+    unidad_medida: producto.unidad ?? "",
+    // Resolver el código de la nueva unidad, no conservar el del producto anterior.
+    unidad_codigo: "",
+    cod_marca: producto.cod_marca ?? "",
+    marca: producto.marca ?? "",
+    cod_modelo: producto.cod_modelo ?? "",
+    modelo: producto.modelo ?? "",
+    especificaciones: producto.especificaciones ?? "",
+    ...tasas,
+  };
+}
+
 /** Lee un .xlsx de la DGA y devuelve las filas mapeadas y deduplicadas por código. */
 export async function parseDgaXlsx(file: File) {
   const XLSX = await import("xlsx");
