@@ -449,6 +449,13 @@
       "when": 1792452667044,
       "tag": "0063_copiloto_clasificaciones_historial",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1792520734023,
+      "tag": "0064_observaciones_estructura",
+      "breakpoints": true
     }
   ]
 }
