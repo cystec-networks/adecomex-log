@@ -16,6 +16,7 @@ import { ImporteLiquidacionInput } from "@/components/importe-liquidacion-input"
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { BadgeAeropuerto } from "@/components/badge-aeropuerto";
 import { EndosoSection, useEndosoActivo } from "@/components/expediente-endoso";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1036,7 +1037,7 @@ function DetalleExpediente() {
           </div>
           )}
           </div>
-           <CampoHeader etiqueta="Puerto" valor={expData.puerto_arribo} largo className="expediente-header-puerto" />
+           <CampoHeader etiqueta="Puerto" valor={expData.puerto_arribo} largo className="expediente-header-puerto" codigo={expData.puerto_arribo_codigo} />
         </div>
         <div className="expediente-info-fila3">
           <div className="flex h-8 min-w-0 items-center gap-1.5">
@@ -6448,21 +6449,24 @@ function ForzarRegresoEstadoDialog({
 }
 
 /** Campo del encabezado con etiqueta fija; valores largos se ven completos (envueltos o en una línea) al pasar el mouse o tocar. */
-function CampoHeader({ etiqueta, valor, largo, className }: { etiqueta: string; valor: string | null | undefined; largo?: boolean; className?: string }) {
+function CampoHeader({ etiqueta, valor, largo, className, codigo }: { etiqueta: string; valor: string | null | undefined; largo?: boolean; className?: string; codigo?: string | null }) {
   const texto = valor && String(valor).trim() ? String(valor) : "—";
   return (
     <div className={cn("grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 text-xs md:text-sm", largo ? "min-h-8 py-0.5" : "h-8", className)}>
       <span className="whitespace-nowrap text-muted-foreground">{etiqueta}:</span>
-      <Popover>
-        <PopoverTrigger asChild>
-          <button type="button" className={cn("text-left font-medium", largo ? "expediente-header-valor-largo" : "min-w-0 truncate")} title={`${etiqueta}: ${texto}`}>
-            {texto}
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto max-w-[min(24rem,calc(100vw-2rem))] break-words p-2 text-xs" align="start">
-          <span className="text-muted-foreground">{etiqueta}:</span> <span className="font-medium">{texto}</span>
-        </PopoverContent>
-      </Popover>
+      <div className="flex min-w-0 items-center gap-1.5">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button type="button" className={cn("text-left font-medium", largo ? "expediente-header-valor-largo" : "min-w-0 truncate")} title={`${etiqueta}: ${texto}`}>
+              {texto}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto max-w-[min(24rem,calc(100vw-2rem))] break-words p-2 text-xs" align="start">
+            <span className="text-muted-foreground">{etiqueta}:</span> <span className="font-medium">{texto}</span>
+          </PopoverContent>
+        </Popover>
+        <BadgeAeropuerto codigo={codigo} compacto />
+      </div>
     </div>
   );
 }
