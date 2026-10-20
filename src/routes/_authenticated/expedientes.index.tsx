@@ -18,7 +18,7 @@ import { WhatsAppButton } from "@/components/whatsapp-button";
 import { HerramientasDgaVuceMenu, RastreosEnvioMenu } from "@/components/accesos-rapidos-expediente";
 import { EmailButton } from "@/components/email-button";
 import { TruncatedCell } from "@/components/truncated-cell";
-import { BadgeVigenciaPinDga } from "@/components/badge-vigencia";
+import { BadgeVigenciaPinDga, etiquetaPinDgaCompacta } from "@/components/badge-vigencia";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
@@ -428,7 +428,7 @@ function Expedientes() {
       <td className="px-2 py-1 align-middle text-muted-foreground text-xs whitespace-nowrap">
         <span className="inline-flex items-center gap-1.5">
           {e.puerto_arribo ?? "—"}
-          <BadgeAeropuerto codigo={e.puerto_arribo_codigo} compacto />
+          <BadgeAeropuerto codigo={e.puerto_arribo_codigo} soloIcono />
         </span>
       </td>
       <td className="px-2 py-1 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
