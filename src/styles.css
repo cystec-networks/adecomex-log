@@ -356,6 +356,29 @@
   background: var(--background, white);
 }
 
+/* Tabla «Expedientes · Todos los expedientes»: celdas de una sola línea y
+   altura uniforme en todas las filas. */
+.expedientes-tabla-wrap { container: exp-tabla / inline-size; }
+.expedientes-tabla tbody tr:not(.exp-fila-grupo) > td { height: 2rem; }
+.expedientes-tabla .exp-estado-celda {
+  display: flex; align-items: center; justify-content: center; min-width: 0;
+}
+.expedientes-tabla .exp-estado-celda :is(span, div) { white-space: nowrap; }
+.expedientes-tabla .exp-estado-doble {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 0.25rem; min-width: 0;
+}
+.expedientes-tabla .exp-estado-unica { display: none; }
+/* Columna angosta: estado y vigencia en una sola pill combinada «Estado · Vigencia». */
+.expedientes-tabla .exp-estado-celda { max-width: 12rem; }
+@container exp-tabla (max-width: 170px) {
+  .expedientes-tabla .exp-estado-doble { display: none; }
+  .expedientes-tabla .exp-estado-unica {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 0.25rem; white-space: nowrap;
+  }
+}
+
 
 @media print {
   .print-ficha-generales body * {

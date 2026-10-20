@@ -106,3 +106,49 @@ export function BadgeVigenciaPinDga({
   if (!terminoAt) return null;
   return <BadgeVigencia fecha={terminoAt} conHora compacto={compacto} />;
 }
+
+/**
+ * Etiqueta corta del estado del PIN de pago DGA, con los mismos textos que
+ * BadgeVigenciaPinDga en modo compacto. La usa la columna Estado de la lista
+ * de expedientes para armar la pill combinada «Estado · Vigencia» cuando la
+ * columna es angosta.
+ */
+export function etiquetaPinDgaCompacta(
+  terminoAt: string | null | undefined,
+  fechaPago?: string | null,
+): { texto: string; titulo?: string } | null {
+  const fmtFull = (f: Date) =>
+    f.toLocaleString("es-DO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  if (fechaPago) {
+    // Fecha de pago es solo fecha: se compara contra el fin de ese día local.
+    const soloFecha = /^\d{4}-\d{2}-\d{2}$/.test(String(fechaPago));
+    const pago = soloFecha ? parseLocalDate(fechaPago) : new Date(fechaPago);
+    if (soloFecha) pago.setHours(23, 59, 59, 999);
+    const limite = terminoAt ? new Date(terminoAt) : null;
+    const tarde = limite && !isNaN(limite.getTime()) && !isNaN(pago.getTime()) && pago.getTime() > limite.getTime();
+    return tarde
+      ? { texto: "Pago tardío", titulo: "El pago se registró después del vencimiento del PIN" }
+      : { texto: "Pagado", titulo: "Pagado dentro de la vigencia del PIN" };
+  }
+  if (!terminoAt) return null;
+  const limite = new Date(terminoAt);
+  if (isNaN(limite.getTime())) return null;
+  const ms = limite.getTime() - Date.now();
+  if (ms <= 0) {
+    const horas = Math.floor(-ms / 3600000);
+    return {
+      texto: horas < 24 ? `Venció ${Math.round(-ms / 3600000)}h` : `Venció ${Math.floor(horas / 24)}d`,
+      titulo: fmtFull(limite),
+    };
+  }
+  const horasRest = Math.floor(ms / 3600000);
+  if (horasRest < 24) return { texto: `Vence ${Math.round(ms / 3600000)}h`, titulo: fmtFull(limite) };
+  const dias = Math.floor(horasRest / 24);
+  return { texto: `Vence ${dias}d`, titulo: fmtFull(limite) };
+}
