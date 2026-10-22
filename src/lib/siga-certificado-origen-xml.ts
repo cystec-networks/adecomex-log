@@ -9,6 +9,9 @@ const APPLICANT_CODE = "RNC214130481301";
 export type CertMaps = {
   /** codigo -> nombre de catalogo_tratamientos_certificado */
   tratamientos?: Record<string, string>;
+  /** Tercero editado en el formulario (Exportador/Productor): documento con prefijo (TID/RNC/CED/PAS) y país */
+  exportador?: { doc: string; pais?: string | null };
+  productor?: { doc: string; pais?: string | null };
 };
 
 function esc(v: unknown): string {
@@ -66,7 +69,7 @@ export function pendingCertificadoCodes(exp: any, items: any[], maps?: CertMaps)
   const check = (v: any, field: string, label: string) => { if (!v) pending.push({ field, label }); };
 
   check(maps?.tratamientos?.[String(exp?.certificado_tratamiento_codigo ?? "")], "tratamiento_nombre", "Nombre del tratamiento (TreatmentName)");
-  check(exp?.suplidor_rnc, "suplidor_rnc", "TID del exportador / suplidor (ExporterCode)");
+  check(maps?.exportador ? maps.exportador.doc : exp?.suplidor_rnc, "suplidor_rnc", "TID del exportador / suplidor (ExporterCode)");
   partidasUnicas(items ?? []).forEach((it) => {
     check(it.criterio_origen_codigo, `criterio_${it.codigo_arancelario}`, `Partida ${it.codigo_arancelario}: Criterio de origen`);
     check(it.metodo_calificacion_codigo, `metodo_${it.codigo_arancelario}`, `Partida ${it.codigo_arancelario}: Método de calificación`);
@@ -99,9 +102,13 @@ export function buildCertificateOriginXml(exp: any, items: any[], maps?: CertMap
     T("TransportDescription", exp?.certificado_transporte_desc),
     T("Remark", exp?.certificado_remark),
     T("ImporterCode", ownerCode),
-    T("ExporterCode", exp?.suplidor_rnc ? personCode(exp.suplidor_rnc, origen, "TID") : ""),
+    T("ExporterCode", maps?.exportador?.doc
+      ? personCode(maps.exportador.doc, maps.exportador.pais || origen, "TID")
+      : exp?.suplidor_rnc ? personCode(exp.suplidor_rnc, origen, "TID") : ""),
     T("ApplicantCode", APPLICANT_CODE),
-    T("ProductorCode", exp?.certificado_productor_rnc
+    T("ProductorCode", maps?.productor?.doc
+      ? personCode(maps.productor.doc, maps.productor.pais || origen, "TID")
+      : exp?.certificado_productor_rnc
       ? personCode(exp.certificado_productor_rnc, nat, "TID")
       : (exp?.suplidor_rnc ? personCode(exp.suplidor_rnc, origen, "TID") : "")),
   ].join("\n");

@@ -13,7 +13,74 @@ import { ScrollText, AlertTriangle, Download, CheckCircle2, Info, Save, Trash2 }
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { DgaCombobox } from "@/components/dga-combobox";
-import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
+import { TerceroExtranjeroPicker, type TerceroExtranjero } from "@/components/terceros-extranjeros";
+
+/** Bloque Exportador/Productor del certificado (editable, alimentado del catálogo de terceros). */
+type TerceroCert = {
+  nombre: string; tipo_doc: string; doc: string; direccion: string; telefono: string;
+  fax: string; email: string; pais_nombre: string; pais_codigo: string;
+};
+const TIPOS_DOC = [
+  { v: "TID", l: "Tax ID" },
+  { v: "RNC", l: "RNC" },
+  { v: "CED", l: "Cédula" },
+  { v: "PAS", l: "Pasaporte" },
+];
+const terceroVacio: TerceroCert = { nombre: "", tipo_doc: "TID", doc: "", direccion: "", telefono: "", fax: "", email: "", pais_nombre: "", pais_codigo: "" };
+function separarDoc(raw?: string | null): { tipo_doc: string; doc: string } {
+  const clean = String(raw ?? "").trim();
+  const m = /^(RNC|CED|PAS|TID|TAX)[\s-]*(.*)$/i.exec(clean);
+  if (m) return { tipo_doc: m[1].toUpperCase() === "TAX" ? "TID" : m[1].toUpperCase(), doc: m[2] };
+  return { tipo_doc: "TID", doc: clean };
+}
+function desdeCatalogo(t: TerceroExtranjero): TerceroCert {
+  return {
+    nombre: t.nombre ?? "", ...separarDoc(t.tid), direccion: t.direccion ?? "", telefono: t.telefono ?? "",
+    fax: t.fax ?? "", email: t.email ?? "", pais_nombre: t.pais_nombre ?? "", pais_codigo: t.pais_codigo ?? "",
+  };
+}
+const docConPrefijo = (t: TerceroCert) => (t.doc.trim() ? `${t.tipo_doc}${t.doc.trim()}` : "");
+
+function BloqueTercero({ titulo, value, onChange, sinCatalogo }: {
+  titulo: string; value: TerceroCert; onChange: (t: TerceroCert) => void; sinCatalogo: boolean;
+}) {
+  const f = (k: keyof TerceroCert, label: string, span = false) => (
+    <div className={`grid gap-1 ${span ? "sm:col-span-2" : ""}`}>
+      <Label className="text-[11px]">{label}</Label>
+      <Input className="h-8" value={value[k]} onChange={(e) => onChange({ ...value, [k]: e.target.value })} />
+    </div>
+  );
+  return (
+    <div className="rounded-md border p-3 space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[13px] font-semibold">{titulo}</p>
+        <TerceroExtranjeroPicker onSelect={(t) => onChange(desdeCatalogo(t))} />
+      </div>
+      {sinCatalogo && (
+        <p className="text-[11px] text-muted-foreground">
+          Este embarcador aún no está en el Catálogo DGA. Usa «Elegir de catálogo → Agregar nuevo tercero extranjero» para guardarlo una sola vez.
+        </p>
+      )}
+      <div className="grid gap-2 sm:grid-cols-2">
+        {f("nombre", "Nombre", true)}
+        <div className="grid gap-1">
+          <Label className="text-[11px]">Documento</Label>
+          <Select value={value.tipo_doc} onValueChange={(v) => onChange({ ...value, tipo_doc: v })}>
+            <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+            <SelectContent>{TIPOS_DOC.map((t) => <SelectItem key={t.v} value={t.v}>{t.l}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        {f("doc", "Número de documento")}
+        {f("direccion", "Dirección", true)}
+        {f("telefono", "Teléfono")}
+        {f("fax", "Fax")}
+        {f("email", "Email")}
+        {f("pais_nombre", "País")}
+        {f("pais_codigo", "Código de país")}
+      </div>
+    </div>
+  );
+}
 import { downloadXml } from "@/lib/siga-xml";
 import {
   buildCertificateOriginXml,
@@ -116,6 +183,40 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
     });
   }, [exp, open, items, areaPuerto]);
 
+  // Exportador y Productor: parten del Embarcador/Suplidor, buscado en el Catálogo DGA de terceros
+  const [exportador, setExportador] = useState<TerceroCert>(terceroVacio);
+  const [productor, setProductor] = useState<TerceroCert>(terceroVacio);
+  const { data: terceroCat, isFetched: terceroBuscado } = useQuery({
+    queryKey: ["cert-tercero-embarcador", exp?.suplidor_rnc, exp?.suplidor, open],
+    enabled: open && !!exp && !!(exp?.suplidor_rnc || exp?.suplidor),
+    queryFn: async () => {
+      const tbl = supabase.from("catalogo_terceros_extranjeros" as any);
+      const tid = String(exp.suplidor_rnc ?? "").trim();
+      if (tid) {
+        const { data } = await tbl.select("*").eq("activo", true).ilike("tid", tid).limit(1);
+        if (data?.length) return data[0] as unknown as TerceroExtranjero;
+      }
+      const nombre = String(exp.suplidor ?? "").trim();
+      if (nombre) {
+        const { data } = await supabase.from("catalogo_terceros_extranjeros" as any).select("*").eq("activo", true).ilike("nombre", nombre).limit(1);
+        if (data?.length) return data[0] as unknown as TerceroExtranjero;
+      }
+      return null;
+    },
+  });
+  useEffect(() => {
+    if (!open || !exp) return;
+    const base: TerceroCert = terceroCat
+      ? desdeCatalogo(terceroCat)
+      : { ...terceroVacio, nombre: exp.suplidor ?? "", ...separarDoc(exp.suplidor_rnc) };
+    setExportador(base);
+    // Productor guardado distinto del embarcador: conservar su documento
+    const prodGuardado = exp.certificado_productor_rnc && exp.certificado_productor_rnc !== exp.suplidor_rnc
+      ? { ...terceroVacio, ...separarDoc(exp.certificado_productor_rnc) } : base;
+    setProductor(prodGuardado);
+  }, [open, exp, terceroCat]);
+  const sinCatalogo = !!exp && terceroBuscado && !terceroCat && !!(exp?.suplidor_rnc || exp?.suplidor);
+
   const partidas = useMemo(() => partidasUnicas((items as any[]) ?? []), [items]);
 
   useEffect(() => {
@@ -137,7 +238,11 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
     return m;
   }, [tratamientos]);
 
-  const maps: CertMaps = useMemo(() => ({ tratamientos: tratamientoMap }), [tratamientoMap]);
+  const maps: CertMaps = useMemo(() => ({
+    tratamientos: tratamientoMap,
+    exportador: { doc: docConPrefijo(exportador), pais: exportador.pais_codigo || null },
+    productor: { doc: docConPrefijo(productor), pais: productor.pais_codigo || null },
+  }), [tratamientoMap, exportador, productor]);
 
   // Expediente + ítems con los valores actualmente editados en el diálogo
   const expEdit = useMemo(() => {
@@ -167,6 +272,7 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
     setSaving(true);
     const payload: any = {};
     Object.entries(form).forEach(([k, v]) => { payload[k] = v || null; });
+    payload.certificado_productor_rnc = docConPrefijo(productor) || null;
     const { error } = await supabase.from("expedientes").update(payload).eq("id", expedienteId);
     if (error) { setSaving(false); return toast.error(error.message); }
 
@@ -333,16 +439,6 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
                       placeholder="Selecciona país (catálogo DGA)"
                     />
                   </div>
-                  <div className="grid gap-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <Label>TID del Productor (opcional)</Label>
-                      <TerceroExtranjeroPicker onSelect={(t) => set("certificado_productor_rnc", t.tid)} />
-                    </div>
-                    <Input value={form.certificado_productor_rnc ?? ""} onChange={(e) => set("certificado_productor_rnc", e.target.value)} placeholder="TID del productor" />
-                    {exp?.suplidor && (
-                      <p className="text-[11px] text-muted-foreground">Embarcador: {exp.suplidor}{exp.suplidor_rnc ? ` · ${exp.suplidor_rnc}` : ""}</p>
-                    )}
-                  </div>
                   <div className="grid gap-1.5 sm:col-span-2">
                     <Label>Descripción de transporte</Label>
                     <Input value={form.certificado_transporte_desc ?? ""} onChange={(e) => set("certificado_transporte_desc", e.target.value)} />
@@ -351,6 +447,11 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
                     <Label>Observaciones</Label>
                     <Textarea rows={2} value={form.certificado_remark ?? ""} onChange={(e) => set("certificado_remark", e.target.value)} />
                   </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <BloqueTercero titulo="Información de Exportador" value={exportador} onChange={setExportador} sinCatalogo={sinCatalogo} />
+                  <BloqueTercero titulo="Información de Productor" value={productor} onChange={setProductor} sinCatalogo={sinCatalogo} />
                 </div>
 
                 <div>
