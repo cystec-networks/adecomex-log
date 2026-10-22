@@ -9,19 +9,19 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-Las restricciones de transición de Expediente se aplican tanto en `src/lib/estados-expediente.ts` como en el trigger `public.validar_transicion_expediente()`; así los cambios manuales y automáticos respetan los mismos requisitos.
+Apply expediente transitions in `estados-expediente.ts` and `validar_transicion_expediente()` so manual and automatic changes share requirements.
 
-El identificador visible de un expediente usa la clase compartida `expediente-numero`, basada en `--brand-red`, para mantener el mismo énfasis rojo y negrita en vistas y formularios.
+Use `expediente-numero` with `--brand-red` for consistent bold red identifiers.
 
-En el volante de solicitud de pago, resolver primero el número del transporte vinculado y luego el TR reservado en la solicitud; un viaje puede tener varios controles TF, que siguen siendo secundarios para conciliación.
+Payment slips resolve linked transport number before reserved TR; TF controls remain secondary for reconciliation.
 
-Use the shared preliquidation PDF for expediente and quote to prevent divergent summaries.
+Share the preliquidation PDF between expediente and quote to prevent divergent summaries.
 
-Use explicit responsive grid slots and reserved action widths for the expediente header; desktop controls stay on one row, with secondary menus consolidated into More actions when the container cannot fit them, while mobile keeps accessible rows.
+Use reserved grid slots for expediente headers: desktop controls stay on one row, overflow menus enter More actions, mobile keeps accessible rows.
 
-Keep the new-expediente header in two fixed action rows; render the form-owned submit controls into its header slot through a React portal to preserve validation and avoid a separate floating panel.
+Keep new-expediente actions in two fixed header rows; portal form-owned submit controls there to preserve validation without floating panels.
 
-Scope detail-header presentation to its dedicated class; logistics and operational identifiers use independent content-sized flex rows with space-between, keeping client label/value together and wrapping identifiers to avoid fixed-column whitespace. Render active warnings below Description and keep the inline presentation field informational, reusing the existing deadline rules.
+Scope detail headers to their class; use independent content-sized space-between flex rows, keep client label/value together, wrap identifiers, show warnings below Description and reuse deadline rules for informational presentation.
 
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
 - Presentation deadline uses catalogo_regimenes.dias_habiles_presentar with optional expedientes.plazo_presentar_override; expedientes.sla_dias is deprecated — resolve via src/lib/plazo-presentacion.ts. In the header, require real arrival and a configured regime (never ETA), show business days relative to today, and classify overdue by the calendar date so weekends cannot hide expiration.
@@ -40,3 +40,4 @@ Scope detail-header presentation to its dedicated class; logistics and operation
 - Use ImporteLiquidacionInput and liquidacion-moneda for formatted tax editing; preserve USD drafts, calculations, inventory and PDF.
 
 - Copiloto selects real eight-digit leaves, normalizes nature, and ranks manual alternatives. OCR reuses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
+- Resolve certificate parties via `terceros-certificado`; catalog `rol_siga` classifies commercial records, not permissions, preventing identities from crossing SIGA roles.

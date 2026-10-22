@@ -18,6 +18,14 @@ import { TercerosExtranjerosCatalog } from "@/components/terceros-extranjeros";
 import { DepositosDestinoCatalog } from "@/components/depositos-destino-catalog";
 
 export const Route = createFileRoute("/_authenticated/admin/catalogos")({
+  head: () => ({ meta: [
+    { title: "Catálogos DGA y terceros | ADECOMEX Flow" },
+    { name: "description", content: "Administra los catálogos aduaneros y las fichas de exportadoras y proveedoras exteriores en ADECOMEX Flow." },
+    { property: "og:title", content: "Catálogos DGA y terceros | ADECOMEX Flow" },
+    { property: "og:description", content: "Catálogos aduaneros y registros de terceros extranjeros de ADECOMEX Flow." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: CatalogosAdmin,
 });
 
