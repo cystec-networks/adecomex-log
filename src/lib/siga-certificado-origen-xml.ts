@@ -102,15 +102,16 @@ export function buildCertificateOriginXml(exp: any, items: any[], maps?: CertMap
     T("TransportDescription", exp?.certificado_transporte_desc),
     T("Remark", exp?.certificado_remark),
     T("ImporterCode", ownerCode),
+    // CertificateOrigin: tipo + documento, sin insertar el país del tercero.
     T("ExporterCode", maps?.exportador?.doc
-      ? personCode(maps.exportador.doc, maps.exportador.pais || origen, "TID")
-      : exp?.suplidor_rnc ? personCode(exp.suplidor_rnc, origen, "TID") : ""),
+      ? personCode(maps.exportador.doc, "", "TID")
+      : exp?.suplidor_rnc ? personCode(exp.suplidor_rnc, "", "TID") : ""),
     T("ApplicantCode", APPLICANT_CODE),
     T("ProductorCode", maps?.productor?.doc
-      ? personCode(maps.productor.doc, maps.productor.pais || origen, "TID")
+      ? personCode(maps.productor.doc, "", "TID")
       : exp?.certificado_productor_rnc
-      ? personCode(exp.certificado_productor_rnc, nat, "TID")
-      : (exp?.suplidor_rnc ? personCode(exp.suplidor_rnc, origen, "TID") : "")),
+      ? personCode(exp.certificado_productor_rnc, "", "TID")
+      : (exp?.suplidor_rnc ? personCode(exp.suplidor_rnc, "", "TID") : "")),
   ].join("\n");
 
   const detalles = partidasUnicas(items ?? []).map((it) => `  <CertificateOriginDetail>
