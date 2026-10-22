@@ -1,3 +1,4 @@
+- [ ] Restaurar autocompletado completo de Productor y separar catálogo/búsqueda por rol SIGA; verificar Berkshire Dairy Exportadora 0007030022 y Proveedora Exterior 270182962.
 - [ ] CertificateOrigin: bloques completos pendientes del XSD específico (no incluido en los adjuntos); carga SIGA pendiente de acceso autorizado.
 - [x] Corregir ExporterCode/ProductorCode a prefijo + número sin país: 5 pruebas aprobadas y vista previa real del certificado de Berkshire Dairy en 202609I346 con ambos códigos exactamente TID270182962, sin guardar datos. País del formulario y demás códigos SIGA intactos; carga SIGA pendiente de acceso autorizado.
 - [x] Corregir selección del histórico DGA en Editar ítem: descripción, partida, unidad y tasas reemplazadas; 22 pruebas aprobadas y verificación en 202610I374 con cebollas 07031011, 25%/0%, cantidad/peso/FOB intactos, sin guardar cambios. Valor unitario no existe en el histórico y conserva FOB/cantidad.
