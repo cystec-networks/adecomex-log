@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BookUser, Plus, Pencil, Search } from "lucide-react";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ROLES_SIGA, type RolSiga } from "@/lib/terceros-certificado";
 
 export type TerceroExtranjero = {
   id: string;
@@ -24,6 +26,7 @@ export type TerceroExtranjero = {
   pais_codigo: string | null;
   pais_nombre: string | null;
   activo: boolean;
+  rol_siga: RolSiga;
 };
 
 const TABLE = "catalogo_terceros_extranjeros";
@@ -33,10 +36,12 @@ export function TerceroExtranjeroPicker({
   onSelect,
   label = "Elegir de catálogo",
   size = "sm",
+  rol,
 }: {
   onSelect: (t: TerceroExtranjero) => void;
   label?: string;
   size?: "sm" | "default";
+  rol?: RolSiga;
 }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -49,6 +54,7 @@ export function TerceroExtranjeroPicker({
   const crear = useMutation({
     mutationFn: async () => {
       const payload: any = {};
+      payload.rol_siga = form.rol_siga || rol || "sin_especificar";
       FIELDS.forEach((f) => { payload[f.k] = (form[f.k as string] ?? "").trim() || null; });
       if (!payload.nombre || !payload.tid) throw new Error("Nombre y TID son obligatorios");
       const { data, error } = await supabase.from(TABLE as any).insert(payload).select().single();
@@ -58,6 +64,7 @@ export function TerceroExtranjeroPicker({
     onSuccess: (t) => {
       qc.invalidateQueries({ queryKey: ["terceros-extranjeros"] });
       qc.invalidateQueries({ queryKey: ["terceros-extranjeros-picker"] });
+      qc.invalidateQueries({ queryKey: ["cert-terceros-roles"] });
       toast.success("Tercero extranjero creado");
       setNuevoOpen(false);
       setForm({});
@@ -73,14 +80,15 @@ export function TerceroExtranjeroPicker({
   }, [q]);
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["terceros-extranjeros-picker", term, open],
+    queryKey: ["terceros-extranjeros-picker", term, open, rol],
     enabled: open,
     queryFn: async () => {
       let query: any = supabase.from(TABLE as any).select("*").eq("activo", true);
+      if (rol) query = query.in("rol_siga", [rol, "sin_especificar"]);
       if (term) query = query.or(`nombre.ilike.%${term}%,tid.ilike.%${term}%`);
       const { data, error } = await query.order("nombre").limit(50);
       if (error) throw error;
-      return (data ?? []) as TerceroExtranjero[];
+      return ((data ?? []) as TerceroExtranjero[]).sort((a, b) => Number(b.rol_siga === rol) - Number(a.rol_siga === rol));
     },
   });
 
@@ -110,10 +118,11 @@ export function TerceroExtranjeroPicker({
             <p className="p-3 text-sm text-muted-foreground">Sin resultados en el catálogo.</p>
           ) : (
             rows.map((r) => (
-              <button
+               <Button
                 key={r.id}
                 type="button"
-                className="w-full text-left px-3 py-2 hover:bg-accent"
+                 variant="ghost"
+                 className="w-full h-auto rounded-none flex-col items-start text-left px-3 py-2"
                 onClick={() => {
                   onSelect(r);
                   setOpen(false);
@@ -123,8 +132,9 @@ export function TerceroExtranjeroPicker({
                 <div className="text-xs text-muted-foreground font-mono">
                   {r.tid}
                   {r.pais_nombre ? ` · ${r.pais_nombre}` : ""}
+                   {` · ${ROLES_SIGA.find((o) => o.value === r.rol_siga)?.label ?? "Sin especificar"}`}
                 </div>
-              </button>
+               </Button>
             ))
           )}
         </div>
@@ -134,7 +144,7 @@ export function TerceroExtranjeroPicker({
             variant="secondary"
             size="sm"
             className="w-full"
-            onClick={() => { setOpen(false); setForm({}); setNuevoOpen(true); }}
+             onClick={() => { setOpen(false); setForm({ rol_siga: rol ?? "sin_especificar" }); setNuevoOpen(true); }}
           >
             <Plus className="h-4 w-4 mr-1" /> Agregar nuevo tercero extranjero (Catálogo DGA)
           </Button>
@@ -148,6 +158,7 @@ export function TerceroExtranjeroPicker({
             <DialogTitle>Nuevo tercero extranjero (Catálogo DGA)</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
+             <RolSigaField value={form.rol_siga || rol || "sin_especificar"} onChange={(v) => setForm((p) => ({ ...p, rol_siga: v }))} />
             {FIELDS.map((f) => (
               <div key={f.k as string} className="grid gap-1.5">
                 <Label>{f.label}{f.required ? " *" : ""}</Label>
@@ -181,6 +192,10 @@ const FIELDS: Array<{ k: keyof TerceroExtranjero; label: string; required?: bool
   { k: "pais_codigo", label: "Código de país" },
 ];
 
+function RolSigaField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return <div className="grid gap-1.5"><Label>Rol en SIGA</Label><Select value={value} onValueChange={onChange}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{ROLES_SIGA.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent></Select></div>;
+}
+
 /** Pantalla de administración del catálogo de terceros extranjeros. */
 export function TercerosExtranjerosCatalog({ isAdmin }: { isAdmin: boolean }) {
   const qc = useQueryClient();
@@ -207,6 +222,7 @@ export function TercerosExtranjerosCatalog({ isAdmin }: { isAdmin: boolean }) {
   const save = useMutation({
     mutationFn: async () => {
       const payload: any = {};
+      payload.rol_siga = form.rol_siga || "sin_especificar";
       FIELDS.forEach((f) => { payload[f.k] = (form[f.k as string] ?? "").trim() || null; });
       if (!payload.nombre || !payload.tid) throw new Error("Nombre y TID son obligatorios");
       if (editing) {
@@ -220,6 +236,7 @@ export function TercerosExtranjerosCatalog({ isAdmin }: { isAdmin: boolean }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["terceros-extranjeros"] });
       qc.invalidateQueries({ queryKey: ["terceros-extranjeros-picker"] });
+      qc.invalidateQueries({ queryKey: ["cert-terceros-roles"] });
       setOpen(false);
       toast.success(editing ? "Tercero actualizado" : "Tercero creado");
     },
@@ -241,6 +258,7 @@ export function TercerosExtranjerosCatalog({ isAdmin }: { isAdmin: boolean }) {
   const abrir = (r: TerceroExtranjero | null) => {
     setEditing(r);
     const f: Record<string, string> = {};
+    f.rol_siga = r?.rol_siga ?? "sin_especificar";
     FIELDS.forEach((fl) => { f[fl.k as string] = (r?.[fl.k] as string | null) ?? ""; });
     setForm(f);
     setOpen(true);
@@ -263,7 +281,7 @@ export function TercerosExtranjerosCatalog({ isAdmin }: { isAdmin: boolean }) {
             <TableHeader>
               <TableRow>
                 <TableHead>Nombre</TableHead>
-                <TableHead>TID</TableHead>
+                 <TableHead>TID / Rol SIGA</TableHead>
                 <TableHead>País</TableHead>
                 <TableHead>Contacto</TableHead>
                 <TableHead className="w-32">Estado</TableHead>
@@ -281,7 +299,7 @@ export function TercerosExtranjerosCatalog({ isAdmin }: { isAdmin: boolean }) {
                 filtered.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.nombre}</TableCell>
-                    <TableCell className="font-mono text-xs">{r.tid}</TableCell>
+                     <TableCell className="text-xs"><div className="font-mono">{r.tid}</div><div className="text-muted-foreground">{ROLES_SIGA.find((o) => o.value === r.rol_siga)?.label ?? "Sin especificar"}</div></TableCell>
                     <TableCell className="text-sm">{r.pais_nombre ?? "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {[r.telefono, r.email].filter(Boolean).join(" · ") || "—"}
@@ -313,6 +331,7 @@ export function TercerosExtranjerosCatalog({ isAdmin }: { isAdmin: boolean }) {
             <DialogTitle>{editing ? "Editar tercero extranjero" : "Nuevo tercero extranjero"}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
+             <RolSigaField value={form.rol_siga || "sin_especificar"} onChange={(v) => setForm((p) => ({ ...p, rol_siga: v }))} />
             {FIELDS.map((f) => (
               <div key={f.k as string} className="grid gap-1.5">
                 <Label>{f.label}{f.required ? " *" : ""}</Label>

@@ -14,35 +14,17 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { DgaCombobox } from "@/components/dga-combobox";
 import { TerceroExtranjeroPicker, type TerceroExtranjero } from "@/components/terceros-extranjeros";
+import { desdeCatalogo, separarDoc, terceroVacio, docConPrefijo, resolverTerceroCertificado, type TerceroCert, type RolSiga } from "@/lib/terceros-certificado";
 
 /** Bloque Exportador/Productor del certificado (editable, alimentado del catálogo de terceros). */
-type TerceroCert = {
-  nombre: string; tipo_doc: string; doc: string; direccion: string; telefono: string;
-  fax: string; email: string; pais_nombre: string; pais_codigo: string;
-};
 const TIPOS_DOC = [
   { v: "TID", l: "Tax ID" },
   { v: "RNC", l: "RNC" },
   { v: "CED", l: "Cédula" },
   { v: "PAS", l: "Pasaporte" },
 ];
-const terceroVacio: TerceroCert = { nombre: "", tipo_doc: "TID", doc: "", direccion: "", telefono: "", fax: "", email: "", pais_nombre: "", pais_codigo: "" };
-function separarDoc(raw?: string | null): { tipo_doc: string; doc: string } {
-  const clean = String(raw ?? "").trim();
-  const m = /^(RNC|CED|PAS|TID|TAX)[\s-]*(.*)$/i.exec(clean);
-  if (m) return { tipo_doc: m[1].toUpperCase() === "TAX" ? "TID" : m[1].toUpperCase(), doc: m[2] };
-  return { tipo_doc: "TID", doc: clean };
-}
-function desdeCatalogo(t: TerceroExtranjero): TerceroCert {
-  return {
-    nombre: t.nombre ?? "", ...separarDoc(t.tid), direccion: t.direccion ?? "", telefono: t.telefono ?? "",
-    fax: t.fax ?? "", email: t.email ?? "", pais_nombre: t.pais_nombre ?? "", pais_codigo: t.pais_codigo ?? "",
-  };
-}
-const docConPrefijo = (t: TerceroCert) => (t.doc.trim() ? `${t.tipo_doc}${t.doc.trim()}` : "");
-
-function BloqueTercero({ titulo, value, onChange, sinCatalogo }: {
-  titulo: string; value: TerceroCert; onChange: (t: TerceroCert) => void; sinCatalogo: boolean;
+function BloqueTercero({ titulo, value, onChange, sinCatalogo, rol }: {
+  titulo: string; value: TerceroCert; onChange: (t: TerceroCert) => void; sinCatalogo: boolean; rol: RolSiga;
 }) {
   const f = (k: keyof TerceroCert, label: string, span = false) => (
     <div className={`grid gap-1 ${span ? "sm:col-span-2" : ""}`}>
@@ -51,10 +33,10 @@ function BloqueTercero({ titulo, value, onChange, sinCatalogo }: {
     </div>
   );
   return (
-    <div className="rounded-md border p-3 space-y-2">
+    <section aria-label={titulo} className="rounded-md border p-3 space-y-2">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[13px] font-semibold">{titulo}</p>
-        <TerceroExtranjeroPicker onSelect={(t) => onChange(desdeCatalogo(t))} />
+        <TerceroExtranjeroPicker rol={rol} onSelect={(t) => onChange(desdeCatalogo(t))} />
       </div>
       {sinCatalogo && (
         <p className="text-[11px] text-muted-foreground">
@@ -78,7 +60,7 @@ function BloqueTercero({ titulo, value, onChange, sinCatalogo }: {
         {f("pais_nombre", "País")}
         {f("pais_codigo", "Código de país")}
       </div>
-    </div>
+    </section>
   );
 }
 import { downloadXml } from "@/lib/siga-xml";
@@ -186,36 +168,29 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
   // Exportador y Productor: parten del Embarcador/Suplidor, buscado en el Catálogo DGA de terceros
   const [exportador, setExportador] = useState<TerceroCert>(terceroVacio);
   const [productor, setProductor] = useState<TerceroCert>(terceroVacio);
-  const { data: terceroCat, isFetched: terceroBuscado } = useQuery({
-    queryKey: ["cert-tercero-embarcador", exp?.suplidor_rnc, exp?.suplidor, open],
+  const { data: tercerosCat, isFetched: terceroBuscado } = useQuery({
+    queryKey: ["cert-terceros-roles", exp?.suplidor_rnc, exp?.suplidor, exp?.certificado_productor_rnc, open],
     enabled: open && !!exp && !!(exp?.suplidor_rnc || exp?.suplidor),
     queryFn: async () => {
-      const tbl = supabase.from("catalogo_terceros_extranjeros" as any);
-      const tid = String(exp.suplidor_rnc ?? "").trim();
-      if (tid) {
-        const { data } = await tbl.select("*").eq("activo", true).ilike("tid", tid).limit(1);
-        if (data?.length) return data[0] as unknown as TerceroExtranjero;
-      }
-      const nombre = String(exp.suplidor ?? "").trim();
-      if (nombre) {
-        const { data } = await supabase.from("catalogo_terceros_extranjeros" as any).select("*").eq("activo", true).ilike("nombre", nombre).limit(1);
-        if (data?.length) return data[0] as unknown as TerceroExtranjero;
-      }
-      return null;
+      const docs = [...new Set([exp.suplidor_rnc, exp.certificado_productor_rnc].filter(Boolean).flatMap((raw: string) => [raw.trim(), separarDoc(raw).doc, docConPrefijo(separarDoc(raw))]))];
+      const { data, error } = await supabase.from("catalogo_terceros_extranjeros").select("*").eq("activo", true).in("tid", docs);
+      if (error) throw error;
+      const nombres = [...new Set([exp.suplidor, ...(data ?? []).map((r) => r.nombre)].filter(Boolean))] as string[];
+      const porNombre = await Promise.all(nombres.map(async (nombre) => {
+        const { data: matches, error: e } = await supabase.from("catalogo_terceros_extranjeros").select("*").eq("activo", true).ilike("nombre", nombre);
+        if (e) throw e;
+        return matches ?? [];
+      }));
+      return [...new Map([...(data ?? []), ...porNombre.flat()].map((r) => [r.id, r])).values()] as TerceroExtranjero[];
     },
   });
+  const exportadorCat = resolverTerceroCertificado(tercerosCat ?? [], "exportadora", exp?.suplidor ?? "", exp?.suplidor_rnc ?? "");
+  const productorCat = resolverTerceroCertificado(tercerosCat ?? [], "proveedora_exterior", exp?.suplidor ?? "", exp?.suplidor_rnc ?? "", exp?.certificado_productor_rnc);
   useEffect(() => {
-    if (!open || !exp) return;
-    const base: TerceroCert = terceroCat
-      ? desdeCatalogo(terceroCat)
-      : { ...terceroVacio, nombre: exp.suplidor ?? "", ...separarDoc(exp.suplidor_rnc) };
-    setExportador(base);
-    // Productor guardado distinto del embarcador: conservar su documento
-    const prodGuardado = exp.certificado_productor_rnc && exp.certificado_productor_rnc !== exp.suplidor_rnc
-      ? { ...terceroVacio, ...separarDoc(exp.certificado_productor_rnc) } : base;
-    setProductor(prodGuardado);
-  }, [open, exp, terceroCat]);
-  const sinCatalogo = !!exp && terceroBuscado && !terceroCat && !!(exp?.suplidor_rnc || exp?.suplidor);
+    if (!open || !exp || !terceroBuscado) return;
+    setExportador(exportadorCat ? desdeCatalogo(exportadorCat) : { ...terceroVacio, nombre: exp.suplidor ?? "", ...separarDoc(exp.suplidor_rnc) });
+    setProductor(productorCat ? desdeCatalogo(productorCat) : { ...terceroVacio, ...separarDoc(exp.certificado_productor_rnc || exp.suplidor_rnc) });
+  }, [open, exp, exportadorCat, productorCat, terceroBuscado]);
 
   const partidas = useMemo(() => partidasUnicas((items as any[]) ?? []), [items]);
 
@@ -450,8 +425,8 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
-                  <BloqueTercero titulo="Información de Exportador" value={exportador} onChange={setExportador} sinCatalogo={sinCatalogo} />
-                  <BloqueTercero titulo="Información de Productor" value={productor} onChange={setProductor} sinCatalogo={sinCatalogo} />
+                  <BloqueTercero titulo="Información de Exportador" value={exportador} onChange={setExportador} rol="exportadora" sinCatalogo={terceroBuscado && !exportadorCat} />
+                  <BloqueTercero titulo="Información de Productor" value={productor} onChange={setProductor} rol="proveedora_exterior" sinCatalogo={terceroBuscado && !productorCat} />
                 </div>
 
                 <div>
