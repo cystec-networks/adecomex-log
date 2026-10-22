@@ -15,7 +15,7 @@ Use `expediente-numero` with `--brand-red` for consistent bold red identifiers.
 
 Payment slips resolve linked transport number before reserved TR; TF controls remain secondary for reconciliation.
 
-Use the shared preliquidation PDF for expediente and quote to prevent divergent summaries.
+Share the preliquidation PDF between expediente and quote to prevent divergent summaries.
 
 Use reserved grid slots for expediente headers: desktop controls stay on one row, overflow menus enter More actions, mobile keeps accessible rows.
 
@@ -40,4 +40,4 @@ Scope detail headers to their class; use independent content-sized space-between
 - Use ImporteLiquidacionInput and liquidacion-moneda for formatted tax editing; preserve USD drafts, calculations, inventory and PDF.
 
 - Copiloto selects real eight-digit leaves, normalizes nature, and ranks manual alternatives. OCR reuses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
-- Resolve certificate parties independently via `terceros-certificado`; catalog `rol_siga` classifies commercial records, not permissions, preventing supplier-derived identities from crossing SIGA roles.
+- Resolve certificate parties via `terceros-certificado`; catalog `rol_siga` classifies commercial records, not permissions, preventing identities from crossing SIGA roles.

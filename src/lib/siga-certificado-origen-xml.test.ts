@@ -10,6 +10,11 @@ const exp = {
 const code = (xml: string, tag: string) => new RegExp(`<${tag}>(.*?)</${tag}>`).exec(xml)?.[1];
 
 describe("CertificateOrigin: documentos de terceros sin país", () => {
+  it("Berkshire tiene códigos independientes de Exportadora y Proveedora Exterior", () => {
+    const xml = buildCertificateOriginXml(exp, [], { exportador: { doc: "TID0007030022", pais: "840" }, productor: { doc: "TID270182962", pais: "840" } });
+    assert.equal(code(xml, "ExporterCode"), "TID0007030022");
+    assert.equal(code(xml, "ProductorCode"), "TID270182962");
+  });
   it("ExporterCode de Berkshire Dairy es exactamente TID270182962", () => {
     const xml = buildCertificateOriginXml(exp, [], { exportador: { doc: "TID270182962", pais: "840" } });
     assert.equal(code(xml, "ExporterCode"), "TID270182962");
