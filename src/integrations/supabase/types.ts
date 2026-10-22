@@ -1044,6 +1044,7 @@ export type Database = {
           nombre: string
           pais_codigo: string | null
           pais_nombre: string | null
+          rol_siga: string
           telefono: string | null
           tid: string
         }
@@ -1057,6 +1058,7 @@ export type Database = {
           nombre: string
           pais_codigo?: string | null
           pais_nombre?: string | null
+          rol_siga?: string
           telefono?: string | null
           tid: string
         }
@@ -1070,6 +1072,7 @@ export type Database = {
           nombre?: string
           pais_codigo?: string | null
           pais_nombre?: string | null
+          rol_siga?: string
           telefono?: string | null
           tid?: string
         }

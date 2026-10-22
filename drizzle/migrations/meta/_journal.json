@@ -456,6 +456,13 @@
       "when": 1792520734023,
       "tag": "0064_observaciones_estructura",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1792700958571,
+      "tag": "0065_terceros_extranjeros_rol_siga",
+      "breakpoints": true
     }
   ]
 }

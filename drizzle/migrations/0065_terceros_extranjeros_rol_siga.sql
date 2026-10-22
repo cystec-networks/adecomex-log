@@ -1,0 +1,5 @@
+ALTER TABLE public.catalogo_terceros_extranjeros ADD COLUMN rol_siga text NOT NULL DEFAULT 'sin_especificar';
+ALTER TABLE public.catalogo_terceros_extranjeros ADD CONSTRAINT terceros_rol_siga_valido CHECK (rol_siga IN ('sin_especificar', 'exportadora', 'proveedora_exterior'));
+COMMENT ON COLUMN public.catalogo_terceros_extranjeros.rol_siga IS 'Rol del registro comercial SIGA; no representa permisos de usuario. Una empresa puede tener fichas distintas por documento y rol.';
+UPDATE public.catalogo_terceros_extranjeros SET rol_siga = CASE tid WHEN '0007030022' THEN 'exportadora' WHEN '270182962' THEN 'proveedora_exterior' END WHERE nombre ILIKE '%berkshire%' AND tid IN ('0007030022','270182962');
+CREATE INDEX idx_terceros_extranjeros_rol ON public.catalogo_terceros_extranjeros (rol_siga) WHERE activo = true;
