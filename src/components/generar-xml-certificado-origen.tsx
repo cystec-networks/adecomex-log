@@ -70,23 +70,51 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
   // HS code -> { criterio, metodo }
   const [detalles, setDetalles] = useState<Record<string, { criterio: string; metodo: string }>>({});
 
+  // Área sugerida desde el Puerto de arribo (misma relación dga_puerto_area del expediente)
+  const { data: areaPuerto } = useQuery({
+    queryKey: ["cert-area-puerto", exp?.puerto_arribo_codigo, open],
+    enabled: open && !!exp?.puerto_arribo_codigo,
+    queryFn: async () => {
+      const { data: rel } = await supabase.from("dga_puerto_area").select("area_codigo").eq("puerto_codigo", exp.puerto_arribo_codigo).maybeSingle();
+      if (!rel?.area_codigo) return null;
+      const { data: a } = await supabase.from("dga_areas").select("codigo, area").eq("codigo", rel.area_codigo).maybeSingle();
+      return a ? { codigo: String((a as any).codigo), nombre: String((a as any).area ?? "") } : null;
+    },
+  });
+
   useEffect(() => {
-    if (!exp || !open) return;
+    if (!exp || !open || !items) return;
+    // Valores guardados mandan; si están vacíos se precargan defaults editables.
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const hoy = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Santo_Domingo" }));
+    const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const desde = exp.certificado_periodo_desde || iso(hoy);
+    const [y, m, d] = desde.slice(0, 10).split("-").map(Number);
+    const hasta = new Date(y, m + 1, d);
+    if (hasta.getDate() !== d) hasta.setDate(0); // fin de mes si no existe el día
+    const tratamiento = exp.certificado_tratamiento_codigo || exp.acuerdo_codigo || "";
+    const acuerdoTxt = String(exp.acuerdo_comercial || exp.preferencia_comercial || "").toUpperCase();
+    const remarkDef = tratamiento === "1" || acuerdoTxt.includes("CAFTA")
+      ? "PARA APLICAR PREFERENCIA ARANCELARIA DR-CAFTA, SEGUN CERTIFICADO DE ORIGEN Y DOCUMENTOS ADJUNTOS."
+      : "PARA APLICAR PREFERENCIA ARANCELARIA EPA CON LA UNION EUROPEA, SEGUN CERTIFICADO DE ORIGEN Y DOCUMENTOS ADJUNTOS.";
+    const paises = new Map<string, string>();
+    (items as any[]).forEach((it) => { if (it.pais_origen_codigo) paises.set(String(it.pais_origen_codigo), it.pais_origen ?? ""); });
+    const unico = paises.size === 1 ? [...paises.entries()][0] : null;
     setForm({
-      certificado_periodo_desde: exp.certificado_periodo_desde ?? "",
-      certificado_periodo_hasta: exp.certificado_periodo_hasta ?? "",
-      certificado_uso_codigo: exp.certificado_uso_codigo ?? "",
-      certificado_emisor_codigo: exp.certificado_emisor_codigo ?? "",
-      certificado_tratamiento_codigo: exp.certificado_tratamiento_codigo ?? "",
-      certificado_transporte_desc: exp.certificado_transporte_desc ?? "",
-      certificado_remark: exp.certificado_remark ?? "",
-      certificado_productor_rnc: exp.certificado_productor_rnc ?? "",
-      area_aduanera: exp.area_aduanera ?? "",
-      area_aduanera_codigo: exp.area_aduanera_codigo ?? "",
-      pais_origen: exp.pais_origen ?? "",
-      pais_origen_codigo: exp.pais_origen_codigo ?? "",
+      certificado_periodo_desde: desde,
+      certificado_periodo_hasta: exp.certificado_periodo_hasta || iso(hasta),
+      certificado_uso_codigo: exp.certificado_uso_codigo || "IC50-002",
+      certificado_emisor_codigo: exp.certificado_emisor_codigo || "IC51-001",
+      certificado_tratamiento_codigo: tratamiento,
+      certificado_transporte_desc: exp.certificado_transporte_desc || (exp.metodo_transporte_codigo === "IC52-001" ? "AEREO" : "MARITIMO"),
+      certificado_remark: exp.certificado_remark || remarkDef,
+      certificado_productor_rnc: exp.certificado_productor_rnc || exp.suplidor_rnc || "",
+      area_aduanera: exp.area_aduanera || areaPuerto?.nombre || "",
+      area_aduanera_codigo: exp.area_aduanera_codigo || areaPuerto?.codigo || "",
+      pais_origen: unico ? unico[1] : paises.size > 1 ? "" : exp.pais_origen ?? "",
+      pais_origen_codigo: unico ? unico[0] : paises.size > 1 ? "" : exp.pais_origen_codigo ?? "",
     });
-  }, [exp, open]);
+  }, [exp, open, items, areaPuerto]);
 
   const partidas = useMemo(() => partidasUnicas((items as any[]) ?? []), [items]);
 
@@ -311,6 +339,9 @@ export function GenerarXmlCertificadoOrigenButton({ expedienteId }: { expediente
                       <TerceroExtranjeroPicker onSelect={(t) => set("certificado_productor_rnc", t.tid)} />
                     </div>
                     <Input value={form.certificado_productor_rnc ?? ""} onChange={(e) => set("certificado_productor_rnc", e.target.value)} placeholder="TID del productor" />
+                    {exp?.suplidor && (
+                      <p className="text-[11px] text-muted-foreground">Embarcador: {exp.suplidor}{exp.suplidor_rnc ? ` · ${exp.suplidor_rnc}` : ""}</p>
+                    )}
                   </div>
                   <div className="grid gap-1.5 sm:col-span-2">
                     <Label>Descripción de transporte</Label>
