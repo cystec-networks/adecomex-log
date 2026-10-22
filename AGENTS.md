@@ -19,7 +19,7 @@ Use the shared preliquidation PDF for expediente and quote to prevent divergent 
 
 Use reserved grid slots for expediente headers: desktop controls stay on one row, overflow menus enter More actions, mobile keeps accessible rows.
 
-Keep the new-expediente header in two fixed action rows; render the form-owned submit controls into its header slot through a React portal to preserve validation and avoid a separate floating panel.
+Keep new-expediente actions in two fixed header rows; portal form-owned submit controls there to preserve validation without floating panels.
 
 Scope detail headers to their class; use independent content-sized space-between flex rows, keep client label/value together, wrap identifiers, show warnings below Description and reuse deadline rules for informational presentation.
 
