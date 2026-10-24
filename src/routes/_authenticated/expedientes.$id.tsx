@@ -6265,8 +6265,8 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
 
   // Tras finalizar, el Costo de Venta se sigue pudiendo cargar sin reabrir la liquidación.
   const guardarVenta = useMutation({
-    mutationFn: async ({ itemId, valor }: { itemId: string; valor: number | null }) => {
-      const { error: e1 } = await supabase.from("mercancia_items").update({ costo_venta_unitario: valor } as any).eq("id", itemId);
+    mutationFn: async ({ itemId, valor, pct }: { itemId: string; valor: number | null; pct: number | null }) => {
+      const { error: e1 } = await supabase.from("mercancia_items").update({ costo_venta_unitario: valor, pct_ganancia_venta: pct } as any).eq("id", itemId);
       if (e1) throw e1;
       const { error: e2 } = await (supabase.from("almacen_stock" as any) as any).update({ costo_venta_unitario: valor }).eq("mercancia_item_id", itemId);
       if (e2) throw e2;
@@ -6287,6 +6287,7 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
             isc_real: c.ir,
             itbis_real: c.tr,
             costo_venta_unitario: c.cv,
+            pct_ganancia_venta: c.pct,
             liquidacion_final_en: ahora,
             liquidacion_final_por: user?.id ?? null,
           } as any)
