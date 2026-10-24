@@ -43,3 +43,4 @@ Scope detail headers; use content-sized space-between rows, keep client label/va
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.
 - Payment OCR confirms, replaces slots and keys costs by SIGA/invoice marker. e-CF only updates linked pdf_url, never billing/margins.
+- DGA document OCR uses shared field mapping and conditional empty-field writes; persist PDFs first so OCR failures never lose uploads.
