@@ -25,7 +25,7 @@ export function conceptoPagoPuerto(tipo: TipoPagoPuerto, referencia: string) {
 }
 /** Reconoce el concepto guardado en Costos por tipo de pago, sin exigir texto exacto (acepta sufijos « — DPW» y variantes históricas). */
 export function esConceptoPagoPuerto(concepto: unknown, tipo: TipoPagoPuerto): boolean {
-  const c = String(concepto ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const c = String(concepto ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const prefijos: Record<TipoPagoPuerto, string[]> = {
     almacenaje: ["almacenaje"],
     contenedor: ["deposito de contenedor", "demora de contenedor", "pago de contenedor", "contenedor"],
