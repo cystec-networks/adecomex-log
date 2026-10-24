@@ -49,6 +49,8 @@ import { PaqueteRectificacionButton } from "@/components/paquete-rectificacion-b
 import { CorreoDgaButton } from "@/components/correo-dga-button";
 import { PaqueteFacturaCliente } from "@/components/paquete-factura-cliente";
 import { EscanearPagoPuerto } from "@/components/escanear-pago-puerto";
+import { esDocumentoResultadoDga, camposDesdeDocumentoDga, completarResultadoDga, type CamposResultadoDga } from "@/lib/resultado-dga-documentos";
+import { extractSolicitudFromDocument } from "@/lib/ai-ocr.functions";
 
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
@@ -206,7 +208,7 @@ const TIPOS_DOC = [
   "Factura proforma","Factura comercial","Bill of Lading","Guía aérea","Lista de empaque",
   "Certificado de origen","Certificado Sanitario/Fitosanitario","Certificado de análisis",
   "Declaración Única Aduanera (DUA)","Reporte de Liquidación de Impuestos",
-  "Recibo Pago de Impuestos","Recibo Pago de Contenedor","Factura Pago de Almacenaje","Factura Pago Cargos Locales",
+  "Recibo Pago de Impuestos","PIN de Pago de Impuestos","Recibo Pago de Contenedor","Factura Pago de Almacenaje","Factura Pago Cargos Locales",
   "Permiso VUCE previo","Orden de compra",
   "Carta de instrucción","Póliza de seguro","DUA","Evidencia de entrega","Otro (Liquidación)","Otro",
 ];
@@ -239,6 +241,7 @@ const BLOQUE_LIQUIDACION: { tipo: string; label: string }[] = [
   { tipo: "Declaración Única Aduanera (DUA)", label: "Declaración Única Aduanera (DUA)" },
   { tipo: "Reporte de Liquidación de Impuestos", label: "Liquidación de Impuestos" },
   { tipo: "Recibo Pago de Impuestos", label: "Recibo Pago de Impuestos" },
+  { tipo: "PIN de Pago de Impuestos", label: "PIN de Pago de Impuestos" },
   { tipo: "Recibo Pago de Contenedor", label: "Recibo Pago de Contenedor" },
   { tipo: "Factura Pago de Almacenaje", label: "Factura Pago de Almacenaje" },
   { tipo: "Factura Pago Cargos Locales", label: "Factura Pago Cargos Locales" },
@@ -1568,6 +1571,20 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const [form, setForm] = useState(() => construirFormInicial(isNuevo ? null : exp, isNuevo, isNuevo ? tipoParam : ""));
   const sugeridaPresentacion = useRef(false);
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
+  useEffect(() => {
+    if (isNuevo || !exp) return;
+    const inicial = construirFormInicial(exp, false);
+    // Actualizar solo vacíos: conservar cualquier edición manual del formulario abierto.
+    setForm((f) => ({ ...f, ...completarResultadoDga(f, {
+      liq_siga_numero: inicial.liq_siga_numero || undefined,
+      liq_siga_estado: inicial.liq_siga_estado || undefined,
+      liq_siga_pin_pago: inicial.liq_siga_pin_pago || undefined,
+      liq_siga_registro_at: inicial.liq_siga_registro_at || undefined,
+      liq_siga_termino_at: inicial.liq_siga_termino_at || undefined,
+      liq_siga_fecha_pago: inicial.liq_siga_fecha_pago || undefined,
+      ...(exp.liq_oficial_total != null ? { liq_oficial_total: exp.liq_oficial_total } : {}),
+    }) }));
+  }, [isNuevo, exp]);
   const esExportacion = (form.tipo_operacion || "").toLowerCase().startsWith("export");
   // Exportación: precarga los datos del agente despachante de ADECOMEX si están vacíos.
   useEffect(() => {
@@ -2918,6 +2935,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
 function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const qc = useQueryClient();
+  const extraer = useServerFn(extractSolicitudFromDocument);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editPath, setEditPath] = useState<string | null>(null);
@@ -2953,7 +2971,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
     new Promise<boolean>((resolve) => { setConfirmAck(false); setConfirmacion({ ...c, resolve }); });
 
   const upload = async () => {
-    if (file && CHECKLIST_DOCUMENTOS_BASE.includes(tipo) && !(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
+    if (file && (CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo)) && !(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
       toast.error("Este documento del Checklist de Recepción solo acepta archivos PDF.");
       return;
     }
@@ -3017,6 +3035,36 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
         toast.success(codigo ? `Documento agregado · ${codigo}` : "Documento agregado");
       }
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
+      if (file && esDocumentoResultadoDga(tipo)) {
+        try {
+          if (file.size > 15 * 1024 * 1024) throw new Error("el archivo supera 15MB para lectura automática; completa los campos manualmente");
+          const bytes = new Uint8Array(await file.arrayBuffer());
+          let binary = "";
+          for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+          const res = await extraer({ data: { filename: file.name, mime: "application/pdf", base64: btoa(binary), resultado_dga: tipo } });
+          const { data: actual, error: readError } = await supabase.from("expedientes").select("liq_siga_numero,liq_siga_estado,liq_siga_pin_pago,liq_siga_registro_at,liq_siga_termino_at,liq_siga_fecha_registro,liq_siga_fecha_pago,liq_oficial_total").eq("id", expedienteId).single();
+          if (readError) throw readError;
+          const campos = completarResultadoDga(actual, camposDesdeDocumentoDga(tipo, res.resultado_dga ?? {}));
+          let completados = 0;
+          for (const [key, value] of Object.entries(campos)) {
+            const campo = key as keyof CamposResultadoDga;
+            const previo = actual[campo];
+            // Condición atómica por campo: una edición concurrente nunca pierde su valor.
+            const cambio: CamposResultadoDga = campo === "liq_oficial_total" ? { liq_oficial_total: Number(value) } : { [campo]: String(value) };
+            let query = supabase.from("expedientes").update(cambio).eq("id", expedienteId);
+            query = previo == null ? query.is(campo, null) : query.eq(campo, previo);
+            const { data: updated, error } = await query.select("id");
+            if (error) throw error;
+            if (updated?.length) completados++;
+          }
+          toast.success(completados ? "Resultado oficial DGA completado; los datos existentes se conservaron." : "Documento guardado; no hay nuevos campos vacíos que completar.");
+        } catch (e: unknown) {
+          toast.warning(`PDF guardado, pero no se pudo completar el resultado DGA: ${e instanceof Error ? e.message : "revisa los datos manualmente"}`, { duration: 10000 });
+        } finally {
+          await qc.invalidateQueries({ queryKey: ["expediente", expedienteId] });
+          qc.invalidateQueries({ queryKey: ["expedientes"] });
+        }
+      }
       setOpen(false); resetForm();
     } catch (e: any) {
       toast.error(e.message);
@@ -3126,11 +3174,11 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                   <SelectContent>{TIPOS_DOC.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}{CHECKLIST_DOCUMENTOS_BASE.includes(tipo) && <span className="text-xs text-muted-foreground ml-1">(solo PDF)</span>}</Label><Input type="file" accept={CHECKLIST_DOCUMENTOS_BASE.includes(tipo) ? "application/pdf,.pdf" : undefined} onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></div>
+              <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}{(CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo)) && <span className="text-xs text-muted-foreground ml-1">(solo PDF)</span>}</Label><Input type="file" accept={(CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo)) ? "application/pdf,.pdf" : undefined} onChange={(e) => setFile(e.target.files?.[0] ?? null)} disabled={uploading} /></div>
               <div className="grid gap-1.5"><Label>Fecha vencimiento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
               <div className="grid gap-1.5"><Label>Observaciones</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
             </div>
-            <DialogFooter><Button onClick={upload} disabled={uploading}>Guardar</Button></DialogFooter>
+            <DialogFooter><Button onClick={upload} disabled={uploading}>{uploading ? (esDocumentoResultadoDga(tipo) ? "Guardando y leyendo…" : "Guardando…") : "Guardar"}</Button></DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
@@ -5454,7 +5502,7 @@ function ResultadoOficialBlock({ exp, form, set, servicioAduaneroUsd = 0, disabl
           <Select value={form.liq_siga_estado || undefined} onValueChange={(v) => set("liq_siga_estado", v)} disabled={disabled}>
             <SelectTrigger><SelectValue placeholder="Selecciona estado" /></SelectTrigger>
             <SelectContent>
-              {["Registrada", "Inspeccionada", "Pagada", "Liberada", "Con observación", "Rectificada"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {Array.from(new Set(["Registrada", "Registrado/Aceptado", "Inspeccionada", "Pagada", "Liberada", "Con observación", "Rectificada", ...(form.liq_siga_estado ? [form.liq_siga_estado] : [])])).map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

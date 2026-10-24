@@ -24,7 +24,7 @@ Keep new-expediente actions in two fixed header rows; portal form-owned submit c
 Scope detail headers; use content-sized space-between rows, keep client label/value together, wrap IDs, show warnings below Description and reuse deadline rules.
 
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
-- Presentation deadline uses catalogo_regimenes.dias_habiles_presentar with optional expedientes.plazo_presentar_override; expedientes.sla_dias is deprecated — resolve via src/lib/plazo-presentacion.ts. In the header, require real arrival and a configured regime (never ETA), show business days relative to today, and classify overdue by the calendar date so weekends cannot hide expiration.
+- Presentation deadline: catalogo_regimenes.dias_habiles_presentar + expedientes.plazo_presentar_override via plazo-presentacion.ts; sla_dias deprecated. Require real arrival and regime, never ETA; show business days vs today, classify overdue by calendar date (including weekends).
 - In the sticky header, show ETA until arrival, then arrival with calendar transit days; follow with presentation status and omit duplicate transit. Mount deadline override content only while open to avoid overlap.
 - Use the shared state ordering to replace the deadline from verification onward with compliance based on existing fecha_presentado; omit compliance when its date or deadline is missing, never fabricate historical dates.
 - Open the existing Endoso section via a parent-owned request counter from both header document menus, preserving a single form and its current persistence logic.
@@ -43,3 +43,4 @@ Scope detail headers; use content-sized space-between rows, keep client label/va
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.
 - Payment OCR confirms, replaces slots and keys costs by SIGA/invoice marker. e-CF only updates linked pdf_url, never billing/margins.
+- DGA OCR shares field mapping and conditional empty-field writes; save PDFs first so OCR failures never lose uploads.
