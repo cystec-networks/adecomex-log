@@ -11,9 +11,6 @@ import { PAQUETE_TIPO_DOCUMENTO } from "@/components/paquete-rectificacion-butto
 export const DGA_CORREO = "info.correspondenciayarchivo@aduanas.gob.do";
 const ACCION = "correo_dga_preparado";
 
-const limpiarNombre = (s: string) =>
-  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9-]+/g, "_").replace(/^_+|_+$/g, "");
-
 export function CorreoDgaButton({ expedienteId }: { expedienteId: string }) {
   const qc = useQueryClient();
   const { authuser } = useGmailAuthuser();
@@ -42,10 +39,11 @@ export function CorreoDgaButton({ expedienteId }: { expedienteId: string }) {
     setCargando(true);
     try {
       const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Inicia sesión para preparar el correo.");
       const [expRes, docRes, profRes, itemsRes] = await Promise.all([
         supabase.from("expedientes").select("*, clientes(nombre)").eq("id", expedienteId).maybeSingle(),
         supabase.from("documentos").select("storage_path, created_at").eq("expediente_id", expedienteId).eq("tipo", PAQUETE_TIPO_DOCUMENTO).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-        supabase.from("profiles").select("nombre, firma_nombre, firma_cargo").eq("id", u.user!.id).maybeSingle(),
+        supabase.from("profiles").select("nombre, firma_nombre, firma_cargo").eq("id", u.user.id).maybeSingle(),
         supabase.from("mercancia_items").select("pais_origen").eq("expediente_id", expedienteId).is("deleted_at", null),
       ]);
       if (expRes.error) throw expRes.error;
@@ -55,7 +53,6 @@ export function CorreoDgaButton({ expedienteId }: { expedienteId: string }) {
       }
       const consignatario = e.clientes?.nombre ?? "";
       const dua = e.numero_dua ?? "";
-      const tramite = e.numero_tramite_rectificacion ?? "";
       const producto = (e.producto_correcto_rectificacion ?? "").trim();
       const peso = e.peso_neto != null ? Number(e.peso_neto).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
       const paises = [...new Set((itemsRes.data ?? []).map((i: any) => (i.pais_origen ?? "").trim()).filter(Boolean))];
@@ -63,15 +60,7 @@ export function CorreoDgaButton({ expedienteId }: { expedienteId: string }) {
       const faltan = [!dua && "N.º DUA", !producto && "Producto correcto", !consignatario && "Consignatario"].filter(Boolean);
       if (faltan.length) throw new Error(`Faltan datos en el Expediente: ${faltan.join(", ")}.`);
 
-      // 1. Descargar el paquete con nombre claro
-      const { data: blob, error: dlErr } = await supabase.storage.from("documentos").download(docRes.data.storage_path);
-      if (dlErr || !blob) throw new Error("No se pudo descargar el Paquete Completo");
-      const archivo = `Oficio_RT_${limpiarNombre(tramite || e.numero || "")}_${limpiarNombre(consignatario)}.pdf`;
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = archivo;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      const archivo = docRes.data.storage_path.split("/").pop() ?? PAQUETE_TIPO_DOCUMENTO;
 
       // 2. Borrador en Gmail
       const p = profRes.data as any;
@@ -104,7 +93,7 @@ export function CorreoDgaButton({ expedienteId }: { expedienteId: string }) {
         entidad: "expedientes",
         entidad_id: expedienteId,
         accion: ACCION,
-        usuario_id: u.user!.id,
+        usuario_id: u.user.id,
         cambios: { destinatario: DGA_CORREO, asunto, archivo, usuario: firmaNombre },
       });
       qc.invalidateQueries({ queryKey: ["auditoria", ACCION, expedienteId] });
@@ -136,7 +125,7 @@ export function CorreoDgaButton({ expedienteId }: { expedienteId: string }) {
           <DialogHeader>
             <DialogTitle>Recuerda adjuntar el archivo descargado antes de enviar.</DialogTitle>
             <DialogDescription>
-              Se descargó <b>{aviso}</b> y se abrió el borrador en Gmail para {DGA_CORREO}. Adjunta el archivo y presiona Enviar.
+              Se abrió el borrador en Gmail para {DGA_CORREO}. Adjunta el Paquete Completo que ya descargaste y presiona Enviar.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
