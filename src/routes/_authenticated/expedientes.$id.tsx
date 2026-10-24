@@ -223,6 +223,115 @@ const DOC_ESTADO_STYLE: Record<string, { dot: string; text: string; label: strin
   vencido: { dot: "bg-destructive", text: "text-destructive", label: "Vencido" },
 };
 
+// Bloques fijos de la ficha Documentos (Declaración / Liquidación), en el orden solicitado.
+const BLOQUE_DECLARACION: { tipo: string; label: string; obligatorio?: boolean }[] = [
+  { tipo: "Factura comercial", label: "Factura Comercial", obligatorio: true },
+  { tipo: "Bill of Lading", label: "Bill of Lading", obligatorio: true },
+  { tipo: "Lista de empaque", label: "Lista de Empaque" },
+  { tipo: "Certificado de origen", label: "Certificado de Origen" },
+  { tipo: "Certificado Sanitario/Fitosanitario", label: "Certificado Sanitario/Fitosanitario" },
+  { tipo: "Certificado de análisis", label: "Certificado de Análisis" },
+];
+
+const BLOQUE_LIQUIDACION: { tipo: string; label: string }[] = [
+  { tipo: "Declaración Única Aduanera (DUA)", label: "Declaración Única Aduanera (DUA)" },
+  { tipo: "Reporte de Liquidación de Impuestos", label: "Liquidación de Impuestos" },
+  { tipo: "Recibo Pago de Impuestos", label: "Recibo Pago de Impuestos" },
+  { tipo: "Recibo Pago de Contenedor", label: "Recibo Pago de Contenedor" },
+  { tipo: "Factura Pago de Almacenaje", label: "Factura Pago de Almacenaje" },
+  { tipo: "Factura Pago Cargos Locales", label: "Factura Pago Cargos Locales" },
+];
+
+const TIPO_OTROS_DECLARACION = "Otro";
+const TIPO_OTROS_LIQUIDACION = "Otro (Liquidación)";
+
+function FilaDocumento({ label, obligatorio, doc, onUpload, onMarcarRecibido, onEstado, onEliminar }: {
+  label: string; obligatorio?: boolean; doc?: any;
+  onUpload: () => void; onMarcarRecibido?: () => void; onEstado: (v: string) => void; onEliminar: () => void;
+}) {
+  const st = DOC_ESTADO_STYLE[doc?.estado ?? "pendiente"] ?? DOC_ESTADO_STYLE.pendiente;
+  const vd = doc?.fecha_vencimiento ? daysFromToday(doc.fecha_vencimiento) : NaN;
+  const vencido = !isNaN(vd) && vd < 0;
+  return (
+    <div className="flex items-center gap-2 py-[3px] text-[12px] border-b border-border/40 last:border-0">
+      <span className={`h-2 w-2 rounded-full shrink-0 ${st.dot}`} />
+      <span className="w-52 shrink-0 truncate font-medium" title={label}>
+        {obligatorio && <span className="text-destructive mr-0.5" title="Obligatorio para pasar a Presentado">*</span>}
+        {label}
+      </span>
+      <span className="flex-1 min-w-0 truncate text-muted-foreground" title={doc?.storage_path ? nombreArchivo(doc.storage_path) : undefined}>
+        {doc?.storage_path ? nombreArchivo(doc.storage_path) : doc ? <span className="text-[10px]">(sin archivo)</span> : ""}
+      </span>
+      <span className="w-16 shrink-0 font-mono text-[11px] text-primary">{doc?.storage_path && doc?.codigo_siga ? doc.codigo_siga : ""}</span>
+      {doc ? (
+        <Select value={doc.estado ?? "pendiente"} onValueChange={onEstado}>
+          <SelectTrigger className="w-[6.5rem] shrink-0 h-6 text-[11px] px-2"><SelectValue /></SelectTrigger>
+          <SelectContent>{["pendiente", "recibido", "observado", "aprobado", "vencido"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+        </Select>
+      ) : (
+        <span className="w-[6.5rem] shrink-0 text-[11px] text-muted-foreground">Pendiente</span>
+      )}
+      <span className="shrink-0 whitespace-nowrap text-[11px] text-muted-foreground">
+        {doc?.fecha_recepcion ? fmtLocalDate(doc.fecha_recepcion) : "—"}
+        {doc?.fecha_vencimiento && (
+          <span className={`ml-1 ${vencido ? "text-destructive font-medium" : "text-[10px]"}`} title="Vencimiento">
+            {fmtLocalDate(doc.fecha_vencimiento)}
+          </span>
+        )}
+      </span>
+      <div className="flex items-center gap-0.5 shrink-0">
+        {doc?.storage_path && <DocumentoPreviewButton path={doc.storage_path} variant="ghost" size="sm" label="Ver" />}
+        <Button variant="outline" size="sm" className="h-6 px-1.5 text-[11px]" onClick={onUpload}>
+          <Upload className="h-3 w-3 mr-0.5" />{doc?.storage_path ? "Reemplazar" : "Subir"}
+        </Button>
+        {(!doc || doc.estado === "pendiente") && onMarcarRecibido && (
+          <Button variant="ghost" size="sm" className="h-6 px-1.5 text-[11px]" onClick={onMarcarRecibido}>
+            <Check className="h-3 w-3 mr-0.5" />Recibido
+          </Button>
+        )}
+        {doc && (
+          <>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onUpload} title="Editar datos"><Pencil className="h-3 w-3" /></Button>
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onEliminar} title="Eliminar"><Trash2 className="h-3 w-3" /></Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FilaOtros({ archivos, onAgregar, onEditar, onEstado, onEliminar }: {
+  archivos: any[]; onAgregar: () => void; onEditar: (d: any) => void; onEstado: (id: string, v: string) => void; onEliminar: (d: any) => void;
+}) {
+  return (
+    <div className="flex items-start gap-2 py-[3px] text-[12px]">
+      <span className={`h-2 w-2 rounded-full shrink-0 mt-[5px] ${archivos.length ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+      <div className="flex-1 min-w-0">
+        <div className="font-medium">Otros <span className="text-[11px] text-muted-foreground">({archivos.length} archivo{archivos.length === 1 ? "" : "s"})</span></div>
+        {archivos.map((o) => (
+          <div key={o.id} className="flex items-center gap-2 py-[1px] text-[11px]">
+            <span className="w-16 shrink-0 font-mono text-primary">{o.codigo_siga ?? ""}</span>
+            <span className="truncate flex-1 min-w-0" title={o.storage_path ? nombreArchivo(o.storage_path) : undefined}>
+              {o.storage_path ? nombreArchivo(o.storage_path) : "(sin archivo)"}
+            </span>
+            {o.storage_path && <DocumentoPreviewButton path={o.storage_path} variant="ghost" size="sm" label="Ver" />}
+            <Select value={o.estado ?? "pendiente"} onValueChange={(v) => onEstado(o.id, v)}>
+              <SelectTrigger className="w-[6.5rem] shrink-0 h-5 text-[10px] px-1.5"><SelectValue /></SelectTrigger>
+              <SelectContent>{["pendiente", "recibido", "observado", "aprobado", "vencido"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
+            <span className="shrink-0 whitespace-nowrap text-muted-foreground">{o.fecha_recepcion ? fmtLocalDate(o.fecha_recepcion) : "—"}</span>
+            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onEditar(o)} title="Editar datos"><Pencil className="h-3 w-3" /></Button>
+            <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => onEliminar(o)} title="Eliminar"><Trash2 className="h-3 w-3" /></Button>
+          </div>
+        ))}
+      </div>
+      <Button variant="outline" size="sm" className="h-6 px-1.5 text-[11px] shrink-0" onClick={onAgregar}>
+        <Upload className="h-3 w-3 mr-0.5" />Agregar
+      </Button>
+    </div>
+  );
+}
+
 const TIPOS_INCIDENCIA = [
   "Documento faltante","Inconsistencia en factura","Diferencia de peso/cantidad",
   "Retención en aduana","Inspección física","Retraso de naviera","Cargo adicional","Dirección incorrecta","Otro",
