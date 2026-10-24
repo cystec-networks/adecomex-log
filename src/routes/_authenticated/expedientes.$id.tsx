@@ -47,6 +47,7 @@ import { AplicarCertificadoPartidas } from "@/components/aplicar-certificado-par
 import { OficioRectificacionButton } from "@/components/oficio-rectificacion-button";
 import { PaqueteRectificacionButton } from "@/components/paquete-rectificacion-button";
 import { CorreoDgaButton } from "@/components/correo-dga-button";
+import { PaqueteFacturaCliente } from "@/components/paquete-factura-cliente";
 
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
@@ -3169,12 +3170,13 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
         </CardContent>
       </Card>
 
-      {otrosTipos.length > 0 && (
+      <>
         <Card>
           <CardHeader className="px-4 pt-3 pb-1">
             <CardTitle className="text-sm">Otros documentos del expediente</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
+            <div className="px-4"><PaqueteFacturaCliente expedienteId={expedienteId} /></div>
             <div className="overflow-x-auto px-4 pb-2">
               <div className="min-w-[46rem]">
                 {otrosTipos.map((d) => (
@@ -3192,7 +3194,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
             </div>
           </CardContent>
         </Card>
-      )}
+      </>
 
       <Dialog open={!!confirmacion} onOpenChange={(o) => { if (!o) cerrarConfirmacion(false); }}>
         <DialogContent>
