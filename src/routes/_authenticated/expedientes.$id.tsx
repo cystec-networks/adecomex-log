@@ -1,5 +1,5 @@
 import { construirObservaciones, contenedoresValidos, contenedoresDesdeTabla, descripcionBorrador, tipoCargaPorDefecto, estructuraVacia, normalizarRemarkSiga, TIPOS_CARGA_OBS, type ObservacionesEstructura } from "@/lib/observaciones-expediente";
-import { calcularResultadosLiquidacion, valorRealInicial, costoUnitarioReal } from "@/lib/liquidacion-final";
+import { calcularResultadosLiquidacion, valorRealInicial, costoUnitarioReal, precioVentaPorGanancia, margenSobreVenta } from "@/lib/liquidacion-final";
 import { costosAutomaticosLiquidacion } from "@/lib/costos-automaticos-liquidacion";
 import { impuestoPantallaRd, impuestoEditadoUsd } from "@/lib/liquidacion-moneda";
 import { resumenImportacion } from "@/lib/resumen-importacion";
