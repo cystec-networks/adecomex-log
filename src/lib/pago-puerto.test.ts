@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { normalizarPagoPuerto, documentoPagoPuerto, conceptoPagoPuerto, validarPagoPuerto, guardarPagoExclusivo } from "./pago-puerto";
+import { normalizarPagoPuerto, documentoPagoPuerto, conceptoPagoPuerto, validarPagoPuerto, guardarPagoExclusivo, resumenPagoPuerto } from "./pago-puerto";
 describe("Comprobantes de pagos portuarios", () => {
   it("Gestión Aduanal conserva NCF y fecha y se destina a Finanzas", () => {
     const p = normalizarPagoPuerto({ monto: 11800, moneda: "DOP", fecha: "2026-10-24", referencia: "E310000000335", tipo: "gestion_aduanal", confianza: "alta" });
