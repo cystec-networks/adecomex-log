@@ -39,6 +39,6 @@ Scope detail headers to their class; use independent content-sized space-between
 - Keep chapter notes in a separate read-only query/panel and admin-only invoker import, so tariff suggestions and the main importer remain unchanged.
 - Use ImporteLiquidacionInput and liquidacion-moneda for formatted tax editing; preserve USD drafts, calculations, inventory and PDF.
 
-- Copiloto selects real eight-digit leaves, normalizes nature, and ranks manual alternatives. OCR reuses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
-- Resolve certificate parties via `terceros-certificado`; catalog `rol_siga` classifies commercial records, not permissions, preventing identities from crossing SIGA roles.
-- Use shared replacement and generation lock for rectification packages across both menus; email preparation never creates/downloads PDFs, preventing duplicate documents.
+- Copiloto selects real eight-digit leaves, normalizes nature/ranks alternatives. OCR uses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
+- Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
+- Rectification packages share replacement/locking across menus; email never creates/downloads PDFs.

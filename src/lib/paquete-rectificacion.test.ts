@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test";
+import { describe, it as test } from "node:test";
+import assert from "node:assert/strict";
 import { generarPaqueteExclusivo, reemplazarPaquete } from "./paquete-rectificacion";
 
 describe("un único Paquete Rectificación Técnica", () => {
@@ -19,33 +20,33 @@ describe("un único Paquete Rectificación Técnica", () => {
   test("primera generación guarda exactamente una entrada", async () => {
     const r = repositorio([]);
     await reemplazarPaquete(r.repo);
-    expect(r.filas.length).toBe(1);
-    expect(r.inserts()).toBe(1);
+    assert.equal(r.filas.length, 1);
+    assert.equal(r.inserts(), 1);
   });
   test("segunda generación reemplaza sin insertar otra fila", async () => {
     const r = repositorio([]);
     await reemplazarPaquete(r.repo);
     await reemplazarPaquete(r.repo);
-    expect(r.filas.map((d) => d.id)).toEqual(["nuevo"]);
-    expect(r.actualizados).toEqual(["nuevo"]);
-    expect(r.inserts()).toBe(1);
+    assert.deepEqual(r.filas.map((d) => d.id), ["nuevo"]);
+    assert.deepEqual(r.actualizados, ["nuevo"]);
+    assert.equal(r.inserts(), 1);
   });
   test("consolida paquetes duplicados conservando la fila vigente", async () => {
     const r = repositorio(["vigente", "anterior", "duplicado"]);
     await reemplazarPaquete(r.repo);
-    expect(r.filas.map((d) => d.id)).toEqual(["vigente"]);
-    expect(r.actualizados).toEqual(["vigente"]);
-    expect(r.inserts()).toBe(0);
+    assert.deepEqual(r.filas.map((d) => d.id), ["vigente"]);
+    assert.deepEqual(r.actualizados, ["vigente"]);
+    assert.equal(r.inserts(), 0);
   });
   test("dos menús no pueden generar simultáneamente para el mismo expediente", async () => {
     let terminar: (() => void) | undefined;
     const primera = generarPaqueteExclusivo("exp", () => new Promise<void>((resolve) => { terminar = resolve; }));
     let ejecuciones = 0;
-    expect(await generarPaqueteExclusivo("exp", async () => { ejecuciones++; })).toBe(false);
-    expect(ejecuciones).toBe(0);
+    assert.equal(await generarPaqueteExclusivo("exp", async () => { ejecuciones++; }), false);
+    assert.equal(ejecuciones, 0);
     terminar?.();
     await primera;
-    expect(await generarPaqueteExclusivo("exp", async () => { ejecuciones++; })).toBe(true);
-    expect(ejecuciones).toBe(1);
+    assert.equal(await generarPaqueteExclusivo("exp", async () => { ejecuciones++; }), true);
+    assert.equal(ejecuciones, 1);
   });
 });
