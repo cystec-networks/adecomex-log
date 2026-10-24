@@ -1,5 +1,6 @@
 import { construirObservaciones, contenedoresValidos, contenedoresDesdeTabla, descripcionBorrador, tipoCargaPorDefecto, estructuraVacia, normalizarRemarkSiga, TIPOS_CARGA_OBS, type ObservacionesEstructura } from "@/lib/observaciones-expediente";
-import { calcularResultadosLiquidacion, valorRealInicial } from "@/lib/liquidacion-final";
+import { calcularResultadosLiquidacion, valorRealInicial, costoUnitarioReal } from "@/lib/liquidacion-final";
+import { costosAutomaticosLiquidacion } from "@/lib/costos-automaticos-liquidacion";
 import { impuestoPantallaRd, impuestoEditadoUsd } from "@/lib/liquidacion-moneda";
 import { resumenImportacion } from "@/lib/resumen-importacion";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -6137,7 +6138,24 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
   const { data: filasServLiq = [] } = useFilasServicioAduanero(exp.id);
   const { data: tarifasLiq = [] } = useTarifasServicioAduanero();
   const servicioLiqUsd = totalServicioUsd(filasServLiq, tarifasLiq);
-  const filasAdic = (costosAdic ?? []) as any[];
+  // Las mismas claves de Transportes/Finanzas mantienen las lecturas actualizadas al editar allí.
+  const { data: transportesLiq = [] } = useQuery({
+    queryKey: ["transportes-por-expediente", exp.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("transportes").select("*").eq("expediente_id", exp.id).is("eliminado_en", null).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: gastosLiq = [] } = useQuery({
+    queryKey: ["gastos", exp.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("gastos").select("*").eq("expediente_id", exp.id).is("deleted_at", null).order("created_at");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const filasAdic = [...(costosAdic ?? []), ...costosAutomaticosLiquidacion(transportesLiq, gastosLiq)];
   const gastosAdicionales = totalCostoMercanciaRd(filasAdic.filter((c) => c.moneda !== "USD"), servicioLiqUsd);
   const gastosAdicionalesUsdDirecto = totalCostoMercanciaRd(filasAdic.filter((c) => c.moneda === "USD"), servicioLiqUsd);
   const tasaCambio = Number(exp.tasa_cambio_usada) || 0;
@@ -6221,7 +6239,7 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
     const ir = num(it, "isc_real");
     const tr = num(it, "itbis_real");
     const cv = num(it, "costo_venta_unitario");
-    const costoUnit = cant > 0 ? (est.cifLinea + (gr ?? 0) + (ir ?? 0) + gastosAdicLinea) / cant : 0;
+    const costoUnit = costoUnitarioReal(est.cifLinea, gr ?? 0, ir ?? 0, gastosAdicionalesUSD, shareLinea, cant);
     return { fob, est, cant, gr, ir, tr, cv, costoUnit, gastosAdicLinea };
   };
 
@@ -6547,7 +6565,7 @@ function ResultadosLiquidacionView({ r, tasaCambio }: { r: ReturnType<typeof cal
             <div className="text-xs text-muted-foreground">Sin costos registrados</div>
           ) : r.costosMercancia.map((c, i) => (
             <div key={i} className={`grid grid-cols-[1fr_auto_auto] gap-3 text-xs py-0.5 ${c.reemplazada ? "text-muted-foreground line-through" : ""}`}>
-              <span className="truncate">{c.concepto}{c.reemplazada ? " (reemplazada)" : ""}</span>
+              <span className="min-w-0 break-words">{c.concepto}{c.reemplazada ? " (reemplazada)" : ""}</span>
               <span className="text-right w-20 tabular-nums">{c.dop == null ? "s/t" : nf(c.dop)}</span>
               <span className="text-right w-20 tabular-nums">{c.usd == null ? "s/t" : nf(c.usd)}</span>
             </div>
