@@ -49,7 +49,7 @@ import { PaqueteRectificacionButton } from "@/components/paquete-rectificacion-b
 import { CorreoDgaButton } from "@/components/correo-dga-button";
 import { PaqueteFacturaCliente } from "@/components/paquete-factura-cliente";
 import { EscanearPagoPuerto } from "@/components/escanear-pago-puerto";
-import { esDocumentoResultadoDga, camposDesdeDocumentoDga, completarResultadoDga } from "@/lib/resultado-dga-documentos";
+import { esDocumentoResultadoDga, camposDesdeDocumentoDga, completarResultadoDga, type CamposResultadoDga } from "@/lib/resultado-dga-documentos";
 import { extractSolicitudFromDocument } from "@/lib/ai-ocr.functions";
 
 import { CatalogCombobox } from "@/components/catalog-combobox";
@@ -3035,9 +3035,11 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           const campos = completarResultadoDga(actual, camposDesdeDocumentoDga(tipo, res.resultado_dga ?? {}));
           let completados = 0;
           for (const [key, value] of Object.entries(campos)) {
+            const campo = key as keyof CamposResultadoDga;
+            const previo = actual[campo];
             // Condición atómica por campo: una edición concurrente nunca pierde su valor.
-            let query = supabase.from("expedientes").update({ [key]: value }).eq("id", expedienteId);
-            query = actual[key as keyof typeof actual] == null ? query.is(key, null) : query.eq(key, actual[key as keyof typeof actual]);
+            let query = supabase.from("expedientes").update({ [campo]: value } as CamposResultadoDga).eq("id", expedienteId);
+            query = previo == null ? query.is(campo, null) : query.eq(campo, previo);
             const { data: updated, error } = await query.select("id");
             if (error) throw error;
             if (updated?.length) completados++;
