@@ -25,24 +25,41 @@ describe("Paquete de Envío Factura Cliente", () => {
     assert.ok(result.bytes);
     assert.equal((await PDFDocument.load(result.bytes)).getPageCount(), 7);
   });
-  it("sin PDF de e-CF genera el resto sin sustituirlo por otro documento", async () => {
+  it("sin PDF de e-CF bloquea incluso con los otros siete documentos disponibles", async () => {
     const sources = fuentes(); sources[0].ruta = null;
-    const result = await combinarFacturaCliente(sources, descargar);
-    assert.deepEqual(result.faltantes, ["Factura de Gestión Aduanal"]);
-    assert.equal(result.incluidos.length, 7);
+    let descargas = 0;
+    await assert.rejects(combinarFacturaCliente(sources, async (ruta) => { descargas++; return descargar(ruta); }), /falta adjuntar el PDF de la Factura de Gestión Aduanal en Finanzas/);
+    assert.equal(descargas, 0);
   });
   it("sin ninguna fuente no guarda un PDF vacío", async () => {
-    const result = await combinarFacturaCliente(fuentesFacturaCliente([]), descargar);
-    assert.equal(result.bytes, null);
-    assert.equal(result.faltantes.length, 8);
+    await assert.rejects(combinarFacturaCliente(fuentesFacturaCliente([]), descargar), /falta adjuntar el PDF/);
+  });
+  it("factura ilegible bloquea sin generar un paquete parcial", async () => {
+    await assert.rejects(combinarFacturaCliente(fuentes(), async () => new ArrayBuffer(0)), /Factura de Gestión Aduanal no está disponible o es inválido/);
+  });
+  it("solo con la factura genera y avisa los siete faltantes opcionales", async () => {
+    const result = await combinarFacturaCliente(fuentesFacturaCliente([], "0.pdf"), descargar);
+    assert.equal(result.faltantes.length, 7);
+    assert.deepEqual(result.incluidos, ["Factura de Gestión Aduanal"]);
+    assert.ok(result.bytes);
+    assert.equal((await PDFDocument.load(result.bytes)).getPageCount(), 1);
   });
   it("correo selecciona contabilidad y contacto capturado", () => {
-    const url = new URL(correoFacturaCliente("202609I340", { email: "cliente@example.com" }));
+    const url = new URL(correoFacturaCliente("202609I340", { email: "cliente@example.com" }, "E310000000001"));
     assert.equal(url.searchParams.get("authuser"), "contabilidad@adecomex.com");
     assert.equal(url.searchParams.get("from"), "contabilidad@adecomex.com");
     assert.equal(url.searchParams.get("to"), "cliente@example.com");
   });
   it("correo sin contacto deja Para vacío", () => {
-    assert.equal(new URL(correoFacturaCliente("202609I340", {})).searchParams.get("to"), "");
+    assert.equal(new URL(correoFacturaCliente("202609I340", {}, "E310000000001")).searchParams.get("to"), "");
+  });
+  it("correo incorpora el e-NCF vinculado, el cliente y el expediente reales", () => {
+    const url = new URL(correoFacturaCliente("202609I340", { nombre: "Cliente real" }, "E310000000025"));
+    assert.ok(url.searchParams.get("body")?.includes("Factura No. E310000000025"));
+    assert.ok(url.searchParams.get("body")?.includes("Registro # 202609I340"));
+    assert.ok(url.searchParams.get("body")?.includes("Cliente real"));
+  });
+  it("sin e-NCF no inventa un número para el correo", () => {
+    assert.throws(() => correoFacturaCliente("202609I340", {}, " "), /Falta el e-NCF/);
   });
 });
