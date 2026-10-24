@@ -6,8 +6,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { OFICIO_RECTIFICACION } from "@/lib/oficios";
+import { generarPaqueteExclusivo, reemplazarPaquete, PAQUETE_TIPO_DOCUMENTO } from "@/lib/paquete-rectificacion";
 
-export const PAQUETE_TIPO_DOCUMENTO = "Paquete Rectificación Técnica";
+export { PAQUETE_TIPO_DOCUMENTO } from "@/lib/paquete-rectificacion";
 
 /** Orden fijo del paquete. `tipos` = tipos de documento aceptados (el primero es el oficial). */
 const ORDEN: { etiqueta: string; tipos: string[]; grupo?: string }[] = [
@@ -31,6 +32,7 @@ export function PaqueteRectificacionButton({ expedienteId }: { expedienteId: str
   const generar = async () => {
     setCargando(true);
     try {
+      await generarPaqueteExclusivo(expedienteId, async () => {
       const [docsRes, permRes, expRes] = await Promise.all([
         supabase.from("documentos").select("tipo, storage_path, created_at").eq("expediente_id", expedienteId).order("created_at", { ascending: false }),
         supabase.from("permisos").select("tipo, documento_url, created_at").eq("expediente_id", expedienteId).is("eliminado_en", null).order("created_at", { ascending: false }),
@@ -44,8 +46,8 @@ export function PaqueteRectificacionButton({ expedienteId }: { expedienteId: str
       const gruposPresentes = new Set<string>();
       for (const item of ORDEN) {
         const d = item.tipos.map((t) => docs.find((x) => x.tipo === t && esPdf(x.storage_path))).find(Boolean);
-        if (d) {
-          rutas.push(d.storage_path!);
+        if (d?.storage_path) {
+          rutas.push(d.storage_path);
           if (item.grupo) gruposPresentes.add(item.grupo);
         } else if (item.grupo) gruposFaltantes.set(item.grupo, [...(gruposFaltantes.get(item.grupo) ?? []), item.etiqueta]);
         else faltan.push(item.etiqueta);
@@ -56,7 +58,7 @@ export function PaqueteRectificacionButton({ expedienteId }: { expedienteId: str
       const permisos = (permRes.data ?? []).filter((p) => esPdf(p.documento_url));
       const permiso =
         permisos.find((p) => p.tipo === "agricola") ?? permisos.find((p) => p.tipo === "fitosanitario") ?? permisos[0];
-      if (permiso) rutas.push(permiso.documento_url!);
+      if (permiso?.documento_url) rutas.push(permiso.documento_url);
       else faltan.push("Permiso VUCE de Agricultura (módulo Permisos)");
 
       if (faltan.length) {
@@ -79,20 +81,48 @@ export function PaqueteRectificacionButton({ expedienteId }: { expedienteId: str
       }
       const bytes = await final.save();
       const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
-      const hoy = new Date().toLocaleDateString("en-CA");
+      const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Santo_Domingo" });
       const nombre = `Paquete Rectificacion Tecnica ${expRes.data?.numero ?? ""} ${hoy}`.replace(/\s+/g, " ").trim();
       const path = `${expedienteId}/${Date.now()}_${nombre.replace(/\s+/g, "_")}.pdf`;
       const up = await supabase.storage.from("documentos").upload(path, blob, { contentType: "application/pdf" });
       if (up.error) throw up.error;
-      const ins = await supabase.from("documentos").insert({
+      const registro = {
         expediente_id: expedienteId,
         tipo: PAQUETE_TIPO_DOCUMENTO,
         storage_path: path,
-        estado: "recibido",
+        estado: "recibido" as const,
         fecha_recepcion: hoy,
         observaciones: `${PAQUETE_TIPO_DOCUMENTO} - ${hoy} (${rutas.length} documentos)`,
-      });
-      if (ins.error) throw ins.error;
+      };
+      try {
+        await reemplazarPaquete({
+          listar: async () => {
+            const { data, error } = await supabase.from("documentos").select("id, storage_path")
+              .eq("expediente_id", expedienteId).eq("tipo", PAQUETE_TIPO_DOCUMENTO)
+              .order("created_at", { ascending: false }).order("id");
+            if (error) throw error;
+            return data ?? [];
+          },
+          actualizar: async (id) => {
+            const { error } = await supabase.from("documentos").update({ ...registro, file_hash: null })
+              .eq("id", id).eq("expediente_id", expedienteId).eq("tipo", PAQUETE_TIPO_DOCUMENTO);
+            if (error) throw error;
+          },
+          insertar: async () => {
+            const { error } = await supabase.from("documentos").insert(registro);
+            if (error) throw error;
+          },
+          eliminarDuplicados: async (ids) => {
+            const { error } = await supabase.from("documentos").delete().in("id", ids)
+              .eq("expediente_id", expedienteId).eq("tipo", PAQUETE_TIPO_DOCUMENTO);
+            if (error) throw error;
+          },
+        });
+      } catch (error) {
+        // No retirar un archivo que ya pudiera haber quedado enlazado al actualizar.
+        qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
+        throw error;
+      }
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
@@ -100,6 +130,7 @@ export function PaqueteRectificacionButton({ expedienteId }: { expedienteId: str
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
       toast.success("Paquete generado y guardado en Documentos");
+      });
     } catch (err: any) {
       toast.error(err?.message ?? "No se pudo generar el paquete");
     } finally {

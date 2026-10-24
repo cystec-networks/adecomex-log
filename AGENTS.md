@@ -11,13 +11,13 @@
 
 Apply expediente transitions in `estados-expediente.ts` and `validar_transicion_expediente()` so manual and automatic changes share requirements.
 
-Use `expediente-numero` with `--brand-red` for consistent bold red identifiers.
+Use `expediente-numero` with `--brand-red` for bold red identifiers.
 
-Payment slips resolve linked transport number before reserved TR; TF controls remain secondary for reconciliation.
+Payment slips prefer linked transport number over reserved TR; TF stays secondary for reconciliation.
 
 Share the preliquidation PDF between expediente and quote to prevent divergent summaries.
 
-Use reserved grid slots for expediente headers: desktop controls stay on one row, overflow menus enter More actions, mobile keeps accessible rows.
+Expediente headers reserve grid slots: desktop controls in one row, overflow in More actions, accessible mobile rows.
 
 Keep new-expediente actions in two fixed header rows; portal form-owned submit controls there to preserve validation without floating panels.
 
@@ -39,5 +39,6 @@ Scope detail headers to their class; use independent content-sized space-between
 - Keep chapter notes in a separate read-only query/panel and admin-only invoker import, so tariff suggestions and the main importer remain unchanged.
 - Use ImporteLiquidacionInput and liquidacion-moneda for formatted tax editing; preserve USD drafts, calculations, inventory and PDF.
 
-- Copiloto selects real eight-digit leaves, normalizes nature, and ranks manual alternatives. OCR reuses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
-- Resolve certificate parties via `terceros-certificado`; catalog `rol_siga` classifies commercial records, not permissions, preventing identities from crossing SIGA roles.
+- Copiloto selects real eight-digit leaves, normalizes nature/ranks alternatives. OCR uses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
+- Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
+- Rectification packages share replacement/locking across menus; email never creates/downloads PDFs.
