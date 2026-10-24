@@ -204,8 +204,9 @@ const TIPOS_DOC = [
   "Factura proforma","Factura comercial","Bill of Lading","Guía aérea","Lista de empaque",
   "Certificado de origen","Certificado Sanitario/Fitosanitario","Certificado de análisis",
   "Declaración Única Aduanera (DUA)","Reporte de Liquidación de Impuestos",
+  "Recibo Pago de Impuestos","Recibo Pago de Contenedor","Factura Pago de Almacenaje","Factura Pago Cargos Locales",
   "Permiso VUCE previo","Orden de compra",
-  "Carta de instrucción","Póliza de seguro","DUA","Evidencia de entrega","Otro",
+  "Carta de instrucción","Póliza de seguro","DUA","Evidencia de entrega","Otro (Liquidación)","Otro",
 ];
 
 const CHECKLIST_DOCUMENTOS_BASE = [
