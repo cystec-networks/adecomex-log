@@ -35,7 +35,7 @@ import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from "
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday, hoyRD, hoyRDISO } from "@/lib/dates";
-import { resumenPagoPuerto } from "@/lib/pago-puerto";
+import { resumenPagoPuerto, esConceptoPagoPuerto } from "@/lib/pago-puerto";
 import { calcImpuestosLinea } from "@/lib/impuestos";
 import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
 import { conConsignatarioEfectivo, fetchConsignatarioEfectivo } from "@/lib/consignatario-efectivo";
@@ -5447,8 +5447,8 @@ function PinesDesdeCostos({ expedienteId }: { expedienteId?: string }) {
     queryFn: async () =>
       (await supabase.from("costos_producto").select("*").eq("expediente_id", expedienteId!).order("created_at")).data ?? [],
   });
-  const linea = (etiqueta: string, concepto: string) => {
-    const rs = (filas as any[]).filter((c) => c.concepto === concepto);
+  const linea = (etiqueta: string, tipo: "almacenaje" | "contenedor") => {
+    const rs = (filas as any[]).filter((c) => esConceptoPagoPuerto(c.concepto, tipo));
     if (!rs.length) return <div><span className="font-medium">{etiqueta}:</span> <span className="text-muted-foreground">Sin registro en Costos</span></div>;
     return <div><span className="font-medium">{etiqueta}:</span> {rs.map((c, i) => {
       const { monto, detalle } = resumenPagoPuerto(c.monto_real, c.moneda, c.observaciones);
@@ -5458,8 +5458,8 @@ function PinesDesdeCostos({ expedienteId }: { expedienteId?: string }) {
   };
   return (
     <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
-      {linea("Almacenaje", "Almacenaje")}
-      {linea("Contenedor", "Demora de contenedor")}
+      {linea("Almacenaje", "almacenaje")}
+      {linea("Contenedor", "contenedor")}
       <div className="text-[11px] text-muted-foreground">Solo lectura — se registra en «Costo de mercancía (para Liquidación)», pestaña Costos.</div>
     </div>
   );

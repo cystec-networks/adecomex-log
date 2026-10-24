@@ -23,6 +23,17 @@ export function conceptoPagoPuerto(tipo: TipoPagoPuerto, referencia: string) {
   const prefijo = referencia.trim().match(/^(DPW|DPH)/i)?.[0].toUpperCase();
   return `${tipo === "almacenaje" ? "Almacenaje" : "Depósito de Contenedor"}${prefijo ? ` — ${prefijo}` : ""}`;
 }
+/** Reconoce el concepto guardado en Costos por tipo de pago, sin exigir texto exacto (acepta sufijos « — DPW» y variantes históricas). */
+export function esConceptoPagoPuerto(concepto: unknown, tipo: TipoPagoPuerto): boolean {
+  const c = String(concepto ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const prefijos: Record<TipoPagoPuerto, string[]> = {
+    almacenaje: ["almacenaje"],
+    contenedor: ["deposito de contenedor", "demora de contenedor", "pago de contenedor", "contenedor"],
+    gestion_aduanal: ["gestion aduanal"],
+    cargos_locales: ["cargos locales"],
+  };
+  return prefijos[tipo].some((p) => c.startsWith(p));
+}
 export function validarPagoPuerto(p: { tipo: string; monto: string; moneda: string }) {
   if (!TIPOS_PAGO_PUERTO.includes(p.tipo as TipoPagoPuerto)) throw new Error("Selecciona el tipo de pago antes de guardar.");
   if (!p.monto.trim() || !Number.isFinite(Number(p.monto)) || Number(p.monto) <= 0) throw new Error("Confirma un monto pagado mayor que cero.");

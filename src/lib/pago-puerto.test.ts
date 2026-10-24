@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { normalizarPagoPuerto, documentoPagoPuerto, conceptoPagoPuerto, validarPagoPuerto, guardarPagoExclusivo, resumenPagoPuerto } from "./pago-puerto";
+import { normalizarPagoPuerto, documentoPagoPuerto, conceptoPagoPuerto, validarPagoPuerto, guardarPagoExclusivo, resumenPagoPuerto, esConceptoPagoPuerto } from "./pago-puerto";
 describe("Comprobantes de pagos portuarios", () => {
   it("Gestión Aduanal conserva NCF y fecha y se destina a Finanzas", () => {
     const p = normalizarPagoPuerto({ monto: 11800, moneda: "DOP", fecha: "2026-10-24", referencia: "E310000000335", tipo: "gestion_aduanal", confianza: "alta" });
@@ -52,5 +52,15 @@ describe("Comprobantes de pagos portuarios", () => {
   it("deja sin monto los costos sin importe capturado", () => {
     assert.deepEqual(resumenPagoPuerto(null, "DOP", "PIN PORTCOLLECT"), { monto: "", detalle: "PIN PORTCOLLECT" });
     assert.equal(resumenPagoPuerto("", "DOP", "").monto, "");
+  });
+  it("reconoce el Depósito de Contenedor guardado en Costos como pago de contenedor", () => {
+    assert.equal(esConceptoPagoPuerto("Depósito de Contenedor", "contenedor"), true);
+    assert.equal(esConceptoPagoPuerto("Depósito de Contenedor — DPH", "contenedor"), true);
+    assert.equal(esConceptoPagoPuerto("Demora de contenedor", "contenedor"), true);
+    assert.equal(esConceptoPagoPuerto("Almacenaje", "contenedor"), false);
+    assert.equal(esConceptoPagoPuerto("Depósito de Contenedor", "almacenaje"), false);
+    assert.equal(esConceptoPagoPuerto("Almacenaje — DPW", "almacenaje"), true);
+    assert.equal(esConceptoPagoPuerto("Gestión Aduanal", "gestion_aduanal"), true);
+    assert.equal(esConceptoPagoPuerto("Cargos Locales", "cargos_locales"), true);
   });
 });
