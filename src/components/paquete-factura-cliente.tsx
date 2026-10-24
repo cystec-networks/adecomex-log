@@ -8,7 +8,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { supabase } from "@/integrations/supabase/client";
 import { conConsignatarioEfectivo } from "@/lib/consignatario-efectivo";
 import { generarPaqueteExclusivo, reemplazarPaquete } from "@/lib/paquete-rectificacion";
-import { PAQUETE_FACTURA_CLIENTE, CORREO_CONTABILIDAD, fuentesFacturaCliente, combinarFacturaCliente, correoFacturaCliente } from "@/lib/paquete-factura-cliente";
+import { PAQUETE_FACTURA_CLIENTE, CORREO_CONTABILIDAD, FACTURA_PDF_OBLIGATORIA, fuentesFacturaCliente, combinarFacturaCliente, correoFacturaCliente } from "@/lib/paquete-factura-cliente";
+
+async function facturaVinculada(expedienteId: string, facturaEcfId: string | null) {
+  let fid = facturaEcfId;
+  if (!fid) {
+    const { data, error } = await supabase.from("facturas").select("factura_ecf_id").eq("expediente_id", expedienteId).is("deleted_at", null).neq("estado", "anulada").order("created_at", { ascending: false });
+    if (error) throw error;
+    fid = data?.find((f) => f.factura_ecf_id)?.factura_ecf_id ?? null;
+  }
+  if (!fid) return null;
+  const { data, error } = await supabase.from("facturas_ecf").select("pdf_url, encf").eq("id", fid).is("eliminado_en", null).maybeSingle();
+  if (error) throw error;
+  return data;
+}
 
 export function PaqueteFacturaCliente({ expedienteId, menu = false }: { expedienteId: string; menu?: boolean }) {
   const qc = useQueryClient();
@@ -21,22 +34,15 @@ export function PaqueteFacturaCliente({ expedienteId, menu = false }: { expedien
     setCargando(true);
     try {
       await generarPaqueteExclusivo(`factura-cliente:${expedienteId}`, async () => {
-        const [expRes, docsRes, cobrosRes] = await Promise.all([
+        const [expRes, docsRes] = await Promise.all([
           supabase.from("expedientes").select("numero, factura_ecf_id").eq("id", expedienteId).single(),
           supabase.from("documentos").select("tipo, storage_path").eq("expediente_id", expedienteId).order("created_at", { ascending: false }),
-          supabase.from("facturas").select("factura_ecf_id").eq("expediente_id", expedienteId).is("deleted_at", null).neq("estado", "anulada").order("created_at", { ascending: false }),
         ]);
         if (expRes.error) throw expRes.error;
         if (docsRes.error) throw docsRes.error;
-        if (cobrosRes.error) throw cobrosRes.error;
-        const fid = expRes.data.factura_ecf_id || cobrosRes.data?.find((f) => f.factura_ecf_id)?.factura_ecf_id;
-        let pdfFactura: string | null = null;
-        if (fid) {
-          const { data, error } = await supabase.from("facturas_ecf").select("pdf_url").eq("id", fid).is("eliminado_en", null).maybeSingle();
-          if (error) throw error;
-          pdfFactura = data?.pdf_url ?? null;
-        }
-        const combinado = await combinarFacturaCliente(fuentesFacturaCliente(docsRes.data ?? [], pdfFactura), async (ruta) => {
+        const factura = await facturaVinculada(expedienteId, expRes.data.factura_ecf_id);
+        if (!factura?.pdf_url?.trim()) throw new Error(FACTURA_PDF_OBLIGATORIA);
+        const combinado = await combinarFacturaCliente(fuentesFacturaCliente(docsRes.data ?? [], factura.pdf_url), async (ruta) => {
           const { data, error } = await supabase.storage.from("documentos").download(ruta);
           if (error || !data) throw error ?? new Error("Archivo no disponible");
           return data.arrayBuffer();
@@ -79,7 +85,7 @@ export function PaqueteFacturaCliente({ expedienteId, menu = false }: { expedien
         else toast.success("Paquete completo generado y guardado en Documentos");
       });
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "No se pudo generar el paquete");
+      toast.error(error instanceof Error ? error.message : "No se pudo generar el paquete", { duration: 10000 });
     } finally {
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
       setCargando(false);
@@ -91,14 +97,15 @@ export function PaqueteFacturaCliente({ expedienteId, menu = false }: { expedien
     setCorreoCargando(true);
     try {
       const [expRes, paqueteRes] = await Promise.all([
-        supabase.from("expedientes").select("id, numero, clientes(*)").eq("id", expedienteId).single(),
+        supabase.from("expedientes").select("id, numero, factura_ecf_id, clientes(*)").eq("id", expedienteId).single(),
         supabase.from("documentos").select("storage_path").eq("expediente_id", expedienteId).eq("tipo", PAQUETE_FACTURA_CLIENTE).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
       if (expRes.error) throw expRes.error;
       if (paqueteRes.error) throw paqueteRes.error;
       if (!paqueteRes.data?.storage_path) throw new Error("Primero genera el paquete de Factura Cliente.");
       const exp = await conConsignatarioEfectivo(expRes.data);
-      const url = correoFacturaCliente(exp.numero, exp.clientes ?? {});
+      const factura = await facturaVinculada(expedienteId, expRes.data.factura_ecf_id);
+      const url = correoFacturaCliente(exp.numero, exp.clientes ?? {}, factura?.encf ?? "");
       if (win) win.location.href = url;
       else window.open(url, "_blank");
       setAvisoCorreo(true);
