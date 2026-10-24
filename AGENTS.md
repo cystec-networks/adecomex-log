@@ -13,9 +13,9 @@ Apply transitions via `estados-expediente.ts` and `validar_transicion_expediente
 
 Use `expediente-numero`/`--brand-red` for bold red IDs.
 
-Payment slips prefer linked transport number over reserved TR; TF stays secondary for reconciliation.
+Payment slips use linked transport number before reserved TR; TF is secondary.
 
-Share preliquidation PDF between expediente and quote to avoid divergent summaries.
+Share expediente/quote preliquidation PDF to prevent divergence.
 
 Expediente headers reserve grid slots: desktop controls in one row, overflow in More actions, accessible mobile rows.
 
