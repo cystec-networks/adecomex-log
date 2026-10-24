@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useGmailAuthuser } from "@/lib/system-settings";
@@ -11,7 +12,7 @@ import { PAQUETE_TIPO_DOCUMENTO } from "@/components/paquete-rectificacion-butto
 export const DGA_CORREO = "info.correspondenciayarchivo@aduanas.gob.do";
 const ACCION = "correo_dga_preparado";
 
-export function CorreoDgaButton({ expedienteId }: { expedienteId: string }) {
+export function CorreoDgaButton({ expedienteId, menu = false }: { expedienteId: string; menu?: boolean }) {
   const qc = useQueryClient();
   const { authuser } = useGmailAuthuser();
   const [cargando, setCargando] = useState(false);
@@ -110,11 +111,14 @@ export function CorreoDgaButton({ expedienteId }: { expedienteId: string }) {
   const c: any = ultimo?.cambios;
   return (
     <div className="flex flex-col gap-1">
-      <Button type="button" variant="outline" size="sm" onClick={preparar} disabled={cargando}>
+      {menu ? <DropdownMenuItem disabled={cargando} onSelect={(event) => { event.preventDefault(); void preparar(); }}>
+        {cargando ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <Send className="h-4 w-4 shrink-0" />}
+        Preparar Correo a DGA
+      </DropdownMenuItem> : <Button type="button" variant="outline" size="sm" onClick={preparar} disabled={cargando}>
         {cargando ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
         Preparar Correo a DGA
-      </Button>
-      {ultimo && (
+      </Button>}
+      {ultimo && !menu && (
         <span className="text-[11px] text-muted-foreground">
           Último envío preparado: {new Date(ultimo.created_at).toLocaleString("es-DO")}
           {c?.usuario ? ` por ${c.usuario}` : ""} → {c?.destinatario ?? DGA_CORREO}

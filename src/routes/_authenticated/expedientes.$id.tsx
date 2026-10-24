@@ -983,7 +983,7 @@ function DetalleExpediente() {
                        <>
                          <DropdownMenuSeparator />
                          <PaqueteRectificacionButton expedienteId={id} />
-                         <CorreoDgaButton expedienteId={id} />
+                         <CorreoDgaButton expedienteId={id} menu />
                        </>
                      )}
                     {!isNuevo && <>
@@ -1038,7 +1038,7 @@ function DetalleExpediente() {
                          <>
                            <DropdownMenuSeparator />
                            <PaqueteRectificacionButton expedienteId={id} />
-                           <CorreoDgaButton expedienteId={id} />
+                           <CorreoDgaButton expedienteId={id} menu />
                          </>
                        )}
                       <DropdownMenuSeparator />
