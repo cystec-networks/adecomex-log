@@ -3065,10 +3065,50 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   };
 
 
+  const latestByTipo = new Map<string, any>();
+  for (const d of (docs ?? []) as any[]) {
+    const prev = latestByTipo.get(d.tipo);
+    const t = (x: any) => new Date(x?.fecha_recepcion ?? x?.created_at ?? 0).getTime();
+    if (!prev || t(d) >= t(prev)) latestByTipo.set(d.tipo, d);
+  }
+  const otrosDeclaracion = ((docs ?? []) as any[]).filter((d) => d.tipo === TIPO_OTROS_DECLARACION);
+  const otrosLiquidacion = ((docs ?? []) as any[]).filter((d) => d.tipo === TIPO_OTROS_LIQUIDACION);
+  const tiposEnBloques = new Set<string>([
+    ...BLOQUE_DECLARACION.map((b) => b.tipo), ...BLOQUE_LIQUIDACION.map((b) => b.tipo),
+    TIPO_OTROS_DECLARACION, TIPO_OTROS_LIQUIDACION,
+  ]);
+  const otrosTipos = ((docs ?? []) as any[]).filter((d) => !tiposEnBloques.has(d.tipo));
+  const recibidos = CHECKLIST_DOCUMENTOS_BASE.filter((t) => {
+    const d = latestByTipo.get(t);
+    return d && ["recibido", "aprobado", "observado"].includes(d.estado);
+  }).length;
+  const pct = Math.round((recibidos / CHECKLIST_DOCUMENTOS_BASE.length) * 100);
+
+  const filaBloque = (item: { tipo: string; label: string; obligatorio?: boolean }) => (
+    <FilaDocumento
+      key={item.tipo}
+      label={item.label}
+      obligatorio={item.obligatorio}
+      doc={latestByTipo.get(item.tipo)}
+      onUpload={() => { const d = latestByTipo.get(item.tipo); if (d) openEdit(d); else openNuevo(item.tipo); }}
+      onMarcarRecibido={() => marcarRecibido(item.tipo, latestByTipo.get(item.tipo))}
+      onEstado={(v) => { const d = latestByTipo.get(item.tipo); if (d) cambiarEstado(d.id, v); }}
+      onEliminar={() => { const d = latestByTipo.get(item.tipo); if (d) eliminar(d); }}
+    />
+  );
+
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="text-base">Documentos ({docs?.length ?? 0})</CardTitle>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="text-base font-semibold">Documentos ({docs?.length ?? 0})</div>
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <span>Checklist de recepción: {recibidos} de {CHECKLIST_DOCUMENTOS_BASE.length} recibidos</span>
+            <div className="h-1.5 w-24 rounded-full bg-muted overflow-hidden">
+              <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
           <Button size="sm" onClick={() => openNuevo()}><Upload className="h-4 w-4 mr-1" />Subir documento</Button>
           <DialogContent>
@@ -3087,139 +3127,90 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
             <DialogFooter><Button onClick={upload} disabled={uploading}>Guardar</Button></DialogFooter>
           </DialogContent>
         </Dialog>
-      </CardHeader>
+      </div>
 
-      <CardContent className="p-0">
-        {(() => {
-          const latestByTipo = new Map<string, any>();
-          for (const d of (docs ?? []) as any[]) {
-            const prev = latestByTipo.get(d.tipo);
-            const t = (x: any) => new Date(x?.fecha_recepcion ?? x?.created_at ?? 0).getTime();
-            if (!prev || t(d) >= t(prev)) latestByTipo.set(d.tipo, d);
-          }
-          const recibidos = CHECKLIST_DOCUMENTOS_BASE.filter((t) => {
-            const d = latestByTipo.get(t);
-            return d && ["recibido", "aprobado", "observado"].includes(d.estado);
-          }).length;
-          const pct = Math.round((recibidos / CHECKLIST_DOCUMENTOS_BASE.length) * 100);
-          return (
-            <div className="px-4 py-4 border-b bg-muted/20">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-sm font-medium">Checklist de Recepción</div>
-                <div className="text-xs text-muted-foreground">{recibidos} de {CHECKLIST_DOCUMENTOS_BASE.length} documentos recibidos</div>
-              </div>
-              <div className="h-2 w-full rounded-full bg-muted overflow-hidden mb-3">
-                <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
-              </div>
-              <div className="grid gap-1">
-                {CHECKLIST_DOCUMENTOS_BASE.map((t) => {
-                  const d = latestByTipo.get(t);
-                  const st = DOC_ESTADO_STYLE[d?.estado ?? "pendiente"] ?? DOC_ESTADO_STYLE.pendiente;
-                  return (
-                    <div key={t} className="flex items-center gap-3 py-1.5 border-b last:border-0 border-border/50 text-sm">
-                      <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${st.dot}`} />
-                      <span className="flex-1 min-w-0 truncate">{(t === "Factura comercial" || t === "Bill of Lading") && <span className="text-destructive mr-0.5" title="Obligatorio para pasar a Presentado">*</span>}{t}{d?.storage_path && <span className="block text-[11px] text-muted-foreground truncate" title={nombreArchivo(d.storage_path)}>{nombreArchivo(d.storage_path)}</span>}</span>
-                      <span className="w-16 shrink-0 font-mono text-xs text-primary">{d?.storage_path && d?.codigo_siga ? d.codigo_siga : ""}</span>
-                      <span className={`text-xs w-24 shrink-0 ${st.text} inline-flex items-center gap-1`}>
-                        {d ? st.label : "Pendiente"}
-                        {d?.estado === "recibido" && !d?.storage_path && <span className="text-[10px] text-muted-foreground leading-none">(sin archivo)</span>}
-                      </span>
-                      <span className="text-xs text-muted-foreground w-24 shrink-0">{d?.fecha_recepcion ? fmtLocalDate(d.fecha_recepcion) : "—"}</span>
-                      <div className="flex items-center gap-1 shrink-0">
-                        {d?.storage_path && <DocumentoPreviewButton path={d.storage_path} variant="ghost" size="sm" label="Ver" />}
-                        {d?.storage_path ? (
-                          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => openEdit(d)}>
-                            <Upload className="h-3.5 w-3.5 mr-1" />Reemplazar
-                          </Button>
-                        ) : (
-                          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => d ? openEdit(d) : openNuevo(t)}>
-                            <Upload className="h-3.5 w-3.5 mr-1" />Subir
-                          </Button>
-                        )}
-                        {(!d || d.estado === "pendiente") && (
-                          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => marcarRecibido(t, d)}>
-                            <Check className="h-3.5 w-3.5 mr-1" />Marcar recibido
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                {(() => {
-                  const otros = ((docs ?? []) as any[]).filter((d) => d.tipo === "Otro" && d.storage_path);
-                  return (
-                    <div className="flex items-start gap-3 py-1.5 text-sm">
-                      <span className={`h-2.5 w-2.5 rounded-full shrink-0 mt-1.5 ${otros.length ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
-                      <div className="flex-1 min-w-0">
-                        <div>Otros <span className="text-[11px] text-muted-foreground">({otros.length} archivo{otros.length === 1 ? "" : "s"})</span></div>
-                        {otros.map((o) => (
-                          <div key={o.id} className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                            <span className="w-14 shrink-0 font-mono text-primary">{o.codigo_siga ?? ""}</span>
-                            <span className="truncate flex-1 min-w-0" title={nombreArchivo(o.storage_path)}>{nombreArchivo(o.storage_path)}</span>
-                            <DocumentoPreviewButton path={o.storage_path} variant="ghost" size="sm" label="Ver" />
-                          </div>
-                        ))}
-                      </div>
-                      <Button variant="outline" size="sm" className="h-7 text-xs shrink-0" onClick={() => openNuevo("Otro")}>
-                        <Upload className="h-3.5 w-3.5 mr-1" />Agregar
-                      </Button>
-                    </div>
-                  );
-                })()}
+      <Card>
+        <CardHeader className="px-4 pt-3 pb-1">
+          <CardTitle className="text-sm">Documentos Declaración</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto px-4 pb-2">
+            <div className="min-w-[46rem]">
+              {BLOQUE_DECLARACION.map(filaBloque)}
+              <FilaOtros
+                archivos={otrosDeclaracion}
+                onAgregar={() => openNuevo(TIPO_OTROS_DECLARACION)}
+                onEditar={(d) => openEdit(d)}
+                onEstado={(id, v) => cambiarEstado(id, v)}
+                onEliminar={(d) => eliminar(d)}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="px-4 pt-3 pb-1">
+          <CardTitle className="text-sm">Documentos Liquidación</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto px-4 pb-2">
+            <div className="min-w-[46rem]">
+              {BLOQUE_LIQUIDACION.map(filaBloque)}
+              <FilaOtros
+                archivos={otrosLiquidacion}
+                onAgregar={() => openNuevo(TIPO_OTROS_LIQUIDACION)}
+                onEditar={(d) => openEdit(d)}
+                onEstado={(id, v) => cambiarEstado(id, v)}
+                onEliminar={(d) => eliminar(d)}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {otrosTipos.length > 0 && (
+        <Card>
+          <CardHeader className="px-4 pt-3 pb-1">
+            <CardTitle className="text-sm">Otros documentos del expediente</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto px-4 pb-2">
+              <div className="min-w-[46rem]">
+                {otrosTipos.map((d) => (
+                  <FilaDocumento
+                    key={d.id}
+                    label={d.tipo}
+                    doc={d}
+                    onUpload={() => openEdit(d)}
+                    onMarcarRecibido={() => marcarRecibido(d.tipo, d)}
+                    onEstado={(v) => cambiarEstado(d.id, v)}
+                    onEliminar={() => eliminar(d)}
+                  />
+                ))}
               </div>
             </div>
-          );
-        })()}
-        <Dialog open={!!confirmacion} onOpenChange={(o) => { if (!o) cerrarConfirmacion(false); }}>
-          <DialogContent>
-            <DialogHeader><DialogTitle>{confirmacion?.titulo}</DialogTitle></DialogHeader>
-            <p className="text-sm">{confirmacion?.mensaje}</p>
-            {confirmacion?.requiereCheck && (
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={confirmAck} onChange={(e) => setConfirmAck(e.target.checked)} />
-                Confirmo que es intencional: este archivo corresponde a ambas categorías.
-              </label>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => cerrarConfirmacion(false)}>Cancelar</Button>
-              <Button onClick={() => cerrarConfirmacion(true)} disabled={!!confirmacion?.requiereCheck && !confirmAck}>Continuar</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        <table className="w-full text-sm">
-          <thead className="text-xs text-muted-foreground border-b bg-muted/30">
-            <tr><th className="text-left px-4 py-2">Tipo</th><th className="text-left">Estado</th><th className="text-left">Recepción</th><th className="text-left">Vencimiento</th><th /></tr>
-          </thead>
-          <tbody>
-            {(docs ?? []).map((d: any) => {
-              const vd = daysFromToday(d.fecha_vencimiento); const vencido = d.fecha_vencimiento && !isNaN(vd) && vd < 0;
-              return (
-                <tr key={d.id} className="border-b last:border-0">
-                  <td className="px-4 py-2 font-medium"><FileText className="h-4 w-4 inline mr-1 text-muted-foreground" />{d.tipo}{d.codigo_siga && <Badge variant="outline" className="ml-2 font-mono text-[10px]">{d.codigo_siga}</Badge>}</td>
-                  <td>
-                    <Select value={d.estado} onValueChange={(v) => cambiarEstado(d.id, v)}>
-                      <SelectTrigger className="w-36 h-7 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>{["pendiente","recibido","observado","aprobado","vencido"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </td>
-                  <td className="text-xs">{fmtLocalDate(d.fecha_recepcion)}</td>
-                  <td className={`text-xs ${vencido ? "text-destructive font-medium" : ""}`}>{fmtLocalDate(d.fecha_vencimiento)}</td>
-                  <td className="px-4 py-2 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {d.storage_path && <DocumentoPreviewButton path={d.storage_path} variant="ghost" size="sm" label="Ver" />}
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(d)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => eliminar(d)} title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></Button>
-                    </div>
-                  </td>
+          </CardContent>
+        </Card>
+      )}
 
-                </tr>
-              );
-            })}
-            {(!docs || docs.length === 0) && <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Sin documentos.</td></tr>}
-          </tbody>
-        </table>
-      </CardContent>
-    </Card>
+      <Dialog open={!!confirmacion} onOpenChange={(o) => { if (!o) cerrarConfirmacion(false); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{confirmacion?.titulo}</DialogTitle></DialogHeader>
+          <p className="text-sm">{confirmacion?.mensaje}</p>
+          {confirmacion?.requiereCheck && (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={confirmAck} onChange={(e) => setConfirmAck(e.target.checked)} />
+              Confirmo que es intencional: este archivo corresponde a ambas categorías.
+            </label>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => cerrarConfirmacion(false)}>Cancelar</Button>
+            <Button onClick={() => cerrarConfirmacion(true)} disabled={!!confirmacion?.requiereCheck && !confirmAck}>Continuar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 
