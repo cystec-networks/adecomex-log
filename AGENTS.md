@@ -33,11 +33,11 @@ Scope detail headers; use content-sized space-between rows, keep client label/va
 - Group simultaneous PIN and presentation warnings into one list-only deadline entry with both short descriptions; preserve the independent clocks and full detail warnings to avoid hiding payment or legal deadlines.
 - Export DR-CAFTA certificates from the resolved editable preview using native jsPDF text and vector borders, measuring existing cell and text positions to preserve official layouts and annexes without rasterization or losing saved edits.
 - Keep inspection type in the existing canal_riesgo storage field; portal the form-owned selector into the detail header so both editors share draft state and the existing save validation without migrating historical values.
-- Resolve the effective consignee (active endorsement, else original client) via src/lib/consignatario-efectivo.ts in every expediente document generator and new-invoice preload; issued invoices stay frozen.
+- Use consignatario-efectivo.ts (active endorsement, else original client) in every document generator/new-invoice preload; issued invoices stay frozen.
 - Resolve the dispatch-date modal asynchronously within the existing state mutation and reuse fechasDespachoFaltantes for detail-only preventive alerts, preserving permission checks and audit payloads.
 - Share entry suggestions via buscarSugerenciasProducto/resolverSugerenciasProducto (not historical/Real); explicit DGA selections use datosProductoHistorico. Tariff CSV uses staff-checked server import and atomic invoker RPC; no product override writes.
-- Keep chapter notes in a separate read-only query/panel and admin-only invoker import, so tariff suggestions and the main importer remain unchanged.
-- Use ImporteLiquidacionInput and liquidacion-moneda for formatted tax editing; preserve USD drafts, calculations, inventory and PDF.
+- Chapter notes use a separate read-only query/panel and admin invoker import; preserve tariff suggestions/import.
+- Use ImporteLiquidacionInput/liquidacion-moneda for RD$ editing with USD storage. Liquidation reads transport/reimbursements via costos-automaticos-liquidacion; shared unit-cost/results feed UI/PDF without billing writes.
 
 - Copiloto selects real eight-digit leaves, normalizes nature/ranks alternatives. OCR uses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
