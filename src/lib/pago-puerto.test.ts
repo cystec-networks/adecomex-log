@@ -42,4 +42,15 @@ describe("Comprobantes de pagos portuarios", () => {
     assert.equal(ejecutado, false); terminar(); await pendiente;
     assert.equal(await guardarPagoExclusivo("exp", async () => 1), 1);
   });
+  it("muestra el monto antes que fecha, PIN y documento SIGA", () => {
+    assert.deepEqual(resumenPagoPuerto("34976.95", "DOP", "Fecha de pago: 2026-10-24 · PIN/Referencia: Q02910460 · Documento SIGA: OTD-006"), { monto: "RD$34,976.95", detalle: "Fecha de pago: 2026-10-24 · PIN/Referencia: Q02910460 · Documento SIGA: OTD-006" });
+  });
+  it("respeta la moneda del costo y el formato histórico de pago", () => {
+    assert.equal(resumenPagoPuerto("467.00", "USD", "Fecha de pago: 2026-10-23").monto, "US$ 467.00");
+    assert.deepEqual(resumenPagoPuerto("21240.00", "DOP", "PIN DPH · Pagado 21/09/2026"), { monto: "RD$21,240.00", detalle: "PIN DPH, pagado 21/09/2026" });
+  });
+  it("deja sin monto los costos sin importe capturado", () => {
+    assert.deepEqual(resumenPagoPuerto(null, "DOP", "PIN PORTCOLLECT"), { monto: "", detalle: "PIN PORTCOLLECT" });
+    assert.equal(resumenPagoPuerto("", "DOP", "").monto, "");
+  });
 });
