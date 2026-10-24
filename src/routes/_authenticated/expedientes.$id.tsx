@@ -6213,6 +6213,10 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
   };
   const setVal = (id: string, campo: string, v: string) =>
     setDraft((p) => ({ ...p, [id]: { ...(p[id] ?? {}), [campo]: v } }));
+  const setVals = (id: string, campos: Record<string, string>) =>
+    setDraft((p) => ({ ...p, [id]: { ...(p[id] ?? {}), ...campos } }));
+  const modoVenta = (it: any): "directo" | "pct" =>
+    (draft[it.id]?.modo_venta as any) ?? (it.pct_ganancia_venta != null ? "pct" : "directo");
 
   // Adaptación exclusivamente visual: PDF, inventario y persistencia siguen usando US$.
   const tasaValida = Number.isFinite(tasaCambio) && tasaCambio > 0;
@@ -6238,9 +6242,13 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
     const gr = num(it, "gravamen_real");
     const ir = num(it, "isc_real");
     const tr = num(it, "itbis_real");
-    const cv = num(it, "costo_venta_unitario");
     const costoUnit = costoUnitarioReal(est.cifLinea, gr ?? 0, ir ?? 0, gastosAdicionalesUSD, shareLinea, cant);
-    return { fob, est, cant, gr, ir, tr, cv, costoUnit, gastosAdicLinea };
+    const modo = modoVenta(it);
+    const pct = modo === "pct" ? num(it, "pct_ganancia_venta") : null;
+    // En modo %, el precio sigue al costo en vivo hasta que el usuario lo ajuste a mano.
+    const auto = modo === "pct" && draft[it.id]?.cv_auto === "1" ? precioVentaPorGanancia(costoUnit, pct) : null;
+    const cv = auto ?? num(it, "costo_venta_unitario");
+    return { fob, est, cant, gr, ir, tr, cv, costoUnit, gastosAdicLinea, pct };
   };
 
   const completo = !!almacenId && list.length > 0 && list.every((it) => {
