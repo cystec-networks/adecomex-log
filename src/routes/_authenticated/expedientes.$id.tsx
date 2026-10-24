@@ -1571,6 +1571,20 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const [form, setForm] = useState(() => construirFormInicial(isNuevo ? null : exp, isNuevo, isNuevo ? tipoParam : ""));
   const sugeridaPresentacion = useRef(false);
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
+  useEffect(() => {
+    if (isNuevo || !exp) return;
+    const inicial = construirFormInicial(exp, false);
+    // Actualizar solo vacíos: conservar cualquier edición manual del formulario abierto.
+    setForm((f) => ({ ...f, ...completarResultadoDga(f, {
+      liq_siga_numero: inicial.liq_siga_numero || undefined,
+      liq_siga_estado: inicial.liq_siga_estado || undefined,
+      liq_siga_pin_pago: inicial.liq_siga_pin_pago || undefined,
+      liq_siga_registro_at: inicial.liq_siga_registro_at || undefined,
+      liq_siga_termino_at: inicial.liq_siga_termino_at || undefined,
+      liq_siga_fecha_pago: inicial.liq_siga_fecha_pago || undefined,
+      ...(exp.liq_oficial_total != null ? { liq_oficial_total: exp.liq_oficial_total } : {}),
+    }) }));
+  }, [isNuevo, exp]);
   const esExportacion = (form.tipo_operacion || "").toLowerCase().startsWith("export");
   // Exportación: precarga los datos del agente despachante de ADECOMEX si están vacíos.
   useEffect(() => {
@@ -3038,7 +3052,8 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
             const campo = key as keyof CamposResultadoDga;
             const previo = actual[campo];
             // Condición atómica por campo: una edición concurrente nunca pierde su valor.
-            let query = supabase.from("expedientes").update({ [campo]: value } as CamposResultadoDga).eq("id", expedienteId);
+            const cambio: CamposResultadoDga = campo === "liq_oficial_total" ? { liq_oficial_total: Number(value) } : { [campo]: String(value) };
+            let query = supabase.from("expedientes").update(cambio).eq("id", expedienteId);
             query = previo == null ? query.is(campo, null) : query.eq(campo, previo);
             const { data: updated, error } = await query.select("id");
             if (error) throw error;

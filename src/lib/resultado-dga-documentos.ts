@@ -5,7 +5,8 @@ export type ResultadoDgaExtraido = {
   numero?: string | null; estado?: string | null; pin?: string | null;
   registro?: string | null; termino?: string | null; fecha_pago?: string | null; total?: number | null;
 };
-export type CamposResultadoDga = Partial<Record<"liq_siga_numero" | "liq_siga_estado" | "liq_siga_pin_pago" | "liq_siga_registro_at" | "liq_siga_termino_at" | "liq_siga_fecha_registro" | "liq_siga_fecha_pago" | "liq_oficial_total", string | number>>;
+export type CamposTextoDga = "liq_siga_numero" | "liq_siga_estado" | "liq_siga_pin_pago" | "liq_siga_registro_at" | "liq_siga_termino_at" | "liq_siga_fecha_registro" | "liq_siga_fecha_pago";
+export type CamposResultadoDga = Partial<Record<CamposTextoDga, string>> & { liq_oficial_total?: number };
 export const campoDgaVacio = (v: unknown) => v == null || (typeof v === "string" && !v.trim());
 function fecha(v: unknown, hora: boolean): string | null {
   if (typeof v !== "string") return null;
@@ -19,7 +20,7 @@ function fecha(v: unknown, hora: boolean): string | null {
 }
 export function camposDesdeDocumentoDga(tipo: TipoResultadoDga, datos: ResultadoDgaExtraido): CamposResultadoDga {
   const out: CamposResultadoDga = {};
-  const texto = (key: keyof CamposResultadoDga, v: unknown) => { if (typeof v === "string" && v.trim()) out[key] = v.trim(); };
+  const texto = (key: CamposTextoDga, v: unknown) => { if (typeof v === "string" && v.trim()) out[key] = v.trim(); };
   if (tipo === "Reporte de Liquidación de Impuestos") {
     texto("liq_siga_numero", datos.numero); texto("liq_siga_estado", datos.estado);
   } else {
