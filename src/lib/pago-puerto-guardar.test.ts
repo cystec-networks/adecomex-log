@@ -3,23 +3,31 @@ import { mock, test, expect, beforeEach } from "bun:test";
 type Row = Record<string, any>;
 let docs: Row[] = [];
 let costos: Row[] = [];
+let expedientes: Row[] = [];
+let cobros: Row[] = [];
+let ecfs: Row[] = [];
+let escrituras: Array<{ tabla: string; payload: Row }> = [];
 let archivos = new Set<string>();
 let fallaCosto = false;
 let secuencia = 0;
 function tabla(nombre: string) {
   let op = "select"; let payload: Row = {}; let filters: Array<(r: Row) => boolean> = [];
   let single = false;
-  const rows = () => nombre === "documentos" ? docs : costos;
+  const rows = () => ({ documentos: docs, costos_producto: costos, expedientes, facturas: cobros, facturas_ecf: ecfs }[nombre] ?? []);
   const api = {
     select: (_campos?: string) => api,
     eq: (k: string, v: unknown) => { filters.push((r) => r[k] === v); return api; },
+    is: (k: string, v: unknown) => { filters.push((r) => (r[k] ?? null) === v); return api; },
+    neq: (k: string, v: unknown) => { filters.push((r) => r[k] !== v); return api; },
     in: (k: string, v: unknown[]) => { filters.push((r) => v.includes(r[k])); return api; },
     order: () => api, limit: () => api,
     single: () => { single = true; return api; },
+    maybeSingle: () => { single = true; return api; },
     update: (p: Row) => { op = "update"; payload = p; return api; },
     insert: (p: Row) => { op = "insert"; payload = p; return api; },
     delete: () => { op = "delete"; return api; },
     then: (resolve: (v: any) => unknown) => {
+      if (op !== "select") escrituras.push({ tabla: nombre, payload: { ...payload } });
       if (nombre === "costos_producto" && fallaCosto && op !== "select") return Promise.resolve({ data: null, error: new Error("falló costo") }).then(resolve);
       let selected = rows().filter((r) => filters.every((f) => f(r)));
       if (op === "insert") { const r = { id: `id-${++secuencia}`, ...payload }; rows().push(r); selected = [r]; }
@@ -36,10 +44,10 @@ mock.module("@/integrations/supabase/client", () => ({ supabase: {
 } }));
 mock.module("./codigo-siga", () => ({ sha256File: async () => "hash", siguienteCodigoSiga: async () => "OTD-001", validarNombreSiga: () => ({ ok: true }) }));
 const { guardarComprobantePuerto } = await import("./pago-puerto-guardar");
-beforeEach(() => { docs = []; costos = []; archivos = new Set(); fallaCosto = false; });
-for (const tipo of ["almacenaje", "contenedor"] as const) {
+beforeEach(() => { docs = []; costos = []; expedientes = []; cobros = []; ecfs = []; escrituras = []; archivos = new Set(); fallaCosto = false; });
+for (const tipo of ["almacenaje", "contenedor", "cargos_locales"] as const) {
   test(`${tipo}: reemplaza la casilla tradicional y un segundo pago no duplica documento ni costo`, async () => {
-    const casilla = tipo === "almacenaje" ? "Factura Pago de Almacenaje" : "Recibo Pago de Contenedor";
+    const casilla = tipo === "almacenaje" ? "Factura Pago de Almacenaje" : tipo === "cargos_locales" ? "Factura Pago Cargos Locales" : "Recibo Pago de Contenedor";
     docs.push({ id: "tradicional", expediente_id: "exp", tipo: casilla, codigo_siga: "OTD-012", storage_path: "anterior.pdf", estado: "aprobado", fecha_recepcion: "2026-10-01" });
     archivos.add("anterior.pdf");
     const file = new File(["pdf"], "OTD-pago.pdf", { type: "application/pdf" });
@@ -56,4 +64,38 @@ test("costo fallido restaura el PDF previo y no deja una carga incompleta", asyn
   archivos.add("original.pdf"); fallaCosto = true;
   await expect(guardarComprobantePuerto("exp", new File(["pdf"], "OTD-pago.pdf"), { tipo: "almacenaje", monto: "1234", moneda: "DOP", fecha: "", referencia: "", concepto: "Almacenaje" })).rejects.toThrow("falló costo");
   expect(docs[0].storage_path).toBe("original.pdf"); expect(docs[0].estado).toBe("aprobado"); expect(costos).toHaveLength(0); expect([...archivos]).toEqual(["original.pdf"]);
+});
+test("Gestión Aduanal reemplaza PDF de e-CF y costo sin tocar cobros ni importes fiscales", async () => {
+  expedientes.push({ id: "exp", factura_ecf_id: "ecf" });
+  ecfs.push({ id: "ecf", encf: "E310000000335", pdf_url: "original.pdf", monto_total: 11800, total_itbis: 1800 });
+  cobros.push({ id: "cobro", expediente_id: "exp", factura_ecf_id: "ecf", monto: 10000, itbis: 1800, estado: "pendiente" });
+  const original = JSON.stringify(cobros);
+  const draft = { tipo: "gestion_aduanal" as const, monto: "11800", moneda: "DOP", fecha: "2026-10-24", referencia: "E310000000335", concepto: "Gestión Aduanal" };
+  const file = new File(["pdf"], "OTD-gestion.pdf");
+  await guardarComprobantePuerto("exp", file, draft);
+  expect(costos[0].monto_real).toBe(11800); expect(costos[0].concepto).toBe("Gestión Aduanal");
+  expect(costos[0].observaciones).toContain("E310000000335"); expect(costos[0].observaciones).toContain("2026-10-24");
+  expect(archivos.has(ecfs[0].pdf_url)).toBe(true);
+  const primeraRuta = ecfs[0].pdf_url;
+  await guardarComprobantePuerto("exp", file, { ...draft, monto: "12500" });
+  expect(costos).toHaveLength(1); expect(costos[0].monto_real).toBe(12500); expect(ecfs[0].pdf_url === primeraRuta).toBe(false);
+  expect(docs).toHaveLength(0); expect(JSON.stringify(cobros)).toBe(original);
+  expect(ecfs[0].monto_total).toBe(11800); expect(ecfs[0].total_itbis).toBe(1800);
+  expect(escrituras.filter((w) => w.tabla === "facturas_ecf").every((w) => Object.keys(w.payload).join() === "pdf_url")).toBe(true);
+  expect(escrituras.some((w) => w.tabla === "facturas")).toBe(false);
+});
+test("sin e-CF correspondiente guarda costo y avisa sin crear factura ni PDF", async () => {
+  ecfs.push({ id: "otra", encf: "E310000000335", monto_total: 11800 });
+  const r = await guardarComprobantePuerto("exp", new File(["pdf"], "OTD-gestion.pdf"), { tipo: "gestion_aduanal", monto: "11800", moneda: "DOP", fecha: "", referencia: "E310000000335", concepto: "Gestión Aduanal" });
+  expect(r.aviso).toContain("no se adjuntó el PDF ni se creó una factura"); expect(costos).toHaveLength(1); expect(archivos.size).toBe(0); expect(ecfs).toHaveLength(1);
+});
+test("NCF distinto no reemplaza el PDF de otra factura vinculada", async () => {
+  expedientes.push({ id: "exp", factura_ecf_id: "ecf" }); ecfs.push({ id: "ecf", encf: "E310000000111", pdf_url: "original.pdf" });
+  const r = await guardarComprobantePuerto("exp", new File(["pdf"], "OTD-gestion.pdf"), { tipo: "gestion_aduanal", monto: "11800", moneda: "DOP", fecha: "", referencia: "E310000000335", concepto: "Gestión Aduanal" });
+  expect(Boolean(r.aviso)).toBe(true); expect(ecfs[0].pdf_url).toBe("original.pdf");
+});
+test("fallo de costo Gestión Aduanal restaura adjunto e-CF", async () => {
+  expedientes.push({ id: "exp", factura_ecf_id: "ecf" }); ecfs.push({ id: "ecf", encf: "E310000000335", pdf_url: "original.pdf" }); fallaCosto = true;
+  await expect(guardarComprobantePuerto("exp", new File(["pdf"], "OTD-gestion.pdf"), { tipo: "gestion_aduanal", monto: "11800", moneda: "DOP", fecha: "", referencia: "E310000000335", concepto: "Gestión Aduanal" })).rejects.toThrow("falló costo");
+  expect(ecfs[0].pdf_url).toBe("original.pdf"); expect(archivos.size).toBe(0);
 });
