@@ -42,4 +42,4 @@ Scope detail headers; use content-sized space-between rows, keep client label/va
 - Copiloto selects real eight-digit leaves, normalizes nature/ranks alternatives. OCR uses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.
-- Payment OCR shares confirmed replacement; costs link by SIGA code or stable invoice marker. e-CF uploads only update pdf_url on expediente-linked invoices, never billing, to preserve margins.
+- Payment OCR requires confirmation, replaces slots and keys costs by SIGA/invoice marker. e-CF only updates linked pdf_url, never billing/margins.

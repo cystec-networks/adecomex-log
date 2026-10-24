@@ -56,6 +56,7 @@ export function EscanearPagoPuerto({ expedienteId }: { expedienteId: string }) {
       for (const key of ["documentos", "costos_producto", "costos-producto-liq", "ecf-vinculada"]) qc.invalidateQueries({ queryKey: [key, expedienteId] });
       qc.invalidateQueries({ queryKey: ["facturas-ecf"] });
       qc.invalidateQueries({ queryKey: ["facturas-ecf-lite"] });
+      qc.invalidateQueries({ queryKey: ["factura-ecf-edit"] });
       if (r.aviso) toast.warning(r.aviso, { duration: 12000 }); else toast.success(`Costo guardado y PDF vinculado · ${r.codigo}`);
       setOpen(false); reset();
     }, onError: (e) => { toast.error(e.message); if (e.message.includes("El archivo ya está cargado")) setMensajeDuplicado(e.message); },
