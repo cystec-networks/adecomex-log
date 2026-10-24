@@ -82,3 +82,17 @@ describe("valorRealInicial — precarga de Grav./ISC/ITBIS Real", () => {
     assert.equal(valorRealInicial("costo_venta_unitario", null, EST), null);
   });
 });
+
+import { precioVentaPorGanancia, margenSobreVenta } from "./liquidacion-final";
+
+describe("% de ganancia sobre costo", () => {
+  it("30% sobre 4.2641 da 5.5433 y el margen sobre venta no es 30%", () => {
+    const pv = precioVentaPorGanancia(4.2641, 30)!;
+    assert.equal(pv, 5.5433);
+    const m = margenSobreVenta(4.2641, pv)!;
+    assert.ok(Math.abs(m - 23.077) < 0.01);
+  });
+  it("sin % no calcula precio", () => {
+    assert.equal(precioVentaPorGanancia(4, null), null);
+  });
+});

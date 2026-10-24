@@ -42,6 +42,17 @@ export function valorRealInicial(
   return Number.isFinite(n) ? String(Number(n.toFixed(2))) : null;
 }
 
+/** Precio por % de ganancia sobre costo (markup): costo × (1 + %/100), a 4 decimales. */
+export function precioVentaPorGanancia(costoUnit: number, pct: number | null): number | null {
+  if (pct == null || !Number.isFinite(pct) || !Number.isFinite(costoUnit)) return null;
+  return Number((costoUnit * (1 + pct / 100)).toFixed(4));
+}
+
+/** % Margen sobre el precio de venta: (venta − costo) ÷ venta × 100. */
+export function margenSobreVenta(costoUnit: number, venta: number | null): number | null {
+  return venta != null && venta > 0 ? ((venta - costoUnit) / venta) * 100 : null;
+}
+
 /**
  * Resultados de la Liquidación Final. Única fuente para el PDF y la vista en pantalla,
  * para que ambos muestren siempre los mismos números.

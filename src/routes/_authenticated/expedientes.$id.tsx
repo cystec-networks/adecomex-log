@@ -1,5 +1,5 @@
 import { construirObservaciones, contenedoresValidos, contenedoresDesdeTabla, descripcionBorrador, tipoCargaPorDefecto, estructuraVacia, normalizarRemarkSiga, TIPOS_CARGA_OBS, type ObservacionesEstructura } from "@/lib/observaciones-expediente";
-import { calcularResultadosLiquidacion, valorRealInicial, costoUnitarioReal } from "@/lib/liquidacion-final";
+import { calcularResultadosLiquidacion, valorRealInicial, costoUnitarioReal, precioVentaPorGanancia, margenSobreVenta } from "@/lib/liquidacion-final";
 import { costosAutomaticosLiquidacion } from "@/lib/costos-automaticos-liquidacion";
 import { impuestoPantallaRd, impuestoEditadoUsd } from "@/lib/liquidacion-moneda";
 import { resumenImportacion } from "@/lib/resumen-importacion";
@@ -6213,6 +6213,10 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
   };
   const setVal = (id: string, campo: string, v: string) =>
     setDraft((p) => ({ ...p, [id]: { ...(p[id] ?? {}), [campo]: v } }));
+  const setVals = (id: string, campos: Record<string, string>) =>
+    setDraft((p) => ({ ...p, [id]: { ...(p[id] ?? {}), ...campos } }));
+  const modoVenta = (it: any): "directo" | "pct" =>
+    (draft[it.id]?.modo_venta as any) ?? (it.pct_ganancia_venta != null ? "pct" : "directo");
 
   // Adaptación exclusivamente visual: PDF, inventario y persistencia siguen usando US$.
   const tasaValida = Number.isFinite(tasaCambio) && tasaCambio > 0;
@@ -6238,9 +6242,13 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
     const gr = num(it, "gravamen_real");
     const ir = num(it, "isc_real");
     const tr = num(it, "itbis_real");
-    const cv = num(it, "costo_venta_unitario");
     const costoUnit = costoUnitarioReal(est.cifLinea, gr ?? 0, ir ?? 0, gastosAdicionalesUSD, shareLinea, cant);
-    return { fob, est, cant, gr, ir, tr, cv, costoUnit, gastosAdicLinea };
+    const modo = modoVenta(it);
+    const pct = modo === "pct" ? num(it, "pct_ganancia_venta") : null;
+    // En modo %, el precio sigue al costo en vivo hasta que el usuario lo ajuste a mano.
+    const auto = modo === "pct" && draft[it.id]?.cv_auto === "1" ? precioVentaPorGanancia(costoUnit, pct) : null;
+    const cv = auto ?? num(it, "costo_venta_unitario");
+    return { fob, est, cant, gr, ir, tr, cv, costoUnit, gastosAdicLinea, pct };
   };
 
   const completo = !!almacenId && list.length > 0 && list.every((it) => {
@@ -6257,8 +6265,8 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
 
   // Tras finalizar, el Costo de Venta se sigue pudiendo cargar sin reabrir la liquidación.
   const guardarVenta = useMutation({
-    mutationFn: async ({ itemId, valor }: { itemId: string; valor: number | null }) => {
-      const { error: e1 } = await supabase.from("mercancia_items").update({ costo_venta_unitario: valor } as any).eq("id", itemId);
+    mutationFn: async ({ itemId, valor, pct }: { itemId: string; valor: number | null; pct: number | null }) => {
+      const { error: e1 } = await supabase.from("mercancia_items").update({ costo_venta_unitario: valor, pct_ganancia_venta: pct } as any).eq("id", itemId);
       if (e1) throw e1;
       const { error: e2 } = await (supabase.from("almacen_stock" as any) as any).update({ costo_venta_unitario: valor }).eq("mercancia_item_id", itemId);
       if (e2) throw e2;
@@ -6279,6 +6287,7 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
             isc_real: c.ir,
             itbis_real: c.tr,
             costo_venta_unitario: c.cv,
+            pct_ganancia_venta: c.pct,
             liquidacion_final_en: ahora,
             liquidacion_final_por: user?.id ?? null,
           } as any)
@@ -6419,27 +6428,61 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
                         </div>
                       ))}
                     </div>
-                    <div className="mt-3 pt-2 border-t grid grid-cols-2 gap-3">
-                      <div>
-                        <div className="text-muted-foreground">Costo Unit. Real (US$)</div>
-                        <div className="font-medium tabular-nums h-8 flex items-center">{nf(c.costoUnit, 4)}</div>
-                      </div>
-                      <div>
-                        <div className="text-muted-foreground">Costo de Venta (US$)</div>
-                        {editable || (finalizado && canEdit) ? (
-                          <ImporteLiquidacionInput aria-label={`Costo de Venta línea ${it.item_no}`} value={val(it, "costo_venta_unitario")} decimalScale={4}
-                            onValueChange={(v) => setVal(it.id, "costo_venta_unitario", v)}
-                            onBlur={() => {
-                              if (editable) return;
-                              const d = draft[it.id]?.costo_venta_unitario;
-                              if (d === undefined) return;
-                              const nuevo = d === "" ? null : Number(d);
-                              const actual = it.costo_venta_unitario == null ? null : Number(it.costo_venta_unitario);
-                              if (nuevo !== actual) guardarVenta.mutate({ itemId: it.id, valor: nuevo });
-                            }} />
-                        ) : <div className="tabular-nums h-8 flex items-center">{nf(c.cv, 4)}</div>}
-                      </div>
-                    </div>
+                    {(() => {
+                      const puedeVenta = editable || (finalizado && canEdit);
+                      const modo = modoVenta(it);
+                      const margen = margenSobreVenta(c.costoUnit, c.cv);
+                      // Tras finalizar se guarda al salir del campo; antes, al finalizar la liquidación.
+                      const guardarSiFinalizado = () => {
+                        if (editable || !finalizado) return;
+                        const actualCv = it.costo_venta_unitario == null ? null : Number(it.costo_venta_unitario);
+                        const actualPct = it.pct_ganancia_venta == null ? null : Number(it.pct_ganancia_venta);
+                        if (c.cv !== actualCv || c.pct !== actualPct) guardarVenta.mutate({ itemId: it.id, valor: c.cv, pct: c.pct });
+                      };
+                      return (
+                        <div className="mt-3 pt-2 border-t grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div>
+                            <div className="text-muted-foreground">Costo Unit. Real (US$)</div>
+                            <div className="font-medium tabular-nums h-8 flex items-center">{nf(c.costoUnit, 4)}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Precio de venta</div>
+                            {puedeVenta ? (
+                              <Select value={modo} onValueChange={(v) => setVals(it.id, v === "pct" ? { modo_venta: v, cv_auto: "1" } : { modo_venta: v, cv_auto: "" })}>
+                                <SelectTrigger className="h-8 w-48 text-xs" aria-label={`Modo de precio línea ${it.item_no}`}><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="directo">Precio directo</SelectItem>
+                                  <SelectItem value="pct">% de ganancia sobre costo</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : <div className="h-8 flex items-center">{modo === "pct" ? "% de ganancia sobre costo" : "Precio directo"}</div>}
+                          </div>
+                          {modo === "pct" && (
+                            <div>
+                              <div className="text-muted-foreground" title="Markup: Costo de Venta = Costo Unit. Real × (1 + % ÷ 100). No es el % Margen, que se calcula sobre el precio de venta.">
+                                % Ganancia sobre costo (markup)
+                              </div>
+                              {puedeVenta ? (
+                                <ImporteLiquidacionInput aria-label={`% ganancia sobre costo línea ${it.item_no}`} value={val(it, "pct_ganancia_venta")}
+                                  onValueChange={(v) => setVals(it.id, { pct_ganancia_venta: v, cv_auto: "1" })}
+                                  onBlur={guardarSiFinalizado} />
+                              ) : <div className="tabular-nums h-8 flex items-center">{c.pct == null ? "—" : `${nf(c.pct)}%`}</div>}
+                            </div>
+                          )}
+                          <div>
+                            <div className="text-muted-foreground">Costo de Venta (US$)</div>
+                            {puedeVenta ? (
+                              <ImporteLiquidacionInput aria-label={`Costo de Venta línea ${it.item_no}`} value={c.cv == null ? "" : String(c.cv)} decimalScale={4}
+                                onValueChange={(v) => setVals(it.id, { costo_venta_unitario: v, cv_auto: "" })}
+                                onBlur={guardarSiFinalizado} />
+                            ) : <div className="tabular-nums h-8 flex items-center">{nf(c.cv, 4)}</div>}
+                            <div className="text-[11px] text-muted-foreground mt-0.5">
+                              % Margen sobre venta: {margen == null ? "—" : `${nf(margen)}%`}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}

@@ -1,0 +1,1 @@
+ALTER TABLE public.mercancia_items ADD COLUMN IF NOT EXISTS pct_ganancia_venta numeric;
