@@ -21,7 +21,7 @@ Expediente headers reserve grid slots: desktop controls in one row, overflow in 
 
 Keep new-expediente actions in two fixed header rows; portal form-owned submit controls there to preserve validation without floating panels.
 
-Scope detail headers to their class; use independent content-sized space-between flex rows, keep client label/value together, wrap identifiers, show warnings below Description and reuse deadline rules for informational presentation.
+Scope detail headers; use content-sized space-between rows, keep client label/value together, wrap IDs, show warnings below Description and reuse deadline rules.
 
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
 - Presentation deadline uses catalogo_regimenes.dias_habiles_presentar with optional expedientes.plazo_presentar_override; expedientes.sla_dias is deprecated — resolve via src/lib/plazo-presentacion.ts. In the header, require real arrival and a configured regime (never ETA), show business days relative to today, and classify overdue by the calendar date so weekends cannot hide expiration.
@@ -42,4 +42,4 @@ Scope detail headers to their class; use independent content-sized space-between
 - Copiloto selects real eight-digit leaves, normalizes nature/ranks alternatives. OCR uses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.
-- Port-payment OCR extends the existing extractor; confirmed saves replace the document slot, preserving SIGA codes and linking costs by that code to prevent repeat charges.
+- Port-payment OCR reuses the extractor; confirmed saves replace the slot and link costs by preserved SIGA code to avoid repeat charges.
