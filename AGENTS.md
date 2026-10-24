@@ -11,11 +11,11 @@
 
 Apply transitions via `estados-expediente.ts` and `validar_transicion_expediente()` for shared manual/automatic requirements.
 
-Use `expediente-numero`/`--brand-red` for bold red IDs.
+Use `expediente-numero`/`--brand-red` for red IDs.
 
 Payment slips use linked transport number before reserved TR; TF is secondary.
 
-Share expediente/quote preliquidation PDF to prevent divergence.
+Share expediente/quote preliquidation PDF.
 
 Expediente headers reserve grid slots: desktop controls in one row, overflow in More actions, accessible mobile rows.
 
