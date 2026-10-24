@@ -47,6 +47,7 @@ import { AplicarCertificadoPartidas } from "@/components/aplicar-certificado-par
 import { PaqueteRectificacionButton } from "@/components/paquete-rectificacion-button";
 import { CorreoDgaButton } from "@/components/correo-dga-button";
 import { PaqueteFacturaCliente } from "@/components/paquete-factura-cliente";
+import { EscanearPagoPuerto } from "@/components/escanear-pago-puerto";
 
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
@@ -3511,6 +3512,8 @@ function TabCostosProducto({ expedienteId, exp, liqDraft }: { expedienteId: stri
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costo de mercancía (para Liquidación)</CardTitle>
+          <div className="flex flex-wrap items-center gap-2">
+          <EscanearPagoPuerto expedienteId={expedienteId} />
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
             <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar</Button>
             <DialogContent>
@@ -3536,6 +3539,7 @@ function TabCostosProducto({ expedienteId, exp, liqDraft }: { expedienteId: stri
               <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </CardHeader>
         <CardContent className="p-0 overflow-auto max-h-[70vh]">
           <table className="w-full text-sm">

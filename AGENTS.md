@@ -42,3 +42,4 @@ Scope detail headers to their class; use independent content-sized space-between
 - Copiloto selects real eight-digit leaves, normalizes nature/ranks alternatives. OCR uses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.
+- Port-payment OCR extends the existing extractor; confirmed saves replace the document slot, preserving SIGA codes and linking costs by that code to prevent repeat charges.
