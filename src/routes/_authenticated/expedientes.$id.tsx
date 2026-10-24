@@ -5458,8 +5458,8 @@ function PinesDesdeCostos({ expedienteId }: { expedienteId?: string }) {
   };
   return (
     <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
-      {linea("Almacenaje", "Almacenaje")}
-      {linea("Contenedor", "Demora de contenedor")}
+      {linea("Almacenaje", "almacenaje")}
+      {linea("Contenedor", "contenedor")}
       <div className="text-[11px] text-muted-foreground">Solo lectura — se registra en «Costo de mercancía (para Liquidación)», pestaña Costos.</div>
     </div>
   );
