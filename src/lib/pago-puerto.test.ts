@@ -2,6 +2,19 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { normalizarPagoPuerto, documentoPagoPuerto, conceptoPagoPuerto, validarPagoPuerto, guardarPagoExclusivo } from "./pago-puerto";
 describe("Comprobantes de pagos portuarios", () => {
+  it("Gestión Aduanal conserva NCF y fecha y se destina a Finanzas", () => {
+    const p = normalizarPagoPuerto({ monto: 11800, moneda: "DOP", fecha: "2026-10-24", referencia: "E310000000335", tipo: "gestion_aduanal", confianza: "alta" });
+    assert.equal(p.tipo, "gestion_aduanal"); assert.equal(p.monto, 11800); assert.equal(p.referencia, "E310000000335"); assert.equal(p.fecha, "2026-10-24");
+    assert.equal(conceptoPagoPuerto("gestion_aduanal", ""), "Gestión Aduanal");
+    assert.equal(documentoPagoPuerto("gestion_aduanal"), "PDF de Factura e-CF en Finanzas");
+    validarPagoPuerto({ tipo: "gestion_aduanal", monto: "11800", moneda: "DOP" });
+  });
+  it("Cargos Locales se destina a su casilla recibida", () => {
+    assert.equal(normalizarPagoPuerto({ tipo: "cargos_locales" }).tipo, "cargos_locales");
+    assert.equal(documentoPagoPuerto("cargos_locales"), "Factura Pago Cargos Locales");
+    assert.equal(conceptoPagoPuerto("cargos_locales", "PIN001"), "Cargos Locales");
+    validarPagoPuerto({ tipo: "cargos_locales", monto: "2500.50", moneda: "DOP" });
+  });
   it("Almacenaje DPW corresponde a su factura", () => {
     assert.equal(documentoPagoPuerto("almacenaje"), "Factura Pago de Almacenaje");
     assert.equal(conceptoPagoPuerto("almacenaje", "DPW123"), "Almacenaje — DPW");

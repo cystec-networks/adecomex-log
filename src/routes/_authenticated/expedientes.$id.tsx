@@ -3474,7 +3474,7 @@ function TabCostosProducto({ expedienteId, exp, liqDraft }: { expedienteId: stri
   return (
     <div className="space-y-4">
       <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm">
-        Estos costos son de la mercancía (incluido el Servicio Aduanero que se paga a la DGA), no del servicio de gestión aduanal — no afectan el margen del servicio.
+        Estos costos son de la mercancía, incluyendo el Servicio Aduanero que se paga a la DGA y el costo del servicio de Gestión Aduanal (propio o de terceros) como parte del costo total de la importación. Este monto es independiente del cálculo de margen/facturación de ADECOMEX, que se calcula por separado en la ficha Finanzas.
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

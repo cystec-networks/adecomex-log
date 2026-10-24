@@ -1,4 +1,5 @@
-export type TipoPagoPuerto = "almacenaje" | "contenedor";
+export type TipoPagoPuerto = "almacenaje" | "contenedor" | "gestion_aduanal" | "cargos_locales";
+export const TIPOS_PAGO_PUERTO = ["almacenaje", "contenedor", "gestion_aduanal", "cargos_locales"] as const;
 export type PagoPuerto = {
   monto: number | null; moneda: "DOP" | "USD" | null; fecha: string | null;
   referencia: string | null; tipo: TipoPagoPuerto | null; confianza: "alta" | "media" | null;
@@ -10,18 +11,20 @@ export function normalizarPagoPuerto(value: unknown): PagoPuerto {
   return { monto: Number.isFinite(monto) && monto >= 0 ? monto : null,
     moneda: p.moneda === "DOP" || p.moneda === "USD" ? p.moneda : null,
     fecha: typeof p.fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.fecha) ? p.fecha : null,
-    referencia: texto(p.referencia), tipo: p.tipo === "almacenaje" || p.tipo === "contenedor" ? p.tipo : null,
+    referencia: texto(p.referencia), tipo: TIPOS_PAGO_PUERTO.includes(p.tipo as TipoPagoPuerto) ? p.tipo as TipoPagoPuerto : null,
     confianza: p.confianza === "alta" || p.confianza === "media" ? p.confianza : null };
 }
 export function documentoPagoPuerto(tipo: TipoPagoPuerto) {
-  return tipo === "almacenaje" ? "Factura Pago de Almacenaje" : "Recibo Pago de Contenedor";
+  return { almacenaje: "Factura Pago de Almacenaje", contenedor: "Recibo Pago de Contenedor", gestion_aduanal: "PDF de Factura e-CF en Finanzas", cargos_locales: "Factura Pago Cargos Locales" }[tipo];
 }
 export function conceptoPagoPuerto(tipo: TipoPagoPuerto, referencia: string) {
+  if (tipo === "gestion_aduanal") return "Gestión Aduanal";
+  if (tipo === "cargos_locales") return "Cargos Locales";
   const prefijo = referencia.trim().match(/^(DPW|DPH)/i)?.[0].toUpperCase();
   return `${tipo === "almacenaje" ? "Almacenaje" : "Depósito de Contenedor"}${prefijo ? ` — ${prefijo}` : ""}`;
 }
 export function validarPagoPuerto(p: { tipo: string; monto: string; moneda: string }) {
-  if (p.tipo !== "almacenaje" && p.tipo !== "contenedor") throw new Error("Selecciona Almacenaje o Contenedor antes de guardar.");
+  if (!TIPOS_PAGO_PUERTO.includes(p.tipo as TipoPagoPuerto)) throw new Error("Selecciona el tipo de pago antes de guardar.");
   if (!p.monto.trim() || !Number.isFinite(Number(p.monto)) || Number(p.monto) <= 0) throw new Error("Confirma un monto pagado mayor que cero.");
   if (p.moneda !== "DOP" && p.moneda !== "USD") throw new Error("Confirma la moneda del pago.");
 }
