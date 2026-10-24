@@ -6226,8 +6226,8 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
     if (usd !== null) setVal(id, campo, usd);
   };
 
-  const nf = (n: number | null) =>
-    n == null ? "—" : n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const nf = (n: number | null, decimales = 2) =>
+    n == null ? "—" : n.toLocaleString("en-US", { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
 
   const calcFila = (it: any) => {
     const fob = Number(it.valor_fob) || 0;
@@ -6422,12 +6422,12 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
                     <div className="mt-3 pt-2 border-t grid grid-cols-2 gap-3">
                       <div>
                         <div className="text-muted-foreground">Costo Unit. Real (US$)</div>
-                        <div className="font-medium tabular-nums h-8 flex items-center">{nf(c.costoUnit)}</div>
+                        <div className="font-medium tabular-nums h-8 flex items-center">{nf(c.costoUnit, 4)}</div>
                       </div>
                       <div>
                         <div className="text-muted-foreground">Costo de Venta (US$)</div>
                         {editable || (finalizado && canEdit) ? (
-                          <ImporteLiquidacionInput aria-label={`Costo de Venta línea ${it.item_no}`} value={val(it, "costo_venta_unitario")}
+                          <ImporteLiquidacionInput aria-label={`Costo de Venta línea ${it.item_no}`} value={val(it, "costo_venta_unitario")} decimalScale={4}
                             onValueChange={(v) => setVal(it.id, "costo_venta_unitario", v)}
                             onBlur={() => {
                               if (editable) return;
@@ -6437,7 +6437,7 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
                               const actual = it.costo_venta_unitario == null ? null : Number(it.costo_venta_unitario);
                               if (nuevo !== actual) guardarVenta.mutate({ itemId: it.id, valor: nuevo });
                             }} />
-                        ) : <div className="tabular-nums h-8 flex items-center">{nf(c.cv)}</div>}
+                        ) : <div className="tabular-nums h-8 flex items-center">{nf(c.cv, 4)}</div>}
                       </div>
                     </div>
                   </div>
@@ -6483,8 +6483,8 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
 
 /** Vista en pantalla de los resultados; usa exactamente el mismo cálculo que el PDF. */
 function ResultadosLiquidacionView({ r, tasaCambio }: { r: ReturnType<typeof calcularResultadosLiquidacion>; tasaCambio: number }) {
-  const nf = (n: number | null | undefined) =>
-    n == null ? "—" : n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const nf = (n: number | null | undefined, decimales = 2) =>
+    n == null ? "—" : n.toLocaleString("en-US", { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
   const rd = (usd: number | null | undefined) => (usd == null || !tasaCambio || tasaCambio <= 0 ? "—" : nf(usd * tasaCambio));
   const t = r.totales;
   const th = "py-1.5 px-2 text-right font-medium";
@@ -6518,9 +6518,9 @@ function ResultadosLiquidacionView({ r, tasaCambio }: { r: ReturnType<typeof cal
                 <td className={td}>{rd(p.c.gr)}</td>
                 <td className={td}>{rd(p.c.ir)}</td>
                 <td className={td}>{rd(p.c.tr)}</td>
-                <td className={`${td} font-semibold bg-accent/50`}>{nf(p.c.costoUnit)}</td>
+                <td className={`${td} font-semibold bg-accent/50`}>{nf(p.c.costoUnit, 4)}</td>
                 {r.hayVenta && <>
-                  <td className={td}>{nf(p.c.cv)}</td>
+                  <td className={td}>{nf(p.c.cv, 4)}</td>
                   <td className={td}>{nf(p.margenUnit)}</td>
                   <td className={td}>{p.pct == null ? "—" : `${p.pct.toFixed(1)}%`}</td>
                 </>}

@@ -5,11 +5,12 @@ type ImporteLiquidacionInputProps = {
   value: string;
   onValueChange: (value: string) => void;
   onBlur?: () => void;
+  decimalScale?: 2 | 4;
   "aria-label": string;
 };
 
 /** Formato solo de edición: el borrador recibe dígitos y punto, nunca comas. */
-export function ImporteLiquidacionInput({ value, onValueChange, onBlur, "aria-label": label }: ImporteLiquidacionInputProps) {
+export function ImporteLiquidacionInput({ value, onValueChange, onBlur, decimalScale = 2, "aria-label": label }: ImporteLiquidacionInputProps) {
   return (
     <NumericFormat
       customInput={Input}
@@ -21,7 +22,7 @@ export function ImporteLiquidacionInput({ value, onValueChange, onBlur, "aria-la
       valueIsNumericString
       thousandSeparator=","
       decimalSeparator="."
-      decimalScale={2}
+      decimalScale={decimalScale}
       fixedDecimalScale
       onValueChange={(values, source) => {
         if (source.source === "event") onValueChange(values.value);
