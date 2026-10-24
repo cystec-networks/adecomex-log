@@ -35,6 +35,7 @@ import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from "
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday, hoyRD, hoyRDISO } from "@/lib/dates";
+import { resumenPagoPuerto } from "@/lib/pago-puerto";
 import { calcImpuestosLinea } from "@/lib/impuestos";
 import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
 import { conConsignatarioEfectivo, fetchConsignatarioEfectivo } from "@/lib/consignatario-efectivo";
@@ -5448,10 +5449,12 @@ function PinesDesdeCostos({ expedienteId }: { expedienteId?: string }) {
   });
   const linea = (etiqueta: string, concepto: string) => {
     const rs = (filas as any[]).filter((c) => c.concepto === concepto);
-    const texto = rs.length
-      ? rs.map((c) => (c.observaciones ? String(c.observaciones).replace(" · Pagado", ", pagado") : "registrado")).join("; ")
-      : "Sin registro en Costos";
-    return <div><span className="font-medium">{etiqueta}:</span> <span className={rs.length ? "" : "text-muted-foreground"}>{texto}</span></div>;
+    if (!rs.length) return <div><span className="font-medium">{etiqueta}:</span> <span className="text-muted-foreground">Sin registro en Costos</span></div>;
+    return <div><span className="font-medium">{etiqueta}:</span> {rs.map((c, i) => {
+      const { monto, detalle } = resumenPagoPuerto(c.monto_real, c.moneda, c.observaciones);
+      const secundario = monto ? detalle : detalle || "registrado";
+      return <span key={c.id ?? i}>{i ? "; " : ""}{monto && <span className="font-semibold tabular-nums">{monto}</span>}{monto && secundario && " · "}{secundario}</span>;
+    })}</div>;
   };
   return (
     <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-0.5">

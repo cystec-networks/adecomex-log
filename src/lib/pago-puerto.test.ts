@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { normalizarPagoPuerto, documentoPagoPuerto, conceptoPagoPuerto, validarPagoPuerto, guardarPagoExclusivo } from "./pago-puerto";
+import { normalizarPagoPuerto, documentoPagoPuerto, conceptoPagoPuerto, validarPagoPuerto, guardarPagoExclusivo, resumenPagoPuerto } from "./pago-puerto";
 describe("Comprobantes de pagos portuarios", () => {
   it("Gestión Aduanal conserva NCF y fecha y se destina a Finanzas", () => {
     const p = normalizarPagoPuerto({ monto: 11800, moneda: "DOP", fecha: "2026-10-24", referencia: "E310000000335", tipo: "gestion_aduanal", confianza: "alta" });
@@ -41,5 +41,16 @@ describe("Comprobantes de pagos portuarios", () => {
     await assert.rejects(guardarPagoExclusivo("exp", async () => { ejecutado = true; }));
     assert.equal(ejecutado, false); terminar(); await pendiente;
     assert.equal(await guardarPagoExclusivo("exp", async () => 1), 1);
+  });
+  it("muestra el monto antes que fecha, PIN y documento SIGA", () => {
+    assert.deepEqual(resumenPagoPuerto("34976.95", "DOP", "Fecha de pago: 2026-10-24 · PIN/Referencia: Q02910460 · Documento SIGA: OTD-006"), { monto: "RD$34,976.95", detalle: "Fecha de pago: 2026-10-24 · PIN/Referencia: Q02910460 · Documento SIGA: OTD-006" });
+  });
+  it("respeta la moneda del costo y el formato histórico de pago", () => {
+    assert.equal(resumenPagoPuerto("467.00", "USD", "Fecha de pago: 2026-10-23").monto, "US$ 467.00");
+    assert.deepEqual(resumenPagoPuerto("21240.00", "DOP", "PIN DPH · Pagado 21/09/2026"), { monto: "RD$21,240.00", detalle: "PIN DPH, pagado 21/09/2026" });
+  });
+  it("deja sin monto los costos sin importe capturado", () => {
+    assert.deepEqual(resumenPagoPuerto(null, "DOP", "PIN PORTCOLLECT"), { monto: "", detalle: "PIN PORTCOLLECT" });
+    assert.equal(resumenPagoPuerto("", "DOP", "").monto, "");
   });
 });

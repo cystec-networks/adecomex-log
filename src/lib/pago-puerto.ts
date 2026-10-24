@@ -34,3 +34,13 @@ export async function guardarPagoExclusivo<T>(id: string, guardar: () => Promise
   enCurso.add(id);
   try { return await guardar(); } finally { enCurso.delete(id); }
 }
+/** Monta la línea de solo lectura de «Resultado oficial DGA»: monto primero y el resto como detalle. */
+export function resumenPagoPuerto(montoReal: unknown, moneda: unknown, observaciones: unknown): { monto: string; detalle: string } {
+  const n = montoReal === null || montoReal === undefined || montoReal === "" ? NaN : Number(montoReal);
+  const monto = Number.isFinite(n) && n > 0
+    ? moneda === "USD" ? `US$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n)
+    : "";
+  const detalle = typeof observaciones === "string" && observaciones.trim() ? observaciones.trim().replace(" · Pagado", ", pagado") : "";
+  return { monto, detalle };
+}
