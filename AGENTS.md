@@ -13,11 +13,11 @@ Apply expediente transitions in `estados-expediente.ts` and `validar_transicion_
 
 Use `expediente-numero` with `--brand-red` for consistent bold red identifiers.
 
-Payment slips resolve linked transport number before reserved TR; TF controls remain secondary for reconciliation.
+Payment slips prefer linked transport number over reserved TR; TF stays secondary for reconciliation.
 
 Share the preliquidation PDF between expediente and quote to prevent divergent summaries.
 
-Use reserved grid slots for expediente headers: desktop controls stay on one row, overflow menus enter More actions, mobile keeps accessible rows.
+Expediente headers reserve grid slots: desktop controls in one row, overflow in More actions, accessible mobile rows.
 
 Keep new-expediente actions in two fixed header rows; portal form-owned submit controls there to preserve validation without floating panels.
 

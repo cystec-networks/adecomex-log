@@ -1,4 +1,4 @@
-- [ ] Rectificación Técnica: preparar solo correo sin PDF adicional; guardar/reemplazar un único paquete y verificar dos generaciones y correo.
+- [x] Rectificación Técnica: correo sin PDF adicional; reemplazo y consolidación de paquetes con bloqueo compartido entre menús. 4 pruebas aprobadas; en 202610I365 dos generaciones dejan una sola fila, correo sin descargas ni escrituras de documentos. Oficios históricos conservados.
 - [x] Reorganizar la ficha Documentos en dos bloques (Declaración y Liquidación) con 7 entradas cada uno en el orden pedido, filas compactas, «Otros» independientes por bloque y sección extra para tipos rectificación; verificado en 202610I365 con vista previa y formulario intactos.
 
 - [x] Restaurar autocompletado completo de Productor y separar catálogo/búsqueda por rol SIGA: Berkshire Dairy Exportadora 0007030022 y Proveedora Exterior 270182962, ocho campos completos en ambos bloques y códigos independientes verificados en pantalla en 202609I346 sin guardar expediente. Contactos de la ficha Exportadora completados desde la ficha existente de la misma empresa; selector Productor muestra Proveedora Exterior.
