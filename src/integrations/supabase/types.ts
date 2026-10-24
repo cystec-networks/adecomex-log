@@ -4811,6 +4811,7 @@ export type Database = {
           modelo: string | null
           pais_origen: string | null
           pais_origen_codigo: string | null
+          pct_ganancia_venta: number | null
           pct_gravamen: number | null
           pct_isc: number | null
           pct_itbis: number | null
@@ -4855,6 +4856,7 @@ export type Database = {
           modelo?: string | null
           pais_origen?: string | null
           pais_origen_codigo?: string | null
+          pct_ganancia_venta?: number | null
           pct_gravamen?: number | null
           pct_isc?: number | null
           pct_itbis?: number | null
@@ -4899,6 +4901,7 @@ export type Database = {
           modelo?: string | null
           pais_origen?: string | null
           pais_origen_codigo?: string | null
+          pct_ganancia_venta?: number | null
           pct_gravamen?: number | null
           pct_isc?: number | null
           pct_itbis?: number | null
