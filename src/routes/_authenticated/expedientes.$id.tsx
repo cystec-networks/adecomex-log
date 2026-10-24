@@ -2975,9 +2975,6 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       toast.error("Este documento del Checklist de Recepción solo acepta archivos PDF.");
       return;
     }
-    if (file && esDocumentoResultadoDga(tipo) && file.size > 15 * 1024 * 1024) {
-      toast.error("Archivo demasiado grande para lectura automática (máx 15MB)."); return;
-    }
     if (file) {
       const v = validarNombreSiga(file.name, prefijosAceptados(tipo));
       if (!v.ok) { toast.error(v.error, { duration: 8000 }); return; }
@@ -3040,6 +3037,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
       if (file && esDocumentoResultadoDga(tipo)) {
         try {
+          if (file.size > 15 * 1024 * 1024) throw new Error("el archivo supera 15MB para lectura automática; completa los campos manualmente");
           const bytes = new Uint8Array(await file.arrayBuffer());
           let binary = "";
           for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
