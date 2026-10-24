@@ -41,4 +41,4 @@ Scope detail headers to their class; use independent content-sized space-between
 
 - Copiloto selects real eight-digit leaves, normalizes nature/ranks alternatives. OCR uses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
-- Rectification packages share replacement/locking across menus; email never creates/downloads PDFs.
+- Document packages share replacement/locking; client invoice package reads linked e-CF PDF and skips missing sources; email never creates/downloads PDFs.
