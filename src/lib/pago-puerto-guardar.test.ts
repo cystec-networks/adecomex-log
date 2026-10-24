@@ -1,4 +1,3 @@
-/// <reference types="bun" />
 import { mock, test, expect, beforeEach } from "bun:test";
 
 type Row = Record<string, any>;
