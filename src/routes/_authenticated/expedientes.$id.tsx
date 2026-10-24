@@ -44,7 +44,6 @@ import { useTasaCambioForExpediente, debeCongelar } from "@/lib/tasa-cambio";
 import { AutoField } from "@/components/auto-field";
 import { BadgeVigenciaPinDga } from "@/components/badge-vigencia";
 import { AplicarCertificadoPartidas } from "@/components/aplicar-certificado-partidas";
-import { OficioRectificacionButton } from "@/components/oficio-rectificacion-button";
 import { PaqueteRectificacionButton } from "@/components/paquete-rectificacion-button";
 import { CorreoDgaButton } from "@/components/correo-dga-button";
 import { PaqueteFacturaCliente } from "@/components/paquete-factura-cliente";
@@ -960,14 +959,14 @@ function DetalleExpediente() {
               >
                 <Copy className="h-4 w-4" />
               </Button>}
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="px-2" title="Documentos y Reportes">
                     <FileOutput className="h-4 w-4 mr-1" /> <span className="exp-lbl-full">Documentos y Reportes</span><span className="exp-lbl-short">Documentos</span>
                     <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 p-1">
+                <DropdownMenuContent align="end" className="w-[22rem] max-w-[calc(100vw-1rem)] p-1">
                   <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:text-sm [&_button:hover]:bg-accent">
                     <GenerarXmlSigaButton expedienteId={id} />
                     <GenerarXmlCertificadoOrigenButton expedienteId={id} />
@@ -983,11 +982,14 @@ function DetalleExpediente() {
                      {!isNuevo && expData.rectificacion_tecnica && (
                        <>
                          <DropdownMenuSeparator />
-                         <OficioRectificacionButton expedienteId={id} />
                          <PaqueteRectificacionButton expedienteId={id} />
-                         <CorreoDgaButton expedienteId={id} />
+                         <CorreoDgaButton expedienteId={id} menu />
                        </>
                      )}
+                    {!isNuevo && <>
+                      <DropdownMenuSeparator />
+                      <PaqueteFacturaCliente expedienteId={id} menu />
+                    </>}
                   </div>
                   {!isNuevo && canEditExpediente && <>
                     <DropdownMenuSeparator />
@@ -1007,7 +1009,7 @@ function DetalleExpediente() {
             </div>
           )}
           {!isNuevo && (
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="expediente-header-more flex shrink-0 md:w-8 md:px-0" title="Más acciones" aria-label="Más acciones">
                   <MoreVertical className="h-4 w-4" /> <span className="md:hidden">Más acciones</span>
@@ -1019,7 +1021,7 @@ function DetalleExpediente() {
                 </DropdownMenuItem>
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger><FileOutput className="h-4 w-4" /> Documentos y Reportes</DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-64 p-1">
+                  <DropdownMenuSubContent className="w-[22rem] max-w-[calc(100vw-1rem)] p-1">
                     <div className="[&_button]:w-full [&_button]:justify-start [&_button]:border-0 [&_button]:rounded-sm [&_button]:font-normal [&_button]:h-9 [&_button]:px-2 [&_button]:text-sm [&_button:hover]:bg-accent">
                       <GenerarXmlSigaButton expedienteId={id} />
                       <GenerarXmlCertificadoOrigenButton expedienteId={id} />
@@ -1035,11 +1037,12 @@ function DetalleExpediente() {
                         {expData.rectificacion_tecnica && (
                          <>
                            <DropdownMenuSeparator />
-                           <OficioRectificacionButton expedienteId={id} />
                            <PaqueteRectificacionButton expedienteId={id} />
-                           <CorreoDgaButton expedienteId={id} />
+                           <CorreoDgaButton expedienteId={id} menu />
                          </>
                        )}
+                      <DropdownMenuSeparator />
+                      <PaqueteFacturaCliente expedienteId={id} menu />
                     </div>
                     {canEditExpediente && <>
                       <DropdownMenuSeparator />
