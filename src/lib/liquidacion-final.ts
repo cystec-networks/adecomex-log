@@ -1,5 +1,10 @@
 import { filaReemplazadaPorServicio, FORMULARIO_DUA_RD } from "@/lib/costo-mercancia";
 
+/** Prorrateo FOB de todos los costos de mercancía; el ITBIS no integra el costo. */
+export function costoUnitarioReal(cif: number, gravamen: number, isc: number, gastosUsd: number, participacionFob: number, cantidad: number) {
+  return cantidad > 0 ? (cif + gravamen + isc + gastosUsd * participacionFob) / cantidad : 0;
+}
+
 /** Fila calculada por producto (la produce calcFila de la sección Liquidación Final). */
 export type FilaCalc = {
   fob: number;
