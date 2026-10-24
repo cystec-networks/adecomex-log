@@ -11,7 +11,7 @@
 
 Apply expediente transitions in `estados-expediente.ts` and `validar_transicion_expediente()` so manual and automatic changes share requirements.
 
-Use `expediente-numero` with `--brand-red` for consistent bold red identifiers.
+Use `expediente-numero` with `--brand-red` for bold red identifiers.
 
 Payment slips prefer linked transport number over reserved TR; TF stays secondary for reconciliation.
 
