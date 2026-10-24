@@ -3,13 +3,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { FileStack, Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { conConsignatarioEfectivo } from "@/lib/consignatario-efectivo";
 import { generarPaqueteExclusivo, reemplazarPaquete } from "@/lib/paquete-rectificacion";
 import { PAQUETE_FACTURA_CLIENTE, CORREO_CONTABILIDAD, fuentesFacturaCliente, combinarFacturaCliente, correoFacturaCliente } from "@/lib/paquete-factura-cliente";
 
-export function PaqueteFacturaCliente({ expedienteId }: { expedienteId: string }) {
+export function PaqueteFacturaCliente({ expedienteId, menu = false }: { expedienteId: string; menu?: boolean }) {
   const qc = useQueryClient();
   const [cargando, setCargando] = useState(false);
   const [correoCargando, setCorreoCargando] = useState(false);
@@ -109,7 +110,18 @@ export function PaqueteFacturaCliente({ expedienteId }: { expedienteId: string }
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b py-2">
+      {menu ? (
+        <>
+          <DropdownMenuItem disabled={cargando} onSelect={(event) => { event.preventDefault(); void generar(); }}>
+            {cargando ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <FileStack className="h-4 w-4 shrink-0" />}
+            <span>Generar Paquete Completo Factura Cliente (PDF)</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled={correoCargando || cargando} onSelect={(event) => { event.preventDefault(); void preparar(); }}>
+            {correoCargando ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <Send className="h-4 w-4 shrink-0" />}
+            <span>Preparar Correo Factura Cliente</span>
+          </DropdownMenuItem>
+        </>
+      ) : <div className="flex flex-wrap items-center justify-between gap-2 border-b py-2">
         <span className="text-sm font-medium">{PAQUETE_FACTURA_CLIENTE}</span>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" size="sm" disabled={cargando} onClick={generar}>
@@ -119,7 +131,7 @@ export function PaqueteFacturaCliente({ expedienteId }: { expedienteId: string }
             {correoCargando ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}Preparar para enviar
           </Button>
         </div>
-      </div>
+      </div>}
       <Dialog open={!!resultado} onOpenChange={(o) => { if (!o) setResultado(null); }}>
         <DialogContent>
           <DialogHeader>
