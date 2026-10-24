@@ -1,3 +1,4 @@
+- [ ] Paquete de Envío Factura Cliente: combinar ocho fuentes en orden, avisar faltantes sin bloquear, reemplazar una entrada y abrir correo de contabilidad sin PDFs nuevos; verificar generación completa/parcial y correo.
 - [x] Rectificación Técnica: correo sin PDF adicional; reemplazo y consolidación de paquetes con bloqueo compartido entre menús. 4 pruebas aprobadas; en 202610I365 dos generaciones dejan una sola fila, correo sin descargas ni escrituras de documentos. Oficios históricos conservados.
 - [x] Reorganizar la ficha Documentos en dos bloques (Declaración y Liquidación) con 7 entradas cada uno en el orden pedido, filas compactas, «Otros» independientes por bloque y sección extra para tipos rectificación; verificado en 202610I365 con vista previa y formulario intactos.
 
