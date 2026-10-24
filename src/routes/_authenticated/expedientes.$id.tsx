@@ -959,7 +959,7 @@ function DetalleExpediente() {
               >
                 <Copy className="h-4 w-4" />
               </Button>}
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="px-2" title="Documentos y Reportes">
                     <FileOutput className="h-4 w-4 mr-1" /> <span className="exp-lbl-full">Documentos y Reportes</span><span className="exp-lbl-short">Documentos</span>
@@ -1009,7 +1009,7 @@ function DetalleExpediente() {
             </div>
           )}
           {!isNuevo && (
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="expediente-header-more flex shrink-0 md:w-8 md:px-0" title="Más acciones" aria-label="Más acciones">
                   <MoreVertical className="h-4 w-4" /> <span className="md:hidden">Más acciones</span>
