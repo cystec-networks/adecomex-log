@@ -3,12 +3,14 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { callGateway } from "./ai-gateway.server";
 import type { LineaFacturaExpediente } from "./factura-expediente-arancel";
+import { normalizarPagoPuerto, type PagoPuerto } from "./pago-puerto";
 
 const Input = z.object({
   filename: z.string(),
   mime: z.string(),
   base64: z.string().min(20),
   lineas_factura: z.boolean().optional(),
+  pago_puerto: z.boolean().optional(),
 });
 
 export type OcrContenedor = { numero: string; sello1: string | null; sello2: string | null; tipo: string | null };
@@ -44,6 +46,7 @@ export type OcrExtraction = {
   tipo_carga_confianza: "alta" | "media" | null;
   lineas_factura?: LineaFacturaExpediente[];
   productos_factura?: Awaited<ReturnType<typeof import("./factura-expediente-arancel").prepararProductosFactura>>;
+  pago_puerto?: PagoPuerto;
 };
 
 export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
@@ -79,6 +82,7 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
 
 
     if (data.lineas_factura) system += " Agrega lineas_factura: arreglo de cada línea de mercancía en orden con {descripcion, codigo_arancelario, cantidad, unidad, valor_fob, peso}. Extrae descripción completa y valores del documento; codigo_arancelario SOLO si aparece explícitamente para esa línea, nunca clasifiques ni inventes códigos. valor_fob es el importe de la línea, no precio unitario. Datos ausentes null. No agregues flete, seguro ni cargos como mercancías. No cambies los totales de cabecera.";
+    if (data.pago_puerto) system = "Extrae un comprobante portuario de pago de República Dominicana. Devuelve únicamente JSON {pago_puerto:{monto:number|null,moneda:'DOP'|'USD'|null,fecha:string|null,referencia:string|null,tipo:'almacenaje'|'contenedor'|null,confianza:'alta'|'media'|null}}. monto es el TOTAL efectivamente pagado incluyendo impuestos, no subtotal ni saldo pendiente. fecha es fecha de PAGO YYYY-MM-DD, no vencimiento ni emisión si no se acredita pago. referencia es PIN/referencia completa preservando ceros y prefijos DPW/DPH. Distingue Almacenaje (servicio de almacenamiento) de depósito/garantía o pago de contenedor por el concepto explícito del documento; DPW o DPH solos NO bastan para certeza. confianza alta solo con concepto explícito inequívoco; en caso mixto/ambiguo devuelve tipo null. No inventes monto, moneda, fecha ni referencia. Datos ausentes null.";
     const isPdf = data.mime === "application/pdf";
     const raw = await callGateway({
       model: "google/gemini-2.5-flash",
@@ -108,6 +112,7 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
     }
 
     return {
+      ...(data.pago_puerto ? { pago_puerto: normalizarPagoPuerto(parsed.pago_puerto) } : {}),
       cliente: parsed.cliente ?? null,
       bl: parsed.bl ?? null,
       suplidor: parsed.suplidor ?? null,
