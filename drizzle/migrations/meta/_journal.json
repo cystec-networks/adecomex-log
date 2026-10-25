@@ -470,6 +470,13 @@
       "when": 1792877961320,
       "tag": "0066_pct_ganancia_venta",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1792956591756,
+      "tag": "0067_permisos_estado_documental_vuce",
+      "breakpoints": true
     }
   ]
 }

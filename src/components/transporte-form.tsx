@@ -914,7 +914,7 @@ export function estadoBadgeTransporte(estado: string | null) {
   return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${map[estado ?? ""] ?? map.programado}`}>{label}</span>;
 }
 
-export function estadoBadgePermiso(estado: string | null) {
+export function estadoBadgePermiso(estado: string | null, estadoVuce?: string | null) {
   const map: Record<string, string> = {
     solicitado: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
     en_tramite: "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900",
@@ -922,6 +922,6 @@ export function estadoBadgePermiso(estado: string | null) {
     rechazado: "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900",
     vencido: "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900",
   };
-  const labels: Record<string,string> = { solicitado: "Solicitado", en_tramite: "En trámite", aprobado: "Aprobado", rechazado: "Rechazado", vencido: "Vencido" };
-  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${map[estado ?? ""] ?? map.solicitado}`}>{labels[estado ?? ""] ?? estado ?? "—"}</span>;
+  const labels: Record<string,string> = { solicitado: "Solicitado", pendiente_pago: "Pendiente de Pago", en_tramite: "En trámite", aprobado: "Aprobado", rechazado: "Rechazado", vencido: "Vencido" };
+  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${map[estado ?? ""] ?? map.solicitado}`}>{estadoVuce ?? labels[estado ?? ""] ?? estado ?? "—"}</span>;
 }

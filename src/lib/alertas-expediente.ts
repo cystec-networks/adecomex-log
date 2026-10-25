@@ -21,7 +21,7 @@ export function alertasAdicionalesExpediente({ expediente, permisos = [], factur
 }, formato: "corta" | "larga" = "larga"): string[] {
   const alertas: string[] = [];
   const proximos = permisos.filter((p) => {
-    if (!["solicitado", "en_tramite"].includes(p.estado)) return false;
+    if (!["solicitado", "en_tramite", "pendiente_pago"].includes(p.estado)) return false;
     const dias = daysFromToday(p.fecha_vencimiento);
     return dias >= 0 && dias <= REMINDER_CONFIG.permisoPorVencerDias;
   });

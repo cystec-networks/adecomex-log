@@ -4404,7 +4404,7 @@ function TabPermisosExp({ expedienteId }: { expedienteId: string }) {
     queryFn: async () => (await supabase.from("permisos").select("*").eq("expediente_id", expedienteId).is("eliminado_en", null).order("created_at", { ascending: false })).data ?? [],
   });
   const TIPOS: Record<string, string> = { sanitario:"Sanitario", fitosanitario:"Fitosanitario", zoosanitario:"Zoosanitario", indocal:"INDOCAL", ambiental:"Ambiental", agricola:"Agrícola", ministerio_salud:"Ministerio de Salud", otro:"Otro" };
-  const ESTADOS: Record<string, string> = { solicitado:"Solicitado", en_tramite:"En trámite", aprobado:"Aprobado", rechazado:"Rechazado", vencido:"Vencido" };
+  const ESTADOS: Record<string, string> = { solicitado:"Solicitado", pendiente_pago:"Pendiente de Pago", en_tramite:"En trámite", aprobado:"Aprobado", rechazado:"Rechazado", vencido:"Vencido" };
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between">
@@ -4437,7 +4437,7 @@ function TabPermisosExp({ expedienteId }: { expedienteId: string }) {
                   </td>
                   <td className="text-muted-foreground">{TIPOS[p.tipo] ?? "—"}</td>
                   <td className="text-muted-foreground">{p.institucion_emisora ?? "—"}</td>
-                  <td><Badge variant="outline">{ESTADOS[p.estado] ?? p.estado}</Badge></td>
+                  <td><Badge variant="outline">{p.estado_vuce ?? ESTADOS[p.estado] ?? p.estado}</Badge></td>
                   <td className="text-xs text-muted-foreground">{fmtLocalDate(p.fecha_aprobacion)}</td>
                   <td className="text-xs text-muted-foreground">{fmtLocalDate(p.fecha_emision)}</td>
                   <td className="text-xs text-muted-foreground">{fmtLocalDate(p.fecha_vencimiento)}</td>

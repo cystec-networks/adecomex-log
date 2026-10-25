@@ -21,6 +21,9 @@ describe("Alertas independientes del expediente", () => {
   test("sin condiciones no deja alertas", () => {
     expect(alertasAdicionalesExpediente({ expediente })).toEqual([]);
   });
+  test("Pendiente de Pago conserva alerta de vencimiento próximo", () => {
+    expect(alertasAdicionalesExpediente({ expediente, permisos: [{ estado: "pendiente_pago", fecha_vencimiento: fecha(2) }] }, "corta")).toEqual(["VUCE por vencer: 1"]);
+  });
   test("VUCE: hoy y 15 días incluidos, vencidos/aprobados/16 excluidos", () => {
     const permisos = [
       { estado: "solicitado", fecha_vencimiento: hoyRDISO() },
