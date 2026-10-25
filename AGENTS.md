@@ -13,11 +13,11 @@ Apply transitions via `estados-expediente.ts` and `validar_transicion_expediente
 
 Red IDs: `expediente-numero`/`--brand-red`.
 
-Payment slips: linked transport number before reserved TR; TF last.
+Payment slips: linked transport before reserved TR; TF last.
 
-Share expediente/quote PDF; e-CF references use factura-venta-referencias and notas OCR blocks to preserve fiscal lines; share factura-ecf-vinculacion for explicit links.
+Share expediente/quote PDF. e-CF: factura-venta-referencias stores OCR in notas, fiscal lines intact; factura-ecf-vinculacion shares links.
 
-Headers: desktop slots, More actions overflow, mobile rows.
+Headers: desktop slots, More overflow, mobile rows.
 
 New-expediente: two fixed action rows; portal form-owned submits there, preserving validation without floating panels.
 
