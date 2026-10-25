@@ -35,6 +35,9 @@ describe("Detalle Solicitud VUCE", () => {
   test("solo fechas del historial, no aprobación fuera de sección", () => {
     expect(leerDetalleSolicitudVuce("Fecha de Aprobación: 31/12/2026\n" + aprobado)?.fecha_aprobacion).toBe("2026-10-24");
   });
+  test("aprobaciones en una misma línea de texto PDF conservan el máximo", () => {
+    expect(leerDetalleSolicitudVuce(aprobado.replace("25/09/2026\nFecha", "25/09/2026 Fecha"))?.fecha_aprobacion).toBe("2026-10-24");
+  });
   test("reemplazo actualiza estado y fechas conservando campos manuales", () => {
     const form = { numero: "", institucion_emisora: "", estado: "solicitado", estado_vuce: null as string | null, fecha_vencimiento: "2025-01-01", fecha_aprobacion: "2025-01-01", numero_resolucion: "R-123", fecha_emision: "2026-09-20", tipo: "sanitario" };
     const p = leerDetalleSolicitudVuce(pendiente), a = leerDetalleSolicitudVuce(aprobado);

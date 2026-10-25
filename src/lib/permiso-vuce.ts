@@ -36,7 +36,7 @@ export function leerDetalleSolicitudVuce(text: string): DatosPermisoVuce | null 
   if (!estadoVuce || estadoVuce === "-") return null;
   const estado = clasificarEstadoVuce(estadoVuce);
   const historial = t.split(/Historial\s+de\s+Aprobaciones/i)[1]?.split(/(?:Historial\s+de\s+(?!Aprobaciones)|Documentos\s+Adjuntos|Historial\s+de\s+Estados)/i)[0] ?? "";
-  const fechas = [...historial.matchAll(/Fecha\s+de\s+Aprobaci[oó]n\s*:\s*([^\n]+)/gi)]
+  const fechas = [...historial.matchAll(/Fecha\s+de\s+Aprobaci[oó]n\s*:\s*(\d{4}-\d{2}-\d{2}|\d{1,2}[\/-]\d{1,2}[\/-]\d{4})/gi)]
     .map((m) => fechaVuce(m[1])).filter((f): f is string => f !== null).sort();
   return {
     numero, institucion_emisora: valor("Organismo\\s+Externo"), estado, estado_vuce: estadoVuce,
