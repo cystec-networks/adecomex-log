@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { extraerPermisoVuce } from "@/lib/permiso-vuce.functions";
 import { aplicarDetalleVuce } from "@/lib/permiso-vuce";
@@ -58,6 +58,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
   const nav = useNavigate();
   const qc = useQueryClient();
   const leerVuce = useServerFn(extraerPermisoVuce);
+  const detalleVuceInput = useRef<HTMLInputElement>(null);
 
   const { data: existing } = useQuery({
     enabled: mode === "edit" && !!id,
@@ -289,8 +290,26 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
       </Card>
 
       <Card>
-        <CardHeader className="pb-3 border-b">
+        <CardHeader className="pb-3 border-b flex flex-row items-center justify-between gap-3 flex-wrap">
           <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Datos del Permiso VUCE</CardTitle>
+          <input
+            ref={detalleVuceInput}
+            type="file"
+            accept="application/pdf,.pdf"
+            aria-label="Detalle Solicitud VUCE PDF"
+            className="hidden"
+            disabled={uploading || save.isPending}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) void uploadFile(file);
+            }}
+          />
+          <Button variant="outline" size="sm" disabled={uploading || save.isPending}
+            onClick={() => detalleVuceInput.current?.click()}>
+            <Upload className="h-4 w-4 mr-1" />
+            {uploading ? "Leyendo Detalle VUCE…" : "Subir Detalle VUCE (PDF)"}
+          </Button>
         </CardHeader>
         <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div className="grid gap-1.5">
