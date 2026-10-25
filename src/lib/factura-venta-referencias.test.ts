@@ -13,17 +13,17 @@ test("varios expedientes no vinculan y cada coincidencia sigue disponible en Fin
   const ds = ["EXP. 202610I374", "EXP 202610I360"];
   const r = detectarReferenciasFactura(ds);
   expect(r.expedientes).toEqual(["202610I374", "202610I360"]);
-  expect(decidirVinculoFactura(r, [{ id: "exp", numero: "202610I374", factura_ecf_id: null }])).toBeNull();
+  expect(decidirVinculoFactura(r, [{ id: "exp", numero: "202610I374", factura_ecf_id: null }])).toBe(null);
   expect(coincideFacturaExpediente(ds, "202610I374")).toBe(true);
   expect(coincideFacturaExpediente(ds, "202610I352")).toBe(false);
 });
 test("sin EXP o solo BL mantiene Sin vincular", () => {
-  expect(detectarReferenciasFactura(["BL 703-13724200", "HONORARIOS"]).unico).toBeNull();
+  expect(detectarReferenciasFactura(["BL 703-13724200", "HONORARIOS"]).unico).toBe(null);
 });
 test("no sustituye otra factura y no selecciona expediente inexistente", () => {
   const r = detectarReferenciasFactura(["EXP 202610I374"]);
-  expect(decidirVinculoFactura(r, [{ id: "exp", numero: "202610I374", factura_ecf_id: "otra" }], "actual")).toBeNull();
-  expect(decidirVinculoFactura(r, [])).toBeNull();
+  expect(decidirVinculoFactura(r, [{ id: "exp", numero: "202610I374", factura_ecf_id: "otra" }], "actual")).toBe(null);
+  expect(decidirVinculoFactura(r, [])).toBe(null);
 });
 test("referencias OCR persisten sin cambiar líneas fiscales ni notas manuales y reescaneo reemplaza", () => {
   const notas = guardarDescripcionesOcr("Nota manual EXP 202610I360", ["EXP. 202610I374"]);
