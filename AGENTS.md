@@ -42,6 +42,6 @@ Scope detail headers; use content-sized space-between rows, keep client label/va
 - Copiloto selects real eight-digit leaves, normalizes nature/ranks alternatives. OCR uses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.
-- Payment OCR confirms/replaces by SIGA/invoice marker; e-CF only updates pdf_url. Read costs via costos-mercancia-queries: invoice projections dedupe OCR, never write billing; transport/reimbursements use costos-automaticos-liquidacion.
+- Payment OCR confirms/replaces by SIGA/invoice; e-CF only updates pdf_url. Read costs via costos-mercancia-queries: invoice projections dedupe OCR without billing writes; transport/reimbursements use costos-automaticos-liquidacion.
 - DGA OCR shares conditional empty-field mapping; save PDFs before OCR.
 - Expediente editors register dirty/save callbacks in the scoped provider; visited tabs stay mounted to preserve drafts and header saving reuses validated handlers.
