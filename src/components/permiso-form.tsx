@@ -217,7 +217,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
         payload.created_by = u.user?.id ?? null;
         const { data, error } = await supabase.from("permisos").insert(payload).select().single();
         if (error) throw error;
-        // Keep the created identity if linking fails, so retry never creates a second permit.
+        // A linking failure must not encourage creating a duplicate permit; edit the saved row to retry.
         try { await vincularDocumento(); } catch (e) {
           toast.warning(e instanceof Error ? e.message : "Permiso guardado; no se pudo vincular el PDF en Documentos.");
         }
