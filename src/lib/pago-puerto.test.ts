@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { normalizarPagoPuerto, documentoPagoPuerto, conceptoPagoPuerto, validarPagoPuerto, guardarPagoExclusivo, resumenPagoPuerto, esConceptoPagoPuerto } from "./pago-puerto";
 describe("Comprobantes de pagos portuarios", () => {
   it("Gestión Aduanal conserva NCF y fecha y se destina a Finanzas", () => {
-    const p = normalizarPagoPuerto({ monto: 11800, moneda: "DOP", fecha: "2026-10-24", referencia: "E310000000335", tipo: "gestion_aduanal", confianza: "alta" });
-    assert.equal(p.tipo, "gestion_aduanal"); assert.equal(p.monto, 11800); assert.equal(p.referencia, "E310000000335"); assert.equal(p.fecha, "2026-10-24");
+    const p = normalizarPagoPuerto({ monto: 8850, monto_sin_itbis: 7500, moneda: "DOP", fecha: "2026-10-24", referencia: "E310000000335", tipo: "gestion_aduanal", confianza: "alta" });
+    assert.equal(p.tipo, "gestion_aduanal"); assert.equal(p.monto, 7500); assert.equal(p.referencia, "E310000000335"); assert.equal(p.fecha, "2026-10-24");
     assert.equal(conceptoPagoPuerto("gestion_aduanal", ""), "Gestión Aduanal");
     assert.equal(documentoPagoPuerto("gestion_aduanal"), "PDF de Factura e-CF en Finanzas");
     validarPagoPuerto({ tipo: "gestion_aduanal", monto: "11800", moneda: "DOP" });
@@ -32,7 +32,7 @@ describe("Comprobantes de pagos portuarios", () => {
     assert.throws(() => validarPagoPuerto({ tipo: "almacenaje", monto: "", moneda: "DOP" }));
   });
   it("conserva monto, moneda, fecha y PIN extraídos", () => {
-    assert.deepEqual(normalizarPagoPuerto({ monto: 8649.79, moneda: "DOP", fecha: "2026-10-24", referencia: "DPW001", tipo: "almacenaje", confianza: "alta" }), { monto: 8649.79, moneda: "DOP", fecha: "2026-10-24", referencia: "DPW001", tipo: "almacenaje", confianza: "alta" });
+    assert.deepEqual(normalizarPagoPuerto({ monto_sin_itbis: null, monto: 8649.79, moneda: "DOP", fecha: "2026-10-24", referencia: "DPW001", tipo: "almacenaje", confianza: "alta" }), { monto_sin_itbis: null, monto: 8649.79, moneda: "DOP", fecha: "2026-10-24", referencia: "DPW001", tipo: "almacenaje", confianza: "alta" });
   });
   it("bloquea guardados simultáneos sin ejecutar el segundo", async () => {
     let terminar = () => {};
@@ -63,4 +63,10 @@ describe("Comprobantes de pagos portuarios", () => {
     assert.equal(esConceptoPagoPuerto("Gestión Aduanal", "gestion_aduanal"), true);
     assert.equal(esConceptoPagoPuerto("Cargos Locales", "cargos_locales"), true);
   });
+});
+
+it("Gestión sin base OCR no usa el total con ITBIS; base cero se conserva", () => {
+  assert.equal(normalizarPagoPuerto({ tipo: "gestion_aduanal", monto: 8850 }).monto, null);
+  assert.equal(normalizarPagoPuerto({ tipo: "gestion_aduanal", monto: 8850, monto_sin_itbis: 0 }).monto, 0);
+  assert.equal(normalizarPagoPuerto({ tipo: null, monto: 8850, monto_sin_itbis: 7500 }).monto_sin_itbis, 7500);
 });
