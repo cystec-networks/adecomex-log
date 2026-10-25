@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { sha256File, siguienteCodigoSiga, validarNombreSiga } from "./codigo-siga";
 import { hoyRDISO } from "./dates";
-import { documentoPagoPuerto, guardarPagoExclusivo, validarPagoPuerto, type TipoPagoPuerto } from "./pago-puerto";
+import { documentoPagoPuerto, esConceptoPagoPuerto, guardarPagoExclusivo, validarPagoPuerto, type TipoPagoPuerto } from "./pago-puerto";
 
 export type BorradorPagoPuerto = { tipo: TipoPagoPuerto | ""; monto: string; moneda: string; fecha: string; referencia: string; concepto: string };
 
@@ -49,6 +49,27 @@ async function guardarGestion(expedienteId: string, file: File, borrador: Borrad
   }
   // Do not delete the previous e-CF PDF: it may also be referenced by another document.
   return { codigo: factura?.encf ?? "Gestión Aduanal", aviso: factura ? undefined : "Costo guardado. No hay una Factura e-CF correspondiente vinculada en Finanzas: no se adjuntó el PDF ni se creó una factura. Registra o vincula la factura y vuelve a cargar el comprobante." };
+}
+/** Documento ya subido desde la ficha Documentos: solo crea/actualiza su costo (marcador SIGA o, si no existe, el costo del mismo tipo). */
+export async function guardarCostoDocumentoPuerto(expedienteId: string, codigo: string, borrador: BorradorPagoPuerto) {
+  validarPagoPuerto(borrador);
+  const tipoPago = borrador.tipo;
+  if (!tipoPago || tipoPago === "gestion_aduanal") throw new Error("Selecciona el tipo de pago.");
+  if (!borrador.concepto.trim()) throw new Error("Confirma el concepto del costo.");
+  return guardarPagoExclusivo(expedienteId, async () => {
+    const marcador = `Documento SIGA: ${codigo}`;
+    const observaciones = [borrador.fecha && `Fecha de pago: ${borrador.fecha}`, borrador.referencia && `PIN/Referencia: ${borrador.referencia}`, marcador].filter(Boolean).join(" · ");
+    const { data: costos, error: lectura } = await supabase.from("costos_producto").select("id,concepto,observaciones").eq("expediente_id", expedienteId);
+    if (lectura) throw lectura;
+    const previo = costos?.find((c) => c.observaciones?.split(" · ").includes(marcador))
+      ?? costos?.find((c) => esConceptoPagoPuerto(c.concepto, tipoPago) && !c.observaciones?.includes("Documento SIGA:"));
+    const costo = { concepto: borrador.concepto.trim(), monto_real: Number(borrador.monto), moneda: borrador.moneda, observaciones };
+    const { error } = previo
+      ? await supabase.from("costos_producto").update(costo).eq("id", previo.id).eq("expediente_id", expedienteId)
+      : await supabase.from("costos_producto").insert({ expediente_id: expedienteId, ...costo });
+    if (error) throw error;
+    return { codigo, aviso: undefined as string | undefined };
+  });
 }
 export async function guardarComprobantePuerto(expedienteId: string, file: File, borrador: BorradorPagoPuerto, duplicadoConfirmado = false) {
   validarPagoPuerto(borrador);
