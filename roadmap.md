@@ -1,3 +1,4 @@
+- [ ] Sincronizar e-CF de Gestión Aduanal con PDF hacia costo automático de mercancía; altas/ediciones/bajas, sin duplicar escaneo, verificar 202610I352 y Costo Unit. Real.
 - [x] Guardado global del expediente: registro por editor, borradores persistentes entre fichas y validaciones originales. Guardado real desde Costos verificado en 202609I339 con recarga y restauración; Liquidación conserva borrador/indicador entre fichas. 23 pruebas aprobadas.
 - [x] Casilla PIN después del Recibo y OCR acumulativo Liquidación/PIN/Recibo, con campos editables y escrituras condicionales que preservan valores existentes; 9 pruebas aprobadas, OCR real sobre PDFs de prueba y resultado visible completo verificados con sesión en 202610I356 sin persistir datos ficticios.
 - [ ] Verificar las tres cargas con los PDFs reales de Valiente Fernandez 202610I356; no están adjuntos ni cargados en el expediente (solo Factura Comercial y BL).
