@@ -15,6 +15,21 @@ export function coincideFacturaExpediente(descripciones: readonly string[], nume
   return !!numero && detectarReferenciasFactura(descripciones).expedientes.includes(numero.toUpperCase());
 }
 
+const INICIO_OCR = "[Descripciones de servicios · OCR]";
+const FIN_OCR = "[Fin descripciones OCR]";
+export function guardarDescripcionesOcr(notas: string, descripciones: readonly string[]) {
+  const inicio = notas.indexOf(INICIO_OCR);
+  const fin = inicio < 0 ? -1 : notas.indexOf(FIN_OCR, inicio);
+  const manual = fin < 0 ? notas : `${notas.slice(0, inicio)}${notas.slice(fin + FIN_OCR.length)}`;
+  return [manual.trim(), `${INICIO_OCR}\n${descripciones.join("\n")}\n${FIN_OCR}`].filter(Boolean).join("\n\n");
+}
+export function descripcionesOcrGuardadas(notas?: string | null) {
+  const inicio = notas?.indexOf(INICIO_OCR) ?? -1;
+  if (!notas || inicio < 0) return [];
+  const fin = notas.indexOf(FIN_OCR, inicio);
+  return fin < 0 ? [] : [notas.slice(inicio + INICIO_OCR.length, fin)];
+}
+
 export function decidirVinculoFactura(referencias: ReturnType<typeof detectarReferenciasFactura>,
   candidatos: readonly { id: string; numero: string; factura_ecf_id: string | null }[], facturaId?: string) {
   if (!referencias.unico) return null;

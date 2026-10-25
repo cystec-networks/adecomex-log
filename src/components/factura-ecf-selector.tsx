@@ -18,7 +18,7 @@ import {
 import { EscanearFacturaVentaButton } from "@/components/escanear-factura-venta-button";
 import type { FacturaVentaExtraction } from "@/lib/ai-ocr-factura-venta.functions";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
-import { detectarReferenciasFactura, decidirVinculoFactura, coincideFacturaExpediente } from "@/lib/factura-venta-referencias";
+import { detectarReferenciasFactura, decidirVinculoFactura, coincideFacturaExpediente, guardarDescripcionesOcr, descripcionesOcrGuardadas } from "@/lib/factura-venta-referencias";
 import { sincronizarCobroDesdeEcf } from "@/lib/factura-ecf-vinculacion";
 
 const TERMINOS_PAGO = [
@@ -95,7 +95,7 @@ export function FacturaEcfFormDialog({
 
   const [fechaVencPagoManual, setFechaVencPagoManual] = useState(false);
   const [omitirVinculo, setOmitirVinculo] = useState(false);
-  const referencias = useMemo(() => detectarReferenciasFactura(lineas.map(l => l.descripcion)), [lineas]);
+  const referencias = useMemo(() => detectarReferenciasFactura([...lineas.map(l => l.descripcion), ...descripcionesOcrGuardadas(notas)]), [lineas, notas]);
   const { data: expedientesReferencia } = useQuery({
     queryKey: ["expedientes-referencia-ecf", referencias.expedientes],
     enabled: open && referencias.expedientes.length > 0,
@@ -333,6 +333,10 @@ export function FacturaEcfFormDialog({
   };
 
   const applyExtracted = (d: FacturaVentaExtraction) => {
+    if (d.descripciones?.length) {
+      setNotas(prev => guardarDescripcionesOcr(prev, d.descripciones));
+      setOmitirVinculo(false);
+    }
     if (d.encf && !encf) setEncf(d.encf);
     if (d.tipo_comprobante && tipo === "31") setTipo(d.tipo_comprobante);
     if (d.fecha_emision) setFechaEmision(d.fecha_emision);
@@ -371,12 +375,6 @@ export function FacturaEcfFormDialog({
         });
       }
       if (nuevas.length) setLineas(nuevas);
-      if (nuevas.length && d.descripciones?.length) {
-        nuevas[0] = { ...nuevas[0], descripcion: d.descripciones.join("\n") };
-        setLineas(nuevas);
-      }
-    } else if (d.descripciones?.length) {
-      toast.info("Las líneas editadas se conservaron. Revisa las referencias EXP de sus descripciones antes de guardar.");
     }
   };
 
@@ -624,7 +622,7 @@ export function FacturaEcfSelector({
     queryKey: ["facturas-ecf-lite"],
     queryFn: async () => (await supabase
       .from("facturas_ecf")
-      .select("id,encf,cliente_razon_social,monto_total,fecha_emision,tipo_comprobante,cliente_id,facturas_ecf_lineas(descripcion)")
+      .select("id,encf,cliente_razon_social,monto_total,fecha_emision,tipo_comprobante,cliente_id,notas,facturas_ecf_lineas(descripcion)")
       .is("eliminado_en", null)
       .order("fecha_emision", { ascending: false })
       .limit(500)
@@ -633,7 +631,7 @@ export function FacturaEcfSelector({
 
   const selected = (facturas ?? []).find((f) => f.id === value);
   const esCoincidencia = (f: NonNullable<typeof facturas>[number]) =>
-    coincideFacturaExpediente(f.facturas_ecf_lineas.map(l => l.descripcion ?? ""), expedienteNumero);
+    coincideFacturaExpediente([...f.facturas_ecf_lineas.map(l => l.descripcion ?? ""), ...descripcionesOcrGuardadas(f.notas)], expedienteNumero);
   const ordenadas = [...(facturas ?? [])].sort((a, b) => Number(esCoincidencia(b)) - Number(esCoincidencia(a)));
 
   return (

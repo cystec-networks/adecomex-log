@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { detectarReferenciasFactura, decidirVinculoFactura, coincideFacturaExpediente } from "./factura-venta-referencias";
+import { detectarReferenciasFactura, decidirVinculoFactura, coincideFacturaExpediente, guardarDescripcionesOcr, descripcionesOcrGuardadas } from "./factura-venta-referencias";
 
 test("E310000000358 detecta un único EXP aunque VUCE no lo repita y conserva BL", () => {
   const r = detectarReferenciasFactura(["HONORARIOS GESTIONES ADUANALES, EXP. 202610I374 - BL 703-13724200 - FERMENTOS.", "PERMISO VUCE"]);
@@ -24,4 +24,12 @@ test("no sustituye otra factura y no selecciona expediente inexistente", () => {
   const r = detectarReferenciasFactura(["EXP 202610I374"]);
   expect(decidirVinculoFactura(r, [{ id: "exp", numero: "202610I374", factura_ecf_id: "otra" }], "actual")).toBeNull();
   expect(decidirVinculoFactura(r, [])).toBeNull();
+});
+test("referencias OCR persisten sin cambiar líneas fiscales ni notas manuales y reescaneo reemplaza", () => {
+  const notas = guardarDescripcionesOcr("Nota manual EXP 202610I360", ["EXP. 202610I374"]);
+  expect(notas.startsWith("Nota manual EXP 202610I360")).toBe(true);
+  expect(detectarReferenciasFactura(descripcionesOcrGuardadas(notas)).unico).toBe("202610I374");
+  const segunda = guardarDescripcionesOcr(notas, ["EXP 202610I352"]);
+  expect(detectarReferenciasFactura(descripcionesOcrGuardadas(segunda)).expedientes).toEqual(["202610I352"]);
+  expect(descripcionesOcrGuardadas("Nota manual EXP 202610I360")).toEqual([]);
 });

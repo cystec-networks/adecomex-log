@@ -15,7 +15,7 @@ Red IDs: `expediente-numero`/`--brand-red`.
 
 Payment slips: linked transport number before reserved TR; TF last.
 
-Share expediente/quote PDF.
+Share expediente/quote PDF; e-CF references use factura-venta-referencias and notas OCR blocks to preserve fiscal lines; share factura-ecf-vinculacion for explicit links.
 
 Headers: desktop slots, More actions overflow, mobile rows.
 
