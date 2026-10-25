@@ -22,14 +22,14 @@ Detail headers: content-sized space-between rows, client label/value together, w
 - Open the existing Endoso section via a parent-owned request counter from both header document menus, preserving a single form and its current persistence logic.
 - Evaluate detail warnings with scoped evidence queries; invoice links and persisted reception incidents prevent unrelated debt alerts and recomputed tolerances.
 - Use the shared expediente alert evaluator for list and detail short/long text; keep PIN timestamp countdown separate from business-day presentation deadlines, and batch list evidence reads to avoid per-row requests.
-- Group simultaneous PIN and presentation warnings into one list-only deadline entry with both short descriptions; preserve the independent clocks and full detail warnings to avoid hiding payment or legal deadlines.
+- Group PIN/presentation warnings in one list-only deadline entry with both short texts; retain independent clocks and full detail warnings.
 - Export DR-CAFTA certificates from the resolved editable preview using native jsPDF text and vector borders, measuring existing cell and text positions to preserve official layouts and annexes without rasterization or losing saved edits.
 - Keep inspection type in the existing canal_riesgo storage field; portal the form-owned selector into the detail header so both editors share draft state and the existing save validation without migrating historical values.
 - Use consignatario-efectivo.ts (active endorsement, else original) for documents/new invoices; issued invoices stay frozen.
 - Resolve the dispatch-date modal asynchronously within the existing state mutation and reuse fechasDespachoFaltantes for detail-only preventive alerts, preserving permission checks and audit payloads.
 - Share entry suggestions via buscarSugerenciasProducto/resolverSugerenciasProducto (not historical/Real); explicit DGA selections use datosProductoHistorico. Tariff CSV uses staff-checked server import and atomic invoker RPC; no product override writes.
 - Chapter notes: separate read-only panel, admin invoker import; preserve tariff suggestions/import.
-- ImporteLiquidacionInput/liquidacion-moneda: RD$ editing, USD storage. liquidacion-final shares UI/PDF, batch item markup; weighted totals, no billing writes.
+- Liquidation: independent Radix collapsibles retain draft handlers; ImporteLiquidacionInput/liquidacion-moneda edit RD$, store USD. Shared UI/PDF totals and batch markup; no billing writes.
 - Copiloto selects real eight-digit leaves, normalizes nature/ranks alternatives. OCR uses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.

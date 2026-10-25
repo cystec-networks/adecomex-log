@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { ImporteLiquidacionInput } from "@/components/importe-liquidacion-input";
 import { Label } from "@/components/ui/label";
@@ -6477,35 +6478,52 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
               </div>}
               {list.map((it) => {
                 const c = calcFila(it);
+                const margenResumen = margenSobreVenta(c.costoUnit, c.cv);
+                const pendiente = ["gravamen_real", "isc_real", "itbis_real"].some((campo) => {
+                  const valor = draft[it.id]?.[campo] ?? it[campo];
+                  return valor == null || valor === "";
+                });
                 const bloques = [
                   { label: "Gravamen", campo: "gravamen_real", est: c.est.gravamen, real: c.gr },
                   { label: "ISC", campo: "isc_real", est: c.est.selectivo, real: c.ir },
                   { label: "ITBIS", campo: "itbis_real", est: c.est.itbis, real: c.tr },
                 ];
                 return (
-                  <div key={it.id} className="rounded-md border p-3">
-                    <div className="flex flex-wrap items-baseline justify-between gap-2 border-b pb-2 mb-2">
-                      <div className="min-w-0">
-                        <div className="font-medium text-[13px]">{it.detalle_producto ?? "—"}</div>
-                        <div className="text-muted-foreground">{it.codigo_arancelario ?? "—"}</div>
-                      </div>
-                      <div className="text-right tabular-nums"><span className="text-muted-foreground">Cantidad: </span>{nf(c.cant)} {it.unidad_medida ?? ""}</div>
+                  <Collapsible key={it.id} defaultOpen={false} className="rounded-md border" data-producto-liquidacion={it.item_no}>
+                    <div className="overflow-x-auto">
+                      <CollapsibleTrigger asChild>
+                        <Button type="button" variant="ghost" aria-label={`Producto línea ${it.item_no}: ${it.detalle_producto ?? "—"}`} className="group h-auto min-h-12 w-full min-w-[850px] justify-start rounded-md px-3 py-2 text-xs font-normal">
+                          <ChevronDown className="h-4 w-4 shrink-0 -rotate-90 transition-transform motion-reduce:transition-none group-data-[state=open]:rotate-0" />
+                          <span className="min-w-0 flex-1 truncate text-left font-medium text-[13px]" title={it.detalle_producto ?? "—"}>{it.detalle_producto ?? "—"}</span>
+                          {pendiente && <Badge variant="outline" className="shrink-0 border-warning text-warning">Pendiente</Badge>}
+                          <span className="w-32 shrink-0 text-right tabular-nums"><span className="text-muted-foreground">Cant.: </span>{nf(c.cant)} <span title={it.unidad_medida ?? ""}>{it.unidad_medida ?? ""}</span></span>
+                          <span className="w-40 shrink-0 text-right tabular-nums"><span className="text-muted-foreground">Costo Unit. US$: </span>{nf(c.costoUnit, 4)}</span>
+                          <span className="w-40 shrink-0 text-right tabular-nums"><span className="text-muted-foreground">Venta US$: </span>{nf(c.cv, 4)}</span>
+                          <span className="w-28 shrink-0 text-right tabular-nums"><span className="text-muted-foreground">Margen: </span>{margenResumen == null ? "—" : `${nf(margenResumen)}%`}</span>
+                        </Button>
+                      </CollapsibleTrigger>
                     </div>
-                    <div className="space-y-1.5">
+                    <CollapsibleContent className="border-t p-3">
+                    <div className="mb-2 text-muted-foreground">{it.codigo_arancelario ?? "—"}</div>
+                    <div className="overflow-x-auto">
+                    <div className="grid min-w-[540px] grid-cols-3 gap-3">
                       {bloques.map((b) => (
-                        <div key={b.campo} className="grid grid-cols-[110px_1fr_auto_1fr] items-center gap-x-3 gap-y-1">
+                        <div key={b.campo} className="space-y-1.5">
                           <div className="font-medium">{b.label} (RD$)</div>
-                          <div className="text-right tabular-nums"><span className="text-muted-foreground">Est. </span>{nf(rd(Number(b.est.toFixed(2))))}</div>
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center gap-2">
                             <span className="text-muted-foreground">Real</span>
                             {editable && tasaValida ? (
                               <ImporteLiquidacionInput aria-label={`${b.label === "Gravamen" ? "Grav." : b.label} Real línea ${it.item_no}`} value={valRd(it, b.campo)}
                                 onValueChange={(v) => setValRd(it.id, b.campo, v)} />
                             ) : <span className="tabular-nums">{nf(rd(b.real))}</span>}
                           </div>
-                          <div className="text-right tabular-nums"><span className="text-muted-foreground">Dif. </span><Diff real={rd(b.real)} est={rd(Number(b.est.toFixed(2))) ?? 0} /></div>
+                          <div className="flex flex-wrap justify-between gap-1 tabular-nums">
+                            <span><span className="text-muted-foreground">Est. </span>{nf(rd(Number(b.est.toFixed(2))))}</span>
+                            <span><span className="text-muted-foreground">Dif. </span><Diff real={rd(b.real)} est={rd(Number(b.est.toFixed(2))) ?? 0} /></span>
+                          </div>
                         </div>
                       ))}
+                    </div>
                     </div>
                     {(() => {
                       const puedeVenta = editable || (finalizado && canEdit);
@@ -6562,7 +6580,8 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
                         </div>
                       );
                     })()}
-                  </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 );
               })}
           </div>
