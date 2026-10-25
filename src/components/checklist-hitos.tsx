@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from "react";
+import { useEditorExpediente } from "@/components/expediente-guardado";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,11 +54,10 @@ function DeferredTextarea({ value, onSave, ...props }: DeferredTextareaProps) {
     <Textarea
       {...props}
       value={local}
-      onChange={(e) => setLocal(e.target.value)}
+      onChange={(e) => { setLocal(e.target.value); onSave(e.target.value || null); }}
       onFocus={() => { isFocused.current = true; }}
       onBlur={() => {
         isFocused.current = false;
-        onSave(local || null);
       }}
     />
   );
@@ -84,11 +84,10 @@ function DeferredDateInput({ value, onSave, className }: DeferredDateInputProps)
       type="date"
       className={className}
       value={local}
-      onChange={(e) => setLocal(e.target.value)}
+      onChange={(e) => { setLocal(e.target.value); onSave(e.target.value || null); }}
       onFocus={() => { isFocused.current = true; }}
       onBlur={() => {
         isFocused.current = false;
-        onSave(local || null);
       }}
     />
   );
@@ -128,6 +127,10 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
     responsable_id?: string | null;
   };
 
+  const [borradores, setBorradores] = useState<Record<string, HitoPatch>>({});
+  const editar = ({ id, patch }: { id: string; patch: HitoPatch }) =>
+    setBorradores((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+
   const update = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: HitoPatch }) => {
       const p: HitoPatch = { ...patch };
@@ -145,6 +148,17 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
       qc.invalidateQueries({ queryKey: ["reminders"] });
     },
     onError: (e: any) => toast.error(e.message),
+  });
+
+  const [guardando, setGuardando] = useState(false);
+  useEditorExpediente(Object.keys(borradores).length > 0, guardando, async () => {
+    setGuardando(true);
+    try {
+      for (const [id, patch] of Object.entries(borradores)) {
+        await update.mutateAsync({ id, patch });
+        setBorradores((prev) => { const next = { ...prev }; delete next[id]; return next; });
+      }
+    } finally { setGuardando(false); }
   });
 
   const { done, total, pct } = useMemo(() => {
@@ -190,7 +204,8 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
                 </tr>
               </thead>
               <tbody>
-                {(hitos ?? []).map((h, i) => {
+                {(hitos ?? []).map((original, i) => {
+                  const h = { ...original, ...borradores[original.id] };
                   const esCritico = h.catalogo_hitos?.con_alerta === true;
                   const activo = h.estado !== "completado" && h.estado !== "no_aplica";
                   const atrasado = !!(
@@ -226,12 +241,12 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
                         <DeferredDateInput
                           className="h-8"
                           value={h.fecha_programada}
-                          onSave={(v) => update.mutate({ id: h.id, patch: { fecha_programada: v } })}
+                          onSave={(v) => editar({ id: h.id, patch: { fecha_programada: v } })}
                         />
                       </td>
                       <td className="px-2 py-2">
                         <div className="flex flex-col gap-1.5">
-                          <Select value={h.estado} onValueChange={(v) => update.mutate({ id: h.id, patch: { estado: v as HitoRow["estado"] } })}>
+                          <Select value={h.estado} onValueChange={(v) => editar({ id: h.id, patch: { estado: v as HitoRow["estado"] } })}>
                             <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                             <SelectContent>
                               {ESTADOS.map((e) => <SelectItem key={e.v} value={e.v}>{e.label}</SelectItem>)}
@@ -244,7 +259,7 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
                         <DeferredDateInput
                           className="h-8"
                           value={h.fecha_cumplimiento}
-                          onSave={(v) => update.mutate({ id: h.id, patch: { fecha_cumplimiento: v } })}
+                          onSave={(v) => editar({ id: h.id, patch: { fecha_cumplimiento: v } })}
                         />
                       </td>
                       <td className="px-2 py-2">
@@ -252,7 +267,7 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
                           rows={1}
                           className="min-h-8 text-sm"
                           value={h.notas}
-                          onSave={(v) => update.mutate({ id: h.id, patch: { notas: v } })}
+                          onSave={(v) => editar({ id: h.id, patch: { notas: v } })}
                           placeholder="Observaciones…"
                         />
                       </td>

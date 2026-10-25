@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEditorExpediente } from "@/components/expediente-guardado";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, Loader2, AlertTriangle } from "lucide-react";
@@ -62,10 +63,11 @@ export function EscanearPagoPuerto({ expedienteId }: { expedienteId: string }) {
     }, onError: (e) => { toast.error(e.message); if (e.message.includes("El archivo ya está cargado")) setMensajeDuplicado(e.message); },
   });
   const pendiente = analizar.isPending || guardar.isPending;
+  useEditorExpediente(analizado, pendiente, async () => { await guardar.mutateAsync(); });
   const editar = (values: Partial<BorradorPagoPuerto>) => { setBorrador((p) => ({ ...p, ...values })); setConfirmado(false); };
   return <>
     <Button size="sm" variant="outline" onClick={() => { reset(); setOpen(true); }}><Sparkles className="h-4 w-4 mr-1" />Escanear pago</Button>
-    <Dialog open={open} onOpenChange={(v) => { if (!pendiente) { setOpen(v); if (!v) reset(); } }}>
+    <Dialog modal={false} open={open} onOpenChange={(v) => { if (!pendiente) setOpen(v); }}>
       <DialogContent className="max-w-xl">
         <DialogHeader><DialogTitle>Escanear pago de importación</DialogTitle></DialogHeader>
         <div className="grid gap-3">

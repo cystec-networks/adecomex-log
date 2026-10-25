@@ -1,3 +1,6 @@
+import { ExpedienteGuardadoProvider, useGuardadoExpediente, useEditorExpediente, useBorradorExpediente } from "@/components/expediente-guardado";
+import { TransporteForm } from "@/components/transporte-form";
+import { PermisoForm } from "@/components/permiso-form";
 import { construirObservaciones, contenedoresValidos, contenedoresDesdeTabla, descripcionBorrador, tipoCargaPorDefecto, estructuraVacia, normalizarRemarkSiga, TIPOS_CARGA_OBS, type ObservacionesEstructura } from "@/lib/observaciones-expediente";
 import { calcularResultadosLiquidacion, valorRealInicial, costoUnitarioReal, precioVentaPorGanancia, margenSobreVenta } from "@/lib/liquidacion-final";
 import { costosAutomaticosLiquidacion } from "@/lib/costos-automaticos-liquidacion";
@@ -152,8 +155,13 @@ export const Route = createFileRoute("/_authenticated/expedientes/$id")({
     ],
   }),
   validateSearch: zodValidator(searchSchema),
-  component: DetalleExpediente,
+  component: ExpedienteConGuardado,
 });
+
+function ExpedienteConGuardado() {
+  const { id } = Route.useParams();
+  return <ExpedienteGuardadoProvider key={id}><DetalleExpediente /></ExpedienteGuardadoProvider>;
+}
 
 // Helpers para inputs `datetime-local` (vigencia del PIN de pago DGA).
 function isoToLocalInput(iso: string | null | undefined): string {
@@ -394,6 +402,7 @@ function publicarEstadoGuardado(e: EstadoGuardadoHeader) {
 
 function ControlesGuardadoHeader({ expedienteId, compacto = false }: { expedienteId: string; compacto?: boolean }) {
   const qc = useQueryClient();
+  const registro = useGuardadoExpediente();
   const [st, setSt] = useState<EstadoGuardadoHeader>(null);
   useEffect(() => {
     setSt((window as any).__expGuardado ?? null);
@@ -408,10 +417,10 @@ function ControlesGuardadoHeader({ expedienteId, compacto = false }: { expedient
   };
   return (
     <div className={compacto ? "flex items-center gap-1" : "flex items-center gap-1.5 border-l pl-1.5"}>
-      <span className="flex h-4 w-4 shrink-0 items-center justify-center text-xs" role="status" title={st?.estado === "error" ? "No se pudo guardar, intenta de nuevo" : st?.hayCambios ? "Cambios sin guardar" : st?.estado === "ok" ? "Cambios guardados" : undefined}>
-        {st?.estado === "error" ? <span className="text-destructive">✗<span className="sr-only">No se pudo guardar, intenta de nuevo</span></span> : st?.hayCambios ? <span className="h-2 w-2 rounded-full bg-warning"><span className="sr-only">Cambios sin guardar</span></span> : st?.estado === "ok" ? <span className="text-success">✓<span className="sr-only">Cambios guardados</span></span> : null}
+      <span className="flex h-4 w-4 shrink-0 items-center justify-center text-xs" role="status" title={registro?.estado === "error" ? "No se pudo guardar, intenta de nuevo" : registro?.hayCambios ? "Cambios sin guardar" : registro?.estado === "ok" ? "Cambios guardados" : undefined}>
+        {registro?.estado === "error" ? <span className="text-destructive">✗<span className="sr-only">No se pudo guardar, intenta de nuevo</span></span> : registro?.hayCambios ? <span className="h-2 w-2 rounded-full bg-warning"><span className="sr-only">Cambios sin guardar</span></span> : registro?.estado === "ok" ? <span className="text-success">✓<span className="sr-only">Cambios guardados</span></span> : null}
       </span>
-      {st?.puedeEditar ? (
+      {st?.puedeEditar && !registro?.hayCambios ? (
         <Button size={compacto ? "sm" : "default"} className={compacto ? "w-24 shrink-0" : "w-32 shrink-0"} onClick={() => window.dispatchEvent(new Event("exp-editar"))} aria-label="Editar">
           <Pencil className="h-4 w-4 mr-1" /> Editar
         </Button>
@@ -419,13 +428,13 @@ function ControlesGuardadoHeader({ expedienteId, compacto = false }: { expedient
         <Button
           size={compacto ? "sm" : "default"}
           className={compacto ? "relative w-24 shrink-0 px-3" : "relative w-32 shrink-0 px-3"}
-          disabled={!st?.editable || st?.pendiente}
-          onClick={() => window.dispatchEvent(new Event("exp-guardar"))}
-          title={st ? "Guardar cambios" : "En esta ficha cada registro se guarda desde su propia ventana"}
+          disabled={!registro?.hayCambios || registro?.pendiente}
+          onClick={() => { void registro?.guardar().catch(() => toast.error("No se pudieron guardar todos los cambios; revisa los datos pendientes.")); }}
+          title="Guardar cambios de todas las fichas"
           aria-label="Guardar cambios"
         >
-          {st?.hayCambios && <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-background bg-amber-500" />}
-          {st?.pendiente ? "Guardando…" : compacto ? "Guardar" : "Guardar cambios"}
+          {registro?.hayCambios && <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-background bg-warning" />}
+          {registro?.pendiente ? "Guardando…" : compacto ? "Guardar" : "Guardar cambios"}
         </Button>
       )}
       <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={refrescar} disabled={refrescando} title="Refrescar datos del Expediente">
@@ -548,6 +557,8 @@ function DetalleExpediente() {
   const qc = useQueryClient();
   const [tabOrder, setTabOrder] = useState<string[]>(DEFAULT_TAB_ORDER);
   const [tabActiva, setTabActiva] = useState("info");
+  const [fichasVisitadas, setFichasVisitadas] = useState<string[]>(["info"]);
+  const activarFicha = (value: string) => { setTabActiva(value); setFichasVisitadas((prev) => prev.includes(value) ? prev : [...prev, value]); };
   const [nuevoAccionesHost, setNuevoAccionesHost] = useState<HTMLDivElement | null>(null);
   const [inspeccionHost, setInspeccionHost] = useState<HTMLDivElement | null>(null);
   const [solicitudEndoso, setSolicitudEndoso] = useState(0);
@@ -880,7 +891,7 @@ function DetalleExpediente() {
   return (
     <div className={cn("max-w-[1600px] mx-auto space-y-6", (isNuevo || modoEdicion) && (nuevo || isNuevo ? "bg-emerald-50/40" : "bg-amber-50/40"))}>
       <ImpuestosSuspCtx.Provider value={suspEstado}>
-      <Tabs value={tabActiva} onValueChange={setTabActiva}>
+      <Tabs value={tabActiva} onValueChange={activarFicha}>
       <div
         ref={(el) => {
           if (!el || (el as any)._roSet) return;
@@ -1241,7 +1252,7 @@ function DetalleExpediente() {
         )}
       </div>
       <div className="px-6">
-        <TabsContent value="info">
+        <TabsContent value="info" forceMount={fichasVisitadas.includes("info") ? true : undefined} className="data-[state=inactive]:hidden">
           <div id="ficha-generales-print">
             <div className="hidden print:block mb-4">
               <h1 className="text-xl font-bold">Expediente <span className="expediente-numero">{expData.numero}</span> — Ficha General</h1>
@@ -1267,21 +1278,21 @@ function DetalleExpediente() {
         </TabsContent>
         {!isNuevo && (
         <>
-        <TabsContent value="checklist">
+        <TabsContent value="checklist" forceMount={fichasVisitadas.includes("checklist") ? true : undefined} className="data-[state=inactive]:hidden">
           <ChecklistHitos expedienteId={id} />
         </TabsContent>
 
         
-        <TabsContent value="liqfinal"><LiquidacionFinalSection exp={expData} draft={liqDraft} setDraft={setLiqDraft} /></TabsContent>
-        <TabsContent value="docs"><TabDocumentos expedienteId={id} /></TabsContent>
+        <TabsContent value="liqfinal" forceMount={fichasVisitadas.includes("liqfinal") ? true : undefined} className="data-[state=inactive]:hidden"><LiquidacionFinalSection exp={expData} draft={liqDraft} setDraft={setLiqDraft} /></TabsContent>
+        <TabsContent value="docs" forceMount={fichasVisitadas.includes("docs") ? true : undefined} className="data-[state=inactive]:hidden"><TabDocumentos expedienteId={id} /></TabsContent>
 
-        <TabsContent value="permisos"><TabPermisosExp expedienteId={id} /></TabsContent>
-        <TabsContent value="transportes"><TabTransportesExp expedienteId={id} /></TabsContent>
-        <TabsContent value="recepcion"><TabRecepcion expedienteId={id} /></TabsContent>
-        <TabsContent value="inc"><TabIncidencias expedienteId={id} /></TabsContent>
-        <TabsContent value="cost"><TabCostos expedienteId={id} exp={expData} canEdit={canEditExpediente} /></TabsContent>
-        <TabsContent value="costprod"><TabCostosProducto expedienteId={id} exp={expData} liqDraft={liqDraft} /></TabsContent>
-        <TabsContent value="aud"><TabAuditoria expedienteId={id} /></TabsContent>
+        <TabsContent value="permisos" forceMount={fichasVisitadas.includes("permisos") ? true : undefined} className="data-[state=inactive]:hidden"><TabPermisosExp expedienteId={id} /></TabsContent>
+        <TabsContent value="transportes" forceMount={fichasVisitadas.includes("transportes") ? true : undefined} className="data-[state=inactive]:hidden"><TabTransportesExp expedienteId={id} /></TabsContent>
+        <TabsContent value="recepcion" forceMount={fichasVisitadas.includes("recepcion") ? true : undefined} className="data-[state=inactive]:hidden"><TabRecepcion expedienteId={id} /></TabsContent>
+        <TabsContent value="inc" forceMount={fichasVisitadas.includes("inc") ? true : undefined} className="data-[state=inactive]:hidden"><TabIncidencias expedienteId={id} /></TabsContent>
+        <TabsContent value="cost" forceMount={fichasVisitadas.includes("cost") ? true : undefined} className="data-[state=inactive]:hidden"><TabCostos expedienteId={id} exp={expData} canEdit={canEditExpediente} /></TabsContent>
+        <TabsContent value="costprod" forceMount={fichasVisitadas.includes("costprod") ? true : undefined} className="data-[state=inactive]:hidden"><TabCostosProducto expedienteId={id} exp={expData} liqDraft={liqDraft} /></TabsContent>
+        <TabsContent value="aud" forceMount={fichasVisitadas.includes("aud") ? true : undefined} className="data-[state=inactive]:hidden"><TabAuditoria expedienteId={id} /></TabsContent>
         </>
         )}
       </div>
@@ -2047,7 +2058,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   // Indicador de cambios sin guardar y resultado del último guardado.
   const [base, setBase] = useState<string | null>(null);
   const [estadoGuardado, setEstadoGuardado] = useState<null | "ok" | "error">(null);
-  const snapshot = JSON.stringify([form, contenedores]);
+  const snapshot = JSON.stringify([form, contenedores, filasServicioAduanero]);
   useEffect(() => {
     if (modoEdicion && !isNuevo) setBase((b) => b ?? snapshot);
     if (!modoEdicion) setBase(null);
@@ -2216,6 +2227,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     crear.mutate();
   };
 
+  useEditorExpediente(hayCambios, save.isPending, () => save.mutateAsync());
+
   // Publica el estado de guardado para los botones del panel superior fijo.
   useEffect(() => {
     if (isNuevo) return;
@@ -2224,11 +2237,9 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   useEffect(() => () => publicarEstadoGuardado(null), []);
   useEffect(() => {
     if (isNuevo) return;
-    const onSave = () => save.mutate();
     const onEdit = () => setModoEdicion(true);
-    window.addEventListener("exp-guardar", onSave);
     window.addEventListener("exp-editar", onEdit);
-    return () => { window.removeEventListener("exp-guardar", onSave); window.removeEventListener("exp-editar", onEdit); };
+    return () => { window.removeEventListener("exp-editar", onEdit); };
   });
 
   const BotonesAccion = () => !isNuevo || !nuevoAccionesHost ? null : createPortal(
@@ -2945,6 +2956,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const [obs, setObs] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [documentoGuardado, setDocumentoGuardado] = useState(0);
   const [confirmacion, setConfirmacion] = useState<{ titulo: string; mensaje: string; requiereCheck?: boolean; resolve: (v: boolean) => void } | null>(null);
   const [confirmAck, setConfirmAck] = useState(false);
   const cerrarConfirmacion = (v: boolean) => { confirmacion?.resolve(v); setConfirmacion(null); };
@@ -3066,13 +3078,18 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           qc.invalidateQueries({ queryKey: ["expedientes"] });
         }
       }
-      setOpen(false); resetForm();
+      setDocumentoGuardado((v) => v + 1); setOpen(false); resetForm();
+      return true;
     } catch (e: any) {
       toast.error(e.message);
     } finally {
       setUploading(false);
     }
   };
+
+  useBorradorExpediente([tipo, venc, obs, file?.name, file?.lastModified], open, uploading, async () => {
+    const ok = await upload(); if (!ok) throw new Error("Documento pendiente");
+  }, documentoGuardado);
 
   const eliminar = async (d: any) => {
     if (!confirm("¿Eliminar este documento? Esta acción no se puede deshacer.")) return;
@@ -3164,7 +3181,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
             </div>
           </div>
         </div>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
+        <Dialog modal={false} open={open} onOpenChange={setOpen}>
           <Button size="sm" onClick={() => openNuevo()}><Upload className="h-4 w-4 mr-1" />Subir documento</Button>
           <DialogContent>
             <DialogHeader><DialogTitle>{editId ? "Editar documento" : "Nuevo documento"}</DialogTitle></DialogHeader>
@@ -3288,6 +3305,8 @@ function TabIncidencias({ expedienteId }: { expedienteId: string }) {
     onSuccess: () => { toast.success("Incidencia registrada"); qc.invalidateQueries({ queryKey: ["incidencias", expedienteId] }); setOpen(false); setF({ tipo: TIPOS_INCIDENCIA[0], severidad: "media", descripcion: "" }); },
   });
 
+  useBorradorExpediente(f, open, add.isPending, () => add.mutateAsync(), add.isSuccess ? add.submittedAt : undefined);
+
   const resolver = async (incId: string) => {
     await supabase.from("incidencias").update({ estado: "resuelta", fecha_resolucion: new Date().toISOString() }).eq("id", incId);
     qc.invalidateQueries({ queryKey: ["incidencias", expedienteId] });
@@ -3304,7 +3323,7 @@ function TabIncidencias({ expedienteId }: { expedienteId: string }) {
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-4 w-4" />Incidencias</CardTitle>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog modal={false} open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />Nueva</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Registrar incidencia</DialogTitle></DialogHeader>
@@ -3458,6 +3477,8 @@ function TabCostosProducto({ expedienteId, exp, liqDraft }: { expedienteId: stri
     onError: (e: any) => toast.error(e.message ?? "No se pudo guardar"),
   });
 
+  useBorradorExpediente(f, open, save.isPending, () => save.mutateAsync(), save.isSuccess ? save.submittedAt : undefined);
+
   const del = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("costos_producto").delete().eq("id", id);
@@ -3564,7 +3585,7 @@ function TabCostosProducto({ expedienteId, exp, liqDraft }: { expedienteId: stri
           <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-4 w-4" />Costo de mercancía (para Liquidación)</CardTitle>
           <div className="flex flex-wrap items-center gap-2">
           <EscanearPagoPuerto expedienteId={expedienteId} />
-          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); } }}>
+          <Dialog modal={false} open={open} onOpenChange={setOpen}>
             <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar</Button>
             <DialogContent>
               <DialogHeader><DialogTitle>{editingId ? "Editar costo de producto" : "Nuevo costo de producto"}</DialogTitle></DialogHeader>
@@ -3848,6 +3869,8 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
     onError: (e: any) => toast.error(e.message),
   });
 
+  useBorradorExpediente(f, open, save.isPending, () => save.mutateAsync(), save.isSuccess ? save.submittedAt : undefined);
+
   const softDel = useMutation({
     mutationFn: async (id: string) => {
       const { data: u } = await supabase.auth.getUser();
@@ -3887,7 +3910,7 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-base">Facturación (cobros)</CardTitle>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); setPrefillEcf(null); } }}>
+        <Dialog modal={false} open={open} onOpenChange={setOpen}>
           <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar factura</Button>
           <DialogContent>
             <DialogHeader><DialogTitle>{editingId ? "Editar factura" : "Nueva factura"}</DialogTitle></DialogHeader>
@@ -4099,6 +4122,8 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
     onError: (e: any) => toast.error(e.message),
   });
 
+  useBorradorExpediente([f, file?.name, crearCxp, cxpVence], open, save.isPending, () => save.mutateAsync(), save.isSuccess ? save.submittedAt : undefined);
+
   const softDel = useMutation({
     mutationFn: async (id: string) => {
       const { data: u } = await supabase.auth.getUser();
@@ -4149,7 +4174,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
       <CardHeader className="flex-row items-center justify-between gap-3 flex-wrap">
         <CardTitle className="text-base">Gastos operativos</CardTitle>
         <ReembolsoEstadoControl expedienteId={expedienteId} />
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); } }}>
+        <Dialog modal={false} open={open} onOpenChange={setOpen}>
           <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar gasto</Button>
           <DialogContent className="max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editingId ? "Editar gasto" : "Nuevo gasto"}</DialogTitle></DialogHeader>
@@ -4402,6 +4427,8 @@ function TabAuditoria({ expedienteId }: { expedienteId: string }) {
 }
 
 function TabPermisosExp({ expedienteId }: { expedienteId: string }) {
+  const [editor, setEditor] = useState<string | null>(null);
+  const registro = useGuardadoExpediente();
   const { data } = useQuery({
     queryKey: ["permisos-por-expediente", expedienteId],
     queryFn: async () => (await supabase.from("permisos").select("*").eq("expediente_id", expedienteId).is("eliminado_en", null).order("created_at", { ascending: false })).data ?? [],
@@ -4414,6 +4441,7 @@ function TabPermisosExp({ expedienteId }: { expedienteId: string }) {
         <CardTitle className="text-base">Permisos VUCE vinculados ({data?.length ?? 0})</CardTitle>
         <Button asChild size="sm"><Link to="/permisos/nuevo" search={{ expediente: expedienteId }}><Plus className="h-4 w-4 mr-1" /> Agregar Permiso VUCE</Link></Button>
       </CardHeader>
+      {editor && <PermisoForm key={editor} mode="edit" id={editor} expedienteId={expedienteId} embedded onSaved={() => setEditor(null)} />}
       <CardContent className="p-0">
         {(!data || data.length === 0) ? (
           <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin permisos VUCE vinculados.</div>
@@ -4444,7 +4472,7 @@ function TabPermisosExp({ expedienteId }: { expedienteId: string }) {
                   <td className="text-xs text-muted-foreground">{fmtLocalDate(p.fecha_emision)}</td>
                   <td className="text-xs text-muted-foreground">{fmtLocalDate(p.fecha_vencimiento)}</td>
                   <td className="px-4 py-2 text-right">
-                    <Button variant="ghost" size="sm" asChild><Link to="/permisos/$id" params={{ id: p.id }}>Editar</Link></Button>
+                    <Button variant="ghost" size="sm" disabled={registro?.hayCambios && editor !== p.id} onClick={() => setEditor(p.id)}>Editar</Button>
                   </td>
                 </tr>
               ))}
@@ -4457,6 +4485,8 @@ function TabPermisosExp({ expedienteId }: { expedienteId: string }) {
 }
 
 function TabTransportesExp({ expedienteId }: { expedienteId: string }) {
+  const [editor, setEditor] = useState<string | null>(null);
+  const registro = useGuardadoExpediente();
   const { data } = useQuery({
     queryKey: ["transportes-por-expediente", expedienteId],
     queryFn: async () => (await supabase.from("transportes").select("*").eq("expediente_id", expedienteId).is("eliminado_en", null).order("created_at", { ascending: false })).data ?? [],
@@ -4469,6 +4499,7 @@ function TabTransportesExp({ expedienteId }: { expedienteId: string }) {
         <CardTitle className="text-base">Transportes vinculados ({data?.length ?? 0})</CardTitle>
         <Button asChild size="sm"><Link to="/transportes/nuevo" search={{ expediente: expedienteId }}><Plus className="h-4 w-4 mr-1" /> Agregar Transporte</Link></Button>
       </CardHeader>
+      {editor && <TransporteForm key={editor} mode="edit" id={editor} expedienteId={expedienteId} embedded onSaved={() => setEditor(null)} />}
       <CardContent className="p-0">
         {(!data || data.length === 0) ? (
           <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin transportes vinculados.</div>
@@ -4499,7 +4530,7 @@ function TabTransportesExp({ expedienteId }: { expedienteId: string }) {
                   <td className="text-xs">{fmtLocalDate(t.eta)}</td>
                   <td><Badge variant="outline">{ESTADOS[t.estado] ?? t.estado}</Badge></td>
                   <td className="px-4 py-2 text-right">
-                    <Button variant="ghost" size="sm" asChild><Link to="/transportes/$id" params={{ id: t.id }}>Editar</Link></Button>
+                    <Button variant="ghost" size="sm" disabled={registro?.hayCambios && editor !== t.id} onClick={() => setEditor(t.id)}>Editar</Button>
                   </td>
                 </tr>
               ))}
@@ -4708,6 +4739,8 @@ function MercanciaItemsBlock({
     onSuccess: () => { toast.success(editingId ? "Ítem actualizado" : "Ítem agregado"); setOpen(false); setEditingId(null); setF(emptyForm); setValorUnitario(""); if (!local) invalidate(); },
     onError: (e: any) => toast.error(e.message),
   });
+
+  useBorradorExpediente(f, open && !local, guardar.isPending, () => guardar.mutateAsync(), guardar.isSuccess ? guardar.submittedAt : undefined);
 
   const eliminar = useMutation({
     mutationFn: async (id: string) => {
@@ -4927,7 +4960,7 @@ function MercanciaItemsBlock({
         <span className="inline-flex items-center gap-1 ml-2"><AlertTriangle className="h-3 w-3 text-amber-500" /> = tasa aprendida, sin verificar por Admin.</span>
       </p>
 
-      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); setTasaBloqueada(false); setValorUnitario(""); } }}>
+      <Dialog modal={false} open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingId ? "Editar ítem" : "Nuevo ítem"}</DialogTitle></DialogHeader>
           <div className="rounded-md border bg-muted/30 p-3">
@@ -6322,7 +6355,11 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
       const { error: e2 } = await (supabase.from("almacen_stock" as any) as any).update({ costo_venta_unitario: valor }).eq("mercancia_item_id", itemId);
       if (e2) throw e2;
     },
-    onSuccess: () => { toast.success("Costo de Venta guardado"); qc.invalidateQueries({ queryKey: ["mercancia-items", exp.id] }); },
+    onSuccess: async (_, variables) => {
+      toast.success("Costo de Venta guardado");
+      await qc.invalidateQueries({ queryKey: ["mercancia-items", exp.id] });
+      setDraft((prev) => { const next = { ...prev }; delete next[variables.itemId]; return next; });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -6379,6 +6416,24 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const guardarBorrador = useMutation({
+    mutationFn: async () => {
+      for (const it of list.filter((it) => draft[it.id])) {
+        const c = calcFila(it);
+        const payload = { gravamen_real: c.gr, isc_real: c.ir, itbis_real: c.tr, costo_venta_unitario: c.cv, pct_ganancia_venta: c.pct };
+        const { error } = await supabase.from("mercancia_items").update(payload).eq("id", it.id);
+        if (error) throw error;
+        if (it.liquidacion_final_en) {
+          const { error: stockError } = await supabase.from("almacen_stock").update({ costo_venta_unitario: c.cv ?? undefined }).eq("mercancia_item_id", it.id);
+          if (stockError) throw stockError;
+        }
+      }
+    },
+    onSuccess: async () => { await qc.invalidateQueries({ queryKey: ["mercancia-items", exp.id] }); setDraft({}); toast.success("Cambios de Liquidación guardados"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  useEditorExpediente(canEdit && Object.keys(draft).length > 0, guardarBorrador.isPending || guardarVenta.isPending || finalizar.isPending, () => guardarBorrador.mutateAsync());
 
   return (
     <Card>
@@ -6483,7 +6538,7 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
                       const puedeVenta = editable || (finalizado && canEdit);
                       const modo = modoVenta(it);
                       const margen = margenSobreVenta(c.costoUnit, c.cv);
-                      // Tras finalizar se guarda al salir del campo; antes, al finalizar la liquidación.
+                      // Conserva el autoguardado histórico tras finalizar y limpia ese borrador al confirmar.
                       const guardarSiFinalizado = () => {
                         if (editable || !finalizado) return;
                         const actualCv = it.costo_venta_unitario == null ? null : Number(it.costo_venta_unitario);

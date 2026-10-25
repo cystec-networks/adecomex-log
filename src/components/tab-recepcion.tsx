@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useBorradorExpediente } from "@/components/expediente-guardado";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -178,11 +179,13 @@ export function TabRecepcion({ expedienteId }: { expedienteId: string }) {
   const setLinea = (idx: number, patch: Partial<Linea>) =>
     setLineas((prev) => prev.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
 
+  useBorradorExpediente([lineas, obs, toleranciaPct], open, guardar.isPending, () => guardar.mutateAsync(), guardar.isSuccess ? guardar.submittedAt : undefined);
+
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-base flex items-center gap-2"><PackageCheck className="h-4 w-4" />Recepción de Mercancía</CardTitle>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog modal={false} open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="sm" onClick={openDialog} disabled={!items || items.length === 0}>
               <Plus className="h-4 w-4 mr-1" />Registrar Recepción

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useEditorExpediente } from "@/components/expediente-guardado";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -153,6 +154,9 @@ export function EndosoSection({ expedienteId, clienteOriginal, editable, solicit
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const endosoPendiente = editable && (Boolean(file) || endosadoId !== (endoso?.consignatario_endosado_id ?? "") || fecha !== (endoso?.fecha_endoso ?? "") || obs !== (endoso?.observaciones ?? ""));
+  useEditorExpediente(endosoPendiente, guardar.isPending, () => guardar.mutateAsync());
 
   const anular = useMutation({
     mutationFn: async () => {

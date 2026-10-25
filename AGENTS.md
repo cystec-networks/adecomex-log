@@ -11,15 +11,15 @@
 
 Apply transitions via `estados-expediente.ts` and `validar_transicion_expediente()` for shared manual/automatic requirements.
 
-Use `expediente-numero`/`--brand-red` for red IDs.
+Red IDs: `expediente-numero`/`--brand-red`.
 
-Payment slips use linked transport number before reserved TR; TF is secondary.
+Payment slips: linked transport number before reserved TR; TF last.
 
 Share expediente/quote preliquidation PDF.
 
-Expediente headers reserve grid slots: desktop controls in one row, overflow in More actions, accessible mobile rows.
+Expediente headers: desktop slots, More actions overflow, mobile rows.
 
-Keep new-expediente actions in two fixed header rows; portal form-owned submit controls there to preserve validation without floating panels.
+New-expediente: two fixed action rows; portal form-owned submits there, preserving validation without floating panels.
 
 Scope detail headers; use content-sized space-between rows, keep client label/value together, wrap IDs, show warnings below Description and reuse deadline rules.
 
@@ -33,7 +33,7 @@ Scope detail headers; use content-sized space-between rows, keep client label/va
 - Group simultaneous PIN and presentation warnings into one list-only deadline entry with both short descriptions; preserve the independent clocks and full detail warnings to avoid hiding payment or legal deadlines.
 - Export DR-CAFTA certificates from the resolved editable preview using native jsPDF text and vector borders, measuring existing cell and text positions to preserve official layouts and annexes without rasterization or losing saved edits.
 - Keep inspection type in the existing canal_riesgo storage field; portal the form-owned selector into the detail header so both editors share draft state and the existing save validation without migrating historical values.
-- Use consignatario-efectivo.ts (active endorsement, else original client) in every document generator/new-invoice preload; issued invoices stay frozen.
+- Use consignatario-efectivo.ts (active endorsement, else original) for documents/new invoices; issued invoices stay frozen.
 - Resolve the dispatch-date modal asynchronously within the existing state mutation and reuse fechasDespachoFaltantes for detail-only preventive alerts, preserving permission checks and audit payloads.
 - Share entry suggestions via buscarSugerenciasProducto/resolverSugerenciasProducto (not historical/Real); explicit DGA selections use datosProductoHistorico. Tariff CSV uses staff-checked server import and atomic invoker RPC; no product override writes.
 - Chapter notes use a separate read-only query/panel and admin invoker import; preserve tariff suggestions/import.
@@ -43,4 +43,5 @@ Scope detail headers; use content-sized space-between rows, keep client label/va
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.
 - Payment OCR confirms, replaces slots and keys costs by SIGA/invoice marker. e-CF only updates linked pdf_url, never billing/margins.
-- DGA OCR shares field mapping and conditional empty-field writes; save PDFs first so OCR failures never lose uploads.
+- DGA OCR shares conditional empty-field mapping; save PDFs before OCR.
+- Expediente editors register dirty/save callbacks in the scoped provider; visited tabs stay mounted to preserve drafts and header saving reuses validated handlers.
