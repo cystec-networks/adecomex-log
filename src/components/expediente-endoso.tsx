@@ -155,6 +155,9 @@ export function EndosoSection({ expedienteId, clienteOriginal, editable, solicit
     onError: (e: any) => toast.error(e.message),
   });
 
+  const endosoPendiente = editable && (Boolean(file) || endosadoId !== (endoso?.consignatario_endosado_id ?? "") || fecha !== (endoso?.fecha_endoso ?? "") || obs !== (endoso?.observaciones ?? ""));
+  useEditorExpediente(endosoPendiente, guardar.isPending, () => guardar.mutateAsync());
+
   const anular = useMutation({
     mutationFn: async () => {
       if (!endoso) return;

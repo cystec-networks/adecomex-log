@@ -6355,7 +6355,11 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
       const { error: e2 } = await (supabase.from("almacen_stock" as any) as any).update({ costo_venta_unitario: valor }).eq("mercancia_item_id", itemId);
       if (e2) throw e2;
     },
-    onSuccess: () => { toast.success("Costo de Venta guardado"); qc.invalidateQueries({ queryKey: ["mercancia-items", exp.id] }); },
+    onSuccess: async (_, variables) => {
+      toast.success("Costo de Venta guardado");
+      await qc.invalidateQueries({ queryKey: ["mercancia-items", exp.id] });
+      setDraft((prev) => { const next = { ...prev }; delete next[variables.itemId]; return next; });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 

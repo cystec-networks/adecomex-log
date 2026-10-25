@@ -17,7 +17,7 @@ Payment slips use linked transport number before reserved TR; TF is secondary.
 
 Share expediente/quote preliquidation PDF.
 
-Expediente headers reserve grid slots: desktop controls in one row, overflow in More actions, accessible mobile rows.
+Expediente headers: fixed desktop slots, More actions overflow, accessible mobile rows.
 
 Keep new-expediente actions in two fixed header rows; portal form-owned submit controls there to preserve validation without floating panels.
 
@@ -43,4 +43,5 @@ Scope detail headers; use content-sized space-between rows, keep client label/va
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.
 - Payment OCR confirms, replaces slots and keys costs by SIGA/invoice marker. e-CF only updates linked pdf_url, never billing/margins.
-- DGA OCR shares field mapping and conditional empty-field writes; save PDFs first so OCR failures never lose uploads.
+- DGA OCR shares conditional empty-field mapping; save PDFs before OCR.
+- Expediente editors register dirty/save callbacks in the scoped provider; visited tabs stay mounted to preserve drafts and header saving reuses validated handlers.
