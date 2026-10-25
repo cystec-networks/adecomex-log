@@ -10,10 +10,10 @@
 <!-- LOVABLE:END -->
 Apply transitions via `estados-expediente.ts` and `validar_transicion_expediente()` for shared manual/automatic requirements.
 Red IDs: `expediente-numero`/`--brand-red`.
-Payment slips: linked transport before reserved TR; TF last.
-Share expediente/quote PDF. e-CF: factura-venta-referencias preserves fiscal lines with OCR in notas; factura-ecf-vinculacion shares links.
-Headers: desktop slots, More overflow, mobile rows.
-New-expediente: two fixed action rows, portaled form submits; keep validation, no floating panels.
+Payment slips: linked transport first, reserved TR next; TF last.
+Share expediente/quote PDF. e-CF: factura-venta-referencias keeps fiscal lines, OCR in notas; factura-ecf-vinculacion shares links.
+Headers: desktop slots, More; mobile rows.
+New-expediente: two fixed action rows, form submits portaled; validation intact, no floating panels.
 Detail headers: content-sized space-between rows, client label/value together, wrap IDs, warnings below Description; shared deadlines.
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
 - Presentation deadline: catalogo_regimenes.dias_habiles_presentar + expedientes.plazo_presentar_override via plazo-presentacion.ts; sla_dias deprecated. Require real arrival and regime, never ETA; show business days vs today, classify overdue by calendar date (including weekends).
@@ -28,11 +28,11 @@ Detail headers: content-sized space-between rows, client label/value together, w
 - Use consignatario-efectivo.ts (active endorsement, else original) for documents/new invoices; issued invoices stay frozen.
 - Resolve the dispatch-date modal asynchronously within the existing state mutation and reuse fechasDespachoFaltantes for detail-only preventive alerts, preserving permission checks and audit payloads.
 - Share entry suggestions via buscarSugerenciasProducto/resolverSugerenciasProducto (not historical/Real); explicit DGA selections use datosProductoHistorico. Tariff CSV uses staff-checked server import and atomic invoker RPC; no product override writes.
-- Chapter notes use a separate read-only query/panel and admin invoker import; preserve tariff suggestions/import.
-- ImporteLiquidacionInput/liquidacion-moneda: RD$ editing, USD storage; shared UI/PDF results, no billing writes.
+- Chapter notes: separate read-only panel, admin invoker import; preserve tariff suggestions/import.
+- ImporteLiquidacionInput/liquidacion-moneda: RD$ editing, USD storage. liquidacion-final shares UI/PDF, batch item markup; weighted totals, no billing writes.
 - Copiloto selects real eight-digit leaves, normalizes nature/ranks alternatives. OCR uses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.
 - Payment OCR: labels via pago-puerto-ocr; confirm/replace by SIGA/invoice; e-CF updates only pdf_url. Costs dedupe OCR; management uses precioBase/tax-free base, never gross. Transport/reimbursements: costos-automaticos-liquidacion.
-- DGA OCR: shared empty-field mapping; save PDF first.
+- DGA OCR: empty-field mapping; PDF first.
 - Expediente editors register dirty/save callbacks in the scoped provider; visited tabs stay mounted to preserve drafts and header saving reuses validated handlers.

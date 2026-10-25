@@ -2,6 +2,8 @@ import { NumericFormat } from "react-number-format";
 import { Input } from "@/components/ui/input";
 
 type ImporteLiquidacionInputProps = {
+  id?: string;
+  disabled?: boolean;
   value: string;
   onValueChange: (value: string) => void;
   onBlur?: () => void;
@@ -10,10 +12,12 @@ type ImporteLiquidacionInputProps = {
 };
 
 /** Formato solo de edición: el borrador recibe dígitos y punto, nunca comas. */
-export function ImporteLiquidacionInput({ value, onValueChange, onBlur, decimalScale = 2, "aria-label": label }: ImporteLiquidacionInputProps) {
+export function ImporteLiquidacionInput({ id, disabled, value, onValueChange, onBlur, decimalScale = 2, "aria-label": label }: ImporteLiquidacionInputProps) {
   return (
     <NumericFormat
       customInput={Input}
+      id={id}
+      disabled={disabled}
       type="text"
       inputMode="decimal"
       className="h-8 w-32 text-right tabular-nums"
