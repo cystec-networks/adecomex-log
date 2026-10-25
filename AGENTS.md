@@ -15,9 +15,9 @@ Red IDs: `expediente-numero`/`--brand-red`.
 
 Payment slips: linked transport number before reserved TR; TF last.
 
-Share expediente/quote preliquidation PDF.
+Share expediente/quote PDF.
 
-Expediente headers: desktop slots, More actions overflow, mobile rows.
+Headers: desktop slots, More actions overflow, mobile rows.
 
 New-expediente: two fixed action rows; portal form-owned submits there, preserving validation without floating panels.
 
