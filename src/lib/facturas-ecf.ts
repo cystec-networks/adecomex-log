@@ -64,3 +64,9 @@ export function calcTotales(lineas: LineaInput[]) {
 
 export const fmtRD = (n: number | null | undefined) =>
   `RD$ ${(Number(n) || 0).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/** Base imponible de la factura: subtotal gravado + subtotal exento (antes de ITBIS). */
+export const precioBase = (f: {
+  subtotal_gravado?: number | string | null;
+  subtotal_exento?: number | string | null;
+}) => +((Number(f.subtotal_gravado) || 0) + (Number(f.subtotal_exento) || 0)).toFixed(2);

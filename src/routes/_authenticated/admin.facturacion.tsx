@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
 import { FacturaEcfFormDialog } from "@/components/factura-ecf-selector";
-import { TIPOS_COMPROBANTE, tipoLabel, tipoBadgeClass, fmtRD } from "@/lib/facturas-ecf";
+import { TIPOS_COMPROBANTE, tipoLabel, tipoBadgeClass, fmtRD, precioBase } from "@/lib/facturas-ecf";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { buildDocumentoComercialPdf } from "@/lib/pdf-documento-comercial";
 import { FileText } from "lucide-react";
@@ -303,19 +303,21 @@ function FacturacionPage() {
                   <th className="text-left">Tipo</th>
                   <th className="text-left">Cliente</th>
                   <th className="text-left">Emisión</th>
-                  <th className="text-right">Monto Total</th>
+                  <th className="text-right whitespace-nowrap px-3">Precio</th>
+                  <th className="text-right whitespace-nowrap px-3">ITBIS</th>
+                  <th className="text-right whitespace-nowrap px-3">Monto Total</th>
                   <th className="text-left">Vinculado a</th>
                   <th className="text-right px-3">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {isLoading && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Cargando…</td></tr>}
+                {isLoading && <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">Cargando…</td></tr>}
                 {!isLoading && filtered.length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Sin facturas registradas.</td></tr>
+                  <tr><td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">Sin facturas registradas.</td></tr>
                 )}
                 {grupos.flatMap((grupo) => [
                   <tr key={`mes-${grupo.mes}`} className="bg-muted/70 border-y border-border cursor-pointer hover:bg-muted" onClick={() => toggleGrupo(grupo.mes)} aria-expanded={estaAbierto(grupo.mes)}>
-                    <th colSpan={7} scope="rowgroup" className="px-3 py-2 text-left text-xs font-bold uppercase text-foreground">
+                    <th colSpan={9} scope="rowgroup" className="px-3 py-2 text-left text-xs font-bold uppercase text-foreground">
                       <div className="flex items-center justify-between gap-3">
                         <span>{estaAbierto(grupo.mes) ? "▾" : "▸"} {grupo.titulo} <span className="font-normal normal-case text-muted-foreground">— {grupo.facturas.length} {grupo.facturas.length === 1 ? "factura" : "facturas"}</span></span>
                         <span>{fmtRD(grupo.total)}</span>
@@ -346,7 +348,9 @@ function FacturacionPage() {
                         {f.cliente_rnc && <div className="text-xs text-muted-foreground">RNC {f.cliente_rnc}</div>}
                       </td>
                       <td className="text-muted-foreground">{fmtLocalDate(f.fecha_emision)}</td>
-                      <td className="text-right font-semibold">{fmtRD(f.monto_total)}</td>
+                      <td className="text-right tabular-nums whitespace-nowrap px-3">{fmtRD(precioBase(f))}</td>
+                      <td className="text-right tabular-nums whitespace-nowrap px-3 text-muted-foreground">{fmtRD(f.total_itbis)}</td>
+                      <td className="text-right font-semibold tabular-nums whitespace-nowrap px-3">{fmtRD(f.monto_total)}</td>
                       <td>
                         <div className="flex flex-wrap gap-1">
                           {(exps ?? []).map((e) => (
