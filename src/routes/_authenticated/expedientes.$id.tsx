@@ -6414,7 +6414,7 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
         const { error } = await supabase.from("mercancia_items").update(payload).eq("id", it.id);
         if (error) throw error;
         if (it.liquidacion_final_en) {
-          const { error: stockError } = await supabase.from("almacen_stock").update({ costo_venta_unitario: c.cv }).eq("mercancia_item_id", it.id);
+          const { error: stockError } = await supabase.from("almacen_stock").update({ costo_venta_unitario: c.cv ?? undefined }).eq("mercancia_item_id", it.id);
           if (stockError) throw stockError;
         }
       }
