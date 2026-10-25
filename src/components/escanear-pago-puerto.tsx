@@ -27,6 +27,7 @@ export function EscanearPagoPuerto({ expedienteId }: { expedienteId: string }) {
   const [confirmado, setConfirmado] = useState(false);
   const [duplicado, setDuplicado] = useState(false);
   const [mensajeDuplicado, setMensajeDuplicado] = useState("");
+  const [baseSinItbis, setBaseSinItbis] = useState<number | null>(null);
   const reset = () => { setFile(null); setBorrador(vacio); setAnalizado(false); setConfirmado(false); setDuplicado(false); setMensajeDuplicado(""); };
   const analizar = useMutation({
     mutationFn: async () => {
@@ -43,6 +44,7 @@ export function EscanearPagoPuerto({ expedienteId }: { expedienteId: string }) {
       return res.pago_puerto;
     },
     onSuccess: (p) => {
+      setBaseSinItbis(p.monto_sin_itbis);
       const tipo = p.confianza === "alta" ? p.tipo ?? "" : "";
       setBorrador({ tipo, monto: p.monto === null ? "" : String(p.monto), moneda: p.moneda ?? "", fecha: p.fecha ?? "", referencia: p.referencia ?? "", concepto: tipo ? conceptoPagoPuerto(tipo, p.referencia ?? "") : "" });
       setAnalizado(true);
@@ -76,10 +78,10 @@ export function EscanearPagoPuerto({ expedienteId }: { expedienteId: string }) {
           {analizado && <fieldset disabled={pendiente} className="grid gap-3">
             <div className="flex gap-2 text-xs text-muted-foreground"><AlertTriangle className="h-4 w-4 shrink-0" />Verifica los datos sugeridos por IA antes de guardar.</div>
             {!borrador.tipo && <div className="text-sm text-destructive">No se determinó el tipo con certeza. Selecciona la casilla correcta.</div>}
-            <div className="grid gap-1.5"><Label>Tipo de pago</Label><Select disabled={pendiente} value={borrador.tipo} onValueChange={(tipo: TipoPagoPuerto) => editar({ tipo, concepto: conceptoPagoPuerto(tipo, borrador.referencia) })}><SelectTrigger aria-label="Tipo de pago"><SelectValue placeholder="Seleccionar tipo de pago" /></SelectTrigger><SelectContent><SelectItem value="almacenaje">Almacenaje</SelectItem><SelectItem value="contenedor">Depósito / Pago de Contenedor</SelectItem><SelectItem value="gestion_aduanal">Factura de Gestión Aduanal</SelectItem><SelectItem value="cargos_locales">Pago de Cargos Locales</SelectItem></SelectContent></Select></div>
+            <div className="grid gap-1.5"><Label>Tipo de pago</Label><Select disabled={pendiente} value={borrador.tipo} onValueChange={(tipo: TipoPagoPuerto) => editar({ tipo, concepto: conceptoPagoPuerto(tipo, borrador.referencia), ...(tipo === "gestion_aduanal" ? { monto: baseSinItbis === null ? "" : String(baseSinItbis) } : {}) })}><SelectTrigger aria-label="Tipo de pago"><SelectValue placeholder="Seleccionar tipo de pago" /></SelectTrigger><SelectContent><SelectItem value="almacenaje">Almacenaje</SelectItem><SelectItem value="contenedor">Depósito / Pago de Contenedor</SelectItem><SelectItem value="gestion_aduanal">Factura de Gestión Aduanal</SelectItem><SelectItem value="cargos_locales">Pago de Cargos Locales</SelectItem></SelectContent></Select></div>
             <div className="grid gap-1.5"><Label htmlFor="pago-concepto">Concepto</Label><Input id="pago-concepto" value={borrador.concepto} onChange={(e) => editar({ concepto: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-1.5"><Label>{borrador.tipo === "gestion_aduanal" ? "Monto total facturado" : "Monto total pagado"}</Label><ImporteLiquidacionInput aria-label="Monto total pagado" value={borrador.monto} onValueChange={(monto) => editar({ monto })} /></div>
+              <div className="grid gap-1.5"><Label>{borrador.tipo === "gestion_aduanal" ? "Precio sin ITBIS" : "Monto total pagado"}</Label><ImporteLiquidacionInput aria-label={borrador.tipo === "gestion_aduanal" ? "Precio sin ITBIS" : "Monto total pagado"} value={borrador.monto} onValueChange={(monto) => editar({ monto })} /></div>
               <div className="grid gap-1.5"><Label>Moneda</Label><Select disabled={pendiente} value={borrador.moneda} onValueChange={(moneda) => editar({ moneda })}><SelectTrigger aria-label="Moneda del pago"><SelectValue placeholder="Confirmar moneda" /></SelectTrigger><SelectContent><SelectItem value="DOP">RD$</SelectItem><SelectItem value="USD">US$</SelectItem></SelectContent></Select></div>
               <div className="grid gap-1.5"><Label htmlFor="pago-fecha">{borrador.tipo === "gestion_aduanal" ? "Fecha de factura" : "Fecha de pago"}</Label><Input id="pago-fecha" type="date" value={borrador.fecha} onChange={(e) => editar({ fecha: e.target.value })} /></div>
               <div className="grid gap-1.5"><Label htmlFor="pago-pin">{borrador.tipo === "gestion_aduanal" ? "N° de factura / NCF" : "PIN / Referencia"}</Label><Input id="pago-pin" value={borrador.referencia} onChange={(e) => editar({ referencia: e.target.value })} /></div>

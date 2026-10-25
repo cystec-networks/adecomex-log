@@ -1,6 +1,7 @@
 export type TipoPagoPuerto = "almacenaje" | "contenedor" | "gestion_aduanal" | "cargos_locales";
 export const TIPOS_PAGO_PUERTO = ["almacenaje", "contenedor", "gestion_aduanal", "cargos_locales"] as const;
 export type PagoPuerto = {
+  monto_sin_itbis: number | null;
   monto: number | null; moneda: "DOP" | "USD" | null; fecha: string | null;
   referencia: string | null; tipo: TipoPagoPuerto | null; confianza: "alta" | "media" | null;
 };
@@ -8,7 +9,9 @@ export function normalizarPagoPuerto(value: unknown): PagoPuerto {
   const p = value && typeof value === "object" ? value as Record<string, unknown> : {};
   const texto = (v: unknown) => typeof v === "string" && v.trim() ? v.trim() : null;
   const monto = p.monto === null || p.monto === undefined || p.monto === "" ? NaN : Number(p.monto);
-  return { monto: Number.isFinite(monto) && monto >= 0 ? monto : null,
+  const base = p.monto_sin_itbis === null || p.monto_sin_itbis === undefined || p.monto_sin_itbis === "" ? NaN : Number(p.monto_sin_itbis);
+  const montoSinItbis = Number.isFinite(base) && base >= 0 ? base : null;
+  return { monto_sin_itbis: montoSinItbis, monto: p.tipo === "gestion_aduanal" ? montoSinItbis : Number.isFinite(monto) && monto >= 0 ? monto : null,
     moneda: p.moneda === "DOP" || p.moneda === "USD" ? p.moneda : null,
     fecha: typeof p.fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.fecha) ? p.fecha : null,
     referencia: texto(p.referencia), tipo: TIPOS_PAGO_PUERTO.includes(p.tipo as TipoPagoPuerto) ? p.tipo as TipoPagoPuerto : null,

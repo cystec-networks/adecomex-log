@@ -1,4 +1,5 @@
 import { esConceptoPagoPuerto } from "./pago-puerto";
+import { precioBase } from "./facturas-ecf";
 
 export type CostoMercancia = {
   id: string; concepto: string; monto_real: number | string; moneda: string;
@@ -7,6 +8,7 @@ export type CostoMercancia = {
 export type FacturaGestion = {
   id: string; encf: string; monto_total: number | string; pdf_url?: string | null;
   fecha_emision?: string | null; eliminado_en?: string | null; estado?: string | null;
+  subtotal_gravado?: number | string | null; subtotal_exento?: number | string | null;
 };
 export type CobroGestion = {
   concepto: string; deleted_at?: string | null; estado?: string | null;
@@ -37,7 +39,7 @@ export function resolverCostosGestion(costos: CostoMercancia[], cobros: CobroGes
     return !(relacionadas.size === 1 && notas.split(" · ").includes("Pago escaneado: Gestión Aduanal"));
   });
   return [...manuales, ...[...vigentes.values()].map((f) => ({
-    id: `gestion-ecf-${f.id}`, concepto: "Gestión Aduanal", monto_real: Number(f.monto_total),
+    id: `gestion-ecf-${f.id}`, concepto: "Gestión Aduanal", monto_real: precioBase(f),
     moneda: "DOP", automatico: true,
     observaciones: [f.fecha_emision && `Fecha de factura: ${f.fecha_emision}`, `Factura/NCF: ${f.encf}`].filter(Boolean).join(" · "),
   }))];
