@@ -29,7 +29,7 @@ Detail headers: content-sized space-between rows, client label/value together, w
 - Resolve the dispatch-date modal asynchronously within the existing state mutation and reuse fechasDespachoFaltantes for detail-only preventive alerts, preserving permission checks and audit payloads.
 - Share entry suggestions via buscarSugerenciasProducto/resolverSugerenciasProducto (not historical/Real); explicit DGA selections use datosProductoHistorico. Tariff CSV uses staff-checked server import and atomic invoker RPC; no product override writes.
 - Chapter notes use a separate read-only query/panel and admin invoker import; preserve tariff suggestions/import.
-- ImporteLiquidacionInput/liquidacion-moneda: RD$ editing, USD storage; shared UI/PDF results, no billing writes.
+- ImporteLiquidacionInput/liquidacion-moneda: RD$ editing, USD storage. liquidacion-final shares UI/PDF, batch markup drafts by item; totals quantity-weighted, no billing writes.
 - Copiloto selects real eight-digit leaves, normalizes nature/ranks alternatives. OCR uses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.
