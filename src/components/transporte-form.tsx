@@ -893,7 +893,7 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial, embedde
       )}
 
       <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => nav({ to: "/transportes" })}>Cancelar</Button>
+        <Button variant="outline" onClick={() => embedded ? onSaved?.() : nav({ to: "/transportes" })}>Cancelar</Button>
         <Button onClick={() => save.mutate()} disabled={save.isPending}>
           <Check className="h-4 w-4 mr-1" />{save.isPending ? "Guardando…" : mode === "new" ? "Crear transporte" : "Guardar cambios"}
         </Button>

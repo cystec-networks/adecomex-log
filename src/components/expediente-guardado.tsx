@@ -29,7 +29,7 @@ export function useBorradorExpediente(valor: unknown, abierto: boolean, pendient
   const anterior = useRef(false);
   useEffect(() => { if (guardado !== undefined) setBase(null); }, [guardado]);
   useEffect(() => {
-    if (abierto && !anterior.current) setBase(snapshot);
+    if (abierto && !anterior.current) setBase((prev) => prev ?? snapshot);
     anterior.current = abierto;
   }, [abierto, snapshot]);
   const dirty = base !== null && base !== snapshot;
