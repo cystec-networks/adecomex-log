@@ -168,6 +168,7 @@ function FacturacionPage() {
     onSuccess: () => {
       toast.success("Factura enviada a papelera");
       qc.invalidateQueries({ queryKey: ["facturas-ecf"] });
+      for (const key of ["costos_producto", "costos-producto-liq", "ecf-vinculada"]) qc.invalidateQueries({ queryKey: [key] });
     },
     onError: (e: any) => toast.error(e.message),
   });

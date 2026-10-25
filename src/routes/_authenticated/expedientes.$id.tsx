@@ -4,6 +4,7 @@ import { PermisoForm } from "@/components/permiso-form";
 import { construirObservaciones, contenedoresValidos, contenedoresDesdeTabla, descripcionBorrador, tipoCargaPorDefecto, estructuraVacia, normalizarRemarkSiga, TIPOS_CARGA_OBS, type ObservacionesEstructura } from "@/lib/observaciones-expediente";
 import { calcularResultadosLiquidacion, valorRealInicial, costoUnitarioReal, precioVentaPorGanancia, margenSobreVenta } from "@/lib/liquidacion-final";
 import { costosAutomaticosLiquidacion } from "@/lib/costos-automaticos-liquidacion";
+import { leerCostosMercancia } from "@/lib/costos-mercancia-queries";
 import { impuestoPantallaRd, impuestoEditadoUsd } from "@/lib/liquidacion-moneda";
 import { resumenImportacion } from "@/lib/resumen-importacion";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -3445,8 +3446,7 @@ function TabCostosProducto({ expedienteId, exp, liqDraft }: { expedienteId: stri
   const { data: tarifas = [] } = useTarifasServicioAduanero();
   const { data: costos } = useQuery({
     queryKey: ["costos_producto", expedienteId],
-    queryFn: async () =>
-      (await supabase.from("costos_producto").select("*").eq("expediente_id", expedienteId).order("created_at")).data ?? [],
+    queryFn: () => leerCostosMercancia(expedienteId),
   });
   // Mismos ítems que la pestaña Liquidación (misma llave de caché): incluye los campos del Estimado.
   const { data: itemsImp } = useQuery({
@@ -3652,16 +3652,17 @@ function TabCostosProducto({ expedienteId, exp, liqDraft }: { expedienteId: stri
                     <td className="px-4 py-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className={reemp ? "line-through" : ""}>{c.concepto}</span>
+                        {c.automatico && <Badge variant="secondary" className="text-[11px] font-normal" title="Importe completo de la factura e-CF con PDF en Finanzas">Automático</Badge>}
                         {reemp && <Badge variant="outline" className="text-[11px] font-normal">Reemplazada por la fila automática — no se suma</Badge>}
                       </div>
                     </td>
                     <td className="text-muted-foreground">{c.observaciones ?? "—"}</td>
                     <td className="text-right tabular-nums">{c.moneda === "USD" ? fmtUsd(Number(c.monto_real)) : fmt(Number(c.monto_real))}</td>
                     <td className="text-right pr-4">
-                      <div className="inline-flex gap-1">
+                      {!c.automatico && <div className="inline-flex gap-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(c)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if (confirm("¿Eliminar este costo?")) del.mutate(c.id); }} title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></Button>
-                      </div>
+                      </div>}
                     </td>
                   </tr>
                 );
@@ -3796,6 +3797,8 @@ function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; to
       qc.invalidateQueries({ queryKey: ["expediente", expedienteId] });
       qc.invalidateQueries({ queryKey: ["facturas", expedienteId] });
       qc.invalidateQueries({ queryKey: ["ecf-vinculada", expedienteId] });
+      qc.invalidateQueries({ queryKey: ["costos_producto", expedienteId] });
+      qc.invalidateQueries({ queryKey: ["costos-producto-liq", expedienteId] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -3864,6 +3867,8 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
     onSuccess: () => {
       toast.success(editingId ? "Factura actualizada" : "Factura registrada");
       qc.invalidateQueries({ queryKey: ["facturas", expedienteId] });
+      qc.invalidateQueries({ queryKey: ["costos_producto", expedienteId] });
+      qc.invalidateQueries({ queryKey: ["costos-producto-liq", expedienteId] });
       setOpen(false); setEditingId(null); setF(empty);
     },
     onError: (e: any) => toast.error(e.message),
@@ -3877,7 +3882,10 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
       const { error } = await supabase.from("facturas").update({ deleted_at: new Date().toISOString(), deleted_by: u.user?.id }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Enviada a papelera"); qc.invalidateQueries({ queryKey: ["facturas", expedienteId] }); },
+    onSuccess: () => {
+      toast.success("Enviada a papelera");
+      for (const key of ["facturas", "costos_producto", "costos-producto-liq"]) qc.invalidateQueries({ queryKey: [key, expedienteId] });
+    },
   });
 
   const openEdit = (r: any) => {
@@ -5477,8 +5485,7 @@ function PinesDesdeCostos({ expedienteId }: { expedienteId?: string }) {
   const { data: filas = [] } = useQuery({
     queryKey: ["costos_producto", expedienteId],
     enabled: !!expedienteId,
-    queryFn: async () =>
-      (await supabase.from("costos_producto").select("*").eq("expediente_id", expedienteId!).order("created_at")).data ?? [],
+    queryFn: () => expedienteId ? leerCostosMercancia(expedienteId) : Promise.resolve([]),
   });
   const linea = (etiqueta: string, tipo: "almacenaje" | "contenedor") => {
     const rs = (filas as any[]).filter((c) => esConceptoPagoPuerto(c.concepto, tipo));
@@ -6211,12 +6218,7 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
 
   const { data: costosAdic } = useQuery({
     queryKey: ["costos-producto-liq", exp.id],
-    queryFn: async () =>
-      (await supabase
-        .from("costos_producto")
-        .select("concepto, monto_real, moneda")
-        .eq("expediente_id", exp.id)
-        .order("created_at")).data ?? [],
+    queryFn: () => leerCostosMercancia(exp.id),
   });
   // Servicio Aduanero (pago a la DGA) es costo de mercancía: suma al costo por unidad.
   const { data: filasServLiq = [] } = useFilasServicioAduanero(exp.id);

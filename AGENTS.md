@@ -15,9 +15,9 @@ Red IDs: `expediente-numero`/`--brand-red`.
 
 Payment slips: linked transport number before reserved TR; TF last.
 
-Share expediente/quote preliquidation PDF.
+Share expediente/quote PDF.
 
-Expediente headers: desktop slots, More actions overflow, mobile rows.
+Headers: desktop slots, More actions overflow, mobile rows.
 
 New-expediente: two fixed action rows; portal form-owned submits there, preserving validation without floating panels.
 
@@ -37,11 +37,11 @@ Scope detail headers; use content-sized space-between rows, keep client label/va
 - Resolve the dispatch-date modal asynchronously within the existing state mutation and reuse fechasDespachoFaltantes for detail-only preventive alerts, preserving permission checks and audit payloads.
 - Share entry suggestions via buscarSugerenciasProducto/resolverSugerenciasProducto (not historical/Real); explicit DGA selections use datosProductoHistorico. Tariff CSV uses staff-checked server import and atomic invoker RPC; no product override writes.
 - Chapter notes use a separate read-only query/panel and admin invoker import; preserve tariff suggestions/import.
-- Use ImporteLiquidacionInput/liquidacion-moneda for RD$ editing with USD storage. Liquidation reads transport/reimbursements via costos-automaticos-liquidacion; shared unit-cost/results feed UI/PDF without billing writes.
+- Use ImporteLiquidacionInput/liquidacion-moneda for RD$ editing with USD storage; shared liquidation results feed UI/PDF without billing writes.
 
 - Copiloto selects real eight-digit leaves, normalizes nature/ranks alternatives. OCR uses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.
-- Payment OCR confirms, replaces slots and keys costs by SIGA/invoice marker. e-CF only updates linked pdf_url, never billing/margins.
+- Payment OCR confirms/replaces by SIGA/invoice; e-CF only updates pdf_url. Read costs via costos-mercancia-queries: invoice projections dedupe OCR without billing writes; transport/reimbursements use costos-automaticos-liquidacion.
 - DGA OCR shares conditional empty-field mapping; save PDFs before OCR.
 - Expediente editors register dirty/save callbacks in the scoped provider; visited tabs stay mounted to preserve drafts and header saving reuses validated handlers.

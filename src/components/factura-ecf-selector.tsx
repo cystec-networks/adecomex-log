@@ -260,6 +260,7 @@ export function FacturaEcfFormDialog({
       qc.invalidateQueries({ queryKey: ["facturas-ecf-lite"] });
       qc.invalidateQueries({ queryKey: ["ecf-pendientes"] });
       qc.invalidateQueries({ queryKey: ["cxc-facturas"] });
+      for (const key of ["costos_producto", "costos-producto-liq", "ecf-vinculada"]) qc.invalidateQueries({ queryKey: [key] });
       if (editId) qc.invalidateQueries({ queryKey: ["factura-ecf-edit", editId] });
       onOpenChange(false);
       onCreated?.(row.id);
