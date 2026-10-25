@@ -12,7 +12,7 @@ TIPO: almacenaje es almacenamiento; contenedor es depósito/garantía/pago de co
 const objeto = (v: unknown): Record<string, unknown> => v && typeof v === "object" ? v as Record<string, unknown> : {};
 const etiqueta = (v: unknown) => String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 const moneda = (v: unknown) => v === "DOP" || v === "USD" ? v : null;
-const etiquetasFinales = /^(monto total|total(?: dop|usd|rd|us)?|total a pagar|total impuestos a pagar|grand total|total amount|amount due|monto(?: del pin)?)$/;
+const etiquetasFinales = /^(monto total|total|total a pagar|total impuestos a pagar|grand total|total amount|amount due|monto(?: del pin)?)(?: dop|usd|rd|us)?$/;
 const fechaPago = /^(fecha (?:de )?pago|payment date|date of payment)$/;
 const fechaRegistro = /^(fecha (?:de )?registro|registration date|register date)$/;
 const fechaFactura = /^(invoice date|fecha (?:de )?emision|fecha (?:de (?:la )?)?factura|fecha decl(?:aracion)?)$/;
@@ -37,7 +37,7 @@ export function resolverPagoPuertoOcr(value: unknown): PagoPuerto {
   }
   return normalizarPagoPuerto({ ...p,
     monto: final?.monto ?? null,
-    moneda: moneda(final?.moneda) ?? moneda(evidencia.moneda_factura),
+    moneda: moneda(final?.moneda) ?? (/\b(?:dop|rd)\b/.test(etiqueta(final?.etiqueta)) ? "DOP" : /\b(?:usd|us)\b/.test(etiqueta(final?.etiqueta)) ? "USD" : null) ?? moneda(evidencia.moneda_factura),
     fecha,
   });
 }

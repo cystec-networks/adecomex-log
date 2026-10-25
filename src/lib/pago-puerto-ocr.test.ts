@@ -62,4 +62,11 @@ describe("OCR portuario por etiquetas, independiente del formato", () => {
     assert.equal(p.monto, 7500); assert.equal(p.fecha, "2026-10-24");
     assert.equal(resolverPagoPuertoOcr({ tipo: "gestion_aduanal", evidencia: { totales: [{ etiqueta: "TOTAL", monto: 8850, alcance: "final" }] } }).monto, null);
   });
+  it("acepta la moneda explícita en la etiqueta del total de tabla SIGA", () => {
+    const p = resolverPagoPuertoOcr({ evidencia: { totales: [
+      { etiqueta: "Monto", monto: 18353.76, alcance: "final" },
+      { etiqueta: "Monto (RD$)", monto: 18353.76, alcance: "final" },
+    ] } });
+    assert.equal(p.monto, 18353.76); assert.equal(p.moneda, "DOP");
+  });
 });
