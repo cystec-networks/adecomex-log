@@ -155,8 +155,13 @@ export const Route = createFileRoute("/_authenticated/expedientes/$id")({
     ],
   }),
   validateSearch: zodValidator(searchSchema),
-  component: () => <ExpedienteGuardadoProvider><DetalleExpediente /></ExpedienteGuardadoProvider>,
+  component: ExpedienteConGuardado,
 });
+
+function ExpedienteConGuardado() {
+  const { id } = Route.useParams();
+  return <ExpedienteGuardadoProvider key={id}><DetalleExpediente /></ExpedienteGuardadoProvider>;
+}
 
 // Helpers para inputs `datetime-local` (vigencia del PIN de pago DGA).
 function isoToLocalInput(iso: string | null | undefined): string {
@@ -4735,6 +4740,8 @@ function MercanciaItemsBlock({
     onError: (e: any) => toast.error(e.message),
   });
 
+  useBorradorExpediente(f, open && !local, guardar.isPending, () => guardar.mutateAsync(), guardar.isSuccess ? guardar.submittedAt : undefined);
+
   const eliminar = useMutation({
     mutationFn: async (id: string) => {
       if (local) {
@@ -4953,7 +4960,7 @@ function MercanciaItemsBlock({
         <span className="inline-flex items-center gap-1 ml-2"><AlertTriangle className="h-3 w-3 text-amber-500" /> = tasa aprendida, sin verificar por Admin.</span>
       </p>
 
-      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingId(null); setF(emptyForm); setTasaBloqueada(false); setValorUnitario(""); } }}>
+      <Dialog modal={false} open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingId ? "Editar ítem" : "Nuevo ítem"}</DialogTitle></DialogHeader>
           <div className="rounded-md border bg-muted/30 p-3">
@@ -6527,7 +6534,7 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
                       const puedeVenta = editable || (finalizado && canEdit);
                       const modo = modoVenta(it);
                       const margen = margenSobreVenta(c.costoUnit, c.cv);
-                      // Tras finalizar se guarda al salir del campo; antes, al finalizar la liquidación.
+                      // Conserva el autoguardado histórico tras finalizar y limpia ese borrador al confirmar.
                       const guardarSiFinalizado = () => {
                         if (editable || !finalizado) return;
                         const actualCv = it.costo_venta_unitario == null ? null : Number(it.costo_venta_unitario);

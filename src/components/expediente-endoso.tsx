@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useEditorExpediente } from "@/components/expediente-guardado";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
