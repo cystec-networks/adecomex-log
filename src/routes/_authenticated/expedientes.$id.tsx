@@ -6335,8 +6335,10 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
     const costoUnit = costoUnitarioReal(est.cifLinea, gr ?? 0, ir ?? 0, gastosAdicionalesUSD, shareLinea, cant);
     const modo = modoVenta(it);
     const pct = modo === "pct" ? num(it, "pct_ganancia_venta") : null;
-    // En modo %, el precio sigue al costo en vivo hasta que el usuario lo ajuste a mano.
-    const auto = modo === "pct" && draft[it.id]?.cv_auto === "1" ? precioVentaPorGanancia(costoUnit, pct) : null;
+    // En modo %, el precio se deriva siempre del costo en vivo (también al cargar con un % guardado),
+    // salvo que el usuario lo haya ajustado a mano en esta sesión (cv_auto === "").
+    const manual = draft[it.id]?.cv_auto === "";
+    const auto = modo === "pct" && !manual ? precioVentaPorGanancia(costoUnit, pct) : null;
     const cv = auto ?? num(it, "costo_venta_unitario");
     return { fob, est, cant, gr, ir, tr, cv, costoUnit, gastosAdicLinea, pct };
   };
