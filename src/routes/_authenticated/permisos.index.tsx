@@ -20,6 +20,13 @@ import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
 
 
 export const Route = createFileRoute("/_authenticated/permisos/")({
+  head: () => ({ meta: [
+    { title: "Permisos VUCE | ADECOMEX Flow" },
+    { name: "description", content: "Consulta permisos VUCE, estados y vencimientos vinculados a expedientes ADECOMEX." },
+    { property: "og:title", content: "Permisos VUCE | ADECOMEX Flow" },
+    { property: "og:description", content: "Consulta permisos VUCE, estados y vencimientos vinculados a expedientes ADECOMEX." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
   validateSearch: (s: Record<string, unknown>): { vencimiento?: number } => {
     const vencimiento = Number(s.vencimiento);
     return Number.isFinite(vencimiento) && vencimiento > 0 ? { vencimiento: Math.min(365, Math.floor(vencimiento)) } : {};
@@ -70,7 +77,7 @@ function Permisos() {
   const filtered = (data ?? []).filter((p: any) => {
     if (vencimiento) {
       if (!p.fecha_vencimiento) return false;
-      if (p.estado !== "solicitado" && p.estado !== "en_tramite") return false;
+      if (!["solicitado", "en_tramite", "pendiente_pago"].includes(p.estado)) return false;
       const days = daysFromToday(p.fecha_vencimiento);
       if (days < 0 || days > vencimiento) return false;
     }
@@ -214,7 +221,7 @@ function Permisos() {
                           <td className="px-3 py-2 whitespace-nowrap">{p.clientes?.nombre ?? "—"}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{PERMISO_TIPOS.find((t: { v: string; l: string }) => t.v === p.tipo)?.l ?? "—"}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{p.institucion_emisora ?? "—"}</td>
-                          <td className="px-3 py-2 text-center whitespace-nowrap">{estadoBadgePermiso(p.estado)}</td>
+                          <td className="px-3 py-2 text-center whitespace-nowrap">{estadoBadgePermiso(p.estado, p.estado_vuce)}</td>
                           <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">{fmt(p.fecha_solicitud)}</td>
                           <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">{fmt(p.fecha_emision)}</td>
                           <td className={`px-3 py-2 text-right tabular-nums whitespace-nowrap ${venceProximo(p.fecha_vencimiento) ? "text-amber-600 font-medium dark:text-amber-400" : "text-muted-foreground"}`}>{fmt(p.fecha_vencimiento)}</td>

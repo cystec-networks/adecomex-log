@@ -8,6 +8,13 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_authenticated/permisos/nuevo")({
+  head: () => ({ meta: [
+    { title: "Nuevo permiso VUCE | ADECOMEX Flow" },
+    { name: "description", content: "Registra un permiso VUCE y su Detalle Solicitud para un expediente ADECOMEX." },
+    { property: "og:title", content: "Nuevo permiso VUCE | ADECOMEX Flow" },
+    { property: "og:description", content: "Registra un permiso VUCE y su Detalle Solicitud para un expediente ADECOMEX." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
   validateSearch: searchSchema,
   component: NuevoPermiso,
 });

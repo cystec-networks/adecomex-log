@@ -149,7 +149,7 @@ export function useReminders() {
           .from("permisos")
           .select("id,numero,estado,fecha_vencimiento")
           .is("eliminado_en", null)
-          .in("estado", ["solicitado", "en_tramite"])
+          .in("estado", ["solicitado", "en_tramite", "pendiente_pago"])
           .not("fecha_vencimiento", "is", null)
           .lte("fecha_vencimiento", isoDay(permLimite))
           .limit(200),
