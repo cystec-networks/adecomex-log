@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { extraerPermisoVuce } from "@/lib/permiso-vuce.functions";
-import { aplicarDetalleVuce } from "@/lib/permiso-vuce";
+import { aplicarDetalleVuce, documentoDelPermisoVuce } from "@/lib/permiso-vuce";
 import { useBorradorExpediente } from "@/components/expediente-guardado";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "@tanstack/react-router";
@@ -190,17 +190,43 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
         const { siguienteCodigoSiga } = await import("@/lib/codigo-siga");
         payload.codigo_siga = await siguienteCodigoSiga(payload.expediente_id, "PER");
       }
+      const vincularDocumento = async () => {
+        if (!payload.documento_url || !payload.expediente_id) return;
+        const { data: docs, error: readError } = await supabase.from("documentos")
+          .select("id,storage_path,codigo_siga,fecha_recepcion")
+          .eq("expediente_id", payload.expediente_id).eq("tipo", "Permiso VUCE previo");
+        if (readError) throw readError;
+        const documento = documentoDelPermisoVuce(docs ?? [], payload.documento_url,
+          existing?.documento_url ?? null, payload.codigo_siga);
+        const datos = {
+          expediente_id: payload.expediente_id, tipo: "Permiso VUCE previo",
+          storage_path: payload.documento_url, codigo_siga: payload.codigo_siga,
+          estado: "recibido" as const,
+          fecha_recepcion: documento?.fecha_recepcion ?? new Date().toLocaleDateString("en-CA", { timeZone: "America/Santo_Domingo" }),
+          fecha_vencimiento: payload.fecha_vencimiento,
+        };
+        const { error } = documento
+          ? await supabase.from("documentos").update(datos).eq("id", documento.id)
+          : await supabase.from("documentos").insert(datos);
+        if (error) throw new Error(`Permiso guardado, pero no se pudo vincular el PDF en Documentos: ${error.message}. Vuelve a guardar para reintentar.`);
+        await qc.invalidateQueries({ queryKey: ["documentos", payload.expediente_id] });
+      };
       if (mode === "new") {
         if (payload.numero == null) throw new Error("Escribe el N° de Permiso VUCE (se captura manualmente).");
         const { data: u } = await supabase.auth.getUser();
         payload.created_by = u.user?.id ?? null;
         const { data, error } = await supabase.from("permisos").insert(payload).select().single();
         if (error) throw error;
+        // Keep the created identity if linking fails, so retry never creates a second permit.
+        try { await vincularDocumento(); } catch (e) {
+          toast.warning(e instanceof Error ? e.message : "Permiso guardado; no se pudo vincular el PDF en Documentos.");
+        }
         return data;
       } else {
         if (!id) throw new Error("Falta el permiso que se desea actualizar.");
         const { data, error } = await supabase.from("permisos").update(payload).eq("id", id).select().single();
         if (error) throw error;
+        await vincularDocumento();
         return data;
       }
     },

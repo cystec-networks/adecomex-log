@@ -51,3 +51,12 @@ export function aplicarDetalleVuce<T extends { numero: string; institucion_emiso
     estado: datos.estado, estado_vuce: datos.estado_vuce,
     fecha_vencimiento: datos.fecha_vencimiento ?? "", fecha_aprobacion: datos.fecha_aprobacion ?? "" };
 }
+
+/** Match this permit only; other permits in the same expediente remain independent. */
+export function documentoDelPermisoVuce<T extends { storage_path: string | null; codigo_siga: string | null }>(
+  documentos: T[], path: string, previo: string | null, codigo: string | null,
+): T | undefined {
+  return documentos.find((d) => d.storage_path === path)
+    ?? documentos.find((d) => previo != null && d.storage_path === previo)
+    ?? documentos.find((d) => codigo != null && d.codigo_siga === codigo);
+}
