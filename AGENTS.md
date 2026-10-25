@@ -8,21 +8,13 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
-
 Apply transitions via `estados-expediente.ts` and `validar_transicion_expediente()` for shared manual/automatic requirements.
-
 Red IDs: `expediente-numero`/`--brand-red`.
-
 Payment slips: linked transport before reserved TR; TF last.
-
-Share expediente/quote PDF. e-CF: factura-venta-referencias stores OCR in notas, fiscal lines intact; factura-ecf-vinculacion shares links.
-
+Share expediente/quote PDF. e-CF references: factura-venta-referencias stores OCR in notas, preserving fiscal lines; factura-ecf-vinculacion shares links.
 Headers: desktop slots, More overflow, mobile rows.
-
-New-expediente: two fixed action rows; portal form-owned submits there, preserving validation without floating panels.
-
-Scope detail headers; use content-sized space-between rows, keep client label/value together, wrap IDs, show warnings below Description and reuse deadline rules.
-
+New-expediente: two fixed action rows, portaled form submits; keep validation, no floating panels.
+Detail headers: content-sized space-between rows, client label/value together, wrap IDs, warnings below Description; shared deadlines.
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
 - Presentation deadline: catalogo_regimenes.dias_habiles_presentar + expedientes.plazo_presentar_override via plazo-presentacion.ts; sla_dias deprecated. Require real arrival and regime, never ETA; show business days vs today, classify overdue by calendar date (including weekends).
 - In the sticky header, show ETA until arrival, then arrival with calendar transit days; follow with presentation status and omit duplicate transit. Mount deadline override content only while open to avoid overlap.
@@ -38,7 +30,6 @@ Scope detail headers; use content-sized space-between rows, keep client label/va
 - Share entry suggestions via buscarSugerenciasProducto/resolverSugerenciasProducto (not historical/Real); explicit DGA selections use datosProductoHistorico. Tariff CSV uses staff-checked server import and atomic invoker RPC; no product override writes.
 - Chapter notes use a separate read-only query/panel and admin invoker import; preserve tariff suggestions/import.
 - Use ImporteLiquidacionInput/liquidacion-moneda for RD$ editing with USD storage; shared liquidation results feed UI/PDF without billing writes.
-
 - Copiloto selects real eight-digit leaves, normalizes nature/ranks alternatives. OCR uses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.
