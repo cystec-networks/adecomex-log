@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { extraerPermisoVuce } from "@/lib/permiso-vuce.functions";
+import { aplicarDetalleVuce } from "@/lib/permiso-vuce";
 import { useBorradorExpediente } from "@/components/expediente-guardado";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "@tanstack/react-router";
@@ -25,6 +28,7 @@ export const PERMISO_TIPOS = [
 ];
 export const PERMISO_ESTADOS = [
   { v: "solicitado", l: "Solicitado" },
+  { v: "pendiente_pago", l: "Pendiente de Pago" },
   { v: "en_tramite", l: "En trámite" },
   { v: "aprobado", l: "Aprobado" },
   { v: "rechazado", l: "Rechazado" },
@@ -53,11 +57,15 @@ type Props = {
 export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false, onSaved }: Props) {
   const nav = useNavigate();
   const qc = useQueryClient();
+  const leerVuce = useServerFn(extraerPermisoVuce);
 
   const { data: existing } = useQuery({
     enabled: mode === "edit" && !!id,
     queryKey: ["permiso", id],
-    queryFn: async () => (await supabase.from("permisos").select("*, clientes(nombre), expedientes(numero,cliente_id), ordenes(numero,cliente_id)").eq("id", id!).maybeSingle()).data,
+    queryFn: async () => {
+      if (!id) return null;
+      return (await supabase.from("permisos").select("*, clientes(nombre), expedientes(numero,cliente_id), ordenes(numero,cliente_id)").eq("id", id).maybeSingle()).data;
+    },
   });
 
   const { data: ordenes } = useQuery({
@@ -80,6 +88,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
     tipo: "",
     institucion_emisora: "",
     estado: "solicitado",
+    estado_vuce: null as string | null,
     fecha_aprobacion: "",
     fecha_solicitud: "",
     fecha_emision: "",
@@ -101,6 +110,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
         tipo: existing.tipo ?? "",
         institucion_emisora: existing.institucion_emisora ?? "",
         estado: existing.estado ?? "solicitado",
+        estado_vuce: existing.estado_vuce ?? null,
         fecha_aprobacion: (existing as any).fecha_aprobacion ?? "",
         fecha_solicitud: existing.fecha_solicitud ?? "",
         fecha_emision: existing.fecha_emision ?? "",
@@ -133,6 +143,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
 
   const [uploading, setUploading] = useState(false);
   const uploadFile = async (file: File) => {
+    if (uploading || save.isPending) return;
     const { validarNombreSiga, prefijosAceptados } = await import("@/lib/codigo-siga");
     const v = validarNombreSiga(file.name, prefijosAceptados("Permiso VUCE previo"));
     if (!v.ok) { toast.error(v.error, { duration: 8000 }); return; }
@@ -144,6 +155,25 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
       if (error) throw error;
       set("documento_url", path);
       toast.success("Documento subido");
+      if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
+        if (file.size > 15 * 1024 * 1024) {
+          toast.warning("PDF guardado. La lectura VUCE admite hasta 15 MB; completa los datos manualmente.");
+        } else {
+          try {
+            const bytes = new Uint8Array(await file.arrayBuffer());
+            let binary = "";
+            for (const byte of bytes) binary += String.fromCharCode(byte);
+            const datos = await leerVuce({ data: { filename: file.name, base64: btoa(binary) } });
+            if (datos) {
+              setForm((f) => aplicarDetalleVuce(f, datos));
+              toast.success("Datos del permiso VUCE completados; revisa y guarda los cambios.");
+              if (datos.estado === "aprobado" && !datos.fecha_aprobacion) toast.warning("No se encontró una fecha válida de aprobación final en el historial.");
+            } else toast.warning("PDF guardado; no se reconoció Detalle Solicitud VUCE. Los datos actuales se conservan.");
+          } catch {
+            toast.warning("PDF guardado; no se pudieron leer los datos VUCE. Puedes completarlos manualmente.");
+          }
+        }
+      }
     } catch (e: any) {
       toast.error(e.message ?? "Error al subir");
     } finally { setUploading(false); }
@@ -151,6 +181,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
 
   const save = useMutation({
     mutationFn: async () => {
+      if (uploading) throw new Error("Espera a que termine la lectura del documento.");
       const payload: any = { ...form };
       ["expediente_id","orden_id","cliente_id","tipo","fecha_solicitud","fecha_emision","fecha_vencimiento","fecha_aprobacion","documento_url","numero_resolucion","institucion_emisora","observaciones","numero"]
         .forEach((k) => { if (payload[k] === "") payload[k] = null; });
@@ -166,7 +197,8 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
         if (error) throw error;
         return data;
       } else {
-        const { data, error } = await supabase.from("permisos").update(payload).eq("id", id!).select().single();
+        if (!id) throw new Error("Falta el permiso que se desea actualizar.");
+        const { data, error } = await supabase.from("permisos").update(payload).eq("id", id).select().single();
         if (error) throw error;
         return data;
       }
@@ -211,7 +243,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
         <Button variant="outline" onClick={() => nav({ to: "/permisos" })}>
           <X className="h-4 w-4 mr-1" />Cancelar
         </Button>
-        <Button onClick={() => save.mutate()} disabled={save.isPending}>
+        <Button onClick={() => save.mutate()} disabled={save.isPending || uploading}>
           <Check className="h-4 w-4 mr-1" />{save.isPending ? "Guardando…" : mode === "new" ? "Crear permiso VUCE" : "Guardar cambios"}
         </Button>
       </div>}
@@ -292,16 +324,20 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
           <div className="grid gap-1.5">
             <Label>Estado</Label>
             <Select
-              value={form.estado}
+              value={form.estado_vuce ? `vuce:${form.estado_vuce}` : form.estado}
               onValueChange={(v) => {
                 set("estado", v);
+                set("estado_vuce", null);
                 if (v === "aprobado" && !form.fecha_aprobacion) {
                   set("fecha_aprobacion", new Date().toISOString().slice(0, 10));
                 }
               }}
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{PERMISO_ESTADOS.map((s) => <SelectItem key={s.v} value={s.v}>{s.l}</SelectItem>)}</SelectContent>
+              <SelectContent>
+                {form.estado_vuce && <SelectItem value={`vuce:${form.estado_vuce}`}>{form.estado_vuce}</SelectItem>}
+                {PERMISO_ESTADOS.map((s) => <SelectItem key={s.v} value={s.v}>{s.l}</SelectItem>)}
+              </SelectContent>
             </Select>
           </div>
           <div className="grid gap-1.5">
@@ -337,9 +373,9 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
         <CardContent className="pt-5 space-y-3">
           <div className="flex items-center gap-3 flex-wrap">
             <label className="inline-flex">
-              <input type="file" accept="application/pdf,image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])} />
+              <input type="file" accept="application/pdf,image/*" className="hidden" disabled={uploading || save.isPending} onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) void uploadFile(file); }} />
               <span className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md border bg-background hover:bg-muted cursor-pointer text-sm">
-                <Upload className="h-4 w-4" /> {uploading ? "Subiendo…" : "Subir PDF/imagen"}
+                <Upload className="h-4 w-4" /> {uploading ? "Subiendo / leyendo…" : form.documento_url ? "Reemplazar PDF/imagen" : "Subir PDF/imagen"}
               </span>
             </label>
             {form.documento_url && (
@@ -364,7 +400,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={() => embedded ? onSaved?.() : nav({ to: "/permisos" })}>Cancelar</Button>
-        <Button onClick={() => save.mutate()} disabled={save.isPending}>
+        <Button onClick={() => save.mutate()} disabled={save.isPending || uploading}>
           <Check className="h-4 w-4 mr-1" />{save.isPending ? "Guardando…" : mode === "new" ? "Crear permiso" : "Guardar cambios"}
         </Button>
       </div>

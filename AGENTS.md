@@ -34,5 +34,5 @@ Detail headers: content-sized space-between rows, client label/value together, w
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.
 - Payment OCR: labels via pago-puerto-ocr; confirm/replace by SIGA/invoice; e-CF updates only pdf_url. Costs dedupe OCR; management uses precioBase/tax-free base, never gross. Transport/reimbursements: costos-automaticos-liquidacion.
-- DGA OCR: empty-field mapping; PDF first.
+- DGA OCR fills blanks; VUCE replaces documentary fields via permiso-vuce, preserving manual-only fields and literal states. PDF first.
 - Expediente editors register dirty/save callbacks in the scoped provider; visited tabs stay mounted to preserve drafts and header saving reuses validated handlers.
