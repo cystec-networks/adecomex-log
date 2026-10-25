@@ -11,7 +11,7 @@ function expect(actual: unknown) {
     },
   };
 }
-import { aplicarDetalleVuce, leerDetalleSolicitudVuce } from "./permiso-vuce";
+import { aplicarDetalleVuce, documentoDelPermisoVuce, leerDetalleSolicitudVuce } from "./permiso-vuce";
 
 const pendiente = `Detalle Solicitud - VUCE
 No. Trámite: TRM-0926-2533722
@@ -23,6 +23,12 @@ Fecha de Aprobación: 25/09/2026
 Fecha de Aprobación: 24/10/2026`;
 const aprobado = pendiente.replace("Pendiente de Pago", "Aprobado").replace("Vencimiento: -", "Vencimiento: 24/12/2026");
 describe("Detalle Solicitud VUCE", () => {
+  test("reemplazo conserva el documento del permiso sin tocar otros permisos", () => {
+    const docs = [{ id: "otro", storage_path: "otro.pdf", codigo_siga: "PER-002" }, { id: "actual", storage_path: "pendiente.pdf", codigo_siga: "PER-001" }];
+    expect(documentoDelPermisoVuce(docs, "aprobado.pdf", "pendiente.pdf", "PER-001")?.id).toBe("actual");
+    expect(documentoDelPermisoVuce(docs, "nuevo.pdf", null, "PER-003")).toBe(undefined);
+    expect(documentoDelPermisoVuce(docs, "pendiente.pdf", null, "PER-001")?.id).toBe("actual");
+  });
   test("No. Trámite e institución se extraen por etiqueta", () => {
     expect(leerDetalleSolicitudVuce(pendiente)).toMatchObject({ numero: "TRM-0926-2533722", institucion_emisora: "Ministerio de Agricultura" });
   });
