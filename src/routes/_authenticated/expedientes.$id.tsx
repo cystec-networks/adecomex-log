@@ -53,7 +53,7 @@ import { AplicarCertificadoPartidas } from "@/components/aplicar-certificado-par
 import { PaqueteRectificacionButton } from "@/components/paquete-rectificacion-button";
 import { CorreoDgaButton } from "@/components/correo-dga-button";
 import { PaqueteFacturaCliente } from "@/components/paquete-factura-cliente";
-import { EscanearPagoPuerto } from "@/components/escanear-pago-puerto";
+import { EscanearPagoPuerto, type DocumentoPagoSubido } from "@/components/escanear-pago-puerto";
 import { esDocumentoResultadoDga, camposDesdeDocumentoDga, completarResultadoDga, type CamposResultadoDga } from "@/lib/resultado-dga-documentos";
 import { extractSolicitudFromDocument } from "@/lib/ai-ocr.functions";
 
@@ -2958,6 +2958,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [documentoGuardado, setDocumentoGuardado] = useState(0);
+  const [pagoDoc, setPagoDoc] = useState<DocumentoPagoSubido | null>(null);
   const [confirmacion, setConfirmacion] = useState<{ titulo: string; mensaje: string; requiereCheck?: boolean; resolve: (v: boolean) => void } | null>(null);
   const [confirmAck, setConfirmAck] = useState(false);
   const cerrarConfirmacion = (v: boolean) => { confirmacion?.resolve(v); setConfirmacion(null); };
@@ -3049,6 +3050,8 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
         toast.success(codigo ? `Documento agregado · ${codigo}` : "Documento agregado");
       }
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
+      const tipoPago = ({ "Recibo Pago de Contenedor": "contenedor", "Factura Pago de Almacenaje": "almacenaje", "Factura Pago Cargos Locales": "cargos_locales" } as const)[tipo as "Recibo Pago de Contenedor"];
+      if (file && tipoPago && codigo && file.size <= 15 * 1024 * 1024) setPagoDoc({ file, tipo: tipoPago, codigo });
       if (file && esDocumentoResultadoDga(tipo)) {
         try {
           if (file.size > 15 * 1024 * 1024) throw new Error("el archivo supera 15MB para lectura automática; completa los campos manualmente");
@@ -3172,6 +3175,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
 
   return (
     <div className="space-y-3">
+      {pagoDoc && <EscanearPagoPuerto key={pagoDoc.codigo + pagoDoc.file.name + pagoDoc.file.lastModified} expedienteId={expedienteId} documento={pagoDoc} onDone={() => setPagoDoc(null)} />}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="text-base font-semibold">Documentos ({docs?.length ?? 0})</div>
