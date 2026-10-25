@@ -53,6 +53,18 @@ export function margenSobreVenta(costoUnit: number, venta: number | null): numbe
   return venta != null && venta > 0 ? ((venta - costoUnit) / venta) * 100 : null;
 }
 
+/** A common edit is a single draft update covering every item, never just the active row. */
+export function aplicarGananciaTodos(draft: Record<string, Record<string, string>>, ids: readonly string[], pct: string) {
+  const next = { ...draft };
+  for (const id of ids) next[id] = { ...next[id], modo_venta: "pct", pct_ganancia_venta: pct, cv_auto: "1" };
+  return next;
+}
+
+export function gananciaComunGuardada(items: readonly { pct_ganancia_venta?: number | string | null }[]): number | null {
+  const porcentajes = [...new Set(items.filter(it => it.pct_ganancia_venta != null).map(it => Number(it.pct_ganancia_venta)))];
+  return porcentajes.length === 1 && Number.isFinite(porcentajes[0]) ? porcentajes[0] : null;
+}
+
 /**
  * Resultados de la Liquidación Final. Única fuente para el PDF y la vista en pantalla,
  * para que ambos muestren siempre los mismos números.

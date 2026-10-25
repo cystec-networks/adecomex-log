@@ -3,7 +3,7 @@ import { ExpedienteGuardadoProvider, useGuardadoExpediente, useEditorExpediente,
 import { TransporteForm } from "@/components/transporte-form";
 import { PermisoForm } from "@/components/permiso-form";
 import { construirObservaciones, contenedoresValidos, contenedoresDesdeTabla, descripcionBorrador, tipoCargaPorDefecto, estructuraVacia, normalizarRemarkSiga, TIPOS_CARGA_OBS, type ObservacionesEstructura } from "@/lib/observaciones-expediente";
-import { calcularResultadosLiquidacion, valorRealInicial, costoUnitarioReal, precioVentaPorGanancia, margenSobreVenta } from "@/lib/liquidacion-final";
+import { calcularResultadosLiquidacion, valorRealInicial, costoUnitarioReal, precioVentaPorGanancia, margenSobreVenta, aplicarGananciaTodos, gananciaComunGuardada } from "@/lib/liquidacion-final";
 import { costosAutomaticosLiquidacion } from "@/lib/costos-automaticos-liquidacion";
 import { leerCostosMercancia } from "@/lib/costos-mercancia-queries";
 import { impuestoPantallaRd, impuestoEditadoUsd } from "@/lib/liquidacion-moneda";
@@ -6262,8 +6262,12 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
     setDraft((p) => ({ ...p, [id]: { ...(p[id] ?? {}), [campo]: v } }));
   const setVals = (id: string, campos: Record<string, string>) =>
     setDraft((p) => ({ ...p, [id]: { ...(p[id] ?? {}), ...campos } }));
+  const pctComun = gananciaComunGuardada(list);
+  const porcentajesActuales = list.map(it => draft[it.id]?.pct_ganancia_venta ?? (it.pct_ganancia_venta == null ? (pctComun == null ? "" : String(pctComun)) : String(it.pct_ganancia_venta)));
+  const porcentajeSuperior = porcentajesActuales.every(v => v === porcentajesActuales[0]) ? porcentajesActuales[0] ?? "" : "";
+  const aplicarPctComun = (v: string) => setDraft(prev => aplicarGananciaTodos(prev, list.map(it => it.id), v));
   const modoVenta = (it: any): "directo" | "pct" =>
-    (draft[it.id]?.modo_venta as any) ?? (it.pct_ganancia_venta != null ? "pct" : "directo");
+    (draft[it.id]?.modo_venta as any) ?? (it.pct_ganancia_venta != null || (pctComun != null && !(Number(it.costo_venta_unitario) > 0)) ? "pct" : "directo");
 
   // Adaptación exclusivamente visual: PDF, inventario y persistencia siguen usando US$.
   const tasaValida = Number.isFinite(tasaCambio) && tasaCambio > 0;
@@ -6291,7 +6295,7 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
     const tr = num(it, "itbis_real");
     const costoUnit = costoUnitarioReal(est.cifLinea, gr ?? 0, ir ?? 0, gastosAdicionalesUSD, shareLinea, cant);
     const modo = modoVenta(it);
-    const pct = modo === "pct" ? num(it, "pct_ganancia_venta") : null;
+    const pct = modo === "pct" ? (draft[it.id]?.pct_ganancia_venta !== undefined ? num(it, "pct_ganancia_venta") : num(it, "pct_ganancia_venta") ?? pctComun) : null;
     // En modo %, el precio se deriva siempre del costo en vivo (también al cargar con un % guardado),
     // salvo que el usuario lo haya ajustado a mano en esta sesión (cv_auto === "").
     const manual = draft[it.id]?.cv_auto === "";
@@ -6467,6 +6471,10 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
             {!almacenId && <span className="text-[11px] text-muted-foreground">Requerido para finalizar la liquidación.</span>}
           </div>
           <div className="space-y-3 text-xs">
+              {list.length > 1 && <div className="flex items-center gap-3 flex-wrap border-b pb-3">
+                <Label htmlFor="ganancia-comun">% Ganancia sobre costo · todos los productos</Label>
+                <ImporteLiquidacionInput id="ganancia-comun" aria-label="% ganancia sobre costo todos los productos" value={porcentajeSuperior} onValueChange={aplicarPctComun} disabled={!canEdit} />
+              </div>}
               {list.map((it) => {
                 const c = calcFila(it);
                 const bloques = [
@@ -6534,7 +6542,7 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
                                 % Ganancia sobre costo (markup)
                               </div>
                               {puedeVenta ? (
-                                <ImporteLiquidacionInput aria-label={`% ganancia sobre costo línea ${it.item_no}`} value={val(it, "pct_ganancia_venta")}
+                                <ImporteLiquidacionInput aria-label={`% ganancia sobre costo línea ${it.item_no}`} value={c.pct == null ? "" : String(c.pct)}
                                   onValueChange={(v) => setVals(it.id, { pct_ganancia_venta: v, cv_auto: "1" })}
                                   onBlur={guardarSiFinalizado} />
                               ) : <div className="tabular-nums h-8 flex items-center">{c.pct == null ? "—" : `${nf(c.pct)}%`}</div>}
@@ -6544,7 +6552,7 @@ function LiquidacionFinalSection({ exp, draft, setDraft }: { exp: any; draft: Re
                             <div className="text-muted-foreground">Costo de Venta (US$)</div>
                             {puedeVenta ? (
                               <ImporteLiquidacionInput aria-label={`Costo de Venta línea ${it.item_no}`} value={c.cv == null ? "" : String(c.cv)} decimalScale={4}
-                                onValueChange={(v) => setVals(it.id, { costo_venta_unitario: v, cv_auto: "" })}
+                                onValueChange={(v) => setVals(it.id, { costo_venta_unitario: v, cv_auto: "", modo_venta: "directo" })}
                                 onBlur={guardarSiFinalizado} />
                             ) : <div className="tabular-nums h-8 flex items-center">{nf(c.cv, 4)}</div>}
                             <div className="text-[11px] text-muted-foreground mt-0.5">

@@ -83,7 +83,7 @@ describe("valorRealInicial — precarga de Grav./ISC/ITBIS Real", () => {
   });
 });
 
-import { precioVentaPorGanancia, margenSobreVenta } from "./liquidacion-final";
+import { precioVentaPorGanancia, margenSobreVenta, aplicarGananciaTodos, gananciaComunGuardada } from "./liquidacion-final";
 
 describe("% de ganancia sobre costo", () => {
   it("30% sobre 4.2641 da 5.5433 y el margen sobre venta no es 30%", () => {
@@ -94,5 +94,33 @@ describe("% de ganancia sobre costo", () => {
   });
   it("sin % no calcula precio", () => {
     assert.equal(precioVentaPorGanancia(4, null), null);
+  });
+});
+
+describe("markup común multiproducto", () => {
+  it("30% actualiza las tres filas en un único borrador preservando sus impuestos", () => {
+    const draft = aplicarGananciaTodos({ a: { gravamen_real: "15" } }, ["a", "b", "c"], "30");
+    assert.equal(draft.a.gravamen_real, "15");
+    for (const id of ["a", "b", "c"]) assert.deepEqual([draft[id].modo_venta, draft[id].pct_ganancia_venta, draft[id].cv_auto], ["pct", "30", "1"]);
+    assert.equal(gananciaComunGuardada([{ pct_ganancia_venta: null }, {}, { pct_ganancia_venta: 30 }]), 30);
+  });
+  it("cada costo propio × 1.30 y cantidades generan margen combinado 23.0769%, no −170.1%", () => {
+    const filas = [{ costo: 4, cant: 2000 }, { costo: 8, cant: 600 }, { costo: 5, cant: 1000 }];
+    const r = calcularResultadosLiquidacion({ ...base, list: filas, costosProducto: [], calcFila: it => ({ ...calcFila(), cant: it.cant, costoUnit: it.costo, cv: precioVentaPorGanancia(it.costo, 30) }) });
+    assert.deepEqual(r.productos.map(p => p.c.cv), [5.2, 10.4, 6.5]);
+    assert.equal(r.totales.inv, 17800);
+    assert.equal(r.totales.venta, 23140);
+    assert.equal(r.margenTotal, 5340);
+    assert.ok(Math.abs(r.margenPct - 23.0769230769) < 0.0001);
+  });
+  it("ajuste directo de una fila solo cambia su precio y mantiene total ponderado", () => {
+    const draft = aplicarGananciaTodos({}, ["a", "b", "c"], "30");
+    draft.b = { ...draft.b, modo_venta: "directo", costo_venta_unitario: "12", cv_auto: "" };
+    assert.equal(draft.a.pct_ganancia_venta, "30");
+    assert.equal(draft.c.pct_ganancia_venta, "30");
+    assert.equal(draft.b.costo_venta_unitario, "12");
+    const nuevos = aplicarGananciaTodos(draft, ["a", "b", "c"], "25");
+    assert.equal(nuevos.b.cv_auto, "1");
+    assert.equal(precioVentaPorGanancia(8, Number(nuevos.b.pct_ganancia_venta)), 10);
   });
 });
