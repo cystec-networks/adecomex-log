@@ -6,6 +6,21 @@ import type { LineaFacturaExpediente } from "./factura-expediente-arancel";
 import type { PagoPuerto } from "./pago-puerto";
 import { PROMPT_PAGO_PUERTO, resolverPagoPuertoOcr } from "./pago-puerto-ocr";
 import { TIPOS_RESULTADO_DGA, type ResultadoDgaExtraido } from "./resultado-dga-documentos";
+import { totalDesdeTexto } from "./pago-puerto-texto";
+
+/** Primary deterministic total from the PDF text layer; AI value stays only as fallback (Gestión Aduanal keeps its tax-free base). */
+async function aplicarTotalTexto(p: PagoPuerto, base64: string | null): Promise<PagoPuerto> {
+  if (!base64 || p.tipo === "gestion_aduanal") return p;
+  try {
+    const { extractText, getDocumentProxy } = await import("unpdf");
+    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    const { text } = await extractText(await getDocumentProxy(bytes), { mergePages: true });
+    const total = totalDesdeTexto(text);
+    return total ? { ...p, monto: total.monto, moneda: total.moneda } : p;
+  } catch {
+    return p;
+  }
+}
 
 const Input = z.object({
   filename: z.string(),
@@ -98,6 +113,7 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
     const isPdf = data.mime === "application/pdf";
     const raw = await callGateway({
       model: "google/gemini-2.5-flash",
+      ...(data.pago_puerto ? { temperature: 0 } : {}),
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: system },
@@ -125,7 +141,7 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
 
     return {
       ...(data.resultado_dga ? { resultado_dga: parsed.resultado_dga ?? {} } : {}),
-      ...(data.pago_puerto ? { pago_puerto: resolverPagoPuertoOcr(parsed.pago_puerto) } : {}),
+      ...(data.pago_puerto ? { pago_puerto: await aplicarTotalTexto(resolverPagoPuertoOcr(parsed.pago_puerto), isPdf ? data.base64 : null) } : {}),
       cliente: parsed.cliente ?? null,
       bl: parsed.bl ?? null,
       suplidor: parsed.suplidor ?? null,
