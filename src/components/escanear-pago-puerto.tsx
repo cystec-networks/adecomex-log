@@ -85,6 +85,11 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
           {!analizado && <Button disabled={!file || pendiente} onClick={() => analizar.mutate()}>{analizar.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}{analizar.isPending ? "Analizando…" : "Extraer datos"}</Button>}
           {analizado && <fieldset disabled={pendiente} className="grid gap-3">
             <div className="flex gap-2 text-xs text-muted-foreground"><AlertTriangle className="h-4 w-4 shrink-0" />Verifica los datos sugeridos por IA antes de guardar.</div>
+            {(!borrador.monto || !borrador.moneda || !borrador.fecha) && <div role="alert" className="grid gap-1 text-xs text-destructive">
+              {!borrador.monto && <p>No se pudo determinar el monto automáticamente — verificar manualmente.</p>}
+              {!borrador.moneda && <p>No se pudo determinar la moneda automáticamente — verificar manualmente.</p>}
+              {!borrador.fecha && <p>No se pudo determinar la fecha automáticamente — verificar manualmente.</p>}
+            </div>}
             {!borrador.tipo && <div className="text-sm text-destructive">No se determinó el tipo con certeza. Selecciona la casilla correcta.</div>}
             <div className="grid gap-1.5"><Label>Tipo de pago</Label><Select disabled={pendiente || Boolean(documento)} value={borrador.tipo} onValueChange={(tipo: TipoPagoPuerto) => editar({ tipo, concepto: conceptoPagoPuerto(tipo, borrador.referencia), ...(tipo === "gestion_aduanal" ? { monto: baseSinItbis === null ? "" : String(baseSinItbis) } : {}) })}><SelectTrigger aria-label="Tipo de pago"><SelectValue placeholder="Seleccionar tipo de pago" /></SelectTrigger><SelectContent><SelectItem value="almacenaje">Almacenaje</SelectItem><SelectItem value="contenedor">Depósito / Pago de Contenedor</SelectItem><SelectItem value="gestion_aduanal">Factura de Gestión Aduanal</SelectItem><SelectItem value="cargos_locales">Pago de Cargos Locales</SelectItem></SelectContent></Select></div>
             <div className="grid gap-1.5"><Label htmlFor="pago-concepto">Concepto</Label><Input id="pago-concepto" value={borrador.concepto} onChange={(e) => editar({ concepto: e.target.value })} /></div>

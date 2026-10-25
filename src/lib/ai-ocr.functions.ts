@@ -3,7 +3,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { callGateway } from "./ai-gateway.server";
 import type { LineaFacturaExpediente } from "./factura-expediente-arancel";
-import { normalizarPagoPuerto, type PagoPuerto } from "./pago-puerto";
+import type { PagoPuerto } from "./pago-puerto";
+import { PROMPT_PAGO_PUERTO, resolverPagoPuertoOcr } from "./pago-puerto-ocr";
 import { TIPOS_RESULTADO_DGA, type ResultadoDgaExtraido } from "./resultado-dga-documentos";
 
 const Input = z.object({
@@ -85,7 +86,7 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
 
 
     if (data.lineas_factura) system += " Agrega lineas_factura: arreglo de cada línea de mercancía en orden con {descripcion, codigo_arancelario, cantidad, unidad, valor_fob, peso}. Extrae descripción completa y valores del documento; codigo_arancelario SOLO si aparece explícitamente para esa línea, nunca clasifiques ni inventes códigos. valor_fob es el importe de la línea, no precio unitario. Datos ausentes null. No agregues flete, seguro ni cargos como mercancías. No cambies los totales de cabecera.";
-    if (data.pago_puerto) system = "Extrae una factura o comprobante de costos de importación de República Dominicana. Devuelve únicamente JSON {pago_puerto:{monto:number|null,monto_sin_itbis:number|null,moneda:'DOP'|'USD'|null,fecha:string|null,referencia:string|null,tipo:'almacenaje'|'contenedor'|'gestion_aduanal'|'cargos_locales'|null,confianza:'alta'|'media'|null}}. monto es el total efectivamente pagado para almacenaje, contenedor y cargos_locales, incluyendo impuestos, no saldo pendiente. Para gestion_aduanal extrae monto_sin_itbis: Precio/base antes de ITBIS (subtotal gravado + subtotal exento), nunca Monto Total. Si no hay base explícita, puedes obtenerla únicamente de total menos ITBIS ambos explícitos; nunca asumir tasa 18% ni usar el total como base. Devuelve también monto igual a monto_sin_itbis para gestion_aduanal; si no puede determinarse, ambos null. Para tipo ambiguo extrae monto_sin_itbis si consta, para permitir selección manual posterior. gestion_aduanal es Factura de Gestión Aduanal (servicio de gestión/despacho propio o de terceros): extrae fecha de la factura YYYY-MM-DD y NCF/e-NCF o número de factura completo como referencia. cargos_locales es Pago de Cargos Locales: extrae fecha de PAGO y PIN/referencia. almacenaje es servicio de almacenamiento; contenedor es depósito/garantía o pago de contenedor. Para los pagos fecha es fecha de PAGO YYYY-MM-DD, no vencimiento ni emisión si no se acredita pago. Preserva ceros y prefijos DPW/DPH/NCF en referencia. Distingue por el concepto explícito del documento; DPW o DPH solos NO bastan para certeza. confianza alta solo con concepto explícito inequívoco; una factura con varios tipos o un concepto ambiguo devuelve tipo null. No inventes monto, moneda, fecha ni referencia. Datos ausentes null.";
+    if (data.pago_puerto) system = PROMPT_PAGO_PUERTO;
     if (data.resultado_dga) {
       const reglas = data.resultado_dga === "Reporte de Liquidación de Impuestos"
         ? "Del reporte Liquidación de Impuestos extrae numero del campo Liquidación y estado del campo Estado, exactamente como aparecen. No extraigas total: Total Impuestos a Pagar excluye Servicio Aduanero y DUA."
@@ -124,7 +125,7 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
 
     return {
       ...(data.resultado_dga ? { resultado_dga: parsed.resultado_dga ?? {} } : {}),
-      ...(data.pago_puerto ? { pago_puerto: normalizarPagoPuerto(parsed.pago_puerto) } : {}),
+      ...(data.pago_puerto ? { pago_puerto: resolverPagoPuertoOcr(parsed.pago_puerto) } : {}),
       cliente: parsed.cliente ?? null,
       bl: parsed.bl ?? null,
       suplidor: parsed.suplidor ?? null,
