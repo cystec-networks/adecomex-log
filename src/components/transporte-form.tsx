@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useBorradorExpediente } from "@/components/expediente-guardado";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +38,7 @@ export const PAGO_ESTADOS = [
   { v: "pagado", l: "Pagado" },
 ];
 
-type Props = { mode: "new" | "edit"; id?: string; expedienteId?: string; controlInicial?: string };
+type Props = { mode: "new" | "edit"; id?: string; expedienteId?: string; controlInicial?: string; embedded?: boolean; onSaved?: () => void };
 
 const fmtDOP = (n: number) =>
   `RD$ ${n.toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -63,7 +64,7 @@ function MoneyDOP({
   );
 }
 
-export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props) {
+export function TransporteForm({ mode, id, expedienteId, controlInicial, embedded = false, onSaved }: Props) {
   const nav = useNavigate();
   const qc = useQueryClient();
 
@@ -366,6 +367,7 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
       qc.invalidateQueries({ queryKey: ["transporte", id] });
       qc.invalidateQueries({ queryKey: ["transportes-por-expediente"] });
       toast.success(mode === "new" ? `Transporte ${row.numero_viaje} creado` : "Transporte actualizado");
+      if (embedded) { onSaved?.(); return; }
       if (mode === "new") {
         if (expedienteId) nav({ to: "/expedientes/$id", params: { id: expedienteId } });
         else nav({ to: "/transportes" });
@@ -373,6 +375,8 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  useBorradorExpediente(form, embedded && loaded, save.isPending, () => save.mutateAsync(), save.isSuccess ? save.submittedAt : undefined);
 
   const dividir = useMutation({
     mutationFn: async () => {
@@ -436,7 +440,7 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-5">
-      <div className="flex items-center gap-3 flex-wrap">
+      {!embedded && <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" size="sm" asChild>
           <Link to={expedienteId ? "/expedientes/$id" : "/transportes"} params={expedienteId ? { id: expedienteId } : undefined as any}>
             <ArrowLeft className="h-4 w-4 mr-1" />Volver
@@ -470,6 +474,7 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial }: Props
         </Button>
       </div>
 
+      }
       <Dialog open={splitOpen} onOpenChange={setSplitOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Dividir en un nuevo Transporte</DialogTitle></DialogHeader>

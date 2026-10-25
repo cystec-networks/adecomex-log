@@ -23,10 +23,11 @@ export function useEditorExpediente(hayCambios: boolean, pendiente: boolean, gua
 }
 
 /** Una ventana cerrada conserva su borrador hasta guardarlo o abrir otro registro. */
-export function useBorradorExpediente(valor: unknown, abierto: boolean, pendiente: boolean, guardar: () => Promise<unknown>) {
+export function useBorradorExpediente(valor: unknown, abierto: boolean, pendiente: boolean, guardar: () => Promise<unknown>, guardado?: number) {
   const snapshot = JSON.stringify(valor);
   const [base, setBase] = useState<string | null>(null);
   const anterior = useRef(false);
+  useEffect(() => { if (guardado !== undefined) setBase(null); }, [guardado]);
   useEffect(() => {
     if (abierto && !anterior.current) setBase(snapshot);
     anterior.current = abierto;

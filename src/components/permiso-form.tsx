@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useBorradorExpediente } from "@/components/expediente-guardado";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,9 +46,11 @@ type Props = {
   id?: string;
   expedienteId?: string; // preselect
   ordenId?: string; // preselect
+  embedded?: boolean;
+  onSaved?: () => void;
 };
 
-export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
+export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false, onSaved }: Props) {
   const nav = useNavigate();
   const qc = useQueryClient();
 
@@ -174,6 +177,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
       qc.invalidateQueries({ queryKey: ["permisos-por-expediente"] });
       qc.invalidateQueries({ queryKey: ["permisos-por-orden"] });
       toast.success(mode === "new" ? `Permiso VUCE ${row.numero} creado` : "Permiso VUCE actualizado");
+      if (embedded) { onSaved?.(); return; }
       if (mode === "new") {
         if (expedienteId) nav({ to: "/expedientes/$id", params: { id: expedienteId } });
         else if (ordenId) nav({ to: "/ordenes/$id", params: { id: ordenId } });
@@ -183,10 +187,11 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
     onError: (e: any) => toast.error(e.message),
   });
 
+  useBorradorExpediente(form, embedded && loaded, save.isPending || uploading, () => save.mutateAsync(), save.isSuccess ? save.submittedAt : undefined);
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-5">
-      <div className="flex items-center gap-3 flex-wrap">
+      {!embedded && <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" size="sm" asChild>
           <Link
             to={expedienteId ? "/expedientes/$id" : ordenId ? "/ordenes/$id" : "/permisos"}
@@ -209,7 +214,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
         <Button onClick={() => save.mutate()} disabled={save.isPending}>
           <Check className="h-4 w-4 mr-1" />{save.isPending ? "Guardando…" : mode === "new" ? "Crear permiso VUCE" : "Guardar cambios"}
         </Button>
-      </div>
+      </div>}
 
       <Card>
         <CardHeader className="pb-3 border-b">
@@ -358,7 +363,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId }: Props) {
       </Card>
 
       <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => nav({ to: "/permisos" })}>Cancelar</Button>
+        <Button variant="outline" onClick={() => embedded ? onSaved?.() : nav({ to: "/permisos" })}>Cancelar</Button>
         <Button onClick={() => save.mutate()} disabled={save.isPending}>
           <Check className="h-4 w-4 mr-1" />{save.isPending ? "Guardando…" : mode === "new" ? "Crear permiso" : "Guardar cambios"}
         </Button>
