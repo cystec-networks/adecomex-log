@@ -5629,6 +5629,7 @@ export type Database = {
           eliminado_en: string | null
           eliminado_por: string | null
           estado: Database["public"]["Enums"]["permiso_estado"]
+          estado_vuce: string | null
           expediente_id: string | null
           fecha_aprobacion: string | null
           fecha_emision: string | null
@@ -5652,6 +5653,7 @@ export type Database = {
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["permiso_estado"]
+          estado_vuce?: string | null
           expediente_id?: string | null
           fecha_aprobacion?: string | null
           fecha_emision?: string | null
@@ -5675,6 +5677,7 @@ export type Database = {
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["permiso_estado"]
+          estado_vuce?: string | null
           expediente_id?: string | null
           fecha_aprobacion?: string | null
           fecha_emision?: string | null
@@ -7415,6 +7418,7 @@ export type Database = {
         | "aprobado"
         | "rechazado"
         | "vencido"
+        | "pendiente_pago"
       permiso_tipo:
         | "sanitario"
         | "fitosanitario"
@@ -7677,6 +7681,7 @@ export const Constants = {
         "aprobado",
         "rechazado",
         "vencido",
+        "pendiente_pago",
       ],
       permiso_tipo: [
         "sanitario",
