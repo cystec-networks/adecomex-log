@@ -18,6 +18,8 @@ import {
 import { EscanearFacturaVentaButton } from "@/components/escanear-factura-venta-button";
 import type { FacturaVentaExtraction } from "@/lib/ai-ocr-factura-venta.functions";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
+import { detectarReferenciasFactura, decidirVinculoFactura, coincideFacturaExpediente, guardarDescripcionesOcr, descripcionesOcrGuardadas } from "@/lib/factura-venta-referencias";
+import { sincronizarCobroDesdeEcf } from "@/lib/factura-ecf-vinculacion";
 
 const TERMINOS_PAGO = [
   { value: "0", label: "Contado" },
@@ -92,6 +94,19 @@ export function FacturaEcfFormDialog({
   });
 
   const [fechaVencPagoManual, setFechaVencPagoManual] = useState(false);
+  const [omitirVinculo, setOmitirVinculo] = useState(false);
+  const referencias = useMemo(() => detectarReferenciasFactura([...lineas.map(l => l.descripcion), ...descripcionesOcrGuardadas(notas)]), [lineas, notas]);
+  const { data: expedientesReferencia } = useQuery({
+    queryKey: ["expedientes-referencia-ecf", referencias.expedientes],
+    enabled: open && referencias.expedientes.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("expedientes").select("id,numero,factura_ecf_id")
+        .in("numero", referencias.expedientes).is("eliminado_en", null);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const expedienteSugerido = decidirVinculoFactura(referencias, expedientesReferencia ?? [], editId);
 
   useEffect(() => {
     if (fechaVencPagoManual || !fechaEmision) return;
@@ -114,6 +129,7 @@ export function FacturaEcfFormDialog({
     setFechaFirma("");
     setClienteId(preload?.cliente_id ?? "");
     setNotas("");
+    setOmitirVinculo(false);
     setPdfFile(null);
     setExistingPdfUrl(null);
     setItbisRetenidoTerceros("");
@@ -139,10 +155,11 @@ export function FacturaEcfFormDialog({
     queryKey: ["factura-ecf-edit", editId],
     enabled: !!editId && open,
     queryFn: async () => {
-      const { data: f, error } = await supabase.from("facturas_ecf").select("*").eq("id", editId!).single();
+      if (!editId) throw new Error("Factura no seleccionada");
+      const { data: f, error } = await supabase.from("facturas_ecf").select("*").eq("id", editId).single();
       if (error) throw error;
       const { data: ls } = await supabase
-        .from("facturas_ecf_lineas").select("*").eq("factura_id", editId!).order("orden");
+        .from("facturas_ecf_lineas").select("*").eq("factura_id", editId).order("orden");
       return { f, ls: ls ?? [] };
     },
   });
@@ -251,6 +268,31 @@ export function FacturaEcfFormDialog({
       const { error: lErr } = await supabase.from("facturas_ecf_lineas").insert(lineasPayload);
       if (lErr) throw lErr;
 
+      if (referencias.unico && !omitirVinculo) {
+        try {
+          const { data: candidatos, error: candidatosError } = await supabase.from("expedientes")
+            .select("id,numero,factura_ecf_id").eq("numero", referencias.unico).is("eliminado_en", null);
+          if (candidatosError) throw candidatosError;
+          const target = decidirVinculoFactura(referencias, candidatos ?? [], data.id);
+          const { data: vinculados, error: vinculosError } = await supabase.from("expedientes")
+            .select("id").eq("factura_ecf_id", data.id).is("eliminado_en", null);
+          if (vinculosError) throw vinculosError;
+          if (target && !(vinculados ?? []).some(e => e.id !== target)) {
+            const { data: enlazados, error: enlaceError } = await supabase.from("expedientes")
+              .update({ factura_ecf_id: data.id }).eq("id", target).is("factura_ecf_id", null).select("id");
+            if (enlaceError) throw enlaceError;
+            if (enlazados?.length) {
+              await sincronizarCobroDesdeEcf(target, data.id, null);
+              toast.success(`Factura vinculada a ${referencias.unico}`);
+            }
+          } else {
+            toast.info(`Factura guardada. Revisa manualmente el vínculo con ${referencias.unico}; no se sustituyeron vínculos existentes.`);
+          }
+        } catch {
+          toast.warning("Factura guardada, pero no se pudo completar la vinculación. Revísala en Finanzas.");
+        }
+      }
+
       return data;
 
     },
@@ -259,6 +301,7 @@ export function FacturaEcfFormDialog({
       qc.invalidateQueries({ queryKey: ["facturas-ecf"] });
       qc.invalidateQueries({ queryKey: ["facturas-ecf-lite"] });
       qc.invalidateQueries({ queryKey: ["ecf-pendientes"] });
+      for (const key of ["expediente", "expedientes", "facturas", "ecf-pendientes-count", "expedientes-referencia-ecf"]) qc.invalidateQueries({ queryKey: [key] });
       qc.invalidateQueries({ queryKey: ["cxc-facturas"] });
       for (const key of ["costos_producto", "costos-producto-liq", "ecf-vinculada"]) qc.invalidateQueries({ queryKey: [key] });
       if (editId) qc.invalidateQueries({ queryKey: ["factura-ecf-edit", editId] });
@@ -290,6 +333,10 @@ export function FacturaEcfFormDialog({
   };
 
   const applyExtracted = (d: FacturaVentaExtraction) => {
+    if (d.descripciones?.length) {
+      setNotas(prev => guardarDescripcionesOcr(prev, d.descripciones));
+      setOmitirVinculo(false);
+    }
     if (d.encf && !encf) setEncf(d.encf);
     if (d.tipo_comprobante && tipo === "31") setTipo(d.tipo_comprobante);
     if (d.fecha_emision) setFechaEmision(d.fecha_emision);
@@ -352,6 +399,24 @@ export function FacturaEcfFormDialog({
         <div className="flex justify-end">
           <EscanearFacturaVentaButton onExtracted={applyExtracted} />
         </div>
+
+        {referencias.expedientes.length > 0 && (
+          <div className="border border-border rounded-md p-3 text-xs space-y-2">
+            <div>Expedientes detectados: <span className="font-semibold">{referencias.expedientes.join(", ")}</span></div>
+            {referencias.bl.length > 0 && <div className="text-muted-foreground">BL/Transporte: {referencias.bl.join(", ")}</div>}
+            {referencias.expedientes.length > 1 ? (
+              <p className="text-warning">Varios expedientes: sin vinculación automática. Confirma cada vínculo desde Finanzas.</p>
+            ) : expedienteSugerido ? (
+              <Select value={omitirVinculo ? "__none__" : expedienteSugerido} onValueChange={v => setOmitirVinculo(v === "__none__")}>
+                <SelectTrigger aria-label="Expediente detectado"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={expedienteSugerido}>{referencias.unico} · Vincular al guardar</SelectItem>
+                  <SelectItem value="__none__">Sin vincular</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : <p className="text-muted-foreground">Sin coincidencia disponible para vinculación automática; revisa el expediente en Finanzas.</p>}
+          </div>
+        )}
 
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -544,18 +609,20 @@ export function FacturaEcfSelector({
   onChange,
   preload,
   className,
+  expedienteNumero,
 }: {
   value: string | null | undefined;
   onChange: (id: string | null, factura?: any) => void;
   preload?: FacturaEcfFormPreload;
   className?: string;
+  expedienteNumero?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const { data: facturas } = useQuery({
     queryKey: ["facturas-ecf-lite"],
     queryFn: async () => (await supabase
       .from("facturas_ecf")
-      .select("id,encf,cliente_razon_social,monto_total,fecha_emision,tipo_comprobante,cliente_id")
+      .select("id,encf,cliente_razon_social,monto_total,fecha_emision,tipo_comprobante,cliente_id,notas,facturas_ecf_lineas(descripcion)")
       .is("eliminado_en", null)
       .order("fecha_emision", { ascending: false })
       .limit(500)
@@ -563,6 +630,9 @@ export function FacturaEcfSelector({
   });
 
   const selected = (facturas ?? []).find((f) => f.id === value);
+  const esCoincidencia = (f: NonNullable<typeof facturas>[number]) =>
+    coincideFacturaExpediente([...f.facturas_ecf_lineas.map(l => l.descripcion ?? ""), ...descripcionesOcrGuardadas(f.notas)], expedienteNumero);
+  const ordenadas = [...(facturas ?? [])].sort((a, b) => Number(esCoincidencia(b)) - Number(esCoincidencia(a)));
 
   return (
     <div className={`flex gap-1 items-center ${className ?? ""}`}>
@@ -583,9 +653,9 @@ export function FacturaEcfSelector({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="__none__">— Sin vincular —</SelectItem>
-          {(facturas ?? []).map((f) => (
+          {ordenadas.map((f) => (
             <SelectItem key={f.id} value={f.id}>
-              {f.encf} · {f.cliente_razon_social ?? "—"} · {fmtRD(f.monto_total)}
+              <span className={esCoincidencia(f) ? "font-semibold text-primary" : undefined}>{esCoincidencia(f) ? `✓ EXP. ${expedienteNumero} · ` : ""}{f.encf} · {f.cliente_razon_social ?? "—"} · {fmtRD(f.monto_total)}</span>
             </SelectItem>
           ))}
         </SelectContent>

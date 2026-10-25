@@ -24,6 +24,7 @@ export type FacturaVentaExtraction = {
   otros_impuestos: number | null;
   propina_legal: number | null;
   monto_total: number | null;
+  descripciones: string[];
 };
 
 const PREFIX_MAP: Record<string, string> = {
@@ -42,8 +43,9 @@ export const extractFacturaVentaFromDocument = createServerFn({ method: "POST" }
       "emite la empresa ADECOMEX a sus clientes. Analiza la factura adjunta y devuelve " +
       "ÚNICAMENTE un objeto JSON con las claves exactas: encf, tipo_comprobante, fecha_emision, " +
       "fecha_vencimiento_ncf, codigo_seguridad, fecha_firma, cliente_razon_social, cliente_rnc, " +
-      "subtotal_gravado, subtotal_exento, total_itbis, otros_impuestos, propina_legal, monto_total.\n" +
+      "subtotal_gravado, subtotal_exento, total_itbis, otros_impuestos, propina_legal, monto_total, descripciones.\n" +
       "Reglas:\n" +
+      "- descripciones: array con el texto literal de CADA línea de Descripción de servicios, incluyendo EXP./EXP y BL con sus códigos completos. Conserva líneas sin EXP también. No tomes referencias del encabezado, notas ni inventes números.\n" +
       "- Reconoce si es un BORRADOR interno (sin QR ni código de seguridad) o un e-CF OFICIAL ya " +
       "generado por el facturador de la DGII (trae QR, Código de Seguridad y Fecha de Firma Digital).\n" +
       "- En borradores: CALCULA subtotal_gravado sumando las líneas con impuesto 'ITBIS', y " +
@@ -130,5 +132,6 @@ export const extractFacturaVentaFromDocument = createServerFn({ method: "POST" }
       otros_impuestos: numOrZero(parsed.otros_impuestos),
       propina_legal: numOrZero(parsed.propina_legal),
       monto_total: num(parsed.monto_total),
+      descripciones: Array.isArray(parsed.descripciones) ? parsed.descripciones.filter((v): v is string => typeof v === "string" && !!v.trim()) : [],
     };
   });
