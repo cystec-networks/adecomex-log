@@ -31,7 +31,7 @@ export function leerDetalleSolicitudVuce(text: string): DatosPermisoVuce | null 
   const numero = t.match(/No\.?\s*(?:de\s+)?Tr[aá]mite\s*:?\s*(TRM-[\w-]+)/i)?.[1];
   if (!numero) return null;
   // Stop at the next label even when PDF text extraction merges a table row.
-  const valor = (label: string) => t.match(new RegExp(`${label}\\s*:?\\s*([^\\n]+?)(?=\\s+(?:[A-ZÁÉÍÓÚ][\\wÁÉÍÓÚáéíóú.]*\\s*){1,5}:|\\n|$)`, "i"))?.[1]?.trim() ?? null;
+  const valor = (label: string) => t.match(new RegExp(`${label}\\s*:?\\s*([^\\n]+?)(?=[ \t]+(?:No\\.?[ \t]+Tr[aá]mite|Organismo[ \t]+Externo|Estado|Fecha[ \t]+de[ \t]+[A-Za-zÁÉÍÓÚáéíóú]+)[ \t]*:|\\n|$)`, "i"))?.[1]?.trim() ?? null;
   const estadoVuce = valor("(?<![\\w])Estado");
   if (!estadoVuce || estadoVuce === "-") return null;
   const estado = clasificarEstadoVuce(estadoVuce);

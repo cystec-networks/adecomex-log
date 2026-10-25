@@ -1,4 +1,16 @@
-import { describe, expect, test } from "bun:test";
+import { describe, it as test } from "node:test";
+import assert from "node:assert/strict";
+function expect(actual: unknown) {
+  return {
+    toBe: (value: unknown) => assert.equal(actual, value),
+    toBeNull: () => assert.equal(actual, null),
+    toEqual: (value: unknown) => assert.deepEqual(actual, value),
+    toMatchObject: (value: Record<string, unknown>) => {
+      assert.ok(actual && typeof actual === "object");
+      for (const [k, v] of Object.entries(value)) assert.deepEqual((actual as Record<string, unknown>)[k], v);
+    },
+  };
+}
 import { aplicarDetalleVuce, leerDetalleSolicitudVuce } from "./permiso-vuce";
 
 const pendiente = `Detalle Solicitud - VUCE
