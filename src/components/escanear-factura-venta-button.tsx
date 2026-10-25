@@ -6,6 +6,7 @@ import { Sparkles, Loader2, FileUp, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { detectarReferenciasFactura } from "@/lib/factura-venta-referencias";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   extractFacturaVentaFromDocument,
@@ -59,6 +60,8 @@ export function EscanearFacturaVentaButton({
 
   const fmt = (v: string | number | null) =>
     v === null || v === undefined || v === "" ? <span className="text-muted-foreground">—</span> : String(v);
+
+  const referencias = detectarReferenciasFactura(data?.descripciones ?? []);
 
   return (
     <>
@@ -129,7 +132,10 @@ export function EscanearFacturaVentaButton({
                   <div><span className="text-muted-foreground">Otros impuestos:</span> {fmt(data.otros_impuestos)}</div>
                   <div><span className="text-muted-foreground">Propina legal:</span> {fmt(data.propina_legal)}</div>
                   <div><span className="text-muted-foreground">MONTO TOTAL:</span> {fmt(data.monto_total)}</div>
+                  <div className="col-span-2"><span className="text-muted-foreground">Expedientes:</span> {referencias.expedientes.join(", ") || "Sin referencia"}</div>
+                  {referencias.bl.length > 0 && <div className="col-span-2"><span className="text-muted-foreground">BL/Transporte:</span> {referencias.bl.join(", ")}</div>}
                 </div>
+                {referencias.expedientes.length > 1 && <p className="text-warning">Varios expedientes detectados: {referencias.expedientes.join(", ")}. Vinculación manual requerida.</p>}
                 <div className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-500 pt-2 border-t">
                   <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                   <span>Verifica los datos antes de guardar — la IA puede cometer errores.</span>
