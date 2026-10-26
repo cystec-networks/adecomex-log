@@ -16,7 +16,7 @@ import { conceptoPagoPuerto, documentoPagoPuerto, type TipoPagoPuerto } from "@/
 import { guardarComprobantePuerto, guardarCostoDocumentoPuerto, type BorradorPagoPuerto } from "@/lib/pago-puerto-guardar";
 import { validarNombreSiga } from "@/lib/codigo-siga";
 import { supabase } from "@/integrations/supabase/client";
-import { esPagoVuce, acumularPagoVuce, costoDelPermiso, permisosDelDocumento } from "@/lib/pago-vuce";
+import { esPagoVuce, acumularPagoVuce, costoDelPermiso, costoPorPinVuce, permisoDelCostoVuce, permisosDelDocumento } from "@/lib/pago-vuce";
 
 const vacio: BorradorPagoPuerto = { tipo: "", monto: "", moneda: "", fecha: "", referencia: "", concepto: "" };
 export type DocumentoPagoSubido = { file: File; tipo: Exclude<TipoPagoPuerto, "gestion_aduanal">; codigo: string };
@@ -35,8 +35,9 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
   const [permisos, setPermisos] = useState<{ id: string; numero: string | null; estado: string }[]>([]);
   const [costosVuce, setCostosVuce] = useState<{ monto_real: number | null; moneda: string | null; observaciones: string | null }[]>([]);
   const [avisoVuce, setAvisoVuce] = useState("");
+  const [notaVuce, setNotaVuce] = useState("");
   const [lecturaEnCurso, setLecturaEnCurso] = useState(false);
-  const reset = () => { setFile(null); setBorrador(vacio); setAnalizado(false); setConfirmado(false); setDuplicado(false); setMensajeDuplicado(""); };
+  const reset = () => { setFile(null); setBorrador(vacio); setAnalizado(false); setConfirmado(false); setDuplicado(false); setMensajeDuplicado(""); setAvisoVuce(""); setNotaVuce(""); };
   const analizar = useMutation({
     mutationFn: async () => {
       setLecturaEnCurso(true);
@@ -64,9 +65,22 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
       ]);
       setPermisos(ps.data ?? []); setCostosVuce(cs.data ?? []);
       const matches = permisosDelDocumento(ps.data ?? [], nuevo.documentos_vuce ?? []);
-      const numero = matches.length === 1 ? matches[0].numero ?? "" : "";
-      setAvisoVuce(ps.error || cs.error ? "No se pudo consultar los permisos o costos; vuelve a leer antes de confirmar." : !nuevo.documentos_vuce?.length ? "No se identificó el N.º de trámite en este documento. Selecciona el permiso correcto para vincularlo." : matches.length !== 1 ? "El No. Documento no coincide con un único Permiso VUCE de este expediente. Revisa y selecciona el permiso; no se asumió ningún vínculo." : "");
-      setBorrador({ ...nuevo, permiso_numero: numero, ...(esPagoVuce(tipo) && numero ? acumularPagoVuce(tipo, nuevo, costoDelPermiso(cs.data ?? [], numero)) : {}) });
+      let numero = matches.length === 1 ? matches[0].numero ?? "" : "";
+      let previo = numero ? costoDelPermiso(cs.data ?? [], numero) : undefined;
+      // El Recibo no trae el N.º de trámite: cruzar por el PIN contra el costo que ya guardó el PIN de pago.
+      if (!numero && esPagoVuce(tipo) && nuevo.referencia) {
+        previo = costoPorPinVuce(cs.data ?? [], nuevo.referencia);
+        numero = permisoDelCostoVuce(previo);
+      }
+      setAvisoVuce(ps.error || cs.error ? "No se pudo consultar los permisos o costos; vuelve a leer antes de confirmar."
+        : !esPagoVuce(tipo) || numero ? ""
+        : tipo === "vuce_recibo" && nuevo.referencia ? ""
+        : !nuevo.documentos_vuce?.length ? "No se identificó el N.º de trámite en este documento. Selecciona el permiso correcto para vincularlo."
+        : "El No. Documento no coincide con un único Permiso VUCE de este expediente. Revisa y selecciona el permiso; no se asumió ningún vínculo.");
+      setNotaVuce(esPagoVuce(tipo) && !numero && tipo === "vuce_recibo" && nuevo.referencia
+        ? "Este recibo no trae el N.º de trámite: se guardará con su PIN y quedará vinculado al permiso cuando se suba el PIN de pago con el mismo número."
+        : numero && !matches.length ? `Vinculado a ${numero} por el PIN ${nuevo.referencia} ya guardado.` : "");
+      setBorrador({ ...nuevo, permiso_numero: numero, ...(esPagoVuce(tipo) && (numero || previo) ? acumularPagoVuce(tipo, nuevo, previo) : {}) });
       setAnalizado(true);
       setLecturaEnCurso(false);
     }, onError: (e) => { setLecturaEnCurso(false); toast.error(e.message); },
