@@ -88,3 +88,12 @@ export function construirObservaciones(
 export function estructuraVacia(e?: ObservacionesEstructura | null): boolean {
   return !e || !(limpio(e.tipo_carga) || limpio(e.contenedores) || limpio(e.descripcion) || limpio(e.embarcador));
 }
+
+/** Solo un cambio del texto generado reemplaza el ajuste manual de Descripción. */
+export function sincronizarDescripcionObservaciones<T extends { observaciones_estructura?: ObservacionesEstructura | null; factura_comercial?: string | null; descripcion?: string | null }>(
+  anterior: T, siguiente: T, numeroAnterior?: string | null, numeroSiguiente?: string | null,
+): T {
+  const antes = construirObservaciones(anterior.observaciones_estructura ?? {}, anterior.factura_comercial, numeroAnterior);
+  const despues = construirObservaciones(siguiente.observaciones_estructura ?? {}, siguiente.factura_comercial, numeroSiguiente);
+  return antes === despues ? siguiente : { ...siguiente, descripcion: despues };
+}

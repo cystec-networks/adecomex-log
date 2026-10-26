@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { construirObservaciones, contenedoresValidos, normalizarRemarkSiga, contenedoresDesdeTabla, tipoCargaPorDefecto, descripcionBorrador } from "./observaciones-expediente";
+import { construirObservaciones, contenedoresValidos, normalizarRemarkSiga, contenedoresDesdeTabla, tipoCargaPorDefecto, descripcionBorrador, sincronizarDescripcionObservaciones } from "./observaciones-expediente";
 import { buildImportDUAXml } from "./siga-xml";
 
 const ej = { tipo_carga: "FCL", contenedores: "4x40", descripcion: "3,840 fundas de leche descremada en polvo", embarcador: "Melkweg Holland BV" };
@@ -49,5 +49,26 @@ describe("observaciones estructuradas", () => {
   });
   it("texto con contenedores mixtos", () => {
     assert.ok(construirObservaciones({ tipo_carga: "FCL", contenedores: "1x40+1x20" }).startsWith("FCL 1X40 + 1X20"));
+  });
+  const anterior = { descripcion: "Ajuste manual", factura_comercial: "FT 13/30881", observaciones_estructura: { tipo_carga: "FCL", contenedores: "2X40", descripcion: "LECHE EN POLVO", embarcador: "VHUMANA S A" } };
+  it("copia exactamente el texto con cantidad completa del expediente 2026091334", () => {
+    const siguiente = { ...anterior, observaciones_estructura: { ...anterior.observaciones_estructura, descripcion: "2,000 FUNDAS DE LECHE EN POLVO" } };
+    assert.equal(sincronizarDescripcionObservaciones(anterior, siguiente, "2026091334", "2026091334").descripcion,
+      "FCL 2X40 STC: 2,000 FUNDAS DE LECHE EN POLVO, EMB.: VHUMANA S A, FACTURA FT 13/30881, EXP.: 2026091334.");
+  });
+  it("respeta la edición manual mientras Observaciones no cambie", () => {
+    assert.equal(sincronizarDescripcionObservaciones(anterior, { ...anterior, descripcion: "Descripción puntual" }, "2026091334", "2026091334").descripcion, "Descripción puntual");
+  });
+  it("el siguiente cambio de cada campo estructurado reemplaza el ajuste manual", () => {
+    for (const [campo, valor] of Object.entries({ tipo_carga: "LCL", contenedores: "1X20", descripcion: "2,000 FUNDAS DE LECHE EN POLVO", embarcador: "OTRO EMBARCADOR" })) {
+      const siguiente = { ...anterior, observaciones_estructura: { ...anterior.observaciones_estructura, [campo]: valor } };
+      assert.equal(sincronizarDescripcionObservaciones(anterior, siguiente, "2026091334", "2026091334").descripcion,
+        construirObservaciones(siguiente.observaciones_estructura, siguiente.factura_comercial, "2026091334"));
+    }
+  });
+  it("sincroniza al cambiar factura o número de expediente", () => {
+    const siguiente = { ...anterior, factura_comercial: "FT NUEVA" };
+    assert.equal(sincronizarDescripcionObservaciones(anterior, siguiente, "2026091334", "2026091335").descripcion,
+      "FCL 2X40 STC: LECHE EN POLVO, EMB.: VHUMANA S A, FACTURA FT NUEVA, EXP.: 2026091335.");
   });
 });
