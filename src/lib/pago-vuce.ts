@@ -12,6 +12,19 @@ export const marcadorPermisoVuce = (numero: string) => `Permiso VUCE: ${numeroTr
 export function costoDelPermiso<T extends { observaciones?: string | null }>(costos: readonly T[], numero: string): T | undefined {
   return costos.find(c => c.observaciones?.split(" · ").includes(marcadorPermisoVuce(numero)));
 }
+export const marcadorPinVuce = (pin: string) => `PIN/Referencia: ${pin.trim()}`;
+/** Costo VUCE ya guardado con el mismo PIN, aunque aún no tenga trámite vinculado (recibo subido antes que el PIN). */
+export function costoPorPinVuce<T extends { observaciones?: string | null }>(costos: readonly T[], pin: string): T | undefined {
+  const p = pin.trim();
+  if (!p) return undefined;
+  return costos.find(c => {
+    const partes = c.observaciones?.split(" · ") ?? [];
+    return partes.includes(marcadorPinVuce(p)) && partes.some(x => x.startsWith("Permiso VUCE: ") || /^(PIN|Recibo) VUCE SIGA: /.test(x));
+  });
+}
+export function permisoDelCostoVuce(costo?: { observaciones?: string | null }): string {
+  return costo?.observaciones?.split(" · ").find(p => p.startsWith("Permiso VUCE: "))?.slice("Permiso VUCE: ".length) ?? "";
+}
 export function permisosDelDocumento<T extends { numero: string | null }>(permisos: readonly T[], documentos: readonly string[]): T[] {
   return permisos.filter(p => documentos.some(n => numeroTramite(n) === numeroTramite(p.numero)));
 }
@@ -31,7 +44,7 @@ export function acumularPagoVuce(tipo: string, nuevo: { monto: string; moneda: s
 export function observacionesPagoVuce(numero: string, codigo: string, tipo: string, datos: { fecha: string; referencia: string }, anteriores?: string | null) {
   const prefijo = tipo === "vuce_pin" ? "PIN VUCE SIGA: " : "Recibo VUCE SIGA: ";
   const otro = (anteriores?.split(" · ") ?? []).filter(p => /^(PIN|Recibo) VUCE SIGA: /.test(p) && !p.startsWith(prefijo));
-  return [datos.fecha && `Fecha de pago: ${datos.fecha}`, datos.referencia && `PIN/Referencia: ${datos.referencia}`, marcadorPermisoVuce(numero), ...otro, `${prefijo}${codigo}`].filter(Boolean).join(" · ");
+  return [datos.fecha && `Fecha de pago: ${datos.fecha}`, datos.referencia && `PIN/Referencia: ${datos.referencia}`, numero.trim() && marcadorPermisoVuce(numero), ...otro, `${prefijo}${codigo}`].filter(Boolean).join(" · ");
 }
 /** Narrow deterministic parser for VUCE text PDFs; no dates from validity/registration. */
 export function leerPagoVuceTexto(text: string): PagoPuerto | null {
@@ -44,7 +57,7 @@ export function leerPagoVuceTexto(text: string): PagoPuerto | null {
   const total = totalDesdeTexto(t);
   const listado = t.split(/Listado\s+de\s+Facturas/i)[1] ?? "";
   const documentos = [...new Set([...(pin ? listado : t).matchAll(/\bTRM-[\w-]+/gi)].map(m => m[0].toUpperCase()))];
-  const referencia = pin ? t.match(/No\.?\s*(?:de\s+)?PIN\s*:?\s*([A-Z0-9-]+)/i)?.[1] : null;
+  const referencia = pin ? t.match(/No\.?\s*(?:de\s+)?PIN\s*:?\s*([A-Z0-9-]+)/i)?.[1] : t.match(/NUMERO\s*\/\s*PIN\s*:?\s*([A-Z0-9-]+)/i)?.[1] ?? null;
   const fecha = !pin ? fechaVuce(t.match(/(?<![\w])Fecha\s*:?\s*(\d{1,2}[\/-]\d{1,2}[\/-]\d{4}|\d{4}-\d{2}-\d{2})/i)?.[1] ?? "") : null;
   return normalizarPagoPuerto({ tipo, monto: total?.monto ?? null, moneda: total?.moneda ?? null, fecha, referencia, documentos_vuce: documentos, confianza: "alta" });
 }
