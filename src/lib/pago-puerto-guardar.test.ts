@@ -6,6 +6,7 @@ let costos: Row[] = [];
 let expedientes: Row[] = [];
 let cobros: Row[] = [];
 let ecfs: Row[] = [];
+let permisos: Row[] = [];
 let escrituras: Array<{ tabla: string; payload: Row }> = [];
 let archivos = new Set<string>();
 let fallaCosto = false;
@@ -13,7 +14,7 @@ let secuencia = 0;
 function tabla(nombre: string) {
   let op = "select"; let payload: Row = {}; let filters: Array<(r: Row) => boolean> = [];
   let single = false;
-  const rows = () => ({ documentos: docs, costos_producto: costos, expedientes, facturas: cobros, facturas_ecf: ecfs }[nombre] ?? []);
+  const rows = () => ({ documentos: docs, costos_producto: costos, expedientes, facturas: cobros, facturas_ecf: ecfs, permisos }[nombre] ?? []);
   const api = {
     select: (_campos?: string) => api,
     eq: (k: string, v: unknown) => { filters.push((r) => r[k] === v); return api; },
@@ -43,8 +44,29 @@ mock.module("@/integrations/supabase/client", () => ({ supabase: {
   storage: { from: () => ({ upload: async (path: string) => { archivos.add(path); return { error: null }; }, remove: async (paths: string[]) => { paths.forEach((p) => archivos.delete(p)); return { error: null }; } }) },
 } }));
 mock.module("./codigo-siga", () => ({ sha256File: async () => "hash", siguienteCodigoSiga: async () => "OTD-001", validarNombreSiga: () => ({ ok: true }) }));
-const { guardarComprobantePuerto } = await import("./pago-puerto-guardar");
-beforeEach(() => { docs = []; costos = []; expedientes = []; cobros = []; ecfs = []; escrituras = []; archivos = new Set(); fallaCosto = false; });
+const { guardarComprobantePuerto, guardarCostoDocumentoPuerto } = await import("./pago-puerto-guardar");
+beforeEach(() => { docs = []; costos = []; expedientes = []; cobros = []; ecfs = []; permisos = []; escrituras = []; archivos = new Set(); fallaCosto = false; });
+test("VUCE desde Documentos actualiza una sola línea por permiso con ambos comprobantes", async () => {
+  permisos.push({ expediente_id: "exp", numero: "TRM-0926-2533722" });
+  const draft = { tipo: "vuce_pin" as const, monto: "5800", moneda: "DOP", fecha: "", referencia: "20260924F07D3F40", concepto: "Permiso VUCE", permiso_numero: "TRM-0926-2533722" };
+  await guardarCostoDocumentoPuerto("exp", "OTD-010", draft);
+  await guardarCostoDocumentoPuerto("exp", "OTD-011", { ...draft, tipo: "vuce_recibo", fecha: "2026-09-25" });
+  expect(costos).toHaveLength(1); expect(costos[0].monto_real).toBe(5800);
+  expect(costos[0].observaciones).toContain("2026-09-25"); expect(costos[0].observaciones).toContain("PIN VUCE SIGA: OTD-010"); expect(costos[0].observaciones).toContain("Recibo VUCE SIGA: OTD-011");
+  await guardarCostoDocumentoPuerto("exp", "OTD-010", { ...draft, monto: "6000" });
+  expect(costos).toHaveLength(1); expect(costos[0].monto_real).toBe(6000); expect(costos[0].observaciones).toContain("2026-09-25"); expect(docs).toHaveLength(0);
+});
+test("VUCE Escanear pago recibe dos PDFs pero crea un solo costo", async () => {
+  permisos.push({ expediente_id: "exp", numero: "TRM-0926-2533722" });
+  const draft = { tipo: "vuce_pin" as const, monto: "5800", moneda: "DOP", fecha: "", referencia: "20260924F07D3F40", concepto: "Permiso VUCE", permiso_numero: "TRM-0926-2533722" };
+  await guardarComprobantePuerto("exp", new File(["pin"], "OTD-pin.pdf"), draft);
+  await guardarComprobantePuerto("exp", new File(["recibo"], "OTD-recibo.pdf"), { ...draft, tipo: "vuce_recibo", fecha: "2026-09-25" }, true);
+  expect(docs).toHaveLength(2); expect(costos).toHaveLength(1); expect(costos[0].monto_real).toBe(5800);
+});
+test("VUCE sin permiso coincidente no escribe costo ni sube PDF", async () => {
+  await expect(guardarComprobantePuerto("exp", new File(["pin"], "OTD-pin.pdf"), { tipo: "vuce_pin", monto: "5800", moneda: "DOP", fecha: "", referencia: "PIN", concepto: "Permiso VUCE", permiso_numero: "TRM-OTRO" })).rejects.toThrow("no se asumirá un vínculo");
+  expect(escrituras).toHaveLength(0); expect(archivos.size).toBe(0);
+});
 for (const tipo of ["almacenaje", "contenedor", "cargos_locales"] as const) {
   test(`${tipo}: reemplaza la casilla tradicional y un segundo pago no duplica documento ni costo`, async () => {
     const casilla = tipo === "almacenaje" ? "Factura Pago de Almacenaje" : tipo === "cargos_locales" ? "Factura Pago Cargos Locales" : "Recibo Pago de Contenedor";
