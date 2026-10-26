@@ -3006,7 +3006,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
     setEditPath(d.storage_path ?? null);
     setTipo(d.tipo ?? TIPOS_DOC[0]);
     setVenc(d.fecha_vencimiento ?? "");
-    setObs(d.observaciones ?? "");
+    setObs(d.tipo === TIPO_CERTIFICADO_DGA ? (d.observaciones ?? "").replace(/\[Constancia de Origen DGA\][\s\S]*?\[Fin Constancia de Origen DGA\]/g, "").trim() : d.observaciones ?? "");
     setFile(null);
     setOpen(true);
   };
@@ -3041,6 +3041,8 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       }
       let certificadoDga: CertificadoDga | null = null;
       let observacionesDoc = obs;
+      const referenciaAnterior = editId && tipo === TIPO_CERTIFICADO_DGA ? leerReferenciaCertificado((docs ?? []).find((d) => d.id === editId)?.observaciones) : "";
+      if (referenciaAnterior) observacionesDoc = [obs.trim(), `[Constancia de Origen DGA]\n${referenciaAnterior}\n[Fin Constancia de Origen DGA]`].filter(Boolean).join("\n\n");
       if (file && tipo === TIPO_CERTIFICADO_DGA) {
         try {
           if (file.size > 15 * 1024 * 1024) throw new Error("supera 15 MB para lectura automática");
@@ -3277,6 +3279,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
               <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}{(tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && <span className="text-xs text-muted-foreground ml-1">(solo PDF)</span>}</Label><Input type="file" accept={(tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) ? "application/pdf,.pdf" : undefined} onChange={(e) => setFile(e.target.files?.[0] ?? null)} disabled={uploading} /></div>
               <div className="grid gap-1.5"><Label>Fecha vencimiento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
               <div className="grid gap-1.5"><Label>Observaciones</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
+              {tipo === TIPO_CERTIFICADO_DGA && editId && leerReferenciaCertificado((docs ?? []).find((d) => d.id === editId)?.observaciones) && <div className="text-xs whitespace-pre-wrap break-words max-h-56 overflow-y-auto text-muted-foreground">{leerReferenciaCertificado((docs ?? []).find((d) => d.id === editId)?.observaciones)}</div>}
             </div>
             <DialogFooter><Button onClick={upload} disabled={uploading}>{uploading ? (tipo === TIPO_CERTIFICADO_DGA || esDocumentoResultadoDga(tipo) ? "Guardando y leyendo…" : "Guardando…") : "Guardar"}</Button></DialogFooter>
           </DialogContent>

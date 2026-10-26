@@ -12,8 +12,7 @@ Apply transitions via `estados-expediente.ts` and `validar_transicion_expediente
 Red IDs: `expediente-numero`/`--brand-red`.
 Payment slips: linked transport first, reserved TR next; TF last.
 Share expediente/quote PDF. e-CF: factura-venta-referencias keeps fiscal lines, OCR in notas; factura-ecf-vinculacion shares links.
-Headers: desktop slots, More; mobile rows.
-New-expediente: two fixed action rows, form submits portaled; validation intact, no floating panels.
+Headers: desktop slots/More, mobile rows. New-expediente: two fixed action rows, portaled submits; retain validation, no floating panels.
 Detail headers: content-sized space-between rows, client label/value together, wrap IDs, warnings below Description; shared deadlines.
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
 - Presentation deadline: catalogo_regimenes.dias_habiles_presentar + expedientes.plazo_presentar_override via plazo-presentacion.ts; sla_dias deprecated. Require real arrival and regime, never ETA; show business days vs today, classify overdue by calendar date (including weekends).

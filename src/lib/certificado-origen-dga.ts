@@ -17,7 +17,7 @@ export function decidirCertificadoDga(actual: DeclaracionOrigen, datos: Certific
   const acuerdo = datos.acuerdo?.trim();
   const catalogo = acuerdos.find((a) => normalizar(a.codigo) === normalizar(acuerdo) || normalizar(a.nombre) === normalizar(acuerdo) || (!!acuerdo && normalizar(a.nombre).split(/[^A-Z0-9-]+/).includes(normalizar(acuerdo))));
   const actualCatalogo = acuerdos.find((a) => a.codigo === actual.acuerdo_codigo);
-  const seleccionado = actualCatalogo?.nombre || actual.acuerdo_comercial || actual.preferencia_comercial;
+  const seleccionado = actualCatalogo?.nombre || actual.acuerdo_comercial || actual.preferencia_comercial || actual.acuerdo_codigo;
   const vacio = !normalizar(seleccionado) || normalizar(seleccionado) === "NINGUNA";
   const coincide = catalogo ? actual.acuerdo_codigo === catalogo.codigo || normalizar(seleccionado) === normalizar(catalogo.nombre) : normalizar(seleccionado) === normalizar(acuerdo);
   const conflictoAcuerdo = !!acuerdo && !vacio && !coincide;
