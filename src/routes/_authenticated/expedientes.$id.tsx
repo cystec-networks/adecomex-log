@@ -1608,7 +1608,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     const origen = JSON.parse(origenDescripcionJson);
     const sincronizado = sincronizarDescripcionObservaciones(JSON.parse(anterior.origen), origen, anterior.numero, numeroObservaciones);
     if (sincronizado === origen) return;
-    setForm((f) => ({ ...f, descripcion: sincronizado.descripcion }));
+    setForm((f) => ({ ...f, descripcion_mercancia: sincronizado.descripcion_mercancia }));
     toast.info("Descripción actualizada desde Observaciones", { id: "descripcion-desde-observaciones", duration: 2500 });
   }, [id, editable, origenDescripcionJson, numeroObservaciones]);
   useEffect(() => {

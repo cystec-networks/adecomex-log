@@ -90,10 +90,10 @@ export function estructuraVacia(e?: ObservacionesEstructura | null): boolean {
 }
 
 /** Solo un cambio del texto generado reemplaza el ajuste manual de Descripción. */
-export function sincronizarDescripcionObservaciones<T extends { observaciones_estructura?: ObservacionesEstructura | null; factura_comercial?: string | null; descripcion?: string | null }>(
+export function sincronizarDescripcionObservaciones<T extends { observaciones_estructura?: ObservacionesEstructura | null; factura_comercial?: string | null; descripcion_mercancia?: string | null }>(
   anterior: T, siguiente: T, numeroAnterior?: string | null, numeroSiguiente?: string | null,
 ): T {
   const antes = construirObservaciones(anterior.observaciones_estructura ?? {}, anterior.factura_comercial, numeroAnterior);
   const despues = construirObservaciones(siguiente.observaciones_estructura ?? {}, siguiente.factura_comercial, numeroSiguiente);
-  return antes === despues ? siguiente : { ...siguiente, descripcion: despues };
+  return antes === despues ? siguiente : { ...siguiente, descripcion_mercancia: despues };
 }
