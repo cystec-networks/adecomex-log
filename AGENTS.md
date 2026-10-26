@@ -35,4 +35,4 @@ Detail headers: content-sized rows, client label/value together, wrap IDs, warni
 - Payment OCR: labels via pago-puerto-ocr; confirm/replace by SIGA/invoice; e-CF updates only pdf_url. Costs dedupe OCR; management uses precioBase/tax-free base, never gross. Transport/reimbursements: costos-automaticos-liquidacion.
 - DGA fills blanks; permiso-vuce replaces documentary fields and links PDFs on save. VUCE payments share pago-vuce accumulation by verified permit; PIN/receipt markers preserve both sources, preventing duplicate costs.
 - Editors retain drafts/global saves. DGA origin uses declaracion-origen-context for conditional sync; references stay in document observations.
-- Sync draft Description on generated observation changes via observaciones-expediente, not on save, preserving manual adjustments.
+- Sync draft Description via observaciones-expediente on observation changes, not save; preserve manual edits.
