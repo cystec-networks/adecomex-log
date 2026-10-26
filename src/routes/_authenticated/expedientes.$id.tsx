@@ -59,6 +59,8 @@ import { PaqueteFacturaCliente } from "@/components/paquete-factura-cliente";
 import { EscanearPagoPuerto, type DocumentoPagoSubido } from "@/components/escanear-pago-puerto";
 import { esDocumentoResultadoDga, camposDesdeDocumentoDga, completarResultadoDga, type CamposResultadoDga } from "@/lib/resultado-dga-documentos";
 import { extractSolicitudFromDocument } from "@/lib/ai-ocr.functions";
+import { DeclaracionOrigenProvider, useDeclaracionOrigen } from "@/components/declaracion-origen-context";
+import { TIPO_CERTIFICADO_DGA, decidirCertificadoDga, guardarReferenciaCertificado, leerReferenciaCertificado, type CertificadoDga } from "@/lib/certificado-origen-dga";
 
 import { CatalogCombobox } from "@/components/catalog-combobox";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
@@ -164,7 +166,7 @@ export const Route = createFileRoute("/_authenticated/expedientes/$id")({
 
 function ExpedienteConGuardado() {
   const { id } = Route.useParams();
-  return <ExpedienteGuardadoProvider key={id}><DetalleExpediente /></ExpedienteGuardadoProvider>;
+  return <ExpedienteGuardadoProvider key={id}><DeclaracionOrigenProvider><DetalleExpediente /></DeclaracionOrigenProvider></ExpedienteGuardadoProvider>;
 }
 
 // Helpers para inputs `datetime-local` (vigencia del PIN de pago DGA).
@@ -219,7 +221,7 @@ const CAMPOS_FECHA_EXPEDIENTE = [
 
 const TIPOS_DOC = [
   "Factura proforma","Factura comercial","Bill of Lading","Guía aérea","Lista de empaque",
-  "Certificado de origen","Certificado Sanitario/Fitosanitario","Certificado de análisis",
+  "Certificado de origen",TIPO_CERTIFICADO_DGA,"Certificado Sanitario/Fitosanitario","Certificado de análisis",
   "Declaración Única Aduanera (DUA)","Reporte de Liquidación de Impuestos",
   "Recibo Pago de Impuestos","PIN de Pago de Impuestos","Recibo Pago de Contenedor","Factura Pago de Almacenaje","Factura Pago Cargos Locales","PIN de Pago Permiso VUCE","Recibo Pago Permiso VUCE",
   "Permiso VUCE previo","Orden de compra",
@@ -246,6 +248,7 @@ const BLOQUE_DECLARACION: { tipo: string; label: string; obligatorio?: boolean }
   { tipo: "Bill of Lading", label: "Bill of Lading", obligatorio: true },
   { tipo: "Lista de empaque", label: "Lista de Empaque" },
   { tipo: "Certificado de origen", label: "Certificado de Origen" },
+  { tipo: TIPO_CERTIFICADO_DGA, label: TIPO_CERTIFICADO_DGA },
   { tipo: "Certificado Sanitario/Fitosanitario", label: "Certificado Sanitario/Fitosanitario" },
   { tipo: "Certificado de análisis", label: "Certificado de Análisis" },
 ];
@@ -300,6 +303,11 @@ function FilaDocumento({ label, obligatorio, doc, onUpload, onMarcarRecibido, on
         )}
       </span>
       <div className="flex items-center gap-0.5 shrink-0">
+        {doc?.tipo === TIPO_CERTIFICADO_DGA && leerReferenciaCertificado(doc.observaciones) && (
+          <Popover><PopoverTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6" title="Datos oficiales de origen" aria-label="Datos oficiales de origen"><FileCheck className="h-3 w-3" /></Button></PopoverTrigger>
+            <PopoverContent className="w-96 max-w-[calc(100vw-2rem)]"><p className="text-xs font-semibold mb-2">Constancia oficial SIGA</p><p className="whitespace-pre-wrap break-words text-xs max-h-80 overflow-y-auto">{leerReferenciaCertificado(doc.observaciones)}</p></PopoverContent>
+          </Popover>
+        )}
         {doc?.storage_path && <DocumentoPreviewButton path={doc.storage_path} variant="ghost" size="sm" label="Ver" />}
         <Button variant="outline" size="sm" className="h-6 px-1.5 text-[11px]" onClick={onUpload}>
           <Upload className="h-3 w-3 mr-0.5" />{doc?.storage_path ? "Reemplazar" : "Subir"}
@@ -2063,6 +2071,21 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
   // Indicador de cambios sin guardar y resultado del último guardado.
   const [base, setBase] = useState<string | null>(null);
+  const editorOrigen = useDeclaracionOrigen();
+  useEffect(() => {
+    if (!editorOrigen || isNuevo) return;
+    const editor = { leer: () => form, aplicar: (cambios: import("@/lib/certificado-origen-dga").DeclaracionOrigen) => {
+      setForm((f) => ({ ...f, ...cambios }));
+      setBase((b) => {
+        if (!b) return b;
+        const anterior = JSON.parse(b);
+        anterior[0] = { ...anterior[0], ...cambios };
+        return JSON.stringify(anterior);
+      });
+    } };
+    editorOrigen.current = editor;
+    return () => { if (editorOrigen.current === editor) editorOrigen.current = null; };
+  }, [editorOrigen, isNuevo, form]);
   const [estadoGuardado, setEstadoGuardado] = useState<null | "ok" | "error">(null);
   const snapshot = JSON.stringify([form, contenedores, filasServicioAduanero]);
   useEffect(() => {
@@ -2953,6 +2976,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
 function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const qc = useQueryClient();
+  const editorOrigen = useDeclaracionOrigen();
   const extraer = useServerFn(extractSolicitudFromDocument);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -2991,7 +3015,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
     new Promise<boolean>((resolve) => { setConfirmAck(false); setConfirmacion({ ...c, resolve }); });
 
   const upload = async () => {
-    if (file && (CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && !(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
+    if (file && (tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && !(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
       toast.error("Este documento del Checklist de Recepción solo acepta archivos PDF.");
       return;
     }
@@ -3015,6 +3039,22 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           if (!ok) return;
         }
       }
+      let certificadoDga: CertificadoDga | null = null;
+      let observacionesDoc = obs;
+      if (file && tipo === TIPO_CERTIFICADO_DGA) {
+        try {
+          if (file.size > 15 * 1024 * 1024) throw new Error("supera 15 MB para lectura automática");
+          const bytes = new Uint8Array(await file.arrayBuffer());
+          let binary = "";
+          for (const byte of bytes) binary += String.fromCharCode(byte);
+          const res = await extraer({ data: { filename: file.name, mime: "application/pdf", base64: btoa(binary), certificado_origen_dga: true } });
+          certificadoDga = res.certificado_origen_dga ?? null;
+          if (!certificadoDga?.numero) toast.warning("No se pudo leer el Número oficial. El PDF se guardará; revisa la constancia y completa Declaración manualmente.");
+          if (certificadoDga) observacionesDoc = guardarReferenciaCertificado(obs, certificadoDga);
+        } catch (e) {
+          toast.warning(`El PDF se guardará sin autocompletar: ${e instanceof Error ? e.message : "lectura no disponible"}`, { duration: 10000 });
+        }
+      }
       const docActual: any = editId ? (docs ?? []).find((d: any) => d.id === editId) : null;
       const codigo = file
         ? (docActual?.codigo_siga && prefijoSiga(docActual.tipo) === prefijoSiga(tipo)
@@ -3033,7 +3073,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
         const { error: e2 } = await supabase.from("documentos").update({
           tipo, storage_path: path,
           ...(file ? { file_hash: fileHash, codigo_siga: codigo, estado: "recibido" as const, fecha_recepcion: docActual?.fecha_recepcion ?? new Date().toISOString().slice(0, 10) } : {}),
-          fecha_vencimiento: venc || null, observaciones: obs || null,
+          fecha_vencimiento: venc || null, observaciones: observacionesDoc || null,
         }).eq("id", editId);
         if (e2) throw e2;
         toast.success(codigo && file ? `Documento actualizado · ${codigo}` : "Documento actualizado");
@@ -3048,13 +3088,44 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           expediente_id: expedienteId, tipo, storage_path: path,
           estado: file ? "recibido" : "pendiente",
           fecha_recepcion: file ? new Date().toISOString().slice(0, 10) : null,
-          fecha_vencimiento: venc || null, observaciones: obs || null,
+          fecha_vencimiento: venc || null, observaciones: observacionesDoc || null,
           file_hash: fileHash, codigo_siga: codigo,
         });
         if (e2) throw e2;
         toast.success(codigo ? `Documento agregado · ${codigo}` : "Documento agregado");
       }
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
+      if (certificadoDga) {
+        try {
+          const { data: actual, error } = await supabase.from("expedientes").select("numero_certificado_origen,acuerdo_codigo,acuerdo_comercial,preferencia_comercial").eq("id", expedienteId).single();
+          if (error) throw error;
+          const { data: acuerdos, error: errorAcuerdos } = await supabase.from("catalogo_acuerdos").select("codigo,nombre");
+          if (errorAcuerdos) throw errorAcuerdos;
+          const visible = { ...actual, ...editorOrigen?.current?.leer() };
+          let decision = decidirCertificadoDga(visible, certificadoDga, acuerdos ?? []);
+          if (decision.conflictoNumero) {
+            const confirmado = await pedirConfirmacion({ titulo: "Confirmar N° Certificado de Origen", mensaje: `Valor actual: ${visible.numero_certificado_origen}. Número oficial DGA leído: ${certificadoDga.numero}. ¿Reemplazar el valor actual por el Número oficial DGA? El certificado comercial y su PDF se conservarán.` });
+            decision = decidirCertificadoDga(visible, certificadoDga, acuerdos ?? [], confirmado);
+          }
+          if (decision.conflictoAcuerdo) toast.warning(`Acuerdo leído: ${certificadoDga.acuerdo}. Acuerdo actual: ${visible.acuerdo_comercial || visible.preferencia_comercial}. Se conserva el acuerdo actual.`, { duration: 10000 });
+          if (decision.acuerdoDesconocido) toast.warning(`Acuerdo ${certificadoDga.acuerdo} no encontrado en el catálogo; selección manual requerida.`);
+          if (Object.keys(decision.cambios).length) {
+            let query = supabase.from("expedientes").update(decision.cambios).eq("id", expedienteId);
+            // No reemplazar datos que otro usuario haya modificado durante la confirmación.
+            for (const campo of ["numero_certificado_origen", "acuerdo_codigo", "acuerdo_comercial", "preferencia_comercial"] as const) query = actual[campo] == null ? query.is(campo, null) : query.eq(campo, actual[campo]);
+            const { data: updated, error: writeError } = await query.select("id");
+            if (writeError) throw writeError;
+            if (!updated?.length) throw new Error("el expediente cambió durante la revisión; vuelve a revisar los datos");
+            editorOrigen?.current?.aplicar(decision.cambios);
+            toast.success("Declaración actualizada con la constancia oficial DGA.");
+          }
+        } catch (e) {
+          toast.warning(`PDF guardado; Declaración no actualizada: ${e instanceof Error ? e.message : "revisa los datos"}`, { duration: 10000 });
+        } finally {
+          await qc.invalidateQueries({ queryKey: ["expediente", expedienteId] });
+          qc.invalidateQueries({ queryKey: ["expedientes"] });
+        }
+      }
       const tipoPago = TIPO_DOCUMENTO_PAGO[tipo];
       if (file && tipoPago && codigo && file.size <= 15 * 1024 * 1024) setPagoDoc({ file, tipo: tipoPago, codigo });
       if (file && tipoPago && file.size > 15 * 1024 * 1024) toast.warning("PDF guardado; supera 15 MB para lectura. Captura el costo manualmente en Costos.");
@@ -3203,11 +3274,11 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                   <SelectContent>{TIPOS_DOC.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}{(CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && <span className="text-xs text-muted-foreground ml-1">(solo PDF)</span>}</Label><Input type="file" accept={(CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) ? "application/pdf,.pdf" : undefined} onChange={(e) => setFile(e.target.files?.[0] ?? null)} disabled={uploading} /></div>
+              <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}{(tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && <span className="text-xs text-muted-foreground ml-1">(solo PDF)</span>}</Label><Input type="file" accept={(tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) ? "application/pdf,.pdf" : undefined} onChange={(e) => setFile(e.target.files?.[0] ?? null)} disabled={uploading} /></div>
               <div className="grid gap-1.5"><Label>Fecha vencimiento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
               <div className="grid gap-1.5"><Label>Observaciones</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
             </div>
-            <DialogFooter><Button onClick={upload} disabled={uploading}>{uploading ? (esDocumentoResultadoDga(tipo) ? "Guardando y leyendo…" : "Guardando…") : "Guardar"}</Button></DialogFooter>
+            <DialogFooter><Button onClick={upload} disabled={uploading}>{uploading ? (tipo === TIPO_CERTIFICADO_DGA || esDocumentoResultadoDga(tipo) ? "Guardando y leyendo…" : "Guardando…") : "Guardar"}</Button></DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
