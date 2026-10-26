@@ -15,6 +15,8 @@ import { extractSolicitudFromDocument } from "@/lib/ai-ocr.functions";
 import { conceptoPagoPuerto, documentoPagoPuerto, type TipoPagoPuerto } from "@/lib/pago-puerto";
 import { guardarComprobantePuerto, guardarCostoDocumentoPuerto, type BorradorPagoPuerto } from "@/lib/pago-puerto-guardar";
 import { validarNombreSiga } from "@/lib/codigo-siga";
+import { supabase } from "@/integrations/supabase/client";
+import { esPagoVuce, acumularPagoVuce, costoDelPermiso, permisosDelDocumento } from "@/lib/pago-vuce";
 
 const vacio: BorradorPagoPuerto = { tipo: "", monto: "", moneda: "", fecha: "", referencia: "", concepto: "" };
 export type DocumentoPagoSubido = { file: File; tipo: Exclude<TipoPagoPuerto, "gestion_aduanal">; codigo: string };
@@ -30,6 +32,9 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
   const [duplicado, setDuplicado] = useState(false);
   const [mensajeDuplicado, setMensajeDuplicado] = useState("");
   const [baseSinItbis, setBaseSinItbis] = useState<number | null>(null);
+  const [permisos, setPermisos] = useState<{ id: string; numero: string | null; estado: string }[]>([]);
+  const [costosVuce, setCostosVuce] = useState<{ monto_real: number | null; moneda: string | null; observaciones: string | null }[]>([]);
+  const [avisoVuce, setAvisoVuce] = useState("");
   const reset = () => { setFile(null); setBorrador(vacio); setAnalizado(false); setConfirmado(false); setDuplicado(false); setMensajeDuplicado(""); };
   const analizar = useMutation({
     mutationFn: async () => {
@@ -47,10 +52,19 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
       if (!res.pago_puerto) throw new Error("No se obtuvieron datos del comprobante.");
       return res.pago_puerto;
     },
-    onSuccess: (p) => {
+    onSuccess: async (p) => {
       setBaseSinItbis(p.monto_sin_itbis);
       const tipo = documento?.tipo ?? (p.confianza === "alta" ? p.tipo ?? "" : "");
-      setBorrador({ tipo, monto: p.monto === null ? "" : String(p.monto), moneda: p.moneda ?? "", fecha: p.fecha ?? "", referencia: p.referencia ?? "", concepto: tipo ? conceptoPagoPuerto(tipo, p.referencia ?? "") : "" });
+      const nuevo = { tipo, monto: p.monto === null ? "" : String(p.monto), moneda: p.moneda ?? "", fecha: p.fecha ?? "", referencia: p.referencia ?? "", concepto: tipo ? conceptoPagoPuerto(tipo, p.referencia ?? "") : "", documentos_vuce: p.documentos_vuce ?? [] };
+      const [ps, cs] = await Promise.all([
+        supabase.from("permisos").select("id,numero,estado").eq("expediente_id", expedienteId),
+        supabase.from("costos_producto").select("monto_real,moneda,observaciones").eq("expediente_id", expedienteId),
+      ]);
+      setPermisos(ps.data ?? []); setCostosVuce(cs.data ?? []);
+      const matches = permisosDelDocumento(ps.data ?? [], nuevo.documentos_vuce);
+      const numero = matches.length === 1 ? matches[0].numero ?? "" : "";
+      setAvisoVuce(ps.error || cs.error ? "No se pudo consultar los permisos o costos; vuelve a leer antes de confirmar." : !nuevo.documentos_vuce.length ? "No se identificó el N.º de trámite en este documento. Selecciona el permiso correcto para vincularlo." : matches.length !== 1 ? "El No. Documento no coincide con un único Permiso VUCE de este expediente. Revisa y selecciona el permiso; no se asumió ningún vínculo." : "");
+      setBorrador({ ...nuevo, permiso_numero: numero, ...(esPagoVuce(tipo) && numero ? acumularPagoVuce(tipo, nuevo, costoDelPermiso(cs.data ?? [], numero)) : {}) });
       setAnalizado(true);
     }, onError: (e) => toast.error(e.message),
   });
@@ -61,7 +75,7 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
       return guardarComprobantePuerto(expedienteId, file, borrador, duplicado);
     },
     onSuccess: (r) => {
-      for (const key of ["documentos", "costos_producto", "costos-producto-liq", "ecf-vinculada"]) qc.invalidateQueries({ queryKey: [key, expedienteId] });
+      for (const key of ["documentos", "costos_producto", "costos-producto-liq", "ecf-vinculada", "costos-vuce-resumen"]) qc.invalidateQueries({ queryKey: [key, expedienteId] });
       qc.invalidateQueries({ queryKey: ["facturas-ecf"] });
       qc.invalidateQueries({ queryKey: ["facturas-ecf-lite"] });
       qc.invalidateQueries({ queryKey: ["factura-ecf-edit"] });
@@ -91,7 +105,12 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
               {!borrador.fecha && <p>No se pudo determinar la fecha automáticamente — verificar manualmente.</p>}
             </div>}
             {!borrador.tipo && <div className="text-sm text-destructive">No se determinó el tipo con certeza. Selecciona la casilla correcta.</div>}
-            <div className="grid gap-1.5"><Label>Tipo de pago</Label><Select disabled={pendiente || Boolean(documento)} value={borrador.tipo} onValueChange={(tipo: TipoPagoPuerto) => editar({ tipo, concepto: conceptoPagoPuerto(tipo, borrador.referencia), ...(tipo === "gestion_aduanal" ? { monto: baseSinItbis === null ? "" : String(baseSinItbis) } : {}) })}><SelectTrigger aria-label="Tipo de pago"><SelectValue placeholder="Seleccionar tipo de pago" /></SelectTrigger><SelectContent><SelectItem value="almacenaje">Almacenaje</SelectItem><SelectItem value="contenedor">Depósito / Pago de Contenedor</SelectItem><SelectItem value="gestion_aduanal">Factura de Gestión Aduanal</SelectItem><SelectItem value="cargos_locales">Pago de Cargos Locales</SelectItem></SelectContent></Select></div>
+            <div className="grid gap-1.5"><Label>Tipo de pago</Label><Select disabled={pendiente || Boolean(documento)} value={borrador.tipo} onValueChange={(tipo: TipoPagoPuerto) => editar({ tipo, concepto: conceptoPagoPuerto(tipo, borrador.referencia), ...(tipo === "gestion_aduanal" ? { monto: baseSinItbis === null ? "" : String(baseSinItbis) } : {}) })}><SelectTrigger aria-label="Tipo de pago"><SelectValue placeholder="Seleccionar tipo de pago" /></SelectTrigger><SelectContent><SelectItem value="almacenaje">Almacenaje</SelectItem><SelectItem value="contenedor">Depósito / Pago de Contenedor</SelectItem><SelectItem value="gestion_aduanal">Factura de Gestión Aduanal</SelectItem><SelectItem value="cargos_locales">Pago de Cargos Locales</SelectItem><SelectItem value="vuce_pin">PIN de Pago Permiso VUCE</SelectItem><SelectItem value="vuce_recibo">Recibo Pago Permiso VUCE</SelectItem></SelectContent></Select></div>
+            {esPagoVuce(borrador.tipo) && <div className="grid gap-1.5">
+              {avisoVuce && <p role="alert" className="text-xs text-destructive">{avisoVuce}</p>}
+              {!!borrador.documentos_vuce?.length && <p className="text-xs text-muted-foreground">No. Documento: {borrador.documentos_vuce.join(", ")}</p>}
+              <Label>Permiso VUCE vinculado</Label><Select value={borrador.permiso_numero ?? ""} onValueChange={(numero) => editar({ permiso_numero: numero, ...acumularPagoVuce(borrador.tipo, borrador, costoDelPermiso(costosVuce, numero)) })}><SelectTrigger aria-label="Permiso VUCE vinculado"><SelectValue placeholder="Seleccionar permiso del expediente" /></SelectTrigger><SelectContent>{permisos.filter(p => p.numero).map(p => <SelectItem key={p.id} value={p.numero ?? ""}>{p.numero} · {p.estado}</SelectItem>)}</SelectContent></Select>
+            </div>}
             <div className="grid gap-1.5"><Label htmlFor="pago-concepto">Concepto</Label><Input id="pago-concepto" value={borrador.concepto} onChange={(e) => editar({ concepto: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5"><Label>{borrador.tipo === "gestion_aduanal" ? "Precio sin ITBIS" : "Monto total pagado"}</Label><ImporteLiquidacionInput aria-label={borrador.tipo === "gestion_aduanal" ? "Precio sin ITBIS" : "Monto total pagado"} value={borrador.monto} onValueChange={(monto) => editar({ monto })} /></div>
@@ -104,7 +123,7 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
             <label className="flex items-center gap-2 text-sm"><Checkbox aria-label="Confirmo el monto y los datos del pago" checked={confirmado} onCheckedChange={(v) => setConfirmado(v === true)} />Confirmo el monto y los datos del pago</label>
           </fieldset>}
         </div>
-        <DialogFooter><Button variant="outline" disabled={pendiente} onClick={() => { setOpen(false); reset(); }}>Cancelar</Button>{analizado && <Button disabled={pendiente || !confirmado || !borrador.tipo || !borrador.moneda || !borrador.monto || (Boolean(mensajeDuplicado) && !duplicado)} onClick={() => guardar.mutate()}>{guardar.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}Guardar costo y documento</Button>}</DialogFooter>
+        <DialogFooter><Button variant="outline" disabled={pendiente} onClick={() => { setOpen(false); reset(); }}>Cancelar</Button>{analizado && <Button disabled={pendiente || !confirmado || !borrador.tipo || !borrador.moneda || !borrador.monto || (esPagoVuce(borrador.tipo) && !borrador.permiso_numero) || (Boolean(mensajeDuplicado) && !duplicado)} onClick={() => guardar.mutate()}>{guardar.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}Guardar costo y documento</Button>}</DialogFooter>
       </DialogContent>
     </Dialog>
   </>;
