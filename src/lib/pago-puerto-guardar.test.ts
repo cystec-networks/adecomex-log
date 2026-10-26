@@ -70,7 +70,7 @@ test("Recibo VUCE primero (sin trámite) se guarda con su PIN y el PIN posterior
   expect(costos).toHaveLength(1);
   expect(costos[0].observaciones).toContain("PIN/Referencia: 20260924F07D3F40");
   expect(costos[0].observaciones).toContain("Recibo VUCE SIGA: OTD-011");
-  expect(costos[0].observaciones).not.toContain("Permiso VUCE:");
+  expect(costos[0].observaciones.includes("Permiso VUCE:")).toBe(false);
   const pin = { tipo: "vuce_pin" as const, monto: "5800", moneda: "DOP", fecha: "", referencia: "20260924F07D3F40", concepto: "Permiso VUCE", permiso_numero: "TRM-0926-2533722" };
   await guardarCostoDocumentoPuerto("exp", "OTD-010", pin);
   expect(costos).toHaveLength(1);
