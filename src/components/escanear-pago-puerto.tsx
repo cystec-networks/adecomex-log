@@ -55,15 +55,15 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
     onSuccess: async (p) => {
       setBaseSinItbis(p.monto_sin_itbis);
       const tipo = documento?.tipo ?? (p.confianza === "alta" ? p.tipo ?? "" : "");
-      const nuevo = { tipo, monto: p.monto === null ? "" : String(p.monto), moneda: p.moneda ?? "", fecha: p.fecha ?? "", referencia: p.referencia ?? "", concepto: tipo ? conceptoPagoPuerto(tipo, p.referencia ?? "") : "", documentos_vuce: p.documentos_vuce ?? [] };
+      const nuevo: BorradorPagoPuerto = { tipo, monto: p.monto === null ? "" : String(p.monto), moneda: p.moneda ?? "", fecha: p.fecha ?? "", referencia: p.referencia ?? "", concepto: tipo ? conceptoPagoPuerto(tipo, p.referencia ?? "") : "", documentos_vuce: p.documentos_vuce ?? [] };
       const [ps, cs] = await Promise.all([
         supabase.from("permisos").select("id,numero,estado").eq("expediente_id", expedienteId),
         supabase.from("costos_producto").select("monto_real,moneda,observaciones").eq("expediente_id", expedienteId),
       ]);
       setPermisos(ps.data ?? []); setCostosVuce(cs.data ?? []);
-      const matches = permisosDelDocumento(ps.data ?? [], nuevo.documentos_vuce);
+      const matches = permisosDelDocumento(ps.data ?? [], nuevo.documentos_vuce ?? []);
       const numero = matches.length === 1 ? matches[0].numero ?? "" : "";
-      setAvisoVuce(ps.error || cs.error ? "No se pudo consultar los permisos o costos; vuelve a leer antes de confirmar." : !nuevo.documentos_vuce.length ? "No se identificó el N.º de trámite en este documento. Selecciona el permiso correcto para vincularlo." : matches.length !== 1 ? "El No. Documento no coincide con un único Permiso VUCE de este expediente. Revisa y selecciona el permiso; no se asumió ningún vínculo." : "");
+      setAvisoVuce(ps.error || cs.error ? "No se pudo consultar los permisos o costos; vuelve a leer antes de confirmar." : !nuevo.documentos_vuce?.length ? "No se identificó el N.º de trámite en este documento. Selecciona el permiso correcto para vincularlo." : matches.length !== 1 ? "El No. Documento no coincide con un único Permiso VUCE de este expediente. Revisa y selecciona el permiso; no se asumió ningún vínculo." : "");
       setBorrador({ ...nuevo, permiso_numero: numero, ...(esPagoVuce(tipo) && numero ? acumularPagoVuce(tipo, nuevo, costoDelPermiso(cs.data ?? [], numero)) : {}) });
       setAnalizado(true);
     }, onError: (e) => toast.error(e.message),

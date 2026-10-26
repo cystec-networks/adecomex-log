@@ -12,7 +12,7 @@ export function normalizarPagoPuerto(value: unknown): PagoPuerto {
   const monto = p.monto === null || p.monto === undefined || p.monto === "" ? NaN : Number(p.monto);
   const base = p.monto_sin_itbis === null || p.monto_sin_itbis === undefined || p.monto_sin_itbis === "" ? NaN : Number(p.monto_sin_itbis);
   const montoSinItbis = Number.isFinite(base) && base >= 0 ? base : null;
-  return { documentos_vuce: Array.isArray(p.documentos_vuce) ? [...new Set(p.documentos_vuce.filter((v): v is string => typeof v === "string" && /^TRM-[\w-]+$/i.test(v)).map(v => v.toUpperCase()))] : [], monto_sin_itbis: montoSinItbis, monto: p.tipo === "gestion_aduanal" ? montoSinItbis : Number.isFinite(monto) && monto >= 0 ? monto : null,
+  return { ...(Array.isArray(p.documentos_vuce) ? { documentos_vuce: [...new Set(p.documentos_vuce.filter((v): v is string => typeof v === "string" && /^TRM-[\w-]+$/i.test(v)).map(v => v.toUpperCase()))] } : {}), monto_sin_itbis: montoSinItbis, monto: p.tipo === "gestion_aduanal" ? montoSinItbis : Number.isFinite(monto) && monto >= 0 ? monto : null,
     moneda: p.moneda === "DOP" || p.moneda === "USD" ? p.moneda : null,
     fecha: typeof p.fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.fecha) ? p.fecha : null,
     referencia: texto(p.referencia), tipo: TIPOS_PAGO_PUERTO.includes(p.tipo as TipoPagoPuerto) ? p.tipo as TipoPagoPuerto : null,

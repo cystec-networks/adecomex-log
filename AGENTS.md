@@ -23,7 +23,7 @@ Detail headers: content-sized space-between rows, client label/value together, w
 - Evaluate detail warnings with scoped evidence queries; invoice links and persisted reception incidents prevent unrelated debt alerts and recomputed tolerances.
 - Use the shared expediente alert evaluator for list and detail short/long text; keep PIN timestamp countdown separate from business-day presentation deadlines, and batch list evidence reads to avoid per-row requests.
 - Group PIN/presentation warnings in one list-only deadline entry with both short texts; retain independent clocks and full detail warnings.
-- Export DR-CAFTA certificates from the resolved editable preview using native jsPDF text and vector borders, measuring existing cell and text positions to preserve official layouts and annexes without rasterization or losing saved edits.
+- Export DR-CAFTA from the editable preview with jsPDF text/vector borders; measure cells/text to preserve official layouts, annexes and saved edits without rasterization.
 - Keep inspection type in the existing canal_riesgo storage field; portal the form-owned selector into the detail header so both editors share draft state and the existing save validation without migrating historical values.
 - Use consignatario-efectivo.ts (active endorsement, else original) for documents/new invoices; issued invoices stay frozen.
 - Resolve the dispatch-date modal asynchronously within the existing state mutation and reuse fechasDespachoFaltantes for detail-only preventive alerts, preserving permission checks and audit payloads.
