@@ -2,7 +2,7 @@ import { sincronizarCobroDesdeEcf } from "@/lib/factura-ecf-vinculacion";
 import { ExpedienteGuardadoProvider, useGuardadoExpediente, useEditorExpediente, useBorradorExpediente } from "@/components/expediente-guardado";
 import { TransporteForm } from "@/components/transporte-form";
 import { PermisoForm } from "@/components/permiso-form";
-import { construirObservaciones, contenedoresValidos, contenedoresDesdeTabla, descripcionBorrador, tipoCargaPorDefecto, estructuraVacia, normalizarRemarkSiga, TIPOS_CARGA_OBS, type ObservacionesEstructura } from "@/lib/observaciones-expediente";
+import { construirObservaciones, contenedoresValidos, contenedoresDesdeTabla, descripcionBorrador, tipoCargaPorDefecto, estructuraVacia, normalizarRemarkSiga, sincronizarDescripcionObservaciones, TIPOS_CARGA_OBS, type ObservacionesEstructura } from "@/lib/observaciones-expediente";
 import { calcularResultadosLiquidacion, valorRealInicial, costoUnitarioReal, precioVentaPorGanancia, margenSobreVenta, aplicarGananciaTodos, gananciaComunGuardada } from "@/lib/liquidacion-final";
 import { costosAutomaticosLiquidacion } from "@/lib/costos-automaticos-liquidacion";
 import { leerCostosMercancia } from "@/lib/costos-mercancia-queries";
@@ -1351,11 +1351,11 @@ function DetalleExpediente() {
 /** Genera observaciones (normalizadas para SIGA) desde la estructura; texto antiguo intacto si está vacía. */
 function aplicarObservaciones(payload: any, numero?: string | null) {
   const e = payload.observaciones_estructura as ObservacionesEstructura | null;
-  if (estructuraVacia(e)) {
+  if (!e || estructuraVacia(e)) {
     payload.observaciones_estructura = null;
     return payload;
   }
-  payload.observaciones = normalizarRemarkSiga(construirObservaciones(e!, payload.factura_comercial, numero)) || null;
+  payload.observaciones = normalizarRemarkSiga(construirObservaciones(e, payload.factura_comercial, numero)) || null;
   return payload;
 }
 
@@ -1410,8 +1410,8 @@ function ObservacionesEstructuradas({ form, numero, onChange, disabled, contened
           <span className="h-9 flex items-center px-2 rounded-md bg-muted text-[13px] font-medium">STC:</span>
         </div>
         <div className="grid gap-1">
-          <span className="text-[11px] text-muted-foreground">Cantidad y descripción de la carga</span>
-          <Input value={e.descripcion} placeholder="3,840 fundas de leche descremada en polvo" onChange={(ev) => upd("descripcion", ev.target.value)} disabled={disabled} />
+          <Label htmlFor="observaciones-cantidad-descripcion" className="text-[11px] text-muted-foreground">Cantidad y descripción de la carga (incluir cantidad)</Label>
+          <Input id="observaciones-cantidad-descripcion" value={e.descripcion} placeholder="2,000 FUNDAS DE LECHE EN POLVO" onChange={(ev) => upd("descripcion", ev.target.value)} disabled={disabled} />
         </div>
       </div>
       {!contOk && <p className="text-[11px] text-destructive">Formato esperado: cantidad X tamaño (ej. 2X40, 1X20 o 1X40 + 1X20).</p>}
@@ -1597,6 +1597,20 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const [form, setForm] = useState(() => construirFormInicial(isNuevo ? null : exp, isNuevo, isNuevo ? tipoParam : ""));
   const sugeridaPresentacion = useRef(false);
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
+  const numeroObservaciones = form.numero || (isNuevo ? "" : exp?.numero ?? "");
+  const origenDescripcion = { observaciones_estructura: form.observaciones_estructura, factura_comercial: form.factura_comercial };
+  const origenDescripcionJson = JSON.stringify(origenDescripcion);
+  const observacionesAnteriores = useRef({ id, origen: origenDescripcionJson, numero: numeroObservaciones });
+  useEffect(() => {
+    const anterior = observacionesAnteriores.current;
+    observacionesAnteriores.current = { id, origen: origenDescripcionJson, numero: numeroObservaciones };
+    if (anterior.id !== id || !editable || (anterior.origen === origenDescripcionJson && anterior.numero === numeroObservaciones)) return;
+    const origen = JSON.parse(origenDescripcionJson);
+    const sincronizado = sincronizarDescripcionObservaciones(JSON.parse(anterior.origen), origen, anterior.numero, numeroObservaciones);
+    if (sincronizado === origen) return;
+    setForm((f) => ({ ...f, descripcion_mercancia: sincronizado.descripcion_mercancia }));
+    toast.info("Descripción actualizada desde Observaciones", { id: "descripcion-desde-observaciones", duration: 2500 });
+  }, [id, editable, origenDescripcionJson, numeroObservaciones]);
   useEffect(() => {
     if (isNuevo || !exp) return;
     const inicial = construirFormInicial(exp, false);
@@ -2008,7 +2022,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           throw new Error(`El número de permiso "${form.numero_vuce}" ya fue utilizado en el Expediente ${conflicto.numero}.`);
         }
       }
-      aplicarObservaciones(payload, exp.numero);
+      aplicarObservaciones(payload, payload.numero || exp.numero);
       const { error } = await supabase.from("expedientes").update(payload).eq("id", exp.id);
       if (error) throw error;
       await supabase.from("expediente_contenedores").delete().eq("expediente_id", exp.id);
@@ -2961,7 +2975,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
           <ObservacionesEstructuradas
             form={form}
-            numero={isNuevo ? (form.numero || "") : (exp?.numero ?? "")}
+            numero={numeroObservaciones}
             onChange={(v) => set("observaciones_estructura", v)}
             disabled={!editable}
             contenedores={contenedores}
