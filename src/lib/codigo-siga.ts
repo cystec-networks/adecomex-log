@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { TIPO_CERTIFICADO_DGA } from "./certificado-origen-dga";
 
 export type PrefijoSiga = "FAC" | "DOE" | "CEO" | "PER" | "OTD";
 
@@ -6,7 +7,7 @@ export function prefijoSiga(tipo: string | null | undefined): PrefijoSiga {
   switch (tipo) {
     case "Factura comercial": return "FAC";
     case "Bill of Lading": case "Guía aérea": return "DOE";
-    case "Certificado de origen": return "CEO";
+    case "Certificado de origen": case TIPO_CERTIFICADO_DGA: return "CEO";
     case "Certificado Sanitario/Fitosanitario": case "Certificado sanitario": case "Certificado fitosanitario":
     case "Certificado de análisis": case "Permiso VUCE previo": return "PER";
     default: return "OTD";
@@ -56,6 +57,7 @@ const PREFIJOS_ALT: Record<string, PrefijoSiga[]> = {
   "Certificado sanitario": ["PER", "OTD"],
   "Certificado fitosanitario": ["PER", "OTD"],
   "Certificado de análisis": ["PER", "OTD"],
+  [TIPO_CERTIFICADO_DGA]: ["CEO", "OTD"],
 };
 
 /** Prefijos SIGA aceptados para un tipo de documento (uno, o dos en los tres tipos indicados). */
