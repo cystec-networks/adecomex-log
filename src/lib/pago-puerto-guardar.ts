@@ -87,7 +87,7 @@ export async function guardarCostoDocumentoPuerto(expedienteId: string, codigo: 
     const observaciones = [borrador.fecha && `Fecha de pago: ${borrador.fecha}`, borrador.referencia && `PIN/Referencia: ${borrador.referencia}`, marcador].filter(Boolean).join(" · ");
     const { data: costos, error: lectura } = await supabase.from("costos_producto").select("id,concepto,observaciones,monto_real,moneda").eq("expediente_id", expedienteId);
     if (lectura) throw lectura;
-    const previo = esPagoVuce(tipoPago) ? costoDelPermiso(costos ?? [], borrador.permiso_numero ?? "") : costos?.find((c) => c.observaciones?.split(" · ").includes(marcador))
+    const previo = esPagoVuce(tipoPago) ? costoVucePrevio(costos ?? [], borrador) : costos?.find((c) => c.observaciones?.split(" · ").includes(marcador))
       ?? costos?.find((c) => esConceptoPagoPuerto(c.concepto, tipoPago) && !c.observaciones?.includes("Documento SIGA:"));
     const costo = { concepto: borrador.concepto.trim(), monto_real: Number(borrador.monto), moneda: borrador.moneda,
       observaciones: esPagoVuce(tipoPago) ? observacionesPagoVuce(borrador.permiso_numero ?? "", codigo, tipoPago, { fecha: borrador.fecha || acumularPagoVuce(tipoPago, borrador, previo).fecha, referencia: borrador.referencia }, previo?.observaciones) : observaciones };
@@ -136,7 +136,7 @@ export async function guardarComprobantePuerto(expedienteId: string, file: File,
       try {
         const { data: costos, error: lecturaCosto } = await supabase.from("costos_producto").select("id,observaciones,monto_real,moneda").eq("expediente_id", expedienteId);
         if (lecturaCosto) throw lecturaCosto;
-        const previo = esPagoVuce(tipoPago) ? costoDelPermiso(costos ?? [], borrador.permiso_numero ?? "") : costos?.find((c) => c.observaciones?.split(" · ").includes(marcador));
+        const previo = esPagoVuce(tipoPago) ? costoVucePrevio(costos ?? [], borrador) : costos?.find((c) => c.observaciones?.split(" · ").includes(marcador));
         const costo = { concepto: borrador.concepto.trim(), monto_real: Number(borrador.monto), moneda: borrador.moneda,
           observaciones: esPagoVuce(tipoPago) ? observacionesPagoVuce(borrador.permiso_numero ?? "", codigo, tipoPago, { fecha: borrador.fecha || acumularPagoVuce(tipoPago, borrador, previo).fecha, referencia: borrador.referencia }, previo?.observaciones) : observaciones };
         const { error } = previo
