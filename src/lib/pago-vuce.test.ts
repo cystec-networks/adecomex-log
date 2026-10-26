@@ -58,7 +58,8 @@ Banca Electrónica 20260924F07D3F40 BANCO POPULAR DOMINICANO C POR A 68997508 5,
 TOTAL 5,800.00
 Balance $ : 0.00
 FACTURAS PAGADAS
-10000-CL11-2609-005AD8`;
+10000-CL11-2609-005AD8
+Detalle Factura 10000-CL11-2609-005AD8 - VUCE`;
     const r = leerPagoVuceTexto(texto);
     assert.equal(r?.tipo, "vuce_recibo");
     assert.equal(r?.referencia, "20260924F07D3F40");
