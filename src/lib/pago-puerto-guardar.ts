@@ -2,16 +2,32 @@ import { supabase } from "@/integrations/supabase/client";
 import { sha256File, siguienteCodigoSiga, validarNombreSiga } from "./codigo-siga";
 import { hoyRDISO } from "./dates";
 import { documentoPagoPuerto, esConceptoPagoPuerto, guardarPagoExclusivo, validarPagoPuerto, type TipoPagoPuerto } from "./pago-puerto";
-import { esPagoVuce, costoDelPermiso, numeroTramite, observacionesPagoVuce, acumularPagoVuce } from "./pago-vuce";
+import { esPagoVuce, costoDelPermiso, costoPorPinVuce, permisoDelCostoVuce, numeroTramite, observacionesPagoVuce, acumularPagoVuce } from "./pago-vuce";
 
 export type BorradorPagoPuerto = { tipo: TipoPagoPuerto | ""; monto: string; moneda: string; fecha: string; referencia: string; concepto: string; permiso_numero?: string; documentos_vuce?: string[] };
 
 async function validarPermisoVinculado(expedienteId: string, borrador: BorradorPagoPuerto) {
   if (!esPagoVuce(borrador.tipo)) return;
-  const numero = numeroTramite(borrador.permiso_numero);
+  let numero = numeroTramite(borrador.permiso_numero);
   const { data, error } = await supabase.from("permisos").select("numero").eq("expediente_id", expedienteId);
   if (error) throw error;
-  if (!numero || !data?.some(p => numeroTramite(p.numero) === numero)) throw new Error("Selecciona un Permiso VUCE de este expediente; no se asumirá un vínculo.");
+  // El Recibo no trae el N.º de trámite: heredarlo del costo que ya guardó el PIN con el mismo número.
+  if (!numero && borrador.referencia.trim()) {
+    const { data: costos, error: lectura } = await supabase.from("costos_producto").select("observaciones").eq("expediente_id", expedienteId);
+    if (lectura) throw lectura;
+    numero = numeroTramite(permisoDelCostoVuce(costoPorPinVuce(costos ?? [], borrador.referencia)));
+    if (numero) borrador.permiso_numero = numero;
+  }
+  if (!numero) {
+    // Recibo subido antes que el PIN: se guarda con su PIN y el cruce retroactivo lo vincula al llegar el PIN.
+    if (borrador.tipo === "vuce_recibo" && borrador.referencia.trim()) return;
+    throw new Error("Selecciona un Permiso VUCE de este expediente; no se asumirá un vínculo.");
+  }
+  if (!data?.some(p => numeroTramite(p.numero) === numero)) throw new Error("Selecciona un Permiso VUCE de este expediente; no se asumirá un vínculo.");
+}
+/** Costo VUCE previo del mismo pago: por trámite y, si falta, por PIN (cruce retroactivo PIN ↔ Recibo). */
+function costoVucePrevio<T extends { observaciones?: string | null }>(costos: readonly T[], borrador: BorradorPagoPuerto): T | undefined {
+  return costoDelPermiso(costos, borrador.permiso_numero ?? "") ?? costoPorPinVuce(costos, borrador.referencia);
 }
 
 // Only invoices already related to this expediente are eligible; never create/sync billing rows.
