@@ -1,6 +1,7 @@
-export type TipoPagoPuerto = "almacenaje" | "contenedor" | "gestion_aduanal" | "cargos_locales";
-export const TIPOS_PAGO_PUERTO = ["almacenaje", "contenedor", "gestion_aduanal", "cargos_locales"] as const;
+export type TipoPagoPuerto = "almacenaje" | "contenedor" | "gestion_aduanal" | "cargos_locales" | "vuce_pin" | "vuce_recibo";
+export const TIPOS_PAGO_PUERTO = ["almacenaje", "contenedor", "gestion_aduanal", "cargos_locales", "vuce_pin", "vuce_recibo"] as const;
 export type PagoPuerto = {
+  documentos_vuce?: string[];
   monto_sin_itbis: number | null;
   monto: number | null; moneda: "DOP" | "USD" | null; fecha: string | null;
   referencia: string | null; tipo: TipoPagoPuerto | null; confianza: "alta" | "media" | null;
@@ -11,16 +12,17 @@ export function normalizarPagoPuerto(value: unknown): PagoPuerto {
   const monto = p.monto === null || p.monto === undefined || p.monto === "" ? NaN : Number(p.monto);
   const base = p.monto_sin_itbis === null || p.monto_sin_itbis === undefined || p.monto_sin_itbis === "" ? NaN : Number(p.monto_sin_itbis);
   const montoSinItbis = Number.isFinite(base) && base >= 0 ? base : null;
-  return { monto_sin_itbis: montoSinItbis, monto: p.tipo === "gestion_aduanal" ? montoSinItbis : Number.isFinite(monto) && monto >= 0 ? monto : null,
+  return { documentos_vuce: Array.isArray(p.documentos_vuce) ? [...new Set(p.documentos_vuce.filter((v): v is string => typeof v === "string" && /^TRM-[\w-]+$/i.test(v)).map(v => v.toUpperCase()))] : [], monto_sin_itbis: montoSinItbis, monto: p.tipo === "gestion_aduanal" ? montoSinItbis : Number.isFinite(monto) && monto >= 0 ? monto : null,
     moneda: p.moneda === "DOP" || p.moneda === "USD" ? p.moneda : null,
     fecha: typeof p.fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.fecha) ? p.fecha : null,
     referencia: texto(p.referencia), tipo: TIPOS_PAGO_PUERTO.includes(p.tipo as TipoPagoPuerto) ? p.tipo as TipoPagoPuerto : null,
     confianza: p.confianza === "alta" || p.confianza === "media" ? p.confianza : null };
 }
 export function documentoPagoPuerto(tipo: TipoPagoPuerto) {
-  return { almacenaje: "Factura Pago de Almacenaje", contenedor: "Recibo Pago de Contenedor", gestion_aduanal: "PDF de Factura e-CF en Finanzas", cargos_locales: "Factura Pago Cargos Locales" }[tipo];
+  return { almacenaje: "Factura Pago de Almacenaje", contenedor: "Recibo Pago de Contenedor", gestion_aduanal: "PDF de Factura e-CF en Finanzas", cargos_locales: "Factura Pago Cargos Locales", vuce_pin: "PIN de Pago Permiso VUCE", vuce_recibo: "Recibo Pago Permiso VUCE" }[tipo];
 }
 export function conceptoPagoPuerto(tipo: TipoPagoPuerto, referencia: string) {
+  if (tipo === "vuce_pin" || tipo === "vuce_recibo") return "Permiso VUCE";
   if (tipo === "gestion_aduanal") return "Gestión Aduanal";
   if (tipo === "cargos_locales") return "Cargos Locales";
   const prefijo = referencia.trim().match(/^(DPW|DPH)/i)?.[0].toUpperCase();
@@ -34,6 +36,8 @@ export function esConceptoPagoPuerto(concepto: unknown, tipo: TipoPagoPuerto): b
     contenedor: ["deposito de contenedor", "demora de contenedor", "pago de contenedor", "contenedor"],
     gestion_aduanal: ["gestion aduanal"],
     cargos_locales: ["cargos locales"],
+    vuce_pin: ["permiso vuce"],
+    vuce_recibo: ["permiso vuce"],
   };
   return prefijos[tipo].some((p) => c.startsWith(p));
 }
