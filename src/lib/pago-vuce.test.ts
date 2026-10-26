@@ -30,6 +30,22 @@ describe("Pagos complementarios VUCE", () => {
     assert.equal(r?.referencia, "20260924F07D3F40");
     assert.deepEqual(r?.documentos_vuce, []);
   });
+  it("recibo con banco y transacción captura solo el valor de NUMERO/PIN, nunca BANCO", () => {
+    const texto = `Detalle Factura - VUCE RECIBO
+Fecha: 25/09/2026
+FORMAS DE PAGO: Banca Electrónica, NUMERO/PIN: 20260924F07D3F40, BANCO POPULAR DOMINICANO, NO. TRANSACCION: 68997508, MONTO: 5,800.00
+TOTAL: RD$5,800.00`;
+    const r = leerPagoVuceTexto(texto);
+    assert.equal(r?.referencia, "20260924F07D3F40");
+  });
+  it("recibo con columnas intercaladas encuentra el PIN en la ventana y descarta el No. de transacción", () => {
+    const texto = `Detalle Factura - VUCE RECIBO
+Fecha: 25/09/2026
+FORMAS DE PAGO: Banca Electrónica, NUMERO/PIN: BANCO POPULAR DOMINICANO, NO. TRANSACCION: 68997508, MONTO: 5,800.00 20260924F07D3F40
+TOTAL: RD$5,800.00`;
+    const r = leerPagoVuceTexto(texto);
+    assert.equal(r?.referencia, "20260924F07D3F40");
+  });
   it("cruce por PIN encuentra el costo aunque aún no tenga trámite y hereda el permiso", () => {
     const sinPermiso = { id: "c1", observaciones: "Fecha de pago: 2026-09-25 · PIN/Referencia: 20260924F07D3F40 · Recibo VUCE SIGA: OTD-011" };
     assert.equal(costoPorPinVuce([sinPermiso], "20260924F07D3F40")?.id, "c1");
