@@ -12,9 +12,8 @@ Apply transitions via `estados-expediente.ts` and `validar_transicion_expediente
 Red IDs: `expediente-numero`/`--brand-red`.
 Payment slips: linked transport first, reserved TR next; TF last.
 Share expediente/quote PDF. e-CF: factura-venta-referencias keeps fiscal lines, OCR in notas; factura-ecf-vinculacion shares links.
-Headers: desktop slots, More; mobile rows.
-New-expediente: two fixed action rows, form submits portaled; validation intact, no floating panels.
-Detail headers: content-sized space-between rows, client label/value together, wrap IDs, warnings below Description; shared deadlines.
+Headers: desktop slots/More, mobile rows. New-expediente: two fixed action rows, portaled submits; retain validation, no floating panels.
+Detail headers: content-sized rows, client label/value together, wrap IDs, warnings below Description; shared deadlines.
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
 - Presentation deadline: catalogo_regimenes.dias_habiles_presentar + expedientes.plazo_presentar_override via plazo-presentacion.ts; sla_dias deprecated. Require real arrival and regime, never ETA; show business days vs today, classify overdue by calendar date (including weekends).
 - In the sticky header, show ETA until arrival, then arrival with calendar transit days; follow with presentation status and omit duplicate transit. Mount deadline override content only while open to avoid overlap.
@@ -35,4 +34,4 @@ Detail headers: content-sized space-between rows, client label/value together, w
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.
 - Payment OCR: labels via pago-puerto-ocr; confirm/replace by SIGA/invoice; e-CF updates only pdf_url. Costs dedupe OCR; management uses precioBase/tax-free base, never gross. Transport/reimbursements: costos-automaticos-liquidacion.
 - DGA fills blanks; permiso-vuce replaces documentary fields and links PDFs on save. VUCE payments share pago-vuce accumulation by verified permit; PIN/receipt markers preserve both sources, preventing duplicate costs.
-- Editors register dirty/save callbacks; visited tabs retain drafts; header save reuses validation.
+- Editors retain drafts/global saves. DGA origin uses declaracion-origen-context for conditional sync; references stay in document observations.
