@@ -35,9 +35,11 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
   const [permisos, setPermisos] = useState<{ id: string; numero: string | null; estado: string }[]>([]);
   const [costosVuce, setCostosVuce] = useState<{ monto_real: number | null; moneda: string | null; observaciones: string | null }[]>([]);
   const [avisoVuce, setAvisoVuce] = useState("");
+  const [lecturaEnCurso, setLecturaEnCurso] = useState(false);
   const reset = () => { setFile(null); setBorrador(vacio); setAnalizado(false); setConfirmado(false); setDuplicado(false); setMensajeDuplicado(""); };
   const analizar = useMutation({
     mutationFn: async () => {
+      setLecturaEnCurso(true);
       if (!file || !file.size || file.size > 15 * 1024 * 1024) throw new Error("Selecciona un PDF no vacío de hasta 15 MB.");
       if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) throw new Error("Este comprobante solo acepta PDF.");
       if (!documento) {
@@ -66,7 +68,8 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
       setAvisoVuce(ps.error || cs.error ? "No se pudo consultar los permisos o costos; vuelve a leer antes de confirmar." : !nuevo.documentos_vuce?.length ? "No se identificó el N.º de trámite en este documento. Selecciona el permiso correcto para vincularlo." : matches.length !== 1 ? "El No. Documento no coincide con un único Permiso VUCE de este expediente. Revisa y selecciona el permiso; no se asumió ningún vínculo." : "");
       setBorrador({ ...nuevo, permiso_numero: numero, ...(esPagoVuce(tipo) && numero ? acumularPagoVuce(tipo, nuevo, costoDelPermiso(cs.data ?? [], numero)) : {}) });
       setAnalizado(true);
-    }, onError: (e) => toast.error(e.message),
+      setLecturaEnCurso(false);
+    }, onError: (e) => { setLecturaEnCurso(false); toast.error(e.message); },
   });
   const guardar = useMutation({
     mutationFn: async () => {
@@ -85,7 +88,7 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
   });
   const iniciado = useRef(false);
   useEffect(() => { if (documento && !iniciado.current) { iniciado.current = true; analizar.mutate(); } }, [documento]);
-  const pendiente = analizar.isPending || guardar.isPending;
+  const pendiente = lecturaEnCurso || guardar.isPending;
   useEditorExpediente(analizado, pendiente, async () => { await guardar.mutateAsync(); });
   const editar = (values: Partial<BorradorPagoPuerto>) => { setBorrador((p) => ({ ...p, ...values })); setConfirmado(false); };
   return <>
