@@ -2,8 +2,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { sha256File, siguienteCodigoSiga, validarNombreSiga } from "./codigo-siga";
 import { hoyRDISO } from "./dates";
 import { documentoPagoPuerto, esConceptoPagoPuerto, guardarPagoExclusivo, validarPagoPuerto, type TipoPagoPuerto } from "./pago-puerto";
+import { esPagoVuce, costoDelPermiso, numeroTramite, observacionesPagoVuce, acumularPagoVuce } from "./pago-vuce";
 
-export type BorradorPagoPuerto = { tipo: TipoPagoPuerto | ""; monto: string; moneda: string; fecha: string; referencia: string; concepto: string };
+export type BorradorPagoPuerto = { tipo: TipoPagoPuerto | ""; monto: string; moneda: string; fecha: string; referencia: string; concepto: string; permiso_numero?: string; documentos_vuce?: string[] };
+
+async function validarPermisoVinculado(expedienteId: string, borrador: BorradorPagoPuerto) {
+  if (!esPagoVuce(borrador.tipo)) return;
+  const numero = numeroTramite(borrador.permiso_numero);
+  const { data, error } = await supabase.from("permisos").select("numero").eq("expediente_id", expedienteId);
+  if (error) throw error;
+  if (!numero || !data?.some(p => numeroTramite(p.numero) === numero)) throw new Error("Selecciona un Permiso VUCE de este expediente; no se asumirá un vínculo.");
+}
 
 // Only invoices already related to this expediente are eligible; never create/sync billing rows.
 async function facturaDelPago(expedienteId: string, referencia: string) {
@@ -56,14 +65,16 @@ export async function guardarCostoDocumentoPuerto(expedienteId: string, codigo: 
   const tipoPago = borrador.tipo;
   if (!tipoPago || tipoPago === "gestion_aduanal") throw new Error("Selecciona el tipo de pago.");
   if (!borrador.concepto.trim()) throw new Error("Confirma el concepto del costo.");
+  await validarPermisoVinculado(expedienteId, borrador);
   return guardarPagoExclusivo(expedienteId, async () => {
     const marcador = `Documento SIGA: ${codigo}`;
     const observaciones = [borrador.fecha && `Fecha de pago: ${borrador.fecha}`, borrador.referencia && `PIN/Referencia: ${borrador.referencia}`, marcador].filter(Boolean).join(" · ");
-    const { data: costos, error: lectura } = await supabase.from("costos_producto").select("id,concepto,observaciones").eq("expediente_id", expedienteId);
+    const { data: costos, error: lectura } = await supabase.from("costos_producto").select("id,concepto,observaciones,monto_real,moneda").eq("expediente_id", expedienteId);
     if (lectura) throw lectura;
-    const previo = costos?.find((c) => c.observaciones?.split(" · ").includes(marcador))
+    const previo = esPagoVuce(tipoPago) ? costoDelPermiso(costos ?? [], borrador.permiso_numero ?? "") : costos?.find((c) => c.observaciones?.split(" · ").includes(marcador))
       ?? costos?.find((c) => esConceptoPagoPuerto(c.concepto, tipoPago) && !c.observaciones?.includes("Documento SIGA:"));
-    const costo = { concepto: borrador.concepto.trim(), monto_real: Number(borrador.monto), moneda: borrador.moneda, observaciones };
+    const costo = { concepto: borrador.concepto.trim(), monto_real: Number(borrador.monto), moneda: borrador.moneda,
+      observaciones: esPagoVuce(tipoPago) ? observacionesPagoVuce(borrador.permiso_numero ?? "", codigo, tipoPago, { fecha: borrador.fecha || acumularPagoVuce(tipoPago, borrador, previo).fecha, referencia: borrador.referencia }, previo?.observaciones) : observaciones };
     const { error } = previo
       ? await supabase.from("costos_producto").update(costo).eq("id", previo.id).eq("expediente_id", expedienteId)
       : await supabase.from("costos_producto").insert({ expediente_id: expedienteId, ...costo });
@@ -78,6 +89,7 @@ export async function guardarComprobantePuerto(expedienteId: string, file: File,
   if (!borrador.concepto.trim()) throw new Error("Confirma el concepto del costo.");
   const nombre = validarNombreSiga(file.name, "OTD");
   if (!nombre.ok) throw new Error(nombre.error);
+  await validarPermisoVinculado(expedienteId, borrador);
   return guardarPagoExclusivo(expedienteId, async () => {
     if (tipoPago === "gestion_aduanal") return guardarGestion(expedienteId, file, borrador);
     const tipo = documentoPagoPuerto(tipoPago);
@@ -106,10 +118,11 @@ export async function guardarComprobantePuerto(expedienteId: string, file: File,
         documentoId = data.id;
       }
       try {
-        const { data: costos, error: lecturaCosto } = await supabase.from("costos_producto").select("id,observaciones").eq("expediente_id", expedienteId);
+        const { data: costos, error: lecturaCosto } = await supabase.from("costos_producto").select("id,observaciones,monto_real,moneda").eq("expediente_id", expedienteId);
         if (lecturaCosto) throw lecturaCosto;
-        const previo = costos?.find((c) => c.observaciones?.split(" · ").includes(marcador));
-        const costo = { concepto: borrador.concepto.trim(), monto_real: Number(borrador.monto), moneda: borrador.moneda, observaciones };
+        const previo = esPagoVuce(tipoPago) ? costoDelPermiso(costos ?? [], borrador.permiso_numero ?? "") : costos?.find((c) => c.observaciones?.split(" · ").includes(marcador));
+        const costo = { concepto: borrador.concepto.trim(), monto_real: Number(borrador.monto), moneda: borrador.moneda,
+          observaciones: esPagoVuce(tipoPago) ? observacionesPagoVuce(borrador.permiso_numero ?? "", codigo, tipoPago, { fecha: borrador.fecha || acumularPagoVuce(tipoPago, borrador, previo).fecha, referencia: borrador.referencia }, previo?.observaciones) : observaciones };
         const { error } = previo
           ? await supabase.from("costos_producto").update(costo).eq("id", previo.id).eq("expediente_id", expedienteId)
           : await supabase.from("costos_producto").insert({ expediente_id: expedienteId, ...costo });

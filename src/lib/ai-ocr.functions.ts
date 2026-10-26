@@ -7,6 +7,7 @@ import type { PagoPuerto } from "./pago-puerto";
 import { PROMPT_PAGO_PUERTO, resolverPagoPuertoOcr } from "./pago-puerto-ocr";
 import { TIPOS_RESULTADO_DGA, type ResultadoDgaExtraido } from "./resultado-dga-documentos";
 import { totalDesdeTexto } from "./pago-puerto-texto";
+import { leerPagoVuceTexto, esPagoVuce } from "./pago-vuce";
 
 /** Primary deterministic total from the PDF text layer; AI value stays only as fallback (Gestión Aduanal keeps its tax-free base). */
 async function aplicarTotalTexto(p: PagoPuerto, base64: string | null): Promise<PagoPuerto> {
@@ -15,6 +16,9 @@ async function aplicarTotalTexto(p: PagoPuerto, base64: string | null): Promise<
     const { extractText, getDocumentProxy } = await import("unpdf");
     const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
     const { text } = await extractText(await getDocumentProxy(bytes), { mergePages: true });
+    const vuce = leerPagoVuceTexto(text);
+    if (vuce) return { ...p, ...vuce, monto: vuce.monto ?? p.monto, moneda: vuce.moneda ?? p.moneda };
+    if (esPagoVuce(p.tipo)) return p;
     const total = totalDesdeTexto(text);
     return total ? { ...p, monto: total.monto, moneda: total.moneda } : p;
   } catch {

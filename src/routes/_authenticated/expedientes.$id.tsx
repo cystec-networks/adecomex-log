@@ -42,6 +42,7 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday, hoyRD, hoyRDISO } from "@/lib/dates";
 import { resumenPagoPuerto, esConceptoPagoPuerto } from "@/lib/pago-puerto";
+import { TIPO_DOCUMENTO_PAGO, costoDelPermiso } from "@/lib/pago-vuce";
 import { calcImpuestosLinea } from "@/lib/impuestos";
 import { buildPreLiquidacionPdf } from "@/lib/pdf-preliquidacion";
 import { conConsignatarioEfectivo, fetchConsignatarioEfectivo } from "@/lib/consignatario-efectivo";
@@ -220,7 +221,7 @@ const TIPOS_DOC = [
   "Factura proforma","Factura comercial","Bill of Lading","Guía aérea","Lista de empaque",
   "Certificado de origen","Certificado Sanitario/Fitosanitario","Certificado de análisis",
   "Declaración Única Aduanera (DUA)","Reporte de Liquidación de Impuestos",
-  "Recibo Pago de Impuestos","PIN de Pago de Impuestos","Recibo Pago de Contenedor","Factura Pago de Almacenaje","Factura Pago Cargos Locales",
+  "Recibo Pago de Impuestos","PIN de Pago de Impuestos","Recibo Pago de Contenedor","Factura Pago de Almacenaje","Factura Pago Cargos Locales","PIN de Pago Permiso VUCE","Recibo Pago Permiso VUCE",
   "Permiso VUCE previo","Orden de compra",
   "Carta de instrucción","Póliza de seguro","DUA","Evidencia de entrega","Otro (Liquidación)","Otro",
 ];
@@ -257,6 +258,8 @@ const BLOQUE_LIQUIDACION: { tipo: string; label: string }[] = [
   { tipo: "Recibo Pago de Contenedor", label: "Recibo Pago de Contenedor" },
   { tipo: "Factura Pago de Almacenaje", label: "Factura Pago de Almacenaje" },
   { tipo: "Factura Pago Cargos Locales", label: "Factura Pago Cargos Locales" },
+  { tipo: "PIN de Pago Permiso VUCE", label: "PIN de Pago Permiso VUCE" },
+  { tipo: "Recibo Pago Permiso VUCE", label: "Recibo Pago Permiso VUCE" },
 ];
 
 const TIPO_OTROS_DECLARACION = "Otro";
@@ -358,7 +361,7 @@ const TIPOS_INCIDENCIA = [
 // Servicio Aduanero (pago a la DGA) sí va aquí: fila automática + concepto manual de respaldo.
 const CONCEPTOS_COSTO_ADICIONALES = [
   "Gestión Aduanal", "Tasa Servicio Aduanero", "Almacenaje", "Demora de contenedor", "Uso de Chasis", "Flete Terrestre", "Cargos Locales",
-  "Cargos THC", "Gastos en Puerto", "Comisiones Bancarias", "Transporte local", "Otros",
+  "Cargos THC", "Gastos en Puerto", "Comisiones Bancarias", "Transporte local", "Permiso VUCE", "Otros",
 ];
 /** Conceptos de Costo de mercancía que abren en US$ al crear una fila nueva. */
 const CONCEPTOS_COSTO_USD_DEFAULT = ["Cargos THC", "Cargos Locales"];
@@ -2988,7 +2991,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
     new Promise<boolean>((resolve) => { setConfirmAck(false); setConfirmacion({ ...c, resolve }); });
 
   const upload = async () => {
-    if (file && (CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo)) && !(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
+    if (file && (CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && !(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
       toast.error("Este documento del Checklist de Recepción solo acepta archivos PDF.");
       return;
     }
@@ -3052,8 +3055,9 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
         toast.success(codigo ? `Documento agregado · ${codigo}` : "Documento agregado");
       }
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
-      const tipoPago = ({ "Recibo Pago de Contenedor": "contenedor", "Factura Pago de Almacenaje": "almacenaje", "Factura Pago Cargos Locales": "cargos_locales" } as const)[tipo as "Recibo Pago de Contenedor"];
+      const tipoPago = TIPO_DOCUMENTO_PAGO[tipo];
       if (file && tipoPago && codigo && file.size <= 15 * 1024 * 1024) setPagoDoc({ file, tipo: tipoPago, codigo });
+      if (file && tipoPago && file.size > 15 * 1024 * 1024) toast.warning("PDF guardado; supera 15 MB para lectura. Captura el costo manualmente en Costos.");
       if (file && esDocumentoResultadoDga(tipo)) {
         try {
           if (file.size > 15 * 1024 * 1024) throw new Error("el archivo supera 15MB para lectura automática; completa los campos manualmente");
@@ -3199,7 +3203,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                   <SelectContent>{TIPOS_DOC.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}{(CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo)) && <span className="text-xs text-muted-foreground ml-1">(solo PDF)</span>}</Label><Input type="file" accept={(CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo)) ? "application/pdf,.pdf" : undefined} onChange={(e) => setFile(e.target.files?.[0] ?? null)} disabled={uploading} /></div>
+              <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}{(CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && <span className="text-xs text-muted-foreground ml-1">(solo PDF)</span>}</Label><Input type="file" accept={(CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) ? "application/pdf,.pdf" : undefined} onChange={(e) => setFile(e.target.files?.[0] ?? null)} disabled={uploading} /></div>
               <div className="grid gap-1.5"><Label>Fecha vencimiento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
               <div className="grid gap-1.5"><Label>Observaciones</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
             </div>
@@ -5444,6 +5448,10 @@ function AvisoRegimenSuspensivo({ expedienteId }: { expedienteId: string }) {
 }
 
 function PinesDesdeCostos({ expedienteId }: { expedienteId?: string }) {
+  const { data: permisosVuce = [] } = useQuery({
+    queryKey: ["permisos", expedienteId], enabled: !!expedienteId,
+    queryFn: async () => { const r = await supabase.from("permisos").select("id,numero,estado").eq("expediente_id", expedienteId ?? ""); if (r.error) throw r.error; return r.data ?? []; },
+  });
   const { data: filas = [] } = useQuery({
     queryKey: ["costos_producto", expedienteId],
     enabled: !!expedienteId,
@@ -5462,6 +5470,11 @@ function PinesDesdeCostos({ expedienteId }: { expedienteId?: string }) {
     <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-0.5">
       {linea("Almacenaje", "almacenaje")}
       {linea("Contenedor", "contenedor")}
+      {permisosVuce.map(p => {
+        const costo = costoDelPermiso(filas, p.numero ?? "");
+        const resumen = costo ? resumenPagoPuerto(costo.monto_real, costo.moneda, costo.observaciones) : null;
+        return <div key={p.id}><span className="font-medium">Permiso VUCE {p.numero}:</span> {resumen ? <><span className="font-semibold tabular-nums">{resumen.monto}</span>{resumen.detalle && ` · ${resumen.detalle}`}</> : <span className="text-muted-foreground">Sin registro en Costos</span>}</div>;
+      })}
       <div className="text-[11px] text-muted-foreground">Solo lectura — se registra en «Costo de mercancía (para Liquidación)», pestaña Costos.</div>
     </div>
   );
