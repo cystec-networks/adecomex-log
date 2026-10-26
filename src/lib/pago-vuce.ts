@@ -54,10 +54,25 @@ export function leerPagoVuceTexto(text: string): PagoPuerto | null {
   const recibo = /Detalle\s+(?:de\s+)?Factura|RECIBO/i.test(t);
   if (!pin && !recibo) return null;
   const tipo = pin ? "vuce_pin" : "vuce_recibo";
-  const total = totalDesdeTexto(t);
+  // VUCE receipts are always in DOP; when no currency marker sits next to the total, take the last explicit TOTAL line.
+  const total = totalDesdeTexto(t) ?? (() => {
+    const totales = [...t.matchAll(/\bTOTAL\b[\s:.\-]*([0-9]{1,3}(?:,[0-9]{3})+(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/gi)];
+    const ult = totales.at(-1);
+    const monto = ult ? Number(ult[1].replace(/,/g, "")) : NaN;
+    return Number.isFinite(monto) && monto > 0 ? { monto, moneda: "DOP" as const, etiqueta: ult![0] } : null;
+  })();
   const listado = t.split(/Listado\s+de\s+Facturas/i)[1] ?? "";
   const documentos = [...new Set([...(pin ? listado : t).matchAll(/\bTRM-[\w-]+/gi)].map(m => m[0].toUpperCase()))];
-  const referencia = pin ? t.match(/No\.?\s*(?:de\s+)?PIN\s*:?\s*([A-Z0-9-]+)/i)?.[1] : t.match(/NUMERO\s*\/\s*PIN\s*:?\s*([A-Z0-9-]+)/i)?.[1] ?? null;
+  const esPin = (v: string) => /^(?=.*\d)[A-Z0-9][A-Z0-9-]{5,}$/i.test(v) && (/[A-Z]/i.test(v) || v.replace(/\D/g, "").length >= 10);
+  const referenciaRecibo = (() => {
+    const i = t.search(/NUMERO\s*\/\s*PIN/i);
+    if (i < 0) return null;
+    const ventana = t.slice(i, i + 200);
+    const directo = ventana.match(/NUMERO\s*\/\s*PIN\s*:?\s*([^,\n]*)/i)?.[1]?.trim() ?? "";
+    if (esPin(directo)) return directo.toUpperCase();
+    return ventana.match(/\b[A-Z0-9-]{6,}\b/gi)?.map(v => v.toUpperCase()).find(esPin) ?? null;
+  })();
+  const referencia = pin ? t.match(/No\.?\s*(?:de\s+)?PIN\s*:?\s*([A-Z0-9-]+)/i)?.[1] : referenciaRecibo;
   const fecha = !pin ? fechaVuce(t.match(/(?<![\w])Fecha\s*:?\s*(\d{1,2}[\/-]\d{1,2}[\/-]\d{4}|\d{4}-\d{2}-\d{2})/i)?.[1] ?? "") : null;
   return normalizarPagoPuerto({ tipo, monto: total?.monto ?? null, moneda: total?.moneda ?? null, fecha, referencia, documentos_vuce: documentos, confianza: "alta" });
 }

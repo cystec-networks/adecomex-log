@@ -30,6 +30,42 @@ describe("Pagos complementarios VUCE", () => {
     assert.equal(r?.referencia, "20260924F07D3F40");
     assert.deepEqual(r?.documentos_vuce, []);
   });
+  it("recibo con banco y transacción captura solo el valor de NUMERO/PIN, nunca BANCO", () => {
+    const texto = `Detalle Factura - VUCE RECIBO
+Fecha: 25/09/2026
+FORMAS DE PAGO: Banca Electrónica, NUMERO/PIN: 20260924F07D3F40, BANCO POPULAR DOMINICANO, NO. TRANSACCION: 68997508, MONTO: 5,800.00
+TOTAL: RD$5,800.00`;
+    const r = leerPagoVuceTexto(texto);
+    assert.equal(r?.referencia, "20260924F07D3F40");
+  });
+  it("recibo con columnas intercaladas encuentra el PIN en la ventana y descarta el No. de transacción", () => {
+    const texto = `Detalle Factura - VUCE RECIBO
+Fecha: 25/09/2026
+FORMAS DE PAGO: Banca Electrónica, NUMERO/PIN: BANCO POPULAR DOMINICANO, NO. TRANSACCION: 68997508, MONTO: 5,800.00 20260924F07D3F40
+TOTAL: RD$5,800.00`;
+    const r = leerPagoVuceTexto(texto);
+    assert.equal(r?.referencia, "20260924F07D3F40");
+  });
+  it("recibo real tabular (encabezado NUMERO / PIN BANCO) captura el PIN de la fila y el TOTAL sin moneda", () => {
+    const texto = `Recibo No. : 20260924-0322
+Fecha : 25/09/2026
+COMPROBANTE DE PAGO
+RECIBIDO DE AGROLACTEOS IMANFA SRL $ : 5,800.00
+TOTAL 5,800.00
+FORMAS DE PAGO
+TIPO DE PAGO NUMERO / PIN BANCO NO. TRANSACCION MONTO
+Banca Electrónica 20260924F07D3F40 BANCO POPULAR DOMINICANO C POR A 68997508 5,800.00
+TOTAL 5,800.00
+Balance $ : 0.00
+FACTURAS PAGADAS
+10000-CL11-2609-005AD8
+Detalle Factura 10000-CL11-2609-005AD8 - VUCE`;
+    const r = leerPagoVuceTexto(texto);
+    assert.equal(r?.tipo, "vuce_recibo");
+    assert.equal(r?.referencia, "20260924F07D3F40");
+    assert.equal(r?.monto, 5800); assert.equal(r?.moneda, "DOP");
+    assert.equal(r?.fecha, "2026-09-25");
+  });
   it("cruce por PIN encuentra el costo aunque aún no tenga trámite y hereda el permiso", () => {
     const sinPermiso = { id: "c1", observaciones: "Fecha de pago: 2026-09-25 · PIN/Referencia: 20260924F07D3F40 · Recibo VUCE SIGA: OTD-011" };
     assert.equal(costoPorPinVuce([sinPermiso], "20260924F07D3F40")?.id, "c1");
