@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { acumularPagoVuce, leerPagoVuceTexto, permisosDelDocumento, costoDelPermiso, observacionesPagoVuce } from "./pago-vuce";
+import { acumularPagoVuce, leerPagoVuceTexto, permisosDelDocumento, costoDelPermiso, costoPorPinVuce, permisoDelCostoVuce, observacionesPagoVuce } from "./pago-vuce";
 import { resolverPagoPuertoOcr } from "./pago-puerto-ocr";
 import { costoUnitarioReal } from "./liquidacion-final";
 
@@ -13,6 +13,7 @@ No. Documento: TRM-0926-2533722`;
 const recibo = `Detalle Factura - VUCE RECIBO
 Fecha: 25/09/2026
 Fecha de Vencimiento: 24/12/2026
+FORMAS DE PAGO: TRANSFERENCIA NUMERO/PIN: 20260924F07D3F40
 TOTAL: RD$5,800.00`;
 describe("Pagos complementarios VUCE", () => {
   it("PIN extrae monto íntegro, referencia y trámite del listado sin fecha de pago", () => {
@@ -23,6 +24,21 @@ describe("Pagos complementarios VUCE", () => {
   it("recibo toma Fecha y TOTAL, no vencimiento ni exclusión de ITBIS", () => {
     const r = leerPagoVuceTexto(recibo);
     assert.equal(r?.fecha, "2026-09-25"); assert.equal(r?.monto, 5800);
+  });
+  it("recibo extrae el PIN desde NUMERO/PIN de FORMAS DE PAGO como referencia", () => {
+    const r = leerPagoVuceTexto(recibo);
+    assert.equal(r?.referencia, "20260924F07D3F40");
+    assert.deepEqual(r?.documentos_vuce, []);
+  });
+  it("cruce por PIN encuentra el costo aunque aún no tenga trámite y hereda el permiso", () => {
+    const sinPermiso = { id: "c1", observaciones: "Fecha de pago: 2026-09-25 · PIN/Referencia: 20260924F07D3F40 · Recibo VUCE SIGA: OTD-011" };
+    assert.equal(costoPorPinVuce([sinPermiso], "20260924F07D3F40")?.id, "c1");
+    assert.equal(permisoDelCostoVuce(sinPermiso), "");
+    const conPermiso = { id: "c2", observaciones: "PIN/Referencia: 20260924F07D3F40 · Permiso VUCE: TRM-0926-2533722 · PIN VUCE SIGA: OTD-010" };
+    assert.equal(costoPorPinVuce([conPermiso], "20260924F07D3F40")?.id, "c2");
+    assert.equal(permisoDelCostoVuce(conPermiso), "TRM-0926-2533722");
+    assert.equal(costoPorPinVuce([conPermiso], "OTRO-PIN"), undefined);
+    assert.equal(costoPorPinVuce([{ observaciones: "PIN/Referencia: 20260924F07D3F40" }], "20260924F07D3F40"), undefined);
   });
   it("cruce exacto por trámite no asume el único permiso si no coincide", () => {
     const permisos = [{ numero: "TRM-0926-2533722" }];

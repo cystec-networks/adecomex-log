@@ -63,6 +63,38 @@ test("VUCE Escanear pago recibe dos PDFs pero crea un solo costo", async () => {
   await guardarComprobantePuerto("exp", new File(["recibo"], "OTD-recibo.pdf"), { ...draft, tipo: "vuce_recibo", fecha: "2026-09-25" }, true);
   expect(docs).toHaveLength(2); expect(costos).toHaveLength(1); expect(costos[0].monto_real).toBe(5800);
 });
+test("Recibo VUCE primero (sin trámite) se guarda con su PIN y el PIN posterior lo vincula retroactivamente", async () => {
+  permisos.push({ expediente_id: "exp", numero: "TRM-0926-2533722" });
+  const recibo = { tipo: "vuce_recibo" as const, monto: "5800", moneda: "DOP", fecha: "2026-09-25", referencia: "20260924F07D3F40", concepto: "Permiso VUCE", permiso_numero: "" };
+  await guardarCostoDocumentoPuerto("exp", "OTD-011", recibo);
+  expect(costos).toHaveLength(1);
+  expect(costos[0].observaciones).toContain("PIN/Referencia: 20260924F07D3F40");
+  expect(costos[0].observaciones).toContain("Recibo VUCE SIGA: OTD-011");
+  expect(costos[0].observaciones.includes("Permiso VUCE:")).toBe(false);
+  const pin = { tipo: "vuce_pin" as const, monto: "5800", moneda: "DOP", fecha: "", referencia: "20260924F07D3F40", concepto: "Permiso VUCE", permiso_numero: "TRM-0926-2533722" };
+  await guardarCostoDocumentoPuerto("exp", "OTD-010", pin);
+  expect(costos).toHaveLength(1);
+  expect(costos[0].observaciones).toContain("Permiso VUCE: TRM-0926-2533722");
+  expect(costos[0].observaciones).toContain("PIN VUCE SIGA: OTD-010");
+  expect(costos[0].observaciones).toContain("Recibo VUCE SIGA: OTD-011");
+  expect(costos[0].observaciones).toContain("Fecha de pago: 2026-09-25");
+  expect(costos[0].monto_real).toBe(5800);
+});
+test("Recibo VUCE después del PIN hereda el trámite por el mismo PIN sin pedirlo manualmente", async () => {
+  permisos.push({ expediente_id: "exp", numero: "TRM-0926-2533722" });
+  const pin = { tipo: "vuce_pin" as const, monto: "5800", moneda: "DOP", fecha: "", referencia: "20260924F07D3F40", concepto: "Permiso VUCE", permiso_numero: "TRM-0926-2533722" };
+  await guardarCostoDocumentoPuerto("exp", "OTD-010", pin);
+  const recibo = { tipo: "vuce_recibo" as const, monto: "5800", moneda: "DOP", fecha: "2026-09-25", referencia: "20260924F07D3F40", concepto: "Permiso VUCE", permiso_numero: "" };
+  await guardarCostoDocumentoPuerto("exp", "OTD-011", recibo);
+  expect(costos).toHaveLength(1);
+  expect(costos[0].observaciones).toContain("Permiso VUCE: TRM-0926-2533722");
+  expect(costos[0].observaciones).toContain("Recibo VUCE SIGA: OTD-011");
+  expect(costos[0].observaciones).toContain("Fecha de pago: 2026-09-25");
+});
+test("Recibo VUCE sin PIN ni trámite sigue sin guardarse", async () => {
+  await expect(guardarCostoDocumentoPuerto("exp", "OTD-011", { tipo: "vuce_recibo", monto: "5800", moneda: "DOP", fecha: "2026-09-25", referencia: "", concepto: "Permiso VUCE", permiso_numero: "" })).rejects.toThrow("no se asumirá un vínculo");
+  expect(escrituras).toHaveLength(0);
+});
 test("VUCE sin permiso coincidente no escribe costo ni sube PDF", async () => {
   await expect(guardarComprobantePuerto("exp", new File(["pin"], "OTD-pin.pdf"), { tipo: "vuce_pin", monto: "5800", moneda: "DOP", fecha: "", referencia: "PIN", concepto: "Permiso VUCE", permiso_numero: "TRM-OTRO" })).rejects.toThrow("no se asumirá un vínculo");
   expect(escrituras).toHaveLength(0); expect(archivos.size).toBe(0);

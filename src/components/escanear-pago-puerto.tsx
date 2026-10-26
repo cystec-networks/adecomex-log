@@ -16,7 +16,7 @@ import { conceptoPagoPuerto, documentoPagoPuerto, type TipoPagoPuerto } from "@/
 import { guardarComprobantePuerto, guardarCostoDocumentoPuerto, type BorradorPagoPuerto } from "@/lib/pago-puerto-guardar";
 import { validarNombreSiga } from "@/lib/codigo-siga";
 import { supabase } from "@/integrations/supabase/client";
-import { esPagoVuce, acumularPagoVuce, costoDelPermiso, permisosDelDocumento } from "@/lib/pago-vuce";
+import { esPagoVuce, acumularPagoVuce, costoDelPermiso, costoPorPinVuce, permisoDelCostoVuce, permisosDelDocumento } from "@/lib/pago-vuce";
 
 const vacio: BorradorPagoPuerto = { tipo: "", monto: "", moneda: "", fecha: "", referencia: "", concepto: "" };
 export type DocumentoPagoSubido = { file: File; tipo: Exclude<TipoPagoPuerto, "gestion_aduanal">; codigo: string };
@@ -35,8 +35,9 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
   const [permisos, setPermisos] = useState<{ id: string; numero: string | null; estado: string }[]>([]);
   const [costosVuce, setCostosVuce] = useState<{ monto_real: number | null; moneda: string | null; observaciones: string | null }[]>([]);
   const [avisoVuce, setAvisoVuce] = useState("");
+  const [notaVuce, setNotaVuce] = useState("");
   const [lecturaEnCurso, setLecturaEnCurso] = useState(false);
-  const reset = () => { setFile(null); setBorrador(vacio); setAnalizado(false); setConfirmado(false); setDuplicado(false); setMensajeDuplicado(""); };
+  const reset = () => { setFile(null); setBorrador(vacio); setAnalizado(false); setConfirmado(false); setDuplicado(false); setMensajeDuplicado(""); setAvisoVuce(""); setNotaVuce(""); };
   const analizar = useMutation({
     mutationFn: async () => {
       setLecturaEnCurso(true);
@@ -64,9 +65,22 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
       ]);
       setPermisos(ps.data ?? []); setCostosVuce(cs.data ?? []);
       const matches = permisosDelDocumento(ps.data ?? [], nuevo.documentos_vuce ?? []);
-      const numero = matches.length === 1 ? matches[0].numero ?? "" : "";
-      setAvisoVuce(ps.error || cs.error ? "No se pudo consultar los permisos o costos; vuelve a leer antes de confirmar." : !nuevo.documentos_vuce?.length ? "No se identificó el N.º de trámite en este documento. Selecciona el permiso correcto para vincularlo." : matches.length !== 1 ? "El No. Documento no coincide con un único Permiso VUCE de este expediente. Revisa y selecciona el permiso; no se asumió ningún vínculo." : "");
-      setBorrador({ ...nuevo, permiso_numero: numero, ...(esPagoVuce(tipo) && numero ? acumularPagoVuce(tipo, nuevo, costoDelPermiso(cs.data ?? [], numero)) : {}) });
+      let numero = matches.length === 1 ? matches[0].numero ?? "" : "";
+      let previo = numero ? costoDelPermiso(cs.data ?? [], numero) : undefined;
+      // El Recibo no trae el N.º de trámite: cruzar por el PIN contra el costo que ya guardó el PIN de pago.
+      if (!numero && esPagoVuce(tipo) && nuevo.referencia) {
+        previo = costoPorPinVuce(cs.data ?? [], nuevo.referencia);
+        numero = permisoDelCostoVuce(previo);
+      }
+      setAvisoVuce(ps.error || cs.error ? "No se pudo consultar los permisos o costos; vuelve a leer antes de confirmar."
+        : !esPagoVuce(tipo) || numero ? ""
+        : tipo === "vuce_recibo" && nuevo.referencia ? ""
+        : !nuevo.documentos_vuce?.length ? "No se identificó el N.º de trámite en este documento. Selecciona el permiso correcto para vincularlo."
+        : "El No. Documento no coincide con un único Permiso VUCE de este expediente. Revisa y selecciona el permiso; no se asumió ningún vínculo.");
+      setNotaVuce(esPagoVuce(tipo) && !numero && tipo === "vuce_recibo" && nuevo.referencia
+        ? "Este recibo no trae el N.º de trámite: se guardará con su PIN y quedará vinculado al permiso cuando se suba el PIN de pago con el mismo número."
+        : numero && !matches.length ? `Vinculado a ${numero} por el PIN ${nuevo.referencia} ya guardado.` : "");
+      setBorrador({ ...nuevo, permiso_numero: numero, ...(esPagoVuce(tipo) && (numero || previo) ? acumularPagoVuce(tipo, nuevo, previo) : {}) });
       setAnalizado(true);
       setLecturaEnCurso(false);
     }, onError: (e) => { setLecturaEnCurso(false); toast.error(e.message); },
@@ -90,7 +104,19 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
   useEffect(() => { if (documento && !iniciado.current) { iniciado.current = true; analizar.mutate(); } }, [documento]);
   const pendiente = lecturaEnCurso || guardar.isPending;
   useEditorExpediente(analizado, pendiente, async () => { await guardar.mutateAsync(); });
-  const editar = (values: Partial<BorradorPagoPuerto>) => { setBorrador((p) => ({ ...p, ...values })); setConfirmado(false); };
+  const editar = (values: Partial<BorradorPagoPuerto>) => {
+    setBorrador((p) => {
+      const n = { ...p, ...values };
+      // Al escribir/corregir el PIN a mano, reintentar el cruce contra el costo ya guardado.
+      if (esPagoVuce(n.tipo) && values.referencia !== undefined && !n.permiso_numero) {
+        const previo = costoPorPinVuce(costosVuce, n.referencia);
+        const numero = permisoDelCostoVuce(previo);
+        if (numero) return { ...n, permiso_numero: numero, ...acumularPagoVuce(n.tipo, n, previo) };
+      }
+      return n;
+    });
+    setConfirmado(false);
+  };
   return <>
     {!documento && <Button size="sm" variant="outline" onClick={() => { reset(); setOpen(true); }}><Sparkles className="h-4 w-4 mr-1" />Escanear pago</Button>}
     <Dialog modal={false} open={open} onOpenChange={(v) => { if (!pendiente) setOpen(v); }}>
@@ -111,6 +137,7 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
             <div className="grid gap-1.5"><Label>Tipo de pago</Label><Select disabled={pendiente || Boolean(documento)} value={borrador.tipo} onValueChange={(tipo: TipoPagoPuerto) => editar({ tipo, concepto: conceptoPagoPuerto(tipo, borrador.referencia), ...(tipo === "gestion_aduanal" ? { monto: baseSinItbis === null ? "" : String(baseSinItbis) } : {}) })}><SelectTrigger aria-label="Tipo de pago"><SelectValue placeholder="Seleccionar tipo de pago" /></SelectTrigger><SelectContent><SelectItem value="almacenaje">Almacenaje</SelectItem><SelectItem value="contenedor">Depósito / Pago de Contenedor</SelectItem><SelectItem value="gestion_aduanal">Factura de Gestión Aduanal</SelectItem><SelectItem value="cargos_locales">Pago de Cargos Locales</SelectItem><SelectItem value="vuce_pin">PIN de Pago Permiso VUCE</SelectItem><SelectItem value="vuce_recibo">Recibo Pago Permiso VUCE</SelectItem></SelectContent></Select></div>
             {esPagoVuce(borrador.tipo) && <div className="grid gap-1.5">
               {avisoVuce && <p role="alert" className="text-xs text-destructive">{avisoVuce}</p>}
+              {notaVuce && <p className="text-xs text-muted-foreground">{notaVuce}</p>}
               {!!borrador.documentos_vuce?.length && <p className="text-xs text-muted-foreground">No. Documento: {borrador.documentos_vuce.join(", ")}</p>}
               <Label>Permiso VUCE vinculado</Label><Select value={borrador.permiso_numero ?? ""} onValueChange={(numero) => editar({ permiso_numero: numero, ...acumularPagoVuce(borrador.tipo, borrador, costoDelPermiso(costosVuce, numero)) })}><SelectTrigger aria-label="Permiso VUCE vinculado"><SelectValue placeholder="Seleccionar permiso del expediente" /></SelectTrigger><SelectContent>{permisos.filter(p => p.numero).map(p => <SelectItem key={p.id} value={p.numero ?? ""}>{p.numero} · {p.estado}</SelectItem>)}</SelectContent></Select>
             </div>}
@@ -126,7 +153,7 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
             <label className="flex items-center gap-2 text-sm"><Checkbox aria-label="Confirmo el monto y los datos del pago" checked={confirmado} onCheckedChange={(v) => setConfirmado(v === true)} />Confirmo el monto y los datos del pago</label>
           </fieldset>}
         </div>
-        <DialogFooter><Button variant="outline" disabled={pendiente} onClick={() => { setOpen(false); reset(); }}>Cancelar</Button>{analizado && <Button disabled={pendiente || !confirmado || !borrador.tipo || !borrador.moneda || !borrador.monto || (esPagoVuce(borrador.tipo) && !borrador.permiso_numero) || (Boolean(mensajeDuplicado) && !duplicado)} onClick={() => guardar.mutate()}>{guardar.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}Guardar costo y documento</Button>}</DialogFooter>
+        <DialogFooter><Button variant="outline" disabled={pendiente} onClick={() => { setOpen(false); reset(); }}>Cancelar</Button>{analizado && <Button disabled={pendiente || !confirmado || !borrador.tipo || !borrador.moneda || !borrador.monto || (esPagoVuce(borrador.tipo) && !borrador.permiso_numero && !(borrador.tipo === "vuce_recibo" && borrador.referencia.trim())) || (Boolean(mensajeDuplicado) && !duplicado)} onClick={() => guardar.mutate()}>{guardar.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}Guardar costo y documento</Button>}</DialogFooter>
       </DialogContent>
     </Dialog>
   </>;
