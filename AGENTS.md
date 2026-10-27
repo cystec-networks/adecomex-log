@@ -36,3 +36,4 @@ Detail headers: content-sized rows, client label/value together, wrap IDs, warni
 - DGA fills blanks; permiso-vuce replaces documentary fields and links PDFs on save. VUCE payments share pago-vuce accumulation by verified permit; PIN/receipt markers preserve both sources, preventing duplicate costs.
 - Editors retain drafts/global saves. DGA origin uses declaracion-origen-context for conditional sync; references stay in document observations.
 - Sync draft Description via observaciones-expediente on observation changes, not save; preserve manual edits.
+- Liquidation report OCR uses liquidacion-dga-documento for label-based extraction, conflict notices and comparison-only totals; sync persisted changes through liquidacion-dga-context to preserve open drafts. Manifest/inspection references are documentary, never manual inputs.

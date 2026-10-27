@@ -22,7 +22,8 @@ export function camposDesdeDocumentoDga(tipo: TipoResultadoDga, datos: Resultado
   const out: CamposResultadoDga = {};
   const texto = (key: CamposTextoDga, v: unknown) => { if (typeof v === "string" && v.trim()) out[key] = v.trim(); };
   if (tipo === "Reporte de Liquidación de Impuestos") {
-    texto("liq_siga_numero", datos.numero); texto("liq_siga_estado", datos.estado);
+    if (datos.numero && !/^temporal\b/i.test(datos.numero.trim())) texto("liq_siga_numero", datos.numero);
+    texto("liq_siga_estado", datos.estado);
   } else {
     if (typeof datos.total === "number" && Number.isFinite(datos.total) && datos.total >= 0) out.liq_oficial_total = datos.total;
     if (tipo === "PIN de Pago de Impuestos") {
