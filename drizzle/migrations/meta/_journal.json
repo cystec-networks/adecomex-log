@@ -519,6 +519,13 @@
       "when": 1793133433680,
       "tag": "0073_solicitudes_correo_duplicados_advertencias",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1793141629635,
+      "tag": "0074_fusionar_solicitudes_correo_pendientes",
+      "breakpoints": true
     }
   ]
 }
