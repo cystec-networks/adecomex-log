@@ -59,7 +59,7 @@ describe("asunto del correo", () => {
   it("sin patrón no inventa", () => {
     expect(extraerDeAsunto("HACER VUCE Fwd: PROFORMA 2 CEBOLLA ROJA")).toEqual({ bl_awb: null, eta: null });
   });
-  it("el cuerpo gana con advertencia si difiere", () => {
+  it("el asunto gana con aviso si difiere del cuerpo", () => {
     const base = { bl_awb: "AAA111222", eta: "2026-10-01", producto: null, cantidad: null, cliente_nombre: null };
     const r = fusionarAsunto(base, "HACER VUCE: BL MEDUAFV97440--ETA 26/10/2026--");
     expect(r.datos.bl_awb).toBe("MEDUAFV97440");
