@@ -2313,7 +2313,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           nombreCliente = cli?.nombre ?? null;
         }
         const datosCorreo = {
-          numero: data.numero, cliente: nombreCliente, eta: data.eta, descripcion: data.descripcion,
+          numero: data.numero, cliente: nombreCliente, eta: data.fecha_compromiso, descripcion: data.descripcion_mercancia,
           remitente: sol.remitente_correo ?? sol.remitente, asunto: sol.asunto,
           destinatarios: sol.destinatarios, cc: sol.cc,
         };
