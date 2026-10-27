@@ -4,7 +4,7 @@ import { aislarMensajeReciente, combinarDatos, extraerPorEtiquetas, fusionarAsun
 import { PROMPT_DOCUMENTO_IMPORTACION } from "@/lib/ocr-documento-prompt";
 import { callGateway } from "@/lib/ai-gateway.server";
 import { adjuntoCorreoSchema, normalizarAdjuntosCorreo, mimeAdjuntoCorreo, deduplicarAdjuntosCorreo } from "@/lib/correo-adjuntos";
-import { inicioVentanaDuplicadoCorreo, ESTADOS_DUPLICADO_CORREO, respuestaCorreoDuplicado } from "@/lib/correo-duplicados";
+import { mismoPendienteCorreo, respuestaCorreoActualizado } from "@/lib/correo-duplicados";
 
 const adjuntoSchema = adjuntoCorreoSchema;
 
@@ -164,13 +164,6 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         const { remitente, asunto, cuerpo } = p.data;
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const db = supabaseAdmin as any;
-        // Antes de IA/OCR o archivos: una entrega repetida no vuelve a procesarse.
-        const { data: duplicado, error: errorDuplicado } = await db.from("solicitudes_correo")
-          .select("id").eq("remitente", remitente).eq("asunto", asunto)
-          .in("estado", [...ESTADOS_DUPLICADO_CORREO])
-          .gte("created_at", inicioVentanaDuplicadoCorreo()).limit(1).maybeSingle();
-        if (errorDuplicado) return Response.json({ error: "No se pudo verificar el envío duplicado" }, { status: 500 });
-        if (duplicado) return respuestaCorreoDuplicado();
         const entradaAdjuntos = normalizarAdjuntosCorreo(p.data.adjuntos);
         // Mismo archivo repetido (nombre, o contenido idéntico): se procesa una sola vez.
         const adjuntosIn = deduplicarAdjuntosCorreo(entradaAdjuntos.adjuntos.map((a) => ({ ...a, file_hash: a.contenido.replace(/^data:[^,]*,/, "").replace(/\s+/g, "") }))).map(({ file_hash: _h, ...a }) => a);
@@ -190,6 +183,11 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         const { datos, advertencias } = fusionarAdjuntos(correo.datos, [...correo.advertencias, ...entradaAdjuntos.advertencias], adjuntos);
         for (const a of adjuntos) if (a.error) advertencias.push(`${a.nombre}: no se pudo leer el documento; ${a.bytes.length ? "se conserva en Otros documentos" : "reenvía el archivo"}. ${a.error}`);
         const remitenteCorreo = correoDe(remitente);
+        // OCR must run before matching: a retry may complete missing invoice lines.
+        const { data: pendientes, error: errorPendientes } = await db.from("solicitudes_correo")
+          .select("id,remitente,remitente_correo,asunto,bl_awb,estado").eq("estado", "pendiente");
+        if (errorPendientes) return Response.json({ error: "No se pudo verificar el borrador pendiente" }, { status: 500 });
+        const pendiente = (pendientes ?? []).find((s: Parameters<typeof mismoPendienteCorreo>[0]) => mismoPendienteCorreo(s, { remitente, remitente_correo: remitenteCorreo, asunto, bl_awb: datos.bl_awb }));
 
         const subirAdjuntos = async (carpeta: string) => {
           for (const [i, a] of adjuntos.entries()) {
@@ -205,7 +203,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         const textoCompleto = `De: ${remitente}\nAsunto: ${asunto}\nRecibido: ${new Date().toISOString()}\n\n${cuerpo}`;
 
         // BL existente → solo guardar el correo como documento de referencia.
-        if (datos.bl_awb) {
+        if (datos.bl_awb && !pendiente) {
           const { data: existente } = await db.from("expedientes").select("id,numero").ilike("bl_awb", datos.bl_awb).is("eliminado_en", null).limit(1).maybeSingle();
           if (existente) {
             const path = `${existente.id}/${Date.now()}_correo_solicitud.txt`;
@@ -241,20 +239,15 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         try { await subirAdjuntos(`correo/${crypto.randomUUID()}`); } catch (e: any) { return Response.json({ error: e.message }, { status: 500 }); }
         const listaAdjuntos = resumenAdjuntos();
         // Revalidación atómica: dos entregas simultáneas solo pueden crear una fila.
-        const { data: id, error } = await db.rpc("crear_solicitud_correo_sin_duplicado", { p_solicitud: {
+        const { data: guardado, error } = await db.rpc("guardar_solicitud_correo_pendiente", { p_solicitud: {
           remitente, remitente_correo: remitenteCorreo, asunto, cuerpo, mensaje_aislado: mensaje,
           destinatarios: p.data.destinatarios || null, cc: p.data.cc || null,
           ...datos, advertencias, cliente_id: clienteId, adjuntos: listaAdjuntos,
         } });
         if (error) return Response.json({ error: error.message }, { status: 500 });
-        if (!id) {
-          // Retira únicamente los archivos propios de la entrega que perdió la carrera.
-          if (listaAdjuntos.length) {
-            const { error: limpieza } = await db.storage.from("documentos").remove(listaAdjuntos.map((a) => a.storage_path));
-            if (limpieza) console.error("No se pudieron retirar adjuntos de un envío duplicado");
-          }
-          return respuestaCorreoDuplicado();
-        }
+        if (!guardado?.id) return Response.json({ error: "No se pudo guardar el borrador" }, { status: 500 });
+        if (guardado.actualizado) return respuestaCorreoActualizado(guardado.id);
+        const id = guardado.id;
         return Response.json({ resultado: "borrador", id, datos, advertencias, adjuntos: listaAdjuntos.map((a) => ({ nombre: a.nombre, tipo: a.tipo })) });
       },
     },
