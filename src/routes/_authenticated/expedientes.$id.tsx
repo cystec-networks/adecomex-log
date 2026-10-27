@@ -103,6 +103,8 @@ import { EscanearBlButton, EscanearFacturaButton as EscanearFacturaExpButton } f
 import { NuevoDesdeXmlButton } from "@/components/nuevo-desde-xml-button";
 import { type OcrExtraction } from "@/lib/ai-ocr.functions";
 import { datosDocumentalesCorreo, deduplicarAdjuntosCorreo, type AdjuntoGuardadoCorreo } from "@/lib/correo-adjuntos";
+import { prepararFacturasCorreo } from "@/lib/factura-expediente-escaneo";
+import { classifyArancelLote } from "@/lib/ai-arancel.functions";
 import { correoConfirmacionSolicitud, faltantesConfirmacion } from "@/lib/correo-confirmacion";
 import {
   HerramientasDgaVuceItems,
@@ -627,6 +629,8 @@ function DetalleExpediente() {
   const [ocrAplicado, setOcrAplicado] = useState<OcrAplicado | null>(null);
   const [adjuntosDelCorreo, setAdjuntosDelCorreo] = useState<AdjuntoGuardadoCorreo[]>([]);
   const [avisosDelCorreo, setAvisosDelCorreo] = useState<string[]>([]);
+  const extraerFacturaCorreo = useServerFn(extractSolicitudFromDocument);
+  const clasificarFacturaCorreo = useServerFn(classifyArancelLote);
 
   // Borrador recibido por correo: prellena el formulario de creación (se confirma al crear).
   const { correo: correoParam } = Route.useSearch();
@@ -641,12 +645,31 @@ function DetalleExpediente() {
       setAdjuntosDelCorreo(deduplicarAdjuntosCorreo(adjuntos));
       setAvisosDelCorreo(Array.isArray(s.advertencias) ? s.advertencias as string[] : []);
       const doc = datosDocumentalesCorreo(adjuntos);
+      let productosCorreo: OcrExtraction["productos_factura"];
+      try {
+        productosCorreo = await prepararFacturasCorreo(adjuntos, async (adjunto) => {
+          const { data: archivo, error: errorArchivo } = await supabase.storage.from("documentos").download(adjunto.storage_path);
+          if (errorArchivo || !archivo) throw new Error(`No se pudo abrir ${adjunto.nombre}`);
+          const bytes = new Uint8Array(await archivo.arrayBuffer());
+          let binary = "";
+          for (const byte of bytes) binary += String.fromCharCode(byte);
+          return { filename: adjunto.nombre, mime: archivo.type || "application/pdf", base64: btoa(binary) };
+        }, {
+          extraer: (data) => extraerFacturaCorreo({ data }),
+          clasificar: (descripciones) => clasificarFacturaCorreo({ data: { descripciones } }),
+          buscarTasas: (codigo, manual) => buscarSugerenciasProducto(qc, codigo, manual),
+        });
+      } catch (error) {
+        if (vivo) toast.error(error instanceof Error ? error.message : "No se pudo leer la factura del correo");
+      }
+      if (!vivo) return;
       const desc = [s.cantidad, s.producto].filter(Boolean).join(" ").toUpperCase();
       ocrSeq.current += 1;
       setOcrAplicado({
         seq: ocrSeq.current,
         cliente: s.cliente_nombre ?? null,
         clienteId: s.cliente_id ?? null,
+        productos: productosCorreo,
         contenedores: Array.isArray(doc.contenedores) ? doc.contenedores as OcrExtraction["contenedores"] : null,
         tipoCargaConfianza: doc.tipo_carga_confianza === "media" ? "media" : doc.tipo_carga_confianza === "alta" ? "alta" : null,
         campos: {
