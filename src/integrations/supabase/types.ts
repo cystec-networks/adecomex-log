@@ -7418,6 +7418,18 @@ export type Database = {
       }
       expediente_docs_core_faltantes: { Args: { _id: string }; Returns: string }
       expirar_cotizaciones_vencidas: { Args: never; Returns: number }
+      fusionar_adjuntos_correo: {
+        Args: { p_anterior: Json; p_nuevo: Json }
+        Returns: Json
+      }
+      fusionar_datos_correo: {
+        Args: { p_anterior: Json; p_nuevo: Json }
+        Returns: Json
+      }
+      guardar_solicitud_correo_pendiente: {
+        Args: { p_solicitud: Json }
+        Returns: Json
+      }
       immutable_unaccent: { Args: { "": string }; Returns: string }
       importar_capitulo_notas: { Args: { _filas: Json }; Returns: Json }
       importar_catalogo_arancelario: { Args: { _filas: Json }; Returns: Json }
