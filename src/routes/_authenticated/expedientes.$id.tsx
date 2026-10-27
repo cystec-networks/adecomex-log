@@ -643,6 +643,7 @@ function DetalleExpediente() {
           bl_awb: s.bl_awb,
           fecha_compromiso: s.eta,
           descripcion_mercancia: desc || null,
+          descripcion_carga: desc || null,
           contacto_solicitud: s.remitente_correo ?? s.remitente,
         },
       });
@@ -1741,6 +1742,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         }
       }
       if (ocrAplicado.clienteId) next.cliente_id = ocrAplicado.clienteId;
+      // Solicitud por correo: la carga (cantidad + producto) alimenta Observaciones → Descripción.
+      const descCorreo = ocrAplicado.campos.descripcion_carga;
+      if (descCorreo && !String(next.observaciones_estructura?.descripcion ?? "").trim()) {
+        next.observaciones_estructura = { ...(next.observaciones_estructura ?? {}), descripcion: descCorreo };
+      }
+      delete next.descripcion_carga;
       // Puerto detectado → completar Área aduanera si aún está vacía.
       const areaMap = puertoAreaRef.current;
       const areaPuerto = next.puerto_arribo_codigo && areaMap[next.puerto_arribo_codigo];
