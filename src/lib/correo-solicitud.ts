@@ -154,6 +154,7 @@ export function tipoAdjuntoCorreo(v: unknown): string {
 
 export type DatosAdjunto = {
   tipo: string;
+  eta?: string | null;
   bl_awb?: string | null;
   cliente_nombre?: string | null;
   producto?: string | null;
@@ -164,7 +165,7 @@ export type DatosAdjunto = {
 
 export type DatosCompletosCorreo = DatosSolicitudCorreo & { peso_bruto_kg: number | null; factura_comercial: string | null };
 
-const ETIQUETA: Record<string, string> = { bl_awb: "BL/AWB", cliente_nombre: "Cliente", producto: "Producto", cantidad: "Cantidad" };
+const ETIQUETA: Record<string, string> = { bl_awb: "BL/AWB", eta: "ETA", cliente_nombre: "Cliente", producto: "Producto", cantidad: "Cantidad" };
 
 /**
  * Prioridad: 1) documento adjunto reconocido, 2) asunto/cuerpo (ya fusionados).
@@ -180,9 +181,9 @@ export function fusionarAdjuntos(
   const reconocidos = adjuntos.filter((a) => a.tipo !== "Otro");
   const primero = <K extends keyof DatosAdjunto>(k: K, tipos?: string[]) =>
     reconocidos.filter((a) => !tipos || tipos.includes(a.tipo)).map((a) => a[k]).find((v) => v != null && v !== "") ?? null;
-  for (const k of ["bl_awb", "cliente_nombre", "producto", "cantidad"] as const) {
+  for (const k of ["bl_awb", "eta", "cliente_nombre", "producto", "cantidad"] as const) {
     const raw = primero(k, k === "bl_awb" ? ["Bill of Lading", "Guía aérea"] : undefined) as string | null;
-    const doc = raw ? (k === "bl_awb" ? raw.trim().toUpperCase() : raw.trim()) : null;
+    const doc = raw ? (k === "eta" ? fechaCorreo(raw) : k === "bl_awb" ? raw.trim().toUpperCase() : raw.trim()) : null;
     if (!doc) continue;
     const previo = correo[k];
     if (previo && norm(previo) !== norm(doc)) advertencias.push(`${ETIQUETA[k]}: verificar: el asunto/cuerpo sugiere un valor distinto (${previo}); se usó el del documento adjunto (${doc})`);

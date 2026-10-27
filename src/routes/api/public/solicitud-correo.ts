@@ -3,21 +3,18 @@ import { z } from "zod";
 import { aislarMensajeReciente, combinarDatos, extraerPorEtiquetas, fusionarAsunto, fusionarAdjuntos, tipoAdjuntoCorreo, TIPOS_ADJUNTO_CORREO, type DatosAdjunto } from "@/lib/correo-solicitud";
 import { PROMPT_DOCUMENTO_IMPORTACION } from "@/lib/ocr-documento-prompt";
 import { callGateway } from "@/lib/ai-gateway.server";
+import { adjuntoCorreoSchema, normalizarAdjuntosCorreo, mimeAdjuntoCorreo } from "@/lib/correo-adjuntos";
 
-const adjuntoSchema = z.object({
-  nombre: z.string().trim().min(1).max(300),
-  tipo: z.string().trim().max(150),
-  contenido: z.string().min(20).max(20_000_000),
-});
+const adjuntoSchema = adjuntoCorreoSchema;
 
-type AdjuntoProcesado = DatosAdjunto & { nombre: string; mime: string; bytes: Uint8Array; storage_path?: string; error?: string };
+type AdjuntoProcesado = DatosAdjunto & { nombre: string; mime: string; bytes: Uint8Array; storage_path?: string; error?: string; datos?: Record<string, unknown> };
 
 const MIME_OK = /^(application\/pdf|image\/(png|jpe?g|webp|gif))$/i;
 
 /** Reutiliza el reconocimiento de Nuevo Expediente y añade la clasificación del tipo de documento. */
 async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoProcesado> {
   const base64 = a.contenido.replace(/^data:[^,]*,/, "").replace(/\s/g, "");
-  const mime = (a.tipo || (/\.pdf$/i.test(a.nombre) ? "application/pdf" : "")).toLowerCase();
+  const mime = mimeAdjuntoCorreo(a.nombre, a.tipo, a.contenido);
   let bytes: Uint8Array;
   try { bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)); }
   catch { return { tipo: "Otro", nombre: a.nombre, mime, bytes: new Uint8Array(), error: "Contenido base64 inválido" }; }
@@ -45,11 +42,13 @@ async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoPro
       ...base,
       tipo: tipoAdjuntoCorreo(j.tipo_documento),
       bl_awb: txt(j.bl),
+      eta: txt(j.eta),
       cliente_nombre: txt(j.cliente),
       producto: txt(j.productos) ?? txt(j.descripcion_mercancia),
       cantidad: txt(j.cantidad),
       peso_bruto_kg: j.peso_bruto_kg != null && !isNaN(Number(j.peso_bruto_kg)) ? Number(j.peso_bruto_kg) : null,
       factura_comercial: txt(j.factura_comercial),
+      datos: Object.fromEntries(["tipo_carga", "tipo_carga_confianza", "contenedores", "suplidor", "medio_transporte", "naviera", "buque", "puerto_arribo", "puerto_salida", "pais_origen", "pais_procedencia", "incoterm", "peso_neto_kg", "fecha_cargado", "fob_total", "seguro", "flete", "otros_gastos"].map((k) => [k, j[k] ?? null])),
     };
   } catch (e: any) {
     return { ...base, error: String(e?.message ?? e).slice(0, 200) };
@@ -60,24 +59,12 @@ const nombreSeguro = (n: string) => n.normalize("NFD").replace(/[\u0300-\u036f]/
 
 const texto = (max: number) => z.preprocess((v) => (v == null ? "" : typeof v === "string" ? v : String(v)), z.string().trim().max(max));
 
-/** Normaliza nombres de campo habituales (Gmail/Zapier/Make); un adjunto inválido se omite, nunca rechaza el correo. */
-const adjuntoFlexible = z.preprocess((v: any) => {
-  if (!v || typeof v !== "object") return null;
-  const contenido = v.contenido ?? v.content ?? v.data ?? v.base64 ?? "";
-  return {
-    nombre: String(v.nombre ?? v.name ?? v.filename ?? v.fileName ?? "adjunto").trim() || "adjunto",
-    tipo: String(v.tipo ?? v.mimeType ?? v.mime ?? v.contentType ?? v.type ?? ""),
-    contenido: typeof contenido === "string" ? contenido : "",
-  };
-}, adjuntoSchema.nullable().catch(null));
-
 const schema = z.object({
   remitente: texto(500),
   asunto: texto(1000),
   cuerpo: texto(200_000),
-  adjuntos: z.preprocess((v) => (Array.isArray(v) ? v : []), z.array(adjuntoFlexible))
-    .transform((a) => a.filter((x): x is z.infer<typeof adjuntoSchema> => !!x).slice(0, 10)),
-}).refine((d) => d.cuerpo || d.asunto || d.adjuntos.length, { message: "Correo vacío" });
+  adjuntos: z.unknown().optional(),
+}).refine((d) => d.cuerpo || d.asunto || (Array.isArray(d.adjuntos) && d.adjuntos.length), { message: "Correo vacío" });
 
 
 function igualSeguro(a: string, b: string) {
@@ -150,10 +137,12 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         try { body = await request.json(); } catch { return Response.json({ error: "JSON inválido" }, { status: 400 }); }
         const p = schema.safeParse(body);
         if (!p.success) return Response.json({ error: "Faltan remitente/asunto/cuerpo válidos", detalle: p.error.issues.map((i) => `${i.path.join(".") || "correo"}: ${i.message}`) }, { status: 400 });
-        const { remitente, asunto, cuerpo, adjuntos: adjuntosIn } = p.data;
+        const { remitente, asunto, cuerpo } = p.data;
+        const entradaAdjuntos = normalizarAdjuntosCorreo(p.data.adjuntos);
+        const adjuntosIn = entradaAdjuntos.adjuntos;
 
         const mensaje = aislarMensajeReciente(cuerpo);
-        if (!mensaje) return Response.json({ resultado: "descartado", motivo: "Mensaje vacío" });
+        if (!mensaje && !asunto && !adjuntosIn.length) return Response.json({ resultado: "descartado", motivo: "Mensaje vacío", advertencias: entradaAdjuntos.advertencias });
 
         let ia: any;
         try { ia = await clasificar(asunto, remitente, mensaje); }
@@ -162,8 +151,10 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
 
         const correo = fusionarAsunto(combinarDatos(extraerPorEtiquetas(mensaje), ia, mensaje, remitente), asunto);
         // Un adjunto ilegible no bloquea a los demás: queda como «Otro».
-        const adjuntos = await Promise.all(adjuntosIn.map(leerAdjunto));
-        const { datos, advertencias } = fusionarAdjuntos(correo.datos, correo.advertencias, adjuntos);
+        const adjuntos: AdjuntoProcesado[] = [];
+        for (const a of adjuntosIn) adjuntos.push(await leerAdjunto(a));
+        const { datos, advertencias } = fusionarAdjuntos(correo.datos, [...correo.advertencias, ...entradaAdjuntos.advertencias], adjuntos);
+        for (const a of adjuntos) if (a.error) advertencias.push(`${a.nombre}: no se pudo leer el documento; ${a.bytes.length ? "se conserva en Otros documentos" : "reenvía el archivo"}. ${a.error}`);
         const remitenteCorreo = correoDe(remitente);
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const db = supabaseAdmin as any;
@@ -177,7 +168,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
             a.storage_path = path;
           }
         };
-        const resumenAdjuntos = () => adjuntos.filter((a) => a.storage_path).map((a) => ({ nombre: a.nombre, mime: a.mime, tipo: a.tipo, storage_path: a.storage_path, ...(a.error ? { error: a.error } : {}) }));
+        const resumenAdjuntos = () => adjuntos.filter((a) => a.storage_path).map((a) => ({ nombre: a.nombre, mime: a.mime, tipo: a.tipo, storage_path: a.storage_path, datos: a.datos ?? {}, ...(a.error ? { error: a.error } : {}) }));
 
         const textoCompleto = `De: ${remitente}\nAsunto: ${asunto}\nRecibido: ${new Date().toISOString()}\n\n${cuerpo}`;
 
