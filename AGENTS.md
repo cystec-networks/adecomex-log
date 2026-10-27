@@ -37,3 +37,4 @@ Detail headers: content-sized rows, client label/value together, wrap IDs, warni
 - Editors retain drafts/global saves. DGA origin uses declaracion-origen-context for conditional sync; references stay in document observations.
 - Sync draft Description via observaciones-expediente on observation changes, not save; preserve manual edits.
 - Liquidation OCR: liquidacion-dga-documento extracts labels/conflicts/comparison-only totals and prepares one guarded UPDATE for the entire mapping; liquidacion-dga-context syncs only after success without losing drafts. Manifest/inspection are read-only references.
+- Email service requests land in `solicitudes_correo` (staging), never as `expedientes` rows; "Confirmar y activar" opens the normal new-expediente form prefilled (`?correo=`), so drafts never reach reports/finance and numbering stays identical to manual creation.
