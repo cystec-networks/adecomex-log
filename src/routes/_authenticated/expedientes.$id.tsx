@@ -102,6 +102,7 @@ import { TabRecepcion } from "@/components/tab-recepcion";
 import { EscanearBlButton, EscanearFacturaButton as EscanearFacturaExpButton } from "@/components/escanear-documento-expediente-buttons";
 import { NuevoDesdeXmlButton } from "@/components/nuevo-desde-xml-button";
 import { type OcrExtraction } from "@/lib/ai-ocr.functions";
+import { datosDocumentalesCorreo, type AdjuntoGuardadoCorreo } from "@/lib/correo-adjuntos";
 import {
   HerramientasDgaVuceItems,
   HerramientasDgaVuceMenu,
@@ -623,6 +624,8 @@ function DetalleExpediente() {
   const facRes = useRef<OcrExtraction | null>(null);
   const ocrSeq = useRef(0);
   const [ocrAplicado, setOcrAplicado] = useState<OcrAplicado | null>(null);
+  const [adjuntosDelCorreo, setAdjuntosDelCorreo] = useState<AdjuntoGuardadoCorreo[]>([]);
+  const [avisosDelCorreo, setAvisosDelCorreo] = useState<string[]>([]);
 
   // Borrador recibido por correo: prellena el formulario de creación (se confirma al crear).
   const { correo: correoParam } = Route.useSearch();
@@ -630,16 +633,24 @@ function DetalleExpediente() {
     if (!isNuevo || !correoParam) return;
     let vivo = true;
     (async () => {
-      const { data: s } = await supabase.from("solicitudes_correo").select("*").eq("id", correoParam).maybeSingle();
+      const { data: s, error } = await supabase.from("solicitudes_correo").select("*").eq("id", correoParam).maybeSingle();
+      if (error) { toast.error("No se pudo cargar la solicitud de correo: " + error.message); return; }
       if (!vivo || !s || s.estado !== "pendiente") return;
+      const adjuntos = (Array.isArray(s.adjuntos) ? s.adjuntos : []) as AdjuntoGuardadoCorreo[];
+      setAdjuntosDelCorreo(adjuntos);
+      setAvisosDelCorreo(Array.isArray(s.advertencias) ? s.advertencias as string[] : []);
+      const doc = datosDocumentalesCorreo(adjuntos);
       const desc = [s.cantidad, s.producto].filter(Boolean).join(" ").toUpperCase();
       ocrSeq.current += 1;
       setOcrAplicado({
         seq: ocrSeq.current,
         cliente: s.cliente_nombre ?? null,
         clienteId: s.cliente_id ?? null,
-        contenedores: null,
+        contenedores: Array.isArray(doc.contenedores) ? doc.contenedores as OcrExtraction["contenedores"] : null,
+        tipoCargaConfianza: doc.tipo_carga_confianza === "media" ? "media" : doc.tipo_carga_confianza === "alta" ? "alta" : null,
         campos: {
+          ...Object.fromEntries(["tipo_carga", "suplidor", "medio_transporte", "naviera", "buque", "puerto_arribo", "puerto_salida", "pais_origen", "pais_procedencia", "incoterm", "fecha_cargado", "flete", "seguro", "otros_gastos"].map((k) => [k, doc[k] ?? null])),
+          ...(doc.peso_neto_kg != null ? { peso_neto: doc.peso_neto_kg } : {}),
           bl_awb: s.bl_awb,
           fecha_compromiso: s.eta,
           descripcion_mercancia: desc || null,
@@ -1257,6 +1268,14 @@ function DetalleExpediente() {
           </div>
         )}
       </div>
+        {isNuevo && correoParam && <section className="px-3 py-2 border-b space-y-1" aria-label="Documentos recibidos por correo">
+          <h2 className="text-sm font-semibold">Documentos Declaración · recibidos por correo ({adjuntosDelCorreo.length})</h2>
+          {adjuntosDelCorreo.map((a, i) => <div key={a.storage_path || i} className="flex items-center gap-2 flex-wrap text-xs">
+            <FileText className="h-3.5 w-3.5 text-muted-foreground" /><span>{a.tipo === "Otro" ? "Otros documentos" : a.tipo}: {a.nombre}</span>
+            {a.storage_path && <DocumentoPreviewButton path={a.storage_path} label="Ver adjunto" />}
+          </div>)}
+          {avisosDelCorreo.map((a, i) => <p key={i} className="text-xs text-warning-foreground">⚠ {a}</p>)}
+        </section>}
         <TabsList className="mt-1.5 flex h-auto max-w-full flex-nowrap justify-start overflow-x-auto md:mt-1 md:flex-wrap">
           {tabOrder.map((key) => {
             const label = TAB_LABELS[key];
@@ -2270,18 +2289,21 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: data.id, accion: "creado" });
       if (correoOrigen) {
         // Adjuntos del correo: quedan cargados en su casilla de Documentos (los no reconocidos, en «Otro»).
-        const { data: sol } = await supabase.from("solicitudes_correo").select("adjuntos").eq("id", correoOrigen).maybeSingle();
+        const { data: sol, error: errorSol } = await supabase.from("solicitudes_correo").select("adjuntos").eq("id", correoOrigen).single();
+        if (errorSol) throw errorSol;
         const adjuntosCorreo = (Array.isArray(sol?.adjuntos) ? sol.adjuntos : []) as { nombre: string; tipo: string; storage_path: string }[];
         for (const a of adjuntosCorreo) {
           if (!a?.storage_path) continue;
           const codigo = await siguienteCodigoSiga(data.id, prefijoSiga(a.tipo));
-          await supabase.from("documentos").insert({
+          const { error: errorDocumento } = await supabase.from("documentos").insert({
             expediente_id: data.id, tipo: a.tipo || "Otro", storage_path: a.storage_path, estado: "recibido",
             codigo_siga: codigo, fecha_recepcion: new Date().toISOString().slice(0, 10),
             observaciones: `Adjunto de correo: ${a.nombre}`.slice(0, 500),
           });
+          if (errorDocumento) throw new Error(`No se pudo vincular ${a.nombre}: ${errorDocumento.message}`);
         }
-        await supabase.from("solicitudes_correo").update({ estado: "confirmada", expediente_id: data.id }).eq("id", correoOrigen).eq("estado", "pendiente");
+        const { error: errorConfirmacion } = await supabase.from("solicitudes_correo").update({ estado: "confirmada", expediente_id: data.id }).eq("id", correoOrigen).eq("estado", "pendiente");
+        if (errorConfirmacion) throw errorConfirmacion;
         qc.invalidateQueries({ queryKey: ["solicitudes-correo"] });
       }
       return data;
