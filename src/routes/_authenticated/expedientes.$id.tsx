@@ -57,11 +57,11 @@ import { PaqueteRectificacionButton } from "@/components/paquete-rectificacion-b
 import { CorreoDgaButton } from "@/components/correo-dga-button";
 import { PaqueteFacturaCliente } from "@/components/paquete-factura-cliente";
 import { EscanearPagoPuerto, type DocumentoPagoSubido } from "@/components/escanear-pago-puerto";
-import { esDocumentoResultadoDga, camposDesdeDocumentoDga, completarResultadoDga, type CamposResultadoDga } from "@/lib/resultado-dga-documentos";
+import { esDocumentoResultadoDga, camposDesdeDocumentoDga, completarResultadoDga } from "@/lib/resultado-dga-documentos";
 import { extractSolicitudFromDocument } from "@/lib/ai-ocr.functions";
 import { DeclaracionOrigenProvider, useDeclaracionOrigen } from "@/components/declaracion-origen-context";
 import { LiquidacionDgaProvider, useLiquidacionDga } from "@/components/liquidacion-dga-context";
-import { decidirLiquidacionDga, prepararGuardadoLiquidacion } from "@/lib/liquidacion-dga-documento";
+import { decidirLiquidacionDga, prepararGuardadoLiquidacion, type CambiosLiquidacion } from "@/lib/liquidacion-dga-documento";
 import { TIPO_CERTIFICADO_DGA, decidirCertificadoDga, guardarReferenciaCertificado, leerReferenciaCertificado, type CertificadoDga } from "@/lib/certificado-origen-dga";
 
 import { CatalogCombobox } from "@/components/catalog-combobox";
