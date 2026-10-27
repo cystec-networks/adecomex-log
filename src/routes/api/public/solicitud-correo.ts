@@ -149,7 +149,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         let body: unknown;
         try { body = await request.json(); } catch { return Response.json({ error: "JSON inválido" }, { status: 400 }); }
         const p = schema.safeParse(body);
-        if (!p.success) return Response.json({ error: "Faltan remitente/asunto/cuerpo válidos" }, { status: 400 });
+        if (!p.success) return Response.json({ error: "Faltan remitente/asunto/cuerpo válidos", detalle: p.error.issues.map((i) => `${i.path.join(".") || "correo"}: ${i.message}`) }, { status: 400 });
         const { remitente, asunto, cuerpo, adjuntos: adjuntosIn } = p.data;
 
         const mensaje = aislarMensajeReciente(cuerpo);
