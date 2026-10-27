@@ -8,6 +8,7 @@ import { useReminders, type Reminder } from "@/lib/reminders";
 
 const KIND_ICON = {
   solicitud_sin_convertir: Inbox,
+  solicitud_correo_pendiente: Inbox,
   expediente_inactivo: Clock,
   eta_proximo: AlertTriangle,
   permiso_por_vencer: FileWarning,

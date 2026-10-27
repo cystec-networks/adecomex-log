@@ -6,6 +6,7 @@ import { REMINDER_CONFIG } from "./reminder-config";
 export type ReminderSeverity = "critica" | "alta" | "media";
 export type ReminderKind =
   | "solicitud_sin_convertir"
+  | "solicitud_correo_pendiente"
   | "expediente_inactivo"
   | "eta_proximo"
   | "permiso_por_vencer"
@@ -129,7 +130,7 @@ export function useReminders() {
       const hitoLimite = new Date(today); hitoLimite.setDate(hitoLimite.getDate() + 3);
       const traLimite = new Date(today); traLimite.setDate(traLimite.getDate() - cfg.transporteRetrasadoDias);
 
-      const [sol, exp, per, tra, hit, logi, emb, pres] = await Promise.all([
+      const [sol, exp, per, tra, hit, logi, emb, pres, correo] = await Promise.all([
         supabase
           .from("solicitudes")
           .select("id,numero,estado,created_at, cliente:clientes(nombre)")
@@ -190,6 +191,12 @@ export function useReminders() {
           .not("fecha_llegada_real", "is", null)
           .in("estado", ["digitar", "en_transito", "manifestado"])
           .limit(300),
+        supabase
+          .from("solicitudes_correo")
+          .select("id,remitente,asunto,created_at")
+          .eq("estado", "pendiente")
+          .order("created_at", { ascending: true })
+          .limit(200),
       ]);
 
       // Operaciones con etapa "Embarque" completada y sin documentos cargados.
