@@ -60,6 +60,7 @@ import { Route as AuthenticatedCotizacionesCalculadoraRouteImport } from './rout
 import { Route as AuthenticatedCotizacionesNuevaRouteImport } from './routes/_authenticated/cotizaciones.nueva'
 import { Route as AuthenticatedExpedientesIndexRouteImport } from './routes/_authenticated/expedientes.index'
 import { Route as AuthenticatedExpedientesIdRouteImport } from './routes/_authenticated/expedientes.$id'
+import { Route as AuthenticatedExpedientesCorreoRouteImport } from './routes/_authenticated/expedientes.correo'
 import { Route as AuthenticatedExpedientesDashboardRouteImport } from './routes/_authenticated/expedientes.dashboard'
 import { Route as AuthenticatedExpedientesPapeleraRouteImport } from './routes/_authenticated/expedientes.papelera'
 import { Route as AuthenticatedLogisticaIndexRouteImport } from './routes/_authenticated/logistica.index'
@@ -82,6 +83,7 @@ import { Route as PortalPortalBienvenidaRouteImport } from './routes/_portal/por
 import { Route as PortalPortalCambiarPasswordRouteImport } from './routes/_portal/portal.cambiar-password'
 import { Route as PortalPortalEmbarquesRouteImport } from './routes/_portal/portal.embarques'
 import { Route as ApiPublicCatalogoViajesTransporteRouteImport } from './routes/api/public/catalogo-viajes-transporte'
+import { Route as ApiPublicSolicitudCorreoRouteImport } from './routes/api/public/solicitud-correo'
 import { Route as ApiPublicSolicitudPagoTransporteRouteImport } from './routes/api/public/solicitud-pago-transporte'
 import { Route as ImprimirReciboPagoIdRouteImport } from './routes/imprimir/recibo-pago.$id'
 import { Route as ImprimirSolicitudPagoIdRouteImport } from './routes/imprimir/solicitud-pago.$id'
@@ -385,6 +387,12 @@ const AuthenticatedExpedientesIdRoute =
     path: '/expedientes/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedExpedientesCorreoRoute =
+  AuthenticatedExpedientesCorreoRouteImport.update({
+    id: '/expedientes/correo',
+    path: '/expedientes/correo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedExpedientesDashboardRoute =
   AuthenticatedExpedientesDashboardRouteImport.update({
     id: '/expedientes/dashboard',
@@ -510,6 +518,12 @@ const ApiPublicCatalogoViajesTransporteRoute =
   ApiPublicCatalogoViajesTransporteRouteImport.update({
     id: '/api/public/catalogo-viajes-transporte',
     path: '/api/public/catalogo-viajes-transporte',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicSolicitudCorreoRoute =
+  ApiPublicSolicitudCorreoRouteImport.update({
+    id: '/api/public/solicitud-correo',
+    path: '/api/public/solicitud-correo',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicSolicitudPagoTransporteRoute =
@@ -639,6 +653,7 @@ export interface FileRoutesByFullPath {
   '/cotizaciones/calculadora': typeof AuthenticatedCotizacionesCalculadoraRoute
   '/cotizaciones/nueva': typeof AuthenticatedCotizacionesNuevaRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
+  '/expedientes/correo': typeof AuthenticatedExpedientesCorreoRoute
   '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/logistica/$id': typeof AuthenticatedLogisticaIdRoute
@@ -655,6 +670,7 @@ export interface FileRoutesByFullPath {
   '/portal/cambiar-password': typeof PortalPortalCambiarPasswordRoute
   '/portal/embarques': typeof PortalPortalEmbarquesRoute
   '/api/public/catalogo-viajes-transporte': typeof ApiPublicCatalogoViajesTransporteRoute
+  '/api/public/solicitud-correo': typeof ApiPublicSolicitudCorreoRoute
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/recibo-pago/$id': typeof ImprimirReciboPagoIdRoute
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
@@ -725,6 +741,7 @@ export interface FileRoutesByTo {
   '/cotizaciones/calculadora': typeof AuthenticatedCotizacionesCalculadoraRoute
   '/cotizaciones/nueva': typeof AuthenticatedCotizacionesNuevaRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
+  '/expedientes/correo': typeof AuthenticatedExpedientesCorreoRoute
   '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/logistica/$id': typeof AuthenticatedLogisticaIdRoute
@@ -741,6 +758,7 @@ export interface FileRoutesByTo {
   '/portal/cambiar-password': typeof PortalPortalCambiarPasswordRoute
   '/portal/embarques': typeof PortalPortalEmbarquesRoute
   '/api/public/catalogo-viajes-transporte': typeof ApiPublicCatalogoViajesTransporteRoute
+  '/api/public/solicitud-correo': typeof ApiPublicSolicitudCorreoRoute
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/recibo-pago/$id': typeof ImprimirReciboPagoIdRoute
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
@@ -815,6 +833,7 @@ export interface FileRoutesById {
   '/_authenticated/cotizaciones/calculadora': typeof AuthenticatedCotizacionesCalculadoraRoute
   '/_authenticated/cotizaciones/nueva': typeof AuthenticatedCotizacionesNuevaRoute
   '/_authenticated/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
+  '/_authenticated/expedientes/correo': typeof AuthenticatedExpedientesCorreoRoute
   '/_authenticated/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/_authenticated/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/_authenticated/logistica/$id': typeof AuthenticatedLogisticaIdRoute
@@ -831,6 +850,7 @@ export interface FileRoutesById {
   '/_portal/portal/cambiar-password': typeof PortalPortalCambiarPasswordRoute
   '/_portal/portal/embarques': typeof PortalPortalEmbarquesRoute
   '/api/public/catalogo-viajes-transporte': typeof ApiPublicCatalogoViajesTransporteRoute
+  '/api/public/solicitud-correo': typeof ApiPublicSolicitudCorreoRoute
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/recibo-pago/$id': typeof ImprimirReciboPagoIdRoute
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
@@ -903,6 +923,7 @@ export interface FileRouteTypes {
     | '/cotizaciones/calculadora'
     | '/cotizaciones/nueva'
     | '/expedientes/$id'
+    | '/expedientes/correo'
     | '/expedientes/dashboard'
     | '/expedientes/papelera'
     | '/logistica/$id'
@@ -919,6 +940,7 @@ export interface FileRouteTypes {
     | '/portal/cambiar-password'
     | '/portal/embarques'
     | '/api/public/catalogo-viajes-transporte'
+    | '/api/public/solicitud-correo'
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/recibo-pago/$id'
     | '/imprimir/solicitud-pago/$id'
@@ -989,6 +1011,7 @@ export interface FileRouteTypes {
     | '/cotizaciones/calculadora'
     | '/cotizaciones/nueva'
     | '/expedientes/$id'
+    | '/expedientes/correo'
     | '/expedientes/dashboard'
     | '/expedientes/papelera'
     | '/logistica/$id'
@@ -1005,6 +1028,7 @@ export interface FileRouteTypes {
     | '/portal/cambiar-password'
     | '/portal/embarques'
     | '/api/public/catalogo-viajes-transporte'
+    | '/api/public/solicitud-correo'
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/recibo-pago/$id'
     | '/imprimir/solicitud-pago/$id'
@@ -1078,6 +1102,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cotizaciones/calculadora'
     | '/_authenticated/cotizaciones/nueva'
     | '/_authenticated/expedientes/$id'
+    | '/_authenticated/expedientes/correo'
     | '/_authenticated/expedientes/dashboard'
     | '/_authenticated/expedientes/papelera'
     | '/_authenticated/logistica/$id'
@@ -1094,6 +1119,7 @@ export interface FileRouteTypes {
     | '/_portal/portal/cambiar-password'
     | '/_portal/portal/embarques'
     | '/api/public/catalogo-viajes-transporte'
+    | '/api/public/solicitud-correo'
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/recibo-pago/$id'
     | '/imprimir/solicitud-pago/$id'
@@ -1134,6 +1160,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicCatalogoViajesTransporteRoute: typeof ApiPublicCatalogoViajesTransporteRoute
+  ApiPublicSolicitudCorreoRoute: typeof ApiPublicSolicitudCorreoRoute
   ApiPublicSolicitudPagoTransporteRoute: typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   ImprimirReciboPagoIdRoute: typeof ImprimirReciboPagoIdRoute
   ImprimirSolicitudPagoIdRoute: typeof ImprimirSolicitudPagoIdRoute
@@ -1500,6 +1527,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedExpedientesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/expedientes/correo': {
+      id: '/_authenticated/expedientes/correo'
+      path: '/expedientes/correo'
+      fullPath: '/expedientes/correo'
+      preLoaderRoute: typeof AuthenticatedExpedientesCorreoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/expedientes/dashboard': {
       id: '/_authenticated/expedientes/dashboard'
       path: '/expedientes/dashboard'
@@ -1654,6 +1688,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCatalogoViajesTransporteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/solicitud-correo': {
+      id: '/api/public/solicitud-correo'
+      path: '/api/public/solicitud-correo'
+      fullPath: '/api/public/solicitud-correo'
+      preLoaderRoute: typeof ApiPublicSolicitudCorreoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/solicitud-pago-transporte': {
       id: '/api/public/solicitud-pago-transporte'
       path: '/api/public/solicitud-pago-transporte'
@@ -1791,6 +1832,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCotizacionesCalculadoraRoute: typeof AuthenticatedCotizacionesCalculadoraRoute
   AuthenticatedCotizacionesNuevaRoute: typeof AuthenticatedCotizacionesNuevaRoute
   AuthenticatedExpedientesIdRoute: typeof AuthenticatedExpedientesIdRoute
+  AuthenticatedExpedientesCorreoRoute: typeof AuthenticatedExpedientesCorreoRoute
   AuthenticatedExpedientesDashboardRoute: typeof AuthenticatedExpedientesDashboardRoute
   AuthenticatedExpedientesPapeleraRoute: typeof AuthenticatedExpedientesPapeleraRoute
   AuthenticatedLogisticaIdRoute: typeof AuthenticatedLogisticaIdRoute
@@ -1870,6 +1912,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCotizacionesCalculadoraRoute,
   AuthenticatedCotizacionesNuevaRoute: AuthenticatedCotizacionesNuevaRoute,
   AuthenticatedExpedientesIdRoute: AuthenticatedExpedientesIdRoute,
+  AuthenticatedExpedientesCorreoRoute: AuthenticatedExpedientesCorreoRoute,
   AuthenticatedExpedientesDashboardRoute:
     AuthenticatedExpedientesDashboardRoute,
   AuthenticatedExpedientesPapeleraRoute: AuthenticatedExpedientesPapeleraRoute,
@@ -1976,6 +2019,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicCatalogoViajesTransporteRoute:
     ApiPublicCatalogoViajesTransporteRoute,
+  ApiPublicSolicitudCorreoRoute: ApiPublicSolicitudCorreoRoute,
   ApiPublicSolicitudPagoTransporteRoute:
     ApiPublicSolicitudPagoTransporteRouteWithChildren,
   ImprimirReciboPagoIdRoute: ImprimirReciboPagoIdRoute,

@@ -148,6 +148,7 @@ function TipoInspeccionSelector({ value, onChange, disabled, header = false }: {
 const searchSchema = z.object({
   nuevo: fallback(z.string(), "").default(""),
   solicitud: fallback(z.string(), "").default(""),
+  correo: fallback(z.string(), "").default(""),
   tipo: fallback(z.string(), "").default(""),
 });
 
@@ -622,6 +623,32 @@ function DetalleExpediente() {
   const facRes = useRef<OcrExtraction | null>(null);
   const ocrSeq = useRef(0);
   const [ocrAplicado, setOcrAplicado] = useState<OcrAplicado | null>(null);
+
+  // Borrador recibido por correo: prellena el formulario de creación (se confirma al crear).
+  const { correo: correoParam } = Route.useSearch();
+  useEffect(() => {
+    if (!isNuevo || !correoParam) return;
+    let vivo = true;
+    (async () => {
+      const { data: s } = await supabase.from("solicitudes_correo").select("*").eq("id", correoParam).maybeSingle();
+      if (!vivo || !s || s.estado !== "pendiente") return;
+      const desc = [s.cantidad, s.producto].filter(Boolean).join(" ").toUpperCase();
+      ocrSeq.current += 1;
+      setOcrAplicado({
+        seq: ocrSeq.current,
+        cliente: s.cliente_nombre ?? null,
+        clienteId: s.cliente_id ?? null,
+        contenedores: null,
+        campos: {
+          bl_awb: s.bl_awb,
+          fecha_compromiso: s.eta,
+          descripcion_mercancia: desc || null,
+          contacto_solicitud: s.remitente_correo ?? s.remitente,
+        },
+      });
+    })();
+    return () => { vivo = false; };
+  }, [isNuevo, correoParam]);
 
   const aplicarCombinado = async (productosFactura?: OcrExtraction["productos_factura"]) => {
     const res = combinarOcr(blRes.current, facRes.current);
@@ -1596,6 +1623,8 @@ function normalizarCamposExportacion(payload: any) {
 function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null, tipoParam = "", solicitudEndoso = 0, nuevoAccionesHost = null, inspeccionHost = null }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null; tipoParam?: string; solicitudEndoso?: number; nuevoAccionesHost?: HTMLDivElement | null; inspeccionHost?: HTMLDivElement | null }) {
   const qc = useQueryClient();
   const nav = useNavigate();
+  const { correo: correoBusqueda } = Route.useSearch();
+  const correoOrigen = isNuevo ? correoBusqueda : "";
   const editable = (canEdit && modoEdicion) || isNuevo;
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState(() => construirFormInicial(isNuevo ? null : exp, isNuevo, isNuevo ? tipoParam : ""));
@@ -2230,6 +2259,10 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       }
       await guardarFilasServicioAduanero(data.id, filasServicioAduanero);
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: data.id, accion: "creado" });
+      if (correoOrigen) {
+        await supabase.from("solicitudes_correo").update({ estado: "confirmada", expediente_id: data.id }).eq("id", correoOrigen).eq("estado", "pendiente");
+        qc.invalidateQueries({ queryKey: ["solicitudes-correo"] });
+      }
       return data;
 
     },
