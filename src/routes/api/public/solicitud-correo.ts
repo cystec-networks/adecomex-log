@@ -157,7 +157,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
           for (const [i, a] of adjuntos.entries()) {
             if (!a.bytes.length) continue;
             const path = `${carpeta}/${Date.now()}_${i}_${nombreSeguro(a.nombre)}`;
-            const up = await db.storage.from("documentos").upload(path, new Blob([a.bytes], { type: a.mime || "application/octet-stream" }), { contentType: a.mime || undefined });
+            const up = await db.storage.from("documentos").upload(path, new Blob([a.bytes as BlobPart], { type: a.mime || "application/octet-stream" }), { contentType: a.mime || undefined });
             if (up.error) throw new Error(up.error.message);
             a.storage_path = path;
           }
