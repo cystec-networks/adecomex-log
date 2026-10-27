@@ -82,6 +82,7 @@ import { Route as PortalPortalBienvenidaRouteImport } from './routes/_portal/por
 import { Route as PortalPortalCambiarPasswordRouteImport } from './routes/_portal/portal.cambiar-password'
 import { Route as PortalPortalEmbarquesRouteImport } from './routes/_portal/portal.embarques'
 import { Route as ApiPublicCatalogoViajesTransporteRouteImport } from './routes/api/public/catalogo-viajes-transporte'
+import { Route as ApiPublicSolicitudCorreoRouteImport } from './routes/api/public/solicitud-correo'
 import { Route as ApiPublicSolicitudPagoTransporteRouteImport } from './routes/api/public/solicitud-pago-transporte'
 import { Route as ImprimirReciboPagoIdRouteImport } from './routes/imprimir/recibo-pago.$id'
 import { Route as ImprimirSolicitudPagoIdRouteImport } from './routes/imprimir/solicitud-pago.$id'
@@ -512,6 +513,12 @@ const ApiPublicCatalogoViajesTransporteRoute =
     path: '/api/public/catalogo-viajes-transporte',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSolicitudCorreoRoute =
+  ApiPublicSolicitudCorreoRouteImport.update({
+    id: '/api/public/solicitud-correo',
+    path: '/api/public/solicitud-correo',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicSolicitudPagoTransporteRoute =
   ApiPublicSolicitudPagoTransporteRouteImport.update({
     id: '/api/public/solicitud-pago-transporte',
@@ -655,6 +662,7 @@ export interface FileRoutesByFullPath {
   '/portal/cambiar-password': typeof PortalPortalCambiarPasswordRoute
   '/portal/embarques': typeof PortalPortalEmbarquesRoute
   '/api/public/catalogo-viajes-transporte': typeof ApiPublicCatalogoViajesTransporteRoute
+  '/api/public/solicitud-correo': typeof ApiPublicSolicitudCorreoRoute
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/recibo-pago/$id': typeof ImprimirReciboPagoIdRoute
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
@@ -741,6 +749,7 @@ export interface FileRoutesByTo {
   '/portal/cambiar-password': typeof PortalPortalCambiarPasswordRoute
   '/portal/embarques': typeof PortalPortalEmbarquesRoute
   '/api/public/catalogo-viajes-transporte': typeof ApiPublicCatalogoViajesTransporteRoute
+  '/api/public/solicitud-correo': typeof ApiPublicSolicitudCorreoRoute
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/recibo-pago/$id': typeof ImprimirReciboPagoIdRoute
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
@@ -831,6 +840,7 @@ export interface FileRoutesById {
   '/_portal/portal/cambiar-password': typeof PortalPortalCambiarPasswordRoute
   '/_portal/portal/embarques': typeof PortalPortalEmbarquesRoute
   '/api/public/catalogo-viajes-transporte': typeof ApiPublicCatalogoViajesTransporteRoute
+  '/api/public/solicitud-correo': typeof ApiPublicSolicitudCorreoRoute
   '/api/public/solicitud-pago-transporte': typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   '/imprimir/recibo-pago/$id': typeof ImprimirReciboPagoIdRoute
   '/imprimir/solicitud-pago/$id': typeof ImprimirSolicitudPagoIdRoute
@@ -919,6 +929,7 @@ export interface FileRouteTypes {
     | '/portal/cambiar-password'
     | '/portal/embarques'
     | '/api/public/catalogo-viajes-transporte'
+    | '/api/public/solicitud-correo'
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/recibo-pago/$id'
     | '/imprimir/solicitud-pago/$id'
@@ -1005,6 +1016,7 @@ export interface FileRouteTypes {
     | '/portal/cambiar-password'
     | '/portal/embarques'
     | '/api/public/catalogo-viajes-transporte'
+    | '/api/public/solicitud-correo'
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/recibo-pago/$id'
     | '/imprimir/solicitud-pago/$id'
@@ -1094,6 +1106,7 @@ export interface FileRouteTypes {
     | '/_portal/portal/cambiar-password'
     | '/_portal/portal/embarques'
     | '/api/public/catalogo-viajes-transporte'
+    | '/api/public/solicitud-correo'
     | '/api/public/solicitud-pago-transporte'
     | '/imprimir/recibo-pago/$id'
     | '/imprimir/solicitud-pago/$id'
@@ -1134,6 +1147,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicCatalogoViajesTransporteRoute: typeof ApiPublicCatalogoViajesTransporteRoute
+  ApiPublicSolicitudCorreoRoute: typeof ApiPublicSolicitudCorreoRoute
   ApiPublicSolicitudPagoTransporteRoute: typeof ApiPublicSolicitudPagoTransporteRouteWithChildren
   ImprimirReciboPagoIdRoute: typeof ImprimirReciboPagoIdRoute
   ImprimirSolicitudPagoIdRoute: typeof ImprimirSolicitudPagoIdRoute
@@ -1654,6 +1668,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCatalogoViajesTransporteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/solicitud-correo': {
+      id: '/api/public/solicitud-correo'
+      path: '/api/public/solicitud-correo'
+      fullPath: '/api/public/solicitud-correo'
+      preLoaderRoute: typeof ApiPublicSolicitudCorreoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/solicitud-pago-transporte': {
       id: '/api/public/solicitud-pago-transporte'
       path: '/api/public/solicitud-pago-transporte'
@@ -1976,6 +1997,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicCatalogoViajesTransporteRoute:
     ApiPublicCatalogoViajesTransporteRoute,
+  ApiPublicSolicitudCorreoRoute: ApiPublicSolicitudCorreoRoute,
   ApiPublicSolicitudPagoTransporteRoute:
     ApiPublicSolicitudPagoTransporteRouteWithChildren,
   ImprimirReciboPagoIdRoute: ImprimirReciboPagoIdRoute,
