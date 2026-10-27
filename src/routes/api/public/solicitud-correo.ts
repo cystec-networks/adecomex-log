@@ -5,6 +5,7 @@ import { PROMPT_DOCUMENTO_IMPORTACION } from "@/lib/ocr-documento-prompt";
 import { callGateway } from "@/lib/ai-gateway.server";
 import { adjuntoCorreoSchema, normalizarAdjuntosCorreo, mimeAdjuntoCorreo, deduplicarAdjuntosCorreo } from "@/lib/correo-adjuntos";
 import { mismoPendienteCorreo, respuestaCorreoActualizado } from "@/lib/correo-duplicados";
+import { autorizadoWebhook } from "@/lib/webhook-auth";
 
 const adjuntoSchema = adjuntoCorreoSchema;
 
@@ -76,6 +77,7 @@ const schema = z.object({
   cuerpo: texto(200_000),
   destinatarios: texto(2000).optional(),
   cc: texto(2000).optional(),
+  id_hilo: texto(500).optional(),
   adjuntos: z.unknown().optional(),
 }).refine((d) => d.cuerpo || d.asunto || (Array.isArray(d.adjuntos) && d.adjuntos.length), { message: "Correo vacío" });
 
@@ -87,16 +89,11 @@ function normalizarDestinatarios(body: unknown) {
     ...b,
     destinatarios: b.destinatarios ?? b.para ?? b.to ?? b.destinatario,
     cc: b.cc ?? b.con_copia ?? b.copia ?? b.conCopia,
+    id_hilo: b.id_hilo ?? b.idHilo ?? b.threadId ?? b.thread_id ?? b.hilo,
   };
 }
 
 
-function igualSeguro(a: string, b: string) {
-  if (a.length !== b.length) return false;
-  let r = 0;
-  for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return r === 0;
-}
 
 const JSON_SCHEMA = {
   name: "solicitud_correo",
@@ -153,9 +150,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secreto = process.env.CORREO_WEBHOOK_SECRET;
-        const recibido = request.headers.get("x-webhook-secret") ?? "";
-        if (!secreto || !igualSeguro(recibido, secreto)) return Response.json({ error: "No autorizado" }, { status: 401 });
+        if (!autorizadoWebhook(request)) return Response.json({ error: "No autorizado" }, { status: 401 });
 
         let body: unknown;
         try { body = await request.json(); } catch { return Response.json({ error: "JSON inválido" }, { status: 400 }); }
@@ -241,7 +236,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         // Revalidación atómica: dos entregas simultáneas solo pueden crear una fila.
         const { data: guardado, error } = await db.rpc("guardar_solicitud_correo_pendiente", { p_solicitud: {
           remitente, remitente_correo: remitenteCorreo, asunto, cuerpo, mensaje_aislado: mensaje,
-          destinatarios: p.data.destinatarios || null, cc: p.data.cc || null,
+          destinatarios: p.data.destinatarios || null, cc: p.data.cc || null, id_hilo: p.data.id_hilo || null,
           ...datos, advertencias, cliente_id: clienteId, adjuntos: listaAdjuntos,
         } });
         if (error) return Response.json({ error: error.message }, { status: 500 });

@@ -67,14 +67,12 @@ Nuestro equipo le estará informando sobre el proceso en que se encuentra su emb
 ${FIRMA}`;
 }
 
-/** Mismo patrón de «Preparar para enviar»: abre Gmail listo para revisar; no envía solo. */
-export function correoConfirmacionSolicitud(d: DatosConfirmacionCorreo) {
-  const params = new URLSearchParams({
-    authuser: CORREO_OPERACIONES, from: CORREO_OPERACIONES, view: "cm", fs: "1",
-    to: d.remitente?.trim() || "",
+/** Contenido de la confirmación que queda en la cola de pendientes; el script externo la envía respondiendo en el hilo original. */
+export function confirmacionPendienteSolicitud(d: DatosConfirmacionCorreo) {
+  return {
+    para: d.remitente?.trim() || "",
     cc: copiasConfirmacion(d.destinatarios, d.cc),
-    su: asuntoConfirmacion(d.numero, d.asunto),
-    body: cuerpoConfirmacion(d),
-  });
-  return `https://mail.google.com/mail/?${params}`;
+    asunto: asuntoConfirmacion(d.numero, d.asunto),
+    cuerpo: cuerpoConfirmacion(d),
+  };
 }

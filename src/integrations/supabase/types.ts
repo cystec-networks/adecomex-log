@@ -1521,6 +1521,91 @@ export type Database = {
         }
         Relationships: []
       }
+      confirmaciones_correo: {
+        Row: {
+          asunto: string
+          cc: string | null
+          created_at: string
+          cuerpo: string
+          enviado_en: string | null
+          estado: string
+          expediente_id: string | null
+          id: string
+          id_hilo: string | null
+          para: string
+          solicitud_correo_id: string | null
+        }
+        Insert: {
+          asunto: string
+          cc?: string | null
+          created_at?: string
+          cuerpo: string
+          enviado_en?: string | null
+          estado?: string
+          expediente_id?: string | null
+          id?: string
+          id_hilo?: string | null
+          para: string
+          solicitud_correo_id?: string | null
+        }
+        Update: {
+          asunto?: string
+          cc?: string | null
+          created_at?: string
+          cuerpo?: string
+          enviado_en?: string | null
+          estado?: string
+          expediente_id?: string | null
+          id?: string
+          id_hilo?: string | null
+          para?: string
+          solicitud_correo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "confirmaciones_correo_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "confirmaciones_correo_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "confirmaciones_correo_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "confirmaciones_correo_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "confirmaciones_correo_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "confirmaciones_correo_solicitud_correo_id_fkey"
+            columns: ["solicitud_correo_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes_correo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       copiloto_clasificaciones: {
         Row: {
           archivo: string
@@ -6412,6 +6497,7 @@ export type Database = {
           expediente_id: string | null
           factura_comercial: string | null
           id: string
+          id_hilo: string | null
           mensaje_aislado: string | null
           peso_bruto_kg: number | null
           producto: string | null
@@ -6436,6 +6522,7 @@ export type Database = {
           expediente_id?: string | null
           factura_comercial?: string | null
           id?: string
+          id_hilo?: string | null
           mensaje_aislado?: string | null
           peso_bruto_kg?: number | null
           producto?: string | null
@@ -6460,6 +6547,7 @@ export type Database = {
           expediente_id?: string | null
           factura_comercial?: string | null
           id?: string
+          id_hilo?: string | null
           mensaje_aislado?: string | null
           peso_bruto_kg?: number | null
           producto?: string | null

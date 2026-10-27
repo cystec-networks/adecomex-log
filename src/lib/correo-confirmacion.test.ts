@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { asuntoConfirmacion, copiasConfirmacion, cuerpoConfirmacion, correoConfirmacionSolicitud, faltantesConfirmacion } from "./correo-confirmacion";
+import { asuntoConfirmacion, copiasConfirmacion, cuerpoConfirmacion, confirmacionPendienteSolicitud, faltantesConfirmacion } from "./correo-confirmacion";
 
 const base = {
   numero: "202610I388",
@@ -51,15 +51,17 @@ describe("cuerpoConfirmacion", () => {
   });
 });
 
-describe("correoConfirmacionSolicitud", () => {
-  it("abre Gmail con Para, CC, asunto y cuerpo precargados", () => {
-    const url = correoConfirmacionSolicitud(base);
-    assert.ok(url.startsWith("https://mail.google.com/mail/?"));
-    const p = new URLSearchParams(url.split("?")[1]);
-    assert.equal(p.get("to"), "cliente@agrolacteos.com");
-    assert.equal(p.get("cc"), "ventas@agrolacteos.com, compras@agrolacteos.com, gerencia@agrolacteos.com");
-    assert.equal(p.get("su"), "REGISTRO #202610I388 : HACER VUCE: HBLIWF10012026-2 -- ETA 30/11/2026");
-    assert.ok(p.get("body")!.includes("REGISTRO #202610I388, ETA 30/11/2026."));
-    assert.equal(p.get("authuser"), "operaciones@adecomex.com");
+describe("confirmacionPendienteSolicitud", () => {
+  it("devuelve Para, CC, asunto y cuerpo listos para la cola de pendientes", () => {
+    const c = confirmacionPendienteSolicitud(base);
+    assert.equal(c.para, "cliente@agrolacteos.com");
+    assert.equal(c.cc, "ventas@agrolacteos.com, compras@agrolacteos.com, gerencia@agrolacteos.com");
+    assert.equal(c.asunto, "REGISTRO #202610I388 : HACER VUCE: HBLIWF10012026-2 -- ETA 30/11/2026");
+    assert.ok(c.cuerpo.includes("REGISTRO #202610I388, ETA 30/11/2026."));
+  });
+  it("tolera remitente y copias ausentes", () => {
+    const c = confirmacionPendienteSolicitud({ ...base, remitente: null, destinatarios: null, cc: null });
+    assert.equal(c.para, "");
+    assert.equal(c.cc, "");
   });
 });

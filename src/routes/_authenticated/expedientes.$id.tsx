@@ -105,7 +105,7 @@ import { type OcrExtraction } from "@/lib/ai-ocr.functions";
 import { datosDocumentalesCorreo, deduplicarAdjuntosCorreo, type AdjuntoGuardadoCorreo } from "@/lib/correo-adjuntos";
 import { prepararFacturasCorreo } from "@/lib/factura-expediente-escaneo";
 import { classifyArancelLote } from "@/lib/ai-arancel.functions";
-import { correoConfirmacionSolicitud, faltantesConfirmacion } from "@/lib/correo-confirmacion";
+import { confirmacionPendienteSolicitud, faltantesConfirmacion } from "@/lib/correo-confirmacion";
 import {
   HerramientasDgaVuceItems,
   HerramientasDgaVuceMenu,
@@ -861,6 +861,15 @@ function DetalleExpediente() {
     },
   });
 
+  const { data: confirmacionCorreo } = useQuery({
+    queryKey: ["confirmacion-correo", id],
+    enabled: !isNuevo,
+    queryFn: async () => {
+      const { data } = await supabase.from("confirmaciones_correo").select("id, estado, enviado_en, created_at").eq("expediente_id", id).order("created_at", { ascending: false }).limit(1);
+      return data?.[0] ?? null;
+    },
+  });
+
   const etapa = calcularEtapa({ hitos: hitosHeader ?? [], documentos: documentosHeader ?? [], permisos: permisosHeader ?? [], checklist: CHECKLIST_DOCUMENTOS_BASE });
   const datosAlertas = useDatosAlertasExpediente(id, exp?.cliente_id ?? null, exp?.factura_ecf_id ?? null, !isNuevo && !!exp);
   const permisosNumeros = (permisosHeader ?? []).map((p: any) => p.numero).filter(Boolean).join(", ");
@@ -1290,6 +1299,18 @@ function DetalleExpediente() {
           <div className="expediente-header-alertas mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-0 text-destructive" role="status" aria-label="Avisos del expediente">
             <span className="font-semibold">Avisos:</span>
             {alertasHeader.map((alerta) => <span key={alerta} className="break-words">{alerta}</span>)}
+          </div>
+        )}
+        {!isNuevo && confirmacionCorreo && (
+          <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs md:text-sm" role="status" aria-label="Estado de la confirmación al cliente">
+            <span className="text-muted-foreground">Confirmación al cliente:</span>
+            {confirmacionCorreo.estado === "enviada" ? (
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                Enviada{confirmacionCorreo.enviado_en ? ` el ${fmtLocalDate(confirmacionCorreo.enviado_en)}` : ""}
+              </span>
+            ) : (
+              <span className="font-medium text-amber-600 dark:text-amber-400">Pendiente de enviar</span>
+            )}
           </div>
         )}
       </div>
@@ -2314,7 +2335,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: data.id, accion: "creado" });
       if (correoOrigen) {
         // Adjuntos del correo: quedan cargados en su casilla de Documentos (los no reconocidos, en «Otro»).
-        const { data: sol, error: errorSol } = await supabase.from("solicitudes_correo").select("adjuntos, remitente, remitente_correo, asunto, destinatarios, cc").eq("id", correoOrigen).single();
+        const { data: sol, error: errorSol } = await supabase.from("solicitudes_correo").select("adjuntos, remitente, remitente_correo, asunto, destinatarios, cc, id_hilo").eq("id", correoOrigen).single();
         if (errorSol) throw errorSol;
         const adjuntosCorreo = deduplicarAdjuntosCorreo(((Array.isArray(sol?.adjuntos) ? sol.adjuntos : []) as { nombre: string; tipo: string; storage_path: string }[]).filter((a) => a?.storage_path));
         // Ya vinculados (reintento tras un error parcial): no se duplican ni se renumeran.
@@ -2333,7 +2354,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         const { error: errorConfirmacion } = await supabase.from("solicitudes_correo").update({ estado: "confirmada", expediente_id: data.id }).eq("id", correoOrigen).eq("estado", "pendiente");
         if (errorConfirmacion) throw errorConfirmacion;
         qc.invalidateQueries({ queryKey: ["solicitudes-correo"] });
-        // Correo de confirmación precargado (mismo patrón de «Preparar para enviar»: se revisa y se envía a mano).
+        // Correo de confirmación: queda en la cola de pendientes; el script externo lo envía respondiendo en el hilo original del cliente.
         let nombreCliente: string | null = null;
         if (data.cliente_id) {
           const { data: cli } = await supabase.from("clientes").select("nombre").eq("id", data.cliente_id).maybeSingle();
@@ -2344,7 +2365,14 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           remitente: sol.remitente_correo ?? sol.remitente, asunto: sol.asunto,
           destinatarios: sol.destinatarios, cc: sol.cc,
         };
-        return { ...data, correoConfirmacion: correoConfirmacionSolicitud(datosCorreo), correoFaltantes: faltantesConfirmacion(datosCorreo) };
+        const contenido = confirmacionPendienteSolicitud(datosCorreo);
+        const { error: errorCola } = await supabase.from("confirmaciones_correo").insert({
+          solicitud_correo_id: correoOrigen, expediente_id: data.id, id_hilo: (sol as any).id_hilo ?? null,
+          para: contenido.para, cc: contenido.cc || null, asunto: contenido.asunto, cuerpo: contenido.cuerpo,
+        });
+        if (errorCola) throw new Error(`Expediente creado, pero no se pudo encolar la confirmación: ${errorCola.message}`);
+        qc.invalidateQueries({ queryKey: ["confirmacion-correo", data.id] });
+        return { ...data, correoConfirmacionPendiente: true, correoFaltantes: faltantesConfirmacion(datosCorreo) };
       }
       return data;
 
@@ -2353,10 +2381,9 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       qc.invalidateQueries({ queryKey: ["expedientes"] });
       qc.invalidateQueries({ queryKey: ["expedientes-hist"] });
       toast.success(`Expediente ${row.numero} creado`);
-      if (row.correoConfirmacion) {
-        if (row.correoFaltantes?.length) toast.warning(`Completa a mano en el correo: ${row.correoFaltantes.join(", ")}`);
-        const w = window.open(row.correoConfirmacion, "_blank");
-        if (!w) toast.info("Correo de confirmación listo para revisar y enviar", { duration: 15000, action: { label: "Abrir correo", onClick: () => window.open(row.correoConfirmacion, "_blank") } });
+      if (row.correoConfirmacionPendiente) {
+        toast.info("Correo de confirmación pendiente de enviar — se enviará respondiendo en el hilo original del cliente", { duration: 10000 });
+        if (row.correoFaltantes?.length) toast.warning(`La confirmación quedó con datos por completar: ${row.correoFaltantes.join(", ")}`);
       }
       nav({ to: "/expedientes/$id", params: { id: row.id }, search: { nuevo: "1", solicitud: "" } });
     },
