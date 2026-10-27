@@ -883,7 +883,7 @@ function DetalleExpediente() {
   const enviarConfirmacion = useMutation({
     mutationFn: async () => {
       const datosCorreo = {
-        numero: exp?.numero, cliente: (exp as any)?.clientes?.nombre ?? null,
+        numero: exp?.numero ?? "", cliente: (exp as any)?.clientes?.nombre ?? null,
         eta: exp?.fecha_compromiso, descripcion: exp?.descripcion_mercancia,
         remitente: correoOrigenExp?.remitente_correo ?? correoOrigenExp?.remitente ?? (exp as any)?.clientes?.email ?? null,
         asunto: correoOrigenExp?.asunto ?? `Solicitud de servicio ${exp?.numero ?? ""}`,
