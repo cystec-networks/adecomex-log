@@ -80,4 +80,4 @@
 - [ ] Reprocesar el correo original de Pinturas Popular: el registro 9997696d-73f8-4e24-a7cb-0b5b189dc52a tiene adjuntos=[]; requiere reenviar sus archivos originales tras publicar.
 - [x] Solicitudes por correo: endpoint con clave, aislamiento del hilo, clasificación IA sin inventar, BL existente → documento «Otro», bandeja «Por correo» y Confirmar y activar. 4 pruebas aprobadas; IA probada con el correo de ejemplo.
 - [ ] Configurar el reenvío de correos hacia el endpoint: requiere la clave secreta y el servicio de correo del usuario.
-- [ ] Evitar borradores de correo duplicados en cinco minutos, incluidos confirmados; respuesta 200 y protección de envíos simultáneos.
+- [x] Evitar borradores de correo duplicados en cinco minutos, incluidos confirmados; 20 pruebas aprobadas y webhook verificado con repetición, confirmada y envíos simultáneos (un solo borrador, duplicado 200); pruebas retiradas, sin expedientes ni archivos ficticios.
