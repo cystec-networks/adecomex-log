@@ -6394,6 +6394,99 @@ export type Database = {
           },
         ]
       }
+      solicitudes_correo: {
+        Row: {
+          asunto: string | null
+          bl_awb: string | null
+          cantidad: string | null
+          cliente_id: string | null
+          cliente_nombre: string | null
+          created_at: string
+          cuerpo: string
+          estado: string
+          eta: string | null
+          expediente_id: string | null
+          id: string
+          mensaje_aislado: string | null
+          producto: string | null
+          remitente: string | null
+          remitente_correo: string | null
+          updated_at: string
+        }
+        Insert: {
+          asunto?: string | null
+          bl_awb?: string | null
+          cantidad?: string | null
+          cliente_id?: string | null
+          cliente_nombre?: string | null
+          created_at?: string
+          cuerpo: string
+          estado?: string
+          eta?: string | null
+          expediente_id?: string | null
+          id?: string
+          mensaje_aislado?: string | null
+          producto?: string | null
+          remitente?: string | null
+          remitente_correo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          asunto?: string | null
+          bl_awb?: string | null
+          cantidad?: string | null
+          cliente_id?: string | null
+          cliente_nombre?: string | null
+          created_at?: string
+          cuerpo?: string
+          estado?: string
+          eta?: string | null
+          expediente_id?: string | null
+          id?: string
+          mensaje_aislado?: string | null
+          producto?: string | null
+          remitente?: string | null
+          remitente_correo?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitudes_correo_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitudes_correo_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitudes_correo_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "solicitudes_correo_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "solicitudes_correo_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+        ]
+      }
       solicitudes_pago_transferencia: {
         Row: {
           beneficiario: string
