@@ -1,11 +1,68 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { aislarMensajeReciente, combinarDatos, extraerPorEtiquetas, fusionarAsunto } from "@/lib/correo-solicitud";
+import { aislarMensajeReciente, combinarDatos, extraerPorEtiquetas, fusionarAsunto, fusionarAdjuntos, tipoAdjuntoCorreo, TIPOS_ADJUNTO_CORREO, type DatosAdjunto } from "@/lib/correo-solicitud";
+import { PROMPT_DOCUMENTO_IMPORTACION } from "@/lib/ocr-documento-prompt";
+import { callGateway } from "@/lib/ai-gateway.server";
+
+const adjuntoSchema = z.object({
+  nombre: z.string().trim().min(1).max(300),
+  tipo: z.string().trim().max(150),
+  contenido: z.string().min(20).max(20_000_000),
+});
+
+type AdjuntoProcesado = DatosAdjunto & { nombre: string; mime: string; bytes: Uint8Array; storage_path?: string; error?: string };
+
+const MIME_OK = /^(application\/pdf|image\/(png|jpe?g|webp|gif))$/i;
+
+/** Reutiliza el reconocimiento de Nuevo Expediente y añade la clasificación del tipo de documento. */
+async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoProcesado> {
+  const base64 = a.contenido.replace(/^data:[^,]*,/, "").replace(/\s/g, "");
+  const mime = (a.tipo || (/\.pdf$/i.test(a.nombre) ? "application/pdf" : "")).toLowerCase();
+  let bytes: Uint8Array;
+  try { bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)); }
+  catch { return { tipo: "Otro", nombre: a.nombre, mime, bytes: new Uint8Array(), error: "Contenido base64 inválido" }; }
+  const base: AdjuntoProcesado = { tipo: "Otro", nombre: a.nombre, mime, bytes };
+  if (!MIME_OK.test(mime)) return base;
+  try {
+    const dataUrl = `data:${mime};base64,${base64}`;
+    const raw = await callGateway({
+      model: "google/gemini-2.5-flash",
+      temperature: 0,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: PROMPT_DOCUMENTO_IMPORTACION + ` Agrega también la clave 'tipo_documento': exactamente uno de ${TIPOS_ADJUNTO_CORREO.map((t) => `'${t}'`).join(", ")} u 'Otro' si el documento no es ninguno de ellos. Agrega 'cantidad': la cantidad total de bultos/unidades tal como aparece (ej. '2,000 BAGS'), o null.` },
+        { role: "user", content: [
+          { type: "text", text: "Extrae los campos del documento adjunto." },
+          mime === "application/pdf"
+            ? { type: "file", file: { filename: a.nombre, file_data: dataUrl } }
+            : { type: "image_url", image_url: { url: dataUrl } },
+        ] as any },
+      ],
+    });
+    const j = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? "{}");
+    const txt = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+    return {
+      ...base,
+      tipo: tipoAdjuntoCorreo(j.tipo_documento),
+      bl_awb: txt(j.bl),
+      cliente_nombre: txt(j.cliente),
+      producto: txt(j.productos) ?? txt(j.descripcion_mercancia),
+      cantidad: txt(j.cantidad),
+      peso_bruto_kg: j.peso_bruto_kg != null && !isNaN(Number(j.peso_bruto_kg)) ? Number(j.peso_bruto_kg) : null,
+      factura_comercial: txt(j.factura_comercial),
+    };
+  } catch (e: any) {
+    return { ...base, error: String(e?.message ?? e).slice(0, 200) };
+  }
+}
+
+const nombreSeguro = (n: string) => n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w.\- ]+/g, "_").slice(-120);
 
 const schema = z.object({
   remitente: z.string().trim().max(500).optional().default(""),
   asunto: z.string().trim().max(1000).optional().default(""),
   cuerpo: z.string().min(1).max(200_000),
+  adjuntos: z.array(adjuntoSchema).max(10).optional().default([]),
 });
 
 function igualSeguro(a: string, b: string) {
@@ -78,7 +135,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         try { body = await request.json(); } catch { return Response.json({ error: "JSON inválido" }, { status: 400 }); }
         const p = schema.safeParse(body);
         if (!p.success) return Response.json({ error: "Faltan remitente/asunto/cuerpo válidos" }, { status: 400 });
-        const { remitente, asunto, cuerpo } = p.data;
+        const { remitente, asunto, cuerpo, adjuntos: adjuntosIn } = p.data;
 
         const mensaje = aislarMensajeReciente(cuerpo);
         if (!mensaje) return Response.json({ resultado: "descartado", motivo: "Mensaje vacío" });
@@ -88,10 +145,24 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         catch (e: any) { return Response.json({ error: e.message }, { status: e.status ?? 500 }); }
         if (!ia?.es_solicitud_nueva) return Response.json({ resultado: "descartado", motivo: ia?.motivo ?? "No es una solicitud nueva" });
 
-        const { datos, advertencias } = fusionarAsunto(combinarDatos(extraerPorEtiquetas(mensaje), ia, mensaje, remitente), asunto);
+        const correo = fusionarAsunto(combinarDatos(extraerPorEtiquetas(mensaje), ia, mensaje, remitente), asunto);
+        // Un adjunto ilegible no bloquea a los demás: queda como «Otro».
+        const adjuntos = await Promise.all(adjuntosIn.map(leerAdjunto));
+        const { datos, advertencias } = fusionarAdjuntos(correo.datos, correo.advertencias, adjuntos);
         const remitenteCorreo = correoDe(remitente);
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const db = supabaseAdmin as any;
+
+        const subirAdjuntos = async (carpeta: string) => {
+          for (const [i, a] of adjuntos.entries()) {
+            if (!a.bytes.length) continue;
+            const path = `${carpeta}/${Date.now()}_${i}_${nombreSeguro(a.nombre)}`;
+            const up = await db.storage.from("documentos").upload(path, new Blob([a.bytes as BlobPart], { type: a.mime || "application/octet-stream" }), { contentType: a.mime || undefined });
+            if (up.error) throw new Error(up.error.message);
+            a.storage_path = path;
+          }
+        };
+        const resumenAdjuntos = () => adjuntos.filter((a) => a.storage_path).map((a) => ({ nombre: a.nombre, mime: a.mime, tipo: a.tipo, storage_path: a.storage_path, ...(a.error ? { error: a.error } : {}) }));
 
         const textoCompleto = `De: ${remitente}\nAsunto: ${asunto}\nRecibido: ${new Date().toISOString()}\n\n${cuerpo}`;
 
@@ -108,22 +179,35 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
               observaciones: `Correo de solicitud recibido${asunto ? `: ${asunto}` : ""}`.slice(0, 500),
             });
             if (error) return Response.json({ error: error.message }, { status: 500 });
-            return Response.json({ resultado: "adjuntado", expediente: existente.numero });
+            try { await subirAdjuntos(existente.id); } catch (e: any) { return Response.json({ error: e.message }, { status: 500 }); }
+            const filas = resumenAdjuntos().map((a) => ({
+              expediente_id: existente.id, tipo: a.tipo, storage_path: a.storage_path, estado: "recibido",
+              fecha_recepcion: new Date().toISOString().slice(0, 10),
+              observaciones: `Adjunto de correo: ${a.nombre}`.slice(0, 500),
+            }));
+            if (filas.length) {
+              const { error: e2 } = await db.from("documentos").insert(filas);
+              if (e2) return Response.json({ error: e2.message }, { status: 500 });
+            }
+            return Response.json({ resultado: "adjuntado", expediente: existente.numero, adjuntos: filas.map((f) => f.tipo) });
           }
         }
 
         let clienteId: string | null = null;
         if (datos.cliente_nombre) {
-          const { data: c } = await db.from("clientes").select("id").ilike("nombre", `%${datos.cliente_nombre.replace(/[%_]/g, "")}%`).limit(2);
+          const nombreCliente = datos.cliente_nombre.split(",")[0].replace(/[%_]/g, "").trim();
+          const { data: c } = await db.from("clientes").select("id").ilike("nombre", `%${nombreCliente}%`).limit(2);
           if (c?.length === 1) clienteId = c[0].id;
         }
 
+        try { await subirAdjuntos(`correo/${crypto.randomUUID()}`); } catch (e: any) { return Response.json({ error: e.message }, { status: 500 }); }
+        const listaAdjuntos = resumenAdjuntos();
         const { data: fila, error } = await db.from("solicitudes_correo").insert({
           remitente, remitente_correo: remitenteCorreo, asunto, cuerpo, mensaje_aislado: mensaje,
-          ...datos, advertencias, cliente_id: clienteId,
+          ...datos, advertencias, cliente_id: clienteId, adjuntos: listaAdjuntos,
         }).select("id").single();
         if (error) return Response.json({ error: error.message }, { status: 500 });
-        return Response.json({ resultado: "borrador", id: fila.id, datos, advertencias });
+        return Response.json({ resultado: "borrador", id: fila.id, datos, advertencias, adjuntos: listaAdjuntos.map((a) => ({ nombre: a.nombre, tipo: a.tipo })) });
       },
     },
   },

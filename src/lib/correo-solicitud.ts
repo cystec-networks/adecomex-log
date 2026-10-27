@@ -118,14 +118,78 @@ export function extraerDeAsunto(asunto: string): Pick<DatosSolicitudCorreo, "bl_
   return { bl_awb: valido, eta };
 }
 
-/** Une cuerpo (prioritario) y asunto; si ambos traen un dato distinto, gana el cuerpo con advertencia. */
+/** Une asunto (prioritario, patrón fijo) y cuerpo; si ambos traen un dato distinto, gana el asunto con aviso. */
 export function fusionarAsunto(cuerpo: DatosSolicitudCorreo, asunto: string): { datos: DatosSolicitudCorreo; advertencias: string[] } {
   const a = extraerDeAsunto(asunto);
   const advertencias: string[] = [];
   const datos = { ...cuerpo };
-  if (cuerpo.bl_awb && a.bl_awb && norm(cuerpo.bl_awb) !== norm(a.bl_awb)) advertencias.push(`BL del asunto (${a.bl_awb}) distinto del cuerpo (${cuerpo.bl_awb}); se usó el del cuerpo`);
-  if (cuerpo.eta && a.eta && cuerpo.eta !== a.eta) advertencias.push(`ETA del asunto (${a.eta}) distinta del cuerpo (${cuerpo.eta}); se usó la del cuerpo`);
-  datos.bl_awb = cuerpo.bl_awb ?? a.bl_awb;
-  datos.eta = cuerpo.eta ?? a.eta;
+  if (cuerpo.bl_awb && a.bl_awb && norm(cuerpo.bl_awb) !== norm(a.bl_awb)) advertencias.push(`BL/AWB: verificar: el cuerpo sugiere un valor distinto (${cuerpo.bl_awb}); se usó el del asunto (${a.bl_awb})`);
+  if (cuerpo.eta && a.eta && cuerpo.eta !== a.eta) advertencias.push(`ETA: verificar: el cuerpo sugiere un valor distinto (${cuerpo.eta}); se usó la del asunto (${a.eta})`);
+  datos.bl_awb = a.bl_awb ?? cuerpo.bl_awb;
+  datos.eta = a.eta ?? cuerpo.eta;
+  return { datos, advertencias };
+}
+
+/** Tipos de la ficha Documentos que puede recibir un adjunto de correo. */
+export const TIPOS_ADJUNTO_CORREO = [
+  "Bill of Lading", "Guía aérea", "Factura comercial", "Lista de empaque", "Certificado de origen",
+  "Certificado Sanitario/Fitosanitario", "Certificado de análisis",
+] as const;
+
+/** Normaliza el tipo propuesto por la IA; lo no reconocido queda en «Otro». */
+export function tipoAdjuntoCorreo(v: unknown): string {
+  const n = norm(typeof v === "string" ? v : "");
+  if (!n) return "Otro";
+  const exacto = TIPOS_ADJUNTO_CORREO.find((t) => norm(t) === n);
+  if (exacto) return exacto;
+  if (/BILLOFLADING|^BL$|CONOCIMIENTO/.test(n)) return "Bill of Lading";
+  if (/AIRWAYBILL|AIRWAYBILL|AWB|GUIAAEREA/.test(n)) return "Guía aérea";
+  if (/PACKING|EMPAQUE/.test(n)) return "Lista de empaque";
+  if (/INVOICE|FACTURA/.test(n) && !/PROFORMA/.test(n)) return "Factura comercial";
+  if (/ORIGIN|ORIGEN/.test(n)) return "Certificado de origen";
+  if (/SANITAR|PHYTO|FITO|HEALTH/.test(n)) return "Certificado Sanitario/Fitosanitario";
+  if (/ANALYSIS|ANALISIS/.test(n)) return "Certificado de análisis";
+  return "Otro";
+}
+
+export type DatosAdjunto = {
+  tipo: string;
+  bl_awb?: string | null;
+  cliente_nombre?: string | null;
+  producto?: string | null;
+  cantidad?: string | null;
+  peso_bruto_kg?: number | null;
+  factura_comercial?: string | null;
+};
+
+export type DatosCompletosCorreo = DatosSolicitudCorreo & { peso_bruto_kg: number | null; factura_comercial: string | null };
+
+const ETIQUETA: Record<string, string> = { bl_awb: "BL/AWB", cliente_nombre: "Cliente", producto: "Producto", cantidad: "Cantidad" };
+
+/**
+ * Prioridad: 1) documento adjunto reconocido, 2) asunto/cuerpo (ya fusionados).
+ * Si el documento y el correo difieren, gana el documento y se añade el aviso «verificar».
+ */
+export function fusionarAdjuntos(
+  correo: DatosSolicitudCorreo,
+  advertenciasCorreo: string[],
+  adjuntos: DatosAdjunto[],
+): { datos: DatosCompletosCorreo; advertencias: string[] } {
+  const advertencias = [...advertenciasCorreo];
+  const datos: DatosCompletosCorreo = { ...correo, peso_bruto_kg: null, factura_comercial: null };
+  const reconocidos = adjuntos.filter((a) => a.tipo !== "Otro");
+  const primero = <K extends keyof DatosAdjunto>(k: K, tipos?: string[]) =>
+    reconocidos.filter((a) => !tipos || tipos.includes(a.tipo)).map((a) => a[k]).find((v) => v != null && v !== "") ?? null;
+  for (const k of ["bl_awb", "cliente_nombre", "producto", "cantidad"] as const) {
+    const raw = primero(k, k === "bl_awb" ? ["Bill of Lading", "Guía aérea"] : undefined) as string | null;
+    const doc = raw ? (k === "bl_awb" ? raw.trim().toUpperCase() : raw.trim()) : null;
+    if (!doc) continue;
+    const previo = correo[k];
+    if (previo && norm(previo) !== norm(doc)) advertencias.push(`${ETIQUETA[k]}: verificar: el asunto/cuerpo sugiere un valor distinto (${previo}); se usó el del documento adjunto (${doc})`);
+    datos[k] = doc;
+  }
+  const peso = primero("peso_bruto_kg");
+  datos.peso_bruto_kg = peso != null && !isNaN(Number(peso)) ? Number(peso) : null;
+  datos.factura_comercial = (primero("factura_comercial", ["Factura comercial"]) as string | null) ?? (primero("factura_comercial") as string | null);
   return { datos, advertencias };
 }

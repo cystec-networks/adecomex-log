@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { callGateway } from "./ai-gateway.server";
+import { PROMPT_DOCUMENTO_IMPORTACION } from "./ocr-documento-prompt";
 import type { LineaFacturaExpediente } from "./factura-expediente-arancel";
 import type { PagoPuerto } from "./pago-puerto";
 import { PROMPT_PAGO_PUERTO, resolverPagoPuertoOcr } from "./pago-puerto-ocr";
@@ -82,30 +83,7 @@ export const extractSolicitudFromDocument = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<OcrExtraction> => {
     const dataUrl = `data:${data.mime};base64,${data.base64}`;
 
-    let system =
-      "Eres un asistente de operaciones aduanales en República Dominicana. " +
-      "Extraes datos de documentos de importación (BL, factura comercial, packing list, AWB). " +
-      "Devuelve ÚNICAMENTE un objeto JSON con las claves exactas: cliente, bl, suplidor, numero_documento, productos, fecha_cargado, eta, naviera, buque, peso_bruto_kg, puerto_arribo, contenedores, medio_transporte, puerto_salida, pais_origen, pais_procedencia, incoterm, factura_comercial, descripcion_mercancia, peso_neto_kg. " +
-      "'cliente' es el CONSIGNATARIO/IMPORTADOR — la empresa que RECIBE la mercancía en República Dominicana (normalmente aparece como 'Consignee' en el BL, o como el comprador en la factura). NO es el exportador/proveedor (ese es 'suplidor'). Devuelve el nombre tal como aparece en el documento. " +
-      "'contenedores' es un arreglo de objetos {numero, sello1, sello2, tipo} — busca una tabla tipo 'FURGONES' o 'CONTENEDORES' con columnas de número de contenedor/furgón, sello(s) y tipo de empaque/contenedor; si no hay tabla de contenedores en el documento, usa null. " +
-      "'fecha_cargado' es la fecha de embarque/carga que normalmente aparece en el BL (Shipped on Board / Fecha de Embarque). 'eta' es la fecha ESTIMADA DE LLEGADA — úsala solo si el documento la indica explícitamente como tal (poco común en un BL); si no aparece claramente etiquetada como fecha de llegada, usa null en vez de adivinar con la fecha de embarque. " +
-      "'naviera' es el nombre de la naviera/carrier (p. ej. MAERSK, MSC, CMA CGM). " +
-      "'buque' es el nombre específico del buque/vessel que transporta la carga (ej. 'Mizar', 'Marti Caribs', normalmente bajo 'Ocean Vessel' o 'Vessel/Conveyance' en el BL) — distinto de 'naviera', que es el nombre de la empresa naviera/carrier (ej. Maersk, MSC, 'Maritime Services Line'). No confundas ambos: una naviera puede operar varios buques distintos. " +
-      "'peso_bruto_kg' es el peso bruto total de la carga en kilogramos (número, sin unidades). " +
-      "Agrega estas claves: medio_transporte ('maritimo' si el documento es un Bill of Lading/BL, 'aereo' si es un Airway Bill/AWB — infiérelo del tipo de documento, no necesitas que lo diga explícitamente el texto); " +
-      "'pais_origen', 'pais_procedencia', 'puerto_salida' y 'puerto_arribo': devuelve el nombre en ESPAÑOL (ej. 'Lituania' en vez de 'Lithuania', 'China' se mantiene igual, 'Estados Unidos' en vez de 'United States') — los documentos suelen venir en inglés, pero nuestro catálogo interno usa nombres en español. Traduce nombres de países/ciudades conocidos; si no reconoces el nombre o no hay una traducción clara, devuelve el texto original tal cual. " +
-      "puerto_salida (el 'Port of Loading' indicado en el BL); pais_origen y pais_procedencia (del país del exportador/embarque); " +
-      "incoterm (el término de compra FOB, CIF, EXW, etc. si aparece en la factura — usa null si no aparece explícito, no lo adivines); " +
-      "factura_comercial (el número de factura comercial); descripcion_mercancia (un resumen breve de las líneas de producto de la factura); " +
-      "peso_neto_kg (el peso neto si aparece junto al peso bruto en el BL — usa null si no aparece). " +
-      "Para todos estos: si el dato no aparece claramente en el documento, usa null en vez de inventar o asumir un valor. " +
-      "Agrega también: fob_total (el valor FOB total de la factura, suma de todas las líneas si no hay un total explícito), seguro, flete, otros_gastos — estos últimos 3 solo si aparecen explícitamente desglosados en la factura (no los calcules ni los asumas); usa null si no aparecen. " +
-      "Agrega también las claves 'notify_party' y 'agente_entrega': 'notify_party' es la parte a quien se notifica la llegada de la carga (campo 'Notify Party' en el BL — a menudo igual al consignatario, pero puede ser distinto, tómalo tal como aparece). 'agente_entrega' es el agente o empresa indicada para gestionar la entrega en destino (suele aparecer como 'For particulars of delivery apply to' o similar en el BL). " +
-      "Agrega también las claves 'tipo_carga' y 'tipo_carga_confianza'. 'tipo_carga' debe ser UNO de estos valores exactos del catálogo interno: FCL, LCL, Aéreo, Granel, RoRo, Courier, Consolidado. " +
-      "Reglas: (1) CONFIANZA ALTA — si el documento declara el tipo explícitamente, extráelo con tipo_carga_confianza='alta': el texto 'FCL' o 'CY/CY' (o 'CY-CY') equivale a FCL; 'LCL' o 'CFS/CFS' (o 'CFS-CFS') equivale a LCL; en guías aéreas (AWB), una consolidación ('Consolidation', 'CONSOL', Master AWB con House AWB) equivale a 'Consolidado'; 'Courier' si es un envío de mensajería expresa. " +
-      "(2) CONFIANZA MEDIA — si no viene explícito, infiérelo por patrón con tipo_carga_confianza='media': un solo contenedor con un solo sello y lenguaje 'Said to Contain' / 'Shipper's Load and Count' sugiere FCL; referencias a consolidación, groupage, co-load o un Master BL distinto del House BL sugieren LCL (o 'Consolidado' si es AWB). " +
-      "(3) Si no puedes determinarlo con ninguno de estos criterios, usa tipo_carga=null y tipo_carga_confianza=null — NO adivines. " +
-      "Usa null cuando el dato no aparezca. Las fechas en formato YYYY-MM-DD si es posible. 'productos' como resumen breve (máx 300 caracteres).";
+    let system = PROMPT_DOCUMENTO_IMPORTACION;
 
 
     if (data.lineas_factura) system += " Agrega lineas_factura: arreglo de cada línea de mercancía en orden con {descripcion, codigo_arancelario, cantidad, unidad, valor_fob, peso}. Extrae descripción completa y valores del documento; codigo_arancelario SOLO si aparece explícitamente para esa línea, nunca clasifiques ni inventes códigos. valor_fob es el importe de la línea, no precio unitario. Datos ausentes null. No agregues flete, seguro ni cargos como mercancías. No cambies los totales de cabecera.";

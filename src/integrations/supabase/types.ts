@@ -6396,6 +6396,7 @@ export type Database = {
       }
       solicitudes_correo: {
         Row: {
+          adjuntos: Json
           advertencias: string[]
           asunto: string | null
           bl_awb: string | null
@@ -6407,14 +6408,17 @@ export type Database = {
           estado: string
           eta: string | null
           expediente_id: string | null
+          factura_comercial: string | null
           id: string
           mensaje_aislado: string | null
+          peso_bruto_kg: number | null
           producto: string | null
           remitente: string | null
           remitente_correo: string | null
           updated_at: string
         }
         Insert: {
+          adjuntos?: Json
           advertencias?: string[]
           asunto?: string | null
           bl_awb?: string | null
@@ -6426,14 +6430,17 @@ export type Database = {
           estado?: string
           eta?: string | null
           expediente_id?: string | null
+          factura_comercial?: string | null
           id?: string
           mensaje_aislado?: string | null
+          peso_bruto_kg?: number | null
           producto?: string | null
           remitente?: string | null
           remitente_correo?: string | null
           updated_at?: string
         }
         Update: {
+          adjuntos?: Json
           advertencias?: string[]
           asunto?: string | null
           bl_awb?: string | null
@@ -6445,8 +6452,10 @@ export type Database = {
           estado?: string
           eta?: string | null
           expediente_id?: string | null
+          factura_comercial?: string | null
           id?: string
           mensaje_aislado?: string | null
+          peso_bruto_kg?: number | null
           producto?: string | null
           remitente?: string | null
           remitente_correo?: string | null
