@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { camposFaltantes } from "@/lib/correo-solicitud";
 import { fmtLocalDate } from "@/lib/dates";
+import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
 export const Route = createFileRoute("/_authenticated/expedientes/correo")({
   head: () => ({ meta: [
@@ -84,8 +85,11 @@ function BandejaCorreo() {
                           {falta.length === 0 ? <Badge variant="outline" className="text-[11px]">Completo</Badge> :
                             <div className="flex flex-wrap gap-1">{falta.map((f) => <Badge key={f} className="bg-warning/15 text-warning-foreground border-warning/40 text-[11px]" variant="outline">{f}</Badge>)}</div>}
                           {(s.advertencias ?? []).map((a: string) => <div key={a} className="mt-1 text-[11px] text-warning-foreground">⚠ {a}</div>)}
-                          {(Array.isArray(s.adjuntos) ? s.adjuntos as { nombre: string; tipo: string }[] : []).map((d, i) => (
-                            <div key={i} className="mt-1 text-[11px] text-muted-foreground">📎 {d.tipo === "Otro" ? "Otros documentos" : d.tipo}: {d.nombre}</div>
+                          {(Array.isArray(s.adjuntos) ? s.adjuntos as { nombre: string; tipo: string; storage_path?: string; error?: string }[] : []).map((d, i) => (
+                            <div key={i} className="mt-1 text-[11px] text-muted-foreground">📎 {d.tipo === "Otro" ? "Otros documentos" : d.tipo}: {d.nombre}
+                              {d.storage_path && <DocumentoPreviewButton path={d.storage_path} label="Ver adjunto" className="ml-1 h-6" />}
+                              {d.error && <div className="text-warning-foreground">⚠ {d.error}</div>}
+                            </div>
                           ))}
                         </td>
                         <td className="px-2 py-1.5 text-right whitespace-nowrap">
