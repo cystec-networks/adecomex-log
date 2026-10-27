@@ -64,9 +64,9 @@ describe("asunto del correo", () => {
     const r = fusionarAsunto(base, "HACER VUCE: BL MEDUAFV97440--ETA 26/10/2026--");
     expect(r.datos.bl_awb).toBe("AAA111222");
     expect(r.datos.eta).toBe("2026-10-01");
-    expect(r.advertencias).toHaveLength(2);
+    expect(r.advertencias.length).toBe(2);
     const v = fusionarAsunto({ ...base, bl_awb: null, eta: null }, "HACER VUCE: BL MEDUAFV97440--ETA 26/10/2026--");
     expect(v.datos.bl_awb).toBe("MEDUAFV97440");
-    expect(v.advertencias).toHaveLength(0);
+    expect(v.advertencias.length).toBe(0);
   });
 });
