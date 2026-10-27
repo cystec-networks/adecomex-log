@@ -3,7 +3,7 @@ import { z } from "zod";
 import { aislarMensajeReciente, combinarDatos, extraerPorEtiquetas, fusionarAsunto, fusionarAdjuntos, tipoAdjuntoCorreo, TIPOS_ADJUNTO_CORREO, type DatosAdjunto } from "@/lib/correo-solicitud";
 import { PROMPT_DOCUMENTO_IMPORTACION } from "@/lib/ocr-documento-prompt";
 import { callGateway } from "@/lib/ai-gateway.server";
-import { adjuntoCorreoSchema, normalizarAdjuntosCorreo, mimeAdjuntoCorreo } from "@/lib/correo-adjuntos";
+import { adjuntoCorreoSchema, normalizarAdjuntosCorreo, mimeAdjuntoCorreo, deduplicarAdjuntosCorreo } from "@/lib/correo-adjuntos";
 import { inicioVentanaDuplicadoCorreo, ESTADOS_DUPLICADO_CORREO, respuestaCorreoDuplicado } from "@/lib/correo-duplicados";
 
 const adjuntoSchema = adjuntoCorreoSchema;
