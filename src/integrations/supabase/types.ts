@@ -7406,6 +7406,10 @@ export type Database = {
         Args: { _dias_tomados_ultimo_anio: number; _fecha_ingreso: string }
         Returns: number
       }
+      crear_solicitud_correo_sin_duplicado: {
+        Args: { p_solicitud: Json }
+        Returns: string
+      }
       expediente_docs_core_faltantes: { Args: { _id: string }; Returns: string }
       expirar_cotizaciones_vencidas: { Args: never; Returns: number }
       immutable_unaccent: { Args: { "": string }; Returns: string }
