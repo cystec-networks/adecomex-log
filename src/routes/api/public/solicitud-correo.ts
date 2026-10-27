@@ -58,12 +58,27 @@ async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoPro
 
 const nombreSeguro = (n: string) => n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w.\- ]+/g, "_").slice(-120);
 
+const texto = (max: number) => z.preprocess((v) => (v == null ? "" : typeof v === "string" ? v : String(v)), z.string().trim().max(max));
+
+/** Normaliza nombres de campo habituales (Gmail/Zapier/Make); un adjunto inválido se omite, nunca rechaza el correo. */
+const adjuntoFlexible = z.preprocess((v: any) => {
+  if (!v || typeof v !== "object") return null;
+  const contenido = v.contenido ?? v.content ?? v.data ?? v.base64 ?? "";
+  return {
+    nombre: String(v.nombre ?? v.name ?? v.filename ?? v.fileName ?? "adjunto").trim() || "adjunto",
+    tipo: String(v.tipo ?? v.mimeType ?? v.mime ?? v.contentType ?? v.type ?? ""),
+    contenido: typeof contenido === "string" ? contenido : "",
+  };
+}, adjuntoSchema.nullable().catch(null));
+
 const schema = z.object({
-  remitente: z.string().trim().max(500).optional().default(""),
-  asunto: z.string().trim().max(1000).optional().default(""),
-  cuerpo: z.string().min(1).max(200_000),
-  adjuntos: z.array(adjuntoSchema).max(10).optional().default([]),
-});
+  remitente: texto(500),
+  asunto: texto(1000),
+  cuerpo: texto(200_000),
+  adjuntos: z.preprocess((v) => (Array.isArray(v) ? v : []), z.array(adjuntoFlexible))
+    .transform((a) => a.filter((x): x is z.infer<typeof adjuntoSchema> => !!x).slice(0, 10)),
+}).refine((d) => d.cuerpo || d.asunto || d.adjuntos.length, { message: "Correo vacío" });
+
 
 function igualSeguro(a: string, b: string) {
   if (a.length !== b.length) return false;
