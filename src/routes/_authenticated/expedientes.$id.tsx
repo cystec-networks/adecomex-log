@@ -1345,16 +1345,21 @@ function DetalleExpediente() {
             {alertasHeader.map((alerta) => <span key={alerta} className="break-words">{alerta}</span>)}
           </div>
         )}
-        {!isNuevo && confirmacionCorreo && (
-          <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs md:text-sm" role="status" aria-label="Estado de la confirmación al cliente">
+        {!isNuevo && (
+          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs md:text-sm" role="status" aria-label="Estado de la confirmación al cliente">
             <span className="text-muted-foreground">Confirmación al cliente:</span>
-            {confirmacionCorreo.estado === "enviada" ? (
+            {!confirmacionCorreo ? (
+              <span className="font-medium text-muted-foreground">No enviada</span>
+            ) : confirmacionCorreo.estado === "enviada" ? (
               <span className="font-medium text-emerald-600 dark:text-emerald-400">
                 Enviada{confirmacionCorreo.enviado_en ? ` el ${fmtLocalDate(confirmacionCorreo.enviado_en)}` : ""}
               </span>
             ) : (
-              <span className="font-medium text-amber-600 dark:text-amber-400">Pendiente de enviar</span>
+              <span className="font-medium text-amber-600 dark:text-amber-400">Pendiente de envío</span>
             )}
+            <Button size="sm" variant="outline" className="h-6 px-2 text-xs" disabled={enviarConfirmacion.isPending} onClick={() => enviarConfirmacion.mutate()}>
+              <Mail className="h-3.5 w-3.5 mr-1" />{enviarConfirmacion.isPending ? "Preparando…" : confirmacionCorreo ? "Reenviar confirmación" : "Enviar confirmación por correo al cliente"}
+            </Button>
           </div>
         )}
       </div>
