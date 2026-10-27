@@ -3185,7 +3185,8 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           for (const [key, value] of Object.entries(decision.cambios)) {
             const campo = key as keyof CambiosLiquidacion;
             const previo = actual[campo];
-            let query = supabase.from("expedientes").update({ [campo]: value }).eq("id", expedienteId);
+            const cambio: CambiosLiquidacion = campo === "peso_neto" ? { peso_neto: Number(value) } : { [campo]: String(value) };
+            let query = supabase.from("expedientes").update(cambio).eq("id", expedienteId);
             query = previo == null ? query.is(campo, null) : query.eq(campo, previo);
             const { data: updated, error } = await query.select("id");
             if (error) throw error;
