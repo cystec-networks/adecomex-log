@@ -1,4 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+function expect(actual: unknown) {
+  return {
+    toBe: (v: unknown) => assert.equal(actual, v),
+    toBeNull: () => assert.equal(actual, null),
+    toEqual: (v: unknown) => assert.deepEqual(actual, v),
+    not: { toContain: (v: string) => assert.ok(!String(actual).includes(v)) },
+  };
+}
 import { aislarMensajeReciente, combinarDatos, extraerPorEtiquetas, camposFaltantes } from "./correo-solicitud";
 
 const CORREO = `Favor proceder con el trámite de VUCE para la siguiente carga:
