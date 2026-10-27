@@ -100,3 +100,32 @@ export function camposFaltantes(s: Partial<DatosSolicitudCorreo> & { cliente_id?
   if (!s.cliente_id && !s.cliente_nombre) f.push("Cliente");
   return f;
 }
+
+/**
+ * Patrón determinista del Asunto: «HACER VUCE: BL <código>-- ETA <fecha> -- …».
+ * BL = lo que sigue a «BL» hasta «--» o espacio; ETA = lo que sigue a «ETA» hasta «--».
+ * Si no hay etiqueta ETA, se acepta solo una fecha pegada al separador del BL («BL: X ---29/09/2026---»).
+ */
+export function extraerDeAsunto(asunto: string): Pick<DatosSolicitudCorreo, "bl_awb" | "eta"> {
+  const s = (asunto ?? "").replace(/\s+/g, " ");
+  const bl = /\bBL\s*:?\s*([A-Z0-9][A-Z0-9-]*?[A-Z0-9])(?=\s*-{2,}|\s|$)/i.exec(s)?.[1]?.toUpperCase() ?? null;
+  const valido = bl && bl.length >= 6 && /\d/.test(bl) ? bl : null;
+  let eta = fechaCorreo(/\bETA\s*:?\s*([^-]+?)\s*(?:-{2,}|$)/i.exec(s)?.[1] ?? null);
+  if (!eta && valido) {
+    const m = new RegExp(`\\bBL\\s*:?\\s*${valido}\\s*-{2,}\\s*(\\d{1,2}[/.-]\\d{1,2}[/.-]\\d{4}|\\d{4}-\\d{1,2}-\\d{1,2})`, "i").exec(s);
+    eta = fechaCorreo(m?.[1] ?? null);
+  }
+  return { bl_awb: valido, eta };
+}
+
+/** Une cuerpo (prioritario) y asunto; si ambos traen un dato distinto, gana el cuerpo con advertencia. */
+export function fusionarAsunto(cuerpo: DatosSolicitudCorreo, asunto: string): { datos: DatosSolicitudCorreo; advertencias: string[] } {
+  const a = extraerDeAsunto(asunto);
+  const advertencias: string[] = [];
+  const datos = { ...cuerpo };
+  if (cuerpo.bl_awb && a.bl_awb && norm(cuerpo.bl_awb) !== norm(a.bl_awb)) advertencias.push(`BL del asunto (${a.bl_awb}) distinto del cuerpo (${cuerpo.bl_awb}); se usó el del cuerpo`);
+  if (cuerpo.eta && a.eta && cuerpo.eta !== a.eta) advertencias.push(`ETA del asunto (${a.eta}) distinta del cuerpo (${cuerpo.eta}); se usó la del cuerpo`);
+  datos.bl_awb = cuerpo.bl_awb ?? a.bl_awb;
+  datos.eta = cuerpo.eta ?? a.eta;
+  return { datos, advertencias };
+}

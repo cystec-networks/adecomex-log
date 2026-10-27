@@ -48,3 +48,25 @@ describe("correo de solicitud", () => {
     expect(camposFaltantes({ bl_awb: "X", eta: null, producto: "p", cantidad: null, cliente_nombre: null })).toEqual(["ETA", "Cantidad", "Cliente"]);
   });
 });
+
+import { extraerDeAsunto, fusionarAsunto } from "./correo-solicitud";
+describe("asunto del correo", () => {
+  it("lee BL y ETA del patrón HACER VUCE", () => {
+    expect(extraerDeAsunto("HACER VUCE: BL MEDUAFV97440--ETA 26/10/2026---- DRAFT DOCS")).toEqual({ bl_awb: "MEDUAFV97440", eta: "2026-10-26" });
+    expect(extraerDeAsunto("REGISTRO #202608I312 : HACER VUCE: BL MEDURT657984-- ETA 29/09/2026 -- x")).toEqual({ bl_awb: "MEDURT657984", eta: "2026-09-29" });
+    expect(extraerDeAsunto("REGISTRO #202608I312 : HACER VUCE - BL: MEDURT657984 ---29/09/2026---FDP")).toEqual({ bl_awb: "MEDURT657984", eta: "2026-09-29" });
+  });
+  it("sin patrón no inventa", () => {
+    expect(extraerDeAsunto("HACER VUCE Fwd: PROFORMA 2 CEBOLLA ROJA")).toEqual({ bl_awb: null, eta: null });
+  });
+  it("el cuerpo gana con advertencia si difiere", () => {
+    const base = { bl_awb: "AAA111222", eta: "2026-10-01", producto: null, cantidad: null, cliente_nombre: null };
+    const r = fusionarAsunto(base, "HACER VUCE: BL MEDUAFV97440--ETA 26/10/2026--");
+    expect(r.datos.bl_awb).toBe("AAA111222");
+    expect(r.datos.eta).toBe("2026-10-01");
+    expect(r.advertencias.length).toBe(2);
+    const v = fusionarAsunto({ ...base, bl_awb: null, eta: null }, "HACER VUCE: BL MEDUAFV97440--ETA 26/10/2026--");
+    expect(v.datos.bl_awb).toBe("MEDUAFV97440");
+    expect(v.advertencias.length).toBe(0);
+  });
+});

@@ -1,0 +1,1 @@
+ALTER TABLE public.solicitudes_correo ADD COLUMN IF NOT EXISTS advertencias text[] NOT NULL DEFAULT '{}';
