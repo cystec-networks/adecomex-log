@@ -42,3 +42,22 @@ describe("recepción de archivos de correo", () => {
     assert.deepEqual(r.contenedores, [{ numero: "ABCD1234567" }]);
   });
 });
+import { deduplicarAdjuntosCorreo } from "./correo-adjuntos";
+describe("deduplicarAdjuntosCorreo", () => {
+  it("guarda una sola vez el BL HBLIWF10012026-2.pdf repetido", () => {
+    const r = deduplicarAdjuntosCorreo([
+      { nombre: "HBLIWF10012026-2.pdf", tipo: "Bill of Lading" },
+      { nombre: "COA_19001122.PDF", tipo: "Certificado de análisis" },
+      { nombre: "HBLIWF10012026-2.pdf", tipo: "Bill of Lading" },
+    ]);
+    expect(r.map((a) => a.nombre)).toEqual(["HBLIWF10012026-2.pdf", "COA_19001122.PDF"]);
+  });
+  it("mismo tipo y contenido con distinto nombre cuenta como duplicado; distinto contenido no", () => {
+    const r = deduplicarAdjuntosCorreo([
+      { nombre: "a.pdf", tipo: "Factura comercial", file_hash: "h1" },
+      { nombre: "b.pdf", tipo: "Factura comercial", file_hash: "h1" },
+      { nombre: "c.pdf", tipo: "Factura comercial", file_hash: "h2" },
+    ]);
+    expect(r.map((a) => a.nombre)).toEqual(["a.pdf", "c.pdf"]);
+  });
+});
