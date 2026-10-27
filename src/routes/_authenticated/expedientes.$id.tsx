@@ -103,6 +103,7 @@ import { EscanearBlButton, EscanearFacturaButton as EscanearFacturaExpButton } f
 import { NuevoDesdeXmlButton } from "@/components/nuevo-desde-xml-button";
 import { type OcrExtraction } from "@/lib/ai-ocr.functions";
 import { datosDocumentalesCorreo, type AdjuntoGuardadoCorreo } from "@/lib/correo-adjuntos";
+import { correoConfirmacionSolicitud, faltantesConfirmacion } from "@/lib/correo-confirmacion";
 import {
   HerramientasDgaVuceItems,
   HerramientasDgaVuceMenu,
@@ -2325,6 +2326,11 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       qc.invalidateQueries({ queryKey: ["expedientes"] });
       qc.invalidateQueries({ queryKey: ["expedientes-hist"] });
       toast.success(`Expediente ${row.numero} creado`);
+      if (row.correoConfirmacion) {
+        if (row.correoFaltantes?.length) toast.warning(`Completa a mano en el correo: ${row.correoFaltantes.join(", ")}`);
+        const w = window.open(row.correoConfirmacion, "_blank");
+        if (!w) toast.info("Correo de confirmación listo para revisar y enviar", { duration: 15000, action: { label: "Abrir correo", onClick: () => window.open(row.correoConfirmacion, "_blank") } });
+      }
       nav({ to: "/expedientes/$id", params: { id: row.id }, search: { nuevo: "1", solicitud: "" } });
     },
     onError: (e: any) => {
