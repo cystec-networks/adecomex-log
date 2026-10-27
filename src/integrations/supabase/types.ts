@@ -6396,6 +6396,7 @@ export type Database = {
       }
       solicitudes_correo: {
         Row: {
+          advertencias: string[]
           asunto: string | null
           bl_awb: string | null
           cantidad: string | null
@@ -6414,6 +6415,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          advertencias?: string[]
           asunto?: string | null
           bl_awb?: string | null
           cantidad?: string | null
@@ -6432,6 +6434,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          advertencias?: string[]
           asunto?: string | null
           bl_awb?: string | null
           cantidad?: string | null

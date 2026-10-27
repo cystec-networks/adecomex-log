@@ -82,6 +82,7 @@ function BandejaCorreo() {
                         <td className="px-2 py-1.5">
                           {falta.length === 0 ? <Badge variant="outline" className="text-[11px]">Completo</Badge> :
                             <div className="flex flex-wrap gap-1">{falta.map((f) => <Badge key={f} className="bg-warning/15 text-warning-foreground border-warning/40 text-[11px]" variant="outline">{f}</Badge>)}</div>}
+                          {(s.advertencias ?? []).map((a: string) => <div key={a} className="mt-1 text-[11px] text-warning-foreground">⚠ {a}</div>)}
                         </td>
                         <td className="px-2 py-1.5 text-right whitespace-nowrap">
                           <Button size="sm" className="h-7 px-2 mr-1" asChild>

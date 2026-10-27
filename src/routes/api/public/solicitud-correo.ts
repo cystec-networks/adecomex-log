@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { aislarMensajeReciente, combinarDatos, extraerPorEtiquetas } from "@/lib/correo-solicitud";
+import { aislarMensajeReciente, combinarDatos, extraerPorEtiquetas, fusionarAsunto } from "@/lib/correo-solicitud";
 
 const schema = z.object({
   remitente: z.string().trim().max(500).optional().default(""),
@@ -88,7 +88,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         catch (e: any) { return Response.json({ error: e.message }, { status: e.status ?? 500 }); }
         if (!ia?.es_solicitud_nueva) return Response.json({ resultado: "descartado", motivo: ia?.motivo ?? "No es una solicitud nueva" });
 
-        const datos = combinarDatos(extraerPorEtiquetas(mensaje), ia, mensaje, remitente);
+        const { datos, advertencias } = fusionarAsunto(combinarDatos(extraerPorEtiquetas(mensaje), ia, mensaje, remitente), asunto);
         const remitenteCorreo = correoDe(remitente);
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const db = supabaseAdmin as any;
@@ -120,10 +120,10 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
 
         const { data: fila, error } = await db.from("solicitudes_correo").insert({
           remitente, remitente_correo: remitenteCorreo, asunto, cuerpo, mensaje_aislado: mensaje,
-          ...datos, cliente_id: clienteId,
+          ...datos, advertencias, cliente_id: clienteId,
         }).select("id").single();
         if (error) return Response.json({ error: error.message }, { status: 500 });
-        return Response.json({ resultado: "borrador", id: fila.id, datos });
+        return Response.json({ resultado: "borrador", id: fila.id, datos, advertencias });
       },
     },
   },
