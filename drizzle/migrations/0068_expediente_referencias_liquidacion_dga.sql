@@ -1,0 +1,3 @@
+ALTER TABLE public.expedientes ADD COLUMN IF NOT EXISTS liq_dga_manifiesto text, ADD COLUMN IF NOT EXISTS liq_dga_resultado_inspeccion text;
+COMMENT ON COLUMN public.expedientes.liq_dga_manifiesto IS 'Referencia documental Manifiesto del Reporte de Liquidación DGA; no editable manualmente.';
+COMMENT ON COLUMN public.expedientes.liq_dga_resultado_inspeccion IS 'Referencia documental ResuInsp del Reporte de Liquidación DGA; no editable manualmente.';

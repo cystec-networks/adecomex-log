@@ -477,6 +477,13 @@
       "when": 1792956591756,
       "tag": "0067_permisos_estado_documental_vuce",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1793063482241,
+      "tag": "0068_expediente_referencias_liquidacion_dga",
+      "breakpoints": true
     }
   ]
 }

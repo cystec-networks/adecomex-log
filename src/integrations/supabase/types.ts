@@ -3424,6 +3424,8 @@ export type Database = {
           impuestos_override_manual: boolean
           impuestos_override_por: string | null
           incoterm: string | null
+          liq_dga_manifiesto: string | null
+          liq_dga_resultado_inspeccion: string | null
           liq_oficial_total: number | null
           liq_siga_estado: string | null
           liq_siga_fecha_pago: string | null
@@ -3557,6 +3559,8 @@ export type Database = {
           impuestos_override_manual?: boolean
           impuestos_override_por?: string | null
           incoterm?: string | null
+          liq_dga_manifiesto?: string | null
+          liq_dga_resultado_inspeccion?: string | null
           liq_oficial_total?: number | null
           liq_siga_estado?: string | null
           liq_siga_fecha_pago?: string | null
@@ -3690,6 +3694,8 @@ export type Database = {
           impuestos_override_manual?: boolean
           impuestos_override_por?: string | null
           incoterm?: string | null
+          liq_dga_manifiesto?: string | null
+          liq_dga_resultado_inspeccion?: string | null
           liq_oficial_total?: number | null
           liq_siga_estado?: string | null
           liq_siga_fecha_pago?: string | null
