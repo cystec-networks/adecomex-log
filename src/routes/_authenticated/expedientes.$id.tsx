@@ -103,6 +103,7 @@ import { EscanearBlButton, EscanearFacturaButton as EscanearFacturaExpButton } f
 import { NuevoDesdeXmlButton } from "@/components/nuevo-desde-xml-button";
 import { type OcrExtraction } from "@/lib/ai-ocr.functions";
 import { datosDocumentalesCorreo, type AdjuntoGuardadoCorreo } from "@/lib/correo-adjuntos";
+import { correoConfirmacionSolicitud, faltantesConfirmacion } from "@/lib/correo-confirmacion";
 import {
   HerramientasDgaVuceItems,
   HerramientasDgaVuceMenu,
@@ -2289,7 +2290,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: data.id, accion: "creado" });
       if (correoOrigen) {
         // Adjuntos del correo: quedan cargados en su casilla de Documentos (los no reconocidos, en «Otro»).
-        const { data: sol, error: errorSol } = await supabase.from("solicitudes_correo").select("adjuntos").eq("id", correoOrigen).single();
+        const { data: sol, error: errorSol } = await supabase.from("solicitudes_correo").select("adjuntos, remitente, remitente_correo, asunto, destinatarios, cc").eq("id", correoOrigen).single();
         if (errorSol) throw errorSol;
         const adjuntosCorreo = (Array.isArray(sol?.adjuntos) ? sol.adjuntos : []) as { nombre: string; tipo: string; storage_path: string }[];
         for (const a of adjuntosCorreo) {
@@ -2305,6 +2306,18 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         const { error: errorConfirmacion } = await supabase.from("solicitudes_correo").update({ estado: "confirmada", expediente_id: data.id }).eq("id", correoOrigen).eq("estado", "pendiente");
         if (errorConfirmacion) throw errorConfirmacion;
         qc.invalidateQueries({ queryKey: ["solicitudes-correo"] });
+        // Correo de confirmación precargado (mismo patrón de «Preparar para enviar»: se revisa y se envía a mano).
+        let nombreCliente: string | null = null;
+        if (data.cliente_id) {
+          const { data: cli } = await supabase.from("clientes").select("nombre").eq("id", data.cliente_id).maybeSingle();
+          nombreCliente = cli?.nombre ?? null;
+        }
+        const datosCorreo = {
+          numero: data.numero, cliente: nombreCliente, eta: data.fecha_compromiso, descripcion: data.descripcion_mercancia,
+          remitente: sol.remitente_correo ?? sol.remitente, asunto: sol.asunto,
+          destinatarios: sol.destinatarios, cc: sol.cc,
+        };
+        return { ...data, correoConfirmacion: correoConfirmacionSolicitud(datosCorreo), correoFaltantes: faltantesConfirmacion(datosCorreo) };
       }
       return data;
 
@@ -2313,6 +2326,11 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       qc.invalidateQueries({ queryKey: ["expedientes"] });
       qc.invalidateQueries({ queryKey: ["expedientes-hist"] });
       toast.success(`Expediente ${row.numero} creado`);
+      if (row.correoConfirmacion) {
+        if (row.correoFaltantes?.length) toast.warning(`Completa a mano en el correo: ${row.correoFaltantes.join(", ")}`);
+        const w = window.open(row.correoConfirmacion, "_blank");
+        if (!w) toast.info("Correo de confirmación listo para revisar y enviar", { duration: 15000, action: { label: "Abrir correo", onClick: () => window.open(row.correoConfirmacion, "_blank") } });
+      }
       nav({ to: "/expedientes/$id", params: { id: row.id }, search: { nuevo: "1", solicitud: "" } });
     },
     onError: (e: any) => {

@@ -6401,10 +6401,12 @@ export type Database = {
           asunto: string | null
           bl_awb: string | null
           cantidad: string | null
+          cc: string | null
           cliente_id: string | null
           cliente_nombre: string | null
           created_at: string
           cuerpo: string
+          destinatarios: string | null
           estado: string
           eta: string | null
           expediente_id: string | null
@@ -6423,10 +6425,12 @@ export type Database = {
           asunto?: string | null
           bl_awb?: string | null
           cantidad?: string | null
+          cc?: string | null
           cliente_id?: string | null
           cliente_nombre?: string | null
           created_at?: string
           cuerpo: string
+          destinatarios?: string | null
           estado?: string
           eta?: string | null
           expediente_id?: string | null
@@ -6445,10 +6449,12 @@ export type Database = {
           asunto?: string | null
           bl_awb?: string | null
           cantidad?: string | null
+          cc?: string | null
           cliente_id?: string | null
           cliente_nombre?: string | null
           created_at?: string
           cuerpo?: string
+          destinatarios?: string | null
           estado?: string
           eta?: string | null
           expediente_id?: string | null

@@ -64,8 +64,21 @@ const schema = z.object({
   remitente: texto(500),
   asunto: texto(1000),
   cuerpo: texto(200_000),
+  destinatarios: texto(2000).optional(),
+  cc: texto(2000).optional(),
   adjuntos: z.unknown().optional(),
 }).refine((d) => d.cuerpo || d.asunto || (Array.isArray(d.adjuntos) && d.adjuntos.length), { message: "Correo vacío" });
+
+/** Acepta los alias habituales del remitente (para/to, con_copia/copia) sin rechazar el correo. */
+function normalizarDestinatarios(body: unknown) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return body;
+  const b = body as Record<string, unknown>;
+  return {
+    ...b,
+    destinatarios: b.destinatarios ?? b.para ?? b.to ?? b.destinatario,
+    cc: b.cc ?? b.con_copia ?? b.copia ?? b.conCopia,
+  };
+}
 
 
 function igualSeguro(a: string, b: string) {
@@ -136,7 +149,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
 
         let body: unknown;
         try { body = await request.json(); } catch { return Response.json({ error: "JSON inválido" }, { status: 400 }); }
-        const p = schema.safeParse(body);
+        const p = schema.safeParse(normalizarDestinatarios(body));
         if (!p.success) return Response.json({ error: "Faltan remitente/asunto/cuerpo válidos", detalle: p.error.issues.map((i) => `${i.path.join(".") || "correo"}: ${i.message}`) }, { status: 400 });
         const { remitente, asunto, cuerpo } = p.data;
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -219,6 +232,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         // Revalidación atómica: dos entregas simultáneas solo pueden crear una fila.
         const { data: id, error } = await db.rpc("crear_solicitud_correo_sin_duplicado", { p_solicitud: {
           remitente, remitente_correo: remitenteCorreo, asunto, cuerpo, mensaje_aislado: mensaje,
+          destinatarios: p.data.destinatarios || null, cc: p.data.cc || null,
           ...datos, advertencias, cliente_id: clienteId, adjuntos: listaAdjuntos,
         } });
         if (error) return Response.json({ error: error.message }, { status: 500 });
