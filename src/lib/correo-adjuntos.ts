@@ -49,3 +49,20 @@ export function datosDocumentalesCorreo(adjuntos: AdjuntoGuardadoCorreo[]) {
   }
   return resultado;
 }
+const claveNombreAdjunto = (nombre: string) => nombre.trim().toLowerCase().replace(/\s+/g, " ");
+
+/** Un archivo repetido en el mismo correo (mismo nombre, o mismo tipo + contenido) se guarda una sola vez. */
+export function deduplicarAdjuntosCorreo<T extends { nombre: string; tipo?: string | null; file_hash?: string | null }>(adjuntos: T[]): T[] {
+  const nombres = new Set<string>();
+  const contenidos = new Set<string>();
+  const unicos: T[] = [];
+  for (const a of adjuntos) {
+    const n = claveNombreAdjunto(a.nombre ?? "");
+    const c = a.file_hash ? `${a.tipo ?? ""}|${a.file_hash}` : null;
+    if ((n && nombres.has(n)) || (c && contenidos.has(c))) continue;
+    if (n) nombres.add(n);
+    if (c) contenidos.add(c);
+    unicos.push(a);
+  }
+  return unicos;
+}

@@ -102,7 +102,7 @@ import { TabRecepcion } from "@/components/tab-recepcion";
 import { EscanearBlButton, EscanearFacturaButton as EscanearFacturaExpButton } from "@/components/escanear-documento-expediente-buttons";
 import { NuevoDesdeXmlButton } from "@/components/nuevo-desde-xml-button";
 import { type OcrExtraction } from "@/lib/ai-ocr.functions";
-import { datosDocumentalesCorreo, type AdjuntoGuardadoCorreo } from "@/lib/correo-adjuntos";
+import { datosDocumentalesCorreo, deduplicarAdjuntosCorreo, type AdjuntoGuardadoCorreo } from "@/lib/correo-adjuntos";
 import { correoConfirmacionSolicitud, faltantesConfirmacion } from "@/lib/correo-confirmacion";
 import {
   HerramientasDgaVuceItems,
@@ -638,7 +638,7 @@ function DetalleExpediente() {
       if (error) { toast.error("No se pudo cargar la solicitud de correo: " + error.message); return; }
       if (!vivo || !s || s.estado !== "pendiente") return;
       const adjuntos = (Array.isArray(s.adjuntos) ? s.adjuntos : []) as AdjuntoGuardadoCorreo[];
-      setAdjuntosDelCorreo(adjuntos);
+      setAdjuntosDelCorreo(deduplicarAdjuntosCorreo(adjuntos));
       setAvisosDelCorreo(Array.isArray(s.advertencias) ? s.advertencias as string[] : []);
       const doc = datosDocumentalesCorreo(adjuntos);
       const desc = [s.cantidad, s.producto].filter(Boolean).join(" ").toUpperCase();
@@ -2292,9 +2292,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         // Adjuntos del correo: quedan cargados en su casilla de Documentos (los no reconocidos, en «Otro»).
         const { data: sol, error: errorSol } = await supabase.from("solicitudes_correo").select("adjuntos, remitente, remitente_correo, asunto, destinatarios, cc").eq("id", correoOrigen).single();
         if (errorSol) throw errorSol;
-        const adjuntosCorreo = (Array.isArray(sol?.adjuntos) ? sol.adjuntos : []) as { nombre: string; tipo: string; storage_path: string }[];
+        const adjuntosCorreo = deduplicarAdjuntosCorreo(((Array.isArray(sol?.adjuntos) ? sol.adjuntos : []) as { nombre: string; tipo: string; storage_path: string }[]).filter((a) => a?.storage_path));
+        // Ya vinculados (reintento tras un error parcial): no se duplican ni se renumeran.
+        const { data: yaVinculados } = await supabase.from("documentos").select("storage_path").eq("expediente_id", data.id);
+        const rutasVinculadas = new Set((yaVinculados ?? []).map((d) => d.storage_path));
         for (const a of adjuntosCorreo) {
-          if (!a?.storage_path) continue;
+          if (rutasVinculadas.has(a.storage_path)) continue;
           const codigo = await siguienteCodigoSiga(data.id, prefijoSiga(a.tipo));
           const { error: errorDocumento } = await supabase.from("documentos").insert({
             expediente_id: data.id, tipo: a.tipo || "Otro", storage_path: a.storage_path, estado: "recibido",

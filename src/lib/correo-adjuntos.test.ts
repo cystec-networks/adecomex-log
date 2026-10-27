@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { normalizarAdjuntosCorreo, mimeAdjuntoCorreo, datosDocumentalesCorreo } from "./correo-adjuntos";
+import { normalizarAdjuntosCorreo, mimeAdjuntoCorreo, datosDocumentalesCorreo, deduplicarAdjuntosCorreo } from "./correo-adjuntos";
 import { fusionarAdjuntos } from "./correo-solicitud";
 
 describe("recepción de archivos de correo", () => {
@@ -40,5 +40,23 @@ describe("recepción de archivos de correo", () => {
     const r = datosDocumentalesCorreo([{ nombre: "foto.png", tipo: "Otro", storage_path: "x", datos: { tipo_carga: "Courier" } }, { nombre: "BL.pdf", tipo: "Bill of Lading", storage_path: "bl", datos: { tipo_carga: "FCL", contenedores: [{ numero: "ABCD1234567" }] } }]);
     assert.equal(r.tipo_carga, "FCL");
     assert.deepEqual(r.contenedores, [{ numero: "ABCD1234567" }]);
+  });
+});
+describe("deduplicarAdjuntosCorreo", () => {
+  it("guarda una sola vez el BL HBLIWF10012026-2.pdf repetido", () => {
+    const r = deduplicarAdjuntosCorreo([
+      { nombre: "HBLIWF10012026-2.pdf", tipo: "Bill of Lading" },
+      { nombre: "COA_19001122.PDF", tipo: "Certificado de análisis" },
+      { nombre: "HBLIWF10012026-2.pdf", tipo: "Bill of Lading" },
+    ]);
+    assert.deepEqual(r.map((a) => a.nombre), ["HBLIWF10012026-2.pdf", "COA_19001122.PDF"]);
+  });
+  it("mismo tipo y contenido con distinto nombre cuenta como duplicado; distinto contenido no", () => {
+    const r = deduplicarAdjuntosCorreo([
+      { nombre: "a.pdf", tipo: "Factura comercial", file_hash: "h1" },
+      { nombre: "b.pdf", tipo: "Factura comercial", file_hash: "h1" },
+      { nombre: "c.pdf", tipo: "Factura comercial", file_hash: "h2" },
+    ]);
+    assert.deepEqual(r.map((a) => a.nombre), ["a.pdf", "c.pdf"]);
   });
 });
