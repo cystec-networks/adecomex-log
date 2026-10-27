@@ -76,3 +76,13 @@ export function confirmacionPendienteSolicitud(d: DatosConfirmacionCorreo) {
     cuerpo: cuerpoConfirmacion(d),
   };
 }
+
+/** Para expedientes sin hilo de correo: abre Gmail listo para revisar y enviar a mano. */
+export function correoConfirmacionSolicitud(d: DatosConfirmacionCorreo) {
+  const c = confirmacionPendienteSolicitud(d);
+  const params = new URLSearchParams({
+    authuser: CORREO_OPERACIONES, from: CORREO_OPERACIONES, view: "cm", fs: "1",
+    to: c.para, cc: c.cc, su: c.asunto, body: c.cuerpo,
+  });
+  return `https://mail.google.com/mail/?${params}`;
+}
