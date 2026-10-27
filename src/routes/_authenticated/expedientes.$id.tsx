@@ -861,6 +861,15 @@ function DetalleExpediente() {
     },
   });
 
+  const { data: confirmacionCorreo } = useQuery({
+    queryKey: ["confirmacion-correo", id],
+    enabled: !isNuevo,
+    queryFn: async () => {
+      const { data } = await supabase.from("confirmaciones_correo").select("id, estado, enviado_en, created_at").eq("expediente_id", id).order("created_at", { ascending: false }).limit(1);
+      return data?.[0] ?? null;
+    },
+  });
+
   const etapa = calcularEtapa({ hitos: hitosHeader ?? [], documentos: documentosHeader ?? [], permisos: permisosHeader ?? [], checklist: CHECKLIST_DOCUMENTOS_BASE });
   const datosAlertas = useDatosAlertasExpediente(id, exp?.cliente_id ?? null, exp?.factura_ecf_id ?? null, !isNuevo && !!exp);
   const permisosNumeros = (permisosHeader ?? []).map((p: any) => p.numero).filter(Boolean).join(", ");
@@ -1290,6 +1299,18 @@ function DetalleExpediente() {
           <div className="expediente-header-alertas mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-0 text-destructive" role="status" aria-label="Avisos del expediente">
             <span className="font-semibold">Avisos:</span>
             {alertasHeader.map((alerta) => <span key={alerta} className="break-words">{alerta}</span>)}
+          </div>
+        )}
+        {!isNuevo && confirmacionCorreo && (
+          <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs md:text-sm" role="status" aria-label="Estado de la confirmación al cliente">
+            <span className="text-muted-foreground">Confirmación al cliente:</span>
+            {confirmacionCorreo.estado === "enviada" ? (
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                Enviada{confirmacionCorreo.enviado_en ? ` el ${fmtLocalDate(confirmacionCorreo.enviado_en)}` : ""}
+              </span>
+            ) : (
+              <span className="font-medium text-amber-600 dark:text-amber-400">Pendiente de enviar</span>
+            )}
           </div>
         )}
       </div>
