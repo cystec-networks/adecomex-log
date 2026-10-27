@@ -36,7 +36,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical, Printer, Repeat2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, RefreshCw, Globe, Ship, Container, MoreVertical, Printer, Repeat2, Mail } from "lucide-react";
 import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
@@ -105,7 +105,7 @@ import { type OcrExtraction } from "@/lib/ai-ocr.functions";
 import { datosDocumentalesCorreo, deduplicarAdjuntosCorreo, type AdjuntoGuardadoCorreo } from "@/lib/correo-adjuntos";
 import { prepararFacturasCorreo } from "@/lib/factura-expediente-escaneo";
 import { classifyArancelLote } from "@/lib/ai-arancel.functions";
-import { confirmacionPendienteSolicitud, faltantesConfirmacion } from "@/lib/correo-confirmacion";
+import { confirmacionPendienteSolicitud, correoConfirmacionSolicitud, faltantesConfirmacion } from "@/lib/correo-confirmacion";
 import {
   HerramientasDgaVuceItems,
   HerramientasDgaVuceMenu,
@@ -870,6 +870,50 @@ function DetalleExpediente() {
     },
   });
 
+  // Solicitud por correo que originó el Expediente (si existe): de ahí salen el hilo y los destinatarios.
+  const { data: correoOrigenExp } = useQuery({
+    queryKey: ["solicitud-correo-origen", id],
+    enabled: !isNuevo,
+    queryFn: async () => {
+      const { data } = await supabase.from("solicitudes_correo").select("id, id_hilo, remitente, remitente_correo, asunto, destinatarios, cc").eq("expediente_id", id).order("created_at", { ascending: false }).limit(1);
+      return (data?.[0] ?? null) as any;
+    },
+  });
+
+  const enviarConfirmacion = useMutation({
+    mutationFn: async () => {
+      const datosCorreo = {
+        numero: exp?.numero ?? "", cliente: (exp as any)?.clientes?.nombre ?? null,
+        eta: exp?.fecha_compromiso, descripcion: exp?.descripcion_mercancia,
+        remitente: correoOrigenExp?.remitente_correo ?? correoOrigenExp?.remitente ?? (exp as any)?.clientes?.email ?? null,
+        asunto: correoOrigenExp?.asunto ?? `Solicitud de servicio ${exp?.numero ?? ""}`,
+        destinatarios: correoOrigenExp?.destinatarios, cc: correoOrigenExp?.cc,
+      };
+      const faltantes = faltantesConfirmacion(datosCorreo);
+      if (correoOrigenExp?.id_hilo) {
+        const contenido = confirmacionPendienteSolicitud(datosCorreo);
+        const { error } = await supabase.from("confirmaciones_correo").insert({
+          solicitud_correo_id: correoOrigenExp.id, expediente_id: id, id_hilo: correoOrigenExp.id_hilo,
+          para: contenido.para, cc: contenido.cc || null, asunto: contenido.asunto, cuerpo: contenido.cuerpo,
+        });
+        if (error) throw error;
+        return { encolada: true as const, faltantes };
+      }
+      return { encolada: false as const, url: correoConfirmacionSolicitud(datosCorreo), faltantes };
+    },
+    onSuccess: (r) => {
+      if (r.faltantes.length) toast.warning(`La confirmación quedó con datos por completar: ${r.faltantes.join(", ")}`);
+      if (r.encolada) {
+        qc.invalidateQueries({ queryKey: ["confirmacion-correo", id] });
+        toast.success("Confirmación pendiente de envío — se enviará respondiendo en el hilo original del cliente");
+      } else {
+        const w = window.open(r.url, "_blank");
+        if (!w) toast.info("Correo de confirmación listo para revisar y enviar", { duration: 15000, action: { label: "Abrir correo", onClick: () => window.open(r.url, "_blank") } });
+      }
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const etapa = calcularEtapa({ hitos: hitosHeader ?? [], documentos: documentosHeader ?? [], permisos: permisosHeader ?? [], checklist: CHECKLIST_DOCUMENTOS_BASE });
   const datosAlertas = useDatosAlertasExpediente(id, exp?.cliente_id ?? null, exp?.factura_ecf_id ?? null, !isNuevo && !!exp);
   const permisosNumeros = (permisosHeader ?? []).map((p: any) => p.numero).filter(Boolean).join(", ");
@@ -1301,16 +1345,21 @@ function DetalleExpediente() {
             {alertasHeader.map((alerta) => <span key={alerta} className="break-words">{alerta}</span>)}
           </div>
         )}
-        {!isNuevo && confirmacionCorreo && (
-          <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs md:text-sm" role="status" aria-label="Estado de la confirmación al cliente">
+        {!isNuevo && (
+          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs md:text-sm" role="status" aria-label="Estado de la confirmación al cliente">
             <span className="text-muted-foreground">Confirmación al cliente:</span>
-            {confirmacionCorreo.estado === "enviada" ? (
+            {!confirmacionCorreo ? (
+              <span className="font-medium text-muted-foreground">No enviada</span>
+            ) : confirmacionCorreo.estado === "enviada" ? (
               <span className="font-medium text-emerald-600 dark:text-emerald-400">
                 Enviada{confirmacionCorreo.enviado_en ? ` el ${fmtLocalDate(confirmacionCorreo.enviado_en)}` : ""}
               </span>
             ) : (
-              <span className="font-medium text-amber-600 dark:text-amber-400">Pendiente de enviar</span>
+              <span className="font-medium text-amber-600 dark:text-amber-400">Pendiente de envío</span>
             )}
+            <Button size="sm" variant="outline" className="h-6 px-2 text-xs" disabled={enviarConfirmacion.isPending} onClick={() => enviarConfirmacion.mutate()}>
+              <Mail className="h-3.5 w-3.5 mr-1" />{enviarConfirmacion.isPending ? "Preparando…" : confirmacionCorreo ? "Reenviar confirmación" : "Enviar confirmación por correo al cliente"}
+            </Button>
           </div>
         )}
       </div>
