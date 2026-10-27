@@ -645,6 +645,8 @@ function DetalleExpediente() {
           descripcion_mercancia: desc || null,
           descripcion_carga: desc || null,
           contacto_solicitud: s.remitente_correo ?? s.remitente,
+          ...(s.peso_bruto_kg != null ? { peso_bruto: s.peso_bruto_kg } : {}),
+          ...(s.factura_comercial ? { factura_comercial: s.factura_comercial } : {}),
         },
       });
     })();
@@ -2267,6 +2269,18 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       await guardarFilasServicioAduanero(data.id, filasServicioAduanero);
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: data.id, accion: "creado" });
       if (correoOrigen) {
+        // Adjuntos del correo: quedan cargados en su casilla de Documentos (los no reconocidos, en «Otro»).
+        const { data: sol } = await supabase.from("solicitudes_correo").select("adjuntos").eq("id", correoOrigen).maybeSingle();
+        const adjuntosCorreo = (Array.isArray(sol?.adjuntos) ? sol.adjuntos : []) as { nombre: string; tipo: string; storage_path: string }[];
+        for (const a of adjuntosCorreo) {
+          if (!a?.storage_path) continue;
+          const codigo = await siguienteCodigoSiga(data.id, prefijoSiga(a.tipo));
+          await supabase.from("documentos").insert({
+            expediente_id: data.id, tipo: a.tipo || "Otro", storage_path: a.storage_path, estado: "recibido",
+            codigo_siga: codigo, fecha_recepcion: new Date().toISOString().slice(0, 10),
+            observaciones: `Adjunto de correo: ${a.nombre}`.slice(0, 500),
+          });
+        }
         await supabase.from("solicitudes_correo").update({ estado: "confirmada", expediente_id: data.id }).eq("id", correoOrigen).eq("estado", "pendiente");
         qc.invalidateQueries({ queryKey: ["solicitudes-correo"] });
       }
