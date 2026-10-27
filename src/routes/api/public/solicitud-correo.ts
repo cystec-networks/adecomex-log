@@ -195,7 +195,8 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
 
         let clienteId: string | null = null;
         if (datos.cliente_nombre) {
-          const { data: c } = await db.from("clientes").select("id").ilike("nombre", `%${datos.cliente_nombre.replace(/[%_]/g, "")}%`).limit(2);
+          const nombreCliente = datos.cliente_nombre.split(",")[0].replace(/[%_]/g, "").trim();
+          const { data: c } = await db.from("clientes").select("id").ilike("nombre", `%${nombreCliente}%`).limit(2);
           if (c?.length === 1) clienteId = c[0].id;
         }
 
