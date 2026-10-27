@@ -10,6 +10,12 @@ describe("recepción de archivos de correo", () => {
     assert.equal(r.adjuntos[1].contenido, "JVBERi0xLjQ=");
     assert.equal(r.advertencias.length, 0);
   });
+  it("acepta contenidoBase64 tal como lo envía el script externo", () => {
+    const r = normalizarAdjuntosCorreo([{ nombre: "BL.pdf", tipo: "application/pdf", contenidoBase64: "JVBERi0xLjQ=" }]);
+    assert.equal(r.adjuntos.length, 1);
+    assert.equal(r.adjuntos[0].contenido, "JVBERi0xLjQ=");
+    assert.equal(r.advertencias.length, 0);
+  });
   it("sin adjuntos acepta vacío, ausente y null", () => {
     for (const v of [[], undefined, null]) assert.deepEqual(normalizarAdjuntosCorreo(v), { adjuntos: [], advertencias: [] });
   });
