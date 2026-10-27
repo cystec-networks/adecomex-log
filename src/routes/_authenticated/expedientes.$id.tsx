@@ -2289,7 +2289,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: data.id, accion: "creado" });
       if (correoOrigen) {
         // Adjuntos del correo: quedan cargados en su casilla de Documentos (los no reconocidos, en «Otro»).
-        const { data: sol, error: errorSol } = await supabase.from("solicitudes_correo").select("adjuntos").eq("id", correoOrigen).single();
+        const { data: sol, error: errorSol } = await supabase.from("solicitudes_correo").select("adjuntos, remitente, remitente_correo, asunto, destinatarios, cc").eq("id", correoOrigen).single();
         if (errorSol) throw errorSol;
         const adjuntosCorreo = (Array.isArray(sol?.adjuntos) ? sol.adjuntos : []) as { nombre: string; tipo: string; storage_path: string }[];
         for (const a of adjuntosCorreo) {
@@ -2305,6 +2305,18 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         const { error: errorConfirmacion } = await supabase.from("solicitudes_correo").update({ estado: "confirmada", expediente_id: data.id }).eq("id", correoOrigen).eq("estado", "pendiente");
         if (errorConfirmacion) throw errorConfirmacion;
         qc.invalidateQueries({ queryKey: ["solicitudes-correo"] });
+        // Correo de confirmación precargado (mismo patrón de «Preparar para enviar»: se revisa y se envía a mano).
+        let nombreCliente: string | null = null;
+        if (data.cliente_id) {
+          const { data: cli } = await supabase.from("clientes").select("nombre").eq("id", data.cliente_id).maybeSingle();
+          nombreCliente = cli?.nombre ?? null;
+        }
+        const datosCorreo = {
+          numero: data.numero, cliente: nombreCliente, eta: data.eta, descripcion: data.descripcion,
+          remitente: sol.remitente_correo ?? sol.remitente, asunto: sol.asunto,
+          destinatarios: sol.destinatarios, cc: sol.cc,
+        };
+        return { ...data, correoConfirmacion: correoConfirmacionSolicitud(datosCorreo), correoFaltantes: faltantesConfirmacion(datosCorreo) };
       }
       return data;
 
