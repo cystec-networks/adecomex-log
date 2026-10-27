@@ -1,8 +1,16 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { leerLiquidacionDga, decidirLiquidacionDga } from "./liquidacion-dga-documento";
+import { leerLiquidacionDga, decidirLiquidacionDga, prepararGuardadoLiquidacion } from "./liquidacion-dga-documento";
 const temporal = `Reporte de Liquidación de Impuestos\nDeclaración : 10150-IC01-2610-004156 (1.00)\nLiquidación : Temporal ()\nFecha Decl. : 26/10/2026\nManifiesto :\nResuInsp : ()\nNúmero B/L :\nFecha Llegada : //\nDepósito de Destino : [DOCAU] CAUCEDO\nPeso Neto KG: 50,000.00\nTotal Impuestos a Pagar : $2,295,650.79\nTasa Servicio Aduanero: $0.00\nTasa Servicio Aduanero Pagado: $999.00\nDeclaración Unica Aduanera: $258.26`;
 describe("Liquidación DGA documental", () => {
+  it("202610I365 persiste los cuatro campos juntos aunque DUA ya esté guardada", () => {
+    const actual = { numero_dua: "10150-IC01-2610-003868", fecha_presentacion_real: null, liq_dga_manifiesto: null, liq_dga_resultado_inspeccion: null };
+    const datos = leerLiquidacionDga(`Reporte de Liquidación de Impuestos\nDeclaración : 10150-IC01-2610-003868 (1.00)\nFecha Decl. : 22/10/2026\nManifiesto : IGMM2026101327\nResuInsp : 10150-IC10-2610-00260E (1.00)`);
+    assert.ok(datos);
+    const plan = prepararGuardadoLiquidacion(actual, decidirLiquidacionDga(actual, datos).cambios, {});
+    assert.deepEqual(plan.cambios, { numero_dua: "10150-IC01-2610-003868", fecha_presentacion_real: "2026-10-22", liq_dga_manifiesto: "IGMM2026101327", liq_dga_resultado_inspeccion: "10150-IC10-2610-00260E (1.00)" });
+    assert.deepEqual(plan.previos, actual);
+  });
   it("Temporal completa solo DUA fecha puerto y peso, nunca identificadores vacíos", () => {
     const datos = leerLiquidacionDga(temporal); assert.ok(datos);
     assert.equal(datos.numero, null);

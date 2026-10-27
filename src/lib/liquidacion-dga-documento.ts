@@ -1,4 +1,4 @@
-import { campoDgaVacio, type ResultadoDgaExtraido } from "./resultado-dga-documentos";
+import { campoDgaVacio, type CamposResultadoDga, type ResultadoDgaExtraido } from "./resultado-dga-documentos";
 import { construirObservaciones, normalizarRemarkSiga, type ObservacionesEstructura } from "./observaciones-expediente";
 
 export type LiquidacionDga = ResultadoDgaExtraido & {
@@ -8,6 +8,12 @@ export type LiquidacionDga = ResultadoDgaExtraido & {
   impuestos?: number | null; servicio?: number | null; dua?: number | null; observaciones?: string | null;
 };
 export type CambiosLiquidacion = Partial<Record<"numero_dua" | "fecha_presentacion_real" | "bl_awb" | "fecha_llegada_real" | "puerto_arribo" | "puerto_arribo_codigo" | "liq_dga_manifiesto" | "liq_dga_resultado_inspeccion", string>> & { peso_neto?: number };
+/** One payload and one optimistic guard set: never leave a partially written document mapping. */
+export function prepararGuardadoLiquidacion(actual: Record<string, unknown>, documentales: CambiosLiquidacion, resultado: CamposResultadoDga) {
+  const cambios = { ...documentales, ...resultado };
+  const previos = Object.fromEntries(Object.keys(cambios).map((campo) => [campo, actual[campo] ?? null]));
+  return { cambios, previos };
+}
 const texto = (v: unknown) => typeof v === "string" && !/^(?:[-/\s()]|temporal)*$/i.test(v.trim()) ? v.trim() : null;
 export function fechaLiquidacion(v: unknown): string | null {
   const t = texto(v); if (!t) return null;
@@ -36,13 +42,13 @@ export function leerLiquidacionDga(text: string): LiquidacionDga | null {
 }
 export function decidirLiquidacionDga(actual: Record<string, unknown>, datos: LiquidacionDga) {
   const cambios: CambiosLiquidacion = {}; const avisos: string[] = [];
-  const completar = (campo: keyof CambiosLiquidacion, valor: string | number | null | undefined, label: string) => {
+  const completar = (campo: keyof CambiosLiquidacion, valor: string | number | null | undefined, label: string, incluirCoincidente = false) => {
     if (valor == null || valor === "") return;
-    if (campoDgaVacio(actual[campo])) Object.assign(cambios, { [campo]: valor });
+    if (campoDgaVacio(actual[campo]) || (incluirCoincidente && String(actual[campo]) === String(valor))) Object.assign(cambios, { [campo]: valor });
     else if (String(actual[campo]) !== String(valor)) avisos.push(`${label}: documento ${valor}; expediente ${actual[campo]}. Se conserva el dato del expediente.`);
   };
-  completar("numero_dua", texto(datos.declaracion), "Declaración DUA");
-  completar("fecha_presentacion_real", fechaLiquidacion(datos.fecha_declaracion), "Fecha de Presentación");
+  completar("numero_dua", texto(datos.declaracion), "Declaración DUA", true);
+  completar("fecha_presentacion_real", fechaLiquidacion(datos.fecha_declaracion), "Fecha de Presentación", true);
   completar("bl_awb", texto(datos.bl), "BL/AWB"); completar("fecha_llegada_real", fechaLiquidacion(datos.llegada), "Llegada");
   completar("puerto_arribo", texto(datos.puerto), "Puerto");
   if (!actual.puerto_arribo || normalizarRemarkSiga(String(actual.puerto_arribo)) === normalizarRemarkSiga(datos.puerto)) completar("puerto_arribo_codigo", texto(datos.puerto_codigo), "Código de Puerto");

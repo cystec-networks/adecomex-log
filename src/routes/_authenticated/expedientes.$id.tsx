@@ -57,11 +57,11 @@ import { PaqueteRectificacionButton } from "@/components/paquete-rectificacion-b
 import { CorreoDgaButton } from "@/components/correo-dga-button";
 import { PaqueteFacturaCliente } from "@/components/paquete-factura-cliente";
 import { EscanearPagoPuerto, type DocumentoPagoSubido } from "@/components/escanear-pago-puerto";
-import { esDocumentoResultadoDga, camposDesdeDocumentoDga, completarResultadoDga, type CamposResultadoDga } from "@/lib/resultado-dga-documentos";
+import { esDocumentoResultadoDga, camposDesdeDocumentoDga, completarResultadoDga } from "@/lib/resultado-dga-documentos";
 import { extractSolicitudFromDocument } from "@/lib/ai-ocr.functions";
 import { DeclaracionOrigenProvider, useDeclaracionOrigen } from "@/components/declaracion-origen-context";
 import { LiquidacionDgaProvider, useLiquidacionDga } from "@/components/liquidacion-dga-context";
-import { decidirLiquidacionDga, type CambiosLiquidacion } from "@/lib/liquidacion-dga-documento";
+import { decidirLiquidacionDga, prepararGuardadoLiquidacion, type CambiosLiquidacion } from "@/lib/liquidacion-dga-documento";
 import { TIPO_CERTIFICADO_DGA, decidirCertificadoDga, guardarReferenciaCertificado, leerReferenciaCertificado, type CertificadoDga } from "@/lib/certificado-origen-dga";
 
 import { CatalogCombobox } from "@/components/catalog-combobox";
@@ -3180,30 +3180,18 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           const campos = completarResultadoDga(visible, camposDesdeDocumentoDga(tipo, res.resultado_dga ?? {}));
           const decision = tipo === "Reporte de Liquidación de Impuestos" ? decidirLiquidacionDga(visible, res.resultado_dga ?? {}) : { cambios: {}, avisos: [] };
           for (const aviso of decision.avisos) toast.warning(aviso, { duration: 12000 });
-          let completados = 0;
-          const aplicados: CambiosLiquidacion = {};
-          for (const [key, value] of Object.entries(decision.cambios)) {
-            const campo = key as keyof CambiosLiquidacion;
-            const previo = actual[campo];
-            const cambio: CambiosLiquidacion = campo === "peso_neto" ? { peso_neto: Number(value) } : { [campo]: String(value) };
-            let query = supabase.from("expedientes").update(cambio).eq("id", expedienteId);
-            query = previo == null ? query.is(campo, null) : query.eq(campo, previo);
+          const { cambios, previos } = prepararGuardadoLiquidacion(actual, decision.cambios, campos);
+          const completados = Object.keys(cambios).length;
+          if (completados) {
+            // A single UPDATE persists all document fields together, or none on conflict/error.
+            let query = supabase.from("expedientes").update(cambios).eq("id", expedienteId);
+            for (const [campo, previo] of Object.entries(previos)) {
+              query = previo == null ? query.is(campo, null) : query.eq(campo, previo);
+            }
             const { data: updated, error } = await query.select("id");
             if (error) throw error;
-            if (updated?.length) { Object.assign(aplicados, { [campo]: value }); completados++; }
-            else toast.warning(`${campo}: cambió durante la lectura; se conserva el dato más reciente.`);
-          }
-          editorLiquidacion?.current?.aplicar(aplicados);
-          for (const [key, value] of Object.entries(campos)) {
-            const campo = key as keyof CamposResultadoDga;
-            const previo = actual[campo];
-            // Condición atómica por campo: una edición concurrente nunca pierde su valor.
-            const cambio: CamposResultadoDga = campo === "liq_oficial_total" ? { liq_oficial_total: Number(value) } : { [campo]: String(value) };
-            let query = supabase.from("expedientes").update(cambio).eq("id", expedienteId);
-            query = previo == null ? query.is(campo, null) : query.eq(campo, previo);
-            const { data: updated, error } = await query.select("id");
-            if (error) throw error;
-            if (updated?.length) completados++;
+            if (!updated?.length) throw new Error("el expediente cambió durante la lectura; vuelve a procesar el documento. No se guardó ningún campo parcial");
+            editorLiquidacion?.current?.aplicar(decision.cambios);
           }
           toast.success(completados ? "Datos DGA completados; los datos existentes se conservaron." : "Documento guardado; no hay nuevos campos vacíos que completar.");
         } catch (e: unknown) {
