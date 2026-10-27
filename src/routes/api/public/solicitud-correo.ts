@@ -64,8 +64,21 @@ const schema = z.object({
   remitente: texto(500),
   asunto: texto(1000),
   cuerpo: texto(200_000),
+  destinatarios: texto(2000).optional(),
+  cc: texto(2000).optional(),
   adjuntos: z.unknown().optional(),
 }).refine((d) => d.cuerpo || d.asunto || (Array.isArray(d.adjuntos) && d.adjuntos.length), { message: "Correo vacío" });
+
+/** Acepta los alias habituales del remitente (para/to, con_copia/copia) sin rechazar el correo. */
+function normalizarDestinatarios(body: unknown) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return body;
+  const b = body as Record<string, unknown>;
+  return {
+    ...b,
+    destinatarios: b.destinatarios ?? b.para ?? b.to ?? b.destinatario,
+    cc: b.cc ?? b.con_copia ?? b.copia ?? b.conCopia,
+  };
+}
 
 
 function igualSeguro(a: string, b: string) {
