@@ -1623,6 +1623,8 @@ function normalizarCamposExportacion(payload: any) {
 function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null, tipoParam = "", solicitudEndoso = 0, nuevoAccionesHost = null, inspeccionHost = null }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null; tipoParam?: string; solicitudEndoso?: number; nuevoAccionesHost?: HTMLDivElement | null; inspeccionHost?: HTMLDivElement | null }) {
   const qc = useQueryClient();
   const nav = useNavigate();
+  const { correo: correoBusqueda } = Route.useSearch();
+  const correoOrigen = isNuevo ? correoBusqueda : "";
   const editable = (canEdit && modoEdicion) || isNuevo;
   const [focusedMoney, setFocusedMoney] = useState<string | null>(null);
   const [form, setForm] = useState(() => construirFormInicial(isNuevo ? null : exp, isNuevo, isNuevo ? tipoParam : ""));
@@ -2257,6 +2259,10 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       }
       await guardarFilasServicioAduanero(data.id, filasServicioAduanero);
       await supabase.from("auditoria").insert({ entidad: "expedientes", entidad_id: data.id, accion: "creado" });
+      if (correoOrigen) {
+        await supabase.from("solicitudes_correo").update({ estado: "confirmada", expediente_id: data.id }).eq("id", correoOrigen).eq("estado", "pendiente");
+        qc.invalidateQueries({ queryKey: ["solicitudes-correo"] });
+      }
       return data;
 
     },
