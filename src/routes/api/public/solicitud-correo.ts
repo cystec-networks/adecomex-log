@@ -4,6 +4,7 @@ import { aislarMensajeReciente, combinarDatos, extraerPorEtiquetas, fusionarAsun
 import { PROMPT_DOCUMENTO_IMPORTACION } from "@/lib/ocr-documento-prompt";
 import { callGateway } from "@/lib/ai-gateway.server";
 import { adjuntoCorreoSchema, normalizarAdjuntosCorreo, mimeAdjuntoCorreo } from "@/lib/correo-adjuntos";
+import { inicioVentanaDuplicadoCorreo, ESTADOS_DUPLICADO_CORREO, respuestaCorreoDuplicado } from "@/lib/correo-duplicados";
 
 const adjuntoSchema = adjuntoCorreoSchema;
 
@@ -138,6 +139,15 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         const p = schema.safeParse(body);
         if (!p.success) return Response.json({ error: "Faltan remitente/asunto/cuerpo válidos", detalle: p.error.issues.map((i) => `${i.path.join(".") || "correo"}: ${i.message}`) }, { status: 400 });
         const { remitente, asunto, cuerpo } = p.data;
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const db = supabaseAdmin as any;
+        // Antes de IA/OCR o archivos: una entrega repetida no vuelve a procesarse.
+        const { data: duplicado, error: errorDuplicado } = await db.from("solicitudes_correo")
+          .select("id").eq("remitente", remitente).eq("asunto", asunto)
+          .in("estado", [...ESTADOS_DUPLICADO_CORREO])
+          .gte("created_at", inicioVentanaDuplicadoCorreo()).limit(1).maybeSingle();
+        if (errorDuplicado) return Response.json({ error: "No se pudo verificar el envío duplicado" }, { status: 500 });
+        if (duplicado) return respuestaCorreoDuplicado();
         const entradaAdjuntos = normalizarAdjuntosCorreo(p.data.adjuntos);
         const adjuntosIn = entradaAdjuntos.adjuntos;
 
@@ -156,8 +166,6 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         const { datos, advertencias } = fusionarAdjuntos(correo.datos, [...correo.advertencias, ...entradaAdjuntos.advertencias], adjuntos);
         for (const a of adjuntos) if (a.error) advertencias.push(`${a.nombre}: no se pudo leer el documento; ${a.bytes.length ? "se conserva en Otros documentos" : "reenvía el archivo"}. ${a.error}`);
         const remitenteCorreo = correoDe(remitente);
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const db = supabaseAdmin as any;
 
         const subirAdjuntos = async (carpeta: string) => {
           for (const [i, a] of adjuntos.entries()) {
@@ -208,12 +216,21 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
 
         try { await subirAdjuntos(`correo/${crypto.randomUUID()}`); } catch (e: any) { return Response.json({ error: e.message }, { status: 500 }); }
         const listaAdjuntos = resumenAdjuntos();
-        const { data: fila, error } = await db.from("solicitudes_correo").insert({
+        // Revalidación atómica: dos entregas simultáneas solo pueden crear una fila.
+        const { data: id, error } = await db.rpc("crear_solicitud_correo_sin_duplicado", { p_solicitud: {
           remitente, remitente_correo: remitenteCorreo, asunto, cuerpo, mensaje_aislado: mensaje,
           ...datos, advertencias, cliente_id: clienteId, adjuntos: listaAdjuntos,
-        }).select("id").single();
+        } });
         if (error) return Response.json({ error: error.message }, { status: 500 });
-        return Response.json({ resultado: "borrador", id: fila.id, datos, advertencias, adjuntos: listaAdjuntos.map((a) => ({ nombre: a.nombre, tipo: a.tipo })) });
+        if (!id) {
+          // Retira únicamente los archivos propios de la entrega que perdió la carrera.
+          if (listaAdjuntos.length) {
+            const { error: limpieza } = await db.storage.from("documentos").remove(listaAdjuntos.map((a) => a.storage_path));
+            if (limpieza) console.error("No se pudieron retirar adjuntos de un envío duplicado");
+          }
+          return respuestaCorreoDuplicado();
+        }
+        return Response.json({ resultado: "borrador", id, datos, advertencias, adjuntos: listaAdjuntos.map((a) => ({ nombre: a.nombre, tipo: a.tipo })) });
       },
     },
   },
