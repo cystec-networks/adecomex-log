@@ -38,10 +38,20 @@ async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoPro
       ],
     });
     const j = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? "{}");
+    const tipo = tipoAdjuntoCorreo(j.tipo_documento);
+    // Same OCR implementation as Escanear Factura, after webhook authorization.
+    if (tipo === "Factura comercial") {
+      const { leerDocumentoImportacion } = await import("@/lib/ai-ocr.server");
+      try {
+        Object.assign(j, await leerDocumentoImportacion({ filename: a.nombre, mime, base64, lineas_factura: true }));
+      } catch (error) {
+        return { ...base, tipo, datos: j, error: `Factura reconocida; lectura de mercancías pendiente: ${String(error instanceof Error ? error.message : error).slice(0, 160)}` };
+      }
+    }
     const txt = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
     return {
       ...base,
-      tipo: tipoAdjuntoCorreo(j.tipo_documento),
+      tipo,
       bl_awb: txt(j.bl),
       eta: txt(j.eta),
       cliente_nombre: txt(j.cliente),
@@ -49,7 +59,7 @@ async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoPro
       cantidad: txt(j.cantidad),
       peso_bruto_kg: j.peso_bruto_kg != null && !isNaN(Number(j.peso_bruto_kg)) ? Number(j.peso_bruto_kg) : null,
       factura_comercial: txt(j.factura_comercial),
-      datos: Object.fromEntries(["tipo_carga", "tipo_carga_confianza", "contenedores", "suplidor", "medio_transporte", "naviera", "buque", "puerto_arribo", "puerto_salida", "pais_origen", "pais_procedencia", "incoterm", "peso_neto_kg", "fecha_cargado", "fob_total", "seguro", "flete", "otros_gastos"].map((k) => [k, j[k] ?? null])),
+      datos: Object.fromEntries(["tipo_carga", "tipo_carga_confianza", "contenedores", "suplidor", "medio_transporte", "naviera", "buque", "puerto_arribo", "puerto_salida", "pais_origen", "pais_procedencia", "incoterm", "peso_neto_kg", "fecha_cargado", "fob_total", "seguro", "flete", "otros_gastos", "lineas_factura"].map((k) => [k, j[k] ?? null])),
     };
   } catch (e: any) {
     return { ...base, error: String(e?.message ?? e).slice(0, 200) };

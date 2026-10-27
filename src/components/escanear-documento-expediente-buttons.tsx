@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { extractSolicitudFromDocument, type OcrExtraction } from "@/lib/ai-ocr.functions";
 import { classifyArancelLote } from "@/lib/ai-arancel.functions";
-import { prepararProductosFactura } from "@/lib/factura-expediente-arancel";
+import { escanearFacturaExpediente } from "@/lib/factura-expediente-escaneo";
 import { buscarSugerenciasProducto } from "@/lib/catalogo-arancelario-queries";
 
 function EscanearDocumentoButton({
@@ -42,15 +42,12 @@ function EscanearDocumentoButton({
       const bytes = new Uint8Array(buf);
       let binary = "";
       for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-      const res = await extractFn({
-        data: { filename: file.name, mime: file.type || "application/pdf", base64: btoa(binary), ...(sugerirPartidas ? { lineas_factura: true } : {}) },
-      });
-      if (sugerirPartidas && res.lineas_factura?.length) {
-        res.productos_factura = await prepararProductosFactura(res.lineas_factura,
-          (descripciones) => clasificar({ data: { descripciones } }),
-          (codigo, manual) => buscarSugerenciasProducto(qc, codigo, manual));
-      }
-      return res;
+      const archivo = { filename: file.name, mime: file.type || "application/pdf", base64: btoa(binary) };
+      return sugerirPartidas ? escanearFacturaExpediente(archivo, {
+        extraer: (data) => extractFn({ data }),
+        clasificar: (descripciones) => clasificar({ data: { descripciones } }),
+        buscarTasas: (codigo, manual) => buscarSugerenciasProducto(qc, codigo, manual),
+      }) : extractFn({ data: archivo });
     },
     onSuccess: (res) => {
       setData(res);
