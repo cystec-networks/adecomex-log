@@ -23,7 +23,7 @@ Detail headers: content-sized rows, client label/value together, wrap IDs, warni
 - Use the shared expediente alert evaluator for list and detail short/long text; keep PIN timestamp countdown separate from business-day presentation deadlines, and batch list evidence reads to avoid per-row requests.
 - Group PIN/presentation warnings in one list-only deadline entry with both short texts; retain independent clocks and full detail warnings.
 - Export DR-CAFTA from the editable preview with jsPDF text/vector borders; measure cells/text to preserve official layouts, annexes and saved edits without rasterization.
-- Keep inspection type in the existing canal_riesgo storage field; portal the form-owned selector into the detail header so both editors share draft state and the existing save validation without migrating historical values.
+- Inspection stays in canal_riesgo; portal the form-owned selector to the header to share drafts/validation without migrating historical values.
 - Use consignatario-efectivo.ts (active endorsement, else original) for documents/new invoices; issued invoices stay frozen.
 - Resolve the dispatch-date modal asynchronously within the existing state mutation and reuse fechasDespachoFaltantes for detail-only preventive alerts, preserving permission checks and audit payloads.
 - Share entry suggestions via buscarSugerenciasProducto/resolverSugerenciasProducto (not historical/Real); explicit DGA selections use datosProductoHistorico. Tariff CSV uses staff-checked server import and atomic invoker RPC; no product override writes.
