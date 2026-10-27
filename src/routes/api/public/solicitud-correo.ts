@@ -149,7 +149,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
 
         let body: unknown;
         try { body = await request.json(); } catch { return Response.json({ error: "JSON inválido" }, { status: 400 }); }
-        const p = schema.safeParse(body);
+        const p = schema.safeParse(normalizarDestinatarios(body));
         if (!p.success) return Response.json({ error: "Faltan remitente/asunto/cuerpo válidos", detalle: p.error.issues.map((i) => `${i.path.join(".") || "correo"}: ${i.message}`) }, { status: 400 });
         const { remitente, asunto, cuerpo } = p.data;
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -232,6 +232,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         // Revalidación atómica: dos entregas simultáneas solo pueden crear una fila.
         const { data: id, error } = await db.rpc("crear_solicitud_correo_sin_duplicado", { p_solicitud: {
           remitente, remitente_correo: remitenteCorreo, asunto, cuerpo, mensaje_aislado: mensaje,
+          destinatarios: p.data.destinatarios || null, cc: p.data.cc || null,
           ...datos, advertencias, cliente_id: clienteId, adjuntos: listaAdjuntos,
         } });
         if (error) return Response.json({ error: error.message }, { status: 500 });
