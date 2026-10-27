@@ -162,7 +162,8 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         if (errorDuplicado) return Response.json({ error: "No se pudo verificar el envío duplicado" }, { status: 500 });
         if (duplicado) return respuestaCorreoDuplicado();
         const entradaAdjuntos = normalizarAdjuntosCorreo(p.data.adjuntos);
-        const adjuntosIn = entradaAdjuntos.adjuntos;
+        // Mismo archivo repetido (nombre, o contenido idéntico): se procesa una sola vez.
+        const adjuntosIn = deduplicarAdjuntosCorreo(entradaAdjuntos.adjuntos.map((a) => ({ ...a, file_hash: a.contenido.replace(/^data:[^,]*,/, "").replace(/\s+/g, "") }))).map(({ file_hash: _h, ...a }) => a);
 
         const mensaje = aislarMensajeReciente(cuerpo);
         if (!mensaje && !asunto && !adjuntosIn.length) return Response.json({ resultado: "descartado", motivo: "Mensaje vacío", advertencias: entradaAdjuntos.advertencias });
