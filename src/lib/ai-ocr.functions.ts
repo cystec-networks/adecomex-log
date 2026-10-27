@@ -2,15 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { callGateway } from "./ai-gateway.server";
-import { PROMPT_DOCUMENTO_IMPORTACION } from "./ocr-documento-prompt";
 import type { LineaFacturaExpediente } from "./factura-expediente-arancel";
 import type { PagoPuerto } from "./pago-puerto";
-import { PROMPT_PAGO_PUERTO, resolverPagoPuertoOcr } from "./pago-puerto-ocr";
 import { TIPOS_RESULTADO_DGA, type ResultadoDgaExtraido } from "./resultado-dga-documentos";
-import { totalDesdeTexto } from "./pago-puerto-texto";
-import { leerPagoVuceTexto, esPagoVuce } from "./pago-vuce";
-import { normalizarCertificadoDga, type CertificadoDga } from "./certificado-origen-dga";
-import { leerLiquidacionDga, type LiquidacionDga } from "./liquidacion-dga-documento";
+import type { CertificadoDga } from "./certificado-origen-dga";
+import type { LiquidacionDga } from "./liquidacion-dga-documento";
 
 const Input = z.object({
   filename: z.string(),

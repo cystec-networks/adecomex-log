@@ -673,7 +673,8 @@ function DetalleExpediente() {
         contenedores: Array.isArray(doc.contenedores) ? doc.contenedores as OcrExtraction["contenedores"] : null,
         tipoCargaConfianza: doc.tipo_carga_confianza === "media" ? "media" : doc.tipo_carga_confianza === "alta" ? "alta" : null,
         campos: {
-          ...Object.fromEntries(["tipo_carga", "suplidor", "medio_transporte", "naviera", "buque", "puerto_arribo", "puerto_salida", "pais_origen", "pais_procedencia", "incoterm", "fecha_cargado", "flete", "seguro", "otros_gastos"].map((k) => [k, doc[k] ?? null])),
+          ...Object.fromEntries(["tipo_carga", "suplidor", "medio_transporte", "naviera", "puerto_arribo", "puerto_salida", "pais_origen", "pais_procedencia", "incoterm", "fecha_cargado", "flete", "seguro"].map((k) => [k, doc[k] ?? null])),
+          ...(doc.otros_gastos != null ? { otros: doc.otros_gastos } : {}),
           ...(doc.peso_neto_kg != null ? { peso_neto: doc.peso_neto_kg } : {}),
           bl_awb: s.bl_awb,
           fecha_compromiso: s.eta,
