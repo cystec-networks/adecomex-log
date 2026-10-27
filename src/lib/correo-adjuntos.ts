@@ -15,7 +15,7 @@ export function normalizarAdjuntosCorreo(value: unknown) {
   for (const [i, raw] of value.entries()) {
     const v = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
     const nombre = String(v.nombre ?? v.name ?? v.filename ?? v.fileName ?? `adjunto-${i + 1}`);
-    const contenido = v.contenido ?? v.content ?? v.data ?? v.base64 ?? v.contentBytes ?? v.contenido_base64 ?? v.content_base64 ?? v.base64Content ?? v.bytes;
+    const contenido = v.contenidoBase64 ?? v.contenido ?? v.content ?? v.data ?? v.base64 ?? v.contentBytes ?? v.contenido_base64 ?? v.content_base64 ?? v.contentBase64 ?? v.base64Content ?? v.bytes;
     const parsed = adjuntoCorreoSchema.safeParse({ nombre, tipo: String(v.tipo ?? v.mimeType ?? v.mime_type ?? v.mime ?? v.contentType ?? v.content_type ?? v.type ?? ""), contenido });
     if (!parsed.success || adjuntos.length >= 10) {
       advertencias.push(`No se pudo recibir ${nombre}: ${adjuntos.length >= 10 ? "máximo 10 adjuntos por correo" : "contenido base64 ausente o inválido"}. Reenvía el archivo.`);
