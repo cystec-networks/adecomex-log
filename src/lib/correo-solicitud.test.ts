@@ -62,11 +62,36 @@ describe("asunto del correo", () => {
   it("el cuerpo gana con advertencia si difiere", () => {
     const base = { bl_awb: "AAA111222", eta: "2026-10-01", producto: null, cantidad: null, cliente_nombre: null };
     const r = fusionarAsunto(base, "HACER VUCE: BL MEDUAFV97440--ETA 26/10/2026--");
-    expect(r.datos.bl_awb).toBe("AAA111222");
-    expect(r.datos.eta).toBe("2026-10-01");
+    expect(r.datos.bl_awb).toBe("MEDUAFV97440");
+    expect(r.datos.eta).toBe("2026-10-26");
     expect(r.advertencias.length).toBe(2);
     const v = fusionarAsunto({ ...base, bl_awb: null, eta: null }, "HACER VUCE: BL MEDUAFV97440--ETA 26/10/2026--");
     expect(v.datos.bl_awb).toBe("MEDUAFV97440");
     expect(v.advertencias.length).toBe(0);
+  });
+});
+
+import { fusionarAdjuntos, tipoAdjuntoCorreo } from "./correo-solicitud";
+describe("adjuntos del correo", () => {
+  const correo = { bl_awb: "MEDUAFV97440", eta: "2026-10-26", producto: "LECHE", cantidad: null, cliente_nombre: null };
+  it("el documento adjunto gana sobre asunto/cuerpo y deja aviso verificar", () => {
+    const r = fusionarAdjuntos(correo, [], [{ tipo: "Bill of Lading", bl_awb: "hlcuLI2260908636", cliente_nombre: "IMANFA SRL", peso_bruto_kg: 25000 }]);
+    expect(r.datos.bl_awb).toBe("HLCULI2260908636");
+    expect(r.datos.eta).toBe("2026-10-26");
+    expect(r.datos.cliente_nombre).toBe("IMANFA SRL");
+    expect(r.datos.peso_bruto_kg).toBe(25000);
+    expect(r.advertencias.length).toBe(1);
+    expect(r.advertencias[0].includes("verificar: el asunto/cuerpo sugiere un valor distinto")).toBe(true);
+  });
+  it("un adjunto no reconocido no aporta datos", () => {
+    const r = fusionarAdjuntos(correo, ["x"], [{ tipo: "Otro", bl_awb: "ZZZ999999" }]);
+    expect(r.datos.bl_awb).toBe("MEDUAFV97440");
+    expect(r.advertencias.length).toBe(1);
+  });
+  it("normaliza el tipo de documento", () => {
+    expect(tipoAdjuntoCorreo("Bill of Lading")).toBe("Bill of Lading");
+    expect(tipoAdjuntoCorreo("Packing List")).toBe("Lista de empaque");
+    expect(tipoAdjuntoCorreo("Commercial Invoice")).toBe("Factura comercial");
+    expect(tipoAdjuntoCorreo("foto de perfil")).toBe("Otro");
   });
 });
