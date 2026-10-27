@@ -215,6 +215,19 @@ export function useReminders() {
 
       const out: Reminder[] = [];
 
+      // Solicitudes recibidas por correo sin confirmar: siempre urgentes (badge rojo).
+      for (const s of correo.data ?? []) {
+        const horas = Math.max(0, Math.floor((now.getTime() - new Date(s.created_at).getTime()) / 3_600_000));
+        out.push({
+          id: `solicitud_correo_pendiente:${s.id}`,
+          kind: "solicitud_correo_pendiente",
+          severity: "critica",
+          title: "Solicitud por correo sin confirmar",
+          detail: `${s.remitente ?? "Remitente desconocido"} · ${s.asunto ? s.asunto.slice(0, 60) : "Sin asunto"} · ${horas === 0 ? "hace menos de 1 h" : `${horas} h`}`,
+          href: "/expedientes/correo",
+          createdAt: s.created_at,
+        });
+      }
 
       // Solicitudes sin convertir
       for (const s of sol.data ?? []) {
