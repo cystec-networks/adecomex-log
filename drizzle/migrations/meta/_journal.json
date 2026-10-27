@@ -498,6 +498,13 @@
       "when": 1793122500365,
       "tag": "0070_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1793123570234,
+      "tag": "0071_solicitudes_correo_adjuntos",
+      "breakpoints": true
     }
   ]
 }
