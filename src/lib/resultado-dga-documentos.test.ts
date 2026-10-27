@@ -2,6 +2,9 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { camposDesdeDocumentoDga, completarResultadoDga } from "./resultado-dga-documentos";
 describe("Resultado DGA acumulativo", () => {
+  it("Temporal () nunca se guarda como número de Liquidación", () => {
+    assert.deepEqual(camposDesdeDocumentoDga("Reporte de Liquidación de Impuestos", { numero: "Temporal ()", estado: "Registrado/Aceptado" }), { liq_siga_estado: "Registrado/Aceptado" });
+  });
   it("Liquidación aporta número y estado, nunca total de impuestos", () => {
     assert.deepEqual(camposDesdeDocumentoDga("Reporte de Liquidación de Impuestos", { numero: "10150-CL11-2610-001CBA", estado: "Registrado/Aceptado", total: 1654000 }), { liq_siga_numero: "10150-CL11-2610-001CBA", liq_siga_estado: "Registrado/Aceptado" });
   });

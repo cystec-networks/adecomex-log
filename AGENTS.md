@@ -16,14 +16,14 @@ Headers: desktop slots/More, mobile rows. New-expediente: two fixed action rows,
 Detail headers: content-sized rows, client label/value together, wrap IDs, warnings below Description; shared deadlines.
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
 - Deadlines use plazo-presentacion.ts with regime days + expediente override, never sla_dias/ETA. Require real arrival/regime; show business days, classify overdue by calendar date including weekends.
-- In the sticky header, show ETA until arrival, then arrival with calendar transit days; follow with presentation status and omit duplicate transit. Mount deadline override content only while open to avoid overlap.
+- Header: ETA until arrival, then arrival/calendar transit; presentation next, no duplicate transit. Mount deadline override only while open to prevent overlap.
 - From verification onward, shared state ordering replaces deadlines with compliance from fecha_presentado; omit when date/deadline is missing, never fabricate dates.
-- Open the existing Endoso section via a parent-owned request counter from both header document menus, preserving a single form and its current persistence logic.
+- Both header menus open Endoso via parent request counter; retain one form/persistence path.
 - Evaluate detail warnings with scoped evidence queries; invoice links and persisted reception incidents prevent unrelated debt alerts and recomputed tolerances.
 - Use the shared expediente alert evaluator for list and detail short/long text; keep PIN timestamp countdown separate from business-day presentation deadlines, and batch list evidence reads to avoid per-row requests.
 - Group PIN/presentation warnings in one list-only deadline entry with both short texts; retain independent clocks and full detail warnings.
 - Export DR-CAFTA from the editable preview with jsPDF text/vector borders; measure cells/text to preserve official layouts, annexes and saved edits without rasterization.
-- Keep inspection type in the existing canal_riesgo storage field; portal the form-owned selector into the detail header so both editors share draft state and the existing save validation without migrating historical values.
+- Inspection stays in canal_riesgo; portal the form-owned selector to the header to share drafts/validation without migrating historical values.
 - Use consignatario-efectivo.ts (active endorsement, else original) for documents/new invoices; issued invoices stay frozen.
 - Resolve the dispatch-date modal asynchronously within the existing state mutation and reuse fechasDespachoFaltantes for detail-only preventive alerts, preserving permission checks and audit payloads.
 - Share entry suggestions via buscarSugerenciasProducto/resolverSugerenciasProducto (not historical/Real); explicit DGA selections use datosProductoHistorico. Tariff CSV uses staff-checked server import and atomic invoker RPC; no product override writes.
@@ -36,3 +36,4 @@ Detail headers: content-sized rows, client label/value together, wrap IDs, warni
 - DGA fills blanks; permiso-vuce replaces documentary fields and links PDFs on save. VUCE payments share pago-vuce accumulation by verified permit; PIN/receipt markers preserve both sources, preventing duplicate costs.
 - Editors retain drafts/global saves. DGA origin uses declaracion-origen-context for conditional sync; references stay in document observations.
 - Sync draft Description via observaciones-expediente on observation changes, not save; preserve manual edits.
+- Liquidation OCR: liquidacion-dga-documento extracts labels/conflicts/comparison-only totals; liquidacion-dga-context syncs persisted fields without losing drafts. Manifest/inspection are read-only references.

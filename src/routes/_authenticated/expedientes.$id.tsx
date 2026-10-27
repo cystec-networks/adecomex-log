@@ -60,6 +60,8 @@ import { EscanearPagoPuerto, type DocumentoPagoSubido } from "@/components/escan
 import { esDocumentoResultadoDga, camposDesdeDocumentoDga, completarResultadoDga, type CamposResultadoDga } from "@/lib/resultado-dga-documentos";
 import { extractSolicitudFromDocument } from "@/lib/ai-ocr.functions";
 import { DeclaracionOrigenProvider, useDeclaracionOrigen } from "@/components/declaracion-origen-context";
+import { LiquidacionDgaProvider, useLiquidacionDga } from "@/components/liquidacion-dga-context";
+import { decidirLiquidacionDga, type CambiosLiquidacion } from "@/lib/liquidacion-dga-documento";
 import { TIPO_CERTIFICADO_DGA, decidirCertificadoDga, guardarReferenciaCertificado, leerReferenciaCertificado, type CertificadoDga } from "@/lib/certificado-origen-dga";
 
 import { CatalogCombobox } from "@/components/catalog-combobox";
@@ -166,7 +168,7 @@ export const Route = createFileRoute("/_authenticated/expedientes/$id")({
 
 function ExpedienteConGuardado() {
   const { id } = Route.useParams();
-  return <ExpedienteGuardadoProvider key={id}><DeclaracionOrigenProvider><DetalleExpediente /></DeclaracionOrigenProvider></ExpedienteGuardadoProvider>;
+  return <ExpedienteGuardadoProvider key={id}><DeclaracionOrigenProvider><LiquidacionDgaProvider><DetalleExpediente /></LiquidacionDgaProvider></DeclaracionOrigenProvider></ExpedienteGuardadoProvider>;
 }
 
 // Helpers para inputs `datetime-local` (vigencia del PIN de pago DGA).
@@ -1538,6 +1540,8 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     deposito_destino: d.deposito_destino ?? "",
     deposito_destino_codigo: d.deposito_destino_codigo ?? "",
     liq_siga_numero: d.liq_siga_numero ?? "",
+    liq_dga_manifiesto: d.liq_dga_manifiesto ?? "",
+    liq_dga_resultado_inspeccion: d.liq_dga_resultado_inspeccion ?? "",
     liq_siga_estado: d.liq_siga_estado ?? "",
     liq_oficial_total: d.liq_oficial_total ?? "",
     liq_siga_pin_pago: d.liq_siga_pin_pago ?? "",
@@ -2086,6 +2090,21 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   // Indicador de cambios sin guardar y resultado del último guardado.
   const [base, setBase] = useState<string | null>(null);
   const editorOrigen = useDeclaracionOrigen();
+  const editorLiquidacion = useLiquidacionDga();
+  useEffect(() => {
+    if (!editorLiquidacion || isNuevo) return;
+    const editor = { leer: () => form, aplicar: (cambios: CambiosLiquidacion) => {
+      setForm((f) => ({ ...f, ...cambios }));
+      setBase((b) => {
+        if (!b) return b;
+        const anterior = JSON.parse(b);
+        anterior[0] = { ...anterior[0], ...cambios };
+        return JSON.stringify(anterior);
+      });
+    } };
+    editorLiquidacion.current = editor;
+    return () => { if (editorLiquidacion.current === editor) editorLiquidacion.current = null; };
+  }, [editorLiquidacion, isNuevo, form]);
   useEffect(() => {
     if (!editorOrigen || isNuevo) return;
     const editor = { leer: () => form, aplicar: (cambios: import("@/lib/certificado-origen-dga").DeclaracionOrigen) => {
@@ -2557,6 +2576,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             </Select>
           </div>
           <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} req />
+          <div className="grid gap-1.5"><Label>N° de Manifiesto</Label><div className="min-h-9 flex items-center text-sm break-all" aria-label="N° de Manifiesto">{exp?.liq_dga_manifiesto || "—"}</div></div>
+          <div className="grid gap-1.5"><Label>N° Resultado de Inspección</Label><div className="min-h-9 flex items-center text-sm break-all" aria-label="N° Resultado de Inspección">{exp?.liq_dga_resultado_inspeccion || "—"}</div></div>
           <div className="grid gap-1.5">
             <Label className="flex items-center gap-1">
               Fecha de Presentación
@@ -2991,6 +3012,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const qc = useQueryClient();
   const editorOrigen = useDeclaracionOrigen();
+  const editorLiquidacion = useLiquidacionDga();
   const extraer = useServerFn(extractSolicitudFromDocument);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -3152,10 +3174,26 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           let binary = "";
           for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
           const res = await extraer({ data: { filename: file.name, mime: "application/pdf", base64: btoa(binary), resultado_dga: tipo } });
-          const { data: actual, error: readError } = await supabase.from("expedientes").select("liq_siga_numero,liq_siga_estado,liq_siga_pin_pago,liq_siga_registro_at,liq_siga_termino_at,liq_siga_fecha_registro,liq_siga_fecha_pago,liq_oficial_total").eq("id", expedienteId).single();
+          const { data: actual, error: readError } = await supabase.from("expedientes").select("*").eq("id", expedienteId).single();
           if (readError) throw readError;
-          const campos = completarResultadoDga(actual, camposDesdeDocumentoDga(tipo, res.resultado_dga ?? {}));
+          const visible = { ...actual, ...editorLiquidacion?.current?.leer() };
+          const campos = completarResultadoDga(visible, camposDesdeDocumentoDga(tipo, res.resultado_dga ?? {}));
+          const decision = tipo === "Reporte de Liquidación de Impuestos" ? decidirLiquidacionDga(visible, res.resultado_dga ?? {}) : { cambios: {}, avisos: [] };
+          for (const aviso of decision.avisos) toast.warning(aviso, { duration: 12000 });
           let completados = 0;
+          const aplicados: CambiosLiquidacion = {};
+          for (const [key, value] of Object.entries(decision.cambios)) {
+            const campo = key as keyof CambiosLiquidacion;
+            const previo = actual[campo];
+            const cambio: CambiosLiquidacion = campo === "peso_neto" ? { peso_neto: Number(value) } : { [campo]: String(value) };
+            let query = supabase.from("expedientes").update(cambio).eq("id", expedienteId);
+            query = previo == null ? query.is(campo, null) : query.eq(campo, previo);
+            const { data: updated, error } = await query.select("id");
+            if (error) throw error;
+            if (updated?.length) { Object.assign(aplicados, { [campo]: value }); completados++; }
+            else toast.warning(`${campo}: cambió durante la lectura; se conserva el dato más reciente.`);
+          }
+          editorLiquidacion?.current?.aplicar(aplicados);
           for (const [key, value] of Object.entries(campos)) {
             const campo = key as keyof CamposResultadoDga;
             const previo = actual[campo];
@@ -3167,7 +3205,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
             if (error) throw error;
             if (updated?.length) completados++;
           }
-          toast.success(completados ? "Resultado oficial DGA completado; los datos existentes se conservaron." : "Documento guardado; no hay nuevos campos vacíos que completar.");
+          toast.success(completados ? "Datos DGA completados; los datos existentes se conservaron." : "Documento guardado; no hay nuevos campos vacíos que completar.");
         } catch (e: unknown) {
           toast.warning(`PDF guardado, pero no se pudo completar el resultado DGA: ${e instanceof Error ? e.message : "revisa los datos manualmente"}`, { duration: 10000 });
         } finally {
