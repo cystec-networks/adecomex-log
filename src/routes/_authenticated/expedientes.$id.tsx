@@ -2294,7 +2294,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         if (errorSol) throw errorSol;
         const adjuntosCorreo = deduplicarAdjuntosCorreo(((Array.isArray(sol?.adjuntos) ? sol.adjuntos : []) as { nombre: string; tipo: string; storage_path: string }[]).filter((a) => a?.storage_path));
         // Ya vinculados (reintento tras un error parcial): no se duplican ni se renumeran.
-        const { data: yaVinculados } = await supabase.from("documentos").select("storage_path").eq("expediente_id", data.id).is("eliminado_en", null);
+        const { data: yaVinculados } = await supabase.from("documentos").select("storage_path").eq("expediente_id", data.id);
         const rutasVinculadas = new Set((yaVinculados ?? []).map((d) => d.storage_path));
         for (const a of adjuntosCorreo) {
           if (rutasVinculadas.has(a.storage_path)) continue;
