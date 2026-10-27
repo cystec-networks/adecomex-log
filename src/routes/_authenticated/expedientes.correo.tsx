@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, Mail, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,10 +28,13 @@ function BandejaCorreo() {
   const { data = [], isLoading } = useQuery({
     queryKey: ["solicitudes-correo"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("solicitudes_correo").select("*, clientes:cliente_id(nombre)" as any)
+      const { data, error } = await supabase.from("solicitudes_correo").select("*")
         .eq("estado", "pendiente").order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as any[];
+      const ids = [...new Set((data ?? []).map((s) => s.cliente_id).filter(Boolean))] as string[];
+      const { data: cl } = ids.length ? await supabase.from("clientes").select("id,nombre").in("id", ids) : { data: [] as any[] };
+      const nom = new Map((cl ?? []).map((c: any) => [c.id, c.nombre]));
+      return (data ?? []).map((s) => ({ ...s, clientes: s.cliente_id ? { nombre: nom.get(s.cliente_id) } : null })) as any[];
     },
   });
   const descartar = useMutation({
@@ -64,8 +67,8 @@ function BandejaCorreo() {
                 {data.map((s) => {
                   const falta = camposFaltantes(s);
                   return (
-                    <>
-                      <tr key={s.id} className="border-t align-top">
+                    <Fragment key={s.id}>
+                      <tr className="border-t align-top">
                         <td className="px-2 py-1.5 whitespace-nowrap">{new Date(s.created_at).toLocaleString("es-DO", { timeZone: "America/Santo_Domingo" })}</td>
                         <td className="px-2 py-1.5">
                           <div>{s.clientes?.nombre ?? s.cliente_nombre ?? "—"}</div>
@@ -94,7 +97,7 @@ function BandejaCorreo() {
                           <details className="mt-2"><summary className="text-[11px] cursor-pointer text-muted-foreground">Correo completo</summary><pre className="whitespace-pre-wrap text-[11px] mt-1">{s.cuerpo}</pre></details>
                         </td></tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>

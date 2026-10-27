@@ -60,6 +60,7 @@ import { Route as AuthenticatedCotizacionesCalculadoraRouteImport } from './rout
 import { Route as AuthenticatedCotizacionesNuevaRouteImport } from './routes/_authenticated/cotizaciones.nueva'
 import { Route as AuthenticatedExpedientesIndexRouteImport } from './routes/_authenticated/expedientes.index'
 import { Route as AuthenticatedExpedientesIdRouteImport } from './routes/_authenticated/expedientes.$id'
+import { Route as AuthenticatedExpedientesCorreoRouteImport } from './routes/_authenticated/expedientes.correo'
 import { Route as AuthenticatedExpedientesDashboardRouteImport } from './routes/_authenticated/expedientes.dashboard'
 import { Route as AuthenticatedExpedientesPapeleraRouteImport } from './routes/_authenticated/expedientes.papelera'
 import { Route as AuthenticatedLogisticaIndexRouteImport } from './routes/_authenticated/logistica.index'
@@ -386,6 +387,12 @@ const AuthenticatedExpedientesIdRoute =
     path: '/expedientes/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedExpedientesCorreoRoute =
+  AuthenticatedExpedientesCorreoRouteImport.update({
+    id: '/expedientes/correo',
+    path: '/expedientes/correo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedExpedientesDashboardRoute =
   AuthenticatedExpedientesDashboardRouteImport.update({
     id: '/expedientes/dashboard',
@@ -646,6 +653,7 @@ export interface FileRoutesByFullPath {
   '/cotizaciones/calculadora': typeof AuthenticatedCotizacionesCalculadoraRoute
   '/cotizaciones/nueva': typeof AuthenticatedCotizacionesNuevaRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
+  '/expedientes/correo': typeof AuthenticatedExpedientesCorreoRoute
   '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/logistica/$id': typeof AuthenticatedLogisticaIdRoute
@@ -733,6 +741,7 @@ export interface FileRoutesByTo {
   '/cotizaciones/calculadora': typeof AuthenticatedCotizacionesCalculadoraRoute
   '/cotizaciones/nueva': typeof AuthenticatedCotizacionesNuevaRoute
   '/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
+  '/expedientes/correo': typeof AuthenticatedExpedientesCorreoRoute
   '/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/logistica/$id': typeof AuthenticatedLogisticaIdRoute
@@ -824,6 +833,7 @@ export interface FileRoutesById {
   '/_authenticated/cotizaciones/calculadora': typeof AuthenticatedCotizacionesCalculadoraRoute
   '/_authenticated/cotizaciones/nueva': typeof AuthenticatedCotizacionesNuevaRoute
   '/_authenticated/expedientes/$id': typeof AuthenticatedExpedientesIdRoute
+  '/_authenticated/expedientes/correo': typeof AuthenticatedExpedientesCorreoRoute
   '/_authenticated/expedientes/dashboard': typeof AuthenticatedExpedientesDashboardRoute
   '/_authenticated/expedientes/papelera': typeof AuthenticatedExpedientesPapeleraRoute
   '/_authenticated/logistica/$id': typeof AuthenticatedLogisticaIdRoute
@@ -913,6 +923,7 @@ export interface FileRouteTypes {
     | '/cotizaciones/calculadora'
     | '/cotizaciones/nueva'
     | '/expedientes/$id'
+    | '/expedientes/correo'
     | '/expedientes/dashboard'
     | '/expedientes/papelera'
     | '/logistica/$id'
@@ -1000,6 +1011,7 @@ export interface FileRouteTypes {
     | '/cotizaciones/calculadora'
     | '/cotizaciones/nueva'
     | '/expedientes/$id'
+    | '/expedientes/correo'
     | '/expedientes/dashboard'
     | '/expedientes/papelera'
     | '/logistica/$id'
@@ -1090,6 +1102,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cotizaciones/calculadora'
     | '/_authenticated/cotizaciones/nueva'
     | '/_authenticated/expedientes/$id'
+    | '/_authenticated/expedientes/correo'
     | '/_authenticated/expedientes/dashboard'
     | '/_authenticated/expedientes/papelera'
     | '/_authenticated/logistica/$id'
@@ -1514,6 +1527,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedExpedientesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/expedientes/correo': {
+      id: '/_authenticated/expedientes/correo'
+      path: '/expedientes/correo'
+      fullPath: '/expedientes/correo'
+      preLoaderRoute: typeof AuthenticatedExpedientesCorreoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/expedientes/dashboard': {
       id: '/_authenticated/expedientes/dashboard'
       path: '/expedientes/dashboard'
@@ -1812,6 +1832,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCotizacionesCalculadoraRoute: typeof AuthenticatedCotizacionesCalculadoraRoute
   AuthenticatedCotizacionesNuevaRoute: typeof AuthenticatedCotizacionesNuevaRoute
   AuthenticatedExpedientesIdRoute: typeof AuthenticatedExpedientesIdRoute
+  AuthenticatedExpedientesCorreoRoute: typeof AuthenticatedExpedientesCorreoRoute
   AuthenticatedExpedientesDashboardRoute: typeof AuthenticatedExpedientesDashboardRoute
   AuthenticatedExpedientesPapeleraRoute: typeof AuthenticatedExpedientesPapeleraRoute
   AuthenticatedLogisticaIdRoute: typeof AuthenticatedLogisticaIdRoute
@@ -1891,6 +1912,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCotizacionesCalculadoraRoute,
   AuthenticatedCotizacionesNuevaRoute: AuthenticatedCotizacionesNuevaRoute,
   AuthenticatedExpedientesIdRoute: AuthenticatedExpedientesIdRoute,
+  AuthenticatedExpedientesCorreoRoute: AuthenticatedExpedientesCorreoRoute,
   AuthenticatedExpedientesDashboardRoute:
     AuthenticatedExpedientesDashboardRoute,
   AuthenticatedExpedientesPapeleraRoute: AuthenticatedExpedientesPapeleraRoute,

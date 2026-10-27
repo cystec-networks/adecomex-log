@@ -58,6 +58,10 @@ function Expedientes() {
   const [estado, setEstado] = useState(estadoParam ?? "todos");
   const [etaFilter, setEtaFilter] = useState(etaParam ? String(etaParam) : "all");
   const [toTrash, setToTrash] = useState<{ id: string; numero: string } | null>(null);
+  const { data: pendientesCorreo = 0 } = useQuery({
+    queryKey: ["solicitudes-correo", "conteo"],
+    queryFn: async () => (await supabase.from("solicitudes_correo").select("id", { count: "exact", head: true }).eq("estado", "pendiente")).count ?? 0,
+  });
   const [soloUrgentes, setSoloUrgentes] = useState(false);
   const [colapsados, setColapsados] = useState<Record<string, boolean>>(() => {
     try {
@@ -554,6 +558,7 @@ function Expedientes() {
             <Link to="/expedientes" search={{ tipo: "exportacion", estado: estadoParam, eta: etaParam }} className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
             <Link to="/expedientes" search={{ tipo: "facturados", estado: estadoParam, eta: etaParam }} className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
             </div>
+            <Link to="/expedientes/correo" className="px-2 py-1 text-xs rounded border bg-card inline-flex items-center gap-1.5 text-muted-foreground hover:bg-muted" title="Solicitudes recibidas por correo (borradores por confirmar)">Por correo <Badge variant="secondary" className="text-[10px] h-4 px-1">{pendientesCorreo}</Badge></Link>
             <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">{filtered.length} expedientes</span>
           </div>
           <div className="flex items-center gap-0.5 flex-wrap justify-end flex-1 min-w-0">
