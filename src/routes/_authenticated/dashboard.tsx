@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck, RefreshCw } from "lucide-react";
+import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck, RefreshCw, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -11,9 +11,18 @@ import { Button } from "@/components/ui/button";
 import { daysFromToday } from "@/lib/dates";
 import { ESTADO_LABEL } from "@/lib/estados-expediente";
 import { cotizacionEstadoLabel, COTIZACION_ESTADO_CLASS } from "@/lib/estados-cotizacion";
+import { obtenerCorreosPendientes } from "@/lib/correos-pendientes-kpi";
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
+  head: () => ({ meta: [
+    { title: "Panel de Operaciones | ADECOMEX" },
+    { name: "description", content: "Control operativo de expedientes, logística, permisos y correos pendientes de ADECOMEX." },
+    { property: "og:title", content: "Panel de Operaciones | ADECOMEX" },
+    { property: "og:description", content: "Seguimiento operativo de importaciones y comunicaciones pendientes de ADECOMEX." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: Dashboard,
 });
 
@@ -27,16 +36,16 @@ function KPI({ icon: Icon, label, value, tone = "primary", sub }: any) {
   };
   return (
     <Card className="h-full cursor-pointer transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-            <div className="text-3xl font-display font-bold mt-1">{value ?? "—"}</div>
-            {sub && <div className="text-xs text-muted-foreground mt-1">{sub}</div>}
+      <CardContent className="p-3">
+        <div className="min-w-0">
+          <div className="min-h-12 text-xs leading-4 text-muted-foreground">{label}</div>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+            <div className="min-w-0 text-2xl font-display font-bold tabular-nums">{value ?? "—"}</div>
+            <div className={`h-8 w-8 shrink-0 grid place-items-center rounded-md ${toneMap[tone]}`}>
+              <Icon className="h-4 w-4" />
+            </div>
           </div>
-          <div className={`h-11 w-11 grid place-items-center rounded-lg ${toneMap[tone]}`}>
-            <Icon className="h-5 w-5" />
-          </div>
+          <div className="min-h-8 text-xs leading-4 text-muted-foreground mt-2">{sub}</div>
         </div>
       </CardContent>
     </Card>
@@ -45,6 +54,12 @@ function KPI({ icon: Icon, label, value, tone = "primary", sub }: any) {
 
 function Dashboard() {
   const qc = useQueryClient();
+  const { data: correosPendientes, isError: errorCorreos } = useQuery({
+    queryKey: ["correos-pendientes-kpi"],
+    queryFn: () => obtenerCorreosPendientes(supabase),
+    refetchInterval: 30_000,
+    staleTime: 0,
+  });
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
@@ -96,6 +111,7 @@ function Dashboard() {
           onClick={() => {
             qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
             qc.invalidateQueries({ queryKey: ["reminders"] });
+            qc.invalidateQueries({ queryKey: ["correos-pendientes-kpi"] });
             toast.success("Actualizado");
           }}
         >
@@ -103,13 +119,14 @@ function Dashboard() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div aria-label="Indicadores de operaciones" className="grid grid-flow-col auto-cols-[168px] gap-2 overflow-x-auto pb-2 lg:grid-flow-row lg:auto-cols-auto lg:grid-cols-[repeat(7,minmax(0,1fr))] lg:overflow-x-visible">
         <Link to="/logistica" search={{ estado: "activas" }} aria-label="Ver operaciones de logística activas" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Ship} label="LOGÍSTICA EN CURSO" value={operacionesLogisticaActivas} tone="info" /></Link>
         <Link to="/expedientes" search={{ estado: "en_transito" }} aria-label="Ver expedientes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Ship} label="EXPEDIENTES EN TRANSITO" value={expedientesEnTransito} tone="info" /></Link>
         <Link to="/expedientes" search={{ eta: 7 }} aria-label="Ver expedientes por llegar" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Clock} label="EXPEDIENTES POR LLEGAR" value={expedientesPorLlegar} tone="warning" sub="Próximos 7 días" /></Link>
         <Link to="/permisos" search={{ vencimiento: 15 }} aria-label="Ver permisos VUCE por vencer" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FileWarning} label="Permisos VUCE por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" /></Link>
         <Link to="/transportes" search={{ estado: "en_transito,programado" }} aria-label="Ver transportes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" /></Link>
         <Link to="/dashboard" hash="atencion-requerida" aria-label="Ver alertas activas" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={AlertTriangle} label="Alertas activas" value={isLoadingReminders ? null : reminders.length} tone="danger" /></Link>
+        <Link to="/expedientes/correo" aria-label="Ver correos pendientes" className="h-full min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Mail} label="Correos pendientes" value={correosPendientes?.total} tone={correosPendientes?.total ? "danger" : "primary"} sub={correosPendientes ? `${correosPendientes.porConvertir} por convertir · ${correosPendientes.porResponder} por responder` : errorCorreos ? "No disponible" : "Consultando…"} /></Link>
       </div>
 
       <div id="atencion-requerida" className="scroll-mt-4"><RemindersPanel /></div>
