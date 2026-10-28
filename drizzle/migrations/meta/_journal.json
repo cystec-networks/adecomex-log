@@ -547,6 +547,13 @@
       "when": 1793147300001,
       "tag": "0077_confirmacion_pendiente_unica",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1793148064829,
+      "tag": "0078_confirmacion_enviada_irreversible",
+      "breakpoints": true
     }
   ]
 }

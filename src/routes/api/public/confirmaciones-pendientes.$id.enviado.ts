@@ -1,25 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { autorizadoWebhook } from "@/lib/webhook-auth";
+import { z } from "zod";
+import { marcarConfirmacionEnviada, respuestaCola } from "@/lib/confirmaciones-cola";
 
 /** Marca una confirmación de la cola como ya enviada (la llamada es idempotente). */
 export const Route = createFileRoute("/api/public/confirmaciones-pendientes/$id/enviado")({
   server: {
     handlers: {
       POST: async ({ request, params }) => {
-        if (!autorizadoWebhook(request)) return Response.json({ error: "No autorizado" }, { status: 401 });
+        if (!autorizadoWebhook(request)) return respuestaCola({ error: "No autorizado" }, 401);
+        const id = z.string().uuid().safeParse(params.id);
+        if (!id.success) return respuestaCola({ error: "Identificador inválido" }, 400);
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const db = supabaseAdmin as any;
-        const { data, error } = await db
-          .from("confirmaciones_correo")
-          .update({ estado: "enviada", enviado_en: new Date().toISOString() })
-          .eq("id", params.id)
-          .eq("estado", "pendiente")
-          .select("id");
-        if (error) return Response.json({ error: error.message }, { status: 500 });
-        if (data?.length) return Response.json({ resultado: "enviada", id: params.id });
-        const { data: existente } = await db.from("confirmaciones_correo").select("id, estado").eq("id", params.id).maybeSingle();
-        if (!existente) return Response.json({ error: "Confirmación no encontrada" }, { status: 404 });
-        return Response.json({ resultado: "ya_enviada", id: params.id });
+        try {
+          return await marcarConfirmacionEnviada(supabaseAdmin, id.data);
+        } catch (error) {
+          console.error("[confirmaciones-cola] ACK error", { id: id.data, error });
+          return respuestaCola({ error: "No se pudo guardar o verificar la confirmación enviada" }, 500);
+        }
       },
     },
   },
