@@ -218,7 +218,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
           : await supabase.from("documentos").insert(datos);
         // Fill the expediente's own permit number / transport only when blank; never overwrite captured data.
         const { data: exp } = await supabase.from("expedientes").select("numero_vuce,medio_transporte").eq("id", payload.expediente_id).maybeSingle();
-        const cambios: Record<string, string> = {};
+        const cambios: { numero_vuce?: string; medio_transporte?: string } = {};
         if (exp && !exp.numero_vuce?.trim() && payload.numero) cambios.numero_vuce = payload.numero;
         if (exp && !exp.medio_transporte?.trim() && transporteVuce.current) cambios.medio_transporte = transporteVuce.current.replace(/^mar[ií]timo$/i, "Marítimo").replace(/^a[ée]reo$/i, "Aéreo");
         if (Object.keys(cambios).length) {
