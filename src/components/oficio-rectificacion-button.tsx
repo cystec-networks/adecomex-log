@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { conConsignatarioEfectivo } from "@/lib/consignatario-efectivo";
+import { hoyRDISO } from "@/lib/dates";
 import {
   OFICIO_RECTIFICACION,
   descargarWord,
@@ -37,7 +39,10 @@ export function OficioRectificacionButton({ expedienteId, disabled }: { expedien
         fetchOficioConfig(),
       ]);
       if (expRes.error) throw expRes.error;
-      const e: any = expRes.data ?? {};
+      if (!expRes.data) throw new Error("Expediente no encontrado");
+      if (itemsRes.error) throw itemsRes.error;
+      if (docsRes.error) throw docsRes.error;
+      const e = await conConsignatarioEfectivo(expRes.data);
       const items: any[] = itemsRes.data ?? [];
       if (!(e.producto_correcto_rectificacion ?? "").trim()) {
         toast.warning("Complete y guarde el campo \"Producto correcto\" antes de generar el oficio.");
@@ -89,14 +94,14 @@ export function OficioRectificacionButton({ expedienteId, disabled }: { expedien
         tipo: OFICIO_RECTIFICACION.tipoDocumento,
         storage_path: path,
         estado: "recibido",
-        fecha_recepcion: new Date().toISOString().slice(0, 10),
+        fecha_recepcion: hoyRDISO(),
         observaciones: "Generado automáticamente desde el Expediente",
       });
       if (ins.error) throw ins.error;
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
       if (formato === "pdf") doc.save(`${nombre}.pdf`);
       else descargarWord(ref.current?.innerHTML ?? html, nombre);
-      toast.success("Oficio guardado en Documentos del expediente");
+      toast.success("Oficio guardado en Otros documentos del expediente");
     } catch (err: any) {
       toast.error(err?.message ?? "No se pudo guardar el oficio");
     } finally {
