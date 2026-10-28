@@ -24,3 +24,12 @@ describe("KPI de correos pendientes", () => {
     assert.equal(resumirCorreosPendientes(0, [{ expediente_id: null, estado: "pendiente", enviado_en: null }]).porResponder, 0);
   });
 });
+describe("borradores de confirmación", () => {
+  it("un borrador sin revisar cuenta como correo por responder; descartadas no", () => {
+    const r = resumirCorreosPendientes(0, [
+      { expediente_id: "a", estado: "borrador", enviado_en: null },
+      { expediente_id: "b", estado: "descartada", enviado_en: null },
+    ]);
+    assert.equal(r.porResponder, 1);
+  });
+});

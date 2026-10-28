@@ -5,7 +5,7 @@ type ConfirmacionResumen = { expediente_id: string | null; estado: string; envia
 
 export function resumirCorreosPendientes(porConvertir: number, confirmaciones: ConfirmacionResumen[]) {
   const porResponder = new Set(confirmaciones
-    .filter((c) => c.expediente_id !== null && c.estado === "pendiente" && c.enviado_en === null)
+    .filter((c) => c.expediente_id !== null && (c.estado === "pendiente" || c.estado === "borrador") && c.enviado_en === null)
     .map((c) => c.expediente_id)).size;
   return { porConvertir, porResponder, total: porConvertir + porResponder };
 }
@@ -16,7 +16,7 @@ export async function obtenerCorreosPendientes(db: Pick<SupabaseClient<Database>
     db.from("solicitudes_correo").select("id", { count: "exact", head: true }).eq("estado", "pendiente"),
     db.from("confirmaciones_correo")
       .select("expediente_id, estado, enviado_en, expedientes!inner(id)")
-      .eq("estado", "pendiente").is("enviado_en", null).is("expedientes.eliminado_en", null),
+      .in("estado", ["borrador", "pendiente"]).is("enviado_en", null).is("expedientes.eliminado_en", null),
   ]);
   if (borradores.error) throw borradores.error;
   if (confirmaciones.error) throw confirmaciones.error;
