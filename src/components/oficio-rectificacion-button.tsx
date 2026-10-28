@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { supabase } from "@/integrations/supabase/client";
 import { conConsignatarioEfectivo } from "@/lib/consignatario-efectivo";
 import { hoyRDISO } from "@/lib/dates";
+import { generarPaqueteExclusivo, reemplazarPaquete } from "@/lib/paquete-rectificacion";
 import {
   OFICIO_RECTIFICACION,
   descargarWord,
@@ -84,24 +85,48 @@ export function OficioRectificacionButton({ expedienteId, disabled }: { expedien
   const guardarYDescargar = async (formato: "pdf" | "word") => {
     setGuardando(true);
     try {
+      await generarPaqueteExclusivo(`oficio:${expedienteId}`, async () => {
       const doc = await pdf();
       const blob: Blob = doc.output("blob");
       const path = `${expedienteId}/${Date.now()}_${nombre.replace(/\s+/g, "_")}.pdf`;
       const up = await supabase.storage.from("documentos").upload(path, blob, { contentType: "application/pdf" });
       if (up.error) throw up.error;
-      const ins = await supabase.from("documentos").insert({
+      const registro = {
         expediente_id: expedienteId,
         tipo: OFICIO_RECTIFICACION.tipoDocumento,
         storage_path: path,
-        estado: "recibido",
+        estado: "recibido" as const,
         fecha_recepcion: hoyRDISO(),
         observaciones: "Generado automáticamente desde el Expediente",
+      };
+      await reemplazarPaquete({
+        listar: async () => {
+          const { data, error } = await supabase.from("documentos").select("id, storage_path")
+            .eq("expediente_id", expedienteId).eq("tipo", OFICIO_RECTIFICACION.tipoDocumento)
+            .order("created_at", { ascending: false }).order("id");
+          if (error) throw error;
+          return data ?? [];
+        },
+        actualizar: async (id) => {
+          const { error } = await supabase.from("documentos").update({ ...registro, file_hash: null })
+            .eq("id", id).eq("expediente_id", expedienteId).eq("tipo", OFICIO_RECTIFICACION.tipoDocumento);
+          if (error) throw error;
+        },
+        insertar: async () => {
+          const { error } = await supabase.from("documentos").insert(registro);
+          if (error) throw error;
+        },
+        eliminarDuplicados: async (ids) => {
+          const { error } = await supabase.from("documentos").delete().in("id", ids)
+            .eq("expediente_id", expedienteId).eq("tipo", OFICIO_RECTIFICACION.tipoDocumento);
+          if (error) throw error;
+        },
       });
-      if (ins.error) throw ins.error;
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
       if (formato === "pdf") doc.save(`${nombre}.pdf`);
       else descargarWord(ref.current?.innerHTML ?? html, nombre);
       toast.success("Oficio guardado en Otros documentos del expediente");
+      });
     } catch (err: any) {
       toast.error(err?.message ?? "No se pudo guardar el oficio");
     } finally {
