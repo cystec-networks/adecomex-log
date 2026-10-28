@@ -10,7 +10,7 @@ import { impuestoPantallaRd, impuestoEditadoUsd } from "@/lib/liquidacion-moneda
 import { resumenImportacion } from "@/lib/resumen-importacion";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { sha256File, prefijoSiga, prefijosAceptados, siguienteCodigoSiga, validarNombreSiga, nombreArchivo } from "@/lib/codigo-siga";
+import { sha256File, prefijoSiga, prefijosAceptados, siguienteCodigoSiga, validarNombreSiga, nombreArchivo, nombreDocumentoSiga } from "@/lib/codigo-siga";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -2388,13 +2388,19 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         if (errorSol) throw errorSol;
         const adjuntosCorreo = deduplicarAdjuntosCorreo(((Array.isArray(sol?.adjuntos) ? sol.adjuntos : []) as { nombre: string; tipo: string; storage_path: string }[]).filter((a) => a?.storage_path));
         // Ya vinculados (reintento tras un error parcial): no se duplican ni se renumeran.
-        const { data: yaVinculados } = await supabase.from("documentos").select("storage_path").eq("expediente_id", data.id);
+        const { data: yaVinculados } = await supabase.from("documentos").select("storage_path, observaciones").eq("expediente_id", data.id);
         const rutasVinculadas = new Set((yaVinculados ?? []).map((d) => d.storage_path));
+        const origenVinculado = new Set((yaVinculados ?? []).map((d) => d.observaciones));
         for (const a of adjuntosCorreo) {
-          if (rutasVinculadas.has(a.storage_path)) continue;
+          if (rutasVinculadas.has(a.storage_path) || origenVinculado.has(`Adjunto de correo: ${a.nombre}`.slice(0, 500))) continue;
           const codigo = await siguienteCodigoSiga(data.id, prefijoSiga(a.tipo));
+          // Mismo aspecto que la carga manual: «<CÓDIGO> <TIPO>.pdf» en la carpeta del Expediente (el original del borrador queda intacto).
+          let ruta = a.storage_path;
+          const rutaNueva = `${data.id}/${Date.now()}_${nombreDocumentoSiga(codigo, a.tipo, a.nombre)}`;
+          const { error: errorCopia } = await supabase.storage.from("documentos").copy(a.storage_path, rutaNueva);
+          if (!errorCopia) ruta = rutaNueva;
           const { error: errorDocumento } = await supabase.from("documentos").insert({
-            expediente_id: data.id, tipo: a.tipo || "Otro", storage_path: a.storage_path, estado: "recibido",
+            expediente_id: data.id, tipo: a.tipo || "Otro", storage_path: ruta, estado: "recibido",
             codigo_siga: codigo, fecha_recepcion: new Date().toISOString().slice(0, 10),
             observaciones: `Adjunto de correo: ${a.nombre}`.slice(0, 500),
           });
