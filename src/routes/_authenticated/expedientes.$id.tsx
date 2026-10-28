@@ -103,6 +103,7 @@ import { EscanearBlButton, EscanearFacturaButton as EscanearFacturaExpButton } f
 import { NuevoDesdeXmlButton } from "@/components/nuevo-desde-xml-button";
 import { type OcrExtraction } from "@/lib/ai-ocr.functions";
 import { datosDocumentalesCorreo, deduplicarAdjuntosCorreo, type AdjuntoGuardadoCorreo } from "@/lib/correo-adjuntos";
+import { agruparAdjuntosCorreo, etiquetaOriginalIncluido, nombreUnido, unirArchivosPdf } from "@/lib/correo-adjuntos-union";
 import { prepararFacturasCorreo } from "@/lib/factura-expediente-escaneo";
 import { classifyArancelLote } from "@/lib/ai-arancel.functions";
 import { confirmacionPendienteSolicitud, correoConfirmacionSolicitud, faltantesConfirmacion } from "@/lib/correo-confirmacion";
@@ -2391,20 +2392,51 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         const { data: yaVinculados } = await supabase.from("documentos").select("storage_path, observaciones").eq("expediente_id", data.id);
         const rutasVinculadas = new Set((yaVinculados ?? []).map((d) => d.storage_path));
         const origenVinculado = new Set((yaVinculados ?? []).map((d) => d.observaciones));
-        for (const a of adjuntosCorreo) {
-          if (rutasVinculadas.has(a.storage_path) || origenVinculado.has(`Adjunto de correo: ${a.nombre}`.slice(0, 500))) continue;
-          const codigo = await siguienteCodigoSiga(data.id, prefijoSiga(a.tipo));
-          // Mismo aspecto que la carga manual: «<CÓDIGO> <TIPO>.pdf» en la carpeta del Expediente (el original del borrador queda intacto).
-          let ruta = a.storage_path;
-          const rutaNueva = `${data.id}/${Date.now()}_${nombreDocumentoSiga(codigo, a.tipo, a.nombre)}`;
-          const { error: errorCopia } = await supabase.storage.from("documentos").copy(a.storage_path, rutaNueva);
-          if (!errorCopia) ruta = rutaNueva;
-          const { error: errorDocumento } = await supabase.from("documentos").insert({
-            expediente_id: data.id, tipo: a.tipo || "Otro", storage_path: ruta, estado: "recibido",
-            codigo_siga: codigo, fecha_recepcion: new Date().toISOString().slice(0, 10),
-            observaciones: `Adjunto de correo: ${a.nombre}`.slice(0, 500),
-          });
-          if (errorDocumento) throw new Error(`No se pudo vincular ${a.nombre}: ${errorDocumento.message}`);
+        const hoy = new Date().toISOString().slice(0, 10);
+        for (const grupo of agruparAdjuntosCorreo(adjuntosCorreo)) {
+          const pendientes = grupo.filter((a) => !rutasVinculadas.has(a.storage_path) && !origenVinculado.has(`Adjunto de correo: ${a.nombre}`.slice(0, 500)));
+          if (!pendientes.length) continue;
+          const a = grupo[0];
+          if (grupo.length > 1 && pendientes.length === grupo.length) {
+            // Mismo tipo repetido: un solo PDF con las páginas en orden de llegada; los originales quedan como respaldo en «Otro».
+            const archivos: { bytes: Uint8Array; mime: string }[] = [];
+            for (const x of grupo) {
+              const { data: blob, error } = await supabase.storage.from("documentos").download(x.storage_path);
+              if (error || !blob) throw new Error(`No se pudo leer ${x.nombre} para unirlo: ${error?.message ?? "sin contenido"}`);
+              archivos.push({ bytes: new Uint8Array(await blob.arrayBuffer()), mime: blob.type || (/\.png$/i.test(x.nombre) ? "image/png" : /\.jpe?g$/i.test(x.nombre) ? "image/jpeg" : "application/pdf") });
+            }
+            const unido = await unirArchivosPdf(archivos);
+            const codigo = await siguienteCodigoSiga(data.id, prefijoSiga(a.tipo));
+            const rutaUnida = `${data.id}/${Date.now()}_${nombreUnido(nombreDocumentoSiga(codigo, a.tipo, a.nombre), grupo.length)}`;
+            const { error: errorSubida } = await supabase.storage.from("documentos").upload(rutaUnida, new Blob([unido as BlobPart], { type: "application/pdf" }), { contentType: "application/pdf" });
+            if (errorSubida) throw new Error(`No se pudo guardar el PDF unido de ${a.tipo}: ${errorSubida.message}`);
+            const { error: errorUnido } = await supabase.from("documentos").insert({
+              expediente_id: data.id, tipo: a.tipo, storage_path: rutaUnida, estado: "recibido", codigo_siga: codigo, fecha_recepcion: hoy,
+              observaciones: `Adjuntos de correo unidos (${grupo.length}): ${grupo.map((x) => x.nombre).join(", ")}`.slice(0, 500),
+            });
+            if (errorUnido) throw new Error(`No se pudo vincular el PDF unido de ${a.tipo}: ${errorUnido.message}`);
+            for (const x of grupo) {
+              const { error: errorOriginal } = await supabase.from("documentos").insert({
+                expediente_id: data.id, tipo: "Otro", storage_path: x.storage_path, estado: "recibido", codigo_siga: null, fecha_recepcion: hoy,
+                observaciones: `${etiquetaOriginalIncluido(codigo)} · ${x.nombre}`.slice(0, 500),
+              });
+              if (errorOriginal) throw new Error(`No se pudo guardar el original ${x.nombre}: ${errorOriginal.message}`);
+            }
+            continue;
+          }
+          for (const a of pendientes) {
+            const codigo = await siguienteCodigoSiga(data.id, prefijoSiga(a.tipo));
+            let ruta = a.storage_path;
+            const rutaNueva = `${data.id}/${Date.now()}_${nombreDocumentoSiga(codigo, a.tipo, a.nombre)}`;
+            const { error: errorCopia } = await supabase.storage.from("documentos").copy(a.storage_path, rutaNueva);
+            if (!errorCopia) ruta = rutaNueva;
+            const { error: errorDocumento } = await supabase.from("documentos").insert({
+              expediente_id: data.id, tipo: a.tipo || "Otro", storage_path: ruta, estado: "recibido",
+              codigo_siga: codigo, fecha_recepcion: hoy,
+              observaciones: `Adjunto de correo: ${a.nombre}`.slice(0, 500),
+            });
+            if (errorDocumento) throw new Error(`No se pudo vincular ${a.nombre}: ${errorDocumento.message}`);
+          }
         }
         const { error: errorConfirmacion } = await supabase.from("solicitudes_correo").update({ estado: "confirmada", expediente_id: data.id }).eq("id", correoOrigen).eq("estado", "pendiente");
         if (errorConfirmacion) throw errorConfirmacion;
