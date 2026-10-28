@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { leerPermisoVuce } from "./permiso-vuce";
+import { normalizarProductosVuce, PROMPT_PRODUCTOS_VUCE } from "./permiso-vuce-productos";
 
 export const extraerPermisoVuce = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -14,10 +15,23 @@ export const extraerPermisoVuce = createServerFn({ method: "POST" })
       text = (await extractText(await getDocumentProxy(bytes), { mergePages: true })).text;
     } catch { /* Image-only PDFs use OCR below. */ }
     const datos = leerPermisoVuce(text);
-    if (datos) return datos;
+    const { callGateway } = await import("./ai-gateway.server");
+    const productos = async () => {
+      const raw = await callGateway({
+        model: "google/gemini-2.5-flash", temperature: 0, response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: PROMPT_PRODUCTOS_VUCE },
+          { role: "user", content: [{ type: "file", file: { filename: data.filename, file_data: `data:application/pdf;base64,${data.base64}` } }] },
+        ],
+      });
+      const result = normalizarProductosVuce(JSON.parse(raw).productos);
+      const esperados = text.match(/Hay\s+(\d+)\s+productos/i)?.[1];
+      if (esperados && result.length !== Number(esperados)) throw new Error("No se leyeron todos los productos del PDF. Vuelve a subir el documento.");
+      return result;
+    };
+    if (datos) return /\bProductos\b/i.test(text) ? { ...datos, productos: await productos() } : datos;
     // Text-rich PDFs not matching the document are not other kinds of authorization.
     if (text.trim().length > 100 && !/Detalle\s+(?:de\s+)?Solicitud|Historial\s+de\s+Aprobaci|Autorizaci[oó]n\s+Control/i.test(text)) return null;
-    const { callGateway } = await import("./ai-gateway.server");
     const raw = await callGateway({
       model: "google/gemini-2.5-flash", temperature: 0, response_format: { type: "json_object" },
       messages: [
@@ -26,5 +40,6 @@ export const extraerPermisoVuce = createServerFn({ method: "POST" })
       ],
     });
     const parsed = z.object({ texto: z.string() }).parse(JSON.parse(raw));
-    return leerPermisoVuce(parsed.texto);
+    const leido = leerPermisoVuce(parsed.texto);
+    return leido ? { ...leido, productos: await productos() } : null;
   });
