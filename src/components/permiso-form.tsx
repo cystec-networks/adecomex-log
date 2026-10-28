@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { extraerPermisoVuce } from "@/lib/permiso-vuce.functions";
-import { aplicarDetalleVuce, documentoDelPermisoVuce } from "@/lib/permiso-vuce";
+import { aplicarDetalleVuce, avisosVerificacionVuce, documentoDelPermisoVuce } from "@/lib/permiso-vuce";
 import { useBorradorExpediente } from "@/components/expediente-guardado";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "@tanstack/react-router";
@@ -59,6 +59,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
   const qc = useQueryClient();
   const leerVuce = useServerFn(extraerPermisoVuce);
   const detalleVuceInput = useRef<HTMLInputElement>(null);
+  const transporteVuce = useRef<string | null>(null);
 
   const { data: existing } = useQuery({
     enabled: mode === "edit" && !!id,
@@ -167,6 +168,13 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
             const datos = await leerVuce({ data: { filename: file.name, base64: btoa(binary) } });
             if (datos) {
               setForm((f) => aplicarDetalleVuce(f, datos));
+              transporteVuce.current = datos.verificacion?.transporte ?? null;
+              if (datos.verificacion && form.expediente_id) {
+                const { data: exp } = await supabase.from("expedientes").select("bl_awb,puerto_arribo,clientes(nombre,rnc)").eq("id", form.expediente_id).maybeSingle();
+                const cli = (exp as any)?.clientes;
+                for (const aviso of avisosVerificacionVuce(datos, { bl_awb: exp?.bl_awb, puerto_arribo: exp?.puerto_arribo, cliente: cli?.nombre, rnc: cli?.rnc }))
+                  toast.warning(aviso, { duration: 10000 });
+              }
               toast.success("Datos del permiso VUCE completados; revisa y guarda los cambios.");
               if (datos.estado === "aprobado" && !datos.fecha_aprobacion) toast.warning("No se encontró una fecha válida de aprobación final en el historial.");
             } else toast.warning("PDF guardado; no se reconoció Detalle Solicitud VUCE. Los datos actuales se conservan.");
@@ -208,6 +216,15 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
         const { error } = documento
           ? await supabase.from("documentos").update(datos).eq("id", documento.id)
           : await supabase.from("documentos").insert(datos);
+        // Fill the expediente's own permit number / transport only when blank; never overwrite captured data.
+        const { data: exp } = await supabase.from("expedientes").select("numero_vuce,medio_transporte").eq("id", payload.expediente_id).maybeSingle();
+        const cambios: { numero_vuce?: string; medio_transporte?: string } = {};
+        if (exp && !exp.numero_vuce?.trim() && payload.numero) cambios.numero_vuce = payload.numero;
+        if (exp && !exp.medio_transporte?.trim() && transporteVuce.current) cambios.medio_transporte = transporteVuce.current.replace(/^mar[ií]timo$/i, "Marítimo").replace(/^a[ée]reo$/i, "Aéreo");
+        if (Object.keys(cambios).length) {
+          await supabase.from("expedientes").update(cambios).eq("id", payload.expediente_id);
+          await qc.invalidateQueries({ queryKey: ["expediente", payload.expediente_id] });
+        }
         if (error) throw new Error(`Permiso guardado, pero no se pudo vincular el PDF en Documentos: ${error.message}. Vuelve a guardar para reintentar.`);
         await qc.invalidateQueries({ queryKey: ["documentos", payload.expediente_id] });
       };
