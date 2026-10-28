@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { PDFDocument } from "pdf-lib";
+import { unirPdfsRectificacion } from "@/lib/rectificacion-pdf";
 import { FileStack, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -66,20 +66,13 @@ export function PaqueteRectificacionButton({ expedienteId }: { expedienteId: str
         return;
       }
 
-      const final = await PDFDocument.create();
+      const fuentes: { nombre: string; bytes: Uint8Array }[] = [];
       for (const ruta of rutas) {
         const { data, error } = await supabase.storage.from("documentos").download(ruta);
         if (error || !data) throw new Error(`No se pudo descargar ${ruta.split("/").pop()}`);
-        let src: PDFDocument;
-        try {
-          src = await PDFDocument.load(await data.arrayBuffer(), { ignoreEncryption: true });
-        } catch {
-          throw new Error(`El archivo ${ruta.split("/").pop()} no es un PDF válido`);
-        }
-        const pages = await final.copyPages(src, src.getPageIndices());
-        pages.forEach((p) => final.addPage(p));
+        fuentes.push({ nombre: ruta.split("/").pop() ?? ruta, bytes: new Uint8Array(await data.arrayBuffer()) });
       }
-      const bytes = await final.save();
+      const bytes = await unirPdfsRectificacion(fuentes);
       const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
       const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Santo_Domingo" });
       const nombre = `Paquete Rectificacion Tecnica ${expRes.data?.numero ?? ""} ${hoy}`.replace(/\s+/g, " ").trim();
