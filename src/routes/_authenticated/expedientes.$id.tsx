@@ -1367,7 +1367,7 @@ function DetalleExpediente() {
         {isNuevo && correoParam && <section className="px-3 py-2 border-b space-y-1" aria-label="Documentos recibidos por correo">
           <Collapsible>
             <CollapsibleTrigger asChild>
-              <Button type="button" variant="ghost" className="group -mx-1 h-auto justify-start px-1 py-1 text-sm font-semibold" aria-expanded="false">
+              <Button type="button" variant="ghost" className="group -mx-1 h-auto justify-start px-1 py-1 text-sm font-semibold">
                 <ChevronDown className="h-4 w-4 shrink-0 -rotate-90 transition-transform motion-reduce:transition-none group-data-[state=open]:rotate-0" />
                 Documentos Declaración · recibidos por correo ({adjuntosDelCorreo.length})
               </Button>
