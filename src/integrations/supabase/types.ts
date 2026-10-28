@@ -5732,6 +5732,7 @@ export type Database = {
           numero_resolucion: string | null
           observaciones: string | null
           orden_id: string | null
+          productos: Json
           tipo: Database["public"]["Enums"]["permiso_tipo"] | null
           updated_at: string
         }
@@ -5756,6 +5757,7 @@ export type Database = {
           numero_resolucion?: string | null
           observaciones?: string | null
           orden_id?: string | null
+          productos?: Json
           tipo?: Database["public"]["Enums"]["permiso_tipo"] | null
           updated_at?: string
         }
@@ -5780,6 +5782,7 @@ export type Database = {
           numero_resolucion?: string | null
           observaciones?: string | null
           orden_id?: string | null
+          productos?: Json
           tipo?: Database["public"]["Enums"]["permiso_tipo"] | null
           updated_at?: string
         }

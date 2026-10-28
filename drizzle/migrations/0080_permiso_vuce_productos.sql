@@ -1,0 +1,2 @@
+ALTER TABLE public.permisos ADD COLUMN IF NOT EXISTS productos jsonb NOT NULL DEFAULT '[]'::jsonb;
+COMMENT ON COLUMN public.permisos.productos IS 'Editable documentary product rows from Detalle VUCE; independent of liquidation merchandise.';
