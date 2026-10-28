@@ -1365,11 +1365,20 @@ function DetalleExpediente() {
         )}
       </div>
         {isNuevo && correoParam && <section className="px-3 py-2 border-b space-y-1" aria-label="Documentos recibidos por correo">
-          <h2 className="text-sm font-semibold">Documentos Declaración · recibidos por correo ({adjuntosDelCorreo.length})</h2>
-          {adjuntosDelCorreo.map((a, i) => <div key={a.storage_path || i} className="flex items-center gap-2 flex-wrap text-xs">
-            <FileText className="h-3.5 w-3.5 text-muted-foreground" /><span>{a.tipo === "Otro" ? "Otros documentos" : a.tipo}: {a.nombre}</span>
-            {a.storage_path && <DocumentoPreviewButton path={a.storage_path} label="Ver adjunto" />}
-          </div>)}
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <Button type="button" variant="ghost" className="group -mx-1 h-auto justify-start px-1 py-1 text-sm font-semibold">
+                <ChevronDown className="h-4 w-4 shrink-0 -rotate-90 transition-transform motion-reduce:transition-none group-data-[state=open]:rotate-0" />
+                Documentos Declaración · recibidos por correo ({adjuntosDelCorreo.length})
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-1">
+              {adjuntosDelCorreo.map((a, i) => <div key={a.storage_path || i} className="flex items-center gap-2 flex-wrap text-xs">
+                <FileText className="h-3.5 w-3.5 text-muted-foreground" /><span>{a.tipo === "Otro" ? "Otros documentos" : a.tipo}: {a.nombre}</span>
+                {a.storage_path && <DocumentoPreviewButton path={a.storage_path} label="Ver adjunto" />}
+              </div>)}
+            </CollapsibleContent>
+          </Collapsible>
           {avisosDelCorreo.map((a, i) => <p key={i} className="text-xs text-warning-foreground">⚠ {a}</p>)}
         </section>}
         <TabsList className="mt-1.5 flex h-auto max-w-full flex-nowrap justify-start overflow-x-auto md:mt-1 md:flex-wrap">
