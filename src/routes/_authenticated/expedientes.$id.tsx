@@ -866,7 +866,7 @@ function DetalleExpediente() {
     queryKey: ["confirmacion-correo", id],
     enabled: !isNuevo,
     queryFn: async () => {
-      const { data } = await supabase.from("confirmaciones_correo").select("id, estado, enviado_en, created_at").eq("expediente_id", id).order("created_at", { ascending: false }).limit(1);
+      const { data } = await supabase.from("confirmaciones_correo").select("id, estado, enviado_en, created_at, para, cc, asunto, cuerpo").eq("expediente_id", id).order("created_at", { ascending: false }).limit(1);
       return data?.[0] ?? null;
     },
   });
@@ -895,7 +895,7 @@ function DetalleExpediente() {
         const contenido = confirmacionPendienteSolicitud(datosCorreo);
         const { error } = await supabase.from("confirmaciones_correo").insert({
           solicitud_correo_id: correoOrigenExp.id, expediente_id: id, id_hilo: correoOrigenExp.id_hilo,
-          para: contenido.para, cc: contenido.cc || null, asunto: contenido.asunto, cuerpo: contenido.cuerpo,
+          para: contenido.para, cc: contenido.cc || null, asunto: contenido.asunto, cuerpo: contenido.cuerpo, estado: "borrador",
         });
         if (error) throw error;
         return { encolada: true as const, faltantes };
@@ -906,12 +906,36 @@ function DetalleExpediente() {
       if (r.faltantes.length) toast.warning(`La confirmación quedó con datos por completar: ${r.faltantes.join(", ")}`);
       if (r.encolada) {
         qc.invalidateQueries({ queryKey: ["confirmacion-correo", id] });
-        toast.success("Confirmación pendiente de envío — se enviará respondiendo en el hilo original del cliente");
+        toast.success("Borrador de confirmación listo para revisar — no se enviará hasta que presiones «Enviar ahora»");
       } else {
         const w = window.open(r.url, "_blank");
         if (!w) toast.info("Correo de confirmación listo para revisar y enviar", { duration: 15000, action: { label: "Abrir correo", onClick: () => window.open(r.url, "_blank") } });
       }
     },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const [borradorConf, setBorradorConf] = useState<{ para: string; cc: string; asunto: string; cuerpo: string } | null>(null);
+  useEffect(() => {
+    const c: any = confirmacionCorreo;
+    setBorradorConf(c?.estado === "borrador" ? { para: c.para ?? "", cc: c.cc ?? "", asunto: c.asunto ?? "", cuerpo: c.cuerpo ?? "" } : null);
+  }, [confirmacionCorreo]);
+  const aprobarConfirmacion = useMutation({
+    mutationFn: async () => {
+      const c: any = confirmacionCorreo; if (!c || !borradorConf) throw new Error("No hay borrador para enviar");
+      const { error } = await supabase.rpc("aprobar_confirmacion_correo", { p_id: c.id, p_para: borradorConf.para, p_cc: borradorConf.cc, p_asunto: borradorConf.asunto, p_cuerpo: borradorConf.cuerpo });
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["confirmacion-correo", id] }); toast.success("Confirmación pendiente de envío — se responderá en el hilo original del cliente"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const descartarConfirmacion = useMutation({
+    mutationFn: async () => {
+      const c: any = confirmacionCorreo; if (!c) return;
+      const { data, error } = await supabase.from("confirmaciones_correo").update({ estado: "descartada" }).eq("id", c.id).eq("estado", "borrador").select("id");
+      if (error) throw error; if (!data?.length) throw new Error("El borrador ya no está disponible");
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["confirmacion-correo", id] }); toast.success("Confirmación descartada — no se envió nada"); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -1355,6 +1379,10 @@ function DetalleExpediente() {
               <span className="font-medium text-emerald-600 dark:text-emerald-400">
                 Enviada{confirmacionCorreo.enviado_en ? ` el ${fmtLocalDate(confirmacionCorreo.enviado_en)}` : ""}
               </span>
+            ) : confirmacionCorreo.estado === "borrador" ? (
+              <span className="font-medium text-primary">Borrador listo para revisar</span>
+            ) : confirmacionCorreo.estado === "descartada" ? (
+              <span className="font-medium text-muted-foreground">No enviada (descartada)</span>
             ) : (
               <span className="font-medium text-amber-600 dark:text-amber-400">Pendiente de envío</span>
             )}
@@ -1362,6 +1390,21 @@ function DetalleExpediente() {
               <Mail className="h-3.5 w-3.5 mr-1" />{enviarConfirmacion.isPending ? "Preparando…" : confirmacionCorreo ? "Reenviar confirmación" : "Enviar confirmación por correo al cliente"}
             </Button>
           </div>
+        )}
+        {!isNuevo && borradorConf && (
+          <section className="mt-2 max-w-3xl space-y-2 rounded-md border p-2 text-[13px]" aria-label="Revisar confirmación al cliente">
+            <p className="text-xs text-muted-foreground">Revisa y edita la confirmación. No se enviará hasta presionar «Enviar ahora»; se responderá dentro del hilo original del cliente.</p>
+            <div className="grid gap-2 md:grid-cols-2">
+              <label className="space-y-1"><span className="text-xs text-muted-foreground">Para</span><Input value={borradorConf.para} onChange={(e) => setBorradorConf({ ...borradorConf, para: e.target.value })} /></label>
+              <label className="space-y-1"><span className="text-xs text-muted-foreground">CC</span><Input value={borradorConf.cc} onChange={(e) => setBorradorConf({ ...borradorConf, cc: e.target.value })} /></label>
+            </div>
+            <label className="block space-y-1"><span className="text-xs text-muted-foreground">Asunto</span><Input value={borradorConf.asunto} onChange={(e) => setBorradorConf({ ...borradorConf, asunto: e.target.value })} /></label>
+            <label className="block space-y-1"><span className="text-xs text-muted-foreground">Cuerpo</span><Textarea rows={10} value={borradorConf.cuerpo} onChange={(e) => setBorradorConf({ ...borradorConf, cuerpo: e.target.value })} /></label>
+            <div className="flex gap-2">
+              <Button size="sm" disabled={aprobarConfirmacion.isPending || descartarConfirmacion.isPending} onClick={() => aprobarConfirmacion.mutate()}>{aprobarConfirmacion.isPending ? "Enviando…" : "Enviar ahora"}</Button>
+              <Button size="sm" variant="outline" disabled={aprobarConfirmacion.isPending || descartarConfirmacion.isPending} onClick={() => { if (confirm("¿Descartar esta confirmación sin enviar nada?")) descartarConfirmacion.mutate(); }}>Descartar</Button>
+            </div>
+          </section>
         )}
       </div>
         {isNuevo && correoParam && <section className="px-3 py-2 border-b space-y-1" aria-label="Documentos recibidos por correo">
@@ -2464,9 +2507,9 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         const contenido = confirmacionPendienteSolicitud(datosCorreo);
         const { error: errorCola } = await supabase.from("confirmaciones_correo").insert({
           solicitud_correo_id: correoOrigen, expediente_id: data.id, id_hilo: (sol as any).id_hilo ?? null,
-          para: contenido.para, cc: contenido.cc || null, asunto: contenido.asunto, cuerpo: contenido.cuerpo,
+          para: contenido.para, cc: contenido.cc || null, asunto: contenido.asunto, cuerpo: contenido.cuerpo, estado: "borrador",
         });
-        if (errorCola) throw new Error(`Expediente creado, pero no se pudo encolar la confirmación: ${errorCola.message}`);
+        if (errorCola) throw new Error(`Expediente creado, pero no se pudo preparar el borrador de confirmación: ${errorCola.message}`);
         qc.invalidateQueries({ queryKey: ["confirmacion-correo", data.id] });
         return { ...data, correoConfirmacionPendiente: true, correoFaltantes: faltantesConfirmacion(datosCorreo) };
       }
@@ -2478,7 +2521,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       qc.invalidateQueries({ queryKey: ["expedientes-hist"] });
       toast.success(`Expediente ${row.numero} creado`);
       if (row.correoConfirmacionPendiente) {
-        toast.info("Correo de confirmación pendiente de enviar — se enviará respondiendo en el hilo original del cliente", { duration: 10000 });
+        toast.info("Borrador de confirmación listo para revisar en el Expediente — no se ha enviado nada", { duration: 10000 });
         if (row.correoFaltantes?.length) toast.warning(`La confirmación quedó con datos por completar: ${row.correoFaltantes.join(", ")}`);
       }
       nav({ to: "/expedientes/$id", params: { id: row.id }, search: { nuevo: "1", solicitud: "" } });
