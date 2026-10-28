@@ -54,6 +54,7 @@ import { AutoField } from "@/components/auto-field";
 import { BadgeVigenciaPinDga } from "@/components/badge-vigencia";
 import { AplicarCertificadoPartidas } from "@/components/aplicar-certificado-partidas";
 import { PaqueteRectificacionButton } from "@/components/paquete-rectificacion-button";
+import { OficioRectificacionButton } from "@/components/oficio-rectificacion-button";
 import { CorreoDgaButton } from "@/components/correo-dga-button";
 import { PaqueteFacturaCliente } from "@/components/paquete-factura-cliente";
 import { EscanearPagoPuerto, type DocumentoPagoSubido } from "@/components/escanear-pago-puerto";
@@ -1159,6 +1160,7 @@ function DetalleExpediente() {
                      {!isNuevo && expData.rectificacion_tecnica && (
                        <>
                          <DropdownMenuSeparator />
+                         <OficioRectificacionButton expedienteId={id} disabled={!canEditExpediente} />
                          <PaqueteRectificacionButton expedienteId={id} />
                          <CorreoDgaButton expedienteId={id} menu />
                        </>
@@ -1214,6 +1216,7 @@ function DetalleExpediente() {
                         {expData.rectificacion_tecnica && (
                          <>
                            <DropdownMenuSeparator />
+                           <OficioRectificacionButton expedienteId={id} disabled={!canEditExpediente} />
                            <PaqueteRectificacionButton expedienteId={id} />
                            <CorreoDgaButton expedienteId={id} menu />
                          </>
