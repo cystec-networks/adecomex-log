@@ -7490,6 +7490,16 @@ export type Database = {
       }
     }
     Functions: {
+      aprobar_confirmacion_correo: {
+        Args: {
+          p_asunto: string
+          p_cc: string
+          p_cuerpo: string
+          p_id: string
+          p_para: string
+        }
+        Returns: string
+      }
       calc_itbis_periodo: { Args: { _periodo: string }; Returns: Json }
       calcular_interes_prestamo_tercero: {
         Args: { _fecha_prestamo: string; _monto: number; _tasa_pct: number }
