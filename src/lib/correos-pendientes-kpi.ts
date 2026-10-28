@@ -1,11 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
-type ConfirmacionResumen = { expediente_id: string; estado: string; enviado_en: string | null };
+type ConfirmacionResumen = { expediente_id: string | null; estado: string; enviado_en: string | null };
 
 export function resumirCorreosPendientes(porConvertir: number, confirmaciones: ConfirmacionResumen[]) {
   const porResponder = new Set(confirmaciones
-    .filter((c) => c.estado === "pendiente" && c.enviado_en === null)
+    .filter((c) => c.expediente_id !== null && c.estado === "pendiente" && c.enviado_en === null)
     .map((c) => c.expediente_id)).size;
   return { porConvertir, porResponder, total: porConvertir + porResponder };
 }
