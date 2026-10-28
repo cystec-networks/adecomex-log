@@ -20,4 +20,7 @@ describe("KPI de correos pendientes", () => {
   it("sin borradores ni confirmaciones el total es cero", () => {
     assert.deepEqual(resumirCorreosPendientes(0, []), { porConvertir: 0, porResponder: 0, total: 0 });
   });
+  it("una confirmación sin expediente no cuenta como expediente por responder", () => {
+    assert.equal(resumirCorreosPendientes(0, [{ expediente_id: null, estado: "pendiente", enviado_en: null }]).porResponder, 0);
+  });
 });

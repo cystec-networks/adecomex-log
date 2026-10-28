@@ -119,7 +119,7 @@ function Dashboard() {
         </Button>
       </div>
 
-      <div aria-label="Indicadores de operaciones" className="grid grid-flow-col auto-cols-[168px] gap-2 overflow-x-auto pb-2 lg:grid-flow-row lg:auto-cols-auto lg:grid-cols-[repeat(7,minmax(0,1fr))] lg:overflow-x-visible">
+      <div aria-label="Indicadores de operaciones" className="grid grid-flow-col auto-cols-[168px] gap-2 overflow-x-auto pb-2 xl:grid-flow-row xl:auto-cols-auto xl:grid-cols-[repeat(7,minmax(0,1fr))] xl:overflow-x-visible">
         <Link to="/logistica" search={{ estado: "activas" }} aria-label="Ver operaciones de logística activas" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Ship} label="LOGÍSTICA EN CURSO" value={operacionesLogisticaActivas} tone="info" /></Link>
         <Link to="/expedientes" search={{ estado: "en_transito" }} aria-label="Ver expedientes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Ship} label="EXPEDIENTES EN TRANSITO" value={expedientesEnTransito} tone="info" /></Link>
         <Link to="/expedientes" search={{ eta: 7 }} aria-label="Ver expedientes por llegar" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Clock} label="EXPEDIENTES POR LLEGAR" value={expedientesPorLlegar} tone="warning" sub="Próximos 7 días" /></Link>
