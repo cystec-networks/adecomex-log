@@ -1,3 +1,4 @@
+import type { ProductoVuce } from "./permiso-vuce-productos";
 /** Documentary VUCE states retain their literal label alongside the operational enum. */
 export function clasificarEstadoVuce(value: string) {
   const s = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -25,6 +26,7 @@ export function fechaVuce(value: string): string | null {
 export type DatosPermisoVuce = {
   numero: string; institucion_emisora: string | null; estado: ReturnType<typeof clasificarEstadoVuce>;
   estado_vuce: string; fecha_vencimiento: string | null; fecha_aprobacion: string | null;
+  productos?: ProductoVuce[];
   /** Reference values from the document, used only to verify the expediente (never overwrite). */
   verificacion?: { bl: string | null; puerto: string | null; transporte: string | null; solicitante: string | null; documento: string | null };
 };
@@ -107,7 +109,8 @@ export function aplicarDetalleVuce<T extends { numero: string; institucion_emiso
     estado: datos.estado, estado_vuce: datos.estado_vuce,
     // wcIC012003 has no expiry: keep the current value instead of clearing it.
     fecha_vencimiento: datos.verificacion ? form.fecha_vencimiento : datos.fecha_vencimiento ?? "",
-    fecha_aprobacion: datos.fecha_aprobacion ?? "" };
+    fecha_aprobacion: datos.fecha_aprobacion ?? "",
+    ...(datos.productos !== undefined ? { productos: datos.productos } : {}) };
 }
 
 /** Match this permit only; other permits in the same expediente remain independent. */

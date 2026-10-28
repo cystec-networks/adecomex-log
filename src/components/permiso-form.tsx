@@ -15,6 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Check, Upload, FileText, X } from "lucide-react";
 import { toast } from "sonner";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
+import { PermisoVuceProductos } from "@/components/permiso-vuce-productos";
+import { productosVuceGuardados, type ProductoVuce } from "@/lib/permiso-vuce-productos";
 
 export const PERMISO_TIPOS = [
   { v: "sanitario", l: "Sanitario" },
@@ -97,6 +99,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
     fecha_vencimiento: "",
     documento_url: "",
     observaciones: "",
+    productos: [] as ProductoVuce[],
   });
   const [loaded, setLoaded] = useState(false);
 
@@ -119,6 +122,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
         fecha_vencimiento: existing.fecha_vencimiento ?? "",
         documento_url: existing.documento_url ?? "",
         observaciones: existing.observaciones ?? "",
+        productos: productosVuceGuardados(existing.productos),
       });
       setLoaded(true);
     }
@@ -416,6 +420,8 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
           </div>
         </CardContent>
       </Card>
+
+      <PermisoVuceProductos productos={form.productos} onChange={(value) => set("productos", value)} disabled={uploading || save.isPending} />
 
       <Card>
         <CardHeader className="pb-3 border-b">
