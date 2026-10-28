@@ -48,7 +48,7 @@ export function leerAutorizacionControlVuce(text: string): DatosPermisoVuce | nu
   const estado = clasificarEstadoVuce(ultima.estado);
   const campo = (re: RegExp) => t.match(re)?.[1]?.trim() || null;
   const organismo = campo(/Organismo\s+Externo\s*:?\s*(.+?)(?=\s+Nombre\s+de\s+Formulario|\n|$)/i);
-  const transporte = campo(/\b(Mar[ií]timo|A[ée]reo|Terrestre)\b/i);
+  const transporte = campo(/(Mar[ií]timo|A[ée]reo|Terrestre)/i);
   return {
     numero, institucion_emisora: organismo, estado, estado_vuce: ultima.estado,
     fecha_vencimiento: null,
