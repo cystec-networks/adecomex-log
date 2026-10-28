@@ -23,6 +23,14 @@ describe("un único Paquete Rectificación Técnica", () => {
     assert.equal(r.filas.length, 1);
     assert.equal(r.inserts(), 1);
   });
+  test("regenerar oficio de 202609I334 conserva un registro y reemplaza su PDF", async () => {
+    const r = repositorio(["oficio-vigente", "oficio-duplicado"]);
+    await reemplazarPaquete(r.repo);
+    await reemplazarPaquete(r.repo);
+    assert.deepEqual(r.filas.map((d) => d.id), ["oficio-vigente"]);
+    assert.deepEqual(r.actualizados, ["oficio-vigente", "oficio-vigente"]);
+    assert.equal(r.inserts(), 0);
+  });
   test("segunda generación reemplaza sin insertar otra fila", async () => {
     const r = repositorio([]);
     await reemplazarPaquete(r.repo);
