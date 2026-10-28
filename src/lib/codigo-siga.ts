@@ -85,3 +85,26 @@ export function nombreArchivo(path: string | null | undefined): string {
   const base = path.split("/").pop() ?? "";
   return base.replace(/^\d{10,}_/, "").replace(/^[0-9a-f-]{36}-/i, "");
 }
+
+const ETIQUETA_TIPO: Record<string, string> = {
+  "Factura comercial": "FACTURA COMERCIAL",
+  "Bill of Lading": "BILL OF LADING",
+  "Guía aérea": "GUIA AEREA",
+  "Lista de empaque": "LISTA DE EMPAQUE",
+  "Certificado de origen": "CERTIFICADO DE ORIGEN",
+  "Certificado de análisis": "CERTIFICADO DE ANALISIS",
+  "Certificado Sanitario/Fitosanitario": "CERTIFICADO SANITARIO",
+};
+
+/** Nombre normalizado «<CÓDIGO> <TIPO>.<ext>» para documentos guardados automáticamente (p. ej. desde correo). */
+export function nombreDocumentoSiga(codigo: string, tipo: string | null | undefined, nombreOriginal = ""): string {
+  const ext = (nombreOriginal.match(/\.([a-z0-9]{2,5})$/i)?.[1] ?? "pdf").toLowerCase();
+  let etiqueta = ETIQUETA_TIPO[tipo ?? ""];
+  if (!etiqueta) {
+    const n = normalizar(nombreOriginal);
+    if (/insurance|seguro|poliza/.test(n)) etiqueta = "CERTIFICADO DE SEGURO";
+    else if (tipo && tipo !== "Otro" && !tipo.startsWith("Otros")) etiqueta = normalizar(tipo).toUpperCase();
+    else etiqueta = "OTRO DOCUMENTO";
+  }
+  return `${codigo} ${etiqueta}.${ext}`;
+}
