@@ -29,6 +29,7 @@ Detail headers: content-sized rows, client label/value together, wrap IDs, warni
 - Share entry suggestions via buscarSugerenciasProducto/resolverSugerenciasProducto (not historical/Real); explicit DGA selections use datosProductoHistorico. Tariff CSV uses staff-checked server import and atomic invoker RPC; no product override writes.
 - Chapter notes: separate read-only panel, admin invoker import; preserve tariff suggestions/import.
 - Liquidation: independent Radix collapsibles retain draft handlers; ImporteLiquidacionInput/liquidacion-moneda edit RD$, store USD. Shared UI/PDF totals and batch markup; no billing writes.
+- Service fees use `servicio-aduanero-calculo.ts` for line limits and totals in both UI and PDFs; identify fee rules by catalog unit to keep other dispatch types unchanged.
 - Copiloto selects real eight-digit leaves, normalizes nature/ranks alternatives. OCR uses it only for blank codes; strip draft warnings before insert. Manual choices affect unsaved results; snapshots/export never recalculate.
 - Resolve certificate parties via `terceros-certificado`; `rol_siga` classifies commercial records, never permissions, separating identities by SIGA role.
 - Package menus share tab locks/replacement and e-CF: require PDF to generate, email e-NCF without PDFs, skip other missing sources.

@@ -19,10 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export { FORMULARIO_DUA_RD } from "./costo-mercancia";
 import { FORMULARIO_DUA_RD } from "./costo-mercancia";
 
-export type TarifaServicio = { id: string; tipo_despacho: string; unidad: string; tarifa_usd: number };
-
-/** Una línea de Servicio Aduanero. `tipo_despacho` guarda el código de unidad. */
-export type FilaServicio = { tipo_despacho: string; cantidad: number | string };
+import { calcularLineaServicio, totalServicioUsd, type TarifaServicio, type FilaServicio } from "./servicio-aduanero-calculo";
+export { calcServicioAduaneroUsd, subtotalFila, totalServicioUsd, type TarifaServicio, type FilaServicio } from "./servicio-aduanero-calculo";
 
 export const ETIQUETA_CANTIDAD: Record<string, string> = {
   kg: "Peso total (kg)",
@@ -48,28 +46,6 @@ export function useTarifasServicioAduanero() {
       return (data ?? []) as TarifaServicio[];
     },
   });
-}
-
-/** Servicio Aduanero en US$ = tarifa del tipo elegido × cantidad. */
-export function calcServicioAduaneroUsd(
-  tarifa: TarifaServicio | undefined | null,
-  cantidad: number | string | null | undefined,
-): number {
-  if (!tarifa) return 0;
-  const c = Number(cantidad);
-  if (!Number.isFinite(c) || c <= 0) return 0;
-  return Number(tarifa.tarifa_usd) * c;
-}
-
-/** Subtotal de una línea usando el catálogo (busca por código de unidad). */
-export function subtotalFila(fila: FilaServicio, tarifas: TarifaServicio[]): number {
-  const tarifa = tarifas.find((t) => t.unidad === fila.tipo_despacho);
-  return calcServicioAduaneroUsd(tarifa, fila.cantidad);
-}
-
-/** Total del Servicio Aduanero sumando todas las líneas. */
-export function totalServicioUsd(filas: FilaServicio[] | null | undefined, tarifas: TarifaServicio[]): number {
-  return (filas ?? []).reduce((s, f) => s + subtotalFila(f, tarifas), 0);
 }
 
 /** El Formulario DUA es un monto fijo en RD$; sólo se divide por la tasa para mostrarlo en US$. */
@@ -192,6 +168,7 @@ export function ServicioAduaneroFields({
             <tbody>
               {rows.map((f, i) => {
                 const tarifa = tarifas.find((t) => t.unidad === f.tipo_despacho);
+                const linea = calcularLineaServicio(tarifa, f.cantidad);
                 return (
                   <tr key={i} className="border-t align-middle">
                     <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
@@ -223,7 +200,10 @@ export function ServicioAduaneroFields({
                         className="tabular-nums"
                       />
                     </td>
-                    <td className="px-2 py-1 text-right tabular-nums">{nfUsd(subtotalFila(f, tarifas))}</td>
+                    <td className="px-2 py-1 text-right tabular-nums">
+                      {nfUsd(linea.subtotal)}
+                      {linea.topeAplicado && <span className="block text-[11px] text-muted-foreground">(tope aplicado)</span>}
+                    </td>
                     {!disabled && (
                       <td className="px-2 py-1 text-right">
                         <Button
@@ -267,10 +247,7 @@ export async function servicioAduaneroDeExpediente(exp: any): Promise<number> {
     supabase.from("catalogo_tasa_servicio_aduanero").select("id, tipo_despacho, unidad, tarifa_usd"),
   ]);
   if (!filas?.length || !tarifas?.length) return 0;
-  return (filas as any[]).reduce((s, f) => {
-    const t = (tarifas as any[]).find((x) => x.unidad === f.tipo_despacho);
-    return s + (t ? (Number(t.tarifa_usd) || 0) * (Number(f.cantidad) || 0) : 0);
-  }, 0);
+  return totalServicioUsd(filas, tarifas);
 }
 
 export { CONCEPTO_TASA_SERVICIO, filaReemplazadaPorServicio, totalCostoMercanciaRd } from "./costo-mercancia";
