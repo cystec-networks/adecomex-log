@@ -7,7 +7,7 @@ import type { ProductoVuce } from "@/lib/permiso-vuce-productos";
 const columnas: { key: keyof ProductoVuce; label: string; ancho: string }[] = [
   { key: "secuencia", label: "Secuencia", ancho: "w-20" },
   { key: "arancel", label: "Arancel", ancho: "w-28" },
-  { key: "codigo", label: "Código", ancho: "w-48" },
+  { key: "codigo", label: "Código", ancho: "w-56" },
   { key: "producto", label: "Producto", ancho: "w-56" },
   { key: "pais_origen", label: "País de Origen", ancho: "w-32" },
   { key: "unidad", label: "Unidad", ancho: "w-28" },
@@ -30,7 +30,7 @@ export function PermisoVuceProductos({ productos, onChange, disabled }: {
       ])}><Plus className="mr-1 h-4 w-4" />Agregar producto</Button>
     </div>
     <div className="max-w-full overflow-x-auto border rounded-md">
-      <table className="w-full table-fixed text-xs" style={{ minWidth: "1600px" }}>
+      <table className="w-full min-w-[1700px] table-fixed text-xs">
         <thead className="bg-muted"><tr>{columnas.map((c) => <th key={c.key} scope="col" className={`${c.ancho} p-2 text-left font-medium`}>{c.label}</th>)}<th className="w-12"><span className="sr-only">Acciones</span></th></tr></thead>
         <tbody>{productos.map((p, i) => <tr key={i} className="border-t align-top">
           {columnas.map((c) => <td key={c.key} className="p-1.5">
