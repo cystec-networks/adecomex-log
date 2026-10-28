@@ -11,7 +11,7 @@ function expect(actual: unknown) {
     },
   };
 }
-import { aplicarDetalleVuce, documentoDelPermisoVuce, leerDetalleSolicitudVuce } from "./permiso-vuce";
+import { aplicarDetalleVuce, avisosVerificacionVuce, documentoDelPermisoVuce, leerDetalleSolicitudVuce, leerPermisoVuce } from "./permiso-vuce";
 
 const pendiente = `Detalle Solicitud - VUCE
 No. Trámite: TRM-0926-2533722
@@ -60,5 +60,29 @@ describe("Detalle Solicitud VUCE", () => {
   });
   test("otras autorizaciones no completan el formulario", () => {
     expect(leerDetalleSolicitudVuce("AUTORIZACION TRM-0926-2533722 expira 24-12-26")).toBeNull();
+  });
+});
+describe("Autorización Control wcIC012003", () => {
+  const texto = `[wcIC012003] Detalle Información de Autorización Control para Aduaneros(SESPAS)
+Historial de Aprobación
+Organismo Externo MINISTERIO DE AGRICULTURA Nombre de Formulario
+No. de Solicitud TRM-1026-2561110 Tipo de Solicitud Importación
+Transporte CMA CGM ARISTOTE Puerto de Entrada DOHAI RIO HAINA
+No. Doc. de Embarque BL MXO0813739 Cantidad de Contenedor 1
+Nombre BIOAGRO INTERNACIONAL SRL Documento 101653469
+Fecha de Modificación Compañía Modificado por Estados
+16/10/2026 BIOAGRO INTERNACIONAL SRL MARIANELA Registrado/Aceptado
+22/10/2026 BIOAGRO INTERNACIONAL SRL EMIGDIO SECUNDINO No ObjeciónAutorización Importación PlaguicidasMarítimoRNC`;
+  test("No. de Solicitud, fila más reciente y No Objeción como aprobado, sin vencimiento", () => {
+    expect(leerPermisoVuce(texto)).toMatchObject({ numero: "TRM-1026-2561110", estado: "aprobado", estado_vuce: "No Objeción", fecha_aprobacion: "2026-10-22", fecha_vencimiento: null });
+  });
+  test("verificación avisa BL distinto sin sobrescribir", () => {
+    const d = leerPermisoVuce(texto)!;
+    expect(avisosVerificacionVuce(d, { bl_awb: "MXO0813739", puerto_arribo: "RIO HAINA", cliente: "BIOAGRO INTERNACIONAL SRL", rnc: "101653469" }).length).toBe(0);
+    expect(avisosVerificacionVuce(d, { bl_awb: "OTRO123" }).length).toBe(1);
+  });
+  test("conserva vencimiento existente porque el formato no lo trae", () => {
+    const form = { numero: "", institucion_emisora: "", estado: "solicitado", estado_vuce: null as string | null, fecha_vencimiento: "2026-12-01", fecha_aprobacion: "" };
+    expect(aplicarDetalleVuce(form, leerPermisoVuce(texto)!).fecha_vencimiento).toBe("2026-12-01");
   });
 });
