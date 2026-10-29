@@ -1,6 +1,6 @@
 import { PDFDocument } from "@cantoo/pdf-lib";
 import {
-  detectarTipoPagina, segmentarPaginas, nombreSegmento, MAX_PAGINAS_COMBINADO, AVISO_PROCESANDO_COMBINADO, type TipoPagina,
+  detectarTipoPagina, segmentarPaginas, nombreSegmento, MAX_PAGINAS_COMBINADO, AVISO_PROCESANDO_COMBINADO, esTimeoutGateway, type TipoPagina,
 } from "@/lib/correo-documento-combinado";
 import { tipoAdjuntoCorreo } from "@/lib/correo-solicitud";
 import { bytesABase64, clasificarPaginaEscaneada, leerArchivoCorreo, type AdjuntoProcesado } from "@/lib/correo-adjunto-lectura.server";
