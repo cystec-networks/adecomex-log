@@ -15,7 +15,7 @@ describe('Numeración de compras — contrato real', { skip: !process.env.NUMERA
     assert.ok(client.data);
     const solicitud = await db.from('solicitudes_correo').insert({
       cliente_id: client.data.id, remitente_correo: 'prueba-numeracion@example.invalid',
-      asunto: `PRUEBA NUMERACIÓN ${crypto.randomUUID()}`, cuerpo_original: 'Prueba temporal de numeración, no enviar.',
+      asunto: `PRUEBA NUMERACIÓN ${crypto.randomUUID()}`, cuerpo: 'Prueba temporal de numeración, no enviar.',
       estado: 'pendiente', adjuntos: [{ tipo: 'Factura proforma', nombre: 'PRUEBA.pdf', datos: { tipo_operacion: 'Exportación' } }],
     }).select('id').single();
     assert.ifError(solicitud.error);
