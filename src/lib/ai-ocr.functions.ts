@@ -44,6 +44,8 @@ export type OcrExtraction = {
   descripcion_mercancia: string | null;
   peso_neto_kg: number | null;
   fob_total: number | null;
+  total_factura?: number | null;
+  moneda_factura?: 'USD' | 'DOP' | 'EUR' | null;
   seguro: number | null;
   flete: number | null;
   otros_gastos: number | null;

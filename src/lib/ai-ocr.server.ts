@@ -1,5 +1,6 @@
 import { callGateway } from "./ai-gateway.server";
 import { PROMPT_DOCUMENTO_IMPORTACION } from "./ocr-documento-prompt";
+import { normalizarMonedaFactura, normalizarTotalFactura } from './factura-importes';
 import type { PagoPuerto } from "./pago-puerto";
 import { PROMPT_PAGO_PUERTO, resolverPagoPuertoOcr } from "./pago-puerto-ocr";
 import { TIPOS_RESULTADO_DGA, type ResultadoDgaExtraido } from "./resultado-dga-documentos";
@@ -134,6 +135,8 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
       peso_neto_kg:
         parsed.peso_neto_kg != null && !isNaN(Number(parsed.peso_neto_kg)) ? Number(parsed.peso_neto_kg) : null,
       fob_total: num(parsed.fob_total),
+      total_factura: normalizarTotalFactura(parsed.total_factura),
+      moneda_factura: normalizarMonedaFactura(parsed.moneda_factura),
       seguro: num(parsed.seguro),
       flete: num(parsed.flete),
       otros_gastos: num(parsed.otros_gastos),

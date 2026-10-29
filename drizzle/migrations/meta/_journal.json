@@ -596,6 +596,13 @@
       "when": 1793294379751,
       "tag": "0084_cotizaciones_numero_sin_truncar",
       "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1793295512117,
+      "tag": "0085_cotizacion_correo_total_moneda",
+      "breakpoints": true
     }
   ]
 }

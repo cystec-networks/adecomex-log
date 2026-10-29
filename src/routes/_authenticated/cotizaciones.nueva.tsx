@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ImporteCotizacionInput } from '@/components/importe-cotizacion-input';
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +22,14 @@ import type { OcrExtraction } from "@/lib/ai-ocr.functions";
 
 
 export const Route = createFileRoute("/_authenticated/cotizaciones/nueva")({
+  head: () => ({ meta: [
+    { title: 'Nueva cotización de compra | ADECOMEX' },
+    { name: 'description', content: 'Registrar productos, importes y documentos de una nueva cotización de compra.' },
+    { property: 'og:title', content: 'Nueva cotización de compra | ADECOMEX' },
+    { property: 'og:description', content: 'Registrar productos, importes y documentos de una nueva cotización de compra.' },
+    { property: 'og:type', content: 'website' },
+    { name: 'twitter:card', content: 'summary' },
+  ] }),
   component: NuevaCotizacion,
 });
 
@@ -184,7 +193,7 @@ function NuevaCotizacion() {
             <div className="grid gap-1.5"><Label>Destino</Label><Input value={form.destino} onChange={(e) => set("destino", e.target.value)} /></div>
             <div className="grid gap-1.5"><Label>Peso estimado (kg)</Label><Input type="number" step="0.01" value={form.peso_kg} onChange={(e) => set("peso_kg", e.target.value)} /></div>
             <div className="grid gap-1.5"><Label>Volumen estimado (m³)</Label><Input type="number" step="0.01" value={form.volumen_m3} onChange={(e) => set("volumen_m3", e.target.value)} /></div>
-            <div className="grid gap-1.5"><Label>Tarifa propuesta</Label><Input type="number" step="0.01" value={form.tarifa_propuesta} onChange={(e) => set("tarifa_propuesta", e.target.value)} /></div>
+            <div className="grid gap-1.5"><Label>Tarifa propuesta</Label><ImporteCotizacionInput value={form.tarifa_propuesta} onValueChange={(v) => set("tarifa_propuesta", v)} /></div>
             <div className="grid gap-1.5"><Label>Moneda</Label>
               <Select value={form.moneda} onValueChange={(v) => set("moneda", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
