@@ -20,6 +20,14 @@ import { ProductosCard } from "@/components/productos-card";
 import { copiarProductos } from "@/lib/copiar-productos";
 
 export const Route = createFileRoute("/_authenticated/ordenes/$id")({
+  head: () => ({ meta: [
+    { title: 'Orden de Compra | ADECOMEX' },
+    { name: 'description', content: 'Productos y seguimiento de la orden de compra y su expediente vinculado.' },
+    { property: 'og:title', content: 'Orden de Compra | ADECOMEX' },
+    { property: 'og:description', content: 'Productos y seguimiento de la orden de compra y su expediente vinculado.' },
+    { property: 'og:type', content: 'website' },
+    { name: 'twitter:card', content: 'summary' },
+  ] }),
   component: DetalleOrden,
 });
 
@@ -126,11 +134,12 @@ function DetalleOrden() {
 
   const convertirExpediente = useMutation({
     mutationFn: async () => {
+      if (!o) throw new Error('Orden no disponible');
       const { data: exp, error } = await supabase
         .from("expedientes")
         .insert({
           orden_id: id,
-          cliente_id: o!.cliente_id,
+          cliente_id: o.cliente_id,
           suplidor: (o as any).cot_suplidor ?? null,
           suplidor_rnc: (o as any).cot_suplidor_rnc ?? null,
           tipo_operacion: (o as any).cot_tipo_operacion ?? null,
