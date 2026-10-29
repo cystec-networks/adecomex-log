@@ -90,7 +90,7 @@ async function aplicarASolicitud(db: Db, job: Job, segmentos: (AdjuntoProcesado 
     const v = segmentos.find((s) => (s as any)[k] != null && (s as any)[k] !== "");
     if (v) cambios[k] = (v as any)[k];
   }
-  cambios.advertencias = [...((sol.advertencias ?? []) as string[]).filter((a) => !a.includes(job.nombre) || !a.includes(AVISO_PROCESANDO_COMBINADO)),
+  cambios.advertencias = [...((sol.advertencias ?? []) as string[]).filter((a) => !a.includes(job.nombre) || !(a.includes(AVISO_PROCESANDO_COMBINADO) || esTimeoutGateway(a))),
     ...segmentos.filter((s) => s.error).map((s) => `${s.nombre}: ${s.error}`)];
   const { data: upd, error: e2 } = await db.from("solicitudes_correo").update(cambios).eq("id", sol.id).eq("estado", "pendiente").select("id");
   if (e2) throw new Error(e2.message);
