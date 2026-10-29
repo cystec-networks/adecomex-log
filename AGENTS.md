@@ -9,7 +9,8 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 - Carta de Ruta uses `carta-ruta.ts` for extraction, dispatch conflict decisions and document-only references; persist dispatch with an optimistic guard and sync the existing declaration editor only after success to preserve unsaved drafts.
-- Email purchase conversions use invoker RPC `convertir_correo_cotizacion`, retained attachment references and manual same-client links. New quotes copy explicit invoice total/currency (not FOB); re-read legacy proformas first and never overwrite linked quote edits.
+- Email purchases use invoker RPC `convertir_correo_cotizacion`, retained attachments and manual same-client links. Copy total/currency, not FOB; re-read legacy proformas; preserve linked edits.
+- Purchase/expediente numbers use `siguiente_numero_operacion` with a locked monthly counter; conversion triggers inherit source numbers and cross-table guards reject unrelated collisions and linked renumbering.
 Apply transitions via `estados-expediente.ts` and `validar_transicion_expediente()` for shared manual/automatic requirements.
 - Operations email KPI uses `correos-pendientes-kpi.ts` for RLS-bound reads and unique active-expediente counts, excluding delivered confirmations so queue and dashboard semantics remain consistent.
 Red IDs: `expediente-numero`/`--brand-red`.

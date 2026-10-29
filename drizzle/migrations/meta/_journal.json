@@ -603,6 +603,13 @@
       "when": 1793295512117,
       "tag": "0085_cotizacion_correo_total_moneda",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1793297576642,
+      "tag": "0086_numeracion_unificada_compras",
+      "breakpoints": true
     }
   ]
 }

@@ -151,11 +151,12 @@ function DetalleCotizacion() {
 
   const convertir = useMutation({
     mutationFn: async () => {
+      if (!c) throw new Error('Cotización no disponible');
       const { data: orden, error } = await supabase.from("ordenes").insert({
         cotizacion_id: id,
-        cliente_id: c!.cliente_id,
+        cliente_id: c.cliente_id,
         vendedor_id: (c as any).vendedor_id,
-        cot_numero: c!.numero,
+        cot_numero: c.numero,
         cot_tipo_mercancia: (c as any).tipo_mercancia,
         cot_origen: (c as any).origen,
         cot_destino: (c as any).destino,
