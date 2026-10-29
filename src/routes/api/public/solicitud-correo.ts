@@ -41,7 +41,7 @@ async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoPro
     const j = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? "{}");
     const tipo = tipoAdjuntoCorreo(j.tipo_documento);
     // Same OCR implementation as Escanear Factura, after webhook authorization.
-    if (tipo === "Factura comercial") {
+    if (tipo === "Factura comercial" || tipo === "Factura proforma") {
       const { leerDocumentoImportacion } = await import("@/lib/ai-ocr.server");
       try {
         Object.assign(j, await leerDocumentoImportacion({ filename: a.nombre, mime, base64, lineas_factura: true }));
