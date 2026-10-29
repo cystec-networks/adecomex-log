@@ -610,6 +610,13 @@
       "when": 1793297576642,
       "tag": "0086_numeracion_unificada_compras",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1793300028678,
+      "tag": "0087_correo_documentos_combinados",
+      "breakpoints": true
     }
   ]
 }
