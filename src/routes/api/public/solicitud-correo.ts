@@ -1,19 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { aislarMensajeReciente, combinarDatos, extraerPorEtiquetas, fusionarAsunto, fusionarAdjuntos, tipoAdjuntoCorreo, TIPOS_ADJUNTO_CORREO, type DatosAdjunto } from "@/lib/correo-solicitud";
-import { PROMPT_DOCUMENTO_IMPORTACION } from "@/lib/ocr-documento-prompt";
-import { callGateway } from "@/lib/ai-gateway.server";
+import { aislarMensajeReciente, combinarDatos, extraerPorEtiquetas, fusionarAsunto, fusionarAdjuntos } from "@/lib/correo-solicitud";
 import { adjuntoCorreoSchema, normalizarAdjuntosCorreo, mimeAdjuntoCorreo, deduplicarAdjuntosCorreo } from "@/lib/correo-adjuntos";
 import { mismoPendienteCorreo, respuestaCorreoActualizado } from "@/lib/correo-duplicados";
 import { autorizadoWebhook } from "@/lib/webhook-auth";
+import { leerArchivoCorreo, MIME_OK, type AdjuntoProcesado } from "@/lib/correo-adjunto-lectura.server";
+import { contarPaginasPdf } from "@/lib/correo-documento-combinado.server";
+import { esTimeoutGateway, UMBRAL_PAGINAS_COMBINADO, AVISO_PROCESANDO_COMBINADO } from "@/lib/correo-documento-combinado";
 
 const adjuntoSchema = adjuntoCorreoSchema;
 
-type AdjuntoProcesado = DatosAdjunto & { nombre: string; mime: string; bytes: Uint8Array; storage_path?: string; error?: string; datos?: Record<string, unknown> };
-
-const MIME_OK = /^(application\/pdf|image\/(png|jpe?g|webp|gif))$/i;
-
-/** Reutiliza el reconocimiento de Nuevo Expediente y añade la clasificación del tipo de documento. */
+/** PDFs largos o que agotan el tiempo del gateway se aceptan y se separan en segundo plano. */
 async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoProcesado> {
   const base64 = a.contenido.replace(/^data:[^,]*,/, "").replace(/\s/g, "");
   const mime = mimeAdjuntoCorreo(a.nombre, a.tipo, a.contenido);
@@ -22,49 +19,26 @@ async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoPro
   catch { return { tipo: "Otro", nombre: a.nombre, mime, bytes: new Uint8Array(), error: "Contenido base64 inválido" }; }
   const base: AdjuntoProcesado = { tipo: "Otro", nombre: a.nombre, mime, bytes };
   if (!MIME_OK.test(mime)) return base;
+  const esPdf = mime === "application/pdf";
+  const paginas = esPdf ? await contarPaginasPdf(bytes) : null;
+  if (paginas != null && paginas > UMBRAL_PAGINAS_COMBINADO) return { ...base, combinado: { motivo: "paginas", paginas } };
   try {
-    const dataUrl = `data:${mime};base64,${base64}`;
-    const raw = await callGateway({
-      model: "google/gemini-2.5-flash",
-      temperature: 0,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: PROMPT_DOCUMENTO_IMPORTACION + ` Agrega también la clave 'tipo_documento': exactamente uno de ${TIPOS_ADJUNTO_CORREO.map((t) => `'${t}'`).join(", ")} u 'Otro' si el documento no es ninguno de ellos. Agrega 'cantidad': la cantidad total de bultos/unidades tal como aparece (ej. '2,000 BAGS'), o null.` },
-        { role: "user", content: [
-          { type: "text", text: "Extrae los campos del documento adjunto." },
-          mime === "application/pdf"
-            ? { type: "file", file: { filename: a.nombre, file_data: dataUrl } }
-            : { type: "image_url", image_url: { url: dataUrl } },
-        ] as any },
-      ],
-    });
-    const j = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? "{}");
-    const tipo = tipoAdjuntoCorreo(j.tipo_documento);
-    // Same OCR implementation as Escanear Factura, after webhook authorization.
-    if (tipo === "Factura comercial" || tipo === "Factura proforma") {
-      const { leerDocumentoImportacion } = await import("@/lib/ai-ocr.server");
-      try {
-        Object.assign(j, await leerDocumentoImportacion({ filename: a.nombre, mime, base64, lineas_factura: true }));
-      } catch (error) {
-        return { ...base, tipo, datos: j, error: `Factura reconocida; lectura de mercancías pendiente: ${String(error instanceof Error ? error.message : error).slice(0, 160)}` };
-      }
-    }
-    const txt = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
-    return {
-      ...base,
-      tipo,
-      bl_awb: txt(j.bl),
-      eta: txt(j.eta),
-      cliente_nombre: txt(j.cliente),
-      producto: txt(j.productos) ?? txt(j.descripcion_mercancia),
-      cantidad: txt(j.cantidad),
-      peso_bruto_kg: j.peso_bruto_kg != null && !isNaN(Number(j.peso_bruto_kg)) ? Number(j.peso_bruto_kg) : null,
-      factura_comercial: txt(j.factura_comercial),
-      datos: Object.fromEntries(["tipo_carga", "tipo_carga_confianza", "contenedores", "suplidor", "medio_transporte", "naviera", "buque", "puerto_arribo", "puerto_salida", "pais_origen", "pais_procedencia", "incoterm", "peso_neto_kg", "fecha_cargado", "fob_total", "total_factura", "moneda_factura", "seguro", "flete", "otros_gastos", "lineas_factura"].map((k) => [k, j[k] ?? null])),
-    };
+    return await leerArchivoCorreo(a.nombre, mime, base64, bytes);
   } catch (e: any) {
+    if (esPdf && esTimeoutGateway(e)) return { ...base, combinado: { motivo: "timeout", paginas } };
     return { ...base, error: String(e?.message ?? e).slice(0, 200) };
   }
+}
+
+async function encolarCombinados(db: any, adjuntos: AdjuntoProcesado[], destino: { solicitud_id?: string; expediente_id?: string; documentos?: Map<string, string> }) {
+  const filas = adjuntos.filter((a) => a.combinado && a.storage_path).map((a) => ({
+    solicitud_id: destino.solicitud_id ?? null, expediente_id: destino.expediente_id ?? null,
+    documento_id: destino.documentos?.get(a.storage_path!) ?? null,
+    nombre: a.nombre, storage_path: a.storage_path, paginas: a.combinado!.paginas, motivo: a.combinado!.motivo,
+  }));
+  if (!filas.length) return;
+  const { error } = await db.from("correo_documentos_combinados").upsert(filas, { onConflict: "storage_path", ignoreDuplicates: true });
+  if (error) console.error("No se pudo encolar documento combinado", error.message);
 }
 
 const nombreSeguro = (n: string) => n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w.\- ]+/g, "_").slice(-120);
@@ -179,6 +153,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         const adjuntos: AdjuntoProcesado[] = [];
         for (const a of adjuntosIn) adjuntos.push(await leerAdjunto(a));
         const { datos, advertencias } = fusionarAdjuntos(correo.datos, [...correo.advertencias, ...entradaAdjuntos.advertencias], adjuntos);
+        for (const a of adjuntos) if (a.combinado) advertencias.push(`${a.nombre}: ${AVISO_PROCESANDO_COMBINADO} (${a.combinado.paginas ?? "varias"} páginas); se separará por tipo en segundo plano.`);
         for (const a of adjuntos) if (a.error) advertencias.push(`${a.nombre}: no se pudo leer el documento; ${a.bytes.length ? "se conserva en Otros documentos" : "reenvía el archivo"}. ${a.error}`);
         const remitenteCorreo = correoDe(remitente);
         // OCR must run before matching: a retry may complete missing invoice lines.
@@ -196,7 +171,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
             a.storage_path = path;
           }
         };
-        const resumenAdjuntos = () => adjuntos.filter((a) => a.storage_path).map((a) => ({ nombre: a.nombre, mime: a.mime, tipo: a.tipo, storage_path: a.storage_path, datos: a.datos ?? {}, ...(a.error ? { error: a.error } : {}) }));
+        const resumenAdjuntos = () => adjuntos.filter((a) => a.storage_path).map((a) => ({ nombre: a.nombre, mime: a.mime, tipo: a.tipo, storage_path: a.storage_path, datos: a.datos ?? {}, ...(a.error ? { error: a.error } : {}), ...(a.combinado ? { procesando: true, combinado: a.combinado } : {}) }));
 
         const textoCompleto = `De: ${remitente}\nAsunto: ${asunto}\nRecibido: ${new Date().toISOString()}\n\n${cuerpo}`;
 
@@ -214,14 +189,16 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
             });
             if (error) return Response.json({ error: error.message }, { status: 500 });
             try { await subirAdjuntos(existente.id); } catch (e: any) { return Response.json({ error: e.message }, { status: 500 }); }
-            const filas = resumenAdjuntos().map((a) => ({
+            const resumen = resumenAdjuntos();
+            const filas = resumen.map((a) => ({
               expediente_id: existente.id, tipo: a.tipo, storage_path: a.storage_path, estado: "recibido",
               fecha_recepcion: new Date().toISOString().slice(0, 10),
               observaciones: `Adjunto de correo: ${a.nombre}`.slice(0, 500),
             }));
             if (filas.length) {
-              const { error: e2 } = await db.from("documentos").insert(filas);
+              const { data: insertados, error: e2 } = await db.from("documentos").insert(filas).select("id,storage_path");
               if (e2) return Response.json({ error: e2.message }, { status: 500 });
+              await encolarCombinados(db, adjuntos, { expediente_id: existente.id, documentos: new Map((insertados ?? []).map((d: any) => [d.storage_path, d.id])) });
             }
             return Response.json({ resultado: "adjuntado", expediente: existente.numero, adjuntos: filas.map((f) => f.tipo) });
           }
@@ -244,6 +221,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         } });
         if (error) return Response.json({ error: error.message }, { status: 500 });
         if (!guardado?.id) return Response.json({ error: "No se pudo guardar el borrador" }, { status: 500 });
+        await encolarCombinados(db, adjuntos, { solicitud_id: guardado.id });
         if (guardado.actualizado) return respuestaCorreoActualizado(guardado.id);
         const id = guardado.id;
         return Response.json({ resultado: "borrador", id, datos, advertencias, adjuntos: listaAdjuntos.map((a) => ({ nombre: a.nombre, tipo: a.tipo })) });

@@ -1630,6 +1630,103 @@ export type Database = {
         }
         Relationships: []
       }
+      correo_documentos_combinados: {
+        Row: {
+          bloqueado_hasta: string | null
+          created_at: string
+          documento_id: string | null
+          error: string | null
+          estado: string
+          expediente_id: string | null
+          id: string
+          intentos: number
+          motivo: string
+          nombre: string
+          paginas: number | null
+          procesado_en: string | null
+          resultado: Json
+          solicitud_id: string | null
+          storage_path: string
+        }
+        Insert: {
+          bloqueado_hasta?: string | null
+          created_at?: string
+          documento_id?: string | null
+          error?: string | null
+          estado?: string
+          expediente_id?: string | null
+          id?: string
+          intentos?: number
+          motivo?: string
+          nombre: string
+          paginas?: number | null
+          procesado_en?: string | null
+          resultado?: Json
+          solicitud_id?: string | null
+          storage_path: string
+        }
+        Update: {
+          bloqueado_hasta?: string | null
+          created_at?: string
+          documento_id?: string | null
+          error?: string | null
+          estado?: string
+          expediente_id?: string | null
+          id?: string
+          intentos?: number
+          motivo?: string
+          nombre?: string
+          paginas?: number | null
+          procesado_en?: string | null
+          resultado?: Json
+          solicitud_id?: string | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "correo_documentos_combinados_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "correo_documentos_combinados_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "correo_documentos_combinados_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "correo_documentos_combinados_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "correo_documentos_combinados_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "correo_documentos_combinados_solicitud_id_fkey"
+            columns: ["solicitud_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes_correo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       costos: {
         Row: {
           concepto: string
@@ -7583,10 +7680,40 @@ export type Database = {
         Args: { _expediente_id: string; _filas: Json }
         Returns: number
       }
+      reservar_documento_combinado: {
+        Args: { p_id?: string }
+        Returns: {
+          bloqueado_hasta: string | null
+          created_at: string
+          documento_id: string | null
+          error: string | null
+          estado: string
+          expediente_id: string | null
+          id: string
+          intentos: number
+          motivo: string
+          nombre: string
+          paginas: number | null
+          procesado_en: string | null
+          resultado: Json
+          solicitud_id: string | null
+          storage_path: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "correo_documentos_combinados"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       siguiente_numero_operacion: { Args: { p_tipo: string }; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
+      validar_token_tarea: {
+        Args: { p_nombre: string; p_token: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role:

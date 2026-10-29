@@ -610,6 +610,20 @@
       "when": 1793297576642,
       "tag": "0086_numeracion_unificada_compras",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1793300028678,
+      "tag": "0087_correo_documentos_combinados",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1793300372972,
+      "tag": "0088_combinados_timeout_pg_net",
+      "breakpoints": true
     }
   ]
 }
