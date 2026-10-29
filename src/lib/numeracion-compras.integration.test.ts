@@ -4,6 +4,37 @@ import { createClient } from '@supabase/supabase-js';
 
 // Opt-in live contract test: uses an authorized session and removes only its own rows.
 describe('Numeración de compras — contrato real', { skip: !process.env.NUMERACION_TEST_TOKEN }, () => {
+  it('asigna el formato unificado también al convertir un correo de exportación', async () => {
+    const url = process.env.VITE_SUPABASE_URL;
+    const key = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const token = process.env.NUMERACION_TEST_TOKEN;
+    assert.ok(url && key && token);
+    const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: `Bearer ${token}` } } });
+    const client = await db.from('clientes').select('id').eq('nombre', 'PROCESADORA DE GRANOS MAGUANA SRL').single();
+    assert.ifError(client.error);
+    assert.ok(client.data);
+    const solicitud = await db.from('solicitudes_correo').insert({
+      cliente_id: client.data.id, remitente_correo: 'prueba-numeracion@example.invalid',
+      asunto: `PRUEBA NUMERACIÓN ${crypto.randomUUID()}`, cuerpo_original: 'Prueba temporal de numeración, no enviar.',
+      estado: 'pendiente', adjuntos: [{ tipo: 'Factura proforma', nombre: 'PRUEBA.pdf', datos: { tipo_operacion: 'Exportación' } }],
+    }).select('id').single();
+    assert.ifError(solicitud.error);
+    assert.ok(solicitud.data);
+    let quoteId: string | undefined;
+    try {
+      const converted = await db.rpc('convertir_correo_cotizacion', { p_solicitud_id: solicitud.data.id });
+      assert.ifError(converted.error);
+      assert.ok(converted.data);
+      quoteId = converted.data;
+      const quote = await db.from('cotizaciones').select('numero,tipo_operacion').eq('id', quoteId).single();
+      assert.ifError(quote.error);
+      assert.match(quote.data?.numero ?? '', /^202610E\d+$/);
+      assert.equal(quote.data?.tipo_operacion, 'Exportación');
+    } finally {
+      assert.ifError((await db.from('solicitudes_correo').delete().eq('id', solicitud.data.id)).error);
+      if (quoteId) assert.ifError((await db.from('cotizaciones').delete().eq('id', quoteId)).error);
+    }
+  });
   it('comparte contador I/E, conserva número en conversiones y respeta históricos', async () => {
     const url = process.env.VITE_SUPABASE_URL;
     const key = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
