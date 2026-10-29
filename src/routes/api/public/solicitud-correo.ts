@@ -60,7 +60,7 @@ async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoPro
       cantidad: txt(j.cantidad),
       peso_bruto_kg: j.peso_bruto_kg != null && !isNaN(Number(j.peso_bruto_kg)) ? Number(j.peso_bruto_kg) : null,
       factura_comercial: txt(j.factura_comercial),
-      datos: Object.fromEntries(["tipo_carga", "tipo_carga_confianza", "contenedores", "suplidor", "medio_transporte", "naviera", "buque", "puerto_arribo", "puerto_salida", "pais_origen", "pais_procedencia", "incoterm", "peso_neto_kg", "fecha_cargado", "fob_total", "seguro", "flete", "otros_gastos", "lineas_factura"].map((k) => [k, j[k] ?? null])),
+      datos: Object.fromEntries(["tipo_carga", "tipo_carga_confianza", "contenedores", "suplidor", "medio_transporte", "naviera", "buque", "puerto_arribo", "puerto_salida", "pais_origen", "pais_procedencia", "incoterm", "peso_neto_kg", "fecha_cargado", "fob_total", "total_factura", "moneda_factura", "seguro", "flete", "otros_gastos", "lineas_factura"].map((k) => [k, j[k] ?? null])),
     };
   } catch (e: any) {
     return { ...base, error: String(e?.message ?? e).slice(0, 200) };
