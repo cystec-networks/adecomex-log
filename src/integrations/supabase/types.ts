@@ -6492,6 +6492,7 @@ export type Database = {
           cc: string | null
           cliente_id: string | null
           cliente_nombre: string | null
+          cotizacion_id: string | null
           created_at: string
           cuerpo: string
           destinatarios: string | null
@@ -6517,6 +6518,7 @@ export type Database = {
           cc?: string | null
           cliente_id?: string | null
           cliente_nombre?: string | null
+          cotizacion_id?: string | null
           created_at?: string
           cuerpo: string
           destinatarios?: string | null
@@ -6542,6 +6544,7 @@ export type Database = {
           cc?: string | null
           cliente_id?: string | null
           cliente_nombre?: string | null
+          cotizacion_id?: string | null
           created_at?: string
           cuerpo?: string
           destinatarios?: string | null
@@ -6559,6 +6562,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "solicitudes_correo_cotizacion_id_fkey"
+            columns: ["cotizacion_id"]
+            isOneToOne: false
+            referencedRelation: "cotizaciones"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "solicitudes_correo_expediente_id_fkey"
             columns: ["expediente_id"]
@@ -7512,6 +7522,10 @@ export type Database = {
       calcular_vacaciones_vigentes: {
         Args: { _dias_tomados_ultimo_anio: number; _fecha_ingreso: string }
         Returns: number
+      }
+      convertir_correo_cotizacion: {
+        Args: { p_cotizacion_id?: string; p_solicitud_id: string }
+        Returns: string
       }
       crear_solicitud_correo_sin_duplicado: {
         Args: { p_solicitud: Json }

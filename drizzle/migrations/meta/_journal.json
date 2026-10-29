@@ -575,6 +575,27 @@
       "when": 1793209989436,
       "tag": "0081_confirmacion_borrador_revision",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1793294133395,
+      "tag": "0082_correo_conversion_cotizacion_compra",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1793294322806,
+      "tag": "0083_correo_cotizacion_softdelete_correcto",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1793294379751,
+      "tag": "0084_cotizaciones_numero_sin_truncar",
+      "breakpoints": true
     }
   ]
 }

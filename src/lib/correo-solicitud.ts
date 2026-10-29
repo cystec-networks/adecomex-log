@@ -132,7 +132,7 @@ export function fusionarAsunto(cuerpo: DatosSolicitudCorreo, asunto: string): { 
 
 /** Tipos de la ficha Documentos que puede recibir un adjunto de correo. */
 export const TIPOS_ADJUNTO_CORREO = [
-  "Bill of Lading", "Guía aérea", "Factura comercial", "Lista de empaque", "Certificado de origen",
+  "Bill of Lading", "Guía aérea", "Factura comercial", "Factura proforma", "Lista de empaque", "Certificado de origen",
   "Certificado Sanitario/Fitosanitario", "Certificado de análisis",
 ] as const;
 
@@ -145,6 +145,7 @@ export function tipoAdjuntoCorreo(v: unknown): string {
   if (/BILLOFLADING|^BL$|CONOCIMIENTO/.test(n)) return "Bill of Lading";
   if (/AIRWAYBILL|AIRWAYBILL|AWB|GUIAAEREA/.test(n)) return "Guía aérea";
   if (/PACKING|EMPAQUE/.test(n)) return "Lista de empaque";
+  if (/PROFORMA/.test(n)) return "Factura proforma";
   if (/INVOICE|FACTURA/.test(n) && !/PROFORMA/.test(n)) return "Factura comercial";
   if (/ORIGIN|ORIGEN/.test(n)) return "Certificado de origen";
   if (/SANITAR|PHYTO|FITO|HEALTH/.test(n)) return "Certificado Sanitario/Fitosanitario";

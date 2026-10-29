@@ -41,7 +41,7 @@ async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoPro
     const j = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? "{}");
     const tipo = tipoAdjuntoCorreo(j.tipo_documento);
     // Same OCR implementation as Escanear Factura, after webhook authorization.
-    if (tipo === "Factura comercial") {
+    if (tipo === "Factura comercial" || tipo === "Factura proforma") {
       const { leerDocumentoImportacion } = await import("@/lib/ai-ocr.server");
       try {
         Object.assign(j, await leerDocumentoImportacion({ filename: a.nombre, mime, base64, lineas_factura: true }));
@@ -115,7 +115,7 @@ const JSON_SCHEMA = {
 };
 
 const PROMPT = `Eres asistente de una agencia aduanal dominicana. Recibes SOLO el mensaje más reciente de un correo.
-Decide si es una SOLICITUD NUEVA de servicio de gestión aduanal o logística (p. ej. "favor proceder con el trámite / despacho / VUCE de esta carga").
+Decide si es una SOLICITUD NUEVA de compra, cotización, gestión aduanal o logística (p. ej. "favor cotizar esta proforma / proceder con el trámite / despacho / VUCE de esta carga").
 NO es solicitud nueva: seguimientos, preguntas, confirmaciones, facturas, correspondencia general, publicidad o spam.
 Si lo es, copia literalmente del texto: BL/AWB, ETA (tal como aparece), producto/descripción, cantidad y nombre del cliente (de la firma o remitente).
 Usa null para todo dato que no aparezca. Nunca inventes ni deduzcas valores.`;
@@ -169,7 +169,10 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         let ia: any;
         try { ia = await clasificar(asunto, remitente, mensaje); }
         catch (e: any) { return Response.json({ error: e.message }, { status: e.status ?? 500 }); }
-        if (!ia?.es_solicitud_nueva) return Response.json({ resultado: "descartado", motivo: ia?.motivo ?? "No es una solicitud nueva" });
+        // A later shipping reply in an already converted purchase thread must remain
+        // available for manual linking, never be silently discarded as follow-up.
+        const { data: compraHilo } = p.data.id_hilo ? await db.from('solicitudes_correo').select('id').eq('id_hilo', p.data.id_hilo).eq('estado', 'convertida').not('cotizacion_id', 'is', null).limit(1) : { data: [] };
+        if (!ia?.es_solicitud_nueva && !compraHilo?.length) return Response.json({ resultado: "descartado", motivo: ia?.motivo ?? "No es una solicitud nueva" });
 
         const correo = fusionarAsunto(combinarDatos(extraerPorEtiquetas(mensaje), ia, mensaje, remitente), asunto);
         // Un adjunto ilegible no bloquea a los demás: queda como «Otro».
