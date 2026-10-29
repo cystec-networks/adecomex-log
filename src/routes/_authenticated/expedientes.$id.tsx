@@ -1826,7 +1826,9 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     if (isNuevo || !exp) return;
     const inicial = construirFormInicial(exp, false);
     // Actualizar solo vacíos: conservar cualquier edición manual del formulario abierto.
-    setForm((f) => ({ ...f, ...completarResultadoDga(f, {
+    setForm((f) => ({ ...f,
+      ...(!String(f.numero_igra ?? "").trim() && inicial.numero_igra ? { numero_igra: inicial.numero_igra } : {}),
+      ...completarResultadoDga(f, {
       liq_siga_numero: inicial.liq_siga_numero || undefined,
       liq_siga_estado: inicial.liq_siga_estado || undefined,
       liq_siga_pin_pago: inicial.liq_siga_pin_pago || undefined,
