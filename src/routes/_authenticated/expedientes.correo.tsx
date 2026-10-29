@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useState } from "react";
+import { AvisoDocumentosCombinados, useDocumentosCombinados } from "@/components/documentos-combinados-aviso";
 import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, Mail, Trash2, FilePlus2, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -118,6 +119,7 @@ function BandejaCorreo() {
         <Badge variant="secondary">{data.length}</Badge>
       </div>
       <p className="text-xs text-muted-foreground">Borradores pendientes de confirmar. No cuentan en reportes, Costos, Finanzas ni dashboards hasta «Confirmar y activar».</p>
+      <AvisoDocumentosCombinados documentos={combinados} />
       <Card>
         <CardContent className="p-0 overflow-auto">
           {isLoading ? <p className="p-6 text-sm text-muted-foreground">Cargando…</p> : data.length === 0 ? (
@@ -148,10 +150,12 @@ function BandejaCorreo() {
                           {falta.length === 0 ? <Badge variant="outline" className="text-[11px]">Completo</Badge> :
                             <div className="flex flex-wrap gap-1">{falta.map((f) => <Badge key={f} className="bg-warning/15 text-warning-foreground border-warning/40 text-[11px]" variant="outline">{f}</Badge>)}</div>}
                           {(s.advertencias ?? []).map((a: string) => <div key={a} className="mt-1 text-[11px] text-warning-foreground">⚠ {a}</div>)}
-                          {(Array.isArray(s.adjuntos) ? s.adjuntos as { nombre: string; tipo: string; storage_path?: string; error?: string }[] : []).map((d, i) => (
+                          {(Array.isArray(s.adjuntos) ? s.adjuntos as { nombre: string; tipo: string; storage_path?: string; error?: string; procesando?: boolean }[] : []).map((d, i) => (
                             <div key={i} className="mt-1 text-[11px] text-muted-foreground">📎 {d.tipo === "Otro" ? "Otros documentos" : d.tipo}: {d.nombre}
                               {d.storage_path && <DocumentoPreviewButton path={d.storage_path} label="Ver adjunto" className="ml-1 h-6" />}
-                              {d.error && <div className="text-warning-foreground">⚠ {d.error}</div>}
+                              {d.procesando && combinados.some((c) => c.solicitud_id === s.id && c.nombre === d.nombre && (c.estado === "pendiente" || c.estado === "procesando"))
+                                ? <div className="text-primary">⏳ Procesando documento combinado…</div>
+                                : d.error && <div className="text-warning-foreground">⚠ {d.error}</div>}
                             </div>
                           ))}
                         </td>
