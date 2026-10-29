@@ -35,7 +35,7 @@ function KPI({ icon: Icon, label, value, tone = "primary", sub }: any) {
     info: "bg-[var(--info)]/10 text-[var(--info)]",
   };
   return (
-    <Card className="h-full cursor-pointer transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+    <Card className={`h-full cursor-pointer transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${tone === "danger" ? "border-destructive/30 bg-destructive/10" : ""}`}>
       <CardContent className="p-3">
         <div className="min-w-0">
           <div className="min-h-12 text-xs leading-4 text-muted-foreground">{label}</div>
