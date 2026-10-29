@@ -109,7 +109,7 @@ import { datosDocumentalesCorreo, deduplicarAdjuntosCorreo, type AdjuntoGuardado
 import { agruparAdjuntosCorreo, etiquetaOriginalIncluido, nombreUnido, unirArchivosPdf } from "@/lib/correo-adjuntos-union";
 import { prepararFacturasCorreo } from "@/lib/factura-expediente-escaneo";
 import { classifyArancelLote } from "@/lib/ai-arancel.functions";
-import { confirmacionPendienteSolicitud, correoConfirmacionSolicitud, faltantesConfirmacion } from "@/lib/correo-confirmacion";
+import { confirmacionPendienteSolicitud, correoConfirmacionSolicitud, faltantesConfirmacion, cuerpoHtmlConfirmacion } from "@/lib/correo-confirmacion";
 import {
   HerramientasDgaVuceItems,
   HerramientasDgaVuceMenu,

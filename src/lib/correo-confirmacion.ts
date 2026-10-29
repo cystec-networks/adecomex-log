@@ -114,7 +114,7 @@ export function cuerpoHtmlConfirmacion(cuerpo: string) {
     h = h.replace(/^(Descripción:[\s\S]*)$/, "<b>$1</b>");
     return `<p style="margin:0 0 14px 0;text-align:justify">${h}</p>`;
   }).join("\n");
-  return `<div style="font-family:Tahoma,Verdana,sans-serif;font-size:14px;color:#000;max-width:720px">
+  return `<div style="font-family:Tahoma,Verdana,sans-serif;font-size:14px;color:#000;background:#fff;padding:8px;max-width:720px">
 ${parrafos}
 ${corte >= 0 ? FIRMA_HTML : ""}
 </div>`;
