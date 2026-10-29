@@ -7,6 +7,7 @@ import type { PagoPuerto } from "./pago-puerto";
 import { TIPOS_RESULTADO_DGA, type ResultadoDgaExtraido } from "./resultado-dga-documentos";
 import type { CertificadoDga } from "./certificado-origen-dga";
 import type { LiquidacionDga } from "./liquidacion-dga-documento";
+import type { CartaRuta } from "./carta-ruta";
 
 const Input = z.object({
   filename: z.string(),
@@ -16,6 +17,7 @@ const Input = z.object({
   pago_puerto: z.boolean().optional(),
   resultado_dga: z.enum(TIPOS_RESULTADO_DGA).optional(),
   certificado_origen_dga: z.boolean().optional(),
+  carta_ruta: z.boolean().optional(),
 });
 
 export type OcrContenedor = { numero: string; sello1: string | null; sello2: string | null; tipo: string | null };
@@ -54,6 +56,7 @@ export type OcrExtraction = {
   pago_puerto?: PagoPuerto;
   resultado_dga?: ResultadoDgaExtraido & LiquidacionDga;
   certificado_origen_dga?: CertificadoDga;
+  carta_ruta?: CartaRuta;
 };
 
 export const extractSolicitudFromDocument = createServerFn({ method: "POST" })

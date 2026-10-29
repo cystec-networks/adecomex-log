@@ -1,6 +1,6 @@
 import { createContext, useContext, useRef, type ReactNode } from "react";
 import type { CambiosLiquidacion } from "@/lib/liquidacion-dga-documento";
-type Editor = { leer: () => Record<string, unknown>; aplicar: (cambios: CambiosLiquidacion) => void };
+type Editor = { leer: () => Record<string, unknown>; aplicar: (cambios: CambiosLiquidacion & { numero_igra?: string }) => void };
 const Context = createContext<{ current: Editor | null } | null>(null);
 export function LiquidacionDgaProvider({ children }: { children: ReactNode }) {
   const editor = useRef<Editor | null>(null);
