@@ -1408,15 +1408,17 @@ function DetalleExpediente() {
           </div>
         )}
         {!isNuevo && borradorConf && (
-          <section className="mt-2 max-w-3xl space-y-2 rounded-md border p-2 text-[13px]" aria-label="Revisar confirmación al cliente">
+          <section className="mt-2 min-w-0 space-y-2 border-t pt-2 text-[13px]" aria-label="Revisar confirmación al cliente">
             <p className="text-xs text-muted-foreground">Revisa y edita la confirmación. No se enviará hasta presionar «Enviar ahora»; se responderá dentro del hilo original del cliente.</p>
             <div className="grid gap-2 md:grid-cols-2">
-              <label className="space-y-1"><span className="text-xs text-muted-foreground">Para</span><Input value={borradorConf.para} onChange={(e) => setBorradorConf({ ...borradorConf, para: e.target.value })} /></label>
-              <label className="space-y-1"><span className="text-xs text-muted-foreground">CC</span><Input value={borradorConf.cc} onChange={(e) => setBorradorConf({ ...borradorConf, cc: e.target.value })} /></label>
+              <label className="min-w-0 space-y-1"><span className="text-xs text-muted-foreground">Para</span><Textarea rows={2} className="min-h-16 resize-none [field-sizing:content] break-words" value={borradorConf.para} onChange={(e) => setBorradorConf({ ...borradorConf, para: e.target.value })} /></label>
+              <label className="min-w-0 space-y-1"><span className="text-xs text-muted-foreground">CC</span><Textarea rows={2} className="min-h-16 resize-none [field-sizing:content] break-words" value={borradorConf.cc} onChange={(e) => setBorradorConf({ ...borradorConf, cc: e.target.value })} /></label>
             </div>
             <label className="block space-y-1"><span className="text-xs text-muted-foreground">Asunto</span><Input value={borradorConf.asunto} onChange={(e) => setBorradorConf({ ...borradorConf, asunto: e.target.value })} /></label>
-            <label className="block space-y-1"><span className="text-xs text-muted-foreground">Cuerpo</span><Textarea rows={10} value={borradorConf.cuerpo} onChange={(e) => setBorradorConf({ ...borradorConf, cuerpo: e.target.value })} /></label>
-            <div className="space-y-1"><span className="text-xs text-muted-foreground">Vista previa como la recibirá el cliente</span><div className="max-h-96 overflow-auto rounded-md border bg-card p-3" dangerouslySetInnerHTML={{ __html: cuerpoHtmlConfirmacion(borradorConf.cuerpo) }} /></div>
+            <div className="grid min-w-0 gap-3 md:grid-cols-2">
+              <label className="block min-w-0 space-y-1"><span className="text-xs text-muted-foreground">Cuerpo</span><Textarea rows={16} className="h-[26rem] resize-none" value={borradorConf.cuerpo} onChange={(e) => setBorradorConf({ ...borradorConf, cuerpo: e.target.value })} /></label>
+              <div className="min-w-0 space-y-1"><span className="text-xs text-muted-foreground">Vista previa como la recibirá el cliente</span><div className="h-[26rem] overflow-auto break-words rounded-md border bg-card p-3" dangerouslySetInnerHTML={{ __html: cuerpoHtmlConfirmacion(borradorConf.cuerpo) }} /></div>
+            </div>
             <div className="flex gap-2">
               <Button size="sm" disabled={aprobarConfirmacion.isPending || descartarConfirmacion.isPending} onClick={() => aprobarConfirmacion.mutate()}>{aprobarConfirmacion.isPending ? "Enviando…" : "Enviar ahora"}</Button>
               <Button size="sm" variant="outline" disabled={aprobarConfirmacion.isPending || descartarConfirmacion.isPending} onClick={() => { if (confirm("¿Descartar esta confirmación sin enviar nada?")) descartarConfirmacion.mutate(); }}>Descartar</Button>
