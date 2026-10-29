@@ -575,6 +575,13 @@
       "when": 1793209989436,
       "tag": "0081_confirmacion_borrador_revision",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1793294133395,
+      "tag": "0082_correo_conversion_cotizacion_compra",
+      "breakpoints": true
     }
   ]
 }
