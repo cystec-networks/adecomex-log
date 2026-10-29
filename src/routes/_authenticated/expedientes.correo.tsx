@@ -38,7 +38,7 @@ function BandejaCorreo() {
     queryKey: ['cotizaciones-correo-cliente', compra?.cliente_id],
     enabled: !!compra?.cliente_id,
     queryFn: async () => {
-      const { data, error } = await supabase.from('cotizaciones').select('id,numero,estado').eq('cliente_id', compra.cliente_id).is('deleted_at', null).order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('cotizaciones').select('id,numero,estado').eq('cliente_id', compra.cliente_id).is('eliminado_en', null).order('created_at', { ascending: false });
       if (error) throw error;
       return data ?? [];
     },

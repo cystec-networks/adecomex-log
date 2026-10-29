@@ -1,0 +1,1 @@
+DO $migration$ DECLARE definition text; BEGIN SELECT pg_get_functiondef('public.convertir_correo_cotizacion(uuid,uuid)'::regprocedure) INTO definition; definition:=replace(definition,'deleted_at IS NULL','eliminado_en IS NULL'); definition:=replace(definition,'''[0-9]+(\.[0-9]+)?''','''[0-9]+\.?[0-9]*'''); EXECUTE definition; END;$migration$;
