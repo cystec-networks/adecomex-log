@@ -12,6 +12,7 @@ import { fmtLocalDate } from "@/lib/dates";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { sugerirCotizacionCorreo, tipoDocumentoCompra } from "@/lib/correo-cotizacion";
 import { useMyRoles } from "@/lib/auth-hooks";
+import { extractSolicitudFromDocument } from '@/lib/ai-ocr.functions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -46,6 +47,32 @@ function BandejaCorreo() {
   const convertir = useMutation({
     mutationFn: async () => {
       if (!compra) throw new Error('Selecciona una solicitud');
+      // Legacy requests predate invoice total/currency extraction. Read their source
+      // before the atomic conversion; linking never alters an existing quote.
+      if (destino === 'nueva') {
+        const adjuntos = [...(Array.isArray(compra.adjuntos) ? compra.adjuntos : [])];
+        let changed = false;
+        for (let i = 0; i < adjuntos.length; i++) {
+          const a = adjuntos[i];
+          if (tipoDocumentoCompra(a) !== 'Factura proforma' || !a.storage_path) continue;
+          if (Object.hasOwn(a.datos ?? {}, 'total_factura') && Object.hasOwn(a.datos ?? {}, 'moneda_factura')) continue;
+          const { data: archivo, error: descarga } = await supabase.storage.from('documentos').download(a.storage_path);
+          if (descarga || !archivo) throw descarga ?? new Error('No se pudo leer la proforma');
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+            reader.onerror = () => reject(new Error('No se pudo leer la proforma'));
+            reader.readAsDataURL(archivo);
+          });
+          const extraido = await extractSolicitudFromDocument({ data: { filename: a.nombre, mime: a.mime || archivo.type || 'application/pdf', base64, lineas_factura: true } });
+          adjuntos[i] = { ...a, datos: { ...a.datos, total_factura: extraido.total_factura ?? null, moneda_factura: extraido.moneda_factura ?? null } };
+          changed = true;
+        }
+        if (changed) {
+          const { data: guardado, error } = await supabase.from('solicitudes_correo').update({ adjuntos }).eq('id', compra.id).eq('estado', 'pendiente').select('id').single();
+          if (error || !guardado) throw error ?? new Error('La solicitud cambió; vuelve a abrirla');
+        }
+      }
       const { data, error } = await supabase.rpc('convertir_correo_cotizacion', { p_solicitud_id: compra.id, p_cotizacion_id: destino === 'nueva' ? undefined : destino });
       if (error) throw error;
       if (!data) throw new Error('No se pudo crear o vincular la cotización');
