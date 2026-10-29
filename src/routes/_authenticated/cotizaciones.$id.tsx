@@ -20,6 +20,7 @@ import { copiarProductos } from "@/lib/copiar-productos";
 import { fmtLocalDate } from "@/lib/dates";
 import { CalcularEstimadoButton, PreLiquidacionPdfButtonCotizacion } from "@/components/preliquidacion-cotizacion";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
+import { tipoDocumentoCompra } from '@/lib/correo-cotizacion';
 import {
   COTIZACION_ESTADOS, COTIZACION_ESTADO_CLASS, cotizacionEstadoLabel, TIPOS_MERCANCIA,
 } from "@/lib/estados-cotizacion";
@@ -338,7 +339,7 @@ function DetalleCotizacion() {
         {correosVinculados.map(s => <div key={s.id} className="space-y-1 text-[12px]">
           <div className="font-medium break-words">{s.asunto}</div>
           {(s.bl_awb || s.eta) && <div>BL/AWB: {s.bl_awb ?? '—'} · ETA: {s.eta ? fmtLocalDate(s.eta) : '—'}</div>}
-          {(Array.isArray(s.adjuntos) ? s.adjuntos : []).map((a: any, i: number) => <div key={i} className="flex items-center gap-2 flex-wrap"><span className="break-words">{a.tipo}: {a.nombre}</span>{a.storage_path && <DocumentoPreviewButton path={a.storage_path} label="Ver respaldo" size="sm" />}</div>)}
+          {(Array.isArray(s.adjuntos) ? s.adjuntos : []).map((a: any, i: number) => <div key={i} className="flex items-center gap-2 flex-wrap"><span className="break-words">{tipoDocumentoCompra(a)}: {a.nombre}</span>{a.storage_path && <DocumentoPreviewButton path={a.storage_path} label="Ver respaldo" size="sm" />}</div>)}
         </div>)}
       </section>}
 
