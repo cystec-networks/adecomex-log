@@ -25,6 +25,14 @@ import {
 } from "@/lib/estados-cotizacion";
 
 export const Route = createFileRoute("/_authenticated/cotizaciones/$id")({
+  head: () => ({ meta: [
+    { title: 'Cotización de Compra | ADECOMEX' },
+    { name: 'description', content: 'Productos, documentos y seguimiento de la cotización de compra.' },
+    { property: 'og:title', content: 'Cotización de Compra | ADECOMEX' },
+    { property: 'og:description', content: 'Productos, documentos y seguimiento de la cotización de compra.' },
+    { property: 'og:type', content: 'website' },
+    { name: 'twitter:card', content: 'summary' },
+  ] }),
   component: DetalleCotizacion,
 });
 
@@ -38,6 +46,14 @@ function DetalleCotizacion() {
   const { data: c } = useQuery({
     queryKey: ["cotizacion", id],
     queryFn: async () => (await supabase.from("cotizaciones").select("*, clientes(*)").eq("id", id).maybeSingle()).data,
+  });
+  const { data: correosVinculados = [] } = useQuery({
+    queryKey: ['cotizacion-correos', id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('solicitudes_correo').select('id,asunto,bl_awb,eta,adjuntos').eq('cotizacion_id', id).eq('estado', 'convertida').order('created_at');
+      if (error) throw error;
+      return data ?? [];
+    },
   });
 
   const { data: clientes } = useQuery({
@@ -317,6 +333,14 @@ function DetalleCotizacion() {
       </Card>
 
       <ProductosCard tabla="cotizacion_productos" parentId={id} readOnly={readOnly} paisOrigen={form.origen} />
+      {correosVinculados.length > 0 && <section className="space-y-2 border-t pt-3">
+        <h2 className="font-medium text-[14px]">Correos y documentos vinculados</h2>
+        {correosVinculados.map(s => <div key={s.id} className="space-y-1 text-[12px]">
+          <div className="font-medium break-words">{s.asunto}</div>
+          {(s.bl_awb || s.eta) && <div>BL/AWB: {s.bl_awb ?? '—'} · ETA: {s.eta ? fmtLocalDate(s.eta) : '—'}</div>}
+          {(Array.isArray(s.adjuntos) ? s.adjuntos : []).map((a: any, i: number) => <div key={i} className="flex items-center gap-2 flex-wrap"><span className="break-words">{a.tipo}: {a.nombre}</span>{a.storage_path && <DocumentoPreviewButton path={a.storage_path} label="Ver respaldo" size="sm" />}</div>)}
+        </div>)}
+      </section>}
 
       <Card>
         <CardHeader><CardTitle className="text-base">Pre-Liquidación estimada de impuestos</CardTitle></CardHeader>
