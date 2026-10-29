@@ -102,6 +102,7 @@ function BandejaCorreo() {
       return (data ?? []).map((s) => ({ ...s, clientes: s.cliente_id ? { nombre: nom.get(s.cliente_id) } : null })) as any[];
     },
   });
+  const combinados = useDocumentosCombinados({ solicitudIds: data.map((s: any) => s.id) });
   const descartar = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("solicitudes_correo").update({ estado: "descartada" }).eq("id", id);

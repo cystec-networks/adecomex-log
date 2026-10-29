@@ -104,6 +104,7 @@ import { TabRecepcion } from "@/components/tab-recepcion";
 import { EscanearBlButton, EscanearFacturaButton as EscanearFacturaExpButton } from "@/components/escanear-documento-expediente-buttons";
 import { NuevoDesdeXmlButton } from "@/components/nuevo-desde-xml-button";
 import { type OcrExtraction } from "@/lib/ai-ocr.functions";
+import { AvisoDocumentosCombinados, useDocumentosCombinados } from "@/components/documentos-combinados-aviso";
 import { datosDocumentalesCorreo, deduplicarAdjuntosCorreo, type AdjuntoGuardadoCorreo } from "@/lib/correo-adjuntos";
 import { agruparAdjuntosCorreo, etiquetaOriginalIncluido, nombreUnido, unirArchivosPdf } from "@/lib/correo-adjuntos-union";
 import { prepararFacturasCorreo } from "@/lib/factura-expediente-escaneo";
@@ -641,6 +642,12 @@ function DetalleExpediente() {
 
   // Borrador recibido por correo: prellena el formulario de creación (se confirma al crear).
   const { correo: correoParam } = Route.useSearch();
+  const { data: solicitudesVinculadas = [] } = useQuery({
+    queryKey: ["solicitudes-de-expediente", id],
+    enabled: !isNuevo,
+    queryFn: async () => (await supabase.from("solicitudes_correo").select("id").eq("expediente_id", id)).data?.map((x) => x.id) ?? [],
+  });
+  const combinados = useDocumentosCombinados(isNuevo ? { solicitudIds: correoParam ? [correoParam] : [] } : { expedienteId: id, solicitudIds: solicitudesVinculadas });
   useEffect(() => {
     if (!isNuevo || !correoParam) return;
     let vivo = true;
@@ -1366,6 +1373,7 @@ function DetalleExpediente() {
             </span>
           </div>
         )}
+        {!isNuevo && <div className="mt-1"><AvisoDocumentosCombinados documentos={combinados} /></div>}
         {!isNuevo && pendientesAvance.length > 0 && (
           <div className="expediente-header-alertas mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-0 text-destructive" role="status" aria-label="Pendientes para avanzar">
             <span className="font-semibold">Pendientes para avanzar:</span>
@@ -1416,6 +1424,7 @@ function DetalleExpediente() {
         )}
       </div>
         {isNuevo && correoParam && <section className="px-3 py-2 border-b space-y-1" aria-label="Documentos recibidos por correo">
+          <AvisoDocumentosCombinados documentos={combinados} />
           <Collapsible>
             <CollapsibleTrigger asChild>
               <Button type="button" variant="ghost" className="group -mx-1 h-auto justify-start px-1 py-1 text-sm font-semibold">
