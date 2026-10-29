@@ -153,6 +153,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         const adjuntos: AdjuntoProcesado[] = [];
         for (const a of adjuntosIn) adjuntos.push(await leerAdjunto(a));
         const { datos, advertencias } = fusionarAdjuntos(correo.datos, [...correo.advertencias, ...entradaAdjuntos.advertencias], adjuntos);
+        for (const a of adjuntos) if (a.combinado) advertencias.push(`${a.nombre}: ${AVISO_PROCESANDO_COMBINADO} (${a.combinado.paginas ?? "varias"} páginas); se separará por tipo en segundo plano.`);
         for (const a of adjuntos) if (a.error) advertencias.push(`${a.nombre}: no se pudo leer el documento; ${a.bytes.length ? "se conserva en Otros documentos" : "reenvía el archivo"}. ${a.error}`);
         const remitenteCorreo = correoDe(remitente);
         // OCR must run before matching: a retry may complete missing invoice lines.
@@ -170,7 +171,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
             a.storage_path = path;
           }
         };
-        const resumenAdjuntos = () => adjuntos.filter((a) => a.storage_path).map((a) => ({ nombre: a.nombre, mime: a.mime, tipo: a.tipo, storage_path: a.storage_path, datos: a.datos ?? {}, ...(a.error ? { error: a.error } : {}) }));
+        const resumenAdjuntos = () => adjuntos.filter((a) => a.storage_path).map((a) => ({ nombre: a.nombre, mime: a.mime, tipo: a.tipo, storage_path: a.storage_path, datos: a.datos ?? {}, ...(a.error ? { error: a.error } : {}), ...(a.combinado ? { procesando: true, combinado: a.combinado } : {}) }));
 
         const textoCompleto = `De: ${remitente}\nAsunto: ${asunto}\nRecibido: ${new Date().toISOString()}\n\n${cuerpo}`;
 
@@ -188,14 +189,16 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
             });
             if (error) return Response.json({ error: error.message }, { status: 500 });
             try { await subirAdjuntos(existente.id); } catch (e: any) { return Response.json({ error: e.message }, { status: 500 }); }
-            const filas = resumenAdjuntos().map((a) => ({
+            const resumen = resumenAdjuntos();
+            const filas = resumen.map((a) => ({
               expediente_id: existente.id, tipo: a.tipo, storage_path: a.storage_path, estado: "recibido",
               fecha_recepcion: new Date().toISOString().slice(0, 10),
               observaciones: `Adjunto de correo: ${a.nombre}`.slice(0, 500),
             }));
             if (filas.length) {
-              const { error: e2 } = await db.from("documentos").insert(filas);
+              const { data: insertados, error: e2 } = await db.from("documentos").insert(filas).select("id,storage_path");
               if (e2) return Response.json({ error: e2.message }, { status: 500 });
+              await encolarCombinados(db, adjuntos, { expediente_id: existente.id, documentos: new Map((insertados ?? []).map((d: any) => [d.storage_path, d.id])) });
             }
             return Response.json({ resultado: "adjuntado", expediente: existente.numero, adjuntos: filas.map((f) => f.tipo) });
           }
@@ -218,6 +221,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         } });
         if (error) return Response.json({ error: error.message }, { status: 500 });
         if (!guardado?.id) return Response.json({ error: "No se pudo guardar el borrador" }, { status: 500 });
+        await encolarCombinados(db, adjuntos, { solicitud_id: guardado.id });
         if (guardado.actualizado) return respuestaCorreoActualizado(guardado.id);
         const id = guardado.id;
         return Response.json({ resultado: "borrador", id, datos, advertencias, adjuntos: listaAdjuntos.map((a) => ({ nombre: a.nombre, tipo: a.tipo })) });
