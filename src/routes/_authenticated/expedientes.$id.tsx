@@ -109,7 +109,7 @@ import { datosDocumentalesCorreo, deduplicarAdjuntosCorreo, type AdjuntoGuardado
 import { agruparAdjuntosCorreo, etiquetaOriginalIncluido, nombreUnido, unirArchivosPdf } from "@/lib/correo-adjuntos-union";
 import { prepararFacturasCorreo } from "@/lib/factura-expediente-escaneo";
 import { classifyArancelLote } from "@/lib/ai-arancel.functions";
-import { confirmacionPendienteSolicitud, correoConfirmacionSolicitud, faltantesConfirmacion } from "@/lib/correo-confirmacion";
+import { confirmacionPendienteSolicitud, correoConfirmacionSolicitud, faltantesConfirmacion, cuerpoHtmlConfirmacion } from "@/lib/correo-confirmacion";
 import {
   HerramientasDgaVuceItems,
   HerramientasDgaVuceMenu,
@@ -1416,6 +1416,7 @@ function DetalleExpediente() {
             </div>
             <label className="block space-y-1"><span className="text-xs text-muted-foreground">Asunto</span><Input value={borradorConf.asunto} onChange={(e) => setBorradorConf({ ...borradorConf, asunto: e.target.value })} /></label>
             <label className="block space-y-1"><span className="text-xs text-muted-foreground">Cuerpo</span><Textarea rows={10} value={borradorConf.cuerpo} onChange={(e) => setBorradorConf({ ...borradorConf, cuerpo: e.target.value })} /></label>
+            <div className="space-y-1"><span className="text-xs text-muted-foreground">Vista previa como la recibirá el cliente</span><div className="max-h-96 overflow-auto rounded-md border bg-card p-3" dangerouslySetInnerHTML={{ __html: cuerpoHtmlConfirmacion(borradorConf.cuerpo) }} /></div>
             <div className="flex gap-2">
               <Button size="sm" disabled={aprobarConfirmacion.isPending || descartarConfirmacion.isPending} onClick={() => aprobarConfirmacion.mutate()}>{aprobarConfirmacion.isPending ? "Enviando…" : "Enviar ahora"}</Button>
               <Button size="sm" variant="outline" disabled={aprobarConfirmacion.isPending || descartarConfirmacion.isPending} onClick={() => { if (confirm("¿Descartar esta confirmación sin enviar nada?")) descartarConfirmacion.mutate(); }}>Descartar</Button>

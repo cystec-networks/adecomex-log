@@ -1,3 +1,4 @@
+import { cuerpoHtmlConfirmacion } from "@/lib/correo-confirmacion";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -26,7 +27,7 @@ export async function listarConfirmacionesPendientes(db: ColaDB) {
   if (error) throw error;
   return (data ?? []).map((c) => ({
     id: c.id, idHilo: c.id_hilo, para: c.para, cc: c.cc,
-    asunto: c.asunto, cuerpo: c.cuerpo, expediente_id: c.expediente_id,
+    asunto: c.asunto, cuerpo: c.cuerpo, cuerpoHtml: cuerpoHtmlConfirmacion(c.cuerpo ?? ""), expediente_id: c.expediente_id,
     creada_en: c.created_at,
   }));
 }

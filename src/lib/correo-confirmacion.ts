@@ -86,3 +86,36 @@ export function correoConfirmacionSolicitud(d: DatosConfirmacionCorreo) {
   });
   return `https://mail.google.com/mail/?${params}`;
 }
+
+export const LOGO_FIRMA_URL = "https://app.adecomex.com/__l5e/assets-v1/d69c974e-d970-4b9d-a2fc-a7e94ffbc5cd/logo-adecomex-horizontal.png";
+
+const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+const FIRMA_HTML = `<div style="font-family:Tahoma,Verdana,sans-serif;color:#1f3864;margin-top:16px">
+<div style="font-size:17px;font-weight:bold;font-style:italic">Francisco E. López</div>
+<div style="font-size:12px;font-weight:bold;font-style:italic">Especialista en Comercio Exterior</div>
+<div style="font-family:'Times New Roman',serif;font-size:13px;font-weight:bold;margin-top:12px">SERVICIOS DE GESTIÓN Y LOGÍSTICA DE CARGAS</div>
+<div style="font-family:'Times New Roman',serif;font-size:11px;color:#333">Oficina Comercial: Caonabo No. 85E, Los Restauradores, S. D, R.D.</div>
+<div style="font-family:'Times New Roman',serif;font-size:11px;color:#333">Tels.: 809-531-5901 &nbsp;|&nbsp; 809-531-3888 &nbsp;|&nbsp; WhatSapp: 809-931-3246</div>
+<div style="font-family:'Times New Roman',serif;font-size:11px;color:#333">Web: <a href="https://www.adecomex.com" style="color:#1155cc">www.adecomex.com</a> | Email: <a href="mailto:operaciones@adecomex.com" style="color:#1155cc">operaciones@adecomex.com</a></div>
+<img src="${LOGO_FIRMA_URL}" alt="ADECOMEX SRL — Agencia de Comercio Exterior" width="260" style="margin-top:8px;display:block" />
+</div>`;
+
+/** Versión con formato del cuerpo (negritas, justificado y firma con logo); parte del texto revisado, así respeta las ediciones. */
+export function cuerpoHtmlConfirmacion(cuerpo: string) {
+  const texto = cuerpo.replace(/\r\n/g, "\n");
+  // La firma de texto se reemplaza por la firma con formato.
+  const corte = texto.search(/^\s*Francisco E\. López\s*$/m);
+  const principal = corte >= 0 ? texto.slice(0, corte) : texto;
+  const parrafos = principal.trim().split(/\n\s*\n/).map((p) => {
+    let h = esc(p.trim()).replace(/\n/g, "<br>");
+    h = h.replace(/^(Estimado Cliente:\s*)(.+)$/m, "$1<b>$2</b>");
+    h = h.replace(/(REGISTRO\s*#[^<]*?ETA\s+[^<\s]+?)(\.?)\s*$/m, "<b>$1$2</b>");
+    h = h.replace(/^(Descripción:[\s\S]*)$/, "<b>$1</b>");
+    return `<p style="margin:0 0 14px 0;text-align:justify">${h}</p>`;
+  }).join("\n");
+  return `<div style="font-family:Tahoma,Verdana,sans-serif;font-size:14px;color:#000;background:#fff;padding:8px;max-width:720px">
+${parrafos}
+${corte >= 0 ? FIRMA_HTML : ""}
+</div>`;
+}
