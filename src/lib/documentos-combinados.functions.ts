@@ -11,5 +11,6 @@ export const reanudarDocumentoCombinado = createServerFn({ method: "POST" })
     if (!visible) throw new Error("No autorizado");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { procesarCola } = await import("@/lib/correo-documento-combinado.server");
-    return { procesados: await procesarCola(supabaseAdmin as any, { id: data.id, max: 1 }) };
+    const procesados = await procesarCola(supabaseAdmin as any, { id: data.id, max: 1 });
+    return { procesados: procesados.length };
   });

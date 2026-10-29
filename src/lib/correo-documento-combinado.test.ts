@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { detectarTipoPagina, esTimeoutGateway, segmentarPaginas, UMBRAL_PAGINAS_COMBINADO } from "./correo-documento-combinado";
 
 describe("documentos combinados", () => {
