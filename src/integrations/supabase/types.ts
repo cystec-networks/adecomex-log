@@ -5044,6 +5044,21 @@ export type Database = {
           },
         ]
       }
+      numeracion_operaciones_contadores: {
+        Row: {
+          periodo: string
+          ultima_secuencia: number
+        }
+        Insert: {
+          periodo: string
+          ultima_secuencia?: number
+        }
+        Update: {
+          periodo?: string
+          ultima_secuencia?: number
+        }
+        Relationships: []
+      }
       operacion_logistica_etapas: {
         Row: {
           comentario: string | null
@@ -7570,6 +7585,7 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      siguiente_numero_operacion: { Args: { p_tipo: string }; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
