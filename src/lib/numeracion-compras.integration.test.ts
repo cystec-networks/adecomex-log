@@ -14,20 +14,15 @@ describe('Numeración de compras — contrato real', { skip: !process.env.NUMERA
     const solicitud = await db.from('solicitudes_correo').select('id').eq('id', process.env.NUMERACION_TEST_CORREO_ID ?? '').single();
     assert.ifError(solicitud.error);
     assert.ok(solicitud.data);
-    let quoteId: string | undefined;
-    try {
+    // The fixture and its converted quote require privileged teardown outside this test;
+    // normal staff deliberately cannot delete mail staging rows.
       const converted = await db.rpc('convertir_correo_cotizacion', { p_solicitud_id: solicitud.data.id });
       assert.ifError(converted.error);
       assert.ok(converted.data);
-      quoteId = converted.data;
-      const quote = await db.from('cotizaciones').select('numero,tipo_operacion').eq('id', quoteId).single();
+      const quote = await db.from('cotizaciones').select('numero,tipo_operacion').eq('id', converted.data).single();
       assert.ifError(quote.error);
       assert.match(quote.data?.numero ?? '', /^202610E\d+$/);
       assert.equal(quote.data?.tipo_operacion, 'Exportación');
-    } finally {
-      assert.ifError((await db.from('solicitudes_correo').delete().eq('id', solicitud.data.id)).error);
-      if (quoteId) assert.ifError((await db.from('cotizaciones').delete().eq('id', quoteId)).error);
-    }
   });
   it('comparte contador I/E, conserva número en conversiones y respeta históricos', async () => {
     const url = process.env.VITE_SUPABASE_URL;
