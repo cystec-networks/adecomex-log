@@ -1425,10 +1425,6 @@ function DetalleExpediente() {
               <label className="block min-w-0 space-y-1"><span className="text-xs text-muted-foreground">Cuerpo</span><Textarea rows={16} className="h-[26rem] resize-none" value={borradorConf.cuerpo} onChange={(e) => setBorradorConf({ ...borradorConf, cuerpo: e.target.value })} /></label>
               <div className="min-w-0 space-y-1"><span className="text-xs text-muted-foreground">Vista previa como la recibirá el cliente</span><div className="h-[26rem] overflow-auto break-words rounded-md border bg-card p-3" dangerouslySetInnerHTML={{ __html: cuerpoHtmlConfirmacion(borradorConf.cuerpo) }} /></div>
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" disabled={aprobarConfirmacion.isPending || descartarConfirmacion.isPending} onClick={() => aprobarConfirmacion.mutate()}>{aprobarConfirmacion.isPending ? "Enviando…" : "Enviar ahora"}</Button>
-              <Button size="sm" variant="outline" disabled={aprobarConfirmacion.isPending || descartarConfirmacion.isPending} onClick={() => { if (confirm("¿Descartar esta confirmación sin enviar nada?")) descartarConfirmacion.mutate(); }}>Descartar</Button>
-            </div>
           </section>
         )}
       </div>
