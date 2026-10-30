@@ -119,6 +119,7 @@ function Dashboard() {
             qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
             qc.invalidateQueries({ queryKey: ["reminders"] });
             qc.invalidateQueries({ queryKey: ["correos-pendientes-kpi"] });
+            qc.invalidateQueries({ queryKey: ["pagos-transportista-kpi"] });
             toast.success("Actualizado");
           }}
         >
@@ -126,8 +127,9 @@ function Dashboard() {
         </Button>
       </div>
 
-      <div aria-label="Indicadores de operaciones" className="grid grid-flow-col auto-cols-[168px] gap-2 overflow-x-auto pb-2 xl:grid-flow-row xl:auto-cols-auto xl:grid-cols-[repeat(7,minmax(0,1fr))] xl:overflow-x-visible">
+      <div aria-label="Indicadores de operaciones" className="grid grid-flow-col auto-cols-[168px] gap-2 overflow-x-auto pb-2 xl:grid-flow-row xl:auto-cols-auto xl:grid-cols-[repeat(8,minmax(0,1fr))] xl:overflow-x-visible">
         <Link to="/expedientes/correo" aria-label="Ver correos pendientes" className="h-full min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Mail} label="Correos pendientes" value={correosPendientes?.total} tone={correosPendientes?.total ? "danger" : "primary"} sub={correosPendientes ? `${correosPendientes.porConvertir} por convertir · ${correosPendientes.porResponder} por responder` : errorCorreos ? "No disponible" : "Consultando…"} /></Link>
+        <Link to="/admin/solicitudes-pago-transporte" search={{ estado: "pendiente" }} aria-label="Ver pagos de transportista pendientes" className="h-full min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Banknote} label="Pagos transportista pendientes" value={pagosTransportista?.total} tone={pagosTransportista?.total ? "danger" : "primary"} sub={pagosTransportista ? pagosTransportista.sub : errorPagos ? "No disponible" : "Consultando…"} /></Link>
         <Link to="/logistica" search={{ estado: "activas" }} aria-label="Ver operaciones de logística activas" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Ship} label="Logística en curso" value={operacionesLogisticaActivas} tone="info" /></Link>
         <Link to="/expedientes" search={{ estado: "en_transito" }} aria-label="Ver expedientes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Ship} label="Expedientes en tránsito" value={expedientesEnTransito} tone="info" /></Link>
         <Link to="/expedientes" search={{ eta: 7 }} aria-label="Ver expedientes por llegar" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Clock} label="Expedientes por llegar" value={expedientesPorLlegar} tone="warning" sub="Próximos 7 días" /></Link>
