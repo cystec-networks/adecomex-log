@@ -119,6 +119,13 @@ function isoDay(d: Date) {
   return d.toISOString().slice(0, 10);
 }
 
+// Fecha legible DD/MM/AAAA para mostrar la ETA dentro del texto de la alerta.
+function formatoFecha(d: Date) {
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
 export function useReminders() {
   const query = useQuery({
     queryKey: ["reminders"],
@@ -257,26 +264,30 @@ export function useReminders() {
           const eta = parseLocalDate(e.fecha_compromiso);
           const dias = daysBetween(eta, today);
           if (dias < 0) {
+            const vencio = formatoFecha(eta);
             out.push({
               id: `eta_proximo:${e.id}`,
               kind: "eta_proximo",
               severity: "critica",
               title: `Expediente ${e.numero} atrasado`,
-              detail: `${(e as any).cliente?.nombre ?? ""} · ETA vencida hace ${Math.abs(dias)} días`,
+              detail: `${(e as any).cliente?.nombre ?? ""} · ETA vencida hace ${Math.abs(dias)} días (${vencio})`,
               href: `/expedientes/${e.id}`,
               createdAt: e.updated_at,
               diasRestantes: dias,
+              resaltar: Math.abs(dias) <= 2 ? "atrasado" : undefined,
             });
           } else if (dias <= cfg.etaProximoDias) {
+            const fechaEta = formatoFecha(eta);
             out.push({
               id: `eta_proximo:${e.id}`,
               kind: "eta_proximo",
               severity: dias <= 1 ? "alta" : "media",
-              title: `Expediente ${e.numero} · ETA en ${dias} días`,
+              title: `Expediente ${e.numero} · ETA en ${dias} días (${fechaEta})`,
               detail: `${(e as any).cliente?.nombre ?? ""}`,
               href: `/expedientes/${e.id}`,
               createdAt: e.updated_at,
               diasRestantes: dias,
+              resaltar: dias <= 2 ? `ETA en ${dias} días` : undefined,
             });
           }
         }
