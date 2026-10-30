@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { leerPermisoVuce } from "./permiso-vuce";
-import { normalizarProductosVuce, PROMPT_PRODUCTOS_VUCE } from "./permiso-vuce-productos";
+import { normalizarProductosVuce, PROMPT_PRODUCTOS_VUCE, PROMPT_PRODUCTOS_VUCE_AUTORIZACION } from "./permiso-vuce-productos";
 
 export const extraerPermisoVuce = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -16,20 +16,24 @@ export const extraerPermisoVuce = createServerFn({ method: "POST" })
     } catch { /* Image-only PDFs use OCR below. */ }
     const datos = leerPermisoVuce(text);
     const { callGateway } = await import("./ai-gateway.server");
-    const productos = async () => {
+    const productos = async (autorizacion: boolean) => {
       const raw = await callGateway({
         model: "google/gemini-2.5-flash", temperature: 0, response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: PROMPT_PRODUCTOS_VUCE },
+          { role: "system", content: autorizacion ? PROMPT_PRODUCTOS_VUCE_AUTORIZACION : PROMPT_PRODUCTOS_VUCE },
           { role: "user", content: [{ type: "file", file: { filename: data.filename, file_data: `data:application/pdf;base64,${data.base64}` } }] },
         ],
       });
       const result = normalizarProductosVuce(JSON.parse(raw).productos);
       const esperados = text.match(/Hay\s+(\d+)\s+productos/i)?.[1];
-      if (esperados && result.length !== Number(esperados)) throw new Error("No se leyeron todos los productos del PDF. Vuelve a subir el documento.");
+      if (!autorizacion && esperados && result.length !== Number(esperados)) throw new Error("No se leyeron todos los productos del PDF. Vuelve a subir el documento.");
       return result;
     };
-    if (datos) return /\bProductos\b/i.test(text) ? { ...datos, productos: await productos() } : datos;
+    if (datos) {
+      const autorizacion = !!datos.verificacion;
+      const tieneTabla = autorizacion ? /Informaci[oó]n\s+de\s+Mercanc[ií]a/i.test(text) : /\bProductos\b/i.test(text);
+      return tieneTabla ? { ...datos, productos: await productos(autorizacion) } : datos;
+    }
     // Text-rich PDFs not matching the document are not other kinds of authorization.
     if (text.trim().length > 100 && !/Detalle\s+(?:de\s+)?Solicitud|Historial\s+de\s+Aprobaci|Autorizaci[oó]n\s+Control/i.test(text)) return null;
     const raw = await callGateway({
@@ -41,5 +45,5 @@ export const extraerPermisoVuce = createServerFn({ method: "POST" })
     });
     const parsed = z.object({ texto: z.string() }).parse(JSON.parse(raw));
     const leido = leerPermisoVuce(parsed.texto);
-    return leido ? { ...leido, productos: await productos() } : null;
+    return leido ? { ...leido, productos: await productos(!!leido.verificacion) } : null;
   });

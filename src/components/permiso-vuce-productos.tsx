@@ -9,6 +9,8 @@ const columnas: { key: keyof ProductoVuce; label: string; ancho: string }[] = [
   { key: "arancel", label: "Arancel", ancho: "w-28" },
   { key: "codigo", label: "Código", ancho: "w-56" },
   { key: "producto", label: "Producto", ancho: "w-56" },
+  { key: "marca", label: "Marca", ancho: "w-32" },
+  { key: "modelo", label: "Modelo", ancho: "w-32" },
   { key: "pais_origen", label: "País de Origen", ancho: "w-32" },
   { key: "unidad", label: "Unidad", ancho: "w-28" },
   { key: "cantidad", label: "Cantidad", ancho: "w-32" },
@@ -26,11 +28,11 @@ export function PermisoVuceProductos({ productos, onChange, disabled }: {
     <div className="flex items-center justify-between gap-3 border-b pb-3">
       <h2 className="text-sm font-semibold text-primary">Datos de la mercancía <span className="text-muted-foreground">({productos.length})</span></h2>
       <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => onChange([...productos,
-        { secuencia: String(productos.length + 1), arancel: "", codigo: "", producto: "", pais_origen: "", unidad: "", cantidad: "", valor_fob: "", peso: "", descripcion: "" },
+        { secuencia: String(productos.length + 1), arancel: "", codigo: "", producto: "", pais_origen: "", unidad: "", cantidad: "", valor_fob: "", peso: "", descripcion: "", marca: "", modelo: "" },
       ])}><Plus className="mr-1 h-4 w-4" />Agregar producto</Button>
     </div>
     <div className="max-w-full overflow-x-auto border rounded-md">
-      <table className="w-full min-w-[1700px] table-fixed text-xs">
+      <table className="w-full min-w-[1960px] table-fixed text-xs">
         <thead className="bg-muted"><tr>{columnas.map((c) => <th key={c.key} scope="col" className={`${c.ancho} p-2 text-left font-medium`}>{c.label}</th>)}<th className="w-12"><span className="sr-only">Acciones</span></th></tr></thead>
         <tbody>{productos.map((p, i) => <tr key={i} className="border-t align-top">
           {columnas.map((c) => <td key={c.key} className="p-1.5">
@@ -40,7 +42,7 @@ export function PermisoVuceProductos({ productos, onChange, disabled }: {
           </td>)}
           <td className="p-1.5"><Button type="button" variant="ghost" size="icon" title="Eliminar producto" aria-label={`Eliminar producto ${i + 1}`} disabled={disabled} onClick={() => onChange(productos.filter((_, j) => j !== i))}><Trash2 className="h-4 w-4" /></Button></td>
         </tr>)}
-        {!productos.length && <tr><td colSpan={11} className="p-4 text-center text-muted-foreground">Sin productos</td></tr>}
+        {!productos.length && <tr><td colSpan={13} className="p-4 text-center text-muted-foreground">Sin productos</td></tr>}
         </tbody>
       </table>
     </div>
