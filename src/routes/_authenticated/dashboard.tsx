@@ -132,7 +132,7 @@ function Dashboard() {
         <Link to="/admin/solicitudes-pago-transporte" search={{ estado: "pendiente" }} aria-label="Ver pagos de transportista pendientes" className="h-full min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Banknote} label="Pagos transportista pendientes" value={pagosTransportista?.total} tone={pagosTransportista?.total ? "danger" : "primary"} sub={pagosTransportista ? pagosTransportista.sub : errorPagos ? "No disponible" : "Consultando…"} /></Link>
         <Link to="/logistica" search={{ estado: "activas" }} aria-label="Ver operaciones de logística activas" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Ship} label="Logística en curso" value={operacionesLogisticaActivas} tone="info" /></Link>
         <Link to="/expedientes" search={{ estado: "en_transito" }} aria-label="Ver expedientes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Ship} label="Expedientes en tránsito" value={expedientesEnTransito} tone="info" /></Link>
-        <Link to="/expedientes" search={{ eta: 7 }} aria-label="Ver expedientes por llegar" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Clock} label="Expedientes por llegar" value={expedientesPorLlegar} tone="warning" sub="Próximos 7 días" /></Link>
+        <Link to="/expedientes" search={{ eta: 7 }} aria-label="Ver expedientes por llegar" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Clock} label="Expedientes por llegar" value={expedientesPorLlegar} tone={expedientesPorLlegar ? "danger" : "primary"} sub="Próximos 7 días" /></Link>
         <Link to="/permisos" search={{ vencimiento: 15 }} aria-label="Ver permisos VUCE por vencer" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FileWarning} label="Permisos VUCE por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" /></Link>
         <Link to="/transportes" search={{ estado: "en_transito,programado" }} aria-label="Ver transportes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" /></Link>
         <Link to="/dashboard" hash="atencion-requerida" aria-label="Ver alertas activas" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={AlertTriangle} label="Alertas activas" value={isLoadingReminders ? null : reminders.length} tone="danger" /></Link>
@@ -199,6 +199,19 @@ function Dashboard() {
         </Card>
       </div>
     </div>
+  );
+}
+
+// Pinta en rojo el tramo del texto que marca el plazo (solo alertas urgentes).
+function TextoConResaltado({ texto, resaltar }: { texto: string; resaltar?: string }) {
+  if (!resaltar || !texto.includes(resaltar)) return <>{texto}</>;
+  const i = texto.indexOf(resaltar);
+  return (
+    <>
+      {texto.slice(0, i)}
+      <span className="text-destructive font-semibold">{resaltar}</span>
+      {texto.slice(i + resaltar.length)}
+    </>
   );
 }
 
@@ -325,10 +338,12 @@ function RemindersPanel() {
                             }`}
                           />
                           <div className="min-w-0 flex-1">
-                            <Link to={r.href} className="text-sm font-medium hover:underline block truncate">
-                              {r.title}
+                            <Link to={r.href} className="text-sm font-medium hover:underline">
+                              <TextoConResaltado texto={r.title} resaltar={r.resaltar} />
                             </Link>
-                            <div className="text-xs text-muted-foreground truncate">{r.detail}</div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              <TextoConResaltado texto={r.detail} resaltar={r.resaltar} />
+                            </div>
                           </div>
                           <Badge variant="outline" className="text-[10px] uppercase">
                             {r.severity}

@@ -28,6 +28,8 @@ export type Reminder = {
   createdAt: string;
   /** Días hasta el vencimiento (negativo = atrasado); ordena categorías con plazo. */
   diasRestantes?: number;
+  /** Fragmento del título o detalle que se muestra en rojo (solo plazos urgentes). */
+  resaltar?: string;
 };
 
 const DISMISSED_KEY = "adecomex:reminders:dismissed";
@@ -115,6 +117,13 @@ import { habilesRestantesPlazo, parseLocalDate } from "@/lib/dates";
 
 function isoDay(d: Date) {
   return d.toISOString().slice(0, 10);
+}
+
+// Fecha legible DD/MM/AAAA para mostrar la ETA dentro del texto de la alerta.
+function formatoFecha(d: Date) {
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}/${d.getFullYear()}`;
 }
 
 export function useReminders() {
@@ -255,26 +264,30 @@ export function useReminders() {
           const eta = parseLocalDate(e.fecha_compromiso);
           const dias = daysBetween(eta, today);
           if (dias < 0) {
+            const vencio = formatoFecha(eta);
             out.push({
               id: `eta_proximo:${e.id}`,
               kind: "eta_proximo",
               severity: "critica",
               title: `Expediente ${e.numero} atrasado`,
-              detail: `${(e as any).cliente?.nombre ?? ""} · ETA vencida hace ${Math.abs(dias)} días`,
+              detail: `${(e as any).cliente?.nombre ?? ""} · ETA vencida hace ${Math.abs(dias)} días (${vencio})`,
               href: `/expedientes/${e.id}`,
               createdAt: e.updated_at,
               diasRestantes: dias,
+              resaltar: Math.abs(dias) <= 2 ? "atrasado" : undefined,
             });
           } else if (dias <= cfg.etaProximoDias) {
+            const fechaEta = formatoFecha(eta);
             out.push({
               id: `eta_proximo:${e.id}`,
               kind: "eta_proximo",
               severity: dias <= 1 ? "alta" : "media",
-              title: `Expediente ${e.numero} · ETA en ${dias} días`,
+              title: `Expediente ${e.numero} · ETA en ${dias} días (${fechaEta})`,
               detail: `${(e as any).cliente?.nombre ?? ""}`,
               href: `/expedientes/${e.id}`,
               createdAt: e.updated_at,
               diasRestantes: dias,
+              resaltar: dias <= 2 ? `ETA en ${dias} días` : undefined,
             });
           }
         }
