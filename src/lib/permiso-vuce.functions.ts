@@ -20,7 +20,7 @@ export const extraerPermisoVuce = createServerFn({ method: "POST" })
       const raw = await callGateway({
         model: "google/gemini-2.5-flash", temperature: 0, response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: PROMPT_PRODUCTOS_VUCE, PROMPT_PRODUCTOS_VUCE_AUTORIZACION },
+          { role: "system", content: autorizacion ? PROMPT_PRODUCTOS_VUCE_AUTORIZACION : PROMPT_PRODUCTOS_VUCE },
           { role: "user", content: [{ type: "file", file: { filename: data.filename, file_data: `data:application/pdf;base64,${data.base64}` } }] },
         ],
       });
