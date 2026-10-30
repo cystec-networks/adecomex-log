@@ -202,6 +202,19 @@ function Dashboard() {
   );
 }
 
+// Pinta en rojo el tramo del texto que marca el plazo (solo alertas urgentes).
+function TextoConResaltado({ texto, resaltar }: { texto: string; resaltar?: string }) {
+  if (!resaltar || !texto.includes(resaltar)) return <>{texto}</>;
+  const i = texto.indexOf(resaltar);
+  return (
+    <>
+      {texto.slice(0, i)}
+      <span className="text-destructive font-semibold">{resaltar}</span>
+      {texto.slice(i + resaltar.length)}
+    </>
+  );
+}
+
 
 function EstadoBadge({ value }: { value: string }) {
   const map: Record<string, string> = {
