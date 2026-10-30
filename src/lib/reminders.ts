@@ -281,7 +281,7 @@ export function useReminders() {
             out.push({
               id: `eta_proximo:${e.id}`,
               kind: "eta_proximo",
-              severity: dias <= 1 ? "alta" : "media",
+              severity: severidadEtaProximo(dias),
               title: `Expediente ${e.numero} · ETA en ${dias} días (${fechaEta})`,
               detail: `${(e as any).cliente?.nombre ?? ""}`,
               href: `/expedientes/${e.id}`,
