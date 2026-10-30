@@ -352,6 +352,11 @@ function RemindersPanel() {
                               <TextoConResaltado texto={r.detail} resaltar={r.resaltar} />
                             </div>
                           </div>
+                          {g.key === "eta" && (
+                            <span className="w-24 shrink-0 flex justify-center">
+                              {r.estado ? <EstadoBadge value={r.estado} /> : <span className="text-xs text-muted-foreground">—</span>}
+                            </span>
+                          )}
                           <Badge
                             variant="outline"
                             className="text-[10px] uppercase w-20 justify-center shrink-0"

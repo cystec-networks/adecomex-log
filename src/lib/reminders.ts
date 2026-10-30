@@ -278,6 +278,7 @@ export function useReminders() {
               href: `/expedientes/${e.id}`,
               createdAt: e.updated_at,
               diasRestantes: dias,
+              estado: e.estado,
               resaltar: Math.abs(dias) <= 2 ? "atrasado" : undefined,
             });
           } else if (dias <= cfg.etaProximoDias) {
@@ -291,6 +292,7 @@ export function useReminders() {
               href: `/expedientes/${e.id}`,
               createdAt: e.updated_at,
               diasRestantes: dias,
+              estado: e.estado,
               resaltar: dias <= 2 ? `ETA en ${dias} días` : undefined,
             });
           }
@@ -305,6 +307,7 @@ export function useReminders() {
             detail: `${inact} días sin cambios · estado ${e.estado}`,
             href: `/expedientes/${e.id}`,
             createdAt: e.updated_at,
+            estado: e.estado,
           });
         }
       }
