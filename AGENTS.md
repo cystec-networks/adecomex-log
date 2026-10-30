@@ -13,6 +13,7 @@
 - Purchase/expediente numbers use `siguiente_numero_operacion` with a locked monthly counter; conversion triggers inherit source numbers and cross-table guards reject unrelated collisions and linked renumbering.
 Apply transitions via `estados-expediente.ts` and `validar_transicion_expediente()` for shared manual/automatic requirements.
 - Operations email KPI uses `correos-pendientes-kpi.ts` for RLS-bound reads and unique active-expediente counts, excluding delivered confirmations so queue and dashboard semantics remain consistent.
+- Operations KPI cards read only through their own RLS-bound helper module (e.g. `pagos-transportista-kpi.ts`) so the dashboard never invents a count the requesting screen could not see.
 Red IDs: `expediente-numero`/`--brand-red`.
 Payment slips: linked transport first, reserved TR next; TF last.
 Share expediente/quote PDF. e-CF: factura-venta-referencias keeps fiscal lines, OCR in notas; factura-ecf-vinculacion shares links.
