@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const celda = z.union([z.string(), z.number(), z.null(), z.undefined()]).transform((v) => v == null ? "" : String(v));
+const celda = z.union([z.string(), z.number(), z.null()]).optional().transform((v) => v == null ? "" : String(v));
 export const productoVuceSchema = z.object({
   secuencia: celda, arancel: celda, codigo: celda, producto: celda,
   pais_origen: celda, unidad: celda, cantidad: celda, valor_fob: celda,
