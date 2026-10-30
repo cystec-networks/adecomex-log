@@ -325,6 +325,12 @@ function RemindersPanel() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="pb-0">
+                    <div className="flex items-center gap-3 px-4 py-1.5 border-t bg-muted/30 text-[11px] uppercase text-muted-foreground">
+                          <span className="h-2 w-2 shrink-0" aria-hidden />
+                          <div className="min-w-0 flex-1">Detalle</div>
+                          <span className="w-20 shrink-0 text-center">Prioridad</span>
+                          <span className="w-[58px] shrink-0 text-center">Visto</span>
+                        </div>
                     <ul className="divide-y border-t">
                       {g.items.map((r) => (
                         <li key={r.id} className="px-4 py-2.5 flex items-center gap-3 hover:bg-muted/40">
@@ -345,13 +351,16 @@ function RemindersPanel() {
                               <TextoConResaltado texto={r.detail} resaltar={r.resaltar} />
                             </div>
                           </div>
-                          <Badge variant="outline" className="text-[10px] uppercase">
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] uppercase w-20 justify-center shrink-0"
+                          >
                             {r.severity}
                           </Badge>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 text-[11px] px-2"
+                            className="h-6 text-[11px] px-2 w-[58px] justify-center shrink-0"
                             onClick={() => dismiss(r.id)}
                           >
                             Visto
