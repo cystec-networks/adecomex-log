@@ -32,3 +32,14 @@ describe("Productos VUCE", () => {
   assert.deepEqual(aplicarDetalleVuce(updated,d).productos,updated.productos);
  });
 });
+
+describe("Productos VUCE wcIC012003", () => {
+  it("carga Marca y Modelo y deja vacíos País, FOB y Peso sin bloquear", () => {
+    const [p] = normalizarProductosVuce([{ secuencia: "1", arancel: "3002.90.10", producto: "VACUNA", descripcion: "VACUNA", marca: "ZOETIS", modelo: "X1", unidad: "Dosis", cantidad: "1,000" }]);
+    assert.equal(p.marca, "ZOETIS"); assert.equal(p.modelo, "X1"); assert.equal(p.cantidad, "1000");
+    assert.equal(p.pais_origen, ""); assert.equal(p.valor_fob, ""); assert.equal(p.peso, "");
+  });
+  it("filas guardadas antes de Marca/Modelo siguen cargando", () => {
+    assert.equal(productosVuceGuardados([{ secuencia: "1", arancel: "", codigo: "", producto: "A", pais_origen: "", unidad: "", cantidad: "", valor_fob: "", peso: "", descripcion: "" }])[0].marca, "");
+  });
+});
