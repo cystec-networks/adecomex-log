@@ -216,7 +216,7 @@ function TextoConResaltado({ texto, resaltar }: { texto: string; resaltar?: stri
 }
 
 
-function EstadoBadge({ value }: { value: string }) {
+function EstadoBadge({ value, className }: { value: string; className?: string }) {
   const map: Record<string, string> = {
     recibida: "bg-[var(--info)]/15 text-[var(--info)] border-transparent",
     en_revision: "bg-[var(--warning)]/25 text-[var(--warning-foreground)] border-transparent",
@@ -232,7 +232,7 @@ function EstadoBadge({ value }: { value: string }) {
     facturar: "bg-accent/20 text-accent-foreground border-transparent",
   };
   const label = ESTADO_LABEL[value] ?? value?.replace("_", " ");
-  return <Badge className={map[value] ?? "bg-muted text-muted-foreground border-transparent"}>{label}</Badge>;
+  return <Badge className={`text-[10px] ${map[value] ?? "bg-muted text-muted-foreground border-transparent"} ${className ?? ""}`}>{label}</Badge>;
 }
 
 function PrioridadBadge({ value }: { value: string }) {
@@ -328,6 +328,7 @@ function RemindersPanel() {
                     <div className="flex items-center gap-3 px-4 py-1.5 border-t bg-muted/30 text-[11px] uppercase text-muted-foreground">
                           <span className="h-2 w-2 shrink-0" aria-hidden />
                           <div className="min-w-0 flex-1" />
+                          {g.key === "eta" && <span className="w-24 shrink-0 text-center">Estado</span>}
                           <span className="w-20 shrink-0 text-center">Prioridad</span>
                           <span className="w-[58px] shrink-0 text-center">Visto</span>
                         </div>
@@ -351,6 +352,11 @@ function RemindersPanel() {
                               <TextoConResaltado texto={r.detail} resaltar={r.resaltar} />
                             </div>
                           </div>
+                          {g.key === "eta" && (
+                            <span className="w-24 shrink-0 flex justify-center">
+                              {r.estado ? <EstadoBadge value={r.estado} /> : <span className="text-xs text-muted-foreground">—</span>}
+                            </span>
+                          )}
                           <Badge
                             variant="outline"
                             className="text-[10px] uppercase w-20 justify-center shrink-0"
