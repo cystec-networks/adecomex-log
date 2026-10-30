@@ -354,7 +354,7 @@ function RemindersPanel() {
                           </div>
                           {g.key === "eta" && (
                             <span className="w-[70px] shrink-0 flex justify-center">
-                              {r.estado ? <EstadoBadge value={r.estado} /> : <span className="text-xs text-muted-foreground">—</span>}
+                              {r.estado ? <EstadoBadge value={r.estado} className="px-1" /> : <span className="text-xs text-muted-foreground">—</span>}
                             </span>
                           )}
                           <Badge
