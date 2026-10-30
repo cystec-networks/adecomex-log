@@ -283,7 +283,7 @@ function RemindersPanel() {
   // Con una sola categoría activa, usar todo el ancho para que las alertas quepan en dos filas.
   const dosColumnas = columnas[0].length > 0 && columnas[1].length > 0;
   columnas.forEach((c) => c.sort((a, b) => orden.get(a.key)! - orden.get(b.key)!));
-  const defaultOpen = columnas.flatMap((c) => (c[0] ? [c[0].key] : []));
+  const defaultOpen = grouped.map((g) => g.key);
 
   return (
     <Card>
@@ -311,7 +311,7 @@ function RemindersPanel() {
         ) : reminders.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Sin alertas pendientes 🎉</div>
         ) : (
-          <div className={`max-h-[460px] overflow-auto grid grid-cols-1 items-start ${dosColumnas ? "lg:grid-cols-2 lg:divide-x" : ""}`}>
+          <div className={`grid grid-cols-1 items-start ${dosColumnas ? "lg:grid-cols-2 lg:divide-x" : ""}`}>
             {columnas.map((col, ci) =>
               col.length === 0 ? null : (
             <Accordion key={ci} type="multiple" defaultValue={defaultOpen} className="w-full">
