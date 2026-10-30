@@ -250,7 +250,17 @@ function RemindersPanel() {
     .map((g) => ({ ...g, items: reminders.filter((r) => g.kinds.includes(r.kind)) }))
     .filter((g) => g.items.length > 0);
 
-  const defaultOpen = grouped.length > 0 ? [grouped[0].key] : [];
+  // Reparto balanceado: cada categoría va a la columna con menos ítems (encabezado cuenta 1).
+  const columnas: (typeof grouped)[] = [[], []];
+  const pesos = [0, 0];
+  for (const g of [...grouped].sort((a, b) => b.items.length - a.items.length)) {
+    const i = pesos[0] <= pesos[1] ? 0 : 1;
+    columnas[i].push(g);
+    pesos[i] += g.items.length + 1;
+  }
+  const orden = new Map(grouped.map((g, i) => [g.key, i]));
+  columnas.forEach((c) => c.sort((a, b) => orden.get(a.key)! - orden.get(b.key)!));
+  const defaultOpen = columnas.flatMap((c) => (c[0] ? [c[0].key] : []));
 
   return (
     <Card>
@@ -278,10 +288,12 @@ function RemindersPanel() {
         ) : reminders.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Sin alertas pendientes 🎉</div>
         ) : (
-          <div className="max-h-[460px] overflow-auto">
-            <Accordion type="multiple" defaultValue={defaultOpen} className="w-full">
-              {grouped.map((g) => (
-                <AccordionItem key={g.key} value={g.key} className="border-b last:border-b-0">
+          <div className="max-h-[460px] overflow-auto grid grid-cols-1 lg:grid-cols-2 lg:divide-x items-start">
+            {columnas.map((col, ci) =>
+              col.length === 0 ? null : (
+            <Accordion key={ci} type="multiple" defaultValue={defaultOpen} className="w-full">
+              {col.map((g) => (
+                <AccordionItem key={g.key} value={g.key} className="border-b">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
                     <div className="flex items-center gap-2 flex-1">
                       <span className="text-base leading-none">{g.emoji}</span>
@@ -328,6 +340,8 @@ function RemindersPanel() {
                 </AccordionItem>
               ))}
             </Accordion>
+              ),
+            )}
           </div>
         )}
       </CardContent>
