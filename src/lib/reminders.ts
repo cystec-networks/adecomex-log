@@ -28,6 +28,8 @@ export type Reminder = {
   createdAt: string;
   /** Días hasta el vencimiento (negativo = atrasado); ordena categorías con plazo. */
   diasRestantes?: number;
+  /** Fragmento del título o detalle que se muestra en rojo (solo plazos urgentes). */
+  resaltar?: string;
 };
 
 const DISMISSED_KEY = "adecomex:reminders:dismissed";
