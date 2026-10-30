@@ -311,7 +311,7 @@ function RemindersPanel() {
         ) : reminders.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Sin alertas pendientes 🎉</div>
         ) : (
-          <div className="max-h-[460px] overflow-auto grid grid-cols-1 lg:grid-cols-2 lg:divide-x items-start">
+          <div className={`max-h-[460px] overflow-auto grid grid-cols-1 items-start ${dosColumnas ? "lg:grid-cols-2 lg:divide-x" : ""}`}>
             {columnas.map((col, ci) =>
               col.length === 0 ? null : (
             <Accordion key={ci} type="multiple" defaultValue={defaultOpen} className="w-full">
