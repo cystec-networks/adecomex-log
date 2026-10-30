@@ -232,7 +232,7 @@ function EstadoBadge({ value, className }: { value: string; className?: string }
     facturar: "bg-accent/20 text-accent-foreground border-transparent",
   };
   const label = ESTADO_LABEL[value] ?? value?.replace("_", " ");
-  return <Badge className={map[value] ?? "bg-muted text-muted-foreground border-transparent"}>{label}</Badge>;
+  return <Badge className={`text-[10px] ${map[value] ?? "bg-muted text-muted-foreground border-transparent"} ${className ?? ""}`}>{label}</Badge>;
 }
 
 function PrioridadBadge({ value }: { value: string }) {
