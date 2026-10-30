@@ -24,6 +24,5 @@ export const leerEncabezadosJuego = createServerFn({ method: "POST" })
     if (downloadError || !blob) throw new Error("No se pudo leer el PDF");
     const { extractText, getDocumentProxy } = await import("unpdf");
     const proxy = await getDocumentProxy(new Uint8Array(await blob.arrayBuffer()));
-    try { return { textos: (await extractText(proxy, { mergePages: false })).text as string[] }; }
-    finally { await proxy.destroy(); }
+    return { textos: (await extractText(proxy, { mergePages: false })).text as string[] };
   });
