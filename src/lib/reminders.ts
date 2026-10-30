@@ -26,6 +26,8 @@ export type Reminder = {
   detail: string;
   href: string;
   createdAt: string;
+  /** Días hasta el vencimiento (negativo = atrasado); ordena categorías con plazo. */
+  diasRestantes?: number;
 };
 
 const DISMISSED_KEY = "adecomex:reminders:dismissed";
@@ -261,6 +263,7 @@ export function useReminders() {
               detail: `${(e as any).cliente?.nombre ?? ""} · ETA vencida hace ${Math.abs(dias)} días`,
               href: `/expedientes/${e.id}`,
               createdAt: e.updated_at,
+              diasRestantes: dias,
             });
           } else if (dias <= cfg.etaProximoDias) {
             out.push({
@@ -271,6 +274,7 @@ export function useReminders() {
               detail: `${(e as any).cliente?.nombre ?? ""}`,
               href: `/expedientes/${e.id}`,
               createdAt: e.updated_at,
+              diasRestantes: dias,
             });
           }
         }
@@ -302,6 +306,7 @@ export function useReminders() {
             detail: `Venció hace ${Math.abs(dias)} días`,
             href: `/permisos/${p.id}`,
             createdAt: p.fecha_vencimiento,
+            diasRestantes: dias,
           });
         } else if (dias <= cfg.permisoPorVencerDias) {
           out.push({
@@ -312,6 +317,7 @@ export function useReminders() {
             detail: `Vence en ${dias} días`,
             href: `/permisos/${p.id}`,
             createdAt: p.fecha_vencimiento,
+            diasRestantes: dias,
           });
         }
       }
@@ -330,6 +336,7 @@ export function useReminders() {
             detail: `ETA vencida hace ${dias} días`,
             href: `/transportes/${t.id}`,
             createdAt: t.eta,
+            diasRestantes: -dias,
           });
         }
       }
@@ -425,6 +432,7 @@ export function useReminders() {
                 : `${e.cliente?.nombre ?? ""} · quedan ${restantes} días hábiles (plazo de 5 desde la llegada real)`,
           href: `/expedientes/${e.id}`,
           createdAt: e.fecha_llegada_real,
+          diasRestantes: restantes,
         });
       }
 

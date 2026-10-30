@@ -243,11 +243,19 @@ const REMINDER_GROUPS: GroupDef[] = [
   { key: "plazo", label: "Plazo de presentación en aduana", emoji: "⚠️", kinds: ["plazo_presentacion"] },
 ];
 
+// Más urgente primero: atrasados, luego menos días restantes; sin plazo al final (orden estable).
+function ordenarPorUrgencia(items: Reminder[]): Reminder[] {
+  return items
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => (a.r.diasRestantes ?? Infinity) - (b.r.diasRestantes ?? Infinity) || a.i - b.i)
+    .map((x) => x.r);
+}
+
 function RemindersPanel() {
   const { visible: reminders, dismiss, isLoading } = useReminders();
 
   const grouped = REMINDER_GROUPS
-    .map((g) => ({ ...g, items: reminders.filter((r) => g.kinds.includes(r.kind)) }))
+    .map((g) => ({ ...g, items: ordenarPorUrgencia(reminders.filter((r) => g.kinds.includes(r.kind))) }))
     .filter((g) => g.items.length > 0);
 
   // Reparto balanceado: cada categoría va a la columna con menos ítems (encabezado cuenta 1).
