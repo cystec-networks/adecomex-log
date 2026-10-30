@@ -216,7 +216,7 @@ function TextoConResaltado({ texto, resaltar }: { texto: string; resaltar?: stri
 }
 
 
-function EstadoBadge({ value }: { value: string }) {
+function EstadoBadge({ value, className }: { value: string; className?: string }) {
   const map: Record<string, string> = {
     recibida: "bg-[var(--info)]/15 text-[var(--info)] border-transparent",
     en_revision: "bg-[var(--warning)]/25 text-[var(--warning-foreground)] border-transparent",
