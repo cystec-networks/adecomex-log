@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck, RefreshCw, Mail } from "lucide-react";
+import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck, RefreshCw, Mail, Banknote } from "lucide-react";
 import { toast } from "sonner";
 import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -12,6 +12,7 @@ import { daysFromToday } from "@/lib/dates";
 import { ESTADO_LABEL } from "@/lib/estados-expediente";
 import { cotizacionEstadoLabel, COTIZACION_ESTADO_CLASS } from "@/lib/estados-cotizacion";
 import { obtenerCorreosPendientes } from "@/lib/correos-pendientes-kpi";
+import { obtenerPagosTransportistaPendientes } from "@/lib/pagos-transportista-kpi";
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -36,7 +37,7 @@ function KPI({ icon: Icon, label, value, tone = "primary", sub }: any) {
   };
   return (
     <Card className={`h-full cursor-pointer transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${tone === "danger" ? "border-destructive/30 bg-destructive/10" : ""}`}>
-      <CardContent className="p-3">
+      <CardContent className="p-2.5">
         <div className="min-w-0">
           <div className="min-h-12 text-xs leading-4 text-muted-foreground">{label}</div>
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
@@ -57,6 +58,12 @@ function Dashboard() {
   const { data: correosPendientes, isError: errorCorreos } = useQuery({
     queryKey: ["correos-pendientes-kpi"],
     queryFn: () => obtenerCorreosPendientes(supabase),
+    refetchInterval: 30_000,
+    staleTime: 0,
+  });
+  const { data: pagosTransportista, isError: errorPagos } = useQuery({
+    queryKey: ["pagos-transportista-kpi"],
+    queryFn: () => obtenerPagosTransportistaPendientes(supabase),
     refetchInterval: 30_000,
     staleTime: 0,
   });
