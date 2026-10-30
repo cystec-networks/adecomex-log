@@ -30,6 +30,8 @@ export type Reminder = {
   diasRestantes?: number;
   /** Fragmento del título o detalle que se muestra en rojo (solo plazos urgentes). */
   resaltar?: string;
+  /** Estado del expediente vinculado (columna ESTADO del panel). */
+  estado?: string;
 };
 
 import { severidadEtaProximo } from "./reminders-severidad";
