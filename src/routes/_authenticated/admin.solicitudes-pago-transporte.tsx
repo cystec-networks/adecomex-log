@@ -26,6 +26,10 @@ import { SolicitudPagoPdfDialog } from "@/components/solicitud-pago-pdf-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/solicitudes-pago-transporte")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>): { estado?: "todas" | "pendiente" | "vinculada" } =>
+    search.estado === "pendiente" || search.estado === "vinculada" || search.estado === "todas"
+      ? { estado: search.estado }
+      : {},
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth" });
@@ -100,7 +104,8 @@ const fmtMoney = (n: number, m: string) =>
 
 function SolicitudesPagoTransportePage() {
   const nav = useNavigate();
-  const [estado, setEstado] = useState<"todas" | "pendiente" | "vinculada">("todas");
+  const { estado: estadoInicial } = Route.useSearch();
+  const [estado, setEstado] = useState<"todas" | "pendiente" | "vinculada">(estadoInicial ?? "todas");
   const [q, setQ] = useState("");
 
   const { data: rows = [], isLoading } = useQuery({
