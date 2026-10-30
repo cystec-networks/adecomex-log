@@ -47,3 +47,4 @@ Detail headers: content-sized rows, client label/value together, wrap IDs, warni
 - Sync draft Description via observaciones-expediente on observation changes, not save; preserve manual edits.
 - Liquidation OCR: liquidacion-dga-documento extracts labels/conflicts/comparison-only totals and prepares one guarded UPDATE for the entire mapping; liquidacion-dga-context syncs only after success without losing drafts. Manifest/inspection are read-only references.
 - Subdirectories have their own `AGENTS.md` (e.g. `src/lib/AGENTS.md` for the email-intake pipeline); read it before changing files there.
+- Expedition batch uploads reuse email header detection, page classification, segmentation and per-type PDF merging; persist originals before recognition and make one authenticated classification request per scanned page to avoid combined-file gateway timeouts without touching expedition drafts.

@@ -98,6 +98,7 @@ import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { alertasExpedienteCompartidas } from "@/lib/alertas-expediente-compartidas";
 import { useDatosAlertasExpediente } from "@/lib/use-alertas-expediente";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
+import { SubirJuegoDocumentos } from "@/components/subir-juego-documentos";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
 import { TabRecepcion } from "@/components/tab-recepcion";
@@ -3657,6 +3658,8 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
             </div>
           </div>
         </div>
+        <div className="flex items-center gap-2 flex-wrap">
+        <SubirJuegoDocumentos expedienteId={expedienteId} />
         <Dialog modal={false} open={open} onOpenChange={setOpen}>
           <Button size="sm" onClick={() => openNuevo()}><Upload className="h-4 w-4 mr-1" />Subir documento</Button>
           <DialogContent>
@@ -3676,6 +3679,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
             <DialogFooter><Button onClick={upload} disabled={uploading}>{uploading ? (tipo === TIPO_CARTA_RUTA || tipo === TIPO_CERTIFICADO_DGA || esDocumentoResultadoDga(tipo) ? "Guardando y leyendo…" : "Guardando…") : "Guardar"}</Button></DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Card>
