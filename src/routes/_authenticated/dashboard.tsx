@@ -327,7 +327,7 @@ function RemindersPanel() {
                   <AccordionContent className="pb-0">
                     <div className="flex items-center gap-3 px-4 py-1.5 border-t bg-muted/30 text-[11px] uppercase text-muted-foreground">
                           <span className="h-2 w-2 shrink-0" aria-hidden />
-                          <div className="min-w-0 flex-1">Detalle</div>
+                          <div className="min-w-0 flex-1" />
                           <span className="w-20 shrink-0 text-center">Prioridad</span>
                           <span className="w-[58px] shrink-0 text-center">Visto</span>
                         </div>
