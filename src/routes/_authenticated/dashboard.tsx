@@ -280,6 +280,8 @@ function RemindersPanel() {
     pesos[i] += g.items.length + 1;
   }
   const orden = new Map(grouped.map((g, i) => [g.key, i]));
+  // Con una sola categoría activa, usar todo el ancho para que las alertas quepan en dos filas.
+  const dosColumnas = columnas[0].length > 0 && columnas[1].length > 0;
   columnas.forEach((c) => c.sort((a, b) => orden.get(a.key)! - orden.get(b.key)!));
   const defaultOpen = columnas.flatMap((c) => (c[0] ? [c[0].key] : []));
 
