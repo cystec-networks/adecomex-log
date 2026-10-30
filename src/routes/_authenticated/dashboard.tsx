@@ -338,7 +338,7 @@ function RemindersPanel() {
                             }`}
                           />
                           <div className="min-w-0 flex-1">
-                            <Link to={r.href} className="text-sm font-medium hover:underline block truncate">
+                            <Link to={r.href} className="text-sm font-medium hover:underline">
                               <TextoConResaltado texto={r.title} resaltar={r.resaltar} />
                             </Link>
                             <div className="text-xs text-muted-foreground truncate">
