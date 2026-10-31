@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck, RefreshCw, Mail, Banknote } from "lucide-react";
+import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck, RefreshCw, Mail, Banknote, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
