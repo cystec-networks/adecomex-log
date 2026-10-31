@@ -44,15 +44,16 @@ export function dimensiones200Dpi(width: number, height: number, anchoPuntos: nu
 }
 
 function jpegSeguro(bytes: Uint8Array) {
+  let rgb = false;
   // Only ordinary 8-bit RGB/YCbCr JPEGs. Skip CMYK, ICC and EXIF orientation rather than change colors/rotation.
   for (let i = 2; i + 8 < bytes.length;) {
     if (bytes[i] !== 255) return false;
     const marker = bytes[i + 1];
-    if (marker === 0xda) break;
+    if (marker === 0xda) return rgb;
     const len = bytes[i + 2] * 256 + bytes[i + 3];
     if (len < 2) return false;
     if (marker === 0xe1 || marker === 0xe2) return false;
-    if ([0xc0, 0xc1, 0xc2].includes(marker)) return bytes[i + 4] === 8 && bytes[i + 9] === 3;
+    if ([0xc0, 0xc1, 0xc2].includes(marker)) rgb = bytes[i + 4] === 8 && bytes[i + 9] === 3;
     i += 2 + len;
   }
   return false;
@@ -123,6 +124,7 @@ async function optimizarPdf(bytes: Uint8Array): Promise<Uint8Array | null> {
   const pdf = await PDFDocument.load(bytes, { updateMetadata: false });
   const plans = new Map<PDFRawStream, { width: number; height: number }>();
   const blocked = new Set<PDFRawStream>();
+  const hasForms = pdf.context.enumerateIndirectObjects().some(([,obj]) => obj instanceof PDFRawStream && obj.dict.get(nombre("Subtype"))?.toString() === "/Form");
   for (const page of pdf.getPages()) {
     const resources = page.node.Resources();
     const xobjects = resources?.lookupMaybe(nombre("XObject"), PDFDict);
@@ -139,7 +141,7 @@ async function optimizarPdf(bytes: Uint8Array): Promise<Uint8Array | null> {
       const image = pdf.context.lookup(ref);
       if (!(image instanceof PDFRawStream) || image.dict.get(nombre("Subtype"))?.toString() !== "/Image") continue;
       const placement = placements?.get(key.toString());
-      if (!placement) { blocked.add(image); continue; }
+      if (!placement || hasForms) { blocked.add(image); continue; }
       const d = image.dict;
       if (d.get(nombre("Filter"))?.toString() !== "/DCTDecode" || d.get(nombre("ColorSpace"))?.toString() !== "/DeviceRGB" || ["SMask", "Mask", "Decode", "DecodeParms", "ImageMask"].some((k) => d.has(nombre(k)))) continue;
       const w = d.lookup(nombre("Width"), PDFNumber).asNumber(), h = d.lookup(nombre("Height"), PDFNumber).asNumber();
@@ -151,15 +153,24 @@ async function optimizarPdf(bytes: Uint8Array): Promise<Uint8Array | null> {
   }
   for (const [image, target] of plans) {
     if (blocked.has(image)) continue;
-    const optimized = await codificarJpeg(image.contents, target.width, target.height);
+    let optimized: Uint8Array | null = null;
+    try { optimized = await codificarJpeg(image.contents, target.width, target.height); }
+    catch { continue; } // Codec/memory limitation leaves the image intact; lossless optimization may still help.
     if (!optimized) continue;
     image.updateContents(optimized);
     image.dict.set(nombre("Width"), PDFNumber.of(target.width));
     image.dict.set(nombre("Height"), PDFNumber.of(target.height));
   }
   // No page copying/rasterization: bookmarks, links, text, annotations and page geometry are retained.
+  const info = pdf.context.trailerInfo.Info;
+  if (info) pdf.context.delete(info);
   pdf.context.trailerInfo.Info = undefined;
-  pdf.catalog.delete(nombre("Metadata"));
+  // PDF/A output intents and embedded provenance metadata are not considered disposable.
+  if (!pdf.catalog.has(nombre("OutputIntents"))) {
+    const metadata = pdf.catalog.get(nombre("Metadata"));
+    if (metadata instanceof PDFRef) pdf.context.delete(metadata);
+    pdf.catalog.delete(nombre("Metadata"));
+  }
   const out = await pdf.save({ useObjectStreams: true, addDefaultPage: false });
   if (out.length >= bytes.length) return bytes;
   const check = await PDFDocument.load(out, { updateMetadata: false });
