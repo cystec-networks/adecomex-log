@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { optimizarArchivo } from "@/lib/documento-optimizacion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -246,7 +247,7 @@ export function FacturaEcfFormDialog({
 
       if (pdfFile) {
         const path = `facturas-ecf/${data.id}/${pdfFile.name}`;
-        const { error: upErr } = await supabase.storage.from("documentos").upload(path, pdfFile, { upsert: true });
+        const { error: upErr } = await supabase.storage.from("documentos").upload(path, await optimizarArchivo(pdfFile), { upsert: true });
         if (!upErr) {
           await supabase.from("facturas_ecf").update({ pdf_url: path }).eq("id", data.id);
         }

@@ -26,7 +26,7 @@ async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoPro
   if (!MIME_OK.test(mime)) return base;
   const esPdf = mime === "application/pdf";
   const paginas = esPdf ? await contarPaginasPdf(bytes) : null;
-  if (paginas != null && paginas > UMBRAL_PAGINAS_COMBINADO) return { ...base, combinado: { motivo: "paginas", paginas } };
+  if (paginas != null && paginas > UMBRAL_PAGINAS_COMBINADO && optimizado.motivo !== "firmado") return { ...base, combinado: { motivo: "paginas", paginas } };
   try {
     const leido = await leerArchivoCorreo(a.nombre, mime, bytesABase64(bytes), bytes);
     if (optimizado.ahorro && (leido.tipo === "Otro" || leido.error)) {
@@ -38,7 +38,7 @@ async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoPro
       try { return await leerArchivoCorreo(a.nombre, mime, base64, original); }
       catch { bytes = original; base.bytes = original; }
     }
-    if (esPdf && esTimeoutGateway(e)) return { ...base, combinado: { motivo: "timeout", paginas } };
+    if (esPdf && esTimeoutGateway(e) && optimizado.motivo !== "firmado") return { ...base, combinado: { motivo: "timeout", paginas } };
     return { ...base, error: String(e?.message ?? e).slice(0, 200) };
   }
 }

@@ -1,4 +1,5 @@
 import { PDFDocument } from "pdf-lib";
+import { pdfProtegido } from "./documento-optimizacion";
 
 export type AdjuntoCorreoBase = { nombre: string; tipo: string; storage_path: string };
 
@@ -33,6 +34,7 @@ export async function unirArchivosPdf(archivos: { bytes: Uint8Array; mime: strin
       destino.addPage([img.width, img.height]).drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
       continue;
     }
+    if (await pdfProtegido(bytes)) throw new Error("PDF firmado o protegido: se conserva intacto; no se puede unir sin alterar su firma.");
     const origen = await PDFDocument.load(bytes, { ignoreEncryption: true });
     const paginas = await destino.copyPages(origen, origen.getPageIndices());
     paginas.forEach((p) => destino.addPage(p));
