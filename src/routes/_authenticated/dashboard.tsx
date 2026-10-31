@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -320,7 +321,22 @@ function RemindersPanel() {
   // Con una sola categoría activa, usar todo el ancho para que las alertas quepan en dos filas.
   const dosColumnas = columnas[0].length > 0 && columnas[1].length > 0;
   columnas.forEach((c) => c.sort((a, b) => (orden.get(a.key) ?? 0) - (orden.get(b.key) ?? 0)));
-  const defaultOpen = grouped.map((g) => g.key);
+  // Categorías colapsadas por defecto; se recuerda en el navegador cuáles dejó abiertas.
+  const [abiertas, setAbiertas] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      const guardadas = JSON.parse(window.localStorage.getItem("alertas-panel-expandidas") ?? "[]");
+      if (Array.isArray(guardadas)) setAbiertas(new Set(guardadas.filter((k: unknown) => typeof k === "string")));
+    } catch { /* valores inválidos: quedan todas colapsadas */ }
+  }, []);
+  const alternar = (claves: string[], abiertasAqui: string[]) => {
+    setAbiertas((prev) => {
+      const next = new Set([...prev].filter((k) => !claves.includes(k)));
+      abiertasAqui.forEach((k) => next.add(k));
+      try { window.localStorage.setItem("alertas-panel-expandidas", JSON.stringify([...next])); } catch { /* sin storage disponible */ }
+      return next;
+    });
+  };
 
   return (
     <Card>
@@ -352,7 +368,8 @@ function RemindersPanel() {
           <div className={`grid grid-cols-1 items-start ${dosColumnas ? "lg:grid-cols-2 lg:divide-x" : ""}`}>
             {columnas.map((col, ci) =>
               col.length === 0 ? null : (
-            <Accordion key={ci} type="multiple" defaultValue={defaultOpen} className="w-full">
+            <Accordion key={ci} type="multiple" value={col.map((g) => g.key).filter((k) => abiertas.has(k))}
+              onValueChange={(vals) => alternar(col.map((g) => g.key), vals)} className="w-full">
               {col.map((g) => (
                 <AccordionItem key={g.key} value={g.key} className="border-b">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
