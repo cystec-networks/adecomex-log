@@ -321,7 +321,22 @@ function RemindersPanel() {
   // Con una sola categoría activa, usar todo el ancho para que las alertas quepan en dos filas.
   const dosColumnas = columnas[0].length > 0 && columnas[1].length > 0;
   columnas.forEach((c) => c.sort((a, b) => (orden.get(a.key) ?? 0) - (orden.get(b.key) ?? 0)));
-  const defaultOpen = grouped.map((g) => g.key);
+  // Categorías colapsadas por defecto; se recuerda en el navegador cuáles dejó abiertas.
+  const [abiertas, setAbiertas] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      const guardadas = JSON.parse(window.localStorage.getItem("alertas-panel-expandidas") ?? "[]");
+      if (Array.isArray(guardadas)) setAbiertas(new Set(guardadas.filter((k: unknown) => typeof k === "string")));
+    } catch { /* valores inválidos: quedan todas colapsadas */ }
+  }, []);
+  const alternar = (claves: string[], abiertasAqui: string[]) => {
+    setAbiertas((prev) => {
+      const next = new Set([...prev].filter((k) => !claves.includes(k)));
+      abiertasAqui.forEach((k) => next.add(k));
+      try { window.localStorage.setItem("alertas-panel-expandidas", JSON.stringify([...next])); } catch { /* sin storage disponible */ }
+      return next;
+    });
+  };
 
   return (
     <Card>
