@@ -1,6 +1,6 @@
 import { describe, it as test } from "node:test";
 import assert from "node:assert/strict";
-import { idsExpedientesConDocumentos } from "./reminders";
+import { idsExpedientesConDocumentos } from "./reminders-docs";
 
 // Regla del panel: verde (con documentos) cuando hay al menos un documento
 // subido; gris (sin documentos) cuando no hay ninguno.
