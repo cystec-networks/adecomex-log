@@ -1,7 +1,7 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
-import { Upload, Loader2, X } from "lucide-react";
+import { Upload, FolderOpen, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { PDFDocument } from "@cantoo/pdf-lib";
 import { Button } from "@/components/ui/button";
@@ -10,20 +10,40 @@ import { supabase } from "@/integrations/supabase/client";
 import { clasificarPaginaJuego, leerEncabezadosJuego } from "@/lib/juego-documentos.functions";
 import { separarArchivoJuego, guardarGrupoJuego, gruposJuego, type ArchivoJuego } from "@/lib/juego-documentos";
 import { hoyRDISO } from "@/lib/dates";
+import { aceptarDocumentosJuego, agregarArchivosJuego, leerArrastreJuego, rutaArchivoJuego } from "@/lib/juego-documentos-seleccion";
 
 export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string }) {
   const [open, setOpen] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
+  const [leyendoCarpeta, setLeyendoCarpeta] = useState(false);
+  const [permiteCarpetas, setPermiteCarpetas] = useState(false);
   const [progress, setProgress] = useState("");
   const [results, setResults] = useState<string[]>([]);
   const input = useRef<HTMLInputElement>(null);
+  const inputCarpeta = useRef<HTMLInputElement>(null);
+  const bloqueado = busy || leyendoCarpeta;
+  useEffect(() => { setPermiteCarpetas("webkitdirectory" in document.createElement("input")); }, []);
   const clasificar = useServerFn(clasificarPaginaJuego);
   const encabezados = useServerFn(leerEncabezadosJuego);
   const qc = useQueryClient();
-  const agregar = (nuevos: File[]) => setFiles((prev) => [...prev, ...nuevos.filter((f) => !prev.some((p) => p.name === f.name && p.size === f.size && p.lastModified === f.lastModified))]);
+  const agregar = (nuevos: File[]) => {
+    const validos = agregarArchivosJuego([], nuevos);
+    if (!validos.length) toast.info("No se encontraron archivos PDF o imágenes");
+    setFiles((prev) => agregarArchivosJuego(prev, validos));
+  };
+  const recibirArrastre = async (data: DataTransfer) => {
+    if (bloqueado) return;
+    setLeyendoCarpeta(true);
+    try {
+      const out = await leerArrastreJuego(data);
+      agregar(out.files);
+      for (const error of out.errores) toast.error(error);
+    } catch { toast.error("No se pudo leer la carpeta; selecciona sus archivos"); }
+    finally { setLeyendoCarpeta(false); }
+  };
   const subir = async () => {
-    if (busy || !files.length) return;
+    if (bloqueado || !files.length) return;
     setBusy(true); setResults([]);
     const leidos: ArchivoJuego[] = [];
     const mensajes: string[] = [];
@@ -73,20 +93,25 @@ export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string })
   };
   return <>
     <Button size="sm" variant="outline" onClick={() => setOpen(true)}><Upload className="mr-1 h-4 w-4" />Subir juego de documentos</Button>
-    <Dialog open={open} onOpenChange={(v) => { if (!busy) setOpen(v); }}>
-      <DialogContent className="max-w-xl" onInteractOutside={(e) => { if (busy) e.preventDefault(); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!bloqueado) setOpen(v); }}>
+      <DialogContent className="max-w-xl" onInteractOutside={(e) => { if (bloqueado) e.preventDefault(); }}>
         <DialogHeader><DialogTitle>Subir juego de documentos</DialogTitle></DialogHeader>
-        <input ref={input} type="file" multiple className="hidden" aria-label="Archivos del juego de documentos" onChange={(e) => { agregar(Array.from(e.target.files ?? [])); e.target.value = ""; }} disabled={busy} />
-        <div className="border border-dashed border-border rounded-md p-6 text-center" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (!busy) agregar(Array.from(e.dataTransfer.files)); }}>
-          <Button variant="outline" onClick={() => input.current?.click()} disabled={busy}><Upload className="mr-2 h-4 w-4" />Seleccionar archivos</Button>
-          <p className="mt-2 text-sm text-muted-foreground">o arrastrar archivos aquí</p>
+        <input ref={input} type="file" accept={aceptarDocumentosJuego} multiple className="hidden" aria-label="Archivos del juego de documentos" onChange={(e) => { agregar(Array.from(e.target.files ?? [])); e.target.value = ""; }} disabled={bloqueado} />
+        <input ref={(element) => { inputCarpeta.current = element; element?.setAttribute("webkitdirectory", ""); }} type="file" accept={aceptarDocumentosJuego} multiple className="hidden" aria-label="Carpeta del juego de documentos" onChange={(e) => { agregar(Array.from(e.target.files ?? [])); e.target.value = ""; }} disabled={bloqueado} />
+        <div className="border border-dashed border-border rounded-md p-6 text-center" onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = bloqueado ? "none" : "copy"; }} onDrop={(e) => { e.preventDefault(); void recibirArrastre(e.dataTransfer); }}>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button variant="outline" onClick={() => input.current?.click()} disabled={bloqueado}><Upload className="mr-2 h-4 w-4" />Seleccionar archivos</Button>
+            {permiteCarpetas && <Button variant="outline" onClick={() => inputCarpeta.current?.click()} disabled={bloqueado}><FolderOpen className="mr-2 h-4 w-4" />Seleccionar carpeta</Button>}
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">PDF e imágenes</p>
         </div>
         <ul className="max-h-64 overflow-y-auto space-y-2 text-sm">
-          {files.map((f, i) => <li key={`${f.name}-${i}`} className="flex items-center gap-2"><span className="min-w-0 flex-1 break-words">{f.name}</span><Button variant="ghost" size="icon" aria-label={`Quitar ${f.name}`} disabled={busy} onClick={() => setFiles((prev) => prev.filter((_, n) => n !== i))}><X className="h-4 w-4" /></Button></li>)}
+          {files.map((f, i) => <li key={`${rutaArchivoJuego(f)}-${i}`} className="flex items-center gap-2"><span className="min-w-0 flex-1 break-words">{rutaArchivoJuego(f)}</span><Button variant="ghost" size="icon" aria-label={`Quitar ${rutaArchivoJuego(f)}`} disabled={bloqueado} onClick={() => setFiles((prev) => prev.filter((_, n) => n !== i))}><X className="h-4 w-4" /></Button></li>)}
         </ul>
+        {leyendoCarpeta && <p role="status" className="flex items-center gap-2 text-sm"><Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />Leyendo carpeta…</p>}
         {busy && <p role="status" className="flex items-center gap-2 text-sm break-words"><Loader2 className="h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none" />{progress}</p>}
         {!!results.length && <ul aria-label="Resultado de carga" className="max-h-72 overflow-y-auto space-y-2 text-sm">{results.map((r, i) => <li key={i} className="break-words">{r}</li>)}</ul>}
-        <DialogFooter><Button variant="outline" disabled={busy} onClick={() => setOpen(false)}>Cerrar</Button><Button onClick={subir} disabled={busy || !files.length}>{busy ? "Procesando…" : `Subir${files.length ? ` (${files.length})` : ""}`}</Button></DialogFooter>
+        <DialogFooter><Button variant="outline" disabled={bloqueado} onClick={() => setOpen(false)}>Cerrar</Button><Button onClick={subir} disabled={bloqueado || !files.length}>{busy ? "Procesando…" : `Subir${files.length ? ` (${files.length})` : ""}`}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   </>;
