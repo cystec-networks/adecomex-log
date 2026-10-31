@@ -32,7 +32,7 @@ export function recordatoriosAlertasExpedientes(expedientes: ExpedientePanel[], 
       if (kind) grupos.set(kind, [...(grupos.get(kind) ?? []), alerta]);
     }
     return [...grupos].map(([kind, alertas]): Reminder => ({
-      id: `${kind}:${exp.id}`, kind,
+      id: `panel-expediente:${kind}:${exp.id}`, kind,
       severity: alertas.some(a => a.tone === "danger") ? "critica" : alertas.some(a => a.tone === "warning") ? "alta" : "media",
       title: `Expediente ${exp.numero}`,
       detail: `${exp.clientes?.nombre ?? "Sin cliente"} · ${alertas.map(a => a.larga).join(" · ")}`,
