@@ -163,7 +163,7 @@ async function optimizarPdf(bytes: Uint8Array): Promise<Uint8Array | null> {
   }
   // No page copying/rasterization: bookmarks, links, text, annotations and page geometry are retained.
   const info = pdf.context.trailerInfo.Info;
-  if (info) pdf.context.delete(info);
+  if (info instanceof PDFRef) pdf.context.delete(info);
   pdf.context.trailerInfo.Info = undefined;
   // PDF/A output intents and embedded provenance metadata are not considered disposable.
   if (!pdf.catalog.has(nombre("OutputIntents"))) {
