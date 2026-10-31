@@ -25,7 +25,7 @@ Detail headers: content-sized rows, client label/value together, wrap IDs, warni
 - From verification onward, shared state ordering replaces deadlines with compliance from fecha_presentado; omit when date/deadline is missing, never fabricate dates.
 - Both header menus open Endoso via parent request counter; retain one form/persistence path.
 - Evaluate detail warnings with scoped evidence queries; invoice links and persisted reception incidents prevent unrelated debt alerts and recomputed tolerances.
-- Use the shared expediente alert evaluator for list and detail short/long text; keep PIN timestamp countdown separate from business-day presentation deadlines, and batch list evidence reads to avoid per-row requests.
+- List, detail and Operations reuse the shared alert evaluator and batched evidence hook; panel adapters only group results. Keep PIN and business-day deadlines separate.
 - Group PIN/presentation warnings in one list-only deadline entry with both short texts; retain independent clocks and full detail warnings.
 - Export DR-CAFTA from the editable preview with jsPDF text/vector borders; measure cells/text to preserve official layouts, annexes and saved edits without rasterization.
 - Inspection stays in canal_riesgo; portal the form-owned selector to the header to share drafts/validation without migrating historical values.

@@ -13,6 +13,9 @@ import { ESTADO_LABEL } from "@/lib/estados-expediente";
 import { cotizacionEstadoLabel, COTIZACION_ESTADO_CLASS } from "@/lib/estados-cotizacion";
 import { obtenerCorreosPendientes } from "@/lib/correos-pendientes-kpi";
 import { obtenerPagosTransportistaPendientes } from "@/lib/pagos-transportista-kpi";
+import { useDatosAlertasListado } from "@/lib/use-alertas-expediente";
+import { usePlazosRegimen } from "@/lib/plazo-presentacion";
+import { recordatoriosAlertasExpedientes } from "@/lib/alertas-expediente-panel";
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -87,7 +90,7 @@ function Dashboard() {
     },
   });
 
-  const { visible: reminders, isLoading: isLoadingReminders } = useReminders();
+  const { reminders, isLoading: isLoadingReminders } = useAlertasPanel();
 
   const operacionesLogisticaActivas = stats?.operacionesLogistica.filter((o) => o.estado !== "arribo").length ?? 0;
   const expedientesEnTransito = stats?.expedientes.filter((e) => e.estado === "en_transito").length ?? 0;
@@ -120,6 +123,9 @@ function Dashboard() {
             qc.invalidateQueries({ queryKey: ["reminders"] });
             qc.invalidateQueries({ queryKey: ["correos-pendientes-kpi"] });
             qc.invalidateQueries({ queryKey: ["pagos-transportista-kpi"] });
+            qc.invalidateQueries({ queryKey: ["expedientes-alertas-panel"] });
+            qc.invalidateQueries({ queryKey: ["alertas-expedientes-listado"] });
+            qc.invalidateQueries({ queryKey: ["plazos-regimen"] });
             toast.success("Actualizado");
           }}
         >
@@ -249,12 +255,43 @@ type GroupDef = { key: string; label: string; emoji: string; kinds: ReminderKind
 
 const REMINDER_GROUPS: GroupDef[] = [
   { key: "hitos", label: "Hitos atrasados / críticos", emoji: "🔴", kinds: ["hito_atrasado", "hito_proximo"] },
-  { key: "eta", label: "ETA / Expedientes", emoji: "🟡", kinds: ["eta_proximo", "expediente_inactivo"] },
+  { key: "eta", label: "ETA / Expedientes", emoji: "🟡", kinds: ["eta_proximo"] },
+  { key: "documentos", label: "Documentos pendientes", emoji: "📄", kinds: ["expediente_documentos"] },
+  { key: "permisos-pendientes", label: "Permisos pendientes de aprobación", emoji: "📋", kinds: ["expediente_permisos"] },
+  { key: "etapa", label: "Etapa estancada", emoji: "⏳", kinds: ["expediente_etapa"] },
+  { key: "mora", label: "Facturas en mora", emoji: "💳", kinds: ["expediente_mora"] },
+  { key: "recepcion", label: "Discrepancias de recepción", emoji: "📦", kinds: ["expediente_recepcion"] },
+  { key: "pin", label: "PIN de pago DGA", emoji: "⚠️", kinds: ["expediente_pin"] },
   { key: "permisos", label: "Permisos VUCE por vencer", emoji: "🟠", kinds: ["permiso_vencido", "permiso_por_vencer"] },
   { key: "transportes", label: "Transportes retrasados", emoji: "🚚", kinds: ["transporte_retrasado"] },
   { key: "solicitudes", label: "Solicitudes sin convertir", emoji: "📥", kinds: ["solicitud_sin_convertir"] },
   { key: "plazo", label: "Plazo de presentación en aduana", emoji: "⚠️", kinds: ["plazo_presentacion"] },
 ];
+
+function useAlertasPanel() {
+  const base = useReminders();
+  const expedientes = useQuery({
+    queryKey: ["expedientes-alertas-panel"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("expedientes")
+        .select("id,numero,cliente_id,factura_ecf_id,estado,updated_at,fecha_compromiso,fecha_llegada_real,regimen_aduanero,plazo_presentar_override,fecha_presentacion_real,liq_siga_termino_at,liq_siga_fecha_pago,clientes(nombre)")
+        .is("eliminado_en", null);
+      if (error) throw error;
+      return data ?? [];
+    },
+    refetchInterval: 5 * 60_000,
+  });
+  const evidencias = useDatosAlertasListado(expedientes.data ?? []);
+  const plazos = usePlazosRegimen();
+  const compartidas = recordatoriosAlertasExpedientes(expedientes.data ?? [], plazos.data, evidencias.data ?? {});
+  // La etapa y la presentación del panel sustituyen los cálculos antiguos por los del listado.
+  const reminders = [
+    ...base.visible.filter(r => r.kind !== "expediente_inactivo" && r.kind !== "plazo_presentacion"),
+    ...compartidas.filter(r => !base.dismissed.has(r.id)),
+  ].filter(r => REMINDER_GROUPS.some(g => g.kinds.includes(r.kind)));
+  return { reminders, dismiss: base.dismiss, isLoading: base.isLoading || expedientes.isLoading || evidencias.isLoading || plazos.isLoading,
+    isError: expedientes.isError || evidencias.isError || plazos.isError };
+}
 
 // Más urgente primero: atrasados, luego menos días restantes; sin plazo al final (orden estable).
 function ordenarPorUrgencia(items: Reminder[]): Reminder[] {
@@ -265,7 +302,7 @@ function ordenarPorUrgencia(items: Reminder[]): Reminder[] {
 }
 
 function RemindersPanel() {
-  const { visible: reminders, dismiss, isLoading } = useReminders();
+  const { reminders, dismiss, isLoading, isError } = useAlertasPanel();
 
   const grouped = REMINDER_GROUPS
     .map((g) => ({ ...g, items: ordenarPorUrgencia(reminders.filter((r) => g.kinds.includes(r.kind))) }))
@@ -282,7 +319,7 @@ function RemindersPanel() {
   const orden = new Map(grouped.map((g, i) => [g.key, i]));
   // Con una sola categoría activa, usar todo el ancho para que las alertas quepan en dos filas.
   const dosColumnas = columnas[0].length > 0 && columnas[1].length > 0;
-  columnas.forEach((c) => c.sort((a, b) => orden.get(a.key)! - orden.get(b.key)!));
+  columnas.forEach((c) => c.sort((a, b) => (orden.get(a.key) ?? 0) - (orden.get(b.key) ?? 0)));
   const defaultOpen = grouped.map((g) => g.key);
 
   return (
@@ -306,6 +343,7 @@ function RemindersPanel() {
         </div>
       </CardHeader>
       <CardContent className="p-0">
+        {isError && <div role="alert" className="px-4 py-2 text-sm text-destructive">No se pudieron consultar todas las alertas de expedientes. Intente refrescar.</div>}
         {isLoading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Cargando alertas…</div>
         ) : reminders.length === 0 ? (
@@ -337,7 +375,7 @@ function RemindersPanel() {
                         </div>
                     <ul className="divide-y border-t">
                       {g.items.map((r) => (
-                        <li key={r.id} className="px-3 py-2.5 flex items-center gap-2 hover:bg-muted/40">
+                        <li key={r.id} className="px-3 py-2.5 flex flex-wrap sm:flex-nowrap items-center gap-2 hover:bg-muted/40">
                           <span
                             className={`h-2 w-2 rounded-full shrink-0 ${
                               r.severity === "critica"
@@ -347,11 +385,11 @@ function RemindersPanel() {
                                 : "bg-[var(--info)]"
                             }`}
                           />
-                          <div className="min-w-0 flex-1">
+                          <div className="min-w-0 flex-1 basis-[calc(100%-16px)] sm:basis-auto">
                             <Link to={r.href} className="text-[13px] font-medium hover:underline">
                               <TextoConResaltado texto={r.title} resaltar={r.resaltar} />
                             </Link>
-                            <div className="text-xs text-muted-foreground truncate">
+                            <div className="text-xs text-muted-foreground break-words" title={r.detail}>
                               <TextoConResaltado texto={r.detail} resaltar={r.resaltar} />
                             </div>
                           </div>

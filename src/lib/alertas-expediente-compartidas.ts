@@ -3,7 +3,7 @@ import { estadoIndex, fechasDespachoFaltantes } from "./estados-expediente";
 import { diasRegimen, plazoEfectivo, venceEn, habilesRestantes, diasHabilesEntre, type PlazoRegimen } from "./plazo-presentacion";
 import { alertasAdicionalesExpediente } from "./alertas-expediente";
 
-export type AlertaExpediente = { id: string; corta: string; larga: string; tone: "danger" | "warning" | "info" };
+export type AlertaExpediente = { id: string; corta: string; larga: string; tone: "danger" | "warning" | "info"; diasRestantes?: number };
 type DatosAdicionales = Parameters<typeof alertasAdicionalesExpediente>[0];
 export type ExpedienteAlertas = DatosAdicionales["expediente"] & {
   regimen_aduanero?: string | null; plazo_presentar_override?: number | null;
@@ -39,13 +39,14 @@ export function alertaPinDga(exp: Pick<ExpedienteAlertas, "liq_siga_termino_at" 
     id: "pin-dga", tone: vencido ? "danger" : horas < 48 ? "warning" : "info",
     corta: `${vencido ? "Venció" : "Vence"} ${dias ? `${dias}d` : `${Math.round(Math.abs(ms) / 3600000)}h`}`,
     larga: `PIN de pago DGA: ${vencido ? "Vencido hace" : "Vence en"} ${duracion}`,
+    diasRestantes: ms / 86_400_000,
   };
 }
 
 /** Un mismo resultado ofrece sus dos textos; ambas pantallas comparten reglas y evidencias. */
 export function alertasExpedienteCompartidas(expediente: ExpedienteAlertas, plazos: PlazoRegimen[] | undefined, datos: DatosAlertasCompartidas = {}, ahora = Date.now()): AlertaExpediente[] {
   const alertas: AlertaExpediente[] = [];
-  const agregar = (id: string, corta: string, larga: string, tone: AlertaExpediente["tone"] = "warning") => alertas.push({ id, corta, larga, tone });
+  const agregar = (id: string, corta: string, larga: string, tone: AlertaExpediente["tone"] = "warning", diasRestantes?: number) => alertas.push({ id, corta, larga, tone, diasRestantes });
   const pin = alertaPinDga(expediente, ahora);
   if (pin) alertas.push(pin);
   const { dias } = plazoEfectivo(expediente, plazos);
@@ -56,14 +57,14 @@ export function alertasExpedienteCompartidas(expediente: ExpedienteAlertas, plaz
   if (vencimiento && presentado && !isNaN(presentado.getTime())) {
     if (presentado > vencimiento) {
       const retraso = Math.abs(diasHabilesEntre(presentado, vencimiento));
-      agregar("presentacion", `Presentación +${retraso}dh`, `Presentación fuera de plazo (${retraso} días hábiles de retraso)`, "danger");
+      agregar("presentacion", `Presentación +${retraso}dh`, `Presentación fuera de plazo (${retraso} días hábiles de retraso)`, "danger", -retraso);
     }
   } else if (vencimiento && !posterior) {
     const restantes = Math.abs(habilesRestantes(vencimiento));
     const unidad = restantes === 1 ? "día hábil" : "días hábiles";
     const vencido = vencimiento < hoyRD();
     agregar("presentacion", vencido ? `Presentación vencida ${restantes}dh` : restantes ? `Presentar ${restantes}dh` : "Presentar hoy",
-      vencido ? `Plazo de presentación vencido desde ${fmtLocalDate(vencimiento.toISOString().slice(0, 10))} (${restantes} ${unidad} transcurridos)` : restantes ? `Vence en ${restantes} ${unidad} el plazo de presentación` : "Vence hoy el plazo de presentación", vencido ? "danger" : "warning");
+      vencido ? `Plazo de presentación vencido desde ${fmtLocalDate(vencimiento.toISOString().slice(0, 10))} (${restantes} ${unidad} transcurridos)` : restantes ? `Vence en ${restantes} ${unidad} el plazo de presentación` : "Vence hoy el plazo de presentación", vencido ? "danger" : "warning", vencido ? -restantes : restantes);
   }
   if (posterior && !expediente.fecha_presentacion_real) agregar("fecha-presentacion", "Falta fecha presentación", "Falta capturar la fecha de presentación");
   if (datos.documentos) {

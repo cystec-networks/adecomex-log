@@ -8,6 +8,12 @@ export type ReminderKind =
   | "solicitud_sin_convertir"
   | "solicitud_correo_pendiente"
   | "expediente_inactivo"
+  | "expediente_documentos"
+  | "expediente_permisos"
+  | "expediente_etapa"
+  | "expediente_mora"
+  | "expediente_recepcion"
+  | "expediente_pin"
   | "eta_proximo"
   | "permiso_por_vencer"
   | "permiso_vencido"
@@ -510,7 +516,8 @@ export function useReminders() {
   useEffect(() => {
     if (!query.data || pruned.current) return;
     const alive = new Set(query.data.map((r) => r.id));
-    const stale = [...dismissed].filter((id) => !alive.has(id));
+    // Los bloques compartidos del panel tienen su propio conjunto de alertas/evidencias.
+    const stale = [...dismissed].filter((id) => !id.startsWith("panel-expediente:") && !alive.has(id));
     if (stale.length === 0) return;
     pruned.current = true;
     void (async () => {
@@ -526,5 +533,5 @@ export function useReminders() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.data, dismissed]);
 
-  return { all: query.data ?? [], visible, dismiss, clearAll, isLoading };
+  return { all: query.data ?? [], visible, dismiss, clearAll, dismissed, isLoading };
 }
