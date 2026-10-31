@@ -3,7 +3,7 @@ import { PROMPT_DOCUMENTO_IMPORTACION } from "@/lib/ocr-documento-prompt";
 import { callGateway } from "@/lib/ai-gateway.server";
 
 export type AdjuntoProcesado = DatosAdjunto & {
-  nombre: string; mime: string; bytes: Uint8Array; storage_path?: string; error?: string;
+  nombre: string; mime: string; bytes: Uint8Array; storage_path?: string; error?: string; firmado?: boolean;
   datos?: Record<string, unknown>; combinado?: { motivo: "paginas" | "timeout"; paginas: number | null };
 };
 

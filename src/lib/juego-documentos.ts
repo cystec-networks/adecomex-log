@@ -5,6 +5,7 @@ import { agruparAdjuntosCorreo, unirArchivosPdf, nombreUnido, etiquetaOriginalIn
 import { nombreDocumentoSiga, prefijoSiga, siguienteCodigoSiga } from "./codigo-siga";
 import { supabase } from "@/integrations/supabase/client";
 import { hoyRDISO } from "./dates";
+import { optimizarDocumento } from "./documento-optimizacion";
 
 export type ArchivoJuego = { nombre: string; tipo: string; storage_path: string; bytes: Uint8Array; mime: string; originalId?: string };
 export const base64Juego = (bytes: Uint8Array) => {
@@ -45,7 +46,8 @@ export async function guardarGrupoJuego(expedienteId: string, grupo: ArchivoJueg
   if (!primero) return;
   const tipo = primero.tipo || "Otro";
   const codigo = await siguienteCodigoSiga(expedienteId, prefijoSiga(tipo));
-  const bytes = grupo.length > 1 ? await unirArchivosPdf(grupo) : primero.bytes;
+  const source = grupo.length > 1 ? await unirArchivosPdf(grupo) : primero.bytes;
+  const bytes = (await optimizarDocumento(source, "application/pdf")).bytes;
   const nombre = nombreDocumentoSiga(codigo, tipo, primero.nombre);
   const ruta = `${expedienteId}/${crypto.randomUUID()}-${grupo.length > 1 ? nombreUnido(nombre, grupo.length) : nombre}`;
   const { error } = await supabase.storage.from("documentos").upload(ruta, new Blob([bytes as BlobPart], { type: "application/pdf" }), { contentType: "application/pdf" });

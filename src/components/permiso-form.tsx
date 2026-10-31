@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { optimizarArchivo } from "@/lib/documento-optimizacion";
 import { useServerFn } from "@tanstack/react-start";
 import { extraerPermisoVuce } from "@/lib/permiso-vuce.functions";
 import { aplicarDetalleVuce, avisosVerificacionVuce, documentoDelPermisoVuce } from "@/lib/permiso-vuce";
@@ -156,6 +157,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
     if (v.advertencia) toast.warning(v.advertencia, { duration: 8000 });
     setUploading(true);
     try {
+      file = await optimizarArchivo(file);
       const path = `permisos/${crypto.randomUUID()}-${file.name}`;
       const { error } = await supabase.storage.from("documentos").upload(path, file, { upsert: false });
       if (error) throw error;

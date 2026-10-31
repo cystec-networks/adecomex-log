@@ -18,6 +18,10 @@ describe("unión de adjuntos del mismo tipo", () => {
   it("nombre con cantidad", () => {
     assert.equal(nombreUnido("FAC-001 FACTURA COMERCIAL.pdf", 2), "FAC-001 FACTURA COMERCIAL (2 documentos).pdf");
   });
+  it("no une un PDF firmado con otros del mismo tipo", () => {
+    const groups = agruparAdjuntosCorreo([{...a("firmado.pdf","Factura comercial"),firmado:true},a("otro.pdf","Factura comercial"),a("tercero.pdf","Factura comercial")]);
+    assert.deepEqual(groups.map(g=>g.length),[1,2]);
+  });
   it("concatena páginas", async () => {
     const mk = async (n: number) => { const d = await PDFDocument.create(); for (let i = 0; i < n; i++) d.addPage(); return d.save(); };
     const out = await unirArchivosPdf([{ bytes: await mk(1), mime: "application/pdf" }, { bytes: await mk(2), mime: "application/pdf" }, { bytes: await mk(3), mime: "application/pdf" }]);

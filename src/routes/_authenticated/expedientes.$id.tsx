@@ -1,4 +1,5 @@
 import { sincronizarCobroDesdeEcf } from "@/lib/factura-ecf-vinculacion";
+import { optimizarArchivo, optimizarDocumento } from "@/lib/documento-optimizacion";
 import { ExpedienteGuardadoProvider, useGuardadoExpediente, useEditorExpediente, useBorradorExpediente } from "@/components/expediente-guardado";
 import { TransporteForm } from "@/components/transporte-form";
 import { PermisoForm } from "@/components/permiso-form";
@@ -2482,7 +2483,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               if (error || !blob) throw new Error(`No se pudo leer ${x.nombre} para unirlo: ${error?.message ?? "sin contenido"}`);
               archivos.push({ bytes: new Uint8Array(await blob.arrayBuffer()), mime: blob.type || (/\.png$/i.test(x.nombre) ? "image/png" : /\.jpe?g$/i.test(x.nombre) ? "image/jpeg" : "application/pdf") });
             }
-            const unido = await unirArchivosPdf(archivos);
+            const unido = (await optimizarDocumento(await unirArchivosPdf(archivos), "application/pdf")).bytes;
             const codigo = await siguienteCodigoSiga(data.id, prefijoSiga(a.tipo));
             const rutaUnida = `${data.id}/${Date.now()}_${nombreUnido(nombreDocumentoSiga(codigo, a.tipo, a.nombre), grupo.length)}`;
             const { error: errorSubida } = await supabase.storage.from("documentos").upload(rutaUnida, new Blob([unido as BlobPart], { type: "application/pdf" }), { contentType: "application/pdf" });
@@ -3362,7 +3363,9 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const pedirConfirmacion = (c: { titulo: string; mensaje: string; requiereCheck?: boolean }) =>
     new Promise<boolean>((resolve) => { setConfirmAck(false); setConfirmacion({ ...c, resolve }); });
 
+  const fileSeleccionado = file;
   const upload = async () => {
+    let file = fileSeleccionado;
     if (file && (tipo === TIPO_CARTA_RUTA || tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && !(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
       toast.error("Este documento del Checklist de Recepción solo acepta archivos PDF.");
       return;
@@ -3387,6 +3390,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           if (!ok) return;
         }
       }
+      if (file) file = await optimizarArchivo(file);
       let certificadoDga: CertificadoDga | null = null;
       let cartaRuta: CartaRuta | null = null;
       let observacionesDoc = obs;
@@ -4479,7 +4483,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
       let adjunto_path: string | null | undefined = undefined;
       if (file) {
         const path = `expedientes/${expedienteId}/gastos/${Date.now()}-${file.name}`;
-        const { error: upErr } = await supabase.storage.from("documentos").upload(path, file);
+        const { error: upErr } = await supabase.storage.from("documentos").upload(path, await optimizarArchivo(file));
         if (upErr) throw upErr;
         adjunto_path = path;
       }

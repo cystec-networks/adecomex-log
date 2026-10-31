@@ -1,6 +1,7 @@
 import { PDFDocument } from "pdf-lib";
+import { pdfProtegido } from "./documento-optimizacion";
 
-export type AdjuntoCorreoBase = { nombre: string; tipo: string; storage_path: string };
+export type AdjuntoCorreoBase = { nombre: string; tipo: string; storage_path: string; firmado?: boolean };
 
 const esOtro = (tipo: string | null | undefined) => !tipo || tipo === "Otro" || tipo.startsWith("Otros");
 
@@ -9,7 +10,7 @@ export function agruparAdjuntosCorreo<T extends AdjuntoCorreoBase>(adjuntos: T[]
   const grupos: T[][] = [];
   const porTipo = new Map<string, T[]>();
   for (const a of adjuntos) {
-    if (esOtro(a.tipo)) { grupos.push([a]); continue; }
+    if (esOtro(a.tipo) || a.firmado) { grupos.push([a]); continue; }
     const g = porTipo.get(a.tipo);
     if (g) g.push(a);
     else { const nuevo = [a]; porTipo.set(a.tipo, nuevo); grupos.push(nuevo); }
@@ -33,6 +34,7 @@ export async function unirArchivosPdf(archivos: { bytes: Uint8Array; mime: strin
       destino.addPage([img.width, img.height]).drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
       continue;
     }
+    if (await pdfProtegido(bytes)) throw new Error("PDF firmado o protegido: se conserva intacto; no se puede unir sin alterar su firma.");
     const origen = await PDFDocument.load(bytes, { ignoreEncryption: true });
     const paginas = await destino.copyPages(origen, origen.getPageIndices());
     paginas.forEach((p) => destino.addPage(p));

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { optimizarArchivo } from "@/lib/documento-optimizacion";
 import { useEditorExpediente } from "@/components/expediente-guardado";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -124,7 +125,7 @@ export function EndosoSection({ expedienteId, clienteOriginal, editable, solicit
       let documento_id = endoso?.documento_id ?? null;
       if (file) {
         const path = `${expedienteId}/${Date.now()}_${file.name}`;
-        const { error: upErr } = await supabase.storage.from("documentos").upload(path, file);
+        const { error: upErr } = await supabase.storage.from("documentos").upload(path, await optimizarArchivo(file));
         if (upErr) throw upErr;
         const { data: doc, error: dErr } = await supabase.from("documentos").insert({
           expediente_id: expedienteId, tipo: "Endoso (BL endosado / carta de cesión)", storage_path: path,

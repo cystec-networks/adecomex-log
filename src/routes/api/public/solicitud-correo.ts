@@ -6,6 +6,8 @@ import { mismoPendienteCorreo, respuestaCorreoActualizado } from "@/lib/correo-d
 import { autorizadoWebhook } from "@/lib/webhook-auth";
 import { leerArchivoCorreo, MIME_OK, type AdjuntoProcesado } from "@/lib/correo-adjunto-lectura.server";
 import { contarPaginasPdf } from "@/lib/correo-documento-combinado.server";
+import { optimizarDocumento } from "@/lib/documento-optimizacion";
+import { bytesABase64 } from "@/lib/correo-adjunto-lectura.server";
 import { esTimeoutGateway, UMBRAL_PAGINAS_COMBINADO, AVISO_PROCESANDO_COMBINADO } from "@/lib/correo-documento-combinado";
 
 const adjuntoSchema = adjuntoCorreoSchema;
@@ -17,15 +19,26 @@ async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoPro
   let bytes: Uint8Array;
   try { bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)); }
   catch { return { tipo: "Otro", nombre: a.nombre, mime, bytes: new Uint8Array(), error: "Contenido base64 inválido" }; }
-  const base: AdjuntoProcesado = { tipo: "Otro", nombre: a.nombre, mime, bytes };
+  const original = bytes;
+  const optimizado = await optimizarDocumento(bytes, mime);
+  bytes = optimizado.bytes;
+  const base: AdjuntoProcesado = { tipo: "Otro", nombre: a.nombre, mime, bytes, firmado: optimizado.motivo === "firmado" };
   if (!MIME_OK.test(mime)) return base;
   const esPdf = mime === "application/pdf";
   const paginas = esPdf ? await contarPaginasPdf(bytes) : null;
-  if (paginas != null && paginas > UMBRAL_PAGINAS_COMBINADO) return { ...base, combinado: { motivo: "paginas", paginas } };
+  if (paginas != null && paginas > UMBRAL_PAGINAS_COMBINADO && optimizado.motivo !== "firmado") return { ...base, combinado: { motivo: "paginas", paginas } };
   try {
-    return await leerArchivoCorreo(a.nombre, mime, base64, bytes);
+    const leido = await leerArchivoCorreo(a.nombre, mime, bytesABase64(bytes), bytes);
+    if (optimizado.ahorro && (leido.tipo === "Otro" || leido.error)) {
+      return await leerArchivoCorreo(a.nombre, mime, base64, original);
+    }
+    return { ...leido, firmado: base.firmado };
   } catch (e: any) {
-    if (esPdf && esTimeoutGateway(e)) return { ...base, combinado: { motivo: "timeout", paginas } };
+    if (optimizado.ahorro) {
+      try { return await leerArchivoCorreo(a.nombre, mime, base64, original); }
+      catch { bytes = original; base.bytes = original; }
+    }
+    if (esPdf && esTimeoutGateway(e) && optimizado.motivo !== "firmado") return { ...base, combinado: { motivo: "timeout", paginas } };
     return { ...base, error: String(e?.message ?? e).slice(0, 200) };
   }
 }
@@ -171,7 +184,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
             a.storage_path = path;
           }
         };
-        const resumenAdjuntos = () => adjuntos.filter((a) => a.storage_path).map((a) => ({ nombre: a.nombre, mime: a.mime, tipo: a.tipo, storage_path: a.storage_path, datos: a.datos ?? {}, ...(a.error ? { error: a.error } : {}), ...(a.combinado ? { procesando: true, combinado: a.combinado } : {}) }));
+        const resumenAdjuntos = () => adjuntos.filter((a) => a.storage_path).map((a) => ({ nombre: a.nombre, mime: a.mime, tipo: a.tipo, storage_path: a.storage_path, datos: a.datos ?? {}, ...(a.firmado ? { firmado: true } : {}), ...(a.error ? { error: a.error } : {}), ...(a.combinado ? { procesando: true, combinado: a.combinado } : {}) }));
 
         const textoCompleto = `De: ${remitente}\nAsunto: ${asunto}\nRecibido: ${new Date().toISOString()}\n\n${cuerpo}`;
 
