@@ -305,6 +305,7 @@ export function useReminders() {
               createdAt: e.updated_at,
               diasRestantes: dias,
               estado: e.estado,
+              tieneDocumentos: conDocs.has(e.id),
               resaltar: Math.abs(dias) <= 2 ? "atrasado" : undefined,
             });
           } else if (dias <= cfg.etaProximoDias) {
