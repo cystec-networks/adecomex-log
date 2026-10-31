@@ -228,6 +228,18 @@ export function useReminders() {
           .limit(200),
       ]);
 
+      // Expedientes con al menos un documento subido (Declaración o Liquidación), lectura única por lote.
+      const expIds = (exp.data ?? []).map((e: any) => e.id);
+      let conDocs = new Set<string>();
+      if (expIds.length > 0) {
+        const { data: docsExp } = await supabase
+          .from("documentos")
+          .select("expediente_id")
+          .in("expediente_id", expIds)
+          .not("storage_path", "is", null);
+        conDocs = idsExpedientesConDocumentos((docsExp ?? []) as { expediente_id: string }[]);
+      }
+
       // Operaciones con etapa "Embarque" completada y sin documentos cargados.
       const opsEmbarcadas = (emb.data ?? []).filter((r: any) => !r.operaciones_logistica?.eliminado_en);
       let opsSinDocs: any[] = [];
