@@ -37,6 +37,8 @@ export function recordatoriosAlertasExpedientes(expedientes: ExpedientePanel[], 
       title: `Expediente ${exp.numero}`,
       detail: `${exp.clientes?.nombre ?? "Sin cliente"} · ${alertas.map(a => a.larga).join(" · ")}`,
       href: `/expedientes/${exp.id}`, createdAt: exp.updated_at, estado: exp.estado,
+      diasRestantes: alertas.some(a => a.diasRestantes !== undefined)
+        ? Math.min(...alertas.map(a => a.diasRestantes ?? Infinity)) : undefined,
     }));
   });
 }
