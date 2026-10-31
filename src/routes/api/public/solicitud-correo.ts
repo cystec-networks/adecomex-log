@@ -6,6 +6,8 @@ import { mismoPendienteCorreo, respuestaCorreoActualizado } from "@/lib/correo-d
 import { autorizadoWebhook } from "@/lib/webhook-auth";
 import { leerArchivoCorreo, MIME_OK, type AdjuntoProcesado } from "@/lib/correo-adjunto-lectura.server";
 import { contarPaginasPdf } from "@/lib/correo-documento-combinado.server";
+import { optimizarDocumento } from "@/lib/documento-optimizacion";
+import { bytesABase64 } from "@/lib/correo-adjunto-lectura.server";
 import { esTimeoutGateway, UMBRAL_PAGINAS_COMBINADO, AVISO_PROCESANDO_COMBINADO } from "@/lib/correo-documento-combinado";
 
 const adjuntoSchema = adjuntoCorreoSchema;
@@ -17,14 +19,25 @@ async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoPro
   let bytes: Uint8Array;
   try { bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)); }
   catch { return { tipo: "Otro", nombre: a.nombre, mime, bytes: new Uint8Array(), error: "Contenido base64 inválido" }; }
+  const original = bytes;
+  const optimizado = await optimizarDocumento(bytes, mime);
+  bytes = optimizado.bytes;
   const base: AdjuntoProcesado = { tipo: "Otro", nombre: a.nombre, mime, bytes };
   if (!MIME_OK.test(mime)) return base;
   const esPdf = mime === "application/pdf";
   const paginas = esPdf ? await contarPaginasPdf(bytes) : null;
   if (paginas != null && paginas > UMBRAL_PAGINAS_COMBINADO) return { ...base, combinado: { motivo: "paginas", paginas } };
   try {
-    return await leerArchivoCorreo(a.nombre, mime, base64, bytes);
+    const leido = await leerArchivoCorreo(a.nombre, mime, bytesABase64(bytes), bytes);
+    if (optimizado.ahorro && (leido.tipo === "Otro" || leido.error)) {
+      return await leerArchivoCorreo(a.nombre, mime, base64, original);
+    }
+    return leido;
   } catch (e: any) {
+    if (optimizado.ahorro) {
+      try { return await leerArchivoCorreo(a.nombre, mime, base64, original); }
+      catch { bytes = original; base.bytes = original; }
+    }
     if (esPdf && esTimeoutGateway(e)) return { ...base, combinado: { motivo: "timeout", paginas } };
     return { ...base, error: String(e?.message ?? e).slice(0, 200) };
   }

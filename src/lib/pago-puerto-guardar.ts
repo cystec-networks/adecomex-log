@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { optimizarArchivo } from "./documento-optimizacion";
 import { sha256File, siguienteCodigoSiga, validarNombreSiga } from "./codigo-siga";
 import { hoyRDISO } from "./dates";
 import { documentoPagoPuerto, esConceptoPagoPuerto, guardarPagoExclusivo, validarPagoPuerto, type TipoPagoPuerto } from "./pago-puerto";
@@ -56,7 +57,7 @@ async function guardarGestion(expedienteId: string, file: File, borrador: Borrad
   let path: string | undefined;
   if (factura) {
     path = `facturas-ecf/${factura.id}/${crypto.randomUUID()}_${file.name}`;
-    const { error: upload } = await supabase.storage.from("documentos").upload(path, file, { contentType: "application/pdf" });
+    const { error: upload } = await supabase.storage.from("documentos").upload(path, await optimizarArchivo(file), { contentType: "application/pdf" });
     if (upload) throw upload;
     const { data: updated, error } = await supabase.from("facturas_ecf").update({ pdf_url: path }).eq("id", factura.id).is("eliminado_en", null).select("id").single();
     if (error || !updated) { await supabase.storage.from("documentos").remove([path]); throw error ?? new Error("No se pudo adjuntar el PDF a la factura."); }
@@ -120,7 +121,7 @@ export async function guardarComprobantePuerto(expedienteId: string, file: File,
     const marcador = `Documento SIGA: ${codigo}`;
     const observaciones = [borrador.fecha && `Fecha de pago: ${borrador.fecha}`, borrador.referencia && `PIN/Referencia: ${borrador.referencia}`, marcador].filter(Boolean).join(" · ");
     const path = `${expedienteId}/${crypto.randomUUID()}_${file.name}`;
-    const { error: upload } = await supabase.storage.from("documentos").upload(path, file, { contentType: "application/pdf" });
+    const { error: upload } = await supabase.storage.from("documentos").upload(path, await optimizarArchivo(file), { contentType: "application/pdf" });
     if (upload) throw upload;
     let documentoId = anterior?.id;
     try {

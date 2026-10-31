@@ -11,6 +11,7 @@ import { clasificarPaginaJuego, leerEncabezadosJuego } from "@/lib/juego-documen
 import { separarArchivoJuego, guardarGrupoJuego, gruposJuego, type ArchivoJuego } from "@/lib/juego-documentos";
 import { hoyRDISO } from "@/lib/dates";
 import { aceptarDocumentosJuego, agregarArchivosJuego, leerArrastreJuego, rutaArchivoJuego } from "@/lib/juego-documentos-seleccion";
+import { optimizarArchivo, pdfProtegido } from "@/lib/documento-optimizacion";
 
 export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string }) {
   const [open, setOpen] = useState(false);
@@ -49,7 +50,8 @@ export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string })
     const mensajes: string[] = [];
     const carpeta = `${expedienteId}/juegos/${crypto.randomUUID()}`;
     try {
-      for (const file of files) {
+      for (const original of files) {
+        let file = await optimizarArchivo(original);
         setProgress(`Guardando ${file.name}…`);
         let originalId: string | undefined;
         let path = "";
@@ -62,6 +64,10 @@ export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string })
           if (rowError || !data) { await supabase.storage.from("documentos").remove([path]); throw rowError ?? new Error("No se pudo guardar el original"); }
           originalId = data.id;
           let bytes = new Uint8Array(await file.arrayBuffer());
+          if ((file.type === "application/pdf" || /\.pdf$/i.test(file.name)) && await pdfProtegido(bytes)) {
+            mensajes.push(`${file.name}: PDF firmado o protegido recibido intacto en Otros documentos`);
+            continue;
+          }
           let textos: string[] = [];
           if (/\.pdf$/i.test(file.name) || file.type === "application/pdf") {
             try { textos = (await encabezados({ data: { expedienteId, storagePath: path } })).textos; } catch { /* scanned PDFs use the page classifier */ }
@@ -76,7 +82,16 @@ export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string })
             bytes = new Uint8Array(await (await import("@/lib/correo-adjuntos-union")).unirArchivosPdf([{ bytes: new Uint8Array(await png.arrayBuffer()), mime: "image/png" }]));
           } else { mensajes.push(`${file.name}: recibido en Otros documentos`); continue; }
           const paginas = (await PDFDocument.load(bytes, { password: "" } as any)).getPageCount();
-          const segmentos = await separarArchivoJuego(file.name.replace(/\.[^.]+$/, ".pdf"), bytes, textos, async (nombre, base64) => (await clasificar({ data: { expedienteId, nombre, base64 } })).tipo, setProgress);
+          let segmentos = await separarArchivoJuego(file.name.replace(/\.[^.]+$/, ".pdf"), bytes, textos, async (nombre, base64) => (await clasificar({ data: { expedienteId, nombre, base64 } })).tipo, setProgress);
+          if (file !== original && segmentos.some((s) => s.tipo === "Otro")) {
+            // An uncertain OCR/classification restores the source, including the durable backup.
+            const { error: restore } = await supabase.storage.from("documentos").upload(path, original, { upsert: true });
+            if (restore) throw restore;
+            file = original;
+            bytes = new Uint8Array(await original.arrayBuffer());
+            if (original.type.startsWith("image/")) bytes = new Uint8Array(await (await import("@/lib/correo-adjuntos-union")).unirArchivosPdf([{ bytes, mime: original.type }]));
+            segmentos = await separarArchivoJuego(file.name.replace(/\.[^.]+$/, ".pdf"), bytes, textos, async (nombre, base64) => (await clasificar({ data: { expedienteId, nombre, base64 } })).tipo, setProgress);
+          }
           for (const s of segmentos) leidos.push({ ...s, storage_path: path, ...(segmentos.length === 1 && paginas > 0 ? { originalId } : {}) });
           if (segmentos.length > 1) mensajes.push(`${file.name}: ${segmentos.length} documentos separados; original en Otros documentos`);
         } catch (e) { mensajes.push(`${file.name}: ${originalId ? "original recibido en Otros documentos; " : "no se pudo guardar; "}${e instanceof Error ? e.message : "error de lectura"}`); }
