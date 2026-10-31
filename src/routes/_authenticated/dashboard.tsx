@@ -375,7 +375,7 @@ function RemindersPanel() {
                         </div>
                     <ul className="divide-y border-t">
                       {g.items.map((r) => (
-                        <li key={r.id} className="px-3 py-2.5 flex items-center gap-2 hover:bg-muted/40">
+                        <li key={r.id} className="px-3 py-2.5 flex flex-wrap sm:flex-nowrap items-center gap-2 hover:bg-muted/40">
                           <span
                             className={`h-2 w-2 rounded-full shrink-0 ${
                               r.severity === "critica"
@@ -385,7 +385,7 @@ function RemindersPanel() {
                                 : "bg-[var(--info)]"
                             }`}
                           />
-                          <div className="min-w-0 flex-1">
+                          <div className="min-w-0 flex-1 basis-[calc(100%-16px)] sm:basis-auto">
                             <Link to={r.href} className="text-[13px] font-medium hover:underline">
                               <TextoConResaltado texto={r.title} resaltar={r.resaltar} />
                             </Link>
