@@ -368,7 +368,8 @@ function RemindersPanel() {
           <div className={`grid grid-cols-1 items-start ${dosColumnas ? "lg:grid-cols-2 lg:divide-x" : ""}`}>
             {columnas.map((col, ci) =>
               col.length === 0 ? null : (
-            <Accordion key={ci} type="multiple" defaultValue={defaultOpen} className="w-full">
+            <Accordion key={ci} type="multiple" value={col.map((g) => g.key).filter((k) => abiertas.has(k))}
+              onValueChange={(vals) => alternar(col.map((g) => g.key), vals)} className="w-full">
               {col.map((g) => (
                 <AccordionItem key={g.key} value={g.key} className="border-b">
                   <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
