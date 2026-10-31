@@ -69,7 +69,8 @@ export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string })
         const path = `${carpeta}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\- ]/g, "_")}`;
         setProgress(`Guardando ${file.name}…`);
         try {
-          if (listo.documentos.length === 1) {
+          const compartido = listo.documentos.some((d) => !d.firmado && (revision?.listos.flatMap((a) => a.documentos).filter((s) => s.tipo === d.tipo && !s.firmado).length ?? 0) > 1);
+          if (listo.documentos.length === 1 && !compartido) {
             // A single source needs no extra backup; the canonical document preserves it.
             leidos.push(...listo.documentos);
             continue;
@@ -131,7 +132,7 @@ export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string })
       for (const grupo of gruposJuego(leidos)) {
         setProgress(`Guardando ${grupo[0]?.tipo}…`);
         try { await guardarGrupoJuego(expedienteId, grupo); mensajes.push(`${grupo[0]?.tipo}: recibido${grupo.length > 1 ? ` (${grupo.length} documentos unidos)` : ""}`); }
-        catch (e) { mensajes.push(`${grupo[0]?.tipo}: no se pudo distribuir; originales en Otros documentos. ${e instanceof Error ? e.message : "Error"}`); }
+        catch (e) { mensajes.push(`${grupo[0]?.tipo}: no se pudo distribuir; conserva los archivos seleccionados para reintentar. ${e instanceof Error ? e.message : "Error"}`); }
       }
       setResults(mensajes); setFiles([]); setRevision(null);
       toast.success("Carga finalizada; revisa el resultado de cada archivo");
@@ -157,7 +158,7 @@ export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string })
         {revision && <section aria-label="Revisión de carpeta" className="space-y-3 text-sm">
           <p className="font-semibold">{revision.listos.reduce((n, a) => n + a.documentos.length, 0)} documentos identificados y listos para subir</p>
           <ul className="max-h-40 overflow-y-auto space-y-1">{revision.listos.map((a, i) => <li key={i} className="break-words">{rutaArchivoJuego(a.file)} · {a.documentos.map((d) => d.tipo).join(", ")}</li>)}</ul>
-          <p className="font-semibold text-destructive">{revision.rechazados.length} archivos no reconocidos, no se subirán</p>
+          <p className="font-semibold text-destructive">{revision.rechazados.length === 1 ? "1 archivo no reconocido, no se subirá" : `${revision.rechazados.length} archivos no reconocidos, no se subirán`}</p>
           <ul aria-label="Archivos no reconocidos" className="max-h-40 overflow-y-auto space-y-1">{revision.rechazados.map((nombre, i) => <li key={i} className="break-words">{nombre}</li>)}</ul>
           {files.some((f) => !esArchivoCarpeta(f)) && <p className="text-muted-foreground">{files.filter((f) => !esArchivoCarpeta(f)).length} archivos individuales seleccionados para carga habitual</p>}
         </section>}
