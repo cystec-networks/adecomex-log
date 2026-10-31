@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck, RefreshCw, Mail, Banknote } from "lucide-react";
+import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck, RefreshCw, Mail, Banknote, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -330,6 +330,7 @@ function RemindersPanel() {
                     <div className="flex items-center gap-2 px-3 py-1.5 border-t bg-muted/30 text-[11px] uppercase text-muted-foreground">
                           <span className="h-2 w-2 shrink-0" aria-hidden />
                           <div className="min-w-0 flex-1" />
+                          {g.key === "eta" && <span className="w-[30px] shrink-0 text-center">Docs</span>}
                           {g.key === "eta" && <span className="w-[70px] shrink-0 text-center">Estado</span>}
                           <span className="w-[60px] shrink-0 text-center">Prioridad</span>
                           <span className="w-[44px] shrink-0 text-center">Visto</span>
@@ -354,6 +355,14 @@ function RemindersPanel() {
                               <TextoConResaltado texto={r.detail} resaltar={r.resaltar} />
                             </div>
                           </div>
+                          {g.key === "eta" && (
+                            <span
+                              className={`w-[30px] shrink-0 flex justify-center ${r.tieneDocumentos ? "text-[var(--success)]" : "text-muted-foreground/40"}`}
+                              title={r.tieneDocumentos ? "Con documentos cargados" : "Sin documentos cargados"}
+                            >
+                              <Paperclip className="h-3.5 w-3.5" />
+                            </span>
+                          )}
                           {g.key === "eta" && (
                             <span className="w-[70px] shrink-0 flex justify-center">
                               {r.estado ? <EstadoBadge value={r.estado} className="px-1" /> : <span className="text-xs text-muted-foreground">—</span>}

@@ -32,7 +32,15 @@ export type Reminder = {
   resaltar?: string;
   /** Estado del expediente vinculado (columna ESTADO del panel). */
   estado?: string;
+  /** El expediente ya tiene al menos un documento subido en su ficha (Declaración o Liquidación). */
+  tieneDocumentos?: boolean;
 };
+
+/**
+ * Regla del panel: verde = al menos un documento subido; gris = ninguno todavía.
+ * Implementación compartida en `./reminders-docs`.
+ */
+import { idsExpedientesConDocumentos } from "./reminders-docs";
 
 import { severidadEtaProximo } from "./reminders-severidad";
 
@@ -214,6 +222,18 @@ export function useReminders() {
           .limit(200),
       ]);
 
+      // Expedientes con al menos un documento subido (Declaración o Liquidación), lectura única por lote.
+      const expIds = (exp.data ?? []).map((e: any) => e.id);
+      let conDocs = new Set<string>();
+      if (expIds.length > 0) {
+        const { data: docsExp } = await supabase
+          .from("documentos")
+          .select("expediente_id")
+          .in("expediente_id", expIds)
+          .not("storage_path", "is", null);
+        conDocs = idsExpedientesConDocumentos((docsExp ?? []) as { expediente_id: string }[]);
+      }
+
       // Operaciones con etapa "Embarque" completada y sin documentos cargados.
       const opsEmbarcadas = (emb.data ?? []).filter((r: any) => !r.operaciones_logistica?.eliminado_en);
       let opsSinDocs: any[] = [];
@@ -279,6 +299,7 @@ export function useReminders() {
               createdAt: e.updated_at,
               diasRestantes: dias,
               estado: e.estado,
+              tieneDocumentos: conDocs.has(e.id),
               resaltar: Math.abs(dias) <= 2 ? "atrasado" : undefined,
             });
           } else if (dias <= cfg.etaProximoDias) {
@@ -293,6 +314,7 @@ export function useReminders() {
               createdAt: e.updated_at,
               diasRestantes: dias,
               estado: e.estado,
+              tieneDocumentos: conDocs.has(e.id),
               resaltar: dias <= 2 ? `ETA en ${dias} días` : undefined,
             });
           }
@@ -308,6 +330,7 @@ export function useReminders() {
             href: `/expedientes/${e.id}`,
             createdAt: e.updated_at,
             estado: e.estado,
+            tieneDocumentos: conDocs.has(e.id),
           });
         }
       }
