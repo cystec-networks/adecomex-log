@@ -78,7 +78,7 @@
 
 - [x] Checks por transición de Estado, Etapa X de N de solo lectura (TabTimeline ya no existía)
 
-- [ ] Complementar carga conjunta con selección/arrastre de carpetas PDF/imagen, incluidos subdirectorios, conservando clasificación por contenido y distribución/unión/respaldo existentes; verificar selección múltiple y carpetas.
+- [x] Complementar carga conjunta con selección/arrastre de carpetas PDF/imagen, incluidos subdirectorios, filtro y rutas relativas; conserva distribución/unión/respaldo existentes. Ocho pruebas aprobadas. Selección múltiple y selector de carpeta comprobados con sesión real: tres PDFs en carpeta/subcarpeta + factura adicional, factura unida, BL/empaque recibidos con SIGA, recarga confirmada y cinco filas temporales retiradas. Arrastre de entrada de carpeta comprobado con evento simulado; sin errores de compilación. Falta publicar.
 - [x] Carga conjunta en Documentos: selección múltiple/arrastre, clasificación y separación compartidas con correo, nombres SIGA y unión por casilla con originales en Otros. Carga autenticada con copias reales de BIOAGRO: PDF combinado separado en factura/BL/empaque, dos facturas unidas, códigos correlativos y recarga confirmada; cinco filas temporales retiradas y originales intactos. 14 pruebas aprobadas y build OK. Falta publicar.
 - [ ] (Futuro, no implementar aún) Reclasificar los 27 gastos de reembolso: agregar «Es reembolso» en Costo de mercancía y que PDF/reporte de Reembolsos lean de ahí.
 - [x] Unificar sugerencias manual → Arancel → historial en Productos, formulario de ítem y Calculadora; 14 pruebas aprobadas y cebollas 0703.10.11 verificadas en las tres pantallas con 25%/0%, sin consultar historial ni guardar cambios en valores Real o liquidaciones finalizadas.
