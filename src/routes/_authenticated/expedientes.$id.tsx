@@ -101,6 +101,7 @@ import { useDatosAlertasExpediente } from "@/lib/use-alertas-expediente";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { DocumentoTamano } from "@/components/documento-tamano";
 import { SubirJuegoDocumentos } from "@/components/subir-juego-documentos";
+import { DescargarDocumentosZip } from "@/components/descargar-documentos-zip";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
 import { TabRecepcion } from "@/components/tab-recepcion";
@@ -3667,6 +3668,9 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
         <SubirJuegoDocumentos expedienteId={expedienteId} />
+        <DescargarDocumentosZip expedienteId={expedienteId} documentos={docs ?? []}
+          declaracion={[...BLOQUE_DECLARACION.map((d) => d.tipo), TIPO_OTROS_DECLARACION]}
+          liquidacion={[...BLOQUE_LIQUIDACION.map((d) => d.tipo), TIPO_OTROS_LIQUIDACION]} />
         <Dialog modal={false} open={open} onOpenChange={setOpen}>
           <Button size="sm" onClick={() => openNuevo()}><Upload className="h-4 w-4 mr-1" />Subir documento</Button>
           <DialogContent>
