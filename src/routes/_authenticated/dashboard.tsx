@@ -356,6 +356,14 @@ function RemindersPanel() {
                             </div>
                           </div>
                           {g.key === "eta" && (
+                            <span
+                              className={`w-[30px] shrink-0 flex justify-center ${r.tieneDocumentos ? "text-[var(--success)]" : "text-muted-foreground/40"}`}
+                              title={r.tieneDocumentos ? "Con documentos cargados" : "Sin documentos cargados"}
+                            >
+                              <Paperclip className="h-3.5 w-3.5" />
+                            </span>
+                          )}
+                          {g.key === "eta" && (
                             <span className="w-[70px] shrink-0 flex justify-center">
                               {r.estado ? <EstadoBadge value={r.estado} className="px-1" /> : <span className="text-xs text-muted-foreground">—</span>}
                             </span>
