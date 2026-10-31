@@ -320,6 +320,7 @@ export function useReminders() {
               createdAt: e.updated_at,
               diasRestantes: dias,
               estado: e.estado,
+              tieneDocumentos: conDocs.has(e.id),
               resaltar: dias <= 2 ? `ETA en ${dias} días` : undefined,
             });
           }
