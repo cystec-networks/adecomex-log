@@ -330,6 +330,7 @@ function RemindersPanel() {
                     <div className="flex items-center gap-2 px-3 py-1.5 border-t bg-muted/30 text-[11px] uppercase text-muted-foreground">
                           <span className="h-2 w-2 shrink-0" aria-hidden />
                           <div className="min-w-0 flex-1" />
+                          {g.key === "eta" && <span className="w-[30px] shrink-0 text-center">Docs</span>}
                           {g.key === "eta" && <span className="w-[70px] shrink-0 text-center">Estado</span>}
                           <span className="w-[60px] shrink-0 text-center">Prioridad</span>
                           <span className="w-[44px] shrink-0 text-center">Visto</span>
