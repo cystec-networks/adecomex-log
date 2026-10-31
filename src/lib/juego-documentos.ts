@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { hoyRDISO } from "./dates";
 import { optimizarDocumento } from "./documento-optimizacion";
 
-export type ArchivoJuego = { nombre: string; tipo: string; storage_path: string; bytes: Uint8Array; mime: string; originalId?: string };
+export type ArchivoJuego = { nombre: string; tipo: string; storage_path: string; bytes: Uint8Array; mime: string; originalId?: string; firmado?: boolean };
 export const base64Juego = (bytes: Uint8Array) => {
   let bin = "";
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
@@ -47,7 +47,7 @@ export async function guardarGrupoJuego(expedienteId: string, grupo: ArchivoJueg
   const tipo = primero.tipo || "Otro";
   const codigo = await siguienteCodigoSiga(expedienteId, prefijoSiga(tipo));
   const source = grupo.length > 1 ? await unirArchivosPdf(grupo) : primero.bytes;
-  const bytes = (await optimizarDocumento(source, "application/pdf")).bytes;
+  const bytes = primero.firmado ? source : (await optimizarDocumento(source, "application/pdf")).bytes;
   const nombre = nombreDocumentoSiga(codigo, tipo, primero.nombre);
   const ruta = `${expedienteId}/${crypto.randomUUID()}-${grupo.length > 1 ? nombreUnido(nombre, grupo.length) : nombre}`;
   const { error } = await supabase.storage.from("documentos").upload(ruta, new Blob([bytes as BlobPart], { type: "application/pdf" }), { contentType: "application/pdf" });

@@ -1,13 +1,16 @@
 /** Browser-safe selection shared by the picker and directory drop traversal. */
 export const aceptarDocumentosJuego = ".pdf,image/*";
 const rutas = new WeakMap<File, string>();
+const carpetas = new WeakSet<File>();
+export function marcarArchivosCarpeta(files: File[]) { files.forEach((f) => carpetas.add(f)); return files; }
+export function esArchivoCarpeta(file: File) { return carpetas.has(file) || !!file.webkitRelativePath; }
 export function rutaArchivoJuego(file: File) { return rutas.get(file) || file.webkitRelativePath || file.name; }
 export function esDocumentoJuego(file: Pick<File, "name" | "type">) {
   return file.type === "application/pdf" || file.type.startsWith("image/") || /\.(pdf|png|jpe?g|webp|gif|bmp|avif|svg|tiff?|heic|heif)$/i.test(file.name);
 }
 export function agregarArchivosJuego(prev: File[], nuevos: File[]) {
   const salida = [...prev];
-  for (const file of nuevos.filter(esDocumentoJuego)) {
+  for (const file of nuevos.filter((f) => esArchivoCarpeta(f) || esDocumentoJuego(f))) {
     if (!salida.some((p) => rutaArchivoJuego(p) === rutaArchivoJuego(file) && p.size === file.size && p.lastModified === file.lastModified)) salida.push(file);
   }
   return salida;
@@ -23,19 +26,20 @@ export interface EntradaJuego {
 export async function leerEntradasJuego(entradas: EntradaJuego[]) {
   const files: File[] = [];
   const errores: string[] = [];
-  async function visitar(entry: EntradaJuego, parent: string) {
+  async function visitar(entry: EntradaJuego, parent: string, deCarpeta = false) {
     const path = `${parent}${entry.name}`;
     try {
       if (entry.isFile && entry.file) {
         const leer = entry.file.bind(entry);
         const file = await new Promise<File>((ok, fail) => leer(ok, fail));
-        if (esDocumentoJuego(file)) { rutas.set(file, path); files.push(file); }
+        if (deCarpeta) carpetas.add(file);
+        if (deCarpeta || esDocumentoJuego(file)) { rutas.set(file, path); files.push(file); }
       } else if (entry.isDirectory && entry.createReader) {
         const reader = entry.createReader();
         while (true) {
           const batch = await new Promise<EntradaJuego[]>((ok, fail) => reader.readEntries(ok, fail));
           if (!batch.length) break;
-          for (const child of batch) await visitar(child, `${path}/`);
+          for (const child of batch) await visitar(child, `${path}/`, true);
         }
       }
     } catch { errores.push(`No se pudo leer ${path}`); }
