@@ -1,4 +1,4 @@
-import { PDFDocument, PDFDict, PDFName, PDFNumber, PDFRawStream, PDFArray, decodePDFRawStream } from "@cantoo/pdf-lib";
+import { PDFDocument, PDFDict, PDFName, PDFNumber, PDFRawStream, PDFArray, PDFRef, decodePDFRawStream } from "@cantoo/pdf-lib";
 import jpeg from "jpeg-js";
 import { decode as decodePng, encode as encodePng } from "fast-png";
 
