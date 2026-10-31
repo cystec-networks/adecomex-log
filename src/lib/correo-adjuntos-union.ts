@@ -1,7 +1,7 @@
 import { PDFDocument } from "pdf-lib";
 import { pdfProtegido } from "./documento-optimizacion";
 
-export type AdjuntoCorreoBase = { nombre: string; tipo: string; storage_path: string };
+export type AdjuntoCorreoBase = { nombre: string; tipo: string; storage_path: string; firmado?: boolean };
 
 const esOtro = (tipo: string | null | undefined) => !tipo || tipo === "Otro" || tipo.startsWith("Otros");
 
@@ -10,7 +10,7 @@ export function agruparAdjuntosCorreo<T extends AdjuntoCorreoBase>(adjuntos: T[]
   const grupos: T[][] = [];
   const porTipo = new Map<string, T[]>();
   for (const a of adjuntos) {
-    if (esOtro(a.tipo)) { grupos.push([a]); continue; }
+    if (esOtro(a.tipo) || a.firmado) { grupos.push([a]); continue; }
     const g = porTipo.get(a.tipo);
     if (g) g.push(a);
     else { const nuevo = [a]; porTipo.set(a.tipo, nuevo); grupos.push(nuevo); }

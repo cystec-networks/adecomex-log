@@ -22,7 +22,7 @@ async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoPro
   const original = bytes;
   const optimizado = await optimizarDocumento(bytes, mime);
   bytes = optimizado.bytes;
-  const base: AdjuntoProcesado = { tipo: "Otro", nombre: a.nombre, mime, bytes };
+  const base: AdjuntoProcesado = { tipo: "Otro", nombre: a.nombre, mime, bytes, firmado: optimizado.motivo === "firmado" };
   if (!MIME_OK.test(mime)) return base;
   const esPdf = mime === "application/pdf";
   const paginas = esPdf ? await contarPaginasPdf(bytes) : null;
@@ -32,7 +32,7 @@ async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoPro
     if (optimizado.ahorro && (leido.tipo === "Otro" || leido.error)) {
       return await leerArchivoCorreo(a.nombre, mime, base64, original);
     }
-    return leido;
+    return { ...leido, firmado: base.firmado };
   } catch (e: any) {
     if (optimizado.ahorro) {
       try { return await leerArchivoCorreo(a.nombre, mime, base64, original); }
@@ -184,7 +184,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
             a.storage_path = path;
           }
         };
-        const resumenAdjuntos = () => adjuntos.filter((a) => a.storage_path).map((a) => ({ nombre: a.nombre, mime: a.mime, tipo: a.tipo, storage_path: a.storage_path, datos: a.datos ?? {}, ...(a.error ? { error: a.error } : {}), ...(a.combinado ? { procesando: true, combinado: a.combinado } : {}) }));
+        const resumenAdjuntos = () => adjuntos.filter((a) => a.storage_path).map((a) => ({ nombre: a.nombre, mime: a.mime, tipo: a.tipo, storage_path: a.storage_path, datos: a.datos ?? {}, ...(a.firmado ? { firmado: true } : {}), ...(a.error ? { error: a.error } : {}), ...(a.combinado ? { procesando: true, combinado: a.combinado } : {}) }));
 
         const textoCompleto = `De: ${remitente}\nAsunto: ${asunto}\nRecibido: ${new Date().toISOString()}\n\n${cuerpo}`;
 
