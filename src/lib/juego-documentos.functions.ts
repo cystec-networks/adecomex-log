@@ -5,12 +5,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // Each request contains one page only: combined files never hold a gateway request open.
 export const clasificarPaginaJuego = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ expedienteId: z.string().uuid(), nombre: z.string().max(250), base64: z.string().min(20).max(28_000_000) }).parse(d))
+  .inputValidator((d: unknown) => z.object({ expedienteId: z.string().uuid(), nombre: z.string().max(250), base64: z.string().min(20).max(28_000_000), exigirConfianza: z.boolean().optional() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: expediente, error } = await context.supabase.from("expedientes").select("id").eq("id", data.expedienteId).maybeSingle();
     if (error || !expediente) throw new Error("No se puede acceder al expediente");
     const { clasificarPaginaEscaneada } = await import("./correo-adjunto-lectura.server");
-    return { tipo: await clasificarPaginaEscaneada(data.nombre, data.base64) };
+    return { tipo: await clasificarPaginaEscaneada(data.nombre, data.base64, data.exigirConfianza) };
   });
 
 export const leerEncabezadosJuego = createServerFn({ method: "POST" })

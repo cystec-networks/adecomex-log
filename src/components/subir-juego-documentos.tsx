@@ -51,7 +51,7 @@ export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string })
     if (bloqueado || !files.length) return;
     setBusy(true); setResults([]);
     try {
-      setRevision(await revisarArchivosCarpeta(files.filter(esArchivoCarpeta), async (base64) => (await leerPagina({ data: { expedienteId, base64 } })).texto, async (nombre, base64) => (await clasificar({ data: { expedienteId, nombre: nombre.slice(0, 250), base64 } })).tipo, setProgress));
+      setRevision(await revisarArchivosCarpeta(files.filter(esArchivoCarpeta), async (base64) => (await leerPagina({ data: { expedienteId, base64 } })).texto, async (nombre, base64) => (await clasificar({ data: { expedienteId, nombre: nombre.slice(0, 250), base64, exigirConfianza: true } })).tipo, setProgress));
     } catch { toast.error("No se pudo revisar la carpeta; no se ha subido ningún archivo"); }
     finally { setBusy(false); setProgress(""); }
   };

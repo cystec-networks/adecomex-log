@@ -3,12 +3,18 @@ import assert from "node:assert/strict";
 import { PDFDocument } from "@cantoo/pdf-lib";
 import { revisarArchivosCarpeta, documentosCarpetaValidos } from "./juego-documentos-carpeta";
 import { gruposJuego, type ArchivoJuego } from "./juego-documentos";
+import { tipoPaginaConfiable } from "./juego-documentos-confianza";
 
 async function archivo(nombre: string, paginas = 1) {
   const pdf = await PDFDocument.create(); for (let i = 0; i < paginas; i++) pdf.addPage();
   return new File([await pdf.save()], nombre, { type: "application/pdf" });
 }
 describe("revisión exclusiva de carpetas", () => {
+  it("exige confianza alta y evidencia antes de aceptar clasificación de carpeta", () => {
+    assert.equal(tipoPaginaConfiable({ tipo_documento: "Bill of Lading", confianza: "media", evidencia: "BILL OF LADING" }), "Otro");
+    assert.equal(tipoPaginaConfiable({ tipo_documento: "Bill of Lading", confianza: "alta", evidencia: "" }), "Otro");
+    assert.equal(tipoPaginaConfiable({ tipo_documento: "Bill of Lading", confianza: "alta", evidencia: "BILL OF LADING" }), "Bill of Lading");
+  });
   it("solo prepara reconocidos y enumera desconocidos sin persistencia", async () => {
     const revision = await revisarArchivosCarpeta([await archivo("factura.pdf"), await archivo("irrelevante.pdf"), new File(["nota"], "nota.txt", { type: "text/plain" })], async () => "", async (nombre) => nombre.startsWith("factura") ? "Factura comercial" : "Otro", () => {});
     assert.equal(revision.listos.length, 1);
