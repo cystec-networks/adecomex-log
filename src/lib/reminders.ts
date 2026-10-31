@@ -149,7 +149,7 @@ export function useReminders() {
       const solLimite = new Date(today); solLimite.setDate(solLimite.getDate() - cfg.solicitudSinConvertirDias);
       const expLimite = new Date(today); expLimite.setDate(expLimite.getDate() - cfg.expedienteInactivoDias);
       const permLimite = new Date(today); permLimite.setDate(permLimite.getDate() + cfg.permisoPorVencerDias);
-      const etaLimite = new Date(today); etaLimite.setDate(etaLimite.getDate() + cfg.etaProximoDias);
+      const etaLimite = new Date(today); etaLimite.setDate(etaLimite.getDate() + cfg.etaProximoDiasPanel);
       const hitoLimite = new Date(today); hitoLimite.setDate(hitoLimite.getDate() + 3);
       const traLimite = new Date(today); traLimite.setDate(traLimite.getDate() - cfg.transporteRetrasadoDias);
 
@@ -302,7 +302,7 @@ export function useReminders() {
               tieneDocumentos: conDocs.has(e.id),
               resaltar: Math.abs(dias) <= 2 ? "atrasado" : undefined,
             });
-          } else if (dias <= cfg.etaProximoDias) {
+          } else if (dias <= cfg.etaProximoDiasPanel) {
             const fechaEta = formatoFecha(eta);
             out.push({
               id: `eta_proximo:${e.id}`,
