@@ -3363,8 +3363,9 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const pedirConfirmacion = (c: { titulo: string; mensaje: string; requiereCheck?: boolean }) =>
     new Promise<boolean>((resolve) => { setConfirmAck(false); setConfirmacion({ ...c, resolve }); });
 
+  const fileSeleccionado = file;
   const upload = async () => {
-    let file = argumentsFile();
+    let file = fileSeleccionado;
     if (file && (tipo === TIPO_CARTA_RUTA || tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && !(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
       toast.error("Este documento del Checklist de Recepción solo acepta archivos PDF.");
       return;
@@ -3376,7 +3377,6 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
     }
     setUploading(true);
     try {
-      if (file) file = await optimizarArchivo(file);
       let fileHash: string | null = null;
       if (file) {
         fileHash = await sha256File(file);
@@ -3390,6 +3390,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           if (!ok) return;
         }
       }
+      if (file) file = await optimizarArchivo(file);
       let certificadoDga: CertificadoDga | null = null;
       let cartaRuta: CartaRuta | null = null;
       let observacionesDoc = obs;

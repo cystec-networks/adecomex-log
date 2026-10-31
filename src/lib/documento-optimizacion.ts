@@ -72,6 +72,32 @@ function codificarJpeg(bytes: Uint8Array, w: number, h: number) {
   return encoded.length < bytes.length ? encoded : null;
 }
 
+function colocacionesImagen(text: string): Map<string, { width: number; height: number }> | null {
+  const tokens = text.replace(/%[^\r\n]*/g, "").trim().split(/\s+/);
+  let matrix = [1, 0, 0, 1, 0, 0];
+  const stack: number[][] = [], args: string[] = [];
+  const result = new Map<string, { width: number; height: number }>();
+  for (const token of tokens) {
+    if (/^-?(?:\d+(?:\.\d*)?|\.\d+)$/.test(token) || /^\/[A-Za-z0-9_-]+$/.test(token)) { args.push(token); continue; }
+    if (token === "q" && !args.length) { stack.push([...matrix]); continue; }
+    if (token === "Q" && !args.length) { const old = stack.pop(); if (!old) return null; matrix = old; continue; }
+    if (token === "cm" && args.length === 6) {
+      const [a,b,c,d,e,f] = args.map(Number), [A,B,C,D,E,F] = matrix;
+      matrix = [A*a+C*b,B*a+D*b,A*c+C*d,B*c+D*d,A*e+C*f+E,B*e+D*f+F];
+      args.length = 0; continue;
+    }
+    if (token === "Do" && args.length === 1 && args[0].startsWith("/")) {
+      const [a,b,c,d] = matrix;
+      if (b !== 0 || c !== 0 || a <= 0 || d <= 0) return null;
+      const key = args[0], old = result.get(key);
+      result.set(key, { width: Math.max(old?.width ?? 0, a), height: Math.max(old?.height ?? 0, d) });
+      args.length = 0; continue;
+    }
+    return null; // Text, clipping, patterns, inline images and unknown operators: never guess.
+  }
+  return args.length || stack.length ? null : result;
+}
+
 /** Only an unambiguous image-only page is resized. Complex graphics, masks, forms and text stay untouched. */
 async function optimizarPdf(bytes: Uint8Array): Promise<Uint8Array | null> {
   if (await pdfProtegido(bytes)) return null;
@@ -89,17 +115,17 @@ async function optimizarPdf(bytes: Uint8Array): Promise<Uint8Array | null> {
       if (!(stream instanceof PDFRawStream)) { text = "unsupported"; break; }
       text += new TextDecoder("latin1").decode(decodePDFRawStream(stream).decode()) + "\n";
     }
-    const n = "(-?\\d*\\.?\\d+)";
-    const match = new RegExp(`^\\s*q\\s+${n}\\s+${n}\\s+${n}\\s+${n}\\s+${n}\\s+${n}\\s+cm\\s+/([A-Za-z0-9_-]+)\\s+Do\\s+Q\\s*$`).exec(text);
+    const placements = colocacionesImagen(text);
     for (const [key, ref] of xobjects.entries()) {
       const image = pdf.context.lookup(ref);
       if (!(image instanceof PDFRawStream) || image.dict.get(nombre("Subtype"))?.toString() !== "/Image") continue;
-      if (!match || key.toString() !== `/${match[7]}` || Number(match[2]) !== 0 || Number(match[3]) !== 0 || Number(match[1]) <= 0 || Number(match[4]) <= 0) { blocked.add(image); continue; }
+      const placement = placements?.get(key.toString());
+      if (!placement) { blocked.add(image); continue; }
       const d = image.dict;
       if (d.get(nombre("Filter"))?.toString() !== "/DCTDecode" || d.get(nombre("ColorSpace"))?.toString() !== "/DeviceRGB" || ["SMask", "Mask", "Decode", "DecodeParms", "ImageMask"].some((k) => d.has(nombre(k)))) continue;
       const w = d.lookup(nombre("Width"), PDFNumber).asNumber(), h = d.lookup(nombre("Height"), PDFNumber).asNumber();
-      if (w * h > MAX_PIXELES || w * 72 / Number(match[1]) <= 220 || h * 72 / Number(match[4]) <= 220) continue;
-      const target = dimensiones200Dpi(w, h, Number(match[1]), Number(match[4]));
+      if (w * h > MAX_PIXELES || w * 72 / placement.width <= 220 || h * 72 / placement.height <= 220) continue;
+      const target = dimensiones200Dpi(w, h, placement.width, placement.height);
       const old = plans.get(image);
       plans.set(image, { width: Math.max(old?.width ?? 0, target.width), height: Math.max(old?.height ?? 0, target.height) });
     }
@@ -125,7 +151,7 @@ async function optimizarPdf(bytes: Uint8Array): Promise<Uint8Array | null> {
     const original = await extractText(a, { mergePages: false });
     const candidate = await extractText(b, { mergePages: false });
     if (JSON.stringify(original.text) !== JSON.stringify(candidate.text)) throw new Error("Texto distinto");
-  } finally { await a.destroy(); await b.destroy(); }
+  } finally { await a.cleanup(); await b.cleanup(); }
   return out;
 }
 
