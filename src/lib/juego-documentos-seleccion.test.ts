@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { agregarArchivosJuego, leerEntradasJuego, rutaArchivoJuego, type EntradaJuego } from "./juego-documentos-seleccion";
+import { agregarArchivosJuego, leerEntradasJuego, rutaArchivoJuego, esArchivoCarpeta, marcarArchivosCarpeta, type EntradaJuego } from "./juego-documentos-seleccion";
 
 const archivo = (name: string, type = "application/pdf") => new File(["contenido"], name, { type, lastModified: 1 });
 const entrada = (file: File): EntradaJuego => ({ name: file.name, isFile: true, isDirectory: false, file: (ok) => ok(file) });
@@ -12,7 +12,8 @@ describe("selección de documentos individuales y carpetas", () => {
   });
   it("lee la carpeta completa, subcarpetas y todas las tandas", async () => {
     const out = await leerEntradasJuego([carpeta("embarque", [[entrada(archivo("factura.pdf")), entrada(archivo("nota.txt", "text/plain"))], [carpeta("certificados", [[entrada(archivo("origen.jpg", ""))]])], [entrada(archivo("bl.pdf"))]])]);
-    assert.deepEqual(out.files.map(rutaArchivoJuego), ["embarque/factura.pdf", "embarque/certificados/origen.jpg", "embarque/bl.pdf"]);
+    assert.deepEqual(out.files.map(rutaArchivoJuego), ["embarque/factura.pdf", "embarque/nota.txt", "embarque/certificados/origen.jpg", "embarque/bl.pdf"]);
+    assert.ok(out.files.every(esArchivoCarpeta));
     assert.deepEqual(out.errores, []);
   });
   it("conserva archivos homónimos de carpetas distintas y no duplica la misma selección", async () => {
@@ -24,5 +25,11 @@ describe("selección de documentos individuales y carpetas", () => {
     const out = await leerEntradasJuego([malo, entrada(archivo("bl.pdf"))]);
     assert.deepEqual(out.files.map((f) => f.name), ["bl.pdf"]);
     assert.deepEqual(out.errores, ["No se pudo leer ilegible.pdf"]);
+  });
+  it("mezclar archivos y carpeta conserva el comportamiento de cada origen", () => {
+    const manual = archivo("manual.pdf");
+    const [folder] = marcarArchivosCarpeta([archivo("carpeta.pdf")]);
+    assert.equal(esArchivoCarpeta(manual), false);
+    assert.equal(esArchivoCarpeta(folder), true);
   });
 });

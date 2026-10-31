@@ -7,11 +7,12 @@ import { PDFDocument } from "@cantoo/pdf-lib";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { clasificarPaginaJuego, leerEncabezadosJuego } from "@/lib/juego-documentos.functions";
+import { clasificarPaginaJuego, leerEncabezadosJuego, leerPaginaJuego } from "@/lib/juego-documentos.functions";
 import { separarArchivoJuego, guardarGrupoJuego, gruposJuego, type ArchivoJuego } from "@/lib/juego-documentos";
 import { hoyRDISO } from "@/lib/dates";
-import { aceptarDocumentosJuego, agregarArchivosJuego, leerArrastreJuego, rutaArchivoJuego } from "@/lib/juego-documentos-seleccion";
+import { aceptarDocumentosJuego, agregarArchivosJuego, leerArrastreJuego, rutaArchivoJuego, esArchivoCarpeta, marcarArchivosCarpeta } from "@/lib/juego-documentos-seleccion";
 import { optimizarArchivo, pdfProtegido } from "@/lib/documento-optimizacion";
+import { revisarArchivosCarpeta, type RevisionCarpeta } from "@/lib/juego-documentos-carpeta";
 
 export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string }) {
   const [open, setOpen] = useState(false);
@@ -21,14 +22,17 @@ export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string })
   const [permiteCarpetas, setPermiteCarpetas] = useState(false);
   const [progress, setProgress] = useState("");
   const [results, setResults] = useState<string[]>([]);
+  const [revision, setRevision] = useState<RevisionCarpeta | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const inputCarpeta = useRef<HTMLInputElement>(null);
   const bloqueado = busy || leyendoCarpeta;
   useEffect(() => { setPermiteCarpetas("webkitdirectory" in document.createElement("input")); }, []);
   const clasificar = useServerFn(clasificarPaginaJuego);
   const encabezados = useServerFn(leerEncabezadosJuego);
+  const leerPagina = useServerFn(leerPaginaJuego);
   const qc = useQueryClient();
   const agregar = (nuevos: File[]) => {
+    setRevision(null); setResults([]);
     const validos = agregarArchivosJuego([], nuevos);
     if (!validos.length) toast.info("No se encontraron archivos PDF o imágenes");
     setFiles((prev) => agregarArchivosJuego(prev, validos));
@@ -43,14 +47,41 @@ export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string })
     } catch { toast.error("No se pudo leer la carpeta; selecciona sus archivos"); }
     finally { setLeyendoCarpeta(false); }
   };
+  const revisar = async () => {
+    if (bloqueado || !files.length) return;
+    setBusy(true); setResults([]);
+    try {
+      setRevision(await revisarArchivosCarpeta(files.filter(esArchivoCarpeta), async (base64) => (await leerPagina({ data: { expedienteId, base64 } })).texto, async (nombre, base64) => (await clasificar({ data: { expedienteId, nombre: nombre.slice(0, 250), base64 } })).tipo, setProgress));
+    } catch { toast.error("No se pudo revisar la carpeta; no se ha subido ningún archivo"); }
+    finally { setBusy(false); setProgress(""); }
+  };
   const subir = async () => {
     if (bloqueado || !files.length) return;
+    if (files.some(esArchivoCarpeta) && !revision) { await revisar(); return; }
     setBusy(true); setResults([]);
     const leidos: ArchivoJuego[] = [];
     const mensajes: string[] = [];
     const carpeta = `${expedienteId}/juegos/${crypto.randomUUID()}`;
     try {
-      for (const original of files) {
+      // Only confirmed recognized folder sources can ever reach persistence.
+      for (const listo of revision?.listos ?? []) {
+        const file = listo.file;
+        const path = `${carpeta}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\- ]/g, "_")}`;
+        setProgress(`Guardando ${file.name}…`);
+        try {
+          if (listo.documentos.length === 1) {
+            // A single source needs no extra backup; the canonical document preserves it.
+            leidos.push(...listo.documentos);
+            continue;
+          }
+          const { error } = await supabase.storage.from("documentos").upload(path, file);
+          if (error) throw error;
+          const { error: rowError } = await supabase.from("documentos").insert({ expediente_id: expedienteId, tipo: "Otro", estado: "recibido", fecha_recepcion: hoyRDISO(), storage_path: path, observaciones: `Juego de documentos — original identificado: ${file.name}`.slice(0, 500) });
+          if (rowError) { await supabase.storage.from("documentos").remove([path]); throw rowError; }
+          leidos.push(...listo.documentos.map((s) => ({ ...s, storage_path: path })));
+        } catch (e) { mensajes.push(`${file.name}: no se pudo guardar. ${e instanceof Error ? e.message : "Error"}`); }
+      }
+      for (const original of files.filter((f) => !esArchivoCarpeta(f))) {
         let file = await optimizarArchivo(original);
         setProgress(`Guardando ${file.name}…`);
         let originalId: string | undefined;
@@ -102,17 +133,17 @@ export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string })
         try { await guardarGrupoJuego(expedienteId, grupo); mensajes.push(`${grupo[0]?.tipo}: recibido${grupo.length > 1 ? ` (${grupo.length} documentos unidos)` : ""}`); }
         catch (e) { mensajes.push(`${grupo[0]?.tipo}: no se pudo distribuir; originales en Otros documentos. ${e instanceof Error ? e.message : "Error"}`); }
       }
-      setResults(mensajes); setFiles([]);
+      setResults(mensajes); setFiles([]); setRevision(null);
       toast.success("Carga finalizada; revisa el resultado de cada archivo");
     } finally { setBusy(false); setProgress(""); await qc.invalidateQueries({ queryKey: ["documentos", expedienteId] }); }
   };
   return <>
     <Button size="sm" variant="outline" onClick={() => setOpen(true)}><Upload className="mr-1 h-4 w-4" />Subir juego de documentos</Button>
-    <Dialog open={open} onOpenChange={(v) => { if (!bloqueado) setOpen(v); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!bloqueado) { setOpen(v); if (!v) { setRevision(null); setFiles([]); } } }}>
       <DialogContent className="max-w-xl" onInteractOutside={(e) => { if (bloqueado) e.preventDefault(); }}>
         <DialogHeader><DialogTitle>Subir juego de documentos</DialogTitle></DialogHeader>
         <input ref={input} type="file" accept={aceptarDocumentosJuego} multiple className="hidden" aria-label="Archivos del juego de documentos" onChange={(e) => { agregar(Array.from(e.target.files ?? [])); e.target.value = ""; }} disabled={bloqueado} />
-        <input ref={(element) => { inputCarpeta.current = element; element?.setAttribute("webkitdirectory", ""); }} type="file" accept={aceptarDocumentosJuego} multiple className="hidden" aria-label="Carpeta del juego de documentos" onChange={(e) => { agregar(Array.from(e.target.files ?? [])); e.target.value = ""; }} disabled={bloqueado} />
+        <input ref={(element) => { inputCarpeta.current = element; element?.setAttribute("webkitdirectory", ""); }} type="file" multiple className="hidden" aria-label="Carpeta del juego de documentos" onChange={(e) => { agregar(marcarArchivosCarpeta(Array.from(e.target.files ?? []))); e.target.value = ""; }} disabled={bloqueado} />
         <div className="border border-dashed border-border rounded-md p-6 text-center" onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = bloqueado ? "none" : "copy"; }} onDrop={(e) => { e.preventDefault(); void recibirArrastre(e.dataTransfer); }}>
           <div className="flex flex-wrap justify-center gap-2">
             <Button variant="outline" onClick={() => input.current?.click()} disabled={bloqueado}><Upload className="mr-2 h-4 w-4" />Seleccionar archivos</Button>
@@ -121,12 +152,19 @@ export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string })
           <p className="mt-2 text-sm text-muted-foreground">PDF e imágenes</p>
         </div>
         <ul className="max-h-64 overflow-y-auto space-y-2 text-sm">
-          {files.map((f, i) => <li key={`${rutaArchivoJuego(f)}-${i}`} className="flex items-center gap-2"><span className="min-w-0 flex-1 break-words">{rutaArchivoJuego(f)}</span><Button variant="ghost" size="icon" aria-label={`Quitar ${rutaArchivoJuego(f)}`} disabled={bloqueado} onClick={() => setFiles((prev) => prev.filter((_, n) => n !== i))}><X className="h-4 w-4" /></Button></li>)}
+          {!revision && files.map((f, i) => <li key={`${rutaArchivoJuego(f)}-${i}`} className="flex items-center gap-2"><span className="min-w-0 flex-1 break-words">{rutaArchivoJuego(f)}</span><Button variant="ghost" size="icon" aria-label={`Quitar ${rutaArchivoJuego(f)}`} disabled={bloqueado} onClick={() => { setRevision(null); setFiles((prev) => prev.filter((_, n) => n !== i)); }}><X className="h-4 w-4" /></Button></li>)}
         </ul>
+        {revision && <section aria-label="Revisión de carpeta" className="space-y-3 text-sm">
+          <p className="font-semibold">{revision.listos.reduce((n, a) => n + a.documentos.length, 0)} documentos identificados y listos para subir</p>
+          <ul className="max-h-40 overflow-y-auto space-y-1">{revision.listos.map((a, i) => <li key={i} className="break-words">{rutaArchivoJuego(a.file)} · {a.documentos.map((d) => d.tipo).join(", ")}</li>)}</ul>
+          <p className="font-semibold text-destructive">{revision.rechazados.length} archivos no reconocidos, no se subirán</p>
+          <ul aria-label="Archivos no reconocidos" className="max-h-40 overflow-y-auto space-y-1">{revision.rechazados.map((nombre, i) => <li key={i} className="break-words">{nombre}</li>)}</ul>
+          {files.some((f) => !esArchivoCarpeta(f)) && <p className="text-muted-foreground">{files.filter((f) => !esArchivoCarpeta(f)).length} archivos individuales seleccionados para carga habitual</p>}
+        </section>}
         {leyendoCarpeta && <p role="status" className="flex items-center gap-2 text-sm"><Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />Leyendo carpeta…</p>}
         {busy && <p role="status" className="flex items-center gap-2 text-sm break-words"><Loader2 className="h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none" />{progress}</p>}
         {!!results.length && <ul aria-label="Resultado de carga" className="max-h-72 overflow-y-auto space-y-2 text-sm">{results.map((r, i) => <li key={i} className="break-words">{r}</li>)}</ul>}
-        <DialogFooter><Button variant="outline" disabled={bloqueado} onClick={() => setOpen(false)}>Cerrar</Button><Button onClick={subir} disabled={bloqueado || !files.length}>{busy ? "Procesando…" : `Subir${files.length ? ` (${files.length})` : ""}`}</Button></DialogFooter>
+        <DialogFooter><Button variant="outline" disabled={bloqueado} onClick={() => { setOpen(false); setRevision(null); setFiles([]); }}>{revision ? "Cancelar" : "Cerrar"}</Button><Button onClick={subir} disabled={bloqueado || !files.length || (!!revision && !revision.listos.length && files.every(esArchivoCarpeta))}>{busy ? "Procesando…" : revision ? "Confirmar carga" : files.some(esArchivoCarpeta) ? "Revisar carpeta" : `Subir${files.length ? ` (${files.length})` : ""}`}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   </>;
