@@ -58,14 +58,33 @@ function jpegSeguro(bytes: Uint8Array) {
   return false;
 }
 
-function codificarJpeg(bytes: Uint8Array, w: number, h: number) {
+async function codificarJpeg(bytes: Uint8Array, w: number, h: number) {
   if (!jpegSeguro(bytes)) return null;
-  const image = jpeg.decode(bytes, { useTArray: true, maxResolutionInMP: 16, maxMemoryUsageInMB: 160, tolerantDecoding: false });
+  if (typeof document !== "undefined" && typeof createImageBitmap === "function") {
+    const bitmap = await createImageBitmap(new Blob([bytes as BlobPart], { type: "image/jpeg" }));
+    try {
+      if (w >= bitmap.width || h >= bitmap.height) return null;
+      const canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d"); if (!ctx) return null;
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      const before = ctx.getImageData(0,0,w,h).data;
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve,"image/jpeg",CALIDAD_JPEG/100));
+      if (!blob || blob.size >= bytes.length) return null;
+      const check = await createImageBitmap(blob);
+      try {
+        ctx.drawImage(check,0,0); const after = ctx.getImageData(0,0,w,h).data; let error=0;
+        for(let i=0;i<before.length;i+=4) for(let c=0;c<3;c++) error+=(before[i+c]-after[i+c])**2;
+        return check.width===w && check.height===h && error/(w*h*3)<=36 ? new Uint8Array(await blob.arrayBuffer()) : null;
+      } finally { check.close(); }
+    } finally { bitmap.close(); }
+  }
+  const image = jpeg.decode(bytes, { useTArray: true, maxResolutionInMP: 6, maxMemoryUsageInMB: 96, tolerantDecoding: false });
   if (w >= image.width || h >= image.height) return null;
   const rgba = reducirImagen(image.data, image.width, image.height, w, h);
   const encoded = new Uint8Array(jpeg.encode({ data: rgba, width: w, height: h }, CALIDAD_JPEG).data);
   // Verify the codec roundtrip. Excessive visual deviation automatically rejects the candidate.
-  const check = jpeg.decode(encoded, { useTArray: true });
+  const check = jpeg.decode(encoded, { useTArray: true, maxResolutionInMP: 6, maxMemoryUsageInMB: 96 });
   let error = 0;
   for (let i = 0; i < rgba.length; i += 4) for (let c = 0; c < 3; c++) error += (rgba[i + c] - check.data[i + c]) ** 2;
   if (check.width !== w || check.height !== h || error / (w * h * 3) > 36) return null;
@@ -132,7 +151,7 @@ async function optimizarPdf(bytes: Uint8Array): Promise<Uint8Array | null> {
   }
   for (const [image, target] of plans) {
     if (blocked.has(image)) continue;
-    const optimized = codificarJpeg(image.contents, target.width, target.height);
+    const optimized = await codificarJpeg(image.contents, target.width, target.height);
     if (!optimized) continue;
     image.updateContents(optimized);
     image.dict.set(nombre("Width"), PDFNumber.of(target.width));
@@ -175,8 +194,8 @@ export async function optimizarDocumento(bytes: Uint8Array, mime: string): Promi
       const unit = bytes[13], factor = unit === 1 ? 1 : unit === 2 ? 2.54 : 0;
       const dx = (bytes[14] * 256 + bytes[15]) * factor, dy = (bytes[16] * 256 + bytes[17]) * factor;
       if (dx <= 220 || dy <= 220) return base("sin_ahorro");
-      const img = jpeg.decode(bytes, { useTArray: true, maxResolutionInMP: 16, maxMemoryUsageInMB: 160 });
-      candidate = codificarJpeg(bytes, Math.round(img.width * DPI_DOCUMENTO / dx), Math.round(img.height * DPI_DOCUMENTO / dy));
+      const img = jpeg.decode(bytes, { useTArray: true, maxResolutionInMP: 6, maxMemoryUsageInMB: 96 });
+      candidate = await codificarJpeg(bytes, Math.round(img.width * DPI_DOCUMENTO / dx), Math.round(img.height * DPI_DOCUMENTO / dy));
     } else return base("no_admitido");
     if (!candidate || candidate.length >= bytes.length) return base("sin_ahorro");
     return { bytes: candidate, original: bytes, motivo: "optimizado", ahorro: bytes.length - candidate.length };

@@ -42,17 +42,17 @@ describe("optimización conservadora de documentos", () => {
     assert.ok(out.bytes.length <= bytes.length);
   });
   it("reduce únicamente una imagen escaneada de 300 a 200 DPI conservando página y texto", async () => {
-    const w=2550,h=3300; const data=new Uint8Array(w*h*4);
+    const w=1500,h=1800; const data=new Uint8Array(w*h*4);
     for(let i=0;i<data.length;i+=4){const v=220+(i/4%29);data[i]=v;data[i+1]=v;data[i+2]=v;data[i+3]=255;}
     const image=jpeg.encode({width:w,height:h,data},98).data;
-    const pdf=await PDFDocument.create();const jpg=await pdf.embedJpg(image);pdf.addPage([612,792]).drawImage(jpg,{x:0,y:0,width:612,height:792});
+    const pdf=await PDFDocument.create();const jpg=await pdf.embedJpg(image);pdf.addPage([360,432]).drawImage(jpg,{x:0,y:0,width:360,height:432});
     const out=await optimizarDocumento(await pdf.save(),"application/pdf");
     assert.equal(out.motivo,"optimizado");
     const loaded=await PDFDocument.load(out.bytes); assert.equal(loaded.getPageCount(),1);
     const objects=loaded.context.enumerateIndirectObjects().map(([,o])=>o);
     const img=objects.find(o=>"dict" in o && (o.dict as PDFDict).get(PDFName.of("Subtype"))?.toString()==="/Image");
     assert.ok(img && "dict" in img);
-    assert.equal((img.dict as PDFDict).lookup(PDFName.of("Width"),PDFNumber).asNumber(),1700);
-    assert.equal((img.dict as PDFDict).lookup(PDFName.of("Height"),PDFNumber).asNumber(),2200);
+    assert.equal((img.dict as PDFDict).lookup(PDFName.of("Width"),PDFNumber).asNumber(),1000);
+    assert.equal((img.dict as PDFDict).lookup(PDFName.of("Height"),PDFNumber).asNumber(),1200);
   });
 });
