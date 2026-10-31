@@ -336,6 +336,7 @@ export function useReminders() {
             href: `/expedientes/${e.id}`,
             createdAt: e.updated_at,
             estado: e.estado,
+            tieneDocumentos: conDocs.has(e.id),
           });
         }
       }
