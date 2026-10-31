@@ -7,6 +7,10 @@ export const REMINDER_CONFIG = {
   expedienteInactivoDias: 7,
   // Alerta de ETA próximo (expedientes / transportes)
   etaProximoDias: 3,
+  // Ventana de la categoría "ETA / Expedientes" del Panel de operaciones:
+  // incluye hasta 5 días para llegar; prioridad sigue: CRÍTICA atrasados,
+  // ALTA 1–2 días, MEDIA desde 3 días.
+  etaProximoDiasPanel: 5,
   // Permisos por vencer en X días
   permisoPorVencerDias: 15,
   // Transportes en tránsito con ETA vencida hace X días
