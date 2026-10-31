@@ -37,5 +37,5 @@ export const leerPaginaJuego = createServerFn({ method: "POST" })
     const { extractText, getDocumentProxy } = await import("unpdf");
     const proxy = await getDocumentProxy(Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0)));
     try { return { texto: (await extractText(proxy, { mergePages: true })).text }; }
-    finally { await proxy.destroy(); }
+    finally { await proxy.cleanup(); }
   });
