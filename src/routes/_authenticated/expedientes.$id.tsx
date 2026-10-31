@@ -99,6 +99,7 @@ import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { alertasExpedienteCompartidas } from "@/lib/alertas-expediente-compartidas";
 import { useDatosAlertasExpediente } from "@/lib/use-alertas-expediente";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
+import { DocumentoTamano } from "@/components/documento-tamano";
 import { SubirJuegoDocumentos } from "@/components/subir-juego-documentos";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
@@ -297,8 +298,9 @@ function FilaDocumento({ label, obligatorio, doc, onUpload, onMarcarRecibido, on
         {label}
       </span>
       <div className="flex-1 min-w-0 text-muted-foreground">
-        <div className="truncate" title={[doc?.storage_path ? nombreArchivo(doc.storage_path) : "", doc?.tipo === TIPO_CARTA_RUTA ? leerReferenciaCartaRuta(doc.observaciones) : ""].filter(Boolean).join("\n")}>
-          {doc?.storage_path ? nombreArchivo(doc.storage_path) : doc ? <span className="text-[10px]">(sin archivo)</span> : ""}
+        <div className="flex items-center gap-1 min-w-0" title={[doc?.storage_path ? nombreArchivo(doc.storage_path) : "", doc?.tipo === TIPO_CARTA_RUTA ? leerReferenciaCartaRuta(doc.observaciones) : ""].filter(Boolean).join("\n")}>
+          <span className="truncate min-w-0">{doc?.storage_path ? nombreArchivo(doc.storage_path) : doc ? <span className="text-[10px]">(sin archivo)</span> : ""}</span>
+          {doc?.storage_path && <DocumentoTamano path={doc.storage_path} />}
         </div>
         {doc?.tipo === TIPO_CARTA_RUTA && leerReferenciaCartaRuta(doc.observaciones) && <div className="text-[11px] whitespace-normal break-words">{leerReferenciaCartaRuta(doc.observaciones)}</div>}
       </div>
@@ -356,9 +358,10 @@ function FilaOtros({ archivos, onAgregar, onEditar, onEstado, onEliminar }: {
         {archivos.map((o) => (
           <div key={o.id} className="flex items-center gap-2 py-[1px] text-[11px]">
             <span className="w-16 shrink-0 font-mono text-primary">{o.codigo_siga ?? ""}</span>
-            <span className="truncate flex-1 min-w-0" title={o.storage_path ? nombreArchivo(o.storage_path) : undefined}>
-              {o.storage_path ? nombreArchivo(o.storage_path) : "(sin archivo)"}
-            </span>
+            <div className="flex items-center gap-1 flex-1 min-w-0" title={o.storage_path ? nombreArchivo(o.storage_path) : undefined}>
+              <span className="truncate min-w-0">{o.storage_path ? nombreArchivo(o.storage_path) : "(sin archivo)"}</span>
+              {o.storage_path && <DocumentoTamano path={o.storage_path} />}
+            </div>
             {o.storage_path && <DocumentoPreviewButton path={o.storage_path} variant="ghost" size="sm" label="Ver" />}
             <Select value={o.estado ?? "pendiente"} onValueChange={(v) => onEstado(o.id, v)}>
               <SelectTrigger className="w-[6.5rem] shrink-0 h-5 text-[10px] px-1.5"><SelectValue /></SelectTrigger>

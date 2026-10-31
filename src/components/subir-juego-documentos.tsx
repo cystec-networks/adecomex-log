@@ -13,6 +13,7 @@ import { hoyRDISO } from "@/lib/dates";
 import { aceptarDocumentosJuego, agregarArchivosJuego, leerArrastreJuego, rutaArchivoJuego, esArchivoCarpeta, marcarArchivosCarpeta } from "@/lib/juego-documentos-seleccion";
 import { optimizarArchivo, pdfProtegido } from "@/lib/documento-optimizacion";
 import { revisarArchivosCarpeta, type RevisionCarpeta } from "@/lib/juego-documentos-carpeta";
+import { formatoTamanoArchivo } from "@/lib/documento-tamano";
 
 export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string }) {
   const [open, setOpen] = useState(false);
@@ -157,9 +158,9 @@ export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string })
         </ul>
         {revision && <section aria-label="Revisión de carpeta" className="space-y-3 text-sm">
           <p className="font-semibold">{revision.listos.reduce((n, a) => n + a.documentos.length, 0)} documentos identificados y listos para subir</p>
-          <ul className="max-h-40 overflow-y-auto space-y-1">{revision.listos.map((a, i) => <li key={i} className="break-words">{rutaArchivoJuego(a.file)} · {a.documentos.map((d) => d.tipo).join(", ")}</li>)}</ul>
+          <ul className="max-h-40 overflow-y-auto space-y-1">{revision.listos.map((a, i) => <li key={i} className="break-words">{rutaArchivoJuego(a.file)} — {formatoTamanoArchivo(a.file.size)} · {a.documentos.map((d) => d.tipo).join(", ")}</li>)}</ul>
           <p className="font-semibold text-destructive">{revision.rechazados.length === 1 ? "1 archivo no reconocido, no se subirá" : `${revision.rechazados.length} archivos no reconocidos, no se subirán`}</p>
-          <ul aria-label="Archivos no reconocidos" className="max-h-40 overflow-y-auto space-y-1">{revision.rechazados.map((nombre, i) => <li key={i} className="break-words">{nombre}</li>)}</ul>
+          <ul aria-label="Archivos no reconocidos" className="max-h-40 overflow-y-auto space-y-1">{revision.rechazados.map((nombre, i) => <li key={i} className="break-words">{nombre}{(() => { const size = formatoTamanoArchivo(files.find((f) => rutaArchivoJuego(f) === nombre)?.size); return size ? ` — ${size}` : ""; })()}</li>)}</ul>
           {files.some((f) => !esArchivoCarpeta(f)) && <p className="text-muted-foreground">{files.filter((f) => !esArchivoCarpeta(f)).length} archivos individuales seleccionados para carga habitual</p>}
         </section>}
         {leyendoCarpeta && <p role="status" className="flex items-center gap-2 text-sm"><Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />Leyendo carpeta…</p>}
