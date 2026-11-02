@@ -60,7 +60,7 @@ import { CorreoDgaButton } from "@/components/correo-dga-button";
 import { PaqueteFacturaCliente } from "@/components/paquete-factura-cliente";
 import { EscanearPagoPuerto, type DocumentoPagoSubido } from "@/components/escanear-pago-puerto";
 import { esDocumentoResultadoDga, camposDesdeDocumentoDga, completarResultadoDga } from "@/lib/resultado-dga-documentos";
-import { TIPO_CARTA_RUTA, decidirDespachoCartaRuta, guardarReferenciaCartaRuta, leerReferenciaCartaRuta, type CartaRuta } from "@/lib/carta-ruta";
+import { TIPO_CARTA_RUTA, TIPO_SOLICITUD_DESPACHO, decidirDespachoCartaRuta, guardarReferenciaCartaRuta, leerReferenciaCartaRuta, guardarReferenciaSolicitudDespacho, leerReferenciaSolicitudDespacho, compararSolicitudDespacho, type CartaRuta } from "@/lib/carta-ruta";
 import { extractSolicitudFromDocument } from "@/lib/ai-ocr.functions";
 import { DeclaracionOrigenProvider, useDeclaracionOrigen } from "@/components/declaracion-origen-context";
 import { LiquidacionDgaProvider, useLiquidacionDga } from "@/components/liquidacion-dga-context";
@@ -238,7 +238,7 @@ const TIPOS_DOC = [
   "Factura proforma","Factura comercial","Bill of Lading","Guía aérea","Lista de empaque",
   "Certificado de origen",TIPO_CERTIFICADO_DGA,"Certificado Sanitario/Fitosanitario","Certificado de análisis",
   "Declaración Única Aduanera (DUA)","Reporte de Liquidación de Impuestos",
-  "Recibo Pago de Impuestos","PIN de Pago de Impuestos",TIPO_CARTA_RUTA,"Recibo Pago de Contenedor","Factura Pago de Almacenaje","Factura Pago Cargos Locales","PIN de Pago Permiso VUCE","Recibo Pago Permiso VUCE",
+  "Recibo Pago de Impuestos","PIN de Pago de Impuestos",TIPO_SOLICITUD_DESPACHO,TIPO_CARTA_RUTA,"Recibo Pago de Contenedor","Factura Pago de Almacenaje","Factura Pago Cargos Locales","PIN de Pago Permiso VUCE","Recibo Pago Permiso VUCE",
   "Permiso VUCE previo","Orden de compra",
   "Carta de instrucción","Póliza de seguro","DUA","Evidencia de entrega","Otro (Liquidación)","Otro",
 ];
@@ -273,6 +273,7 @@ const BLOQUE_LIQUIDACION: { tipo: string; label: string }[] = [
   { tipo: "Reporte de Liquidación de Impuestos", label: "Liquidación de Impuestos" },
   { tipo: "Recibo Pago de Impuestos", label: "Recibo Pago de Impuestos" },
   { tipo: "PIN de Pago de Impuestos", label: "PIN de Pago de Impuestos" },
+  { tipo: TIPO_SOLICITUD_DESPACHO, label: TIPO_SOLICITUD_DESPACHO },
   { tipo: TIPO_CARTA_RUTA, label: TIPO_CARTA_RUTA },
   { tipo: "Recibo Pago de Contenedor", label: "Recibo Pago de Contenedor" },
   { tipo: "Factura Pago de Almacenaje", label: "Factura Pago de Almacenaje" },
@@ -299,11 +300,12 @@ function FilaDocumento({ label, obligatorio, doc, onUpload, onMarcarRecibido, on
         {label}
       </span>
       <div className="flex-1 min-w-0 text-muted-foreground">
-        <div className="flex items-center gap-1 min-w-0" title={[doc?.storage_path ? nombreArchivo(doc.storage_path) : "", doc?.tipo === TIPO_CARTA_RUTA ? leerReferenciaCartaRuta(doc.observaciones) : ""].filter(Boolean).join("\n")}>
+        <div className="flex items-center gap-1 min-w-0" title={[doc?.storage_path ? nombreArchivo(doc.storage_path) : "", doc?.tipo === TIPO_CARTA_RUTA ? leerReferenciaCartaRuta(doc.observaciones) : doc?.tipo === TIPO_SOLICITUD_DESPACHO ? leerReferenciaSolicitudDespacho(doc.observaciones) : ""].filter(Boolean).join("\n")}>
           <span className="truncate min-w-0">{doc?.storage_path ? nombreArchivo(doc.storage_path) : doc ? <span className="text-[10px]">(sin archivo)</span> : ""}</span>
           {doc?.storage_path && <DocumentoTamano path={doc.storage_path} />}
         </div>
         {doc?.tipo === TIPO_CARTA_RUTA && leerReferenciaCartaRuta(doc.observaciones) && <div className="text-[11px] whitespace-normal break-words">{leerReferenciaCartaRuta(doc.observaciones)}</div>}
+        {doc?.tipo === TIPO_SOLICITUD_DESPACHO && leerReferenciaSolicitudDespacho(doc.observaciones) && <div className="text-[11px] whitespace-normal break-words">No. de Solicitud: {leerReferenciaSolicitudDespacho(doc.observaciones)}</div>}
       </div>
       <span className="w-16 shrink-0 font-mono text-[11px] text-primary">{doc?.storage_path && doc?.codigo_siga ? doc.codigo_siga : ""}</span>
       {doc ? (
@@ -3372,7 +3374,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const fileSeleccionado = file;
   const upload = async () => {
     let file = fileSeleccionado;
-    if (file && (tipo === TIPO_CARTA_RUTA || tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && !(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
+    if (file && (tipo === TIPO_CARTA_RUTA || tipo === TIPO_SOLICITUD_DESPACHO || tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && !(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
       toast.error("Este documento del Checklist de Recepción solo acepta archivos PDF.");
       return;
     }
@@ -3400,18 +3402,19 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       let certificadoDga: CertificadoDga | null = null;
       let cartaRuta: CartaRuta | null = null;
       let observacionesDoc = obs;
-      if (file && tipo === TIPO_CARTA_RUTA) {
+      if (file && (tipo === TIPO_CARTA_RUTA || tipo === TIPO_SOLICITUD_DESPACHO)) {
+        const esSolicitud = tipo === TIPO_SOLICITUD_DESPACHO;
         try {
           if (file.size > 15 * 1024 * 1024) throw new Error("supera 15 MB para lectura automática");
           const bytes = new Uint8Array(await file.arrayBuffer());
           let binary = "";
           for (const byte of bytes) binary += String.fromCharCode(byte);
-          const res = await extraer({ data: { filename: file.name, mime: "application/pdf", base64: btoa(binary), carta_ruta: true } });
+          const res = await extraer({ data: { filename: file.name, mime: "application/pdf", base64: btoa(binary), carta_ruta: true, ...(esSolicitud ? { solicitud_despacho: true } : {}) } });
           cartaRuta = res.carta_ruta ?? null;
-          if (!cartaRuta?.solicitud) toast.warning("No se pudo leer No.Solicitud; revisa la Carta de Ruta y completa Número de despacho manualmente.");
-          if (cartaRuta) observacionesDoc = guardarReferenciaCartaRuta(obs, cartaRuta);
+          if (!cartaRuta?.solicitud) toast.warning(`No se pudo leer No.Solicitud; revisa la ${tipo} y completa Número de despacho manualmente.`);
+          if (cartaRuta) observacionesDoc = esSolicitud ? guardarReferenciaSolicitudDespacho(obs, cartaRuta.solicitud) : guardarReferenciaCartaRuta(obs, cartaRuta);
         } catch (e) {
-          toast.warning(`La Carta de Ruta se guardará sin autocompletar: ${e instanceof Error ? e.message : "lectura no disponible"}`, { duration: 10000 });
+          toast.warning(`La ${tipo} se guardará sin autocompletar: ${e instanceof Error ? e.message : "lectura no disponible"}`, { duration: 10000 });
         }
       }
       const referenciaAnterior = editId && tipo === TIPO_CERTIFICADO_DGA ? leerReferenciaCertificado((docs ?? []).find((d) => d.id === editId)?.observaciones) : "";
@@ -3472,12 +3475,19 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
       if (cartaRuta?.solicitud) {
         try {
+          const solicitudRegistrada = tipo === TIPO_CARTA_RUTA ? leerReferenciaSolicitudDespacho((docs ?? []).find((d: any) => d.tipo === TIPO_SOLICITUD_DESPACHO)?.observaciones) : "";
+          const cmp = compararSolicitudDespacho(solicitudRegistrada, cartaRuta.solicitud);
+          if (cmp === "coincide") toast.success(`No.Solicitud de la Carta de Ruta coincide con la Solicitud de Despacho (${cartaRuta.solicitud}).`);
+          if (cmp === "discrepa") {
+            const seguir = await pedirConfirmacion({ titulo: "Discrepancia en No. de Solicitud", mensaje: `Solicitud de Despacho: ${solicitudRegistrada}. Carta de Ruta: ${cartaRuta.solicitud}. Los números no coinciden. La Carta de Ruta ya quedó guardada; ¿quieres revisar el Número de despacho ahora? Si cancelas, se mantiene sin cambios.` });
+            if (!seguir) throw new Error(`No.Solicitud discrepa (${solicitudRegistrada} vs ${cartaRuta.solicitud}); se mantuvo sin cambios`);
+          }
           const { data: actual, error } = await supabase.from("expedientes").select("numero_igra").eq("id", expedienteId).single();
           if (error) throw error;
           const visible = { ...actual, ...editorLiquidacion?.current?.leer() };
           let decision = decidirDespachoCartaRuta(visible.numero_igra, cartaRuta);
           if (decision.conflicto) {
-            const confirmado = await pedirConfirmacion({ titulo: "Confirmar Número de despacho", mensaje: `Valor actual: ${visible.numero_igra}. No.Solicitud leído: ${cartaRuta.solicitud}. ¿Reemplazar el Número de despacho? La Carta de Ruta se conservará aunque canceles.` });
+            const confirmado = await pedirConfirmacion({ titulo: "Confirmar Número de despacho", mensaje: `Valor actual: ${visible.numero_igra}. No.Solicitud leído: ${cartaRuta.solicitud}. ¿Reemplazar el Número de despacho? El documento se conservará aunque canceles.` });
             decision = decidirDespachoCartaRuta(visible.numero_igra, cartaRuta, confirmado);
           }
           if (decision.cambios.numero_igra) {
@@ -3490,7 +3500,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
             toast.success(`Número de despacho completado: ${decision.cambios.numero_igra}`);
           }
         } catch (e) {
-          toast.warning(`Carta de Ruta guardada; Número de despacho no actualizado: ${e instanceof Error ? e.message : "revisa los datos"}`, { duration: 10000 });
+          toast.warning(`${tipo} guardada; Número de despacho no actualizado: ${e instanceof Error ? e.message : "revisa los datos"}`, { duration: 10000 });
         } finally {
           await qc.invalidateQueries({ queryKey: ["expediente", expedienteId] });
           qc.invalidateQueries({ queryKey: ["expedientes"] });
@@ -3684,12 +3694,12 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                   <SelectContent>{TIPOS_DOC.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}{(tipo === TIPO_CARTA_RUTA || tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && <span className="text-xs text-muted-foreground ml-1">(solo PDF)</span>}</Label><Input type="file" accept={(tipo === TIPO_CARTA_RUTA || tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) ? "application/pdf,.pdf" : undefined} onChange={(e) => setFile(e.target.files?.[0] ?? null)} disabled={uploading} /></div>
+              <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}{(tipo === TIPO_CARTA_RUTA || tipo === TIPO_SOLICITUD_DESPACHO || tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && <span className="text-xs text-muted-foreground ml-1">(solo PDF)</span>}</Label><Input type="file" accept={(tipo === TIPO_CARTA_RUTA || tipo === TIPO_SOLICITUD_DESPACHO || tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) ? "application/pdf,.pdf" : undefined} onChange={(e) => setFile(e.target.files?.[0] ?? null)} disabled={uploading} /></div>
               <div className="grid gap-1.5"><Label>Fecha vencimiento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
               <div className="grid gap-1.5"><Label>Observaciones</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
               {tipo === TIPO_CERTIFICADO_DGA && editId && leerReferenciaCertificado((docs ?? []).find((d) => d.id === editId)?.observaciones) && <div className="text-xs whitespace-pre-wrap break-words max-h-56 overflow-y-auto text-muted-foreground">{leerReferenciaCertificado((docs ?? []).find((d) => d.id === editId)?.observaciones)}</div>}
             </div>
-            <DialogFooter><Button onClick={upload} disabled={uploading}>{uploading ? (tipo === TIPO_CARTA_RUTA || tipo === TIPO_CERTIFICADO_DGA || esDocumentoResultadoDga(tipo) ? "Guardando y leyendo…" : "Guardando…") : "Guardar"}</Button></DialogFooter>
+            <DialogFooter><Button onClick={upload} disabled={uploading}>{uploading ? (tipo === TIPO_CARTA_RUTA || tipo === TIPO_SOLICITUD_DESPACHO || tipo === TIPO_CERTIFICADO_DGA || esDocumentoResultadoDga(tipo) ? "Guardando y leyendo…" : "Guardando…") : "Guardar"}</Button></DialogFooter>
           </DialogContent>
         </Dialog>
         </div>

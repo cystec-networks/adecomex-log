@@ -18,6 +18,7 @@ const Input = z.object({
   resultado_dga: z.enum(TIPOS_RESULTADO_DGA).optional(),
   certificado_origen_dga: z.boolean().optional(),
   carta_ruta: z.boolean().optional(),
+  solicitud_despacho: z.boolean().optional(),
 });
 
 export type OcrContenedor = { numero: string; sello1: string | null; sello2: string | null; tipo: string | null };
