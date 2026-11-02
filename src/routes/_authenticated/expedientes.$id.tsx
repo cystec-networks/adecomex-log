@@ -1848,6 +1848,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     // Actualizar solo vacíos: conservar cualquier edición manual del formulario abierto.
     setForm((f) => ({ ...f,
       ...(!String(f.numero_igra ?? "").trim() && inicial.numero_igra ? { numero_igra: inicial.numero_igra } : {}),
+      // Número de permiso (3. Declaración): se llena cuando el Permiso VUCE guardado lo completa.
+      ...(!String(f.numero_vuce ?? "").trim() && inicial.numero_vuce ? { numero_vuce: inicial.numero_vuce } : {}),
       ...completarResultadoDga(f, {
       liq_siga_numero: inicial.liq_siga_numero || undefined,
       liq_siga_estado: inicial.liq_siga_estado || undefined,
