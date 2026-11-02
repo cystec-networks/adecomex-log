@@ -5719,23 +5719,28 @@ function LiquidacionEstimadaBlock({
 
   const mostrarCaptura = !tc.congelado && (tc.needsCapture || editandoTasa);
 
-  // Actualizar la tasa congelada a la vigente en la Fecha de Presentación del expediente.
-  const [actTasa, setActTasa] = useState<{ fecha: string; valor: string; enCatalogo: boolean } | null>(null);
+  // Actualizar la tasa congelada a la vigente en la fecha de Presentación Definitiva (editable).
+  const [actTasa, setActTasa] = useState<{ fecha: string; valor: string; oficial: number | null } | null>(null);
   const [actGuardando, setActGuardando] = useState(false);
-  const iniciarActualizarTasa = async () => {
-    const fecha = exp.fecha_presentacion_real ? String(exp.fecha_presentacion_real).slice(0, 10) : "";
-    if (!fecha) { toast.error("Primero captura y guarda la Fecha de Presentación del expediente."); return; }
+  const cargarTasaFecha = async (fecha: string) => {
+    if (!fecha) { setActTasa((p) => p && { ...p, fecha, oficial: null }); return; }
     const { data, error } = await supabase.from("catalogo_tasas_cambio").select("tasa").eq("fecha", fecha).maybeSingle();
     if (error) { toast.error(error.message); return; }
-    setActTasa({ fecha, valor: data?.tasa != null ? Number(data.tasa).toFixed(4) : "", enCatalogo: data?.tasa != null });
+    const oficial = data?.tasa != null ? Number(data.tasa) : null;
+    setActTasa((p) => ({ fecha, valor: oficial != null ? oficial.toFixed(4) : (p?.valor ?? ""), oficial }));
+  };
+  const iniciarActualizarTasa = async () => {
+    // Por defecto: hoy (día de la presentación definitiva); se puede cambiar.
+    await cargarTasaFecha(hoyRDISO());
   };
   const confirmarActualizarTasa = async () => {
     if (!actTasa) return;
     const valor = Number(actTasa.valor);
+    if (!actTasa.fecha) { toast.error("Selecciona la fecha de Presentación Definitiva."); return; }
     if (!(valor > 0)) { toast.error("Ingresa una tasa válida."); return; }
     setActGuardando(true);
     try {
-      if (!actTasa.enCatalogo) {
+      if (actTasa.oficial == null) {
         const { error } = await supabase.from("catalogo_tasas_cambio").upsert({ fecha: actTasa.fecha, tasa: valor }, { onConflict: "fecha" });
         if (error) throw error;
       }
@@ -5758,17 +5763,22 @@ function LiquidacionEstimadaBlock({
     <div className="grid gap-4 pt-4 border-t">
       {actTasa && (
         <div className="rounded-lg border border-primary/40 bg-primary/5 p-4 grid gap-3">
-          <div className="font-semibold text-sm">Actualizar tasa a la Fecha de Presentación ({fmtLocalDate(actTasa.fecha)})</div>
+          <div className="font-semibold text-sm">Actualizar tasa a la fecha de Presentación Definitiva</div>
           <p className="text-xs text-muted-foreground">
-            {actTasa.enCatalogo
-              ? <>Tasa oficial registrada para ese día. Al confirmar, el CIF, los impuestos y el Total a Pagar en RD$ se recalculan con ella y queda congelada de nuevo.</>
+            {actTasa.oficial != null
+              ? <>Tasa oficial registrada para ese día: RD$ {actTasa.oficial.toFixed(4)}. Puedes corregirla si la Declaración usó otra; la corrección se aplica solo a este expediente.</>
               : <>No hay tasa oficial registrada para ese día. Ingrésala; se guardará en el catálogo y en este expediente.</>}
-            {tasa != null && <> Tasa actual: RD$ {tasa.toFixed(4)}.</>}
+            {tasa != null && <> Tasa actual del expediente: RD$ {tasa.toFixed(4)}.</>}
+            {" "}Al confirmar, el CIF, los impuestos y el Total a Pagar en RD$ se recalculan y la tasa queda congelada de nuevo.
           </p>
           <div className="flex flex-wrap items-end gap-3">
             <div className="grid gap-1">
+              <Label className="text-xs">Fecha de Presentación Definitiva</Label>
+              <Input type="date" className="w-44" value={actTasa.fecha} onChange={(e) => cargarTasaFecha(e.target.value)} />
+            </div>
+            <div className="grid gap-1">
               <Label className="text-xs">RD$ por US$ 1.00</Label>
-              <Input className="w-40 font-mono tabular-nums" inputMode="decimal" value={actTasa.valor} disabled={actTasa.enCatalogo}
+              <Input className="w-40 font-mono tabular-nums" inputMode="decimal" value={actTasa.valor}
                 onChange={(e) => { const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,4}$/.test(v)) setActTasa({ ...actTasa, valor: v }); }} />
             </div>
             <a href="https://www.aduanas.gob.do/tasa-de-cambio/" target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline flex items-center gap-1 pb-2.5">
