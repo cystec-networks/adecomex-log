@@ -30,14 +30,14 @@ describe("Carta de Ruta", () => {
 import { leerSolicitudDespacho, compararSolicitudDespacho, guardarReferenciaSolicitudDespacho, leerReferenciaSolicitudDespacho } from "./carta-ruta";
 describe("Solicitud de Despacho", () => {
   it("lee No. de Solicitud IGRA", () => {
-    expect(leerSolicitudDespacho("Detalle Solicitud de Despacho No. de Solicitud: IGRA2026111918 Fecha")?.solicitud).toBe("IGRA2026111918");
+    assert.equal(leerSolicitudDespacho("Detalle Solicitud de Despacho No. de Solicitud: IGRA2026111918 Fecha")?.solicitud, "IGRA2026111918");
   });
   it("guarda y lee la referencia", () => {
-    expect(leerReferenciaSolicitudDespacho(guardarReferenciaSolicitudDespacho("nota", "IGRA2026111918"))).toBe("IGRA2026111918");
+    assert.equal(leerReferenciaSolicitudDespacho(guardarReferenciaSolicitudDespacho("nota", "IGRA2026111918")), "IGRA2026111918");
   });
   it("detecta coincidencia y discrepancia", () => {
-    expect(compararSolicitudDespacho("IGRA2026111918", "IGRA2026111918")).toBe("coincide");
-    expect(compararSolicitudDespacho("IGRA2026111918", "IGRA2026111999")).toBe("discrepa");
-    expect(compararSolicitudDespacho("", "IGRA2026111999")).toBe("sin_referencia");
+    assert.equal(compararSolicitudDespacho("IGRA2026111918", "IGRA2026111918"), "coincide");
+    assert.equal(compararSolicitudDespacho("IGRA2026111918", "IGRA2026111999"), "discrepa");
+    assert.equal(compararSolicitudDespacho("", "IGRA2026111999"), "sin_referencia");
   });
 });
