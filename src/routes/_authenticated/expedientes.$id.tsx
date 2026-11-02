@@ -5719,8 +5719,70 @@ function LiquidacionEstimadaBlock({
 
   const mostrarCaptura = !tc.congelado && (tc.needsCapture || editandoTasa);
 
+  // Actualizar la tasa congelada a la vigente en la Fecha de Presentación del expediente.
+  const [actTasa, setActTasa] = useState<{ fecha: string; valor: string; enCatalogo: boolean } | null>(null);
+  const [actGuardando, setActGuardando] = useState(false);
+  const iniciarActualizarTasa = async () => {
+    const fecha = exp.fecha_presentacion_real ? String(exp.fecha_presentacion_real).slice(0, 10) : "";
+    if (!fecha) { toast.error("Primero captura y guarda la Fecha de Presentación del expediente."); return; }
+    const { data, error } = await supabase.from("catalogo_tasas_cambio").select("tasa").eq("fecha", fecha).maybeSingle();
+    if (error) { toast.error(error.message); return; }
+    setActTasa({ fecha, valor: data?.tasa != null ? Number(data.tasa).toFixed(4) : "", enCatalogo: data?.tasa != null });
+  };
+  const confirmarActualizarTasa = async () => {
+    if (!actTasa) return;
+    const valor = Number(actTasa.valor);
+    if (!(valor > 0)) { toast.error("Ingresa una tasa válida."); return; }
+    setActGuardando(true);
+    try {
+      if (!actTasa.enCatalogo) {
+        const { error } = await supabase.from("catalogo_tasas_cambio").upsert({ fecha: actTasa.fecha, tasa: valor }, { onConflict: "fecha" });
+        if (error) throw error;
+      }
+      const { error } = await supabase.from("expedientes")
+        .update({ tasa_cambio_usada: valor, fecha_tasa_manual: actTasa.fecha, tasa_cambio_congelada: true } as any)
+        .eq("id", exp.id);
+      if (error) throw error;
+      toast.success(`Liquidación recalculada con tasa RD$ ${valor.toFixed(4)} del ${fmtLocalDate(actTasa.fecha)}`);
+      setActTasa(null);
+      qcTasa.invalidateQueries({ queryKey: ["expediente", exp.id] });
+      qcTasa.invalidateQueries({ queryKey: ["catalogo_tasas_cambio"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo actualizar la tasa");
+    } finally {
+      setActGuardando(false);
+    }
+  };
+
   return (
     <div className="grid gap-4 pt-4 border-t">
+      {actTasa && (
+        <div className="rounded-lg border border-primary/40 bg-primary/5 p-4 grid gap-3">
+          <div className="font-semibold text-sm">Actualizar tasa a la Fecha de Presentación ({fmtLocalDate(actTasa.fecha)})</div>
+          <p className="text-xs text-muted-foreground">
+            {actTasa.enCatalogo
+              ? <>Tasa oficial registrada para ese día. Al confirmar, el CIF, los impuestos y el Total a Pagar en RD$ se recalculan con ella y queda congelada de nuevo.</>
+              : <>No hay tasa oficial registrada para ese día. Ingrésala; se guardará en el catálogo y en este expediente.</>}
+            {tasa != null && <> Tasa actual: RD$ {tasa.toFixed(4)}.</>}
+          </p>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="grid gap-1">
+              <Label className="text-xs">RD$ por US$ 1.00</Label>
+              <Input className="w-40 font-mono tabular-nums" inputMode="decimal" value={actTasa.valor} disabled={actTasa.enCatalogo}
+                onChange={(e) => { const v = e.target.value.replace(/[$,\s]/g, ""); if (v === "" || /^\d*\.?\d{0,4}$/.test(v)) setActTasa({ ...actTasa, valor: v }); }} />
+            </div>
+            <a href="https://www.aduanas.gob.do/tasa-de-cambio/" target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline flex items-center gap-1 pb-2.5">
+              Ver tasa oficial <ExternalLink className="h-3 w-3" />
+            </a>
+            <div className="ml-auto flex gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setActTasa(null)} disabled={actGuardando}>Cancelar</Button>
+              <Button size="sm" onClick={confirmarActualizarTasa} disabled={actGuardando || !actTasa.valor}>
+                {actGuardando ? "Actualizando…" : "Actualizar y recalcular"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       {!tc.congelado && (
         <div className="flex flex-wrap items-end gap-3">
           <div className="grid gap-1">
@@ -5817,6 +5879,11 @@ function LiquidacionEstimadaBlock({
                 <div className="text-amber-800">
                   {tc.fechaLabel}
                   {tc.origen === "congelada" && <span className="ml-1 inline-flex items-center gap-1 text-emerald-700"><ShieldCheck className="h-3 w-3" />congelada</span>}
+                  {tc.congelado && !disabled && (
+                    <button type="button" className="ml-2 underline text-primary font-medium" onClick={iniciarActualizarTasa}>
+                      Actualizar tasa
+                    </button>
+                  )}
                 </div>
               </>
             ) : (
