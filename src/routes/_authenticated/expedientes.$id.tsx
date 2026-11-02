@@ -146,9 +146,9 @@ const TIPOS_INSPECCION = ["Despacho Expreso", "Verificación Visual", "Verificac
 
 function TipoInspeccionSelector({ value, onChange, disabled, header = false }: { value: string; onChange: (value: string) => void; disabled: boolean; header?: boolean }) {
   return (
-    <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
+    <Select value={value ?? ""} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger aria-label={header ? "Tipo de Inspección en encabezado" : "Tipo de Inspección"} className={header ? "h-8 w-auto min-w-0 gap-1.5 px-2 font-medium text-foreground disabled:opacity-100 [&>span]:line-clamp-none [&>span]:whitespace-normal [&>span]:break-normal" : undefined}>
-        <SelectValue placeholder={header ? "—" : "Selecciona tipo de inspección"}>{value || undefined}</SelectValue>
+        <SelectValue placeholder={header ? "—" : "Selecciona tipo de inspección"} />
       </SelectTrigger>
       <SelectContent>
         {TIPOS_INSPECCION.map((tipo) => <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>)}
