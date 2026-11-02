@@ -229,8 +229,9 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
         if (exp && !exp.medio_transporte?.trim() && transporteVuce.current) cambios.medio_transporte = transporteVuce.current.replace(/^mar[ií]timo$/i, "Marítimo").replace(/^a[ée]reo$/i, "Aéreo");
         if (Object.keys(cambios).length) {
           await supabase.from("expedientes").update(cambios).eq("id", payload.expediente_id);
-          await qc.invalidateQueries({ queryKey: ["expediente", payload.expediente_id] });
         }
+        // Refrescar siempre el Expediente: la Declaración lee numero_vuce incluso si ya estaba guardado.
+        await qc.invalidateQueries({ queryKey: ["expediente", payload.expediente_id] });
         if (error) throw new Error(`Permiso guardado, pero no se pudo vincular el PDF en Documentos: ${error.message}. Vuelve a guardar para reintentar.`);
         await qc.invalidateQueries({ queryKey: ["documentos", payload.expediente_id] });
       };
