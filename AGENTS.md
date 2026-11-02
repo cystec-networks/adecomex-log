@@ -19,6 +19,7 @@ Payment slips: linked transport first, reserved TR next; TF last.
 Share expediente/quote PDF. e-CF: factura-venta-referencias keeps fiscal lines, OCR in notas; factura-ecf-vinculacion shares links.
 Headers: desktop slots/More, mobile rows. New-expediente: two fixed action rows, portaled submits; retain validation, no floating panels.
 Detail headers: content-sized rows, client label/value together, wrap IDs, warnings below Description; shared deadlines.
+- Form grid cells need `min-w-0`; selects truncate with a `title` tooltip so long names stay in their field.
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
 - Deadlines use plazo-presentacion.ts with regime days + expediente override, never sla_dias/ETA. Require real arrival/regime; show business days, classify overdue by calendar date including weekends.
 - Header: ETA until arrival, then arrival/calendar transit; presentation next, no duplicate transit. Mount deadline override only while open to prevent overlap.
