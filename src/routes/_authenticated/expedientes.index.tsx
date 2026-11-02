@@ -435,7 +435,7 @@ function Expedientes() {
         {e.numero_vuce ?? "—"}
       </td>
       <td className="px-2 py-1 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
-        {e.numero_igra ?? "—"}
+        {String(e.numero_igra ?? "").trim() ? e.numero_igra : "—"}
       </td>
       <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
         {(() => {
