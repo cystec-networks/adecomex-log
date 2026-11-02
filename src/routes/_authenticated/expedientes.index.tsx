@@ -185,7 +185,7 @@ function Expedientes() {
 
   const tipoLabel = tipo === "importacion" ? "Importaciones" : tipo === "exportacion" ? "Exportaciones" : tipo === "facturados" ? "Facturados" : "Todos los expedientes";
 
-  type SortKey = "numero" | "cliente" | "numero_dua" | "bl_awb" | "fecha_compromiso" | "puerto_arribo" | "numero_vuce" | "estado";
+  type SortKey = "numero" | "cliente" | "numero_dua" | "bl_awb" | "fecha_compromiso" | "puerto_arribo" | "numero_vuce" | "numero_igra" | "estado";
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
   const toggleSort = (key: SortKey) => {
     setSort((s) => {
@@ -434,6 +434,9 @@ function Expedientes() {
       <td className="px-2 py-1 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
         {e.numero_vuce ?? "—"}
       </td>
+      <td className="px-2 py-1 align-middle text-right text-muted-foreground text-xs tabular-nums whitespace-nowrap">
+        {e.numero_igra ?? "—"}
+      </td>
       <td className="px-2 py-1 align-middle text-center whitespace-nowrap">
         {(() => {
           const fv = e.estado === "verificar" ? fechaVerificacion(e) : null;
@@ -622,6 +625,7 @@ function Expedientes() {
                         <th className="px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap w-12 min-w-12">Días</th>
                         <Th k="puerto_arribo" className="px-2 whitespace-nowrap exp-puerto-col">Puerto</Th>
                         <Th k="numero_vuce" className="px-2 whitespace-nowrap">Permiso VUCE</Th>
+                        <Th k="numero_igra" className="px-2 whitespace-nowrap">N.º Despacho</Th>
                         <Th k="estado" className="px-2 whitespace-nowrap">Estado</Th>
                         <th className="w-14 min-w-14 max-w-14 px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Alerta</th>
                         <th className="px-1 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"></th>
