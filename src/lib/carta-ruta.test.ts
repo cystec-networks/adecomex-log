@@ -27,3 +27,17 @@ describe("Carta de Ruta", () => {
     assert.equal(leerReferenciaCartaRuta(obs), "No.Solicitud: IGRA20261040517 · No.Carta Ruta: TN202610428790 · Hora Salida: 29/10/2026");
   });
 });
+import { leerSolicitudDespacho, compararSolicitudDespacho, guardarReferenciaSolicitudDespacho, leerReferenciaSolicitudDespacho } from "./carta-ruta";
+describe("Solicitud de Despacho", () => {
+  it("lee No. de Solicitud IGRA", () => {
+    assert.equal(leerSolicitudDespacho("Detalle Solicitud de Despacho No. de Solicitud: IGRA2026111918 Fecha")?.solicitud, "IGRA2026111918");
+  });
+  it("guarda y lee la referencia", () => {
+    assert.equal(leerReferenciaSolicitudDespacho(guardarReferenciaSolicitudDespacho("nota", "IGRA2026111918")), "IGRA2026111918");
+  });
+  it("detecta coincidencia y discrepancia", () => {
+    assert.equal(compararSolicitudDespacho("IGRA2026111918", "IGRA2026111918"), "coincide");
+    assert.equal(compararSolicitudDespacho("IGRA2026111918", "IGRA2026111999"), "discrepa");
+    assert.equal(compararSolicitudDespacho("", "IGRA2026111999"), "sin_referencia");
+  });
+});
