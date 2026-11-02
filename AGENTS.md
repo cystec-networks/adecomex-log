@@ -19,6 +19,7 @@ Payment slips: linked transport first, reserved TR next; TF last.
 Share expediente/quote PDF. e-CF: factura-venta-referencias keeps fiscal lines, OCR in notas; factura-ecf-vinculacion shares links.
 Headers: desktop slots/More, mobile rows. New-expediente: two fixed action rows, portaled submits; retain validation, no floating panels.
 Detail headers: content-sized rows, client label/value together, wrap IDs, warnings below Description; shared deadlines.
+- Form grid cells need `min-w-0`; selects truncate with a `title` tooltip so long names stay in their field.
 - Endoso de consignatario lives in `expediente_endosos` (one active row per expediente); never overwrite `expedientes.cliente_id` — SIGA XML swaps in the endorsed client and portal visibility unions both clients, keeping commercial traceability.
 - Deadlines use plazo-presentacion.ts with regime days + expediente override, never sla_dias/ETA. Require real arrival/regime; show business days, classify overdue by calendar date including weekends.
 - Header: ETA until arrival, then arrival/calendar transit; presentation next, no duplicate transit. Mount deadline override only while open to prevent overlap.
@@ -46,7 +47,7 @@ Detail headers: content-sized rows, client label/value together, wrap IDs, warni
 - Editors retain drafts/global saves. DGA origin uses declaracion-origen-context for conditional sync; references stay in document observations.
 - Sync draft Description via observaciones-expediente on observation changes, not save; preserve manual edits.
 - Liquidation OCR: liquidacion-dga-documento extracts labels/conflicts/comparison-only totals and prepares one guarded UPDATE for the entire mapping; liquidacion-dga-context syncs only after success without losing drafts. Manifest/inspection are read-only references.
-- Subdirectories have their own `AGENTS.md` (e.g. `src/lib/AGENTS.md` for the email-intake pipeline); read it before changing files there.
+- Subdirectories have their own `AGENTS.md`; read it before changing files there.
 - Expedition batch uploads reuse email header detection, page classification, segmentation and per-type PDF merging; individual files persist originals before recognition, while folder sources use in-memory preflight and explicit confirmation, preventing unidentified files from occupying storage. Make one authenticated request per page to avoid gateway timeouts without touching expedition drafts.
 - Batch selection uses `juego-documentos-seleccion` for recursive traversal, relative-path deduplication and per-file folder provenance; `juego-documentos-carpeta` rejects an entire folder source if any segment is unidentified so backups cannot silently store unknown pages. Signed single-type folder documents remain byte-identical and unmerged.
 - All incoming document optimization uses `documento-optimizacion.ts` before storage and recognition; rewrite only unsigned readable PDFs, preserve vector content and conservatively resize unambiguous scan images, returning original bytes on uncertainty or no savings. Signed batch sources remain intact in Others instead of being split or merged.

@@ -362,7 +362,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
           </Button>
         </CardHeader>
         <CardContent className="pt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div className="grid gap-1.5">
+          <div className="grid min-w-0 gap-1.5">
             <Label>N° Permiso VUCE *</Label>
             <Input
               value={form.numero}
@@ -370,18 +370,18 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
               placeholder={mode === "new" ? "Ej. TRM-0926-2505112" : ""}
             />
           </div>
-          <div className="grid gap-1.5"><Label>N° Resolución</Label><Input value={form.numero_resolucion} onChange={(e) => set("numero_resolucion", e.target.value)} /></div>
-          <div className="grid gap-1.5">
+          <div className="grid min-w-0 gap-1.5"><Label>N° Resolución</Label><Input value={form.numero_resolucion} onChange={(e) => set("numero_resolucion", e.target.value)} /></div>
+          <div className="grid min-w-0 gap-1.5">
             <Label>Tipo de Permiso VUCE</Label>
             <Select value={form.tipo || undefined} onValueChange={(v) => set("tipo", v)}>
               <SelectTrigger><SelectValue placeholder="Selecciona tipo" /></SelectTrigger>
               <SelectContent>{PERMISO_TIPOS.map((t) => <SelectItem key={t.v} value={t.v}>{t.l}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div className="grid gap-1.5">
+          <div className="grid min-w-0 gap-1.5">
             <Label>Institución Emisora</Label>
             <Select value={form.institucion_emisora || undefined} onValueChange={(v) => set("institucion_emisora", v)}>
-              <SelectTrigger><SelectValue placeholder="Selecciona institución" /></SelectTrigger>
+              <SelectTrigger title={form.institucion_emisora || undefined} className="min-w-0 overflow-hidden [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder="Selecciona institución" /></SelectTrigger>
               <SelectContent>
                 {INSTITUCIONES.map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
                 {form.institucion_emisora && !INSTITUCIONES.includes(form.institucion_emisora) && (
@@ -390,7 +390,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
               </SelectContent>
             </Select>
           </div>
-          <div className="grid gap-1.5">
+          <div className="grid min-w-0 gap-1.5">
             <Label>Estado</Label>
             <Select
               value={form.estado_vuce ? `vuce:${form.estado_vuce}` : form.estado}
@@ -402,14 +402,14 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
                 }
               }}
             >
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className="min-w-0 overflow-hidden [&>span]:min-w-0 [&>span]:truncate"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {form.estado_vuce && <SelectItem value={`vuce:${form.estado_vuce}`}>{form.estado_vuce}</SelectItem>}
                 {PERMISO_ESTADOS.map((s) => <SelectItem key={s.v} value={s.v}>{s.l}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
-          <div className="grid gap-1.5">
+          <div className="grid min-w-0 gap-1.5">
             <Label>Fecha de Aprobación</Label>
             <Input
               type="date"
