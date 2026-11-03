@@ -1,15 +1,18 @@
 import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type * as XLSXNS from "xlsx";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { fmtLocalDate, parseLocalDate } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/admin/reembolsos")({
@@ -139,6 +142,41 @@ function ReembolsosPage() {
     return { pendiente, pagado, general: pendiente + pagado };
   }, [visibles]);
 
+  const qc = useQueryClient();
+  const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
+  const [dlgPago, setDlgPago] = useState(false);
+  const [fechaPago, setFechaPago] = useState(() => iso(new Date()));
+  const [guardando, setGuardando] = useState(false);
+  const seleccionVisible = visibles.filter((s) => seleccion.has(s.expedienteId));
+  const todosMarcados = visibles.length > 0 && seleccionVisible.length === visibles.length;
+  const toggle = (id: string, on: boolean) =>
+    setSeleccion((prev) => { const n = new Set(prev); on ? n.add(id) : n.delete(id); return n; });
+  const toggleTodos = (on: boolean) =>
+    setSeleccion(on ? new Set(visibles.map((s) => s.expedienteId)) : new Set());
+
+  const marcarPagado = async () => {
+    if (!fechaPago || seleccionVisible.length === 0) return;
+    setGuardando(true);
+    const ids = seleccionVisible.map((s) => s.expedienteId);
+    const { data, error } = await supabase
+      .from("expedientes")
+      .update({ reembolso_estado: "pagado", reembolso_fecha_pago: fechaPago } as any)
+      .in("id", ids)
+      .select("id");
+    setGuardando(false);
+    if (error) { toast.error(error.message); return; }
+    const n = data?.length ?? 0;
+    if (n < ids.length) toast.warning(`Se actualizaron ${n} de ${ids.length}; revise permisos.`);
+    else toast.success(`${n} reembolso(s) marcados como pagados`);
+    setDlgPago(false);
+    setSeleccion(new Set());
+    await qc.invalidateQueries({ queryKey: ["reporte-reembolsos"] });
+    ids.forEach((id) => {
+      qc.invalidateQueries({ queryKey: ["reembolso-estado", id] });
+      qc.invalidateQueries({ queryKey: ["expediente", id] });
+    });
+  };
+
   const mover = (delta: number) => {
     setAncla((prev) => {
       if (modo === "semana") return addDays(lunesDe(prev), delta * 7);
@@ -248,7 +286,14 @@ function ReembolsosPage() {
             </div>
           </div>
           <CardTitle className="pt-2 text-base">{etiquetaPeriodo}</CardTitle>
-          <CardDescription>{visibles.length} solicitud(es)</CardDescription>
+          <div className="flex flex-wrap items-center gap-3">
+            <CardDescription>{visibles.length} solicitud(es)</CardDescription>
+            {seleccionVisible.length > 0 && (
+              <Button size="sm" onClick={() => { setFechaPago(iso(new Date())); setDlgPago(true); }}>
+                <CheckCircle2 className="mr-1 h-4 w-4" /> Marcar como pagado ({seleccionVisible.length})
+              </Button>
+            )}
+          </div>
         </CardHeader>
 
         <CardContent className="overflow-x-auto">
@@ -262,6 +307,9 @@ function ReembolsosPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="py-2 pr-3 w-8">
+                    <Checkbox aria-label="Seleccionar todos" checked={todosMarcados} onCheckedChange={(v) => toggleTodos(v === true)} />
+                  </th>
                   <th className="py-2 pr-3">N° REEBGVEXP</th>
                   <th className="py-2 pr-3">Expediente</th>
                   <th className="py-2 pr-3">Cliente</th>
@@ -274,6 +322,9 @@ function ReembolsosPage() {
               <tbody>
                 {visibles.map((s) => (
                   <tr key={s.expedienteId} className="border-b last:border-0 whitespace-nowrap">
+                    <td className="py-1.5 pr-3">
+                      <Checkbox aria-label={`Seleccionar ${s.numeroDoc}`} checked={seleccion.has(s.expedienteId)} onCheckedChange={(v) => toggle(s.expedienteId, v === true)} />
+                    </td>
                     <td className="py-1.5 pr-3 font-mono font-medium">{s.numeroDoc}</td>
                     <td className="py-1.5 pr-3">
                        <Link to="/expedientes/$id" params={{ id: s.expedienteId }} className="expediente-numero hover:underline">
@@ -292,17 +343,17 @@ function ReembolsosPage() {
                   </tr>
                 ))}
                 <tr className="border-t-2 bg-muted/50 font-semibold">
-                  <td className="py-2 pr-3 text-xs uppercase tracking-wide" colSpan={4}>Total pendiente</td>
+                  <td className="py-2 pr-3 text-xs uppercase tracking-wide" colSpan={5}>Total pendiente</td>
                   <td className="py-2 pr-3 text-right text-destructive">{fmtMoney(totales.pendiente)}</td>
                   <td colSpan={2} />
                 </tr>
                 <tr className="bg-muted/50 font-semibold">
-                  <td className="py-2 pr-3 text-xs uppercase tracking-wide" colSpan={4}>Total pagado</td>
+                  <td className="py-2 pr-3 text-xs uppercase tracking-wide" colSpan={5}>Total pagado</td>
                   <td className="py-2 pr-3 text-right">{fmtMoney(totales.pagado)}</td>
                   <td colSpan={2} />
                 </tr>
                 <tr className="border-t-2 bg-primary/10 font-bold">
-                  <td className="py-2 pr-3 text-xs uppercase tracking-wide" colSpan={4}>Total del período</td>
+                  <td className="py-2 pr-3 text-xs uppercase tracking-wide" colSpan={5}>Total del período</td>
                   <td className="py-2 pr-3 text-right">{fmtMoney(totales.general)}</td>
                   <td colSpan={2} />
                 </tr>
@@ -311,6 +362,27 @@ function ReembolsosPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={dlgPago} onOpenChange={setDlgPago}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Marcar como pagado</DialogTitle>
+            <DialogDescription>
+              {seleccionVisible.length} reembolso(s) por {fmtMoney(seleccionVisible.reduce((a, s) => a + s.total, 0))}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-1.5">
+            <label className="text-[13px] font-medium" htmlFor="fecha-pago-lote">Fecha de pago</label>
+            <Input id="fecha-pago-lote" type="date" value={fechaPago} onChange={(e) => setFechaPago(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDlgPago(false)} disabled={guardando}>Cancelar</Button>
+            <Button onClick={marcarPagado} disabled={guardando || !fechaPago}>
+              {guardando ? "Guardando…" : "Confirmar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
