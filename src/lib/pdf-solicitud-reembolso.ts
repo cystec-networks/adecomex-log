@@ -35,13 +35,25 @@ async function loadLogo(): Promise<{ dataUrl: string; width: number; height: num
       reader.onerror = () => reject(reader.error);
       reader.readAsDataURL(blob);
     });
-    const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
-      const image = new Image();
-      image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
-      image.onerror = () => resolve({ width: 4, height: 1 });
-      image.src = dataUrl;
+    const image = await new Promise<HTMLImageElement | null>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = dataUrl;
     });
-    return { dataUrl, ...dimensions };
+    if (!image) return null;
+    // Reducir el logo (original ~1777px, 4.7 MB sin comprimir en el PDF) a ~600px JPEG sobre blanco.
+    const targetWidth = Math.min(600, image.naturalWidth);
+    const targetHeight = Math.round((image.naturalHeight / image.naturalWidth) * targetWidth);
+    const canvas = document.createElement("canvas");
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, targetWidth, targetHeight);
+    ctx.drawImage(image, 0, 0, targetWidth, targetHeight);
+    return { dataUrl: canvas.toDataURL("image/jpeg", 0.85), width: targetWidth, height: targetHeight };
   } catch {
     return null;
   }
