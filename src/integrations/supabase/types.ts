@@ -613,6 +613,30 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_gestores_honorarios: {
+        Row: {
+          codigo: string
+          created_at: string
+          estado: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
       catalogo_hitos: {
         Row: {
           activo: boolean
