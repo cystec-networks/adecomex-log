@@ -335,3 +335,67 @@ export async function buildEstadoCuentaReembolsosPdf(input: {
   });
   return doc;
 }
+
+export type HonorarioFila = { fecha: string; expediente: string; cliente: string; mercanciaBl: string; monto: number };
+export type EstadoCuentaGestor = { proveedor: string; filas: HonorarioFila[] };
+
+/** Estado de cuenta interno de honorarios pendientes por gestor (control del pago semanal). */
+export async function buildEstadoCuentaHonorariosPdf(input: { fecha: string; periodo: string; gestores: EstadoCuentaGestor[] }) {
+  const { jsPDF } = await import("jspdf");
+  const autoTable = (await import("jspdf-autotable")).default;
+  const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4", compress: true });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 28;
+  const blue: [number, number, number] = [30, 58, 138];
+  const money = (v: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "DOP" }).format(v);
+  const logo = await loadLogo();
+  const header = () => {
+    if (logo) doc.addImage(logo.dataUrl, "JPEG", margin, 25, 142, Math.min(48, (logo.height / logo.width) * 142));
+    doc.setTextColor(...blue); doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+    doc.text("ESTADO DE CUENTA - HONORARIOS DE TERCEROS", pageWidth - margin, 38, { align: "right" });
+    doc.setTextColor(0); doc.setFontSize(8);
+    doc.text(`Fecha: ${input.fecha}`, pageWidth - margin, 54, { align: "right" });
+    doc.text(`Período: ${input.periodo}`, pageWidth - margin, 66, { align: "right" });
+    doc.setDrawColor(...blue); doc.setLineWidth(1.5); doc.line(margin, 78, pageWidth - margin, 78);
+  };
+  const footer = () => {
+    const fy = pageHeight - 40;
+    doc.setDrawColor(...blue); doc.setLineWidth(1); doc.line(margin, fy, pageWidth - margin, fy);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(0);
+    doc.text("ADECOMEX SRL — Documento de control interno, no válido como factura", pageWidth / 2, fy + 14, { align: "center" });
+  };
+  input.gestores.forEach((g, gi) => {
+    if (gi > 0) doc.addPage();
+    header();
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+    doc.text(`GESTOR / PROVEEDOR: ${g.proveedor}`, margin, 98);
+    const total = g.filas.reduce((s, f) => s + f.monto, 0);
+    autoTable(doc, {
+      startY: 108,
+      head: [["Fecha", "Expediente", "Cliente", "Mercancía / BL", "Monto"]],
+      body: [
+        ...g.filas.map((f) => [f.fecha, f.expediente, valueOrDash(f.cliente), valueOrDash(f.mercanciaBl), money(f.monto)]),
+        [{ content: "TOTAL PENDIENTE", colSpan: 4, styles: { halign: "right" } }, money(total)],
+      ],
+      theme: "grid",
+      margin: { left: margin, right: margin, top: 90, bottom: 60 },
+      styles: { font: "helvetica", fontSize: 7.5, cellPadding: 5, lineColor: 0, lineWidth: 0.5, valign: "middle" },
+      headStyles: { fillColor: blue, textColor: 255, fontStyle: "bold", fontSize: 7 },
+      columnStyles: { 0: { cellWidth: 58, halign: "center" }, 1: { cellWidth: 70 }, 4: { cellWidth: 80, halign: "right" } },
+      didParseCell: (h) => {
+        if (h.section === "body" && h.row.index === g.filas.length) { h.cell.styles.fontStyle = "bold"; h.cell.styles.fillColor = [232, 238, 249]; }
+      },
+      didDrawPage: () => { header(); footer(); },
+    });
+    const y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 50;
+    if (y < pageHeight - 70) {
+      doc.setLineWidth(0.5); doc.setDrawColor(0);
+      doc.line(margin, y, margin + 180, y); doc.line(pageWidth - margin - 180, y, pageWidth - margin, y);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(7.5);
+      doc.text("Preparado por", margin + 90, y + 11, { align: "center" });
+      doc.text("Recibido conforme (gestor)", pageWidth - margin - 90, y + 11, { align: "center" });
+    }
+  });
+  return doc;
+}

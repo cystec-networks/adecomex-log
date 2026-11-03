@@ -4827,7 +4827,11 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
           <tbody>
             {gastos.map((r) => (
               <tr key={r.id} className="border-b last:border-0">
-                <td className="px-4 py-2">{r.concepto}{r.es_reembolso && <Badge variant="outline" className="ml-2 text-xs">reembolso</Badge>}</td>
+                <td className="px-4 py-2">{r.concepto}{r.es_reembolso && <Badge variant="outline" className="ml-2 text-xs">reembolso</Badge>}{r.concepto === "Honorarios de terceros" && (
+                  <Badge variant={r.pago_estado === "pagado" ? "secondary" : "outline"} className="ml-2 text-xs font-normal" title={r.fecha_pago ? `Pagado el ${fmtLocalDate(r.fecha_pago)}` : "Pago al gestor pendiente"}>
+                    {r.pago_estado === "pagado" ? `Pagado ${fmtLocalDate(r.fecha_pago)}` : "Pago pendiente"}
+                  </Badge>
+                )}</td>
                 <td className="text-xs text-muted-foreground max-w-[220px]">
                   {r.notas ? <span className="block truncate" title={r.notas}>{r.notas}</span> : "—"}
                 </td>

@@ -4317,6 +4317,7 @@ export type Database = {
           es_reembolso: boolean
           expediente_id: string
           fecha: string | null
+          fecha_pago: string | null
           forma_pago: string | null
           id: string
           impuesto_selectivo_consumo: number
@@ -4336,6 +4337,7 @@ export type Database = {
           ncf_proveedor: string | null
           notas: string | null
           otros_impuestos_tasas: number
+          pago_estado: string
           proveedor: string | null
           rnc_cedula_proveedor: string | null
           tipo_bienes_servicios: number | null
@@ -4353,6 +4355,7 @@ export type Database = {
           es_reembolso?: boolean
           expediente_id: string
           fecha?: string | null
+          fecha_pago?: string | null
           forma_pago?: string | null
           id?: string
           impuesto_selectivo_consumo?: number
@@ -4372,6 +4375,7 @@ export type Database = {
           ncf_proveedor?: string | null
           notas?: string | null
           otros_impuestos_tasas?: number
+          pago_estado?: string
           proveedor?: string | null
           rnc_cedula_proveedor?: string | null
           tipo_bienes_servicios?: number | null
@@ -4389,6 +4393,7 @@ export type Database = {
           es_reembolso?: boolean
           expediente_id?: string
           fecha?: string | null
+          fecha_pago?: string | null
           forma_pago?: string | null
           id?: string
           impuesto_selectivo_consumo?: number
@@ -4408,6 +4413,7 @@ export type Database = {
           ncf_proveedor?: string | null
           notas?: string | null
           otros_impuestos_tasas?: number
+          pago_estado?: string
           proveedor?: string | null
           rnc_cedula_proveedor?: string | null
           tipo_bienes_servicios?: number | null

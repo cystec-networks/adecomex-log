@@ -44,6 +44,7 @@ import { Route as AuthenticatedAdminCuentasPorPagarRouteImport } from './routes/
 import { Route as AuthenticatedAdminDashboardFinancieroRouteImport } from './routes/_authenticated/admin.dashboard-financiero'
 import { Route as AuthenticatedAdminFacturacionRouteImport } from './routes/_authenticated/admin.facturacion'
 import { Route as AuthenticatedAdminGastosOperativosRouteImport } from './routes/_authenticated/admin.gastos-operativos'
+import { Route as AuthenticatedAdminHonorariosTercerosRouteImport } from './routes/_authenticated/admin.honorarios-terceros'
 import { Route as AuthenticatedAdminPlantillasDocumentosRouteImport } from './routes/_authenticated/admin.plantillas-documentos'
 import { Route as AuthenticatedAdminReembolsosRouteImport } from './routes/_authenticated/admin.reembolsos'
 import { Route as AuthenticatedAdminRegistroDiarioRouteImport } from './routes/_authenticated/admin.registro-diario'
@@ -292,6 +293,12 @@ const AuthenticatedAdminGastosOperativosRoute =
   AuthenticatedAdminGastosOperativosRouteImport.update({
     id: '/admin/gastos-operativos',
     path: '/admin/gastos-operativos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminHonorariosTercerosRoute =
+  AuthenticatedAdminHonorariosTercerosRouteImport.update({
+    id: '/admin/honorarios-terceros',
+    path: '/admin/honorarios-terceros',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminPlantillasDocumentosRoute =
@@ -662,6 +669,7 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard-financiero': typeof AuthenticatedAdminDashboardFinancieroRoute
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
+  '/admin/honorarios-terceros': typeof AuthenticatedAdminHonorariosTercerosRoute
   '/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
   '/admin/reembolsos': typeof AuthenticatedAdminReembolsosRoute
   '/admin/registro-diario': typeof AuthenticatedAdminRegistroDiarioRoute
@@ -753,6 +761,7 @@ export interface FileRoutesByTo {
   '/admin/dashboard-financiero': typeof AuthenticatedAdminDashboardFinancieroRoute
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
+  '/admin/honorarios-terceros': typeof AuthenticatedAdminHonorariosTercerosRoute
   '/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
   '/admin/reembolsos': typeof AuthenticatedAdminReembolsosRoute
   '/admin/registro-diario': typeof AuthenticatedAdminRegistroDiarioRoute
@@ -848,6 +857,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/dashboard-financiero': typeof AuthenticatedAdminDashboardFinancieroRoute
   '/_authenticated/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/_authenticated/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
+  '/_authenticated/admin/honorarios-terceros': typeof AuthenticatedAdminHonorariosTercerosRoute
   '/_authenticated/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
   '/_authenticated/admin/reembolsos': typeof AuthenticatedAdminReembolsosRoute
   '/_authenticated/admin/registro-diario': typeof AuthenticatedAdminRegistroDiarioRoute
@@ -941,6 +951,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard-financiero'
     | '/admin/facturacion'
     | '/admin/gastos-operativos'
+    | '/admin/honorarios-terceros'
     | '/admin/plantillas-documentos'
     | '/admin/reembolsos'
     | '/admin/registro-diario'
@@ -1032,6 +1043,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard-financiero'
     | '/admin/facturacion'
     | '/admin/gastos-operativos'
+    | '/admin/honorarios-terceros'
     | '/admin/plantillas-documentos'
     | '/admin/reembolsos'
     | '/admin/registro-diario'
@@ -1126,6 +1138,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/dashboard-financiero'
     | '/_authenticated/admin/facturacion'
     | '/_authenticated/admin/gastos-operativos'
+    | '/_authenticated/admin/honorarios-terceros'
     | '/_authenticated/admin/plantillas-documentos'
     | '/_authenticated/admin/reembolsos'
     | '/_authenticated/admin/registro-diario'
@@ -1454,6 +1467,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/gastos-operativos'
       fullPath: '/admin/gastos-operativos'
       preLoaderRoute: typeof AuthenticatedAdminGastosOperativosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/honorarios-terceros': {
+      id: '/_authenticated/admin/honorarios-terceros'
+      path: '/admin/honorarios-terceros'
+      fullPath: '/admin/honorarios-terceros'
+      preLoaderRoute: typeof AuthenticatedAdminHonorariosTercerosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/plantillas-documentos': {
@@ -1882,6 +1902,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminDashboardFinancieroRoute: typeof AuthenticatedAdminDashboardFinancieroRoute
   AuthenticatedAdminFacturacionRoute: typeof AuthenticatedAdminFacturacionRoute
   AuthenticatedAdminGastosOperativosRoute: typeof AuthenticatedAdminGastosOperativosRoute
+  AuthenticatedAdminHonorariosTercerosRoute: typeof AuthenticatedAdminHonorariosTercerosRoute
   AuthenticatedAdminPlantillasDocumentosRoute: typeof AuthenticatedAdminPlantillasDocumentosRoute
   AuthenticatedAdminReembolsosRoute: typeof AuthenticatedAdminReembolsosRoute
   AuthenticatedAdminRegistroDiarioRoute: typeof AuthenticatedAdminRegistroDiarioRoute
@@ -1957,6 +1978,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminFacturacionRoute: AuthenticatedAdminFacturacionRoute,
   AuthenticatedAdminGastosOperativosRoute:
     AuthenticatedAdminGastosOperativosRoute,
+  AuthenticatedAdminHonorariosTercerosRoute:
+    AuthenticatedAdminHonorariosTercerosRoute,
   AuthenticatedAdminPlantillasDocumentosRoute:
     AuthenticatedAdminPlantillasDocumentosRoute,
   AuthenticatedAdminReembolsosRoute: AuthenticatedAdminReembolsosRoute,

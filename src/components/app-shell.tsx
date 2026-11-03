@@ -210,6 +210,8 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/admin/gastos-operativos") },
       { to: "/admin/reembolsos", label: "Reembolsos de Gastos", icon: HandCoins, roles: ["admin","finanzas","contabilidad"],
         match: (p) => p.startsWith("/admin/reembolsos") },
+      { to: "/admin/honorarios-terceros", label: "Honorarios de Terceros", icon: HandCoins, roles: ["admin","finanzas","contabilidad"],
+        match: (p) => p.startsWith("/admin/honorarios-terceros") },
       { to: "/admin/cuentas-por-pagar", label: "Cuentas por Pagar", icon: Wallet, roles: ["admin","finanzas"],
         match: (p) => p.startsWith("/admin/cuentas-por-pagar") },
       { to: "/admin/cuentas-por-cobrar", label: "Cuentas por Cobrar", icon: HandCoins, roles: ["admin","contabilidad"],
