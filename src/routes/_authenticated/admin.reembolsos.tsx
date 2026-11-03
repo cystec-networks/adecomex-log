@@ -142,6 +142,41 @@ function ReembolsosPage() {
     return { pendiente, pagado, general: pendiente + pagado };
   }, [visibles]);
 
+  const qc = useQueryClient();
+  const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
+  const [dlgPago, setDlgPago] = useState(false);
+  const [fechaPago, setFechaPago] = useState(() => iso(new Date()));
+  const [guardando, setGuardando] = useState(false);
+  const seleccionVisible = visibles.filter((s) => seleccion.has(s.expedienteId));
+  const todosMarcados = visibles.length > 0 && seleccionVisible.length === visibles.length;
+  const toggle = (id: string, on: boolean) =>
+    setSeleccion((prev) => { const n = new Set(prev); on ? n.add(id) : n.delete(id); return n; });
+  const toggleTodos = (on: boolean) =>
+    setSeleccion(on ? new Set(visibles.map((s) => s.expedienteId)) : new Set());
+
+  const marcarPagado = async () => {
+    if (!fechaPago || seleccionVisible.length === 0) return;
+    setGuardando(true);
+    const ids = seleccionVisible.map((s) => s.expedienteId);
+    const { data, error } = await supabase
+      .from("expedientes")
+      .update({ reembolso_estado: "pagado", reembolso_fecha_pago: fechaPago } as any)
+      .in("id", ids)
+      .select("id");
+    setGuardando(false);
+    if (error) { toast.error(error.message); return; }
+    const n = data?.length ?? 0;
+    if (n < ids.length) toast.warning(`Se actualizaron ${n} de ${ids.length}; revise permisos.`);
+    else toast.success(`${n} reembolso(s) marcados como pagados`);
+    setDlgPago(false);
+    setSeleccion(new Set());
+    await qc.invalidateQueries({ queryKey: ["reporte-reembolsos"] });
+    ids.forEach((id) => {
+      qc.invalidateQueries({ queryKey: ["reembolso-estado", id] });
+      qc.invalidateQueries({ queryKey: ["expediente", id] });
+    });
+  };
+
   const mover = (delta: number) => {
     setAncla((prev) => {
       if (modo === "semana") return addDays(lunesDe(prev), delta * 7);
