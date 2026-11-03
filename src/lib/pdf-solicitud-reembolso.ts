@@ -209,3 +209,117 @@ export async function buildSolicitudReembolsoPdf(input: SolicitudReembolsoInput)
 
   return doc;
 }
+
+export type EstadoCuentaFila = {
+  numeroDoc: string;
+  expediente: string;
+  mercanciaBl: string;
+  fecha: string;
+  concepto: string;
+  monto: number;
+};
+
+export type EstadoCuentaCliente = {
+  cliente: { nombre: string; direccion: string; rnc: string };
+  filas: EstadoCuentaFila[];
+};
+
+/** Estado de Cuenta de Reembolsos Pendientes: una página (o más) por cliente con el
+ *  mismo encabezado, franja bancaria y pie que la Solicitud individual. */
+export async function buildEstadoCuentaReembolsosPdf(input: {
+  fecha: string;
+  periodo: string;
+  clientes: EstadoCuentaCliente[];
+  moneda?: string;
+  datosBancarios: SolicitudReembolsoInput["datosBancarios"];
+}) {
+  const { jsPDF } = await import("jspdf");
+  const autoTable = (await import("jspdf-autotable")).default;
+  const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 28;
+  const contentWidth = pageWidth - margin * 2;
+  const half = contentWidth / 2;
+  const blue: [number, number, number] = [30, 58, 138];
+  const money = (v: number) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency: input.moneda || "DOP" }).format(v);
+  const logo = await loadLogo();
+
+  const drawCell = (x: number, y: number, w: number, h: number, title: string, text: string, maxLines = 2) => {
+    doc.setDrawColor(0); doc.setLineWidth(0.5); doc.rect(x, y, w, h);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(6.2); doc.setTextColor(0);
+    doc.text(title, x + 5, y + 10);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+    const lines = (doc.splitTextToSize(valueOrDash(text), w - 10) as string[]).slice(0, maxLines);
+    doc.text(lines, x + 5, y + 23, { lineHeightFactor: 1.2 });
+  };
+
+  const header = () => {
+    if (logo) {
+      const lw = 142;
+      doc.addImage(logo.dataUrl, "PNG", margin, 25, lw, Math.min(48, (logo.height / logo.width) * lw));
+    }
+    doc.setTextColor(...blue); doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+    doc.text("ESTADO DE CUENTA - REEMBOLSOS PENDIENTES", pageWidth - margin, 38, { align: "right" });
+    doc.setTextColor(0); doc.setFontSize(8);
+    doc.text(`Fecha: ${input.fecha}`, pageWidth - margin, 54, { align: "right" });
+    doc.text(`Período: ${input.periodo}`, pageWidth - margin, 66, { align: "right" });
+    doc.setDrawColor(...blue); doc.setLineWidth(1.5);
+    doc.line(margin, 78, pageWidth - margin, 78);
+  };
+
+  const footer = () => {
+    const fy = pageHeight - 60;
+    doc.setDrawColor(...blue); doc.setLineWidth(1);
+    doc.line(margin, fy, pageWidth - margin, fy);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(0);
+    doc.text("ADECOMEX SRL — Tel. 809-531-3888 — WhatsApp 809-931-3246 — operaciones@adecomex.com", pageWidth / 2, fy + 16, { align: "center" });
+    doc.setFontSize(6);
+    doc.text("Oficina Comercial: Avenida Caonabo 85E, Los Restauradores, Distrito Nacional, Santo Domingo, República Dominicana", pageWidth / 2, fy + 28, { align: "center" });
+  };
+
+  input.clientes.forEach((grupo, gi) => {
+    if (gi > 0) doc.addPage();
+    header();
+    const c = grupo.cliente;
+    drawCell(margin, 88, contentWidth, 56, "CLIENTE",
+      [c.nombre, c.direccion, c.rnc ? `RNC: ${c.rnc}` : ""].filter(Boolean).join("\n"), 3);
+    const total = grupo.filas.reduce((s, f) => s + f.monto, 0);
+    autoTable(doc, {
+      startY: 156,
+      head: [["No. REEBGVEXP", "Expediente", "Mercancía / BL", "Fecha de generación", "Concepto", "Monto"]],
+      body: [
+        ...grupo.filas.map((f) => [f.numeroDoc, f.expediente, valueOrDash(f.mercanciaBl), f.fecha, f.concepto, money(f.monto)]),
+        [{ content: "TOTAL PENDIENTE", colSpan: 5, styles: { halign: "right" } }, money(total)],
+      ],
+      theme: "grid",
+      margin: { left: margin, right: margin, top: 90, bottom: 80 },
+      styles: { font: "helvetica", fontSize: 7.5, cellPadding: 5, lineColor: 0, lineWidth: 0.5, valign: "middle" },
+      headStyles: { fillColor: blue, textColor: 255, fontStyle: "bold", fontSize: 7 },
+      columnStyles: {
+        0: { cellWidth: 98 }, 1: { cellWidth: 62 }, 3: { cellWidth: 62, halign: "center" },
+        4: { cellWidth: 80 }, 5: { cellWidth: 80, halign: "right" },
+      },
+      didParseCell: (h) => {
+        if (h.section === "body" && h.row.index === grupo.filas.length) {
+          h.cell.styles.fontStyle = "bold";
+          h.cell.styles.fillColor = [232, 238, 249];
+        }
+      },
+      didDrawPage: () => { header(); footer(); },
+    });
+    let y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 16;
+    if (y + 82 > pageHeight - 70) { doc.addPage(); header(); footer(); y = 90; }
+    doc.setFillColor(...blue); doc.rect(margin, y, contentWidth, 18, "F");
+    doc.setTextColor(255); doc.setFont("helvetica", "bold"); doc.setFontSize(7.5);
+    doc.text("FAVOR REALIZAR LA TRANSFERENCIA A LA SIGUIENTE CUENTA", margin + 6, y + 12);
+    doc.setTextColor(0); y += 18;
+    const b = input.datosBancarios;
+    drawCell(margin, y, half, 32, "CUENTA", b.cuenta, 1);
+    drawCell(margin + half, y, half, 32, "TIPO DE CUENTA", b.tipo_cuenta, 1);
+    drawCell(margin, y + 32, half, 32, "BENEFICIARIO", b.beneficiario, 1);
+    drawCell(margin + half, y + 32, half, 32, "BANCO", b.banco, 1);
+  });
+  return doc;
+}

@@ -12,7 +12,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Download, FileText } from "lucide-react";
+import { fetchDatosBancariosReembolso } from "@/lib/reembolso-config";
+import { buildEstadoCuentaReembolsosPdf } from "@/lib/pdf-solicitud-reembolso";
 import { fmtLocalDate, parseLocalDate } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/admin/reembolsos")({
@@ -192,6 +194,55 @@ function ReembolsosPage() {
         ? `${MESES[ancla.getMonth()]} ${ancla.getFullYear()}`
         : `Año ${ancla.getFullYear()}`;
 
+  const [generandoPdf, setGenerandoPdf] = useState(false);
+  const pendientesVisibles = visibles.filter((s) => s.estado === "pendiente");
+  const exportEstadoCuenta = async () => {
+    if (pendientesVisibles.length === 0) return;
+    setGenerandoPdf(true);
+    try {
+      const ids = pendientesVisibles.map((s) => s.expedienteId);
+      const [expRes, banco] = await Promise.all([
+        supabase.from("expedientes")
+          .select("id, descripcion_mercancia, bl_awb, cliente_id, clientes(id, nombre, direccion, rnc)")
+          .in("id", ids),
+        fetchDatosBancariosReembolso(),
+      ]);
+      if (expRes.error) throw expRes.error;
+      const info = new Map((expRes.data ?? []).map((e: any) => [e.id, e]));
+      const grupos = new Map<string, { cliente: { nombre: string; direccion: string; rnc: string }; filas: any[] }>();
+      for (const s of [...pendientesVisibles].sort((a, b) => (a.fecha < b.fecha ? -1 : 1))) {
+        const e: any = info.get(s.expedienteId) ?? {};
+        const key = e.clientes?.id ?? s.cliente;
+        if (!grupos.has(key)) grupos.set(key, {
+          cliente: { nombre: e.clientes?.nombre ?? s.cliente, direccion: e.clientes?.direccion ?? "", rnc: e.clientes?.rnc ?? "" },
+          filas: [],
+        });
+        grupos.get(key)!.filas.push({
+          numeroDoc: s.numeroDoc,
+          expediente: s.expediente,
+          mercanciaBl: [e.descripcion_mercancia, e.bl_awb ? `BL: ${e.bl_awb}` : ""].filter(Boolean).join("\n"),
+          fecha: s.fecha ? fmtLocalDate(s.fecha) : "—",
+          concepto: "Gastos operativos",
+          monto: s.total,
+        });
+      }
+      const lista = [...grupos.values()].sort((a, b) => a.cliente.nombre.localeCompare(b.cliente.nombre));
+      const doc = await buildEstadoCuentaReembolsosPdf({
+        fecha: new Date().toLocaleDateString("es-DO", { timeZone: "America/Santo_Domingo" }),
+        periodo: etiquetaPeriodo,
+        clientes: lista,
+        datosBancarios: banco,
+      });
+      const nombre = lista.length === 1 ? lista[0].cliente.nombre.replace(/[^\w]+/g, "_") : "Clientes";
+      doc.save(`Estado_Cuenta_Reembolsos_${nombre}_${iso(new Date())}.pdf`);
+      if (lista.length > 1) toast.info(`El PDF incluye ${lista.length} clientes, uno por página. Filtre por cliente para un documento individual.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo generar el estado de cuenta");
+    } finally {
+      setGenerandoPdf(false);
+    }
+  };
+
   const exportExcel = async () => {
     const XLSX: typeof XLSXNS = await import("xlsx");
     const aoa: any[][] = [
@@ -282,6 +333,14 @@ function ReembolsosPage() {
               </Select>
               <Button variant="outline" onClick={exportExcel} disabled={visibles.length === 0}>
                 <Download className="mr-1 h-4 w-4" /> Excel
+              </Button>
+              <Button
+                variant="outline"
+                onClick={exportEstadoCuenta}
+                disabled={generandoPdf || pendientesVisibles.length === 0}
+                title="Estado de cuenta de reembolsos pendientes según los filtros aplicados"
+              >
+                <FileText className="mr-1 h-4 w-4" /> {generandoPdf ? "Generando…" : "Estado de cuenta PDF"}
               </Button>
             </div>
           </div>
