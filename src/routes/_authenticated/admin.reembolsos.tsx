@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type * as XLSXNS from "xlsx";
 import { toast } from "sonner";
@@ -195,6 +195,11 @@ function ReembolsosPage() {
         : `Año ${ancla.getFullYear()}`;
 
   const [generandoPdf, setGenerandoPdf] = useState(false);
+  const [vistaPreviaPdf, setVistaPreviaPdf] = useState<{ url: string; nombre: string } | null>(null);
+  useEffect(() => {
+    if (!vistaPreviaPdf) return;
+    return () => URL.revokeObjectURL(vistaPreviaPdf.url);
+  }, [vistaPreviaPdf]);
   const pendientesVisibles = visibles.filter((s) => s.estado === "pendiente");
   const exportEstadoCuenta = async () => {
     if (pendientesVisibles.length === 0) return;
@@ -217,7 +222,7 @@ function ReembolsosPage() {
           cliente: { nombre: e.clientes?.nombre ?? s.cliente, direccion: e.clientes?.direccion ?? "", rnc: e.clientes?.rnc ?? "" },
           filas: [],
         });
-        grupos.get(key)!.filas.push({
+        grupos.get(key)?.filas.push({
           numeroDoc: s.numeroDoc,
           expediente: s.expediente,
           mercanciaBl: [e.descripcion_mercancia, e.bl_awb ? `BL: ${e.bl_awb}` : ""].filter(Boolean).join("\n"),
@@ -234,7 +239,10 @@ function ReembolsosPage() {
         datosBancarios: banco,
       });
       const nombre = lista.length === 1 ? lista[0].cliente.nombre.replace(/[^\w]+/g, "_") : "Clientes";
-      doc.save(`Estado_Cuenta_Reembolsos_${nombre}_${iso(new Date())}.pdf`);
+      setVistaPreviaPdf({
+        url: URL.createObjectURL(doc.output("blob")),
+        nombre: `Estado_Cuenta_Reembolsos_${nombre}_${iso(new Date())}.pdf`,
+      });
       if (lista.length > 1) toast.info(`El PDF incluye ${lista.length} clientes, uno por página. Filtre por cliente para un documento individual.`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo generar el estado de cuenta");
@@ -338,7 +346,7 @@ function ReembolsosPage() {
                 variant="outline"
                 onClick={exportEstadoCuenta}
                 disabled={generandoPdf || pendientesVisibles.length === 0}
-                title="Estado de cuenta de reembolsos pendientes según los filtros aplicados"
+                title="Vista previa del estado de cuenta de reembolsos pendientes según los filtros aplicados"
               >
                 <FileText className="mr-1 h-4 w-4" /> {generandoPdf ? "Generando…" : "Estado de cuenta PDF"}
               </Button>
@@ -421,6 +429,33 @@ function ReembolsosPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={vistaPreviaPdf !== null} onOpenChange={(open) => { if (!open) setVistaPreviaPdf(null); }}>
+        <DialogContent className="max-w-4xl w-[95vw] h-[85vh] flex flex-col p-0 gap-0" aria-describedby={undefined}>
+          <DialogHeader className="px-5 py-3 pr-10 border-b shrink-0">
+            <DialogTitle className="text-base">Estado de Cuenta de Reembolsos Pendientes</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 bg-muted/30 overflow-hidden">
+            {vistaPreviaPdf && (
+              <iframe
+                src={vistaPreviaPdf.url}
+                title="Vista previa del estado de cuenta de reembolsos pendientes"
+                className="w-full h-full border-0"
+              />
+            )}
+          </div>
+          <DialogFooter className="px-5 py-3 border-t gap-2 shrink-0 sm:justify-between">
+            {vistaPreviaPdf && (
+              <Button variant="outline" size="sm" asChild>
+                <a href={vistaPreviaPdf.url} download={vistaPreviaPdf.nombre}>
+                  <Download className="mr-1 h-4 w-4" /> Descargar
+                </a>
+              </Button>
+            )}
+            <Button size="sm" onClick={() => setVistaPreviaPdf(null)}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={dlgPago} onOpenChange={setDlgPago}>
         <DialogContent className="sm:max-w-md">
