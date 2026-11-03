@@ -54,3 +54,4 @@ Detail headers: content-sized rows, client label/value together, wrap IDs, warni
 - Stored document sizes use authenticated Storage info metadata and shared `documento-tamano` formatting, avoiding full downloads and covering all upload paths/history without schema changes.
 - ZIPs use `documentos-zip`: authenticated downloads, section folders, unique names, unchanged bytes; abort on any failed file.
 - Reimbursement statements preview local PDF Blob URLs, download the same bytes on request, and revoke URLs on close/unmount without storing documents.
+- Third-party fee payments (Honorarios de Terceros) are tracked per gasto row via gastos.pago_estado/fecha_pago, so the Finance batch screen and the expediente's operating-expense row share one status.

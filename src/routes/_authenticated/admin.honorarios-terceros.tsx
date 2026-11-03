@@ -16,7 +16,7 @@ import { CheckCircle2, ChevronLeft, ChevronRight, Download, FileText } from "luc
 import { buildEstadoCuentaHonorariosPdf } from "@/lib/pdf-solicitud-reembolso";
 import { fmtLocalDate, parseLocalDate } from "@/lib/dates";
 
-export const CONCEPTO_HONORARIOS = "Honorarios de terceros";
+const CONCEPTO_HONORARIOS = "Honorarios de terceros";
 
 export const Route = createFileRoute("/_authenticated/admin/honorarios-terceros")({
   ssr: false,
@@ -85,12 +85,12 @@ function HonorariosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gastos")
-        .select("id, monto, fecha, created_at, proveedor, pago_estado, fecha_pago, expediente_id, expedientes!inner(id, numero, bl_awb, descripcion_mercancia, deleted_at, clientes(nombre))")
+        .select("id, monto, fecha, created_at, proveedor, pago_estado, fecha_pago, expediente_id, expedientes!inner(id, numero, bl_awb, descripcion_mercancia, clientes(nombre))")
         .ilike("concepto", CONCEPTO_HONORARIOS)
         .is("deleted_at", null);
       if (error) throw error;
       return ((data ?? []) as any[])
-        .filter((r) => r.expedientes && !r.expedientes.deleted_at)
+        .filter((r) => r.expedientes)
         .map<Honorario>((r) => ({
           id: r.id,
           expedienteId: r.expedientes.id,
