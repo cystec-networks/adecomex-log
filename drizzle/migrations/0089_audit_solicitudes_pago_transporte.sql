@@ -1,0 +1,1 @@
+CREATE TRIGGER audit_solicitudes_pago_transporte AFTER INSERT OR DELETE OR UPDATE ON public.solicitudes_pago_transporte FOR EACH ROW EXECUTE FUNCTION public.audit_log();
