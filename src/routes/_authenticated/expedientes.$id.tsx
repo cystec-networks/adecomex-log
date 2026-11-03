@@ -4652,7 +4652,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
                   onValueChange={(v) => {
                     if (v === "__otro__") { setConceptoOtro(true); setF({ ...f, concepto: "" }); return; }
                     setConceptoOtro(false);
-                    setF({ ...f, concepto: v, es_reembolso: v === "Reembolsos" ? true : f.es_reembolso });
+                    setF({ ...f, concepto: v, es_reembolso: v === "Reembolsos" ? true : v === "Honorarios de terceros" ? false : f.es_reembolso });
                   }}
                 >
                   <SelectTrigger><SelectValue placeholder="Seleccione un concepto" /></SelectTrigger>

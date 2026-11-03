@@ -87,6 +87,7 @@ function HonorariosPage() {
         .from("gastos")
         .select("id, monto, fecha, created_at, proveedor, pago_estado, fecha_pago, expediente_id, expedientes!inner(id, numero, bl_awb, descripcion_mercancia, clientes(nombre))")
         .ilike("concepto", CONCEPTO_HONORARIOS)
+        .eq("es_reembolso", false)
         .is("deleted_at", null);
       if (error) throw error;
       return ((data ?? []) as any[])
