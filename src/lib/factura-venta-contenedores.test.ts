@@ -19,8 +19,8 @@ test("varios contenedores en un único Transporte permiten vínculo", () => {
 test("contenedores de dos Transportes distintos no eligen uno arbitrariamente", () => {
   expect(resolverTransporteFactura(["MSKU1234567", "TCLU9876543"], [transporte("TR1", "MSKU1234567"), transporte("TR2", "TCLU9876543")]).unico).toBe(null);
 });
-test("no reemplaza la factura existente ni elimina ambigüedad por filtrar vinculados", () => {
-  expect(resolverTransporteFactura(["MSKU1234567"], [transporte("TR1", "MSKU1234567", "otra")]).disponible).toBe(null);
+test("una factura anterior permite agregar otra sin eliminar la ambigüedad", () => {
+  expect(resolverTransporteFactura(["MSKU1234567"], [transporte("TR1", "MSKU1234567", "otra")]).disponible?.id).toBe("TR1");
   expect(resolverTransporteFactura(["MSKU1234567"], [transporte("TR1", "MSKU1234567", "otra"), transporte("TR2", "MSKU1234567")]).unico).toBe(null);
 });
 test("reescaneo reemplaza referencias sin tocar notas manuales", () => {
@@ -49,8 +49,13 @@ test("TR sin coincidencia recurre al contenedor normalizado", () => {
 test("TR ambiguo no elige arbitrariamente ni recurre a un contenedor", () => {
   expect(resolverTransporteFactura(["MRSU2103597"], [transporte("TR-000065", "MRSU2103597"), transporte("TR-000066", "")], ["TR-000065", "TR-000066"]).unico).toBe(null);
 });
-test("TR ya vinculado conserva su factura aunque otro Transporte coincida por contenedor", () => {
-  expect(resolverTransporteFactura(["MRSU2103597"], [transporte("TR-000065", "", "existente"), transporte("TR-000066", "MRSU2103597")], ["TR-000065"]).disponible).toBe(null);
+test("TR ya vinculado admite otra factura y mantiene prioridad sobre contenedor", () => {
+  expect(resolverTransporteFactura(["MRSU2103597"], [transporte("TR-000065", "", "existente"), transporte("TR-000066", "MRSU2103597")], ["TR-000065"]).disponible?.id).toBe("TR-000065");
+});
+test("TR000065 y TR-000065 se comparan igual en ambos lados", () => {
+  expect(detectarTransportesFactura(["PEDIDO TR000065", "TR-000065"])).toEqual(["TR-000065"]);
+  expect(resolverTransporteFactura([], [transporte("TR000065", "")], ["TR-000065"]).disponible?.id).toBe("TR000065");
+  expect(resolverTransporteFactura([], [transporte("TR-000065", "")], ["TR000065"]).disponible?.id).toBe("TR-000065");
 });
 test("ninguna referencia coincidente deja pendiente el vínculo", () => {
   expect(resolverTransporteFactura(["MRSU2103597"], [transporte("TR-000066", "TCLU9876543")], ["TR-000065"]).unico).toBe(null);

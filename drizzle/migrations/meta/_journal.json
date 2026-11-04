@@ -645,6 +645,34 @@
       "when": 1793750225679,
       "tag": "0091_catalogo_gestores_honorarios",
       "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1793761144851,
+      "tag": "0092_transporte_facturas_ecf_multiples",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1793761177467,
+      "tag": "0093_transporte_ecf_guardas_y_totales",
+      "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1793761286875,
+      "tag": "0094_transporte_ecf_lista_atomica",
+      "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1793761431897,
+      "tag": "0095_transporte_facturas_validar_acceso",
+      "breakpoints": true
     }
   ]
 }

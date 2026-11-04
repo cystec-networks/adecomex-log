@@ -6940,6 +6940,52 @@ export type Database = {
         }
         Relationships: []
       }
+      transporte_facturas_ecf: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          factura_ecf_id: string
+          id: string
+          transporte_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          factura_ecf_id: string
+          id?: string
+          transporte_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          factura_ecf_id?: string
+          id?: string
+          transporte_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transporte_facturas_ecf_factura_ecf_id_fkey"
+            columns: ["factura_ecf_id"]
+            isOneToOne: true
+            referencedRelation: "facturas_ecf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transporte_facturas_ecf_factura_ecf_id_fkey"
+            columns: ["factura_ecf_id"]
+            isOneToOne: true
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transporte_facturas_ecf_transporte_id_fkey"
+            columns: ["transporte_id"]
+            isOneToOne: false
+            referencedRelation: "transportes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transportes: {
         Row: {
           cantidad_viajes: number | null
@@ -7642,6 +7688,15 @@ export type Database = {
       }
     }
     Functions: {
+      agregar_factura_transporte: {
+        Args: {
+          _detalle: string
+          _factura_id: string
+          _numero: string
+          _transporte_id: string
+        }
+        Returns: boolean
+      }
       aprobar_confirmacion_correo: {
         Args: {
           p_asunto: string
@@ -7682,6 +7737,14 @@ export type Database = {
       fusionar_datos_correo: {
         Args: { p_anterior: Json; p_nuevo: Json }
         Returns: Json
+      }
+      guardar_facturas_transporte: {
+        Args: {
+          _anteriores: string[]
+          _facturas: string[]
+          _transporte_id: string
+        }
+        Returns: boolean
       }
       guardar_solicitud_correo_pendiente: {
         Args: { p_solicitud: Json }

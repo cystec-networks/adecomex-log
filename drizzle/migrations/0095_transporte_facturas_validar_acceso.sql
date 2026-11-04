@@ -1,0 +1,1 @@
+ALTER POLICY "transporte facturas insert staff" ON public.transporte_facturas_ecf WITH CHECK (private.is_staff(auth.uid()) AND EXISTS (SELECT 1 FROM public.transportes t WHERE t.id=transporte_id AND t.eliminado_en IS NULL) AND EXISTS (SELECT 1 FROM public.facturas_ecf f WHERE f.id=factura_ecf_id AND f.eliminado_en IS NULL));

@@ -21,23 +21,13 @@ export async function buscarTransportesFactura(contenedores: readonly string[], 
 export async function vincularTransporteDesdeEcf(contenedores: readonly string[], factura: { id: string; encf: string; fecha_emision: string; monto_total: number }, referenciasTr: readonly string[] = []) {
   const resultado = await buscarTransportesFactura(contenedores, referenciasTr);
   const target = resultado.disponible;
-  if (!target) return { vinculado: false, motivo: resultado.coincidencias.length > 1 ? "varios Transportes coincidentes" : resultado.unico ? "el Transporte ya tiene una factura vinculada" : "ningún Transporte coincidente" };
-  const { data: existentes, error: lecturaError } = await supabase.from("transportes")
-    .select("id").eq("factura_ecf_id", factura.id).is("eliminado_en", null);
-  if (lecturaError) throw lecturaError;
-  if (existentes?.length) return { vinculado: false, motivo: "la factura ya tiene un Transporte vinculado" };
-  let escritura = supabase.from("transportes")
-    .update({
-      factura_ecf_id: factura.id,
-      factura_numero: target.factura_numero || factura.encf,
-      factura_fecha: target.factura_fecha || factura.fecha_emision,
-      ingreso_facturado: Number(target.ingreso_facturado) || factura.monto_total,
-    }).eq("id", target.id).is("eliminado_en", null).is("factura_ecf_id", null);
-  escritura = target.numero_viaje === null ? escritura.is("numero_viaje", null) : escritura.eq("numero_viaje", target.numero_viaje);
-  escritura = target.contenedores_detalle === null ? escritura.is("contenedores_detalle", null) : escritura.eq("contenedores_detalle", target.contenedores_detalle);
-  const { data: enlazados, error } = await escritura.select("id");
+  if (!target) return { vinculado: false, motivo: resultado.coincidencias.length > 1 ? "varios Transportes coincidentes" : "ningún Transporte coincidente" };
+  const { data: enlazados, error } = await supabase.rpc("agregar_factura_transporte", {
+    _transporte_id: target.id, _factura_id: factura.id,
+    _numero: target.numero_viaje as string, _detalle: target.contenedores_detalle as string,
+  });
   if (error) throw error;
-  return { vinculado: !!enlazados?.length, motivo: enlazados?.length ? (target.numero_viaje || target.id) : "el Transporte cambió o no permite la vinculación" };
+  return { vinculado: !!enlazados, motivo: enlazados ? (target.numero_viaje || target.id) : "el Transporte cambió o la factura pertenece a otro Transporte" };
 }
 
 /** Crea o actualiza un renglón de "Facturación (cobros)" por cada línea de la e-CF vinculada.

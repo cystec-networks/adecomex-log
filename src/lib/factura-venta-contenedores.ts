@@ -24,19 +24,19 @@ export type TransporteContenedores = {
 };
 
 export function detectarTransportesFactura(textos: readonly string[]): string[] {
-  return [...new Set(textos.flatMap(texto => [...texto.toUpperCase().matchAll(/(?<![A-Z0-9])TR\s*[-–—]\s*(\d{6})(?![A-Z0-9])/g)].map(m => `TR-${m[1]}`)))];
+  return [...new Set(textos.flatMap(texto => [...texto.toUpperCase().matchAll(/(?<![A-Z0-9])TR\s*[-–—]?\s*(\d{6})(?![A-Z0-9])/g)].map(m => `TR-${m[1]}`)))];
 }
 
 export function resolverTransporteFactura(contenedores: readonly string[], transportes: readonly TransporteContenedores[], referenciasTr: readonly string[] = []) {
   const codigos = new Set(detectarContenedoresFactura(contenedores));
   const numeros = new Set(detectarTransportesFactura(referenciasTr));
-  const porNumero = transportes.filter(t => numeros.has((t.numero_viaje ?? "").trim().toUpperCase()));
+  const porNumero = transportes.filter(t => detectarTransportesFactura([t.numero_viaje ?? ""]).some(n => numeros.has(n)));
   const porContenedor = transportes.filter(t =>
     detectarContenedoresFactura([t.contenedores_detalle ?? ""]).some(c => codigos.has(c)),
   );
   const coincidencias = [...new Map((porNumero.length ? porNumero : porContenedor).map(t => [t.id, t])).values()];
   const unico = coincidencias.length === 1 ? coincidencias[0] : null;
-  return { coincidencias, unico, disponible: unico && !unico.factura_ecf_id ? unico : null, criterio: porNumero.length ? "transporte" : "contenedor" };
+  return { coincidencias, unico, disponible: unico, criterio: porNumero.length ? "transporte" : "contenedor" };
 }
 
 const INICIO = "[Contenedores · OCR]";

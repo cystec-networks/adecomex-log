@@ -324,7 +324,7 @@ export function FacturaEcfFormDialog({
       for (const key of ["expediente", "expedientes", "facturas", "ecf-pendientes-count", "expedientes-referencia-ecf"]) qc.invalidateQueries({ queryKey: [key] });
       qc.invalidateQueries({ queryKey: ["cxc-facturas"] });
       for (const key of ["costos_producto", "costos-producto-liq", "ecf-vinculada"]) qc.invalidateQueries({ queryKey: [key] });
-      for (const key of ["transportes", "transporte", "transportes-por-expediente", "transportes-referencia-ecf"]) qc.invalidateQueries({ queryKey: [key] });
+      for (const key of ["transportes", "transporte", "transportes-por-expediente", "transportes-referencia-ecf", "transporte-facturas", "transporte-facturas-detalle", "dash-tr-rows"]) qc.invalidateQueries({ queryKey: [key] });
       if (editId) qc.invalidateQueries({ queryKey: ["factura-ecf-edit", editId] });
       onOpenChange(false);
       onCreated?.(row.id);

@@ -1,5 +1,5 @@
 # Email intake pipeline rules
-- Sales invoice transport references use `factura-venta-contenedores` separately from fiscal descriptions; its resolver is shared by preview and save so both choose identically. `factura-ecf-vinculacion` reads all active transports through RLS (including null container details), links only a unique empty target after invoice save and guards unchanged number/details without replacing links.
+- Sales invoice transport references use `factura-venta-contenedores` separately from fiscal descriptions; preview/save share normalized TR-first matching. `transporte_facturas_ecf` stores multiple invoices per transport and one transport per invoice; guarded invoker RPC appends idempotently. Database triggers maintain summed income for financial consumers and the legacy primary link; manual lists retain drafts until transport save.
 
 - `gastos-agrupados` groups pending fee rows by expediente ID and provider only for consolidated Finance; selection retains individual expense IDs so payments and exports stay unchanged.
 - `honorarios-pago` supplies selection and payload rules for both payment directions; reversal clears the date and writes are guarded by the previous state to preserve concurrent corrections.

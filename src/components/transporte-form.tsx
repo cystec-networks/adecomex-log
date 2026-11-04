@@ -15,7 +15,8 @@ import { toast } from "sonner";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
 import { SearchEmailButton } from "@/components/search-email-button";
-import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
+import { TransporteFacturasLista } from "@/components/transporte-facturas-lista";
+import { totalFacturasTransporte } from "@/lib/transporte-facturas";
 
 const NO_EXPEDIENTE = "__none__";
 
@@ -71,8 +72,32 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial, embedde
   const { data: existing } = useQuery({
     enabled: mode === "edit" && !!id,
     queryKey: ["transporte", id],
-    queryFn: async () => (await supabase.from("transportes").select("*, clientes(nombre), expedientes(numero,cliente_id)").eq("id", id!).maybeSingle()).data,
+    queryFn: async () => {
+      if (!id) return null;
+      return (await supabase.from("transportes").select("*, clientes(nombre), expedientes(numero,cliente_id)").eq("id", id).maybeSingle()).data;
+    },
   });
+  const { data: vinculosGuardados } = useQuery({
+    enabled: mode === "edit" && !!id,
+    queryKey: ["transporte-facturas", id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase.from("transporte_facturas_ecf").select("factura_ecf_id").eq("transporte_id", id).order("created_at");
+      if (error) throw error;
+      return (data ?? []).map(v => v.factura_ecf_id);
+    },
+  });
+  const [facturaIds, setFacturaIds] = useState<string[] | null>(null);
+  const idsFacturas = facturaIds ?? vinculosGuardados ?? [];
+  const { data: facturasVinculadas = [] } = useQuery({
+    queryKey: ["transporte-facturas-detalle", idsFacturas], enabled: idsFacturas.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("facturas_ecf").select("id,encf,monto_total,fecha_emision,pdf_url,eliminado_en").in("id", idsFacturas);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const totalVinculado = idsFacturas.length ? totalFacturasTransporte(facturasVinculadas.filter(f => idsFacturas.includes(f.id))) : null;
 
   const { data: expedientes } = useQuery({
     queryKey: ["expedientes-lite"],
@@ -193,11 +218,11 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial, embedde
     const cxc = n(form.descuento_cxc);
     const netoPagar = Math.max(0, costoViaje - cxc);
     const costos = costoViaje + n(form.costo_combustible) + n(form.costo_peajes) + n(form.costo_chofer) + n(form.costo_otros);
-    const ingreso = n(form.ingreso_facturado);
+    const ingreso = totalVinculado ?? n(form.ingreso_facturado);
     const margen = ingreso - costos;
     const pct = ingreso > 0 ? (margen / ingreso) * 100 : 0;
     return { costos, ingreso, margen, pct, costoViaje, cxc, netoPagar };
-  }, [form.costo_viaje, form.descuento_cxc, form.costo_combustible, form.costo_peajes, form.costo_chofer, form.costo_otros, form.ingreso_facturado]);
+  }, [form.costo_viaje, form.descuento_cxc, form.costo_combustible, form.costo_peajes, form.costo_chofer, form.costo_otros, form.ingreso_facturado, totalVinculado]);
 
   const buscarSolicitudPago = async (control?: string) => {
     const nc = (control ?? form.numero_control_pago ?? "").trim();
@@ -287,10 +312,13 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial, embedde
 
   const save = useMutation({
     mutationFn: async () => {
-      if (form.estado === "facturado" && !form.factura_ecf_id) {
+      if (mode === "edit" && vinculosGuardados === undefined) throw new Error("Espera a que se carguen las facturas vinculadas.");
+      if (form.estado === "facturado" && !idsFacturas.length) {
         throw new Error("Para marcar como Facturado debes vincular una Factura e-CF real.");
       }
       const payload: any = { ...form };
+      delete payload.factura_ecf_id;
+      if (idsFacturas.length) delete payload.ingreso_facturado;
       const nullableStr = [
         "expediente_id","cliente_id","tipo","transportista","placa_contenedor","origen","destino",
         "fecha_salida","eta","observaciones","factura_numero","factura_fecha","numero_viaje",
@@ -332,10 +360,18 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial, embedde
         if (error) throw error;
         saved = data;
       } else {
-        const { data, error } = await supabase.from("transportes").update(payload).eq("id", id!).select().single();
+        if (!id) throw new Error("Transporte no disponible");
+        const { data, error } = await supabase.from("transportes").update(payload).eq("id", id).select().single();
         if (error) throw error;
         saved = data;
       }
+      const actuales = vinculosGuardados ?? [];
+      if (facturaIds !== null || mode === "new" && idsFacturas.length) {
+        const { data: guardado, error } = await supabase.rpc("guardar_facturas_transporte", { _transporte_id: saved.id, _anteriores: actuales, _facturas: idsFacturas });
+        if (error) throw new Error(error.code === "23505" ? "Una de las facturas ya está vinculada a otro Transporte." : error.message);
+        if (!guardado) throw new Error("Las facturas vinculadas cambiaron. Recarga el Transporte antes de guardar.");
+      }
+      setFacturaIds(null);
 
       // Vincular solicitud de pago (una solicitud puede originar varios transportes)
       const nc = (form.numero_control_pago ?? "").trim();
@@ -365,6 +401,8 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial, embedde
     onSuccess: (row) => {
       qc.invalidateQueries({ queryKey: ["transportes"] });
       qc.invalidateQueries({ queryKey: ["transporte", id] });
+      qc.invalidateQueries({ queryKey: ["transporte-facturas", id] });
+      qc.invalidateQueries({ queryKey: ["dash-tr-rows"] });
       qc.invalidateQueries({ queryKey: ["transportes-por-expediente"] });
       toast.success(mode === "new" ? `Transporte ${row.numero_viaje} creado` : "Transporte actualizado");
       if (embedded) { onSaved?.(); return; }
@@ -792,31 +830,16 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial, embedde
             <CardContent className="pt-5 space-y-5">
               <div className="grid gap-1.5">
                 <Label>
-                  Factura e-CF (obligatoria para estado "Facturado")
+                  Facturas e-CF (al menos una para estado "Facturado")
                 </Label>
-                <FacturaEcfSelector
-                  value={form.factura_ecf_id || null}
-                  onChange={(id, fact) => {
-                    set("factura_ecf_id", id ?? "");
-                    if (fact) {
-                      if (!form.factura_numero) set("factura_numero", fact.encf);
-                      if (!form.factura_fecha) set("factura_fecha", fact.fecha_emision);
-                      if (!form.ingreso_facturado || Number(form.ingreso_facturado) === 0) {
-                        set("ingreso_facturado", String(fact.monto_total));
-                      }
-                    }
-                  }}
-                  preload={{
-                    cliente_id: form.cliente_id || null,
-                    monto_total: Number(form.ingreso_facturado) || 0,
-                  }}
-                />
+                <TransporteFacturasLista ids={idsFacturas} onChange={setFacturaIds} clienteId={form.cliente_id || null} />
+                {idsFacturas.length > 0 && <p className="text-xs font-semibold">Total facturado ({idsFacturas.length}): {fmtDOP(totalVinculado ?? 0)}</p>}
               </div>
 
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <div className="grid gap-1.5">
                   <Label>Ingreso facturado al cliente</Label>
-                  <MoneyDOP value={form.ingreso_facturado} onChange={(v) => set("ingreso_facturado", v)} />
+                  <MoneyDOP disabled={idsFacturas.length > 0} value={totalVinculado == null ? form.ingreso_facturado : String(totalVinculado)} onChange={(v) => set("ingreso_facturado", v)} />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>N° Factura (referencia)</Label>
