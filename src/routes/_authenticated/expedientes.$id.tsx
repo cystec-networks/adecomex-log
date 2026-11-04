@@ -19,7 +19,6 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GestorHonorariosSelect } from "@/components/gestor-honorarios-select";
-import { agruparGastosHonorarios } from "@/lib/gastos-agrupados";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
@@ -4635,7 +4634,6 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
   };
   const openNew = () => { setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); setConceptoOtro(false); setOpen(true); };
 
-  const [gruposAbiertos, setGruposAbiertos] = useState<Record<string, boolean>>({});
   const subtotal = gastos.reduce((s, r) => s + (r.es_reembolso ? -Number(r.monto || 0) : Number(r.monto || 0)), 0);
 
 
@@ -4830,10 +4828,9 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
             </tr>
           </thead>
           <tbody>
-            {agruparGastosHonorarios(gastos).map((fila) => {
-              const renderRow = (r: any, child = false) => (
-              <tr key={r.id} className={`border-b last:border-0 ${child ? "bg-muted/10" : ""}`}>
-                <td className={child ? "pl-10 pr-4 py-2 text-xs text-muted-foreground" : "px-4 py-2"}>{r.concepto}{r.es_reembolso && <Badge variant="outline" className="ml-2 text-xs">reembolso</Badge>}{r.concepto === "Honorarios de terceros" && (
+            {gastos.map((r: any) => (
+              <tr key={r.id} className="border-b last:border-0">
+                <td className="px-4 py-2">{r.concepto}{r.es_reembolso && <Badge variant="outline" className="ml-2 text-xs">reembolso</Badge>}{r.concepto === "Honorarios de terceros" && (
                   <Badge variant={r.pago_estado === "pagado" ? "secondary" : "outline"} className="ml-2 text-xs font-normal" title={r.fecha_pago ? `Pagado el ${fmtLocalDate(r.fecha_pago)}` : "Pago al gestor pendiente"}>
                     {r.pago_estado === "pagado" ? `Pagado ${fmtLocalDate(r.fecha_pago)}` : "Pago pendiente"}
                   </Badge>
@@ -4852,32 +4849,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
                   </div>
                 </td>
               </tr>
-              );
-              if (fila.tipo === "simple") return renderRow(fila.gasto);
-              const abierto = !!gruposAbiertos[fila.clave];
-              const pendientes = fila.gastos.filter((g: any) => g.pago_estado !== "pagado").length;
-              return (
-                <Fragment key={`grupo-${fila.clave}`}>
-                  <tr className="border-b cursor-pointer hover:bg-muted/30" onClick={() => setGruposAbiertos((s) => ({ ...s, [fila.clave]: !s[fila.clave] }))}>
-                    <td className="px-4 py-2">
-                      <span className="inline-flex items-center gap-1">
-                        {abierto ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                        Honorarios de terceros
-                        <Badge variant="outline" className="ml-1 text-xs font-normal">{fila.gastos.length} gastos</Badge>
-                        <Badge variant={pendientes === 0 ? "secondary" : "outline"} className="ml-1 text-xs font-normal">{pendientes === 0 ? "Pagados" : `${pendientes} pago(s) pendiente(s)`}</Badge>
-                      </span>
-                    </td>
-                    <td className="text-xs text-muted-foreground">{abierto ? "" : "Clic para ver detalle"}</td>
-                    <td className="text-xs text-muted-foreground">{fila.proveedor}</td>
-                    <td className="text-xs">—</td>
-                    <td></td>
-                    <td className="text-right font-medium">{fmtDOP(fila.total)}</td>
-                    <td></td>
-                  </tr>
-                  {abierto && fila.gastos.map((g: any) => renderRow(g, true))}
-                </Fragment>
-              );
-            })}
+            ))}
             {gastos.length === 0 && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Sin gastos registrados.</td></tr>}
             {gastos.length > 0 && (
               <tr className="bg-muted/20 font-medium">

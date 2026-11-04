@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type * as XLSXNS from "xlsx";
 import { toast } from "sonner";
@@ -12,7 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, ChevronLeft, ChevronRight, Download, FileText } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText } from "lucide-react";
+import { agruparHonorariosPendientes } from "@/lib/gastos-agrupados";
 import { buildEstadoCuentaHonorariosPdf } from "@/lib/pdf-solicitud-reembolso";
 import { fmtLocalDate, parseLocalDate } from "@/lib/dates";
 
@@ -138,6 +139,8 @@ function HonorariosPage() {
   }, [visibles]);
 
   const qc = useQueryClient();
+  const filas = useMemo(() => agruparHonorariosPendientes(visibles), [visibles]);
+  const [gruposAbiertos, setGruposAbiertos] = useState<Record<string, boolean>>({});
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
   const [dlgPago, setDlgPago] = useState(false);
   const [fechaPago, setFechaPago] = useState(() => iso(new Date()));
@@ -146,6 +149,12 @@ function HonorariosPage() {
   const todosMarcados = visibles.length > 0 && seleccionVisible.length === visibles.length;
   const toggle = (id: string, on: boolean) =>
     setSeleccion((prev) => { const n = new Set(prev); on ? n.add(id) : n.delete(id); return n; });
+  const toggleGrupo = (gastos: Honorario[], on: boolean) =>
+    setSeleccion((prev) => {
+      const n = new Set(prev);
+      gastos.forEach((g) => { if (on) n.add(g.id); else n.delete(g.id); });
+      return n;
+    });
   const toggleTodos = (on: boolean) => setSeleccion(on ? new Set(visibles.map((s) => s.id)) : new Set());
 
   const marcarPagado = async () => {
@@ -346,9 +355,10 @@ function HonorariosPage() {
                 </tr>
               </thead>
               <tbody>
-                {visibles.map((s) => (
-                  <tr key={s.id} className="border-b last:border-0 whitespace-nowrap">
-                    <td className="py-1.5 pr-3"><Checkbox aria-label={`Seleccionar ${s.expediente}`} checked={seleccion.has(s.id)} onCheckedChange={(v) => toggle(s.id, v === true)} /></td>
+                {filas.map((fila) => {
+                  const renderIndividual = (s: Honorario, detalle = false) => (
+                  <tr key={s.id} className={`border-b last:border-0 whitespace-nowrap ${detalle ? "bg-muted/30" : ""}`}>
+                    <td className="py-1.5 pr-3"><Checkbox aria-label={`Seleccionar gasto ${s.expediente} ${fmtLocalDate(s.fecha)} ${fmtMoney(s.monto)}`} checked={seleccion.has(s.id)} onCheckedChange={(v) => toggle(s.id, v === true)} /></td>
                     <td className="py-1.5 pr-3">{fmtLocalDate(s.fecha)}</td>
                     <td className="py-1.5 pr-3 max-w-[180px] truncate" title={s.proveedor}>{s.proveedor}</td>
                     <td className="py-1.5 pr-3">
@@ -361,7 +371,41 @@ function HonorariosPage() {
                     </td>
                     <td className="py-1.5">{fmtLocalDate(s.fechaPago)}</td>
                   </tr>
-                ))}
+                  );
+                  if (fila.tipo === "simple") return renderIndividual(fila.gasto);
+                  const primero = fila.gastos[0];
+                  if (!primero) return null;
+                  const abierto = Boolean(gruposAbiertos[fila.clave]);
+                  const marcados = fila.gastos.filter((g) => seleccion.has(g.id)).length;
+                  const fechas = fila.gastos.map((g) => g.fecha).sort();
+                  const primeraFecha = fechas[0];
+                  const ultimaFecha = fechas[fechas.length - 1];
+                  return (
+                    <Fragment key={fila.clave}>
+                      <tr className="border-b whitespace-nowrap hover:bg-muted/30">
+                        <td className="py-1.5 pr-3">
+                          <Checkbox aria-label={`Seleccionar grupo ${primero.expediente} ${fila.proveedor}`} checked={marcados === fila.gastos.length ? true : marcados > 0 ? "indeterminate" : false} onCheckedChange={(v) => toggleGrupo(fila.gastos, v === true)} />
+                        </td>
+                        <td className="py-1.5 pr-3">{fmtLocalDate(primeraFecha)}{primeraFecha !== ultimaFecha && ` – ${fmtLocalDate(ultimaFecha)}`}</td>
+                        <td className="py-1.5 pr-3 max-w-[180px] truncate" title={fila.proveedor}>{fila.proveedor}</td>
+                        <td className="py-1.5 pr-3">
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label={`${abierto ? "Contraer" : "Expandir"} honorarios ${primero.expediente} ${fila.proveedor}`} title={abierto ? "Contraer detalle" : "Ver detalle de gastos"} aria-expanded={abierto} onClick={() => setGruposAbiertos((prev) => ({ ...prev, [fila.clave]: !prev[fila.clave] }))}>
+                              {abierto ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            </Button>
+                            <Link to="/expedientes/$id" params={{ id: primero.expedienteId }} className="expediente-numero hover:underline">{primero.expediente}</Link>
+                            <Badge variant="outline" className="font-normal">{fila.gastos.length} gastos</Badge>
+                          </div>
+                        </td>
+                        <td className="py-1.5 pr-3 max-w-[260px] truncate" title={primero.cliente}>{primero.cliente}</td>
+                        <td className="py-1.5 pr-3 text-right font-semibold">{fmtMoney(fila.total)}</td>
+                        <td className="py-1.5 pr-3"><Badge variant="destructive" className="font-normal">Pendiente</Badge></td>
+                        <td className="py-1.5">—</td>
+                      </tr>
+                      {abierto && fila.gastos.map((g) => renderIndividual(g, true))}
+                    </Fragment>
+                  );
+                })}
                 <tr className="border-t-2 bg-muted/50 font-semibold">
                   <td className="py-2 pr-3 text-xs uppercase tracking-wide" colSpan={5}>Total pendiente</td>
                   <td className="py-2 pr-3 text-right text-destructive">{fmtMoney(totales.pendiente)}</td>
