@@ -687,6 +687,20 @@
       "when": 1793763916671,
       "tag": "0097_ecf_lineas_guardado_validacion",
       "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1793835498987,
+      "tag": "0098_sincronizar_contador_numeracion",
+      "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1793835514061,
+      "tag": "0099_sincronizar_contador_fix",
+      "breakpoints": true
     }
   ]
 }
