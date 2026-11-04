@@ -78,6 +78,37 @@ function FacturacionPage() {
     },
   });
 
+  // Vínculos múltiples Transporte ↔ e-CF (tabla puente); el FK legado
+  // transportes.factura_ecf_id solo refleja la primera factura vinculada.
+  const { data: vinculosTransporte } = useQuery({
+    queryKey: ["transporte-facturas-ecf-todos"],
+    queryFn: async () => {
+      const filas: { factura_ecf_id: string; transportes: { id: string; numero_viaje: string } | null }[] = [];
+      for (let desde = 0; ; desde += 500) {
+        const { data, error } = await supabase
+          .from("transporte_facturas_ecf")
+          .select("factura_ecf_id, transportes:transportes!transporte_facturas_ecf_transporte_id_fkey(id,numero_viaje)")
+          .order("created_at")
+          .range(desde, desde + 499);
+        if (error) throw error;
+        filas.push(...((data ?? []) as any[]));
+        if ((data ?? []).length < 500) break;
+      }
+      return filas;
+    },
+  });
+
+  const transportesPorFactura = useMemo(() => {
+    const mapa = new Map<string, { id: string; numero_viaje: string }[]>();
+    for (const v of vinculosTransporte ?? []) {
+      if (!v.transportes) continue;
+      const lista = mapa.get(v.factura_ecf_id) ?? [];
+      if (!lista.some((t) => t.id === v.transportes!.id)) lista.push(v.transportes);
+      mapa.set(v.factura_ecf_id, lista);
+    }
+    return mapa;
+  }, [vinculosTransporte]);
+
   const { data: pendientesCount } = useQuery({
     queryKey: ["ecf-pendientes-count"],
     queryFn: async () => {
@@ -326,7 +357,11 @@ function FacturacionPage() {
                   </tr>,
                   ...(!estaAbierto(grupo.mes) ? [] : grupo.facturas).map((f: any) => {
                   const exps = f.expedientes as { id: string; numero: string }[] | null;
-                  const trs = f.transportes as { id: string; numero_viaje: string }[] | null;
+                  const trsLegado = (f.transportes as { id: string; numero_viaje: string }[] | null) ?? [];
+                  const trs = [...trsLegado];
+                  for (const t of transportesPorFactura.get(f.id) ?? []) {
+                    if (!trs.some((x) => x.id === t.id)) trs.push(t);
+                  }
                   return (
                     <tr key={f.id} className="border-b last:border-0 hover:bg-muted/20">
                       <td className="px-3 py-2 font-mono font-medium">
