@@ -8,12 +8,40 @@ export type LineaFacturaExpediente = {
 type Resultado = { producto: boolean; arancel: { codigo: string } | null };
 type Tasas = { pct_gravamen: string; aplica_isc: boolean; pct_isc: string; pct_itbis: string };
 
+const normalizarTexto = (v: string | null | undefined) =>
+  (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim();
+const sumar = (a: number | null, b: number | null) =>
+  a == null && b == null ? null : Math.round(((a ?? 0) + (b ?? 0)) * 1e6) / 1e6;
+
+/** Invoice rows of the same product (same tariff code, description and unit) split into sub-lots become one row. */
+export function consolidarLineasFactura(lineas: LineaFacturaExpediente[]): LineaFacturaExpediente[] {
+  const grupos = new Map<string, LineaFacturaExpediente>();
+  const resultado: LineaFacturaExpediente[] = [];
+  for (const l of lineas) {
+    const descripcion = normalizarTexto(l.descripcion);
+    if (!descripcion) { resultado.push({ ...l }); continue; }
+    const clave = [(l.codigo_arancelario ?? "").replace(/\D/g, ""), descripcion, normalizarTexto(l.unidad)].join("|");
+    const previo = grupos.get(clave);
+    if (previo) {
+      previo.cantidad = sumar(previo.cantidad, l.cantidad);
+      previo.peso = sumar(previo.peso, l.peso);
+      previo.valor_fob = sumar(previo.valor_fob, l.valor_fob);
+      continue;
+    }
+    const copia = { ...l };
+    grupos.set(clave, copia);
+    resultado.push(copia);
+  }
+  return resultado;
+}
+
 /** Only OCR rows enter here. Never classify an existing document/manual code. */
 export async function prepararProductosFactura(
   lineas: LineaFacturaExpediente[],
   clasificar: (descripciones: string[]) => Promise<{ resultados: Resultado[] }>,
   buscarTasas: (codigo: string, manual: TasasProducto) => Promise<Tasas>,
 ) {
+  lineas = consolidarLineasFactura(lineas);
   const pendientes = lineas.map((l, i) => ({ l, i })).filter(({ l }) => !l.codigo_arancelario?.trim() && l.descripcion.trim());
   const sugeridos = new Map<number, string>();
   for (let offset = 0; offset < pendientes.length; offset += 100) {
