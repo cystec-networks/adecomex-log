@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -213,8 +214,15 @@ export function FacturaEcfFormDialog({
 
   const cliente = (clientes ?? []).find((c) => c.id === clienteId);
 
+  const [duplicado, setDuplicado] = useState<{ id: string; fecha: string } | null>(null);
+  const buscarDuplicado = async (codigo: string) => {
+    const { data: ex, error: exErr } = await supabase.from("facturas_ecf")
+      .select("id,created_at,fecha_emision").eq("encf", codigo).is("eliminado_en", null).maybeSingle();
+    if (exErr) throw exErr;
+    return ex;
+  };
   const save = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (sobrescribirId?: string) => {
       if (!encf.trim()) throw new Error("El e-NCF es obligatorio");
       if (!clienteId) throw new Error("Selecciona el cliente");
       const { data: u } = await supabase.auth.getUser();
@@ -240,18 +248,29 @@ export function FacturaEcfFormDialog({
         isr_percibido_venta: Number(isrPercibidoVenta) || 0,
       };
 
+      const destinoId = editId ?? sobrescribirId;
+      if (!destinoId) {
+        const ex = await buscarDuplicado(campos.encf);
+        if (ex) { setDuplicado({ id: ex.id, fecha: ex.created_at }); throw new Error("__DUPLICADO__"); }
+      }
       let data: any;
-      if (editId) {
+      if (destinoId) {
         const { data: upd, error } = await supabase.from("facturas_ecf")
-          .update(campos).eq("id", editId).select().single();
+          .update(campos).eq("id", destinoId).is("eliminado_en", null).select().single();
         if (error) throw error;
         data = upd;
-        await supabase.from("facturas_ecf_lineas").delete().eq("factura_id", editId);
+        await supabase.from("facturas_ecf_lineas").delete().eq("factura_id", destinoId);
       } else {
         const { data: ins, error } = await supabase.from("facturas_ecf")
           .insert({ ...campos, pdf_url: null, created_by: u.user?.id ?? null })
           .select().single();
-        if (error) throw error;
+        if (error) {
+          if ((error as any).code === "23505") {
+            const ex = await buscarDuplicado(campos.encf);
+            if (ex) { setDuplicado({ id: ex.id, fecha: ex.created_at }); throw new Error("__DUPLICADO__"); }
+          }
+          throw error;
+        }
         data = ins;
       }
 
@@ -316,8 +335,9 @@ export function FacturaEcfFormDialog({
       return data;
 
     },
-    onSuccess: (row) => {
-      toast.success(editId ? "Factura e-CF actualizada" : "Factura e-CF registrada");
+    onSuccess: (row, sobrescribirId) => {
+      setDuplicado(null);
+      toast.success(editId || sobrescribirId ? "Factura e-CF actualizada" : "Factura e-CF registrada");
       qc.invalidateQueries({ queryKey: ["facturas-ecf"] });
       qc.invalidateQueries({ queryKey: ["facturas-ecf-lite"] });
       qc.invalidateQueries({ queryKey: ["ecf-pendientes"] });
@@ -330,7 +350,7 @@ export function FacturaEcfFormDialog({
       onCreated?.(row.id);
     },
 
-    onError: (e: any) => toast.error(e.message ?? "No se pudo registrar la factura"),
+    onError: (e: any) => e?.message === "__DUPLICADO__" ? undefined : toast.error(e.message ?? "No se pudo registrar la factura"),
   });
 
   const setLinea = (i: number, patch: Partial<LineaInput>) =>
@@ -634,11 +654,27 @@ export function FacturaEcfFormDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+          <Button onClick={() => save.mutate(undefined)} disabled={save.isPending}>
             {save.isPending ? "Guardando…" : editId ? "Guardar cambios" : "Registrar factura"}
           </Button>
         </DialogFooter>
       </DialogContent>
+      <AlertDialog open={!!duplicado} onOpenChange={(v) => { if (!v) setDuplicado(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Factura ya registrada</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta factura ya existe (registrada el {duplicado ? new Date(duplicado.fecha).toLocaleDateString("es-DO", { timeZone: "America/Santo_Domingo", day: "2-digit", month: "2-digit", year: "numeric" }) : ""}). ¿Desea actualizar el registro existente con los nuevos datos/vinculación detectados?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={save.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction disabled={save.isPending} onClick={(e) => { e.preventDefault(); if (duplicado) save.mutate(duplicado.id); }}>
+              {save.isPending ? "Actualizando…" : "Actualizar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
