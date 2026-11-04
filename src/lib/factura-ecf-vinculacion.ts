@@ -1,4 +1,42 @@
 import { supabase } from "@/integrations/supabase/client";
+import { resolverTransporteFactura } from "./factura-venta-contenedores";
+
+export async function buscarTransportesFactura(contenedores: readonly string[]) {
+  if (!contenedores.length) return resolverTransporteFactura([], []);
+  // Paginate instead of silently trusting PostgREST's default row cap.
+  const filas = [];
+  for (let desde = 0; ; desde += 500) {
+    const { data, error } = await supabase.from("transportes")
+      .select("id,numero_viaje,contenedores_detalle,factura_ecf_id,factura_numero,factura_fecha,ingreso_facturado")
+      .is("eliminado_en", null).not("contenedores_detalle", "is", null)
+      .order("id").range(desde, desde + 499);
+    if (error) throw error;
+    filas.push(...(data ?? []));
+    if ((data ?? []).length < 500) break;
+  }
+  return resolverTransporteFactura(contenedores, filas);
+}
+
+/** Failure to link must never roll back a successfully registered invoice. */
+export async function vincularTransporteDesdeEcf(contenedores: readonly string[], factura: { id: string; encf: string; fecha_emision: string; monto_total: number }) {
+  const resultado = await buscarTransportesFactura(contenedores);
+  const target = resultado.disponible;
+  if (!target) return { vinculado: false, motivo: resultado.coincidencias.length > 1 ? "varios Transportes coincidentes" : resultado.unico ? "el Transporte ya tiene una factura vinculada" : "ningún Transporte coincidente" };
+  const { data: existentes, error: lecturaError } = await supabase.from("transportes")
+    .select("id").eq("factura_ecf_id", factura.id).is("eliminado_en", null);
+  if (lecturaError) throw lecturaError;
+  if (existentes?.length) return { vinculado: false, motivo: "la factura ya tiene un Transporte vinculado" };
+  const { data: enlazados, error } = await supabase.from("transportes")
+    .update({
+      factura_ecf_id: factura.id,
+      factura_numero: target.factura_numero || factura.encf,
+      factura_fecha: target.factura_fecha || factura.fecha_emision,
+      ingreso_facturado: Number(target.ingreso_facturado) || factura.monto_total,
+    }).eq("id", target.id).is("eliminado_en", null).is("factura_ecf_id", null)
+    .eq("contenedores_detalle", target.contenedores_detalle ?? "").select("id");
+  if (error) throw error;
+  return { vinculado: !!enlazados?.length, motivo: enlazados?.length ? (target.numero_viaje || target.id) : "el Transporte cambió o no permite la vinculación" };
+}
 
 /** Crea o actualiza un renglón de "Facturación (cobros)" por cada línea de la e-CF vinculada.
  *  No sobrescribe renglones editados a mano; no duplica (empareja por línea e-CF). */

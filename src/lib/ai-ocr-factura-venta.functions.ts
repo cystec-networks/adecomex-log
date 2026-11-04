@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { callGateway } from "./ai-gateway.server";
+import { detectarContenedoresFactura } from "./factura-venta-contenedores";
 
 const Input = z.object({
   filename: z.string(),
@@ -25,6 +26,7 @@ export type FacturaVentaExtraction = {
   propina_legal: number | null;
   monto_total: number | null;
   descripciones: string[];
+  contenedores: string[];
 };
 
 const PREFIX_MAP: Record<string, string> = {
@@ -43,8 +45,9 @@ export const extractFacturaVentaFromDocument = createServerFn({ method: "POST" }
       "emite la empresa ADECOMEX a sus clientes. Analiza la factura adjunta y devuelve " +
       "ÚNICAMENTE un objeto JSON con las claves exactas: encf, tipo_comprobante, fecha_emision, " +
       "fecha_vencimiento_ncf, codigo_seguridad, fecha_firma, cliente_razon_social, cliente_rnc, " +
-      "subtotal_gravado, subtotal_exento, total_itbis, otros_impuestos, propina_legal, monto_total, descripciones.\n" +
+      "subtotal_gravado, subtotal_exento, total_itbis, otros_impuestos, propina_legal, monto_total, descripciones, contenedores.\n" +
       "Reglas:\n" +
+      "- contenedores: array con TODOS los números de contenedor visibles en cualquier parte de la factura, incluyendo encabezado, notas y descripciones. Formato ISO de cuatro letras y siete dígitos (ej. MSKU1234567, TCLU9876543). Copia solo números completos realmente presentes, sin inventar, completar dígitos ni corregir el dígito verificador; [] si no aparecen.\n" +
       "- descripciones: array con el texto literal de CADA línea de Descripción de servicios, incluyendo EXP./EXP y BL con sus códigos completos. Conserva líneas sin EXP también. No tomes referencias del encabezado, notas ni inventes números.\n" +
       "- Reconoce si es un BORRADOR interno (sin QR ni código de seguridad) o un e-CF OFICIAL ya " +
       "generado por el facturador de la DGII (trae QR, Código de Seguridad y Fecha de Firma Digital).\n" +
@@ -133,5 +136,9 @@ export const extractFacturaVentaFromDocument = createServerFn({ method: "POST" }
       propina_legal: numOrZero(parsed.propina_legal),
       monto_total: num(parsed.monto_total),
       descripciones: Array.isArray(parsed.descripciones) ? parsed.descripciones.filter((v): v is string => typeof v === "string" && !!v.trim()) : [],
+      contenedores: detectarContenedoresFactura([
+        ...(Array.isArray(parsed.contenedores) ? parsed.contenedores.filter((v): v is string => typeof v === "string") : []),
+        ...(Array.isArray(parsed.descripciones) ? parsed.descripciones.filter((v): v is string => typeof v === "string") : []),
+      ]),
     };
   });

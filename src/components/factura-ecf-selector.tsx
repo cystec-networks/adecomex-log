@@ -20,7 +20,8 @@ import { EscanearFacturaVentaButton } from "@/components/escanear-factura-venta-
 import type { FacturaVentaExtraction } from "@/lib/ai-ocr-factura-venta.functions";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { detectarReferenciasFactura, decidirVinculoFactura, coincideFacturaExpediente, guardarDescripcionesOcr, descripcionesOcrGuardadas } from "@/lib/factura-venta-referencias";
-import { sincronizarCobroDesdeEcf } from "@/lib/factura-ecf-vinculacion";
+import { sincronizarCobroDesdeEcf, buscarTransportesFactura, vincularTransporteDesdeEcf } from "@/lib/factura-ecf-vinculacion";
+import { detectarContenedoresFactura, guardarContenedoresOcr, contenedoresOcrGuardados } from "@/lib/factura-venta-contenedores";
 
 const TERMINOS_PAGO = [
   { value: "0", label: "Contado" },
@@ -108,6 +109,13 @@ export function FacturaEcfFormDialog({
     },
   });
   const expedienteSugerido = decidirVinculoFactura(referencias, expedientesReferencia ?? [], editId);
+  const [omitirTransporte, setOmitirTransporte] = useState(false);
+  const contenedores = useMemo(() => detectarContenedoresFactura(contenedoresOcrGuardados(notas)), [notas]);
+  const { data: transporteDetectado, isFetching: buscandoTransporte, isError: errorTransporte } = useQuery({
+    queryKey: ["transportes-referencia-ecf", contenedores],
+    enabled: open && !editId && contenedores.length > 0,
+    queryFn: () => buscarTransportesFactura(contenedores),
+  });
 
   useEffect(() => {
     if (fechaVencPagoManual || !fechaEmision) return;
@@ -131,6 +139,7 @@ export function FacturaEcfFormDialog({
     setClienteId(preload?.cliente_id ?? "");
     setNotas("");
     setOmitirVinculo(false);
+    setOmitirTransporte(false);
     setPdfFile(null);
     setExistingPdfUrl(null);
     setItbisRetenidoTerceros("");
@@ -294,6 +303,15 @@ export function FacturaEcfFormDialog({
         }
       }
 
+      if (!editId && contenedores.length && !omitirTransporte) {
+        try {
+          const resultado = await vincularTransporteDesdeEcf(contenedores, data);
+          if (resultado.vinculado) toast.success(`Factura vinculada al Transporte ${resultado.motivo}`);
+          else toast.info(`Factura guardada: ${resultado.motivo}. Vinculación manual pendiente en Transportes.`);
+        } catch {
+          toast.warning("Factura guardada, pero no se pudo vincular al Transporte. Selecciona la factura manualmente en Transportes.");
+        }
+      }
       return data;
 
     },
@@ -305,6 +323,7 @@ export function FacturaEcfFormDialog({
       for (const key of ["expediente", "expedientes", "facturas", "ecf-pendientes-count", "expedientes-referencia-ecf"]) qc.invalidateQueries({ queryKey: [key] });
       qc.invalidateQueries({ queryKey: ["cxc-facturas"] });
       for (const key of ["costos_producto", "costos-producto-liq", "ecf-vinculada"]) qc.invalidateQueries({ queryKey: [key] });
+      for (const key of ["transportes", "transporte", "transportes-por-expediente", "transportes-referencia-ecf"]) qc.invalidateQueries({ queryKey: [key] });
       if (editId) qc.invalidateQueries({ queryKey: ["factura-ecf-edit", editId] });
       onOpenChange(false);
       onCreated?.(row.id);
@@ -334,6 +353,8 @@ export function FacturaEcfFormDialog({
   };
 
   const applyExtracted = (d: FacturaVentaExtraction) => {
+    setNotas(prev => guardarContenedoresOcr(prev, detectarContenedoresFactura([...(d.contenedores ?? []), ...(d.descripciones ?? [])])));
+    setOmitirTransporte(false);
     if (d.descripciones?.length) {
       setNotas(prev => guardarDescripcionesOcr(prev, d.descripciones));
       setOmitirVinculo(false);
@@ -400,6 +421,23 @@ export function FacturaEcfFormDialog({
         <div className="flex justify-end">
           <EscanearFacturaVentaButton onExtracted={applyExtracted} />
         </div>
+
+        {contenedores.length > 0 && (
+          <div className="border border-border rounded-md p-3 text-xs space-y-2">
+            <div className="break-words">Contenedores detectados: <span className="font-semibold">{contenedores.join(", ")}</span></div>
+            {editId ? <p className="text-muted-foreground">Vinculación disponible desde el selector de factura en Transportes.</p>
+              : buscandoTransporte ? <p className="text-muted-foreground">Buscando Transporte…</p>
+              : transporteDetectado?.disponible ? (
+                <Select value={omitirTransporte ? "__none__" : transporteDetectado.disponible.id} onValueChange={v => setOmitirTransporte(v === "__none__")}>
+                  <SelectTrigger aria-label="Transporte detectado"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={transporteDetectado.disponible.id}>{transporteDetectado.disponible.numero_viaje || "Transporte"} · Vincular al guardar</SelectItem>
+                    <SelectItem value="__none__">Sin vincular</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : <p className="text-warning">{errorTransporte ? "No se pudo consultar Transportes." : (transporteDetectado?.coincidencias.length ?? 0) > 1 ? "Varios Transportes coincidentes." : transporteDetectado?.unico ? "El Transporte ya tiene una factura vinculada." : "Sin Transporte coincidente."} Vinculación manual pendiente.</p>}
+          </div>
+        )}
 
         {referencias.expedientes.length > 0 && (
           <div className="border border-border rounded-md p-3 text-xs space-y-2">
