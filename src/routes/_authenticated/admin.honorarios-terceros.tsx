@@ -61,6 +61,7 @@ const fmtMoney = (n: number) =>
   `RD$ ${(n || 0).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const iso = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const hoyPago = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santo_Domingo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 const addDays = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
 function lunesDe(d: Date) {
   const x = new Date(d); const dia = x.getDay(); x.setHours(0, 0, 0, 0);
@@ -145,12 +146,13 @@ function HonorariosPage() {
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
   const [dlgPago, setDlgPago] = useState(false);
   const [destinoPago, setDestinoPago] = useState<EstadoPagoHonorario>("pagado");
-  const [fechaPago, setFechaPago] = useState(() => iso(new Date()));
+  const [idsEdicionFila, setIdsEdicionFila] = useState<string[] | null>(null);
+  const [fechaPago, setFechaPago] = useState(hoyPago);
   const [guardando, setGuardando] = useState(false);
   const seleccionVisible = visibles.filter((s) => seleccion.has(s.id));
   const seleccionPendientes = honorariosParaCambio(seleccionVisible, "pagado");
   const seleccionPagados = honorariosParaCambio(seleccionVisible, "pendiente");
-  const seleccionCambio = honorariosParaCambio(seleccionVisible, destinoPago);
+  const seleccionCambio = honorariosParaCambio(idsEdicionFila ? honorarios.filter((s) => idsEdicionFila.includes(s.id)) : seleccionVisible, destinoPago);
   const todosMarcados = visibles.length > 0 && seleccionVisible.length === visibles.length;
   const toggle = (id: string, on: boolean) =>
     setSeleccion((prev) => { const n = new Set(prev); on ? n.add(id) : n.delete(id); return n; });
@@ -162,16 +164,17 @@ function HonorariosPage() {
     });
   const toggleTodos = (on: boolean) => setSeleccion(on ? new Set(visibles.map((s) => s.id)) : new Set());
 
-  const cambiarEstadoPago = async () => {
-    if ((destinoPago === "pagado" && !fechaPago) || seleccionCambio.length === 0 || guardando) return;
+  const cambiarEstadoPago = async (destino = destinoPago, filasCambio = seleccionCambio, fecha = fechaPago) => {
+    if ((destino === "pagado" && !fecha) || filasCambio.length === 0 || guardando) return;
     setGuardando(true);
     try {
-      const ids = seleccionCambio.map((s) => s.id);
+      const ids = filasCambio.map((s) => s.id);
+      const cambio = cambioPagoHonorario(destino, fecha);
       const { data, error } = await supabase
         .from("gastos")
-        .update(cambioPagoHonorario(destinoPago, fechaPago))
+        .update(cambio)
         .in("id", ids)
-        .eq("pago_estado", destinoPago === "pagado" ? "pendiente" : "pagado")
+        .eq("pago_estado", destino === "pagado" ? "pendiente" : "pagado")
         .ilike("concepto", CONCEPTO_HONORARIOS)
         .eq("es_reembolso", false)
         .is("deleted_at", null)
@@ -179,12 +182,15 @@ function HonorariosPage() {
       if (error) throw error;
       const n = data?.length ?? 0;
       if (n < ids.length) toast.warning(`Se actualizaron ${n} de ${ids.length}; revise permisos o cambios recientes.`);
-      else toast.success(`${n} honorario(s) marcados como ${destinoPago === "pagado" ? "pagados" : "pendientes"}`);
+      else toast.success(`${n} honorario(s) marcados como ${destino === "pagado" ? "pagados" : "pendientes"}`);
+      const actualizados = new Set((data ?? []).map((s) => s.id));
+      qc.setQueryData<Honorario[]>(["reporte-honorarios"], (prev) => prev?.map((s) => actualizados.has(s.id) ? { ...s, estado: destino, fechaPago: cambio.fecha_pago } : s));
       setDlgPago(false);
+      setIdsEdicionFila(null);
       setSeleccion(new Set());
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["reporte-honorarios"] }),
-        ...Array.from(new Set(seleccionCambio.map((s) => s.expedienteId)), (id) => qc.invalidateQueries({ queryKey: ["gastos", id] })),
+        ...Array.from(new Set(filasCambio.map((s) => s.expedienteId)), (id) => qc.invalidateQueries({ queryKey: ["gastos", id] })),
       ]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo cambiar el estado de pago");
@@ -192,6 +198,32 @@ function HonorariosPage() {
       setGuardando(false);
     }
   };
+
+  const editarEstadoFila = (gastos: Honorario[], valor: string) => {
+    if (valor !== "pendiente" && valor !== "pagado") return;
+    const cambios = honorariosParaCambio(gastos, valor);
+    if (!cambios.length) return;
+    if (valor === "pendiente") {
+      void cambiarEstadoPago(valor, cambios, "");
+      return;
+    }
+    setIdsEdicionFila(cambios.map((s) => s.id));
+    setDestinoPago(valor);
+    setFechaPago(hoyPago());
+    setDlgPago(true);
+  };
+
+  const selectorEstado = (gastos: Honorario[], estado: EstadoPagoHonorario, etiqueta: string) => (
+    <Select value={estado} disabled={guardando} onValueChange={(valor) => editarEstadoFila(gastos, valor)}>
+      <SelectTrigger aria-label={etiqueta} title={etiqueta} className={`h-7 w-[112px] text-[12px] ${estado === "pendiente" ? "text-destructive border-destructive/40" : "bg-muted text-foreground"}`}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="pendiente">Pendiente</SelectItem>
+        <SelectItem value="pagado">Pagado</SelectItem>
+      </SelectContent>
+    </Select>
+  );
 
   const mover = (delta: number) => setAncla((prev) => {
     if (modo === "semana") return addDays(lunesDe(prev), delta * 7);
@@ -345,12 +377,12 @@ function HonorariosPage() {
           <div className="flex flex-wrap items-center gap-3">
             <CardDescription>{visibles.length} honorario(s)</CardDescription>
             {seleccionPendientes.length > 0 && (
-              <Button size="sm" disabled={guardando} onClick={() => { setDestinoPago("pagado"); setFechaPago(iso(new Date())); setDlgPago(true); }}>
+              <Button size="sm" disabled={guardando} onClick={() => { setIdsEdicionFila(null); setDestinoPago("pagado"); setFechaPago(hoyPago()); setDlgPago(true); }}>
                 <CheckCircle2 className="mr-1 h-4 w-4" /> Marcar como pagado ({seleccionPendientes.length})
               </Button>
             )}
             {seleccionPagados.length > 0 && (
-              <Button size="sm" variant="outline" disabled={guardando} onClick={() => { setDestinoPago("pendiente"); setDlgPago(true); }}>
+              <Button size="sm" variant="outline" disabled={guardando} onClick={() => { setIdsEdicionFila(null); setDestinoPago("pendiente"); setDlgPago(true); }}>
                 <Undo2 className="mr-1 h-4 w-4" /> Marcar como pendiente ({seleccionPagados.length})
               </Button>
             )}
@@ -388,7 +420,7 @@ function HonorariosPage() {
                     <td className="py-1.5 pr-3 max-w-[260px] truncate" title={s.cliente}>{s.cliente}</td>
                     <td className="py-1.5 pr-3 text-right font-semibold">{fmtMoney(s.monto)}</td>
                     <td className="py-1.5 pr-3">
-                      <Badge variant={s.estado === "pagado" ? "secondary" : "destructive"} className="font-normal">{s.estado === "pagado" ? "Pagado" : "Pendiente"}</Badge>
+                      {selectorEstado([s], s.estado, `Estado del gasto ${s.expediente} ${fmtLocalDate(s.fecha)} ${fmtMoney(s.monto)}`)}
                     </td>
                     <td className="py-1.5">{fmtLocalDate(s.fechaPago)}</td>
                   </tr>
@@ -420,7 +452,7 @@ function HonorariosPage() {
                         </td>
                         <td className="py-1.5 pr-3 max-w-[260px] truncate" title={primero.cliente}>{primero.cliente}</td>
                         <td className="py-1.5 pr-3 text-right font-semibold">{fmtMoney(fila.total)}</td>
-                        <td className="py-1.5 pr-3"><Badge variant="destructive" className="font-normal">Pendiente</Badge></td>
+                        <td className="py-1.5 pr-3">{selectorEstado(fila.gastos, "pendiente", `Estado del grupo ${primero.expediente} ${fila.proveedor}`)}</td>
                         <td className="py-1.5">—</td>
                       </tr>
                       {abierto && fila.gastos.map((g) => renderIndividual(g, true))}
@@ -482,7 +514,7 @@ function HonorariosPage() {
           </div>}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDlgPago(false)} disabled={guardando}>Cancelar</Button>
-            <Button onClick={cambiarEstadoPago} disabled={guardando || seleccionCambio.length === 0 || (destinoPago === "pagado" && !fechaPago)}>{guardando ? "Guardando…" : "Confirmar"}</Button>
+            <Button onClick={() => void cambiarEstadoPago()} disabled={guardando || seleccionCambio.length === 0 || (destinoPago === "pagado" && !fechaPago)}>{guardando ? "Guardando…" : "Confirmar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
