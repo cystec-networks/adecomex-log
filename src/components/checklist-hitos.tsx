@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, Clock, Circle, MinusCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -25,12 +24,6 @@ type HitoRow = {
   catalogo_hitos?: { nombre: string; orden: number; con_alerta: boolean; activo: boolean } | null;
 };
 
-const ESTADOS = [
-  { v: "pendiente", label: "Pendiente" },
-  { v: "en_curso", label: "En curso" },
-  { v: "completado", label: "Completado" },
-  { v: "no_aplica", label: "No aplica" },
-] as const;
 
 type DeferredTextareaProps = {
   value: string | null;
@@ -134,11 +127,9 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
   const update = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: HitoPatch }) => {
       const p: HitoPatch = { ...patch };
-      if (p.estado === "completado" && !p.fecha_cumplimiento) {
-        p.fecha_cumplimiento = new Date().toISOString().slice(0, 10);
-      }
-      if (p.estado && p.estado !== "completado") {
-        p.fecha_cumplimiento = null;
+      // El estado se deriva de la fecha de ejecución: con fecha = Completado, sin fecha = Pendiente.
+      if ("fecha_cumplimiento" in p) {
+        p.estado = p.fecha_cumplimiento ? "completado" : "pendiente";
       }
       const { error } = await supabase.from("expediente_hitos").update(p).eq("id", id);
       if (error) throw error;
@@ -163,9 +154,14 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
 
   const { done, total, pct } = useMemo(() => {
     const t = hitos?.length ?? 0;
-    const d = (hitos ?? []).filter((h) => h.estado === "completado" || h.estado === "no_aplica").length;
+    const d = (hitos ?? []).filter((h) => {
+      const b = borradores[h.id];
+      const fecha = b && "fecha_cumplimiento" in b ? b.fecha_cumplimiento : h.fecha_cumplimiento;
+      const estado = fecha ? "completado" : b && "fecha_cumplimiento" in b ? "pendiente" : h.estado;
+      return estado === "completado" || estado === "no_aplica";
+    }).length;
     return { done: d, total: t, pct: t ? Math.round((d / t) * 100) : 0 };
-  }, [hitos]);
+  }, [hitos, borradores]);
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -198,16 +194,19 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
                   <th className="px-2 py-2 text-left w-8">#</th>
                   <th className="px-2 py-2 text-left">Hito</th>
                   <th className="px-2 py-2 text-left w-40">Fecha programada</th>
-                  <th className="px-2 py-2 text-left w-40">Estado</th>
-                  <th className="px-2 py-2 text-left w-40">Fecha cumplida</th>
+                  <th className="px-2 py-2 text-left w-44">Fecha de ejecución</th>
                   <th className="px-2 py-2 text-left">Notas</th>
                 </tr>
               </thead>
               <tbody>
                 {(hitos ?? []).map((original, i) => {
                   const h = { ...original, ...borradores[original.id] };
+                  const fechaTocada = "fecha_cumplimiento" in (borradores[original.id] ?? {});
+                  const estadoEfectivo: HitoRow["estado"] = h.fecha_cumplimiento
+                    ? "completado"
+                    : fechaTocada ? "pendiente" : h.estado;
                   const esCritico = h.catalogo_hitos?.con_alerta === true;
-                  const activo = h.estado !== "completado" && h.estado !== "no_aplica";
+                  const activo = estadoEfectivo !== "completado" && estadoEfectivo !== "no_aplica";
                   const atrasado = !!(
                     activo &&
                     h.fecha_programada &&
@@ -245,22 +244,14 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
                         />
                       </td>
                       <td className="px-2 py-2">
-                        <div className="flex flex-col gap-1.5">
-                          <Select value={h.estado} onValueChange={(v) => editar({ id: h.id, patch: { estado: v as HitoRow["estado"] } })}>
-                            <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {ESTADOS.map((e) => <SelectItem key={e.v} value={e.v}>{e.label}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          {estadoBadge(h.estado, atrasado, proximo)}
+                        <div className="flex items-center gap-1.5">
+                          <DeferredDateInput
+                            className="h-8 flex-1"
+                            value={h.fecha_cumplimiento}
+                            onSave={(v) => editar({ id: h.id, patch: { fecha_cumplimiento: v } })}
+                          />
+                          {estadoBadge(estadoEfectivo, atrasado, proximo)}
                         </div>
-                      </td>
-                      <td className="px-2 py-2">
-                        <DeferredDateInput
-                          className="h-8"
-                          value={h.fecha_cumplimiento}
-                          onSave={(v) => editar({ id: h.id, patch: { fecha_cumplimiento: v } })}
-                        />
                       </td>
                       <td className="px-2 py-2">
                         <DeferredTextarea
