@@ -1,6 +1,7 @@
 # Email intake pipeline rules
 
 - `gastos-agrupados` groups pending fee rows by expediente ID and provider only for consolidated Finance; selection retains individual expense IDs so payments and exports stay unchanged.
+- `honorarios-pago` supplies selection and payload rules for both payment directions; reversal clears the date and writes are guarded by the previous state to preserve concurrent corrections.
 
 - Email service requests land in `solicitudes_correo` (staging), never as `expedientes` rows; "Confirmar y activar" opens the normal new-expediente form prefilled (`?correo=`), so drafts never reach reports/finance and numbering stays identical to manual creation.
 - Email retries run OCR before the service-only invoker RPC `guardar_solicitud_correo_pendiente`, which serializes per sender and merges only matching pending drafts and attachment data; the legacy RPC delegates to it so deployed older callers also cannot duplicate pendings.

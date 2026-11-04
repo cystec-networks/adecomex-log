@@ -12,7 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, Undo2 } from "lucide-react";
+import { cambioPagoHonorario, honorariosParaCambio, type EstadoPagoHonorario } from "@/lib/honorarios-pago";
 import { agruparHonorariosPendientes } from "@/lib/gastos-agrupados";
 import { buildEstadoCuentaHonorariosPdf } from "@/lib/pdf-solicitud-reembolso";
 import { fmtLocalDate, parseLocalDate } from "@/lib/dates";
@@ -143,9 +144,13 @@ function HonorariosPage() {
   const [gruposAbiertos, setGruposAbiertos] = useState<Record<string, boolean>>({});
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
   const [dlgPago, setDlgPago] = useState(false);
+  const [destinoPago, setDestinoPago] = useState<EstadoPagoHonorario>("pagado");
   const [fechaPago, setFechaPago] = useState(() => iso(new Date()));
   const [guardando, setGuardando] = useState(false);
   const seleccionVisible = visibles.filter((s) => seleccion.has(s.id));
+  const seleccionPendientes = honorariosParaCambio(seleccionVisible, "pagado");
+  const seleccionPagados = honorariosParaCambio(seleccionVisible, "pendiente");
+  const seleccionCambio = honorariosParaCambio(seleccionVisible, destinoPago);
   const todosMarcados = visibles.length > 0 && seleccionVisible.length === visibles.length;
   const toggle = (id: string, on: boolean) =>
     setSeleccion((prev) => { const n = new Set(prev); on ? n.add(id) : n.delete(id); return n; });
@@ -157,24 +162,35 @@ function HonorariosPage() {
     });
   const toggleTodos = (on: boolean) => setSeleccion(on ? new Set(visibles.map((s) => s.id)) : new Set());
 
-  const marcarPagado = async () => {
-    if (!fechaPago || seleccionVisible.length === 0) return;
+  const cambiarEstadoPago = async () => {
+    if ((destinoPago === "pagado" && !fechaPago) || seleccionCambio.length === 0 || guardando) return;
     setGuardando(true);
-    const ids = seleccionVisible.map((s) => s.id);
-    const { data, error } = await supabase
-      .from("gastos")
-      .update({ pago_estado: "pagado", fecha_pago: fechaPago })
-      .in("id", ids)
-      .select("id");
-    setGuardando(false);
-    if (error) { toast.error(error.message); return; }
-    const n = data?.length ?? 0;
-    if (n < ids.length) toast.warning(`Se actualizaron ${n} de ${ids.length}; revise permisos.`);
-    else toast.success(`${n} honorario(s) marcados como pagados`);
-    setDlgPago(false);
-    setSeleccion(new Set());
-    await qc.invalidateQueries({ queryKey: ["reporte-honorarios"] });
-    new Set(seleccionVisible.map((s) => s.expedienteId)).forEach((id) => qc.invalidateQueries({ queryKey: ["gastos", id] }));
+    try {
+      const ids = seleccionCambio.map((s) => s.id);
+      const { data, error } = await supabase
+        .from("gastos")
+        .update(cambioPagoHonorario(destinoPago, fechaPago))
+        .in("id", ids)
+        .eq("pago_estado", destinoPago === "pagado" ? "pendiente" : "pagado")
+        .ilike("concepto", CONCEPTO_HONORARIOS)
+        .eq("es_reembolso", false)
+        .is("deleted_at", null)
+        .select("id");
+      if (error) throw error;
+      const n = data?.length ?? 0;
+      if (n < ids.length) toast.warning(`Se actualizaron ${n} de ${ids.length}; revise permisos o cambios recientes.`);
+      else toast.success(`${n} honorario(s) marcados como ${destinoPago === "pagado" ? "pagados" : "pendientes"}`);
+      setDlgPago(false);
+      setSeleccion(new Set());
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["reporte-honorarios"] }),
+        ...Array.from(new Set(seleccionCambio.map((s) => s.expedienteId)), (id) => qc.invalidateQueries({ queryKey: ["gastos", id] })),
+      ]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo cambiar el estado de pago");
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const mover = (delta: number) => setAncla((prev) => {
@@ -328,9 +344,14 @@ function HonorariosPage() {
           <CardTitle className="pt-2 text-base">{etiquetaPeriodo}</CardTitle>
           <div className="flex flex-wrap items-center gap-3">
             <CardDescription>{visibles.length} honorario(s)</CardDescription>
-            {seleccionVisible.length > 0 && (
-              <Button size="sm" onClick={() => { setFechaPago(iso(new Date())); setDlgPago(true); }}>
-                <CheckCircle2 className="mr-1 h-4 w-4" /> Marcar como pagado ({seleccionVisible.length})
+            {seleccionPendientes.length > 0 && (
+              <Button size="sm" disabled={guardando} onClick={() => { setDestinoPago("pagado"); setFechaPago(iso(new Date())); setDlgPago(true); }}>
+                <CheckCircle2 className="mr-1 h-4 w-4" /> Marcar como pagado ({seleccionPendientes.length})
+              </Button>
+            )}
+            {seleccionPagados.length > 0 && (
+              <Button size="sm" variant="outline" disabled={guardando} onClick={() => { setDestinoPago("pendiente"); setDlgPago(true); }}>
+                <Undo2 className="mr-1 h-4 w-4" /> Marcar como pendiente ({seleccionPagados.length})
               </Button>
             )}
           </div>
@@ -446,21 +467,22 @@ function HonorariosPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={dlgPago} onOpenChange={setDlgPago}>
+      <Dialog open={dlgPago} onOpenChange={(open) => { if (!guardando) setDlgPago(open); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Marcar como pagado</DialogTitle>
+            <DialogTitle>Marcar como {destinoPago}</DialogTitle>
             <DialogDescription>
-              {seleccionVisible.length} honorario(s) por {fmtMoney(seleccionVisible.reduce((a, s) => a + s.monto, 0))}.
+              {seleccionCambio.length} honorario(s) por {fmtMoney(seleccionCambio.reduce((a, s) => a + s.monto, 0))}.
+              {destinoPago === "pendiente" && " Se eliminará la fecha de pago y los importes volverán al total pendiente."}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-1.5">
+          {destinoPago === "pagado" && <div className="grid gap-1.5">
             <label className="text-[13px] font-medium" htmlFor="fecha-pago-honorarios">Fecha de pago</label>
             <Input id="fecha-pago-honorarios" type="date" value={fechaPago} onChange={(e) => setFechaPago(e.target.value)} />
-          </div>
+          </div>}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDlgPago(false)} disabled={guardando}>Cancelar</Button>
-            <Button onClick={marcarPagado} disabled={guardando || !fechaPago}>{guardando ? "Guardando…" : "Confirmar"}</Button>
+            <Button onClick={cambiarEstadoPago} disabled={guardando || seleccionCambio.length === 0 || (destinoPago === "pagado" && !fechaPago)}>{guardando ? "Guardando…" : "Confirmar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
