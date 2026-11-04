@@ -134,6 +134,7 @@ export function EscanearFacturaVentaButton({
                   <div><span className="text-muted-foreground">MONTO TOTAL:</span> {fmt(data.monto_total)}</div>
                   <div className="col-span-2"><span className="text-muted-foreground">Expedientes:</span> {referencias.expedientes.join(", ") || "Sin referencia"}</div>
                   <div className="col-span-2 break-words"><span className="text-muted-foreground">Contenedores:</span> {data.contenedores?.join(", ") || "Sin referencia"}</div>
+                  <div className="col-span-2 break-words"><span className="text-muted-foreground">Pedido / Transporte:</span> {data.transportes?.join(", ") || "Sin referencia"}</div>
                   {referencias.bl.length > 0 && <div className="col-span-2"><span className="text-muted-foreground">BL/Transporte:</span> {referencias.bl.join(", ")}</div>}
                 </div>
                 {referencias.expedientes.length > 1 && <p className="text-warning">Varios expedientes detectados: {referencias.expedientes.join(", ")}. Vinculación manual requerida.</p>}

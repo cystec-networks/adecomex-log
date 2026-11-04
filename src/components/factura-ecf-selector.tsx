@@ -21,7 +21,7 @@ import type { FacturaVentaExtraction } from "@/lib/ai-ocr-factura-venta.function
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { detectarReferenciasFactura, decidirVinculoFactura, coincideFacturaExpediente, guardarDescripcionesOcr, descripcionesOcrGuardadas } from "@/lib/factura-venta-referencias";
 import { sincronizarCobroDesdeEcf, buscarTransportesFactura, vincularTransporteDesdeEcf } from "@/lib/factura-ecf-vinculacion";
-import { detectarContenedoresFactura, guardarContenedoresOcr, contenedoresOcrGuardados } from "@/lib/factura-venta-contenedores";
+import { detectarContenedoresFactura, guardarContenedoresOcr, contenedoresOcrGuardados, detectarTransportesFactura, guardarTransportesOcr, transportesOcrGuardados } from "@/lib/factura-venta-contenedores";
 
 const TERMINOS_PAGO = [
   { value: "0", label: "Contado" },
@@ -111,10 +111,11 @@ export function FacturaEcfFormDialog({
   const expedienteSugerido = decidirVinculoFactura(referencias, expedientesReferencia ?? [], editId);
   const [omitirTransporte, setOmitirTransporte] = useState(false);
   const contenedores = useMemo(() => detectarContenedoresFactura(contenedoresOcrGuardados(notas)), [notas]);
+  const numerosTr = useMemo(() => detectarTransportesFactura([...transportesOcrGuardados(notas), ...descripcionesOcrGuardadas(notas), ...lineas.map(l => l.descripcion)]), [notas, lineas]);
   const { data: transporteDetectado, isFetching: buscandoTransporte, isError: errorTransporte } = useQuery({
-    queryKey: ["transportes-referencia-ecf", contenedores],
-    enabled: open && !editId && contenedores.length > 0,
-    queryFn: () => buscarTransportesFactura(contenedores),
+    queryKey: ["transportes-referencia-ecf", contenedores, numerosTr],
+    enabled: open && !editId && (contenedores.length > 0 || numerosTr.length > 0),
+    queryFn: () => buscarTransportesFactura(contenedores, numerosTr),
   });
 
   useEffect(() => {
@@ -303,9 +304,9 @@ export function FacturaEcfFormDialog({
         }
       }
 
-      if (!editId && contenedores.length && !omitirTransporte) {
+      if (!editId && (contenedores.length || numerosTr.length) && !omitirTransporte) {
         try {
-          const resultado = await vincularTransporteDesdeEcf(contenedores, data);
+          const resultado = await vincularTransporteDesdeEcf(contenedores, data, numerosTr);
           if (resultado.vinculado) toast.success(`Factura vinculada al Transporte ${resultado.motivo}`);
           else toast.info(`Factura guardada: ${resultado.motivo}. Vinculación manual pendiente en Transportes.`);
         } catch {
@@ -354,6 +355,7 @@ export function FacturaEcfFormDialog({
 
   const applyExtracted = (d: FacturaVentaExtraction) => {
     setNotas(prev => guardarContenedoresOcr(prev, detectarContenedoresFactura([...(d.contenedores ?? []), ...(d.descripciones ?? [])])));
+    setNotas(prev => guardarTransportesOcr(prev, [...(d.transportes ?? []), ...(d.descripciones ?? [])]));
     setOmitirTransporte(false);
     if (d.descripciones?.length) {
       setNotas(prev => guardarDescripcionesOcr(prev, d.descripciones));
@@ -422,9 +424,10 @@ export function FacturaEcfFormDialog({
           <EscanearFacturaVentaButton onExtracted={applyExtracted} />
         </div>
 
-        {contenedores.length > 0 && (
+        {(contenedores.length > 0 || numerosTr.length > 0) && (
           <div className="border border-border rounded-md p-3 text-xs space-y-2">
-            <div className="break-words">Contenedores detectados: <span className="font-semibold">{contenedores.join(", ")}</span></div>
+            {numerosTr.length > 0 && <div className="break-words">Pedido / Transporte: <span className="font-semibold">{numerosTr.join(", ")}</span></div>}
+            {contenedores.length > 0 && <div className="break-words">Contenedores detectados: <span className="font-semibold">{contenedores.join(", ")}</span></div>}
             {editId ? <p className="text-muted-foreground">Vinculación disponible desde el selector de factura en Transportes.</p>
               : buscandoTransporte ? <p className="text-muted-foreground">Buscando Transporte…</p>
               : transporteDetectado?.disponible ? (
