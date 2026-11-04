@@ -1,20 +1,21 @@
 import { supabase } from "@/integrations/supabase/client";
 import { resolverTransporteFactura } from "./factura-venta-contenedores";
+import { resolverTransporteAcotado } from './factura-lineas-destino';
 
-export async function buscarTransportesFactura(contenedores: readonly string[], referenciasTr: readonly string[] = []) {
+export async function buscarTransportesFactura(contenedores: readonly string[], referenciasTr: readonly string[] = [], expedienteId?: string | null) {
   if (!contenedores.length && !referenciasTr.length) return resolverTransporteFactura([], []);
   // Paginate instead of silently trusting PostgREST's default row cap.
   const filas = [];
   for (let desde = 0; ; desde += 500) {
     const { data, error } = await supabase.from("transportes")
-      .select("id,numero_viaje,contenedores_detalle,factura_ecf_id,factura_numero,factura_fecha,ingreso_facturado")
+      .select("id,numero_viaje,expediente_id,contenedores_detalle,factura_ecf_id,factura_numero,factura_fecha,ingreso_facturado")
       .is("eliminado_en", null)
       .order("id").range(desde, desde + 499);
     if (error) throw error;
     filas.push(...(data ?? []));
     if ((data ?? []).length < 500) break;
   }
-  return resolverTransporteFactura(contenedores, filas, referenciasTr);
+  return resolverTransporteAcotado(contenedores, filas, referenciasTr, expedienteId);
 }
 
 /** Failure to link must never roll back a successfully registered invoice. */
@@ -34,12 +35,14 @@ export async function vincularTransporteDesdeEcf(contenedores: readonly string[]
  *  No sobrescribe renglones editados a mano; no duplica (empareja por línea e-CF). */
 export async function sincronizarCobroDesdeEcf(expedienteId: string, fid: string | null, prevFid: string | null): Promise<string | null> {
   if (!fid) return null;
-  const { data: ecf } = await supabase.from("facturas_ecf").select("id,encf,fecha_emision,monto_total").eq("id", fid).maybeSingle();
+  const { data: ecf } = await supabase.from("facturas_ecf").select("id,encf,fecha_emision,monto_total,vinculo_por_linea").eq("id", fid).maybeSingle();
   if (!ecf) return null;
-  const { data: lineasDb } = await supabase.from("facturas_ecf_lineas").select("id,orden,descripcion,valor,itbis,gravado").eq("factura_id", fid).order("orden");
+  const { data: todasLineas, error: errorLineas } = await supabase.from("facturas_ecf_lineas").select("id,orden,descripcion,valor,itbis,gravado,expediente_id").eq("factura_id", fid).order("orden");
+  if (errorLineas) throw errorLineas;
+  const lineasDb = ecf.vinculo_por_linea ? (todasLineas ?? []).filter(l => l.expediente_id === expedienteId) : todasLineas;
   const lineas: any[] = (lineasDb ?? []).length
     ? lineasDb ?? []
-    : [{ id: null, descripcion: "Gestión aduanal", valor: Number(ecf.monto_total || 0), itbis: 0, gravado: null }];
+    : ecf.vinculo_por_linea ? [] : [{ id: null, descripcion: "Gestión aduanal", valor: Number(ecf.monto_total || 0), itbis: 0, gravado: null }];
   const ids = [fid, prevFid].filter(Boolean) as string[];
   const { data: filasDb } = await supabase.from("facturas").select("id,editada_manual,factura_ecf_id,ecf_linea_id,referencia")
     .eq("expediente_id", expedienteId).is("deleted_at", null);

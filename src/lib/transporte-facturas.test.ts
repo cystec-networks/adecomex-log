@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test";
 import { totalFacturasTransporte } from "./transporte-facturas";
+test("factura mixta 385 asigna solo los RD$16000 de transporte, no RD$24500", () => {
+  expect(totalFacturasTransporte([{id:'385',encf:'E310000000385',monto_total:24500,monto_asignado:16000,fecha_emision:'2026-11-03'}])).toBe(16000);
+});
 test("flete y retorno suman sus dos montos para el mismo transporte", () => {
   expect(totalFacturasTransporte([
     { id: "ida", encf: "E310000000001", monto_total: 10000, fecha_emision: "2026-11-03" },

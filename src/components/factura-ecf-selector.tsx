@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { facturaMixta, tipoServicioLinea, importeLineaDestino } from "@/lib/factura-lineas-destino";
 import { optimizarArchivo } from "@/lib/documento-optimizacion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -97,28 +98,40 @@ export function FacturaEcfFormDialog({
   });
 
   const [fechaVencPagoManual, setFechaVencPagoManual] = useState(false);
+  const [destinosLinea, setDestinosLinea] = useState<Record<number, string>>({});
   const [omitirVinculo, setOmitirVinculo] = useState(false);
   const referencias = useMemo(() => detectarReferenciasFactura([...lineas.map(l => l.descripcion), ...descripcionesOcrGuardadas(notas)]), [lineas, notas]);
   const { data: expedientesReferencia } = useQuery({
-    queryKey: ["expedientes-referencia-ecf", referencias.expedientes],
-    enabled: open && referencias.expedientes.length > 0,
+    queryKey: ["expedientes-referencia-ecf", referencias.expedientes, referencias.bl],
+    enabled: open && (referencias.expedientes.length > 0 || referencias.bl.length > 0),
     queryFn: async () => {
-      const { data, error } = await supabase.from("expedientes").select("id,numero,factura_ecf_id")
-        .in("numero", referencias.expedientes).is("eliminado_en", null);
+      let q = supabase.from("expedientes").select("id,numero,factura_ecf_id").is("eliminado_en", null);
+      q = referencias.expedientes.length ? q.in("numero", referencias.expedientes) : q.in("bl_awb", referencias.bl);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
   });
   const expedienteSugerido = decidirVinculoFactura(referencias, expedientesReferencia ?? [], editId);
+  const expedienteContexto = expedientesReferencia?.length === 1 ? expedientesReferencia[0] : null;
+  const { data: destinosDisponibles } = useQuery({
+    queryKey: ["ecf-destinos-manuales", expedienteContexto?.id], enabled: open,
+    queryFn: async () => {
+      const [e,t] = await Promise.all([supabase.from("expedientes").select("id,numero").is("eliminado_en",null).order("numero",{ascending:false}).limit(500), supabase.from("transportes").select("id,numero_viaje,expediente_id").is("eliminado_en",null).order("numero_viaje",{ascending:false}).limit(500)]);
+      if(e.error) throw e.error; if(t.error) throw t.error;
+      return {expedientes:e.data??[],transportes:t.data??[]};
+    },
+  });
   const [omitirTransporte, setOmitirTransporte] = useState(false);
   const contenedores = useMemo(() => detectarContenedoresFactura(contenedoresOcrGuardados(notas)), [notas]);
   const numerosTr = useMemo(() => detectarTransportesFactura([...transportesOcrGuardados(notas), ...descripcionesOcrGuardadas(notas), ...lineas.map(l => l.descripcion)]), [notas, lineas]);
   const { data: transporteDetectado, isFetching: buscandoTransporte, isError: errorTransporte } = useQuery({
-    queryKey: ["transportes-referencia-ecf", contenedores, numerosTr],
-    enabled: open && !editId && (contenedores.length > 0 || numerosTr.length > 0),
-    queryFn: () => buscarTransportesFactura(contenedores, numerosTr),
+    queryKey: ["transportes-referencia-ecf", contenedores, numerosTr, expedienteContexto?.id],
+    enabled: open && (contenedores.length > 0 || numerosTr.length > 0),
+    queryFn: () => buscarTransportesFactura(contenedores, numerosTr, expedienteContexto?.id),
   });
 
+  const destinoParaLinea = (i: number) => destinosLinea[i] ?? (tipoServicioLinea(lineas[i]?.descripcion ?? "") === "expediente" && expedienteContexto ? `exp:${expedienteContexto.id}` : tipoServicioLinea(lineas[i]?.descripcion ?? "") === "transporte" && transporteDetectado?.unico ? `tr:${transporteDetectado.unico.id}` : "__none__");
   useEffect(() => {
     if (fechaVencPagoManual || !fechaEmision) return;
     const d = new Date(fechaEmision + "T00:00:00");
@@ -140,6 +153,7 @@ export function FacturaEcfFormDialog({
     setFechaFirma("");
     setClienteId(preload?.cliente_id ?? "");
     setNotas("");
+    setDestinosLinea({});
     setOmitirVinculo(false);
     setOmitirTransporte(false);
     setPdfFile(null);
@@ -176,6 +190,8 @@ export function FacturaEcfFormDialog({
     },
   });
 
+  const porLinea = facturaMixta(lineas) || !!editData?.f.vinculo_por_linea;
+
   useEffect(() => {
     if (!editData || !open) return;
     const f: any = editData.f;
@@ -195,6 +211,7 @@ export function FacturaEcfFormDialog({
     setRetencionRentaTerceros(f.retencion_renta_terceros ? String(f.retencion_renta_terceros) : "");
     setIsrPercibidoVenta(f.isr_percibido_venta ? String(f.isr_percibido_venta) : "");
     setExistingPdfUrl(f.pdf_url ?? null);
+    setDestinosLinea(Object.fromEntries(editData.ls.map((l,i) => [i,l.expediente_id ? `exp:${l.expediente_id}` : l.transporte_id ? `tr:${l.transporte_id}` : "__none__"])));
     if (editData.ls.length) {
       setLineas(editData.ls.map((l: any) => ({
         cantidad: Number(l.cantidad) || 0,
@@ -259,7 +276,7 @@ export function FacturaEcfFormDialog({
           .update(campos).eq("id", destinoId).is("eliminado_en", null).select().single();
         if (error) throw error;
         data = upd;
-        await supabase.from("facturas_ecf_lineas").delete().eq("factura_id", destinoId);
+
       } else {
         const { data: ins, error } = await supabase.from("facturas_ecf")
           .insert({ ...campos, pdf_url: null, created_by: u.user?.id ?? null })
@@ -283,6 +300,8 @@ export function FacturaEcfFormDialog({
       }
 
       const lineasPayload = lineas.map((l, i) => ({
+        expediente_id: porLinea && destinoParaLinea(i).startsWith("exp:") ? destinoParaLinea(i).slice(4) : null,
+        transporte_id: porLinea && destinoParaLinea(i).startsWith("tr:") ? destinoParaLinea(i).slice(3) : null,
         factura_id: data.id,
         orden: i + 1,
         cantidad: l.cantidad,
@@ -295,10 +314,19 @@ export function FacturaEcfFormDialog({
         valor: calcLinea(l),
         gravado: l.gravado,
       }));
-      const { error: lErr } = await supabase.from("facturas_ecf_lineas").insert(lineasPayload);
+      const { error: lErr } = await supabase.rpc("guardar_lineas_ecf", {p_factura:data.id,p_lineas:lineasPayload,p_por_linea:porLinea});
       if (lErr) throw lErr;
 
-      if (referencias.unico && !omitirVinculo) {
+      if (porLinea) {
+        const exps = [...new Set(lineasPayload.flatMap(l => l.expediente_id ? [l.expediente_id] : []))];
+        for (const exp of exps) {
+          const {error} = await supabase.from("expedientes").update({factura_ecf_id:data.id}).eq("id",exp).is("factura_ecf_id",null);
+          if(error) throw error;
+          await sincronizarCobroDesdeEcf(exp,data.id,null);
+        }
+        if(lineasPayload.some(l => !l.expediente_id && !l.transporte_id)) toast.info("Factura guardada; los renglones sin destino quedan pendientes de vinculación.");
+      }
+      if (!porLinea && referencias.unico && !omitirVinculo) {
         try {
           const { data: candidatos, error: candidatosError } = await supabase.from("expedientes")
             .select("id,numero,factura_ecf_id").eq("numero", referencias.unico).is("eliminado_en", null);
@@ -323,7 +351,7 @@ export function FacturaEcfFormDialog({
         }
       }
 
-      if (!editId && (contenedores.length || numerosTr.length) && !omitirTransporte) {
+      if (!porLinea && !editId && (contenedores.length || numerosTr.length) && !omitirTransporte) {
         try {
           const resultado = await vincularTransporteDesdeEcf(contenedores, data, numerosTr);
           if (resultado.vinculado) toast.success(`Factura vinculada al Transporte ${resultado.motivo}`);
@@ -344,7 +372,7 @@ export function FacturaEcfFormDialog({
       for (const key of ["expediente", "expedientes", "facturas", "ecf-pendientes-count", "expedientes-referencia-ecf"]) qc.invalidateQueries({ queryKey: [key] });
       qc.invalidateQueries({ queryKey: ["cxc-facturas"] });
       for (const key of ["costos_producto", "costos-producto-liq", "ecf-vinculada"]) qc.invalidateQueries({ queryKey: [key] });
-      for (const key of ["transportes", "transporte", "transportes-por-expediente", "transportes-referencia-ecf", "transporte-facturas", "transporte-facturas-detalle", "dash-tr-rows"]) qc.invalidateQueries({ queryKey: [key] });
+      for (const key of ["transportes", "transporte", "transportes-por-expediente", "transportes-referencia-ecf", "transporte-facturas", "transporte-facturas-detalle", "dash-tr-rows", "transporte-facturas-ecf-todos"]) qc.invalidateQueries({ queryKey: [key] });
       if (editId) qc.invalidateQueries({ queryKey: ["factura-ecf-edit", editId] });
       onOpenChange(false);
       onCreated?.(row.id);
@@ -374,6 +402,7 @@ export function FacturaEcfFormDialog({
   };
 
   const applyExtracted = (d: FacturaVentaExtraction) => {
+    setDestinosLinea({});
     setNotas(prev => guardarContenedoresOcr(prev, detectarContenedoresFactura([...(d.contenedores ?? []), ...(d.descripciones ?? [])])));
     setNotas(prev => guardarTransportesOcr(prev, [...(d.transportes ?? []), ...(d.descripciones ?? [])]));
     setOmitirTransporte(false);
@@ -418,7 +447,8 @@ export function FacturaEcfFormDialog({
           descuento: 0, recargo: 0, gravado: false,
         });
       }
-      if (nuevas.length) setLineas(nuevas);
+      if (d.lineas?.length) setLineas(d.lineas);
+      else if (nuevas.length) setLineas(nuevas);
     }
   };
 
@@ -604,6 +634,19 @@ export function FacturaEcfFormDialog({
           </div>
         </div>
 
+        {porLinea && <div className="space-y-3 border-t pt-3">
+          <h3 className="text-sm font-semibold">Vinculación por renglón</h3>
+          {lineas.map((l,i) => <div key={i} className="grid gap-2 md:grid-cols-[1fr_16rem] text-xs border-b pb-2 min-w-0">
+            <div className="min-w-0 break-words">{i+1}. {l.descripcion} · <strong>{fmtRD(importeLineaDestino(l))}</strong></div>
+            <Select value={destinoParaLinea(i)} onValueChange={v => setDestinosLinea(prev => ({...prev,[i]:v}))}>
+              <SelectTrigger aria-label={`Destino renglón ${i+1}`} className="min-w-0"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="__none__">Pendiente de vincular</SelectItem>
+                {(destinosDisponibles?.expedientes ?? []).map(e => <SelectItem key={e.id} value={`exp:${e.id}`}>EXP. {e.numero}</SelectItem>)}
+                {(destinosDisponibles?.transportes ?? []).map(t => <SelectItem key={t.id} value={`tr:${t.id}`}>{t.numero_viaje}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>)}
+        </div>}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t">
           <div className="text-sm">
             <div className="text-muted-foreground">Subtotal gravado</div>

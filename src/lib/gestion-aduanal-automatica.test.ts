@@ -6,6 +6,10 @@ import { costoUnitarioReal } from "./liquidacion-final";
 const fuente = (): CobroGestion => ({ concepto: "Servicios de gestión aduanal (gravado)",
   facturas_ecf: { id: "ecf354", encf: "E310000000354", monto_total: 8850, subtotal_gravado: 7500, subtotal_exento: 0, pdf_url: "factura.pdf", estado: "emitida" } });
 describe("Gestión Aduanal automática desde Finanzas", () => {
+  it("factura mixta 385 incluye solo gestión RD$8500, no transporte RD$16000", () => {
+    const c=fuente(); if(c.facturas_ecf) {c.facturas_ecf.monto_total=24500;c.facturas_ecf.base_asignada=8500;}
+    assert.equal(resolverCostosGestion([], [c])[0].monto_real,8500);
+  });
   it("genera Precio RD$7,500 sin ITBIS RD$1,350 de E310000000354 con PDF", () => {
     const filas = resolverCostosGestion([], [fuente()]);
     assert.equal(filas.length, 1); assert.equal(filas[0].monto_real, 7500);

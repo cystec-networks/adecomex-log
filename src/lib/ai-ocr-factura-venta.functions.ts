@@ -3,6 +3,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { callGateway } from "./ai-gateway.server";
 import { detectarContenedoresFactura, detectarTransportesFactura } from "./factura-venta-contenedores";
+import type { LineaInput } from './facturas-ecf';
+import { calcTotales } from './facturas-ecf';
 
 const Input = z.object({
   filename: z.string(),
@@ -28,6 +30,7 @@ export type FacturaVentaExtraction = {
   descripciones: string[];
   contenedores: string[];
   transportes: string[];
+  lineas?: LineaInput[];
 };
 
 const PREFIX_MAP: Record<string, string> = {
@@ -46,8 +49,9 @@ export const extractFacturaVentaFromDocument = createServerFn({ method: "POST" }
       "emite la empresa ADECOMEX a sus clientes. Analiza la factura adjunta y devuelve " +
       "ÚNICAMENTE un objeto JSON con las claves exactas: encf, tipo_comprobante, fecha_emision, " +
       "fecha_vencimiento_ncf, codigo_seguridad, fecha_firma, cliente_razon_social, cliente_rnc, " +
-      "subtotal_gravado, subtotal_exento, total_itbis, otros_impuestos, propina_legal, monto_total, descripciones, contenedores, transportes.\n" +
+      "subtotal_gravado, subtotal_exento, total_itbis, otros_impuestos, propina_legal, monto_total, descripciones, contenedores, transportes, lineas.\n" +
       "Reglas:\n" +
+      "- lineas: CADA renglón real por separado con cantidad, descripcion literal, unidad, precio unitario sin ITBIS, itbis (importe del renglón), descuento, recargo y gravado booleano. No fusionar gestión y transporte ni repartir totales inventando importes. Si no se leen todos los importes con certeza, devolver [].\n" +
       "- transportes: array de referencias internas TR-XXXXXX visibles en CUALQUIER parte (encabezado, PEDIDO, notas o líneas), ej. PEDIDO TR-000065 → TR-000065. No confundir con TF ni EXP, no inventar; [] si no aparecen.\n" +
       "- Contenedores con separadores internos son válidos: MRSU 210359-7 → MRSU2103597. Quita espacios, guiones y separadores, conservando exactamente cuatro letras y siete dígitos.\n" +
       "- contenedores: array con TODOS los números de contenedor visibles en cualquier parte de la factura, incluyendo encabezado, notas y descripciones. Formato ISO de cuatro letras y siete dígitos (ej. MSKU1234567, TCLU9876543). Copia solo números completos realmente presentes, sin inventar, completar dígitos ni corregir el dígito verificador; [] si no aparecen.\n" +
@@ -122,9 +126,18 @@ export const extractFacturaVentaFromDocument = createServerFn({ method: "POST" }
     }
 
     const rnc = str(parsed.cliente_rnc)?.replace(/\D/g, "") ?? null;
+    const lineaSchema = z.object({cantidad:z.number().nonnegative(),descripcion:z.string().min(1),unidad:z.string(),precio:z.number().nonnegative(),itbis:z.number().nonnegative(),descuento:z.number().nonnegative(),recargo:z.number().nonnegative(),gravado:z.boolean()});
+    const leidas = z.array(lineaSchema).safeParse(parsed.lineas);
+    const ls = leidas.success ? leidas.data : [];
+    const t = calcTotales(ls);
+    const validas = ls.length > 0 && [
+      [t.monto_total,num(parsed.monto_total)], [t.subtotal_gravado,numOrZero(parsed.subtotal_gravado)],
+      [t.subtotal_exento,numOrZero(parsed.subtotal_exento)], [t.total_itbis,numOrZero(parsed.total_itbis)],
+    ].every(([a,b]) => b !== null && Math.abs(Number(a)-Number(b)) <= 0.02);
 
     return {
       encf,
+      lineas: validas ? ls : [],
       tipo_comprobante: tipo,
       fecha_emision: str(parsed.fecha_emision),
       fecha_vencimiento_ncf: str(parsed.fecha_vencimiento_ncf),

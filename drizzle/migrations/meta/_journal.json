@@ -673,6 +673,13 @@
       "when": 1793761431897,
       "tag": "0095_transporte_facturas_validar_acceso",
       "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1793763484210,
+      "tag": "0096_ecf_destinos_por_renglon",
+      "breakpoints": true
     }
   ]
 }

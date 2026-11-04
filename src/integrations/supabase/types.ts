@@ -4176,6 +4176,7 @@ export type Database = {
           total_isc_e: number
           total_itbis: number
           updated_at: string
+          vinculo_por_linea: boolean
         }
         Insert: {
           cdt?: number
@@ -4215,6 +4216,7 @@ export type Database = {
           total_isc_e?: number
           total_itbis?: number
           updated_at?: string
+          vinculo_por_linea?: boolean
         }
         Update: {
           cdt?: number
@@ -4254,6 +4256,7 @@ export type Database = {
           total_isc_e?: number
           total_itbis?: number
           updated_at?: string
+          vinculo_por_linea?: boolean
         }
         Relationships: [
           {
@@ -4272,6 +4275,7 @@ export type Database = {
           created_at: string
           descripcion: string
           descuento: number
+          expediente_id: string | null
           factura_id: string
           gravado: boolean
           id: string
@@ -4279,6 +4283,7 @@ export type Database = {
           orden: number
           precio: number
           recargo: number
+          transporte_id: string | null
           unidad: string | null
           valor: number
         }
@@ -4288,6 +4293,7 @@ export type Database = {
           created_at?: string
           descripcion: string
           descuento?: number
+          expediente_id?: string | null
           factura_id: string
           gravado?: boolean
           id?: string
@@ -4295,6 +4301,7 @@ export type Database = {
           orden?: number
           precio?: number
           recargo?: number
+          transporte_id?: string | null
           unidad?: string | null
           valor?: number
         }
@@ -4304,6 +4311,7 @@ export type Database = {
           created_at?: string
           descripcion?: string
           descuento?: number
+          expediente_id?: string | null
           factura_id?: string
           gravado?: boolean
           id?: string
@@ -4311,10 +4319,46 @@ export type Database = {
           orden?: number
           precio?: number
           recargo?: number
+          transporte_id?: string | null
           unidad?: string | null
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "facturas_ecf_lineas_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_ecf_lineas_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_ecf_lineas_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "facturas_ecf_lineas_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "facturas_ecf_lineas_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
           {
             foreignKeyName: "facturas_ecf_lineas_factura_id_fkey"
             columns: ["factura_id"]
@@ -4327,6 +4371,13 @@ export type Database = {
             columns: ["factura_id"]
             isOneToOne: false
             referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_ecf_lineas_transporte_id_fkey"
+            columns: ["transporte_id"]
+            isOneToOne: false
+            referencedRelation: "transportes"
             referencedColumns: ["id"]
           },
         ]
@@ -7746,6 +7797,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      guardar_lineas_ecf: {
+        Args: { p_factura: string; p_lineas: Json; p_por_linea: boolean }
+        Returns: undefined
+      }
       guardar_solicitud_correo_pendiente: {
         Args: { p_solicitud: Json }
         Returns: Json
@@ -7753,6 +7808,10 @@ export type Database = {
       immutable_unaccent: { Args: { "": string }; Returns: string }
       importar_capitulo_notas: { Args: { _filas: Json }; Returns: Json }
       importar_catalogo_arancelario: { Args: { _filas: Json }; Returns: Json }
+      importe_ecf_transporte: {
+        Args: { p_factura: string; p_transporte: string }
+        Returns: number
+      }
       listar_encargados_logistica: {
         Args: never
         Returns: {
