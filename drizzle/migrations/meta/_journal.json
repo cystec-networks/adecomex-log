@@ -680,6 +680,13 @@
       "when": 1793763484210,
       "tag": "0096_ecf_destinos_por_renglon",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1793763916671,
+      "tag": "0097_ecf_lineas_guardado_validacion",
+      "breakpoints": true
     }
   ]
 }

@@ -71,7 +71,7 @@ function FacturacionPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("facturas_ecf")
-        .select("*, facturas_ecf_lineas(*), expedientes:expedientes!expedientes_factura_ecf_id_fkey(id,numero), transportes:transportes!transportes_factura_ecf_id_fkey(id,numero_viaje)")
+        .select("*, facturas_ecf_lineas(*,expedientes(id,numero)), expedientes:expedientes!expedientes_factura_ecf_id_fkey(id,numero), transportes:transportes!transportes_factura_ecf_id_fkey(id,numero_viaje)")
         .is("eliminado_en", null)
         .order("encf", { ascending: false });
       return data ?? [];
@@ -356,7 +356,7 @@ function FacturacionPage() {
                     </th>
                   </tr>,
                   ...(!estaAbierto(grupo.mes) ? [] : grupo.facturas).map((f: any) => {
-                  const exps = f.expedientes as { id: string; numero: string }[] | null;
+                  const exps: {id:string;numero:string}[] = [...new Map([...(f.expedientes ?? []),...(f.facturas_ecf_lineas ?? []).flatMap((l:any)=>l.expedientes?[l.expedientes]:[])].map((e:any)=>[e.id,e] as const)).values()] as {id:string;numero:string}[];
                   const trsLegado = (f.transportes as { id: string; numero_viaje: string }[] | null) ?? [];
                   const trs = [...trsLegado];
                   for (const t of transportesPorFactura.get(f.id) ?? []) {

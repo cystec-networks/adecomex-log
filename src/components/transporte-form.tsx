@@ -17,6 +17,7 @@ import { EmailButton } from "@/components/email-button";
 import { SearchEmailButton } from "@/components/search-email-button";
 import { TransporteFacturasLista } from "@/components/transporte-facturas-lista";
 import { totalFacturasTransporte } from "@/lib/transporte-facturas";
+import { leerFacturasTransporte } from '@/lib/transporte-facturas-queries';
 
 const NO_EXPEDIENTE = "__none__";
 
@@ -90,12 +91,8 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial, embedde
   const [facturaIds, setFacturaIds] = useState<string[] | null>(null);
   const idsFacturas = facturaIds ?? vinculosGuardados ?? [];
   const { data: facturasVinculadas = [] } = useQuery({
-    queryKey: ["transporte-facturas-detalle", idsFacturas], enabled: idsFacturas.length > 0,
-    queryFn: async () => {
-      const { data, error } = await supabase.from("facturas_ecf").select("id,encf,monto_total,fecha_emision,pdf_url,eliminado_en").in("id", idsFacturas);
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryKey: ["transporte-facturas-detalle", idsFacturas, id], enabled: idsFacturas.length > 0,
+    queryFn: () => leerFacturasTransporte(idsFacturas,id),
   });
   const totalVinculado = idsFacturas.length ? totalFacturasTransporte(facturasVinculadas.filter(f => idsFacturas.includes(f.id))) : null;
 
@@ -832,7 +829,7 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial, embedde
                 <Label>
                   Facturas e-CF (al menos una para estado "Facturado")
                 </Label>
-                <TransporteFacturasLista ids={idsFacturas} onChange={setFacturaIds} clienteId={form.cliente_id || null} />
+                <TransporteFacturasLista ids={idsFacturas} onChange={setFacturaIds} clienteId={form.cliente_id || null} transporteId={id} />
                 {idsFacturas.length > 0 && <p className="text-xs font-semibold">Total facturado ({idsFacturas.length}): {fmtDOP(totalVinculado ?? 0)}</p>}
               </div>
 

@@ -4291,7 +4291,7 @@ export type Database = {
           cantidad?: number
           codigo?: string | null
           created_at?: string
-          descripcion: string
+          descripcion?: string
           descuento?: number
           expediente_id?: string | null
           factura_id: string

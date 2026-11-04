@@ -123,7 +123,7 @@ export function FacturaEcfFormDialog({
     },
   });
   const [omitirTransporte, setOmitirTransporte] = useState(false);
-  const contenedores = useMemo(() => detectarContenedoresFactura(contenedoresOcrGuardados(notas)), [notas]);
+  const contenedores = useMemo(() => detectarContenedoresFactura([...contenedoresOcrGuardados(notas),...lineas.map(l=>l.descripcion)]), [notas,lineas]);
   const numerosTr = useMemo(() => detectarTransportesFactura([...transportesOcrGuardados(notas), ...descripcionesOcrGuardadas(notas), ...lineas.map(l => l.descripcion)]), [notas, lineas]);
   const { data: transporteDetectado, isFetching: buscandoTransporte, isError: errorTransporte } = useQuery({
     queryKey: ["transportes-referencia-ecf", contenedores, numerosTr, expedienteContexto?.id],
@@ -385,8 +385,10 @@ export function FacturaEcfFormDialog({
     setLineas((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
   const addLinea = () =>
     setLineas((prev) => [...prev, { cantidad: 1, descripcion: "", unidad: "UND", precio: 0, itbis: 0, descuento: 0, recargo: 0, gravado: true }]);
-  const removeLinea = (i: number) =>
+  const removeLinea = (i: number) => {
     setLineas((prev) => prev.filter((_, idx) => idx !== i));
+    setDestinosLinea(prev => Object.fromEntries(Object.entries(prev).filter(([k])=>Number(k)!==i).map(([k,v])=>[Number(k)>i?Number(k)-1:Number(k),v])));
+  };
 
   const isLineasDefault = () =>
     lineas.length === 1 &&
@@ -478,7 +480,7 @@ export function FacturaEcfFormDialog({
           <div className="border border-border rounded-md p-3 text-xs space-y-2">
             {numerosTr.length > 0 && <div className="break-words">Pedido / Transporte: <span className="font-semibold">{numerosTr.join(", ")}</span></div>}
             {contenedores.length > 0 && <div className="break-words">Contenedores detectados: <span className="font-semibold">{contenedores.join(", ")}</span></div>}
-            {editId ? <p className="text-muted-foreground">Vinculación disponible desde el selector de factura en Transportes.</p>
+            {porLinea ? <p className="text-muted-foreground">Destinos separados por renglón.</p> : editId ? <p className="text-muted-foreground">Vinculación disponible desde el selector de factura en Transportes.</p>
               : buscandoTransporte ? <p className="text-muted-foreground">Buscando Transporte…</p>
               : transporteDetectado?.disponible ? (
                 <Select value={omitirTransporte ? "__none__" : transporteDetectado.disponible.id} onValueChange={v => setOmitirTransporte(v === "__none__")}>
@@ -492,7 +494,7 @@ export function FacturaEcfFormDialog({
           </div>
         )}
 
-        {referencias.expedientes.length > 0 && (
+        {referencias.expedientes.length > 0 && !porLinea && (
           <div className="border border-border rounded-md p-3 text-xs space-y-2">
             <div>Expedientes detectados: <span className="font-semibold">{referencias.expedientes.join(", ")}</span></div>
             {referencias.bl.length > 0 && <div className="text-muted-foreground">BL/Transporte: {referencias.bl.join(", ")}</div>}
