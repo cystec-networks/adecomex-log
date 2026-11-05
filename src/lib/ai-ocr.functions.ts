@@ -40,6 +40,8 @@ export type OcrExtraction = {
   puerto_salida: string | null;
   pais_origen: string | null;
   pais_procedencia: string | null;
+  pais_origen_evidencia?: string | null;
+  pais_procedencia_evidencia?: string | null;
   incoterm: string | null;
   factura_comercial: string | null;
   descripcion_mercancia: string | null;

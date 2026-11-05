@@ -107,6 +107,7 @@ import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
 import type { TerceroExtranjero } from "@/components/terceros-extranjeros";
 import { camposProveedorCatalogo, resolverExportadorFactura } from "@/lib/exportador-factura-catalogo";
+import { resolverPaisDocumento } from "@/lib/pais-documento";
 import { TabRecepcion } from "@/components/tab-recepcion";
 import { EscanearBlButton, EscanearFacturaButton as EscanearFacturaExpButton } from "@/components/escanear-documento-expediente-buttons";
 import { NuevoDesdeXmlButton } from "@/components/nuevo-desde-xml-button";
@@ -566,6 +567,11 @@ async function resolverContraCatalogo(
   valorTexto: string | null,
 ): Promise<{ nombre: string | null; codigo: string | null }> {
   if (!valorTexto) return { nombre: null, codigo: null };
+  if (tabla === "dga_paises") {
+    const { data, error } = await supabase.from("dga_paises").select("codigo, pais");
+    if (error) return { nombre: valorTexto, codigo: null };
+    return resolverPaisDocumento(valorTexto, data ?? []);
+  }
   const { data } = await (supabase.from(tabla) as any)
     .select(`codigo, ${campoNombre}`)
     .ilike(campoNombre, `%${valorTexto}%`)
@@ -670,6 +676,10 @@ function DetalleExpediente() {
       setAdjuntosDelCorreo(deduplicarAdjuntosCorreo(adjuntos));
       setAvisosDelCorreo(Array.isArray(s.advertencias) ? s.advertencias as string[] : []);
       const doc = datosDocumentalesCorreo(adjuntos);
+      const [paisOrigenCorreo, paisProcedenciaCorreo] = await Promise.all([
+        resolverContraCatalogo("dga_paises", "pais", typeof doc.pais_origen === "string" ? doc.pais_origen : null),
+        resolverContraCatalogo("dga_paises", "pais", typeof doc.pais_procedencia === "string" ? doc.pais_procedencia : null),
+      ]);
       let productosCorreo: OcrExtraction["productos_factura"];
       try {
         productosCorreo = await prepararFacturasCorreo(adjuntos, async (adjunto) => {
@@ -699,6 +709,10 @@ function DetalleExpediente() {
         tipoCargaConfianza: doc.tipo_carga_confianza === "media" ? "media" : doc.tipo_carga_confianza === "alta" ? "alta" : null,
         campos: {
           ...Object.fromEntries(["tipo_carga", "suplidor", "medio_transporte", "naviera", "puerto_arribo", "puerto_salida", "pais_origen", "pais_procedencia", "incoterm", "fecha_cargado", "flete", "seguro"].map((k) => [k, doc[k] ?? null])),
+          pais_origen: paisOrigenCorreo.nombre,
+          pais_origen_codigo: paisOrigenCorreo.codigo,
+          pais_procedencia: paisProcedenciaCorreo.nombre,
+          pais_procedencia_codigo: paisProcedenciaCorreo.codigo,
           ...(doc.otros_gastos != null ? { otros: doc.otros_gastos } : {}),
           ...(doc.peso_neto_kg != null ? { peso_neto: doc.peso_neto_kg } : {}),
           bl_awb: s.bl_awb,

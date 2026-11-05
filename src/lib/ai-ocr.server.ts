@@ -1,5 +1,6 @@
 import { callGateway } from "./ai-gateway.server";
 import { PROMPT_DOCUMENTO_IMPORTACION } from "./ocr-documento-prompt";
+import { normalizarPaisDocumento } from "./pais-documento";
 import { normalizarMonedaFactura, normalizarTotalFactura } from './factura-importes';
 import type { PagoPuerto } from "./pago-puerto";
 import { PROMPT_PAGO_PUERTO, resolverPagoPuertoOcr } from "./pago-puerto-ocr";
@@ -127,8 +128,8 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
       medio_transporte:
         parsed.medio_transporte === "maritimo" || parsed.medio_transporte === "aereo" ? parsed.medio_transporte : null,
       puerto_salida: parsed.puerto_salida ?? null,
-      pais_origen: parsed.pais_origen ?? null,
-      pais_procedencia: parsed.pais_procedencia ?? null,
+      pais_origen: normalizarPaisDocumento(parsed.pais_origen, parsed.pais_origen_evidencia),
+      pais_procedencia: normalizarPaisDocumento(parsed.pais_procedencia, parsed.pais_procedencia_evidencia),
       incoterm: parsed.incoterm ?? null,
       factura_comercial: parsed.factura_comercial ?? null,
       descripcion_mercancia: parsed.descripcion_mercancia ?? null,
