@@ -105,6 +105,8 @@ import { SubirJuegoDocumentos } from "@/components/subir-juego-documentos";
 import { DescargarDocumentosZip } from "@/components/descargar-documentos-zip";
 import { GenerarDocumentoButton } from "@/components/generar-documento-dialog";
 import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
+import type { TerceroExtranjero } from "@/components/terceros-extranjeros";
+import { camposProveedorCatalogo, resolverExportadorFactura } from "@/lib/exportador-factura-catalogo";
 import { TabRecepcion } from "@/components/tab-recepcion";
 import { EscanearBlButton, EscanearFacturaButton as EscanearFacturaExpButton } from "@/components/escanear-documento-expediente-buttons";
 import { NuevoDesdeXmlButton } from "@/components/nuevo-desde-xml-button";
@@ -1967,6 +1969,34 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   }, [ocrAplicado, isNuevo]);
 
   useEffect(() => {
+    const nombre = ocrAplicado?.campos.suplidor;
+    if (!isNuevo || esExportacion || !ocrAplicado || ocrAplicado.desdeXml || typeof nombre !== "string" || !nombre.trim()) return;
+    const seq = ocrAplicado.seq;
+    let vigente = true;
+    // Read through the user's existing catalog permissions; never create a supplier on OCR.
+    void (async () => {
+      const filas: TerceroExtranjero[] = [];
+      for (let inicio = 0; ; inicio += 500) {
+        const { data, error } = await supabase.from("catalogo_terceros_extranjeros").select("*").eq("activo", true).order("id").range(inicio, inicio + 499);
+        if (!vigente) return;
+        if (error) { toast.warning("No se pudo consultar el proveedor; puedes elegirlo del catálogo manualmente."); return; }
+        filas.push(...(data ?? []) as TerceroExtranjero[]);
+        if (!data || data.length < 500) break;
+      }
+      const elegido = resolverExportadorFactura(nombre, filas);
+      if (!vigente || !elegido || ultimoOcrSeq.current !== seq) return;
+      setForm((f) => {
+        // A manual selection or edit made while the lookup runs remains authoritative.
+        if (f.suplidor !== nombre || (f.suplidor_rnc && f.suplidor_rnc !== ocrPuesto.current.suplidor_rnc)) return f;
+        const cambios = camposProveedorCatalogo(elegido);
+        Object.assign(ocrPuesto.current, cambios);
+        return { ...f, ...cambios };
+      });
+    })();
+    return () => { vigente = false; };
+  }, [ocrAplicado, isNuevo, esExportacion]);
+
+  useEffect(() => {
     if (!clienteOcr || !clientesLite?.length) {
       setClienteExtraidoSinMatch(null);
       return;
@@ -2745,7 +2775,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                 <Label><ReqMark />Exportador / Suplidor</Label>
                 {editable && (
                   <TerceroExtranjeroPicker
-                    onSelect={(t) => { setForm((f) => ({ ...f, suplidor: t.nombre, suplidor_rnc: t.tid })); limpiarFaltante("req-suplidor"); }}
+                    onSelect={(t) => { setForm((f) => ({ ...f, ...camposProveedorCatalogo(t) })); limpiarFaltante("req-suplidor"); }}
                   />
                 )}
               </div>
