@@ -10,7 +10,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { parseLocalDate, fmtLocalDate } from "@/lib/dates";
@@ -23,6 +23,14 @@ import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
 
 
 export const Route = createFileRoute("/_authenticated/cotizaciones/")({
+  head: () => ({ meta: [
+    { title: 'Cotizaciones de Compras | ADECOMEX' },
+    { name: 'description', content: 'Consulta y modifica las cotizaciones de compras de ADECOMEX.' },
+    { property: 'og:title', content: 'Cotizaciones de Compras | ADECOMEX' },
+    { property: 'og:description', content: 'Consulta y modifica las cotizaciones de compras de ADECOMEX.' },
+    { property: 'og:type', content: 'website' },
+    { name: 'twitter:card', content: 'summary' },
+  ] }),
   validateSearch: (s: Record<string, unknown>): { sinConvertir?: boolean } =>
     s.sinConvertir === true || s.sinConvertir === "true" || s.sinConvertir === 1 || s.sinConvertir === "1"
       ? { sinConvertir: true }
@@ -260,6 +268,12 @@ function Cotizaciones() {
                       </td>
                       <td className="px-4 py-2 text-right whitespace-nowrap">
                         {canEdit && (
+                          <span className="inline-flex items-center gap-2">
+                          <Button asChild variant="ghost" size="sm" title="Editar/Modificar" aria-label={`Editar cotización ${c.numero}`}>
+                            <Link to="/cotizaciones/$id" params={{ id: c.id }}>
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -269,6 +283,7 @@ function Cotizaciones() {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
+                          </span>
                         )}
                       </td>
                     </tr>
