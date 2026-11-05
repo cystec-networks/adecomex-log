@@ -119,7 +119,7 @@ import { agruparAdjuntosCorreo, etiquetaOriginalIncluido, nombreUnido, unirArchi
 import { prepararFacturasCorreo } from "@/lib/factura-expediente-escaneo";
 import { agregarProductosFactura } from "@/lib/factura-expediente-arancel";
 import { acumularValoresFactura } from "@/lib/factura-comercial-cif";
-import { sumarOtrosDocumentos } from '@/lib/bl-collect-charges';
+import { sumarOtrosDocumentos, mismoImporteOcr } from '@/lib/bl-collect-charges';
 import { classifyArancelLote } from "@/lib/ai-arancel.functions";
 import { confirmacionPendienteSolicitud, correoConfirmacionSolicitud, faltantesConfirmacion, cuerpoHtmlConfirmacion } from "@/lib/correo-confirmacion";
 import {
@@ -2025,6 +2025,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         })),
       );
     }
+    const puestosAntes = { ...ocrPuesto.current };
     setForm((f) => {
       const next: any = { ...f };
       for (const [k, v0] of Object.entries(ocrAplicado.campos)) {
@@ -2032,7 +2033,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         const v = typeof v0 === "number" ? String(v0) : v0;
         const actual = (f as any)[k];
         // XML: los códigos vienen exactos, así que reemplazan lo que haya.
-        if (ocrAplicado.desdeXml || actual === "" || actual === null || actual === undefined || actual === ocrPuesto.current[k]) {
+        if (ocrAplicado.desdeXml || actual === "" || actual === null || actual === undefined || actual === puestosAntes[k] || (k === 'otros' && mismoImporteOcr(actual, puestosAntes[k]))) {
           next[k] = v;
           ocrPuesto.current[k] = v;
         }

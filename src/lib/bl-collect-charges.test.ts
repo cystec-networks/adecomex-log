@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { leerCollectCharges, sumarOtrosDocumentos } from './bl-collect-charges';
+import { leerCollectCharges, sumarOtrosDocumentos, mismoImporteOcr } from './bl-collect-charges';
 test('DTHC USD 400.00 completa Otros con 400', () => assert.equal(leerCollectCharges('Collect Charges\nTERMINAL HANDLING CHARGE (DTHC: USD 400.00)'), 400));
 test('todos los cargos de destino se suman sin duplicar subtotal/total', () => assert.equal(leerCollectCharges('Collect Charges\nTERMINAL HANDLING CHARGE (DTHC: USD 400.00)\nDOCUMENTATION CHARGE USD 75.00\nSECURITY CHARGE USD 25.50\nSUBTOTAL USD 500.50\nTOTAL COLLECT USD 500.50'), 500.5));
 test('cabecera USD aplica a cargos sin moneda por fila', () => assert.equal(leerCollectCharges('Collect Charges (USD)\nDTHC 400.00\nDocumentation 75.00'), 475));
@@ -18,4 +18,9 @@ test('BL y factura suman sus cargos y relectura no acumula nuevamente', () => {
   assert.equal(sumarOtrosDocumentos(null, 50), 50);
   assert.equal(sumarOtrosDocumentos(0, null), 0);
   assert.equal(sumarOtrosDocumentos(null, null), null);
+});
+test('formatear 400 como 400.00 no bloquea relectura; corrección 625.25 sí se conserva', () => {
+  assert.equal(mismoImporteOcr('400.00', '400'), true);
+  assert.equal(mismoImporteOcr('625.25', '400'), false);
+  assert.equal(mismoImporteOcr('', null), false);
 });

@@ -27,3 +27,8 @@ export function sumarOtrosDocumentos(bl: number | null | undefined, factura: num
   const montos = [bl, factura].filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
   return montos.length ? montos.reduce((s, v) => s + Math.round(v * 100), 0) / 100 : null;
 }
+/** Formatting on blur is not a manual correction. */
+export function mismoImporteOcr(actual: unknown, anterior: unknown): boolean {
+  if (actual == null || actual === '' || anterior == null || anterior === '') return false;
+  return Number.isFinite(Number(actual)) && Number.isFinite(Number(anterior)) && Number(actual) === Number(anterior);
+}
