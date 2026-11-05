@@ -116,6 +116,8 @@ import { AvisoDocumentosCombinados, useDocumentosCombinados } from "@/components
 import { datosDocumentalesCorreo, deduplicarAdjuntosCorreo, type AdjuntoGuardadoCorreo } from "@/lib/correo-adjuntos";
 import { agruparAdjuntosCorreo, etiquetaOriginalIncluido, nombreUnido, unirArchivosPdf } from "@/lib/correo-adjuntos-union";
 import { prepararFacturasCorreo } from "@/lib/factura-expediente-escaneo";
+import { agregarProductosFactura } from "@/lib/factura-expediente-arancel";
+import { acumularValoresFactura } from "@/lib/factura-comercial-cif";
 import { classifyArancelLote } from "@/lib/ai-arancel.functions";
 import { confirmacionPendienteSolicitud, correoConfirmacionSolicitud, faltantesConfirmacion, cuerpoHtmlConfirmacion } from "@/lib/correo-confirmacion";
 import {
@@ -743,6 +745,9 @@ function DetalleExpediente() {
       campos: {
         factura_comercial: res.factura_comercial ?? res.numero_documento,
         total_fob: res.fob_total,
+        seguro: res.seguro,
+        flete: res.flete,
+        otros: res.otros_gastos,
         suplidor: res.suplidor,
         incoterm: res.incoterm,
       },
@@ -1173,13 +1178,13 @@ function DetalleExpediente() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>¿Agregar estos productos a la mercancía ya cargada?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Ya hay {productosCargados} fila(s) en Detalle de mercancía. «Agregar» suma las {facturaPendiente?.productos_factura?.length ?? 0} fila(s) de esta factura, acumula el FOB y añade su número de factura. «Reemplazar» sustituye todo por esta factura.
+                      Ya hay {productosCargados} fila(s) en Detalle de mercancía. «Agregar» consolida los productos coincidentes, acumula FOB, seguro y flete y añade el número de factura. «Reemplazar» sustituye todo por esta factura.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <Button variant="outline" onClick={() => { const res = facturaPendiente!; setFacturaPendiente(null); facRes.current = res; void aplicarCombinado(res.productos_factura); toast.success("Factura procesada — mercancía reemplazada"); }}>Reemplazar</Button>
-                    <AlertDialogAction onClick={() => { const res = facturaPendiente!; setFacturaPendiente(null); aplicarFacturaAdicional(res); toast.success("Productos agregados a la mercancía"); }}>Agregar</AlertDialogAction>
+                    <Button variant="outline" onClick={() => { const res = facturaPendiente; if (!res) return; setFacturaPendiente(null); facRes.current = res; void aplicarCombinado(res.productos_factura); toast.success("Factura procesada — mercancía reemplazada"); }}>Reemplazar</Button>
+                    <AlertDialogAction onClick={() => { const res = facturaPendiente; if (!res) return; setFacturaPendiente(null); aplicarFacturaAdicional(res); toast.success("Productos agregados a la mercancía"); }}>Agregar</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -1982,7 +1987,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     ultimoOcrSeq.current = ocrAplicado.seq;
     if (ocrAplicado.agregar) {
       const nuevos = ocrAplicado.productos ?? [];
-      setProductosNuevos((prev) => [...prev, ...nuevos]);
+      setProductosNuevos((prev) => agregarProductosFactura(prev, nuevos));
       if (ocrAplicado.contenedores?.length) {
         setContenedores((prev) => {
           const vistos = new Set(prev.map((c) => c.numero.replace(/[^A-Z0-9]/gi, "").toUpperCase()).filter(Boolean));
@@ -1997,8 +2002,9 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         const fac = String(c.factura_comercial ?? "").trim();
         const actualFac = String(f.factura_comercial ?? "").trim();
         if (fac && !actualFac.split(/\s*,\s*/).includes(fac)) next.factura_comercial = actualFac ? `${actualFac}, ${fac}` : fac;
-        const fob = Number(c.total_fob);
-        if (Number.isFinite(fob) && fob > 0) next.total_fob = String(Math.round(((Number(f.total_fob) || 0) + fob) * 100) / 100);
+        const acumulados = acumularValoresFactura(f, c);
+        Object.assign(next, acumulados);
+        Object.assign(ocrPuesto.current, acumulados);
         for (const k of ["suplidor", "incoterm"]) {
           const actual = (f as any)[k];
           if (c[k] && (actual === "" || actual == null)) next[k] = c[k];
@@ -2234,7 +2240,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   useEffect(() => {
     const seguroActual = form.seguro;
     const vacio = seguroActual === "" || seguroActual == null || Number(seguroActual) === 0;
-    if (vacio && sumFob > 0) {
+    if (vacio && sumFob > 0 && ocrPuesto.current.seguro == null) {
       set("seguro", (sumFob * 0.02).toFixed(2));
     }
   }, [sumFob]);
@@ -2560,7 +2566,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (productosNuevos.length) {
         const { error: eProd } = await supabase.from("mercancia_items").insert(
           productosNuevos.map((p: any, i: number) => {
-            const { id: _localId, item_no: _no, codigo_sugerido_ia: _sugeridoIa, ...resto } = p;
+            const { id: _localId, item_no: _no, codigo_sugerido_ia: _sugeridoIa, codigo_producto_documento: _codigoDocumento, ...resto } = p;
             return { ...resto, expediente_id: data.id, item_no: i + 1 };
           }),
         );

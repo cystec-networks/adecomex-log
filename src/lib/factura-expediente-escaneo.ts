@@ -1,5 +1,6 @@
 import type { OcrExtraction } from "./ai-ocr.functions";
-import { prepararProductosFactura } from "./factura-expediente-arancel";
+import { prepararProductosFactura, agregarProductosFactura } from "./factura-expediente-arancel";
+import { normalizarFacturaCif } from "./factura-comercial-cif";
 import { deduplicarAdjuntosCorreo, type AdjuntoGuardadoCorreo } from "./correo-adjuntos";
 
 export type ArchivoFactura = { filename: string; mime: string; base64: string };
@@ -11,7 +12,7 @@ type DependenciasFactura = {
 
 /** Manual upload and email confirmation use the same extraction and enrichment. */
 export async function escanearFacturaExpediente(archivo: ArchivoFactura, deps: DependenciasFactura, extraido?: OcrExtraction) {
-  const resultado = extraido ?? await deps.extraer({ ...archivo, lineas_factura: true });
+  const resultado = normalizarFacturaCif(extraido ?? await deps.extraer({ ...archivo, lineas_factura: true }));
   return {
     ...resultado,
     productos_factura: await prepararProductosFactura(resultado.lineas_factura ?? [], deps.clasificar, deps.buscarTasas),
@@ -35,5 +36,5 @@ export async function prepararFacturasCorreo(
     if (!resultado.productos_factura.length) throw new Error(`No se pudieron leer las mercancías de ${adjunto.nombre}; revisa la factura antes de confirmar.`);
     productos.push(...resultado.productos_factura);
   }
-  return productos.map((p, i) => ({ ...p, item_no: i + 1 }));
+  return agregarProductosFactura([], productos);
 }

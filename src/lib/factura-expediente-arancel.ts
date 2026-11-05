@@ -4,6 +4,8 @@ import type { TasasProducto } from "./catalogo-arancelario";
 export type LineaFacturaExpediente = {
   descripcion: string; codigo_arancelario: string | null; cantidad: number | null;
   unidad: string | null; valor_fob: number | null; peso: number | null;
+  costo_desglose_cif?: number | null;
+  codigo_producto_documento?: string | null;
 };
 type Resultado = { producto: boolean; arancel: { codigo: string } | null };
 type Tasas = { pct_gravamen: string; aplica_isc: boolean; pct_isc: string; pct_itbis: string };
@@ -20,7 +22,7 @@ export function consolidarLineasFactura(lineas: LineaFacturaExpediente[]): Linea
   for (const l of lineas) {
     const descripcion = normalizarTexto(l.descripcion);
     if (!descripcion) { resultado.push({ ...l }); continue; }
-    const clave = [(l.codigo_arancelario ?? "").replace(/\D/g, ""), descripcion, normalizarTexto(l.unidad)].join("|");
+    const clave = [(l.codigo_arancelario ?? "").replace(/\D/g, ""), normalizarTexto(l.codigo_producto_documento), descripcion, normalizarTexto(l.unidad)].join("|");
     const previo = grupos.get(clave);
     if (previo) {
       previo.cantidad = sumar(previo.cantidad, l.cantidad);
@@ -65,10 +67,23 @@ export async function prepararProductosFactura(
     return {
       id: crypto.randomUUID(), item_no: i + 1,
       detalle_producto: l.descripcion, codigo_arancelario: codigo || null,
+      codigo_producto_documento: l.codigo_producto_documento ?? null,
       unidad_medida: l.unidad, cantidad: l.cantidad, peso: l.peso, valor_fob: l.valor_fob,
       pct_gravamen: numero(tasas?.pct_gravamen), aplica_isc: tasas?.aplica_isc ?? false,
       pct_isc: numero(tasas?.pct_isc), pct_itbis: numero(tasas?.pct_itbis),
       codigo_sugerido_ia: sugeridos.get(i) ?? null,
     };
   }));
+}
+
+/** Preserve the first draft's identity and never merge different documentary products or edited tax rules. */
+export function agregarProductosFactura<T extends { detalle_producto?: string | null; codigo_arancelario?: string | null; codigo_producto_documento?: string | null; unidad_medida?: string | null; cantidad?: number | string | null; peso?: number | string | null; valor_fob?: number | string | null; item_no?: number }>(actuales: T[], nuevos: T[]): T[] {
+  const resultado = actuales.map((p) => ({ ...p }));
+  const clave = (p: T) => [normalizarTexto(p.detalle_producto), (p.codigo_arancelario ?? "").replace(/\D/g, ""), normalizarTexto(p.codigo_producto_documento), normalizarTexto(p.unidad_medida), ...["pct_gravamen", "aplica_isc", "pct_isc", "pct_itbis"].map((k) => String((p as Record<string, unknown>)[k] ?? ""))].join("|");
+  for (const p of nuevos) {
+    const previo = p.detalle_producto?.trim() ? resultado.find((r) => clave(r) === clave(p)) : undefined;
+    if (!previo) { resultado.push({ ...p }); continue; }
+    for (const k of ["cantidad", "peso", "valor_fob"] as const) previo[k] = sumar(previo[k] == null || previo[k] === "" ? null : Number(previo[k]), p[k] == null || p[k] === "" ? null : Number(p[k]));
+  }
+  return resultado.map((p, i) => ({ ...p, item_no: i + 1 }));
 }

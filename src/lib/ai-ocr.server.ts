@@ -2,6 +2,7 @@ import { callGateway } from "./ai-gateway.server";
 import { PROMPT_DOCUMENTO_IMPORTACION } from "./ocr-documento-prompt";
 import { normalizarPaisDocumento } from "./pais-documento";
 import { normalizarMonedaFactura, normalizarTotalFactura } from './factura-importes';
+import { leerDesglosesCif, normalizarFacturaCif } from './factura-comercial-cif';
 import type { PagoPuerto } from "./pago-puerto";
 import { PROMPT_PAGO_PUERTO, resolverPagoPuertoOcr } from "./pago-puerto-ocr";
 import { TIPOS_RESULTADO_DGA, type ResultadoDgaExtraido } from "./resultado-dga-documentos";
@@ -39,8 +40,9 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
     let system = PROMPT_DOCUMENTO_IMPORTACION;
 
 
-    if (data.lineas_factura) system += " Agrega lineas_factura: arreglo de cada línea de mercancía en orden con {descripcion, codigo_arancelario, cantidad, unidad, valor_fob, peso}. Extrae descripción completa y valores del documento; codigo_arancelario SOLO si aparece explícitamente para esa línea, nunca clasifiques ni inventes códigos. valor_fob es el importe de la línea, no precio unitario. Datos ausentes null. No agregues flete, seguro ni cargos como mercancías. No cambies los totales de cabecera.";
+    if (data.lineas_factura) system += " Agrega lineas_factura: arreglo de cada línea de mercancía en orden con {descripcion, codigo_arancelario, codigo_producto_documento, cantidad, unidad, valor_fob, costo_desglose_cif, peso}. codigo_arancelario SOLO partida aduanera/HS explícita, nunca CABYS ni código interno. codigo_producto_documento conserva CABYS o código interno explícito por separado. costo_desglose_cif es Costo del Desglose de Valores CIF de esa línea; valor_fob usa ese Costo con prioridad, NUNCA Importe Total CIF ni precio unitario. Si solo consta CIF sin FOB identificable, valor_fob=null. Datos ausentes null. No agregues flete, seguro ni cargos como mercancías. Suma Costo, Seguro y Flete de los desgloses en cabecera, sin duplicar resúmenes.";
     if (data.pago_puerto) system = PROMPT_PAGO_PUERTO;
+    if (data.lineas_factura) system += " descripcion debe ser la copia literal completa de la celda Product/Producto de la tabla, incluyendo presentación y códigos del nombre, sin traducir, resumir ni agregar el tipo genérico de las notas. Así el mismo producto conserva su identidad entre facturas.";
     if (data.resultado_dga) {
       const reglas = data.resultado_dga === "Reporte de Liquidación de Impuestos"
         ? 'Del reporte Liquidación de Impuestos extrae numero del campo Liquidación (null si Temporal ()), estado del campo Estado. Agrega dentro de resultado_dga: declaracion desde Declaración sin versión entre paréntesis; fecha_declaracion desde Fecha Decl.; bl desde Número B/L; llegada desde Fecha Llegada; puerto y puerto_codigo desde Depósito de Destino ([código] nombre); peso_neto desde Peso Neto KG; manifiesto desde Manifiesto; resultado_inspeccion desde ResuInsp. Extrae impuestos desde Total Impuestos a Pagar, servicio desde Tasa Servicio Aduanero y dua desde Declaración Unica Aduanera (nunca sus variantes Pagado). Estos tres solo sirven para comparación; total=null. observaciones es únicamente el texto del bloque OBSERVACIONES, sin el título ni Declaración de Siga Interno. Temporal (), (), //, guiones o vacíos son null; nunca infieras Manifiesto, BL o Llegada de otros datos.'
@@ -72,7 +74,7 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
     }
     const raw = cartaTexto ? JSON.stringify({ carta_ruta: cartaTexto }) : liquidacionTexto ? JSON.stringify({ resultado_dga: liquidacionTexto }) : await callGateway({
       model: "google/gemini-2.5-flash",
-      ...(data.pago_puerto || data.certificado_origen_dga || data.resultado_dga || data.carta_ruta ? { temperature: 0 } : {}),
+      ...(data.lineas_factura || data.pago_puerto || data.certificado_origen_dga || data.resultado_dga || data.carta_ruta ? { temperature: 0 } : {}),
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: system },
@@ -98,6 +100,14 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
       if (m) parsed = JSON.parse(m[0]);
     }
 
+    if (isPdf && !data.pago_puerto && !data.resultado_dga && !data.certificado_origen_dga && !data.carta_ruta) {
+      try {
+        const { extractText, getDocumentProxy } = await import("unpdf");
+        const { text } = await extractText(await getDocumentProxy(Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0))), { mergePages: true });
+        parsed = normalizarFacturaCif(parsed, leerDesglosesCif(text));
+      } catch { /* Scans retain the explicit OCR breakdown. */ }
+    }
+    parsed = normalizarFacturaCif(parsed);
     return {
       ...(data.carta_ruta ? { carta_ruta: normalizarCartaRuta(parsed.carta_ruta) } : {}),
       ...(data.certificado_origen_dga ? { certificado_origen_dga: normalizarCertificadoDga(parsed.certificado_origen_dga) } : {}),
@@ -148,6 +158,7 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
         descripcion: String(l.descripcion ?? "").trim(), codigo_arancelario: l.codigo_arancelario ? String(l.codigo_arancelario).trim() : null,
         cantidad: num(l.cantidad), unidad: l.unidad ? String(l.unidad).trim() : null,
         valor_fob: num(l.valor_fob), peso: num(l.peso),
+        costo_desglose_cif: num(l.costo_desglose_cif), codigo_producto_documento: l.codigo_producto_documento ? String(l.codigo_producto_documento).trim() : null,
       })) : [] } : {}),
       tipo_carga_confianza:
         parsed.tipo_carga_confianza === "alta" || parsed.tipo_carga_confianza === "media"

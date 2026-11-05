@@ -1,4 +1,5 @@
 # Email intake pipeline rules
+- Commercial invoices use `factura-comercial-cif` for explicit CIF Cost/FOB precedence; `agregarProductosFactura` consolidates draft products with documentary identity and matching tax rules. Documentary product IDs are not DGA codes and remain draft-only, preventing incorrect customs bases and unsupported writes.
 - Document countries use `pais-documento` with explicit US/territory evidence and exact catalog resolution, shared by OCR and manual/email forms, because substring-first matching can select an unrelated island entry.
 - Sales invoice transport references stay separate from fiscal descriptions. `factura-lineas-destino` scopes container matching by expediente after TR-first matching; mixed invoices persist exclusive destinations on fiscal lines through `guardar_lineas_ecf`, preserving line IDs. Transport membership remains in `transporte_facturas_ecf`; triggers and UI sum assigned lines for split invoices and full totals for legacy invoices. Customs costs use assigned pre-tax bases, while fiscal/CxC totals remain whole; manual lists retain drafts until save.
 
