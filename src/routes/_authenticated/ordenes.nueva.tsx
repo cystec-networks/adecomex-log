@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumeroCompraInput } from '@/components/numero-compra-input';
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,14 @@ import { ProductosCard } from "@/components/productos-card";
 
 
 export const Route = createFileRoute("/_authenticated/ordenes/nueva")({
+  head: () => ({ meta: [
+    { title: 'Nueva orden de compras | ADECOMEX' },
+    { name: 'description', content: 'Registrar una orden de compras con productos y valores estimados.' },
+    { property: 'og:title', content: 'Nueva orden de compras | ADECOMEX' },
+    { property: 'og:description', content: 'Registrar una orden de compras con productos y valores estimados.' },
+    { property: 'og:type', content: 'website' },
+    { name: 'twitter:card', content: 'summary' },
+  ] }),
   component: NuevaOrden,
 });
 
@@ -141,8 +150,8 @@ function NuevaOrden() {
             </div>
             <div className="grid gap-1.5"><Label>Origen</Label><Input value={form.origen} onChange={(e) => set("origen", e.target.value)} /></div>
             <div className="grid gap-1.5"><Label>Destino</Label><Input value={form.destino} onChange={(e) => set("destino", e.target.value)} /></div>
-            <div className="grid gap-1.5"><Label>Peso estimado (kg)</Label><Input type="number" step="0.01" value={form.peso_kg} onChange={(e) => set("peso_kg", e.target.value)} /></div>
-            <div className="grid gap-1.5"><Label>Volumen estimado (m³)</Label><Input type="number" step="0.01" value={form.volumen_m3} onChange={(e) => set("volumen_m3", e.target.value)} /></div>
+            <div className="grid gap-1.5"><Label>Peso estimado (kg)</Label><NumeroCompraInput label="Peso estimado (kg)" value={form.peso_kg} onValueChange={(v) => set("peso_kg", v)} /></div>
+            <div className="grid gap-1.5"><Label>Volumen estimado (m³)</Label><NumeroCompraInput label="Volumen estimado (m³)" value={form.volumen_m3} onValueChange={(v) => set("volumen_m3", v)} /></div>
             <div className="grid gap-1.5"><Label>Tarifa propuesta</Label><Input type="number" step="0.01" value={form.tarifa_propuesta} onChange={(e) => set("tarifa_propuesta", e.target.value)} /></div>
             <div className="grid gap-1.5"><Label>Moneda</Label>
               <Select value={form.moneda} onValueChange={(v) => set("moneda", v)}>

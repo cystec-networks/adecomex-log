@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ImporteCotizacionInput } from '@/components/importe-cotizacion-input';
+import { NumeroCompraInput } from '@/components/numero-compra-input';
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -287,8 +288,8 @@ function DetalleCotizacion() {
           </div>
           <div className="grid gap-1.5"><Label>Origen</Label><Input value={form.origen} readOnly={readOnly} onChange={(e) => set("origen", e.target.value)} /></div>
           <div className="grid gap-1.5"><Label>Destino</Label><Input value={form.destino} readOnly={readOnly} onChange={(e) => set("destino", e.target.value)} /></div>
-          <div className="grid gap-1.5"><Label>Peso estimado (kg)</Label><Input type="number" step="0.01" value={form.peso_kg ?? ""} readOnly={readOnly} onChange={(e) => set("peso_kg", e.target.value)} /></div>
-          <div className="grid gap-1.5"><Label>Volumen estimado (m³)</Label><Input type="number" step="0.01" value={form.volumen_m3 ?? ""} readOnly={readOnly} onChange={(e) => set("volumen_m3", e.target.value)} /></div>
+          <div className="grid gap-1.5"><Label>Peso estimado (kg)</Label><NumeroCompraInput label="Peso estimado (kg)" value={form.peso_kg ?? ""} readOnly={readOnly} onValueChange={(v) => set("peso_kg", v)} /></div>
+          <div className="grid gap-1.5"><Label>Volumen estimado (m³)</Label><NumeroCompraInput label="Volumen estimado (m³)" value={form.volumen_m3 ?? ""} readOnly={readOnly} onValueChange={(v) => set("volumen_m3", v)} /></div>
           <div className="grid gap-1.5"><Label>Tarifa propuesta</Label><ImporteCotizacionInput value={form.tarifa_propuesta ?? ""} readOnly={readOnly} onValueChange={(v) => set("tarifa_propuesta", v)} /></div>
           <div className="grid gap-1.5"><Label>Moneda</Label>
             <Select value={form.moneda} onValueChange={(v) => set("moneda", v)} disabled={readOnly}>
