@@ -108,6 +108,7 @@ import { TerceroExtranjeroPicker } from "@/components/terceros-extranjeros";
 import type { TerceroExtranjero } from "@/components/terceros-extranjeros";
 import { camposProveedorCatalogo, resolverExportadorFactura } from "@/lib/exportador-factura-catalogo";
 import { resolverPaisDocumento } from "@/lib/pais-documento";
+import { coincidenciasClienteDocumento } from '@/lib/cliente-documento';
 import { TabRecepcion } from "@/components/tab-recepcion";
 import { EscanearBlButton, EscanearFacturaButton as EscanearFacturaExpButton } from "@/components/escanear-documento-expediente-buttons";
 import { NuevoDesdeXmlButton } from "@/components/nuevo-desde-xml-button";
@@ -531,6 +532,7 @@ function pickOcr<K extends keyof OcrExtraction>(
 function combinarOcr(bl: OcrExtraction | null, fac: OcrExtraction | null): OcrExtraction {
   const fromBl = <K extends keyof OcrExtraction>(k: K) => pickOcr(bl, fac, k);
   const fromFac = <K extends keyof OcrExtraction>(k: K) => pickOcr(fac, bl, k);
+  const fuenteCarga = bl?.tipo_carga ? bl : fac;
   return {
     bl: fromBl("bl"),
     medio_transporte: fromBl("medio_transporte"),
@@ -558,8 +560,9 @@ function combinarOcr(bl: OcrExtraction | null, fac: OcrExtraction | null): OcrEx
     otros_gastos: fromFac("otros_gastos"),
     notify_party: fromBl("notify_party"),
     agente_entrega: fromBl("agente_entrega"),
-    tipo_carga: fromBl("tipo_carga"),
-    tipo_carga_confianza: fromBl("tipo_carga_confianza"),
+    tipo_carga: fuenteCarga?.tipo_carga ?? null,
+    tipo_carga_confianza: fuenteCarga?.tipo_carga_confianza ?? null,
+    tipo_carga_evidencia: fuenteCarga?.tipo_carga_evidencia ?? null,
   };
 }
 
@@ -581,9 +584,6 @@ async function resolverContraCatalogo(
     .maybeSingle();
   return data ? { nombre: data[campoNombre], codigo: data.codigo } : { nombre: valorTexto, codigo: null };
 }
-
-const normalizarCliente = (s: string) =>
-  s.toLowerCase().replace(/[.,]/g, "").replace(/\bs\.?r\.?l\.?\b/g, "srl").replace(/\s+/g, " ").trim();
 
 export type OcrAplicado = {
   seq: number;
@@ -1950,6 +1950,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   });
   const [clienteOcr, setClienteOcr] = useState<string | null>(null);
   const [clienteExtraidoSinMatch, setClienteExtraidoSinMatch] = useState<string | null>(null);
+  const [clientesProbables, setClientesProbables] = useState<Array<{ id: string; nombre: string }>>([]);
   const ocrPuesto = useRef<Record<string, any>>({});
   // true cuando el OCR precargó "Tipo de carga" por inferencia (confianza media): se marca para confirmación.
   const [tipoCargaSugerido, setTipoCargaSugerido] = useState(false);
@@ -2087,13 +2088,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   useEffect(() => {
     if (!clienteOcr || !clientesLite?.length) {
       setClienteExtraidoSinMatch(null);
+      setClientesProbables([]);
       return;
     }
-    const match = (clientesLite as any[]).find((c: any) => {
-      const a = normalizarCliente(c.nombre);
-      const b = normalizarCliente(clienteOcr);
-      return b && (a.includes(b) || b.includes(a));
-    });
+    const candidatos = coincidenciasClienteDocumento(clienteOcr, clientesLite);
+    const match = candidatos.length === 1 && candidatos[0]?.exacta ? candidatos[0].cliente : null;
+    setClientesProbables(match ? [] : candidatos.map(c => c.cliente));
     if (match) {
       setForm((f) => (f.cliente_id ? f : { ...f, cliente_id: match.id }));
       setClienteExtraidoSinMatch(null);
@@ -2809,10 +2809,15 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                   </div>
                 );
               })()}
-              {clienteExtraidoSinMatch && (
-                <p className="text-xs text-amber-600 mt-1">
-                  El documento indica "{clienteExtraidoSinMatch}" — no se encontró un cliente registrado con ese nombre, selecciónalo manualmente.
-                </p>
+              {clienteExtraidoSinMatch && !form.cliente_id && (
+                <div className="text-xs text-warning-foreground mt-1 space-y-1">
+                  <p>El documento indica "{clienteExtraidoSinMatch}" — {clientesProbables.length ? 'coincidencia probable:' : 'no se encontró un cliente registrado con ese nombre, selecciónalo manualmente.'}</p>
+                  {clientesProbables.map(c => (
+                    <Button key={c.id} type="button" variant="outline" size="sm" className="max-w-full h-auto whitespace-normal text-left" onClick={() => { set('cliente_id', c.id); setClienteExtraidoSinMatch(null); limpiarFaltante('req-cliente_id'); }}>
+                      <Check className="h-3 w-3 shrink-0 mr-1" />{c.nombre}
+                    </Button>
+                  ))}
+                </div>
               )}
             </div>
             <div className="grid gap-1.5">

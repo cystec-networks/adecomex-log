@@ -1,6 +1,7 @@
 import { callGateway } from "./ai-gateway.server";
 import { PROMPT_DOCUMENTO_IMPORTACION } from "./ocr-documento-prompt";
 import { normalizarPaisDocumento } from "./pais-documento";
+import { resolverConfianzaCarga } from './tipo-carga-documento';
 import { normalizarMonedaFactura, normalizarTotalFactura } from './factura-importes';
 import { leerDesglosesCif, normalizarFacturaCif } from './factura-comercial-cif';
 import type { PagoPuerto } from "./pago-puerto";
@@ -108,6 +109,7 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
       } catch { /* Scans retain the explicit OCR breakdown. */ }
     }
     parsed = normalizarFacturaCif(parsed);
+    parsed = resolverConfianzaCarga(parsed);
     return {
       ...(data.carta_ruta ? { carta_ruta: normalizarCartaRuta(parsed.carta_ruta) } : {}),
       ...(data.certificado_origen_dga ? { certificado_origen_dga: normalizarCertificadoDga(parsed.certificado_origen_dga) } : {}),
@@ -154,6 +156,7 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
       notify_party: parsed.notify_party ?? null,
       agente_entrega: parsed.agente_entrega ?? null,
       tipo_carga: parsed.tipo_carga ?? null,
+      tipo_carga_evidencia: parsed.tipo_carga_evidencia ?? null,
       ...(data.lineas_factura ? { lineas_factura: Array.isArray(parsed.lineas_factura) ? parsed.lineas_factura.slice(0, 200).map((l) => ({
         descripcion: String(l.descripcion ?? "").trim(), codigo_arancelario: l.codigo_arancelario ? String(l.codigo_arancelario).trim() : null,
         cantidad: num(l.cantidad), unidad: l.unidad ? String(l.unidad).trim() : null,

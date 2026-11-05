@@ -8,6 +8,7 @@ import { TIPOS_RESULTADO_DGA, type ResultadoDgaExtraido } from "./resultado-dga-
 import type { CertificadoDga } from "./certificado-origen-dga";
 import type { LiquidacionDga } from "./liquidacion-dga-documento";
 import type { CartaRuta } from "./carta-ruta";
+import type { EvidenciaCarga } from './tipo-carga-documento';
 
 const Input = z.object({
   filename: z.string(),
@@ -56,6 +57,7 @@ export type OcrExtraction = {
   agente_entrega: string | null;
   tipo_carga: string | null;
   tipo_carga_confianza: "alta" | "media" | null;
+  tipo_carga_evidencia?: EvidenciaCarga | null;
   lineas_factura?: LineaFacturaExpediente[];
   productos_factura?: Awaited<ReturnType<typeof import("./factura-expediente-arancel").prepararProductosFactura>>;
   pago_puerto?: PagoPuerto;
