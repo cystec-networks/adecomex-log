@@ -17,6 +17,7 @@ import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { mensajeDuplicadoExpediente } from "@/lib/expediente-duplicados";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GestorHonorariosSelect } from "@/components/gestor-honorarios-select";
 import { Button } from "@/components/ui/button";
@@ -144,6 +145,14 @@ import {
 
 
 const SUG_MEDIO = ["Marítimo", "Aéreo", "Terrestre", "Courier", "Multimodal"];
+async function avisoDuplicadoExpediente(error: unknown, valores: Record<string, unknown>, excluirId?: string) {
+  return mensajeDuplicadoExpediente(error, valores, async (campo, valor) => {
+    let consulta = supabase.from("expedientes").select("numero").eq(campo, valor);
+    if (excluirId) consulta = consulta.neq("id", excluirId);
+    const { data, error: errorConsulta } = await consulta.limit(1).maybeSingle();
+    return errorConsulta ? null : data?.numero ?? null;
+  });
+}
 const SUG_NAVIERA = ["Maersk", "MSC", "CMA CGM", "Hapag-Lloyd", "Evergreen", "ONE", "Cosco", "Seaboard Marine", "King Ocean", "ZIM", "Copa Cargo", "DHL", "FedEx", "UPS"];
 const SUG_PAIS = ["China", "Estados Unidos", "España", "México", "Colombia", "Panamá", "Brasil", "Alemania", "Italia", "Turquía", "India", "Corea del Sur", "Japón", "Vietnam", "Chile", "Argentina", "Perú", "Guatemala", "Costa Rica", "Países Bajos"];
 const SUG_INCOTERM = ["EXW", "FCA", "FAS", "FOB", "CFR", "CIF", "CPT", "CIP", "DAP", "DPU", "DDP"];
@@ -2430,20 +2439,9 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       qc.invalidateQueries({ queryKey: ["expedientes"] });
       qc.invalidateQueries({ queryKey: ["expedientes-hist"] });
     },
-    onError: (e: any) => {
+    onError: async (e: any) => {
       if (e?.message === "Tasa Oficial DGA requerida") return; // ya se notificó con scroll al campo
-      if (e?.code === "23505") {
-        const msg = String(e?.message || "");
-        if (msg.includes("numero_vuce")) {
-          toast.error("Ese número de permiso ya está en uso en otro Expediente — actualiza la página e intenta de nuevo.");
-        } else if (msg.includes("numero") || msg.includes("expedientes_numero")) {
-          toast.error("Ese número de Expediente ya está en uso — elige otro número o actualiza la página.");
-        } else {
-          toast.error("Ya existe un registro con ese mismo valor en un campo único — revisa los datos e intenta de nuevo.");
-        }
-      } else {
-        toast.error(e.message);
-      }
+      toast.error(await avisoDuplicadoExpediente(e, form, exp.id) ?? e.message, { duration: 10000 });
     },
   });
 
@@ -2681,13 +2679,9 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       }
       nav({ to: "/expedientes/$id", params: { id: row.id }, search: { nuevo: "1", solicitud: "" } });
     },
-    onError: (e: any) => {
+    onError: async (e: any) => {
       if (e?.message === "Tasa Oficial DGA requerida") return; // ya se notificó con scroll al campo
-      if (e?.code === "23505") {
-        toast.error("Ya existe un Expediente con ese mismo valor en un campo único — revisa los datos e intenta de nuevo.");
-      } else {
-        toast.error(e.message);
-      }
+      toast.error(await avisoDuplicadoExpediente(e, form) ?? e.message, { duration: 10000 });
     },
   });
 

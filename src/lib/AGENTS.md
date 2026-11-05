@@ -1,4 +1,5 @@
 # Email intake pipeline rules
+- Expediente create/update duplicate diagnostics use `expediente-duplicados` to decode the rejected constraint/value; reference lookups use the authenticated client under RLS and never change numbering or database uniqueness guards.
 - Order operational fields are initialized from cot_* snapshots by an INSERT-only trigger; `orden-operativa` keeps later saves independent and downstream expediente conversion uses operational values rather than quotation history.
 - BL destination costs use `bl-collect-charges` to sum explicit USD amounts from the quoted Collect section, not rates or repeated totals; combine BL and invoice sources once before draft application so rescans preserve manual edits.
 - `tipo-carga-documento` validates OCR evidence for inferred FCL; explicit cargo declarations retain priority and ambiguous container lists remain medium-confidence across manual and email OCR.
