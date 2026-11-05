@@ -10,7 +10,7 @@
 <!-- LOVABLE:END -->
 - Carta de Ruta uses `carta-ruta.ts` for extraction, dispatch conflict decisions and document-only references; persist dispatch with an optimistic guard and sync the existing declaration editor only after success to preserve unsaved drafts.
 - Email purchases use invoker RPC `convertir_correo_cotizacion`, retained attachments and manual same-client links. Copy total/currency, not FOB; re-read legacy proformas; preserve linked edits.
-- Expedientes increment the last saved full number via a locked reference; purchases retain monthly counters. Conversions inherit numbers; guards reject unrelated collisions and linked renumbering.
+- Expedientes lock and skip occupied suffixes after the last saved full number; manual duplicates block. Purchases keep monthly counters; conversions inherit numbers and reject linked renumbering.
 Apply transitions via `estados-expediente.ts` and `validar_transicion_expediente()` for shared manual/automatic requirements.
 - Operations email KPI uses `correos-pendientes-kpi.ts` for RLS-bound reads and unique active-expediente counts, excluding delivered confirmations so queue and dashboard semantics remain consistent.
 - Operations KPI cards read only through their own RLS-bound helper module (e.g. `pagos-transportista-kpi.ts`) so the dashboard never invents a count the requesting screen could not see.
