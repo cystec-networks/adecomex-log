@@ -1,4 +1,5 @@
 # Email intake pipeline rules
+- BL destination costs use `bl-collect-charges` to sum explicit USD amounts from the quoted Collect section, not rates or repeated totals; combine BL and invoice sources once before draft application so rescans preserve manual edits.
 - `tipo-carga-documento` validates OCR evidence for inferred FCL; explicit cargo declarations retain priority and ambiguous container lists remain medium-confidence across manual and email OCR.
 - `cliente-documento` matches catalog client base names without legal suffixes; exact unique names autofill, probable equivalents require selection, preserving manual choices and ambiguous identities.
 - Commercial invoices use `factura-comercial-cif` for explicit CIF Cost/FOB precedence; `agregarProductosFactura` consolidates draft products with documentary identity and matching tax rules. Documentary product IDs are not DGA codes and remain draft-only, preventing incorrect customs bases and unsupported writes.

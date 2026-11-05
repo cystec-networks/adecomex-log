@@ -119,6 +119,7 @@ import { agruparAdjuntosCorreo, etiquetaOriginalIncluido, nombreUnido, unirArchi
 import { prepararFacturasCorreo } from "@/lib/factura-expediente-escaneo";
 import { agregarProductosFactura } from "@/lib/factura-expediente-arancel";
 import { acumularValoresFactura } from "@/lib/factura-comercial-cif";
+import { sumarOtrosDocumentos } from '@/lib/bl-collect-charges';
 import { classifyArancelLote } from "@/lib/ai-arancel.functions";
 import { confirmacionPendienteSolicitud, correoConfirmacionSolicitud, faltantesConfirmacion, cuerpoHtmlConfirmacion } from "@/lib/correo-confirmacion";
 import {
@@ -557,7 +558,7 @@ function combinarOcr(bl: OcrExtraction | null, fac: OcrExtraction | null): OcrEx
     fob_total: fromFac("fob_total"),
     seguro: fromFac("seguro"),
     flete: fromFac("flete"),
-    otros_gastos: fromFac("otros_gastos"),
+    otros_gastos: sumarOtrosDocumentos(bl?.otros_gastos, fac?.otros_gastos),
     notify_party: fromBl("notify_party"),
     agente_entrega: fromBl("agente_entrega"),
     tipo_carga: fuenteCarga?.tipo_carga ?? null,

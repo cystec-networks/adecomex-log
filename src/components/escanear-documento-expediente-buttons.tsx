@@ -178,6 +178,7 @@ export function EscanearBlButton({
         { label: "Peso neto", key: "peso_neto_kg" },
         { label: "Tipo de carga", key: "tipo_carga" },
         { label: "Contenedores", key: "contenedores" },
+        { label: "Otros (US$)", key: "otros_gastos" },
       ]}
     />
   );

@@ -2,6 +2,7 @@ import { callGateway } from "./ai-gateway.server";
 import { PROMPT_DOCUMENTO_IMPORTACION } from "./ocr-documento-prompt";
 import { normalizarPaisDocumento } from "./pais-documento";
 import { resolverConfianzaCarga } from './tipo-carga-documento';
+import { leerCollectCharges } from './bl-collect-charges';
 import { normalizarMonedaFactura, normalizarTotalFactura } from './factura-importes';
 import { leerDesglosesCif, normalizarFacturaCif } from './factura-comercial-cif';
 import type { PagoPuerto } from "./pago-puerto";
@@ -110,6 +111,7 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
     }
     parsed = normalizarFacturaCif(parsed);
     parsed = resolverConfianzaCarga(parsed);
+    if (parsed.collect_charges_texto != null) parsed.otros_gastos = leerCollectCharges(parsed.collect_charges_texto);
     return {
       ...(data.carta_ruta ? { carta_ruta: normalizarCartaRuta(parsed.carta_ruta) } : {}),
       ...(data.certificado_origen_dga ? { certificado_origen_dga: normalizarCertificadoDga(parsed.certificado_origen_dga) } : {}),
@@ -153,6 +155,7 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
       seguro: num(parsed.seguro),
       flete: num(parsed.flete),
       otros_gastos: num(parsed.otros_gastos),
+      collect_charges_texto: typeof parsed.collect_charges_texto === 'string' ? parsed.collect_charges_texto : null,
       notify_party: parsed.notify_party ?? null,
       agente_entrega: parsed.agente_entrega ?? null,
       tipo_carga: parsed.tipo_carga ?? null,

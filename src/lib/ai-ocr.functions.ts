@@ -53,6 +53,7 @@ export type OcrExtraction = {
   seguro: number | null;
   flete: number | null;
   otros_gastos: number | null;
+  collect_charges_texto?: string | null;
   notify_party: string | null;
   agente_entrega: string | null;
   tipo_carga: string | null;
