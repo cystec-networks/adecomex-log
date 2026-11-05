@@ -701,6 +701,13 @@
       "when": 1793835514061,
       "tag": "0099_sincronizar_contador_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1793839227832,
+      "tag": "0100_contador_sigue_ultimo_guardado",
+      "breakpoints": true
     }
   ]
 }
