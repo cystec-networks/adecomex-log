@@ -5222,6 +5222,24 @@ export type Database = {
           },
         ]
       }
+      numeracion_expedientes_referencia: {
+        Row: {
+          actualizado_at: string
+          numero: string
+          singleton: boolean
+        }
+        Insert: {
+          actualizado_at?: string
+          numero: string
+          singleton?: boolean
+        }
+        Update: {
+          actualizado_at?: string
+          numero?: string
+          singleton?: boolean
+        }
+        Relationships: []
+      }
       numeracion_operaciones_contadores: {
         Row: {
           periodo: string
@@ -7812,6 +7830,10 @@ export type Database = {
         Args: { p_factura: string; p_transporte: string }
         Returns: number
       }
+      incrementar_numero_expediente: {
+        Args: { p_numero: string }
+        Returns: string
+      }
       listar_encargados_logistica: {
         Args: never
         Returns: {
@@ -7860,6 +7882,7 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      siguiente_numero_expediente: { Args: never; Returns: string }
       siguiente_numero_operacion: { Args: { p_tipo: string }; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
       validar_token_tarea: {
