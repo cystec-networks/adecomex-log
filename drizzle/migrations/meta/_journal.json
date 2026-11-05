@@ -715,6 +715,13 @@
       "when": 1793841622305,
       "tag": "0101_expedientes_ultimo_numero_guardado",
       "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1793904660043,
+      "tag": "0102_ordenes_datos_operativos_independientes",
+      "breakpoints": true
     }
   ]
 }

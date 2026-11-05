@@ -5823,15 +5823,22 @@ export type Database = {
           cotizacion_id: string | null
           created_at: string
           created_by: string | null
+          destino: string | null
           eliminado_en: string | null
           eliminado_por: string | null
           estado: Database["public"]["Enums"]["orden_estado"]
           id: string
+          incoterm: string | null
+          moneda: Database["public"]["Enums"]["moneda"] | null
           notas: string | null
           numero: string | null
+          origen: string | null
+          peso_kg: number | null
           solicitud_id: string | null
+          tarifa_propuesta: number | null
           updated_at: string
           vendedor_id: string | null
+          volumen_m3: number | null
         }
         Insert: {
           cliente_id?: string | null
@@ -5855,15 +5862,22 @@ export type Database = {
           cotizacion_id?: string | null
           created_at?: string
           created_by?: string | null
+          destino?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["orden_estado"]
           id?: string
+          incoterm?: string | null
+          moneda?: Database["public"]["Enums"]["moneda"] | null
           notas?: string | null
           numero?: string | null
+          origen?: string | null
+          peso_kg?: number | null
           solicitud_id?: string | null
+          tarifa_propuesta?: number | null
           updated_at?: string
           vendedor_id?: string | null
+          volumen_m3?: number | null
         }
         Update: {
           cliente_id?: string | null
@@ -5887,15 +5901,22 @@ export type Database = {
           cotizacion_id?: string | null
           created_at?: string
           created_by?: string | null
+          destino?: string | null
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["orden_estado"]
           id?: string
+          incoterm?: string | null
+          moneda?: Database["public"]["Enums"]["moneda"] | null
           notas?: string | null
           numero?: string | null
+          origen?: string | null
+          peso_kg?: number | null
           solicitud_id?: string | null
+          tarifa_propuesta?: number | null
           updated_at?: string
           vendedor_id?: string | null
+          volumen_m3?: number | null
         }
         Relationships: [
           {

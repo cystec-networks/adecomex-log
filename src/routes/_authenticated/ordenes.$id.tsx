@@ -18,6 +18,10 @@ import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
 import { ProductosCard } from "@/components/productos-card";
 import { copiarProductos } from "@/lib/copiar-productos";
+import { NumeroCompraInput } from "@/components/numero-compra-input";
+import { ImporteCotizacionInput } from "@/components/importe-cotizacion-input";
+import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
+import { datosOperativosOrden, guardarOperativosOrden } from "@/lib/orden-operativa";
 
 export const Route = createFileRoute("/_authenticated/ordenes/$id")({
   head: () => ({ meta: [
@@ -145,8 +149,8 @@ function DetalleOrden() {
           tipo_operacion: (o as any).cot_tipo_operacion ?? null,
           tipo_carga: (o as any).cot_tipo_carga ?? null,
           contacto_solicitud: (o as any).cot_contacto ?? null,
-          incoterm: (o as any).cot_incoterm ?? null,
-          pais_origen: (o as any).cot_origen ?? null,
+          incoterm: o.incoterm ?? null,
+          pais_origen: o.origen ?? null,
           observaciones: (o as any).notas ?? null,
         } as any)
         .select()
@@ -172,12 +176,15 @@ function DetalleOrden() {
   const [form, setForm] = useState<any>(null);
 
   useEffect(() => {
-    if (o && !form) setForm({ numero: o.numero ?? "", estado: o.estado ?? "abierta", notas: o.notas ?? "" });
+    if (o && !form) setForm({ numero: o.numero ?? "", estado: o.estado ?? "abierta", notas: o.notas ?? "", ...datosOperativosOrden(o) });
   }, [o]);
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("ordenes").update(form).eq("id", id);
+      const { error } = await supabase.from("ordenes").update({
+        numero: form.numero, estado: form.estado, notas: form.notas,
+        ...guardarOperativosOrden(form),
+      }).eq("id", id).select("id").single();
       if (error) {
         if (error.code === "23505") {
           throw new Error("Ese número de orden ya está en uso — elige otro.");
@@ -306,7 +313,26 @@ function DetalleOrden() {
         </Card>
       )}
 
-      <ProductosCard tabla="orden_productos" parentId={id} readOnly={!canEdit} paisOrigen={(o as any)?.cot_origen ?? ""} />
+      <section className="space-y-4 border-y py-5" aria-labelledby="operativos-orden">
+        <h2 id="operativos-orden" className="text-sm font-semibold text-primary">Datos operativos de la Orden de Compras</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="min-w-0 grid gap-1.5"><Label htmlFor="orden-origen">Origen</Label>
+            <Input id="orden-origen" value={form.origen} readOnly={!canEdit} onChange={(e) => setForm({ ...form, origen: e.target.value })} /></div>
+          <div className="min-w-0 grid gap-1.5"><Label htmlFor="orden-destino">Destino</Label>
+            <Input id="orden-destino" value={form.destino} readOnly={!canEdit} onChange={(e) => setForm({ ...form, destino: e.target.value })} /></div>
+          <div className="min-w-0 grid gap-1.5"><Label htmlFor="orden-incoterm">Incoterm</Label>
+            {canEdit ? <CatalogoAutocomplete id="orden-incoterm" tabla="catalogo_incoterms" value={form.incoterm} onChange={(v) => setForm({ ...form, incoterm: v })} />
+              : <Input id="orden-incoterm" value={form.incoterm} readOnly />}</div>
+          <div className="min-w-0 grid gap-1.5"><Label>Peso estimado (kg)</Label>
+            <NumeroCompraInput label="Peso estimado (kg)" value={form.peso_kg} readOnly={!canEdit} onValueChange={(v) => setForm({ ...form, peso_kg: v })} /></div>
+          <div className="min-w-0 grid gap-1.5"><Label>Volumen estimado (m³)</Label>
+            <NumeroCompraInput label="Volumen estimado (m³)" value={form.volumen_m3} readOnly={!canEdit} onValueChange={(v) => setForm({ ...form, volumen_m3: v })} /></div>
+          <div className="min-w-0 grid gap-1.5"><Label>Tarifa propuesta ({form.moneda})</Label>
+            <ImporteCotizacionInput value={form.tarifa_propuesta} readOnly={!canEdit} onValueChange={(v) => setForm({ ...form, tarifa_propuesta: v })} /></div>
+        </div>
+      </section>
+
+      <ProductosCard tabla="orden_productos" parentId={id} readOnly={!canEdit} paisOrigen={form.origen} />
 
       <Card>
         <CardHeader className="pb-3 border-b">
