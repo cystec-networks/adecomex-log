@@ -593,6 +593,8 @@ export type OcrAplicado = {
   clienteId?: string | null;
   desdeXml?: boolean;
   tipoCargaConfianza?: "alta" | "media" | null;
+  /** Factura adicional: suma filas de mercancía y solo completa campos vacíos. */
+  agregar?: boolean;
 };
 
 function DetalleExpediente() {
@@ -652,6 +654,8 @@ function DetalleExpediente() {
   const facRes = useRef<OcrExtraction | null>(null);
   const ocrSeq = useRef(0);
   const [ocrAplicado, setOcrAplicado] = useState<OcrAplicado | null>(null);
+  const [productosCargados, setProductosCargados] = useState(0);
+  const [facturaPendiente, setFacturaPendiente] = useState<OcrExtraction | null>(null);
   const [adjuntosDelCorreo, setAdjuntosDelCorreo] = useState<AdjuntoGuardadoCorreo[]>([]);
   const [avisosDelCorreo, setAvisosDelCorreo] = useState<string[]>([]);
   const extraerFacturaCorreo = useServerFn(extractSolicitudFromDocument);
@@ -727,6 +731,23 @@ function DetalleExpediente() {
     })();
     return () => { vivo = false; };
   }, [isNuevo, correoParam]);
+
+  const aplicarFacturaAdicional = (res: OcrExtraction) => {
+    ocrSeq.current += 1;
+    setOcrAplicado({
+      seq: ocrSeq.current,
+      agregar: true,
+      cliente: null,
+      contenedores: res.contenedores ?? null,
+      productos: res.productos_factura ?? [],
+      campos: {
+        factura_comercial: res.factura_comercial ?? res.numero_documento,
+        total_fob: res.fob_total,
+        suplidor: res.suplidor,
+        incoterm: res.incoterm,
+      },
+    });
+  };
 
   const aplicarCombinado = async (productosFactura?: OcrExtraction["productos_factura"]) => {
     const res = combinarOcr(blRes.current, facRes.current);
@@ -1143,7 +1164,25 @@ function DetalleExpediente() {
                 <Copy className="h-4 w-4" />
               </Button>
               <EscanearBlButton onExtracted={(res) => { blRes.current = res; void aplicarCombinado(); toast.success("BL procesado — revisa y ajusta los campos"); }} />
-              <EscanearFacturaExpButton onExtracted={(res) => { facRes.current = res; void aplicarCombinado(res.productos_factura); toast.success("Factura procesada — revisa y ajusta los campos"); }} />
+              <EscanearFacturaExpButton onExtracted={(res) => {
+                if (productosCargados > 0 && res.productos_factura?.length) { setFacturaPendiente(res); return; }
+                facRes.current = res; void aplicarCombinado(res.productos_factura); toast.success("Factura procesada — revisa y ajusta los campos");
+              }} />
+              <AlertDialog open={!!facturaPendiente} onOpenChange={(o) => { if (!o) setFacturaPendiente(null); }}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Agregar estos productos a la mercancía ya cargada?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Ya hay {productosCargados} fila(s) en Detalle de mercancía. «Agregar» suma las {facturaPendiente?.productos_factura?.length ?? 0} fila(s) de esta factura, acumula el FOB y añade su número de factura. «Reemplazar» sustituye todo por esta factura.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <Button variant="outline" onClick={() => { const res = facturaPendiente!; setFacturaPendiente(null); facRes.current = res; void aplicarCombinado(res.productos_factura); toast.success("Factura procesada — mercancía reemplazada"); }}>Reemplazar</Button>
+                    <AlertDialogAction onClick={() => { const res = facturaPendiente!; setFacturaPendiente(null); aplicarFacturaAdicional(res); toast.success("Productos agregados a la mercancía"); }}>Agregar</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               <NuevoDesdeXmlButton
                 onAplicar={(d) => {
                   ocrSeq.current += 1;
@@ -1529,6 +1568,7 @@ function DetalleExpediente() {
             nuevo={!!nuevo}
             isNuevo={isNuevo}
             ocrAplicado={ocrAplicado}
+            onProductosCargados={setProductosCargados}
             tipoParam={tipoParam}
             solicitudEndoso={solicitudEndoso}
             nuevoAccionesHost={nuevoAccionesHost}
@@ -1837,7 +1877,7 @@ function normalizarCamposExportacion(payload: any) {
   });
 }
 
-function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null, tipoParam = "", solicitudEndoso = 0, nuevoAccionesHost = null, inspeccionHost = null }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null; tipoParam?: string; solicitudEndoso?: number; nuevoAccionesHost?: HTMLDivElement | null; inspeccionHost?: HTMLDivElement | null }) {
+function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo = false, ocrAplicado = null, onProductosCargados, tipoParam = "", solicitudEndoso = 0, nuevoAccionesHost = null, inspeccionHost = null }: { id: string; exp: any; modoEdicion: boolean; setModoEdicion: (v: boolean) => void; canEdit: boolean; nuevo?: boolean; isNuevo?: boolean; ocrAplicado?: OcrAplicado | null; onProductosCargados?: (n: number) => void; tipoParam?: string; solicitudEndoso?: number; nuevoAccionesHost?: HTMLDivElement | null; inspeccionHost?: HTMLDivElement | null }) {
   const qc = useQueryClient();
   const nav = useNavigate();
   const { correo: correoBusqueda } = Route.useSearch();
@@ -1934,11 +1974,39 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
   useEffect(() => {
     if (productosNuevos.length > 0) limpiarFaltante("req-mercancia");
+    onProductosCargados?.(productosNuevos.length);
   }, [productosNuevos]);
 
   useEffect(() => {
     if (!isNuevo || !ocrAplicado || ocrAplicado.seq === ultimoOcrSeq.current) return;
     ultimoOcrSeq.current = ocrAplicado.seq;
+    if (ocrAplicado.agregar) {
+      const nuevos = ocrAplicado.productos ?? [];
+      setProductosNuevos((prev) => [...prev, ...nuevos]);
+      if (ocrAplicado.contenedores?.length) {
+        setContenedores((prev) => {
+          const vistos = new Set(prev.map((c) => c.numero.replace(/[^A-Z0-9]/gi, "").toUpperCase()).filter(Boolean));
+          const extra = ocrAplicado.contenedores!.filter((c) => c.numero && !vistos.has(c.numero.replace(/[^A-Z0-9]/gi, "").toUpperCase()))
+            .map((c) => ({ numero: c.numero ?? "", sello1: c.sello1 ?? "", sello2: c.sello2 ?? "", tipo: c.tipo ?? "" }));
+          return [...prev.filter((c) => c.numero || c.sello1 || c.tipo), ...extra];
+        });
+      }
+      const c = ocrAplicado.campos;
+      setForm((f) => {
+        const next: any = { ...f };
+        const fac = String(c.factura_comercial ?? "").trim();
+        const actualFac = String(f.factura_comercial ?? "").trim();
+        if (fac && !actualFac.split(/\s*,\s*/).includes(fac)) next.factura_comercial = actualFac ? `${actualFac}, ${fac}` : fac;
+        const fob = Number(c.total_fob);
+        if (Number.isFinite(fob) && fob > 0) next.total_fob = String(Math.round(((Number(f.total_fob) || 0) + fob) * 100) / 100);
+        for (const k of ["suplidor", "incoterm"]) {
+          const actual = (f as any)[k];
+          if (c[k] && (actual === "" || actual == null)) next[k] = c[k];
+        }
+        return next;
+      });
+      return;
+    }
     if (ocrAplicado.contenedores?.length) {
       setContenedores(
         ocrAplicado.contenedores.map((c) => ({
@@ -1984,7 +2052,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
   useEffect(() => {
     const nombre = ocrAplicado?.campos.suplidor;
-    if (!isNuevo || esExportacion || !ocrAplicado || ocrAplicado.desdeXml || typeof nombre !== "string" || !nombre.trim()) return;
+    if (!isNuevo || esExportacion || !ocrAplicado || ocrAplicado.desdeXml || ocrAplicado.agregar || typeof nombre !== "string" || !nombre.trim()) return;
     const seq = ocrAplicado.seq;
     let vigente = true;
     // Read through the user's existing catalog permissions; never create a supplier on OCR.
