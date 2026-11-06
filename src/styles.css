@@ -231,6 +231,13 @@
 }
 
 :root {
+  /* Fixed paper palette matching the Expediente cover, independent of screen theme. */
+  --pdf-portada-heading: #1f3a5f;
+  --pdf-portada-number: #d52d33;
+  --pdf-portada-ink: #000000;
+  --pdf-portada-muted: #555555;
+  --pdf-portada-border: #bbbbbb;
+  --pdf-portada-paper: #ffffff;
   --radius: 0.5rem;
 
   /* Corporate navy palette - ADECOMEX */
