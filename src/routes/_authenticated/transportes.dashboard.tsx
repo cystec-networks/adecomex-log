@@ -14,8 +14,8 @@ import {
 } from "recharts";
 import { fechaViajePeriodo, gananciaPorTransporte, isoLocal } from "@/lib/transporte-ganancia";
 import {
-  ESTADOS_DASHBOARD, estadoDashboard, resumenTransportes, variacionPct,
-  type EstadoDashboard, type ViajeDashboard,
+  ESTADOS_DASHBOARD, cobroPorTransporte, estadoDashboard, resumenTransportes, variacionPct,
+  type EstadoDashboard, type FacturaCobroTransporte, type ViajeDashboard,
 } from "@/lib/transportes-dashboard";
 import { BloquesOrdenables, FilaRecuadrosOrdenable, useOrdenPreferencia } from "@/components/orden-arrastrable";
 import {
@@ -28,9 +28,9 @@ export const Route = createFileRoute("/_authenticated/transportes/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard de Transportes | ADECOMEX" },
-      { name: "description", content: "Viajes, contenedores, estados, ingresos y margen de los transportes por semana o mes." },
+      { name: "description", content: "Viajes, contenedores, estados, ingresos y margen de los transportes por semana, mes o año." },
       { property: "og:title", content: "Dashboard de Transportes | ADECOMEX" },
-      { property: "og:description", content: "Viajes, contenedores, estados, ingresos y margen de los transportes por semana o mes." },
+      { property: "og:description", content: "Viajes, contenedores, estados, ingresos y margen de los transportes por semana, mes o año." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/transportes/dashboard")({
   notFoundComponent: () => <div className="p-6">No disponible</div>,
 });
 
-type Periodo = "semanal" | "mensual";
+type Periodo = "semanal" | "mensual" | "anual";
 
 // ---------- date helpers ----------
 function startOfWeek(d: Date) {
@@ -56,6 +56,8 @@ function startOfMonth(d: Date) { return new Date(d.getFullYear(), d.getMonth(), 
 function endOfMonth(d: Date) { return new Date(d.getFullYear(), d.getMonth() + 1, 0); }
 function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
 function addMonths(d: Date, n: number) { return new Date(d.getFullYear(), d.getMonth() + n, 1); }
+function startOfYear(d: Date) { return new Date(d.getFullYear(), 0, 1); }
+function endOfYear(d: Date) { return new Date(d.getFullYear(), 11, 31); }
 function fmtDate(d: Date) { return d.toLocaleDateString("es-DO", { day: "2-digit", month: "short" }); }
 function isoWeek(d: Date) {
   const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -114,6 +116,17 @@ function TransporteDashboard() {
         labelPrevio: `semana anterior (${semanaLabel(prevStart)})`,
       };
     }
+    if (periodo === "anual") {
+      const start = startOfYear(anchor);
+      const prevStart = new Date(start.getFullYear() - 1, 0, 1);
+      return {
+        start,
+        actual: { desde: isoLocal(start), hasta: isoLocal(endOfYear(start)) } as Rango,
+        previo: { desde: isoLocal(prevStart), hasta: isoLocal(endOfYear(prevStart)) } as Rango,
+        label: `Año ${start.getFullYear()}`,
+        labelPrevio: `año anterior (${prevStart.getFullYear()})`,
+      };
+    }
     const start = startOfMonth(anchor);
     const prevStart = addMonths(start, -1);
     return {
@@ -136,7 +149,7 @@ function TransporteDashboard() {
     queryKey: ["dash-tr-rows"],
     queryFn: async () => {
       const { data, error } = await supabase.from("transportes")
-        .select("id,estado,tipo,cliente_id,transportista,contenedores_cantidad,contenedores_detalle,placa_contenedor,fecha_salida,eta,created_at,pago_estado,solicitud_pago_id,factura_ecf_id")
+        .select("id,estado,tipo,cliente_id,transportista,contenedores_cantidad,contenedores_detalle,placa_contenedor,fecha_salida,eta,created_at,pago_estado,solicitud_pago_id,factura_ecf_id,factura_legado:facturas_ecf!transportes_factura_ecf_id_fkey(id,monto_total,estado,eliminado_en,vinculo_por_linea,facturas_ecf_lineas(transporte_id,valor,itbis),cxc_pagos(monto))")
         .is("eliminado_en", null);
       if (error) throw error;
       return data ?? [];
@@ -151,13 +164,14 @@ function TransporteDashboard() {
       .select("id, transporte_id, estado, moneda, cantidad_viajes, precio_viaje, porcentaje_margen, monto, descuento_cxc")).data ?? [],
   });
 
-  // Facturas e-CF vinculadas a cada transporte.
+  // Facturas e-CF vinculadas a cada transporte, con sus cobros (mismo saldo que Cuentas por Cobrar).
   const { data: vinculos } = useQuery({
-    queryKey: ["dash-tr-facturas-ecf"],
+    queryKey: ["dash-tr-facturas-ecf-cobros"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("transporte_facturas_ecf").select("transporte_id");
+      const { data, error } = await supabase.from("transporte_facturas_ecf")
+        .select("transporte_id, factura:facturas_ecf!transporte_facturas_ecf_factura_ecf_id_fkey(id,monto_total,estado,eliminado_en,vinculo_por_linea,facturas_ecf_lineas(transporte_id,valor,itbis),cxc_pagos(monto))");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as unknown as { transporte_id: string; factura: FacturaCobroTransporte | null }[];
     },
   });
 
@@ -166,6 +180,15 @@ function TransporteDashboard() {
     [todos, solicitudes],
   );
   const conFactura = useMemo(() => new Set((vinculos ?? []).map((v) => v.transporte_id as string)), [vinculos]);
+  // Fracción ya cobrada de cada viaje según el estado de pago de sus facturas e-CF.
+  const cobros = useMemo(() => {
+    const porTransporte = new Map<string, FacturaCobroTransporte[]>();
+    for (const v of vinculos ?? []) if (v.factura) (porTransporte.get(v.transporte_id) ?? porTransporte.set(v.transporte_id, []).get(v.transporte_id)!).push(v.factura);
+    return cobroPorTransporte((todos ?? []).map((t) => {
+      const legado = (t as { factura_legado?: FacturaCobroTransporte | null }).factura_legado;
+      return { ...t, facturas: [...(porTransporte.get(t.id) ?? []), ...(legado ? [legado] : [])] } as ViajeDashboard & { facturas: FacturaCobroTransporte[] };
+    }));
+  }, [todos, vinculos]);
 
   const rows = useMemo(() => (todos ?? []).filter((r) =>
     r.tipo === "terrestre"
@@ -183,8 +206,8 @@ function TransporteDashboard() {
   const current = useMemo(() => rows.filter((r) => enRango(r, range.actual)), [rows, range]);
   const previous = useMemo(() => rows.filter((r) => enRango(r, range.previo)), [rows, range]);
 
-  const res = useMemo(() => resumenTransportes(current as ViajeDashboard[], ganancias), [current, ganancias]);
-  const prev = useMemo(() => resumenTransportes(previous as ViajeDashboard[], ganancias), [previous, ganancias]);
+  const res = useMemo(() => resumenTransportes(current as ViajeDashboard[], ganancias, cobros), [current, ganancias, cobros]);
+  const prev = useMemo(() => resumenTransportes(previous as ViajeDashboard[], ganancias, cobros), [previous, ganancias, cobros]);
   const hayPrevio = prev.viajes > 0;
   const deltas = {
     viajes: variacionPct(res.viajes, prev.viajes),
@@ -221,6 +244,12 @@ function TransporteDashboard() {
         const s = addDays(range.start, -7 * i);
         buckets.push({ label: `S${isoWeek(s)}`, rango: { desde: isoLocal(s), hasta: isoLocal(addDays(s, 6)) } });
       }
+    } else if (periodo === "anual") {
+      // Vista anual: los 12 meses del año elegido.
+      for (let m = 0; m < 12; m++) {
+        const s = new Date(range.start.getFullYear(), m, 1);
+        buckets.push({ label: s.toLocaleDateString("es-DO", { month: "short" }), rango: { desde: isoLocal(s), hasta: isoLocal(endOfMonth(s)) } });
+      }
     } else {
       for (let i = 5; i >= 0; i--) {
         const s = addMonths(range.start, -i);
@@ -233,8 +262,12 @@ function TransporteDashboard() {
     });
   }, [rows, ganancias, periodo, range.start]);
 
-  const goPrev = () => setAnchor((a) => periodo === "semanal" ? addDays(a, -7) : addMonths(a, -1));
-  const goNext = () => setAnchor((a) => periodo === "semanal" ? addDays(a, 7) : addMonths(a, 1));
+  const mover = (dir: 1 | -1) => setAnchor((a) =>
+    periodo === "semanal" ? addDays(a, 7 * dir)
+      : periodo === "anual" ? new Date(a.getFullYear() + dir, a.getMonth(), 1)
+        : addMonths(a, dir));
+  const goPrev = () => mover(-1);
+  const goNext = () => mover(1);
 
   return (
     <div className="p-4 md:p-6 space-y-4">
@@ -253,6 +286,7 @@ function TransporteDashboard() {
             <TabsList>
               <TabsTrigger value="semanal">Semanal</TabsTrigger>
               <TabsTrigger value="mensual">Mensual</TabsTrigger>
+              <TabsTrigger value="anual">Anual</TabsTrigger>
             </TabsList>
           </Tabs>
           <Select value={clienteId} onValueChange={setClienteId}>
@@ -396,7 +430,8 @@ function TransporteDashboard() {
                   extra={deltas.margenPP == null ? "Sin período anterior" : `${deltas.margenPP >= 0 ? "↑" : "↓"} ${Math.abs(deltas.margenPP).toFixed(1)}pp`} />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <MiniStat label="Pendiente de cobro (Clientes)" value={fmtRD(res.pendienteCobro)} tone="warning" />
+                <MiniStat label="Pendiente de cobro (Clientes)" value={fmtRD(res.pendienteCobro)} tone="warning"
+                    extra={`Ingreso ${fmtRD(res.ingreso)} − cobrado ${fmtRD(res.cobrado)} (según cobros de sus facturas e-CF)`} />
                 <MiniStat label="Neto a pagar a Transportistas (Monto Neto a Pagar)" value={fmtRD(res.netoPagar)} tone="info" />
               </div>
               <div className="h-56">

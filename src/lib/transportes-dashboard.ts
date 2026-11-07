@@ -65,8 +65,61 @@ export type ResumenTransportes = {
   margenPct: number;
   /** Monto Neto a Pagar al transportista. */
   netoPagar: number;
+  /** Parte del Ingreso ya cobrada según los cobros de sus facturas e-CF. */
+  cobrado: number;
+  /** Ingreso − Cobrado. */
   pendienteCobro: number;
 };
+
+/** Factura e-CF vinculada a un transporte, con sus líneas y cobros (Cuentas por Cobrar). */
+export type FacturaCobroTransporte = {
+  id: string;
+  monto_total: number | string | null;
+  estado?: string | null;
+  eliminado_en?: string | null;
+  vinculo_por_linea?: boolean | null;
+  facturas_ecf_lineas?: { transporte_id: string | null; valor: number | string | null; itbis: number | string | null }[] | null;
+  cxc_pagos?: { monto: number | string | null }[] | null;
+};
+
+const num = (v: unknown) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+
+/**
+ * Fracción (0–1) de lo facturado a un transporte que ya se cobró. Cada factura aporta
+ * su cobrado ÷ total (mismo saldo que Cuentas por Cobrar), ponderada por la parte que
+ * le corresponde al viaje: las facturas por línea solo pesan sus líneas asignadas.
+ * Se usa como proporción porque las facturas incluyen ITBIS y pueden mezclar servicios,
+ * mientras el Ingreso del dashboard es el Monto a Facturar del comprobante.
+ */
+export function fraccionCobrada(transporteId: string, facturas: readonly FacturaCobroTransporte[]): number {
+  let peso = 0, cobradoPonderado = 0;
+  const vistas = new Set<string>();
+  for (const f of facturas) {
+    if (vistas.has(f.id) || f.eliminado_en || f.estado === "anulada") continue;
+    vistas.add(f.id);
+    const total = num(f.monto_total);
+    if (total <= 0) continue;
+    const parte = f.vinculo_por_linea
+      ? (f.facturas_ecf_lineas ?? []).filter((l) => l.transporte_id === transporteId).reduce((a, l) => a + num(l.valor) + num(l.itbis), 0)
+      : total;
+    if (parte <= 0) continue;
+    const pagado = (f.cxc_pagos ?? []).reduce((a, p) => a + num(p.monto), 0);
+    peso += parte;
+    cobradoPonderado += parte * Math.min(1, Math.max(0, pagado / total));
+  }
+  return peso > 0 ? cobradoPonderado / peso : 0;
+}
+
+/** Fracción cobrada por transporte: «Pagado» manual cuenta completo; si no, según sus facturas. */
+export function cobroPorTransporte(
+  viajes: readonly (ViajeDashboard & { facturas?: readonly FacturaCobroTransporte[] })[],
+): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const t of viajes) {
+    m.set(t.id, t.pago_estado === "pagado" ? 1 : fraccionCobrada(t.id, t.facturas ?? []));
+  }
+  return m;
+}
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -74,8 +127,10 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 export function resumenTransportes(
   viajes: ViajeDashboard[],
   ganancias: Map<string, GananciaTransporte>,
+  /** Fracción cobrada por transporte (ver `cobroPorTransporte`); sin dato, nada cobrado. */
+  cobros: Map<string, number> = new Map(),
 ): ResumenTransportes {
-  let contenedores = 0, ingreso = 0, ganancia = 0, netoPagar = 0, pendienteCobro = 0;
+  let contenedores = 0, ingreso = 0, ganancia = 0, netoPagar = 0, cobrado = 0;
   for (const t of viajes) {
     contenedores += contarContenedores(t);
     const g = ganancias.get(t.id);
@@ -84,7 +139,7 @@ export function resumenTransportes(
     ingreso += facturar;
     ganancia += g.ganancia ?? 0;
     netoPagar += g.netoPagar;
-    if (t.pago_estado === "pendiente") pendienteCobro += facturar;
+    cobrado += facturar * (cobros.get(t.id) ?? (t.pago_estado === "pagado" ? 1 : 0));
   }
   return {
     viajes: viajes.length,
@@ -94,7 +149,8 @@ export function resumenTransportes(
     ganancia: r2(ganancia),
     margenPct: ingreso > 0 ? (ganancia / ingreso) * 100 : 0,
     netoPagar: r2(netoPagar),
-    pendienteCobro: r2(pendienteCobro),
+    cobrado: r2(cobrado),
+    pendienteCobro: r2(ingreso - cobrado),
   };
 }
 
