@@ -65,6 +65,8 @@ export type GananciaTransporte = {
   /** null si ninguna solicitud del viaje permite calcular la ganancia. */
   ganancia: number | null;
   descuentoCxc: number;
+  /** Monto a Facturar al Cliente (cantidad × precio por viaje); null si ninguna solicitud lo trae. */
+  montoFacturar: number | null;
   /** Monto Neto a Pagar al transportista (Costo del Viaje − Descuento CxC), igual que el comprobante. */
   netoPagar: number;
   moneda: string;
@@ -97,7 +99,8 @@ export function gananciaPorTransporte(
     const destino = s.transporte_id ?? primeroPorSolicitud.get(s.id)?.id ?? null;
     if (!destino || !existentes.has(destino)) continue;
     const d = desgloseSolicitudPago(s);
-    const acc = res.get(destino) ?? { ganancia: null, descuentoCxc: 0, netoPagar: 0, moneda: s.moneda || "DOP", solicitudes: 0 };
+    const acc = res.get(destino) ?? { ganancia: null, montoFacturar: null, descuentoCxc: 0, netoPagar: 0, moneda: s.moneda || "DOP", solicitudes: 0 };
+    if (d.montoFacturar != null) acc.montoFacturar = redondear((acc.montoFacturar ?? 0) + d.montoFacturar);
     if (d.ganancia != null) acc.ganancia = redondear((acc.ganancia ?? 0) + d.ganancia);
     acc.descuentoCxc = redondear(acc.descuentoCxc + d.descuentoCxc);
     acc.netoPagar = redondear(acc.netoPagar + d.netoPagar);
@@ -124,12 +127,13 @@ export type TotalesPeriodoTransportes = { flete: number; pagado: number; gananci
 
 /**
  * Totales del período por moneda para los recuadros y la fila final:
- * Flete (lo registrado en cada viaje, en su moneda) y Total Pagado, Ganancia
- * y Descuento CxC (desglose de las solicitudes de pago, en su moneda).
+ * Flete (Monto a Facturar al Cliente), Total Pagado (Monto Neto a Pagar),
+ * Ganancia y Descuento CxC, todos del desglose de las solicitudes de pago
+ * (igual que el comprobante), en la moneda de la solicitud.
  * Siempre devuelve al menos DOP para que los recuadros muestren 0.
  */
 export function totalesPeriodoTransportes(
-  viajes: { id: string; flete_monto?: number | string | null; flete_moneda?: string | null }[],
+  viajes: { id: string }[],
   ganancias: Map<string, GananciaTransporte>,
 ): [string, TotalesPeriodoTransportes][] {
   const totales = new Map<string, TotalesPeriodoTransportes>();
@@ -139,13 +143,10 @@ export function totalesPeriodoTransportes(
     return t;
   };
   for (const v of viajes) {
-    if (v.flete_monto != null && v.flete_monto !== "") {
-      const t = de(v.flete_moneda || "USD");
-      t.flete = redondear(t.flete + num(v.flete_monto));
-    }
     const g = ganancias.get(v.id);
     if (g) {
       const t = de(g.moneda);
+      t.flete = redondear(t.flete + (g.montoFacturar ?? 0));
       t.pagado = redondear(t.pagado + g.netoPagar);
       t.ganancia = redondear(t.ganancia + (g.ganancia ?? 0));
       t.descuentoCxc = redondear(t.descuentoCxc + g.descuentoCxc);

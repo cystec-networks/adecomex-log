@@ -26,19 +26,24 @@ describe("Total Pagado del viaje (Monto Neto a Pagar del comprobante)", () => {
 });
 
 describe("totales del período (recuadros)", () => {
-  it("suma flete, pagado, ganancia y descuento por moneda", () => {
-    const viajes = [
-      { id: "A", flete_monto: 71100, flete_moneda: "DOP" },
-      { id: "B", flete_monto: "42660", flete_moneda: "DOP" },
-      { id: "C", flete_monto: 500, flete_moneda: "USD" },
-    ];
+  it("Flete es el Monto a Facturar (bruto) y Total Pagado el Neto a Pagar: cifras distintas", () => {
+    const viajes = [{ id: "A" }, { id: "B" }, { id: "C" }];
     const g = gananciaPorTransporte(viajes, [
       { id: "s1", transporte_id: "A", cantidad_viajes: 5, precio_viaje: 16000, porcentaje_margen: 8, descuento_cxc: 2500, moneda: "DOP" },
       { id: "s2", transporte_id: "B", cantidad_viajes: 3, precio_viaje: 16000, porcentaje_margen: 8, descuento_cxc: 1500, moneda: "DOP" },
+      { id: "s3", transporte_id: "C", cantidad_viajes: 1, precio_viaje: 500, porcentaje_margen: 10, moneda: "USD" },
     ]);
+    expect(g.get("A")?.montoFacturar).toBe(80000);
+    expect(g.get("A")?.netoPagar).toBe(71100);
     const t = Object.fromEntries(totalesPeriodoTransportes(viajes, g));
-    expect(t.DOP).toEqual({ flete: 113760, pagado: 113760, ganancia: 10240, descuentoCxc: 4000 });
-    expect(t.USD).toEqual({ flete: 500, pagado: 0, ganancia: 0, descuentoCxc: 0 });
+    expect(t.DOP).toEqual({ flete: 128000, pagado: 113760, ganancia: 10240, descuentoCxc: 4000 });
+    expect(t.USD).toEqual({ flete: 500, pagado: 450, ganancia: 50, descuentoCxc: 0 });
+  });
+
+  it("una solicitud sin cantidad y precio no aporta Flete pero sí Total Pagado", () => {
+    const g = gananciaPorTransporte([{ id: "A" }], [{ id: "s", transporte_id: "A", monto: 15000, moneda: "DOP" }]);
+    expect(g.get("A")?.montoFacturar).toBeNull();
+    expect(totalesPeriodoTransportes([{ id: "A" }], g)).toEqual([["DOP", { flete: 0, pagado: 15000, ganancia: 0, descuentoCxc: 0 }]]);
   });
 
   it("sin viajes en el período muestra ceros en DOP", () => {

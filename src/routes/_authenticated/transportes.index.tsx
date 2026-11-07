@@ -217,7 +217,6 @@ function Transportes() {
   );
 
   const fmt = (d: string | null) => fmtLocalDateShort(d);
-  const fmtFlete = (t: any) => t.flete_monto != null ? `${t.flete_moneda ?? "USD"} ${Number(t.flete_monto).toLocaleString("es-DO", { minimumFractionDigits: 2 })}` : "—";
 
   type Columna = {
     etiqueta: string;
@@ -240,7 +239,8 @@ function Transportes() {
     eta: { etiqueta: "ETA", sort: "eta", align: "right", celda: (t) => <td className={`${td} text-right tabular-nums`}>{fmt(t.eta)}</td> },
     flete: {
       etiqueta: "Flete", align: "right",
-      celda: (t) => <td className={`${td} text-right tabular-nums`}>{fmtFlete(t)}</td>,
+      // Monto a Facturar al Cliente del comprobante (bruto), no el flete_monto guardado.
+      celda: (t) => { const g = ganancias.get(t.id); return <td className={`${td} text-right tabular-nums`}>{g?.montoFacturar != null ? fmtImporte(g.montoFacturar, g.moneda) : "—"}</td>; },
       total: (tot, m) => fmtImporte(tot.flete, m),
     },
     pagado: {
