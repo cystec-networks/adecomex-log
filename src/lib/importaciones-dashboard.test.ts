@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { normalizarOrden } from "./orden-preferencia";
 import {
-  KPI_DASH_IMPORTACIONES_IDS, cubetasSerie, periodoComparado, resumenImportaciones, variacionPct,
+  BLOQUES_DASH_IMPORTACIONES_IDS, KPI_DASH_IMPORTACIONES_IDS, cubetasSerie, fechaMovimiento, pendientesDeLlegada,
+  periodoComparado, resumenImportaciones, variacionPct,
 } from "./importaciones-dashboard";
 
 describe("Dashboard General · Importaciones", () => {
@@ -42,13 +43,38 @@ describe("Dashboard General · Importaciones", () => {
     expect(cubetasSerie("semanal", "2026-11-07")[11].rango).toEqual({ desde: "2026-11-02", hasta: "2026-11-08" });
   });
 
-  it("agrupa por fecha de registro en hora de Santo Domingo", () => {
-    // 2026-11-01 02:00 UTC = 31 oct 22:00 en Santo Domingo → cuenta en octubre.
-    const exps = [{ id: "a", created_at: "2026-11-01T02:00:00Z" }, { id: "b", created_at: "2026-11-03T15:00:00Z" }];
-    const fac = new Map([["a", 1000], ["b", 400]]);
-    const gas = new Map([["b", 100]]);
-    expect(resumenImportaciones(exps, fac, gas, { desde: "2026-11-01", hasta: "2026-11-07" }))
-      .toEqual({ cantidad: 1, facturado: 400, gastos: 100, utilidad: 300, margen: 75 });
+  it("una importación cuenta en el mes de su Fecha de Llegada Real, no en el de registro", () => {
+    const exps = [
+      { id: "a", estado: "entregado", fecha_llegada_real: "2026-10-28" },
+      { id: "b", estado: "presentar", fecha_llegada_real: "2026-11-03" },
+      { id: "c", estado: "en_transito", fecha_llegada_real: null },
+    ];
+    expect(resumenImportaciones(exps, [], [], { desde: "2026-11-01", hasta: "2026-11-30" }).cantidad).toBe(1);
+    expect(resumenImportaciones(exps, [], [], { desde: "2026-10-01", hasta: "2026-10-31" }).cantidad).toBe(1);
+  });
+
+  it("sin Fecha de Llegada Real no cuenta: en tránsito o sin fecha según su estado", () => {
+    const exps = [
+      { id: "a", estado: "en_transito", fecha_llegada_real: null },
+      { id: "b", estado: "digitar", fecha_llegada_real: null },
+      { id: "c", estado: "entregado", fecha_llegada_real: null },
+      { id: "d", estado: "en_transito", fecha_llegada_real: "2026-11-02" },
+    ];
+    expect(pendientesDeLlegada(exps)).toEqual({ enTransito: 2, sinFecha: 1 });
+  });
+
+  it("Facturado y Gastos cuentan por la fecha de cada factura y gasto, no por la llegada", () => {
+    const exps = [{ id: "a", estado: "entregado", fecha_llegada_real: "2026-10-28" }];
+    const fac = [{ monto: 1000, fecha: "2026-11-05" }, { monto: 500, fecha: "2026-10-30" }];
+    const gas = [{ monto: 250, fecha: "2026-11-02" }];
+    expect(resumenImportaciones(exps, fac, gas, { desde: "2026-11-01", hasta: "2026-11-30" }))
+      .toEqual({ cantidad: 0, facturado: 1000, gastos: 250, utilidad: 750, margen: 75 });
+  });
+
+  it("un gasto sin fecha usa el día de su registro en hora de Santo Domingo", () => {
+    // 2026-11-01 02:00 UTC = 31 oct 22:00 en Santo Domingo.
+    expect(fechaMovimiento(null, "2026-11-01T02:00:00Z")).toBe("2026-10-31");
+    expect(fechaMovimiento("2026-11-04", "2026-11-01T02:00:00Z")).toBe("2026-11-04");
   });
 
   it("sin datos en el período anterior la variación es «sin base»", () => {
@@ -59,5 +85,10 @@ describe("Dashboard General · Importaciones", () => {
   it("un orden guardado incompleto conserva los cinco recuadros", () => {
     expect(normalizarOrden(["margen", "importaciones"], KPI_DASH_IMPORTACIONES_IDS))
       .toEqual(["margen", "importaciones", "facturado", "gastos", "utilidad"]);
+  });
+
+  it("la fila de KPI y el gráfico de importaciones son bloques movibles; un orden incompleto los conserva todos", () => {
+    expect(normalizarOrden(["importaciones", "kpis"], BLOQUES_DASH_IMPORTACIONES_IDS))
+      .toEqual(["importaciones", "kpis", "facturado-gastos", "margen", "rankings", "cxc"]);
   });
 });

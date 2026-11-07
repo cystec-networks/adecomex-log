@@ -11,6 +11,11 @@ export const KPI_DASH_IMPORTACIONES_IDS = ["importaciones", "facturado", "gastos
 export type KpiDashImportacionesId = (typeof KPI_DASH_IMPORTACIONES_IDS)[number];
 export const CLAVE_KPI_DASH_IMPORTACIONES = "importaciones-dashboard-kpi-orden";
 
+/** Bloques de la página, incluida la fila de KPI como una sola unidad. */
+export const BLOQUES_DASH_IMPORTACIONES_IDS = ["kpis", "importaciones", "facturado-gastos", "margen", "rankings", "cxc"] as const;
+export type BloqueDashImportacionesId = (typeof BLOQUES_DASH_IMPORTACIONES_IDS)[number];
+export const CLAVE_BLOQUES_DASH_IMPORTACIONES = "importaciones-dashboard-bloques-orden";
+
 const pad = (n: number) => String(n).padStart(2, "0");
 const iso = (y: number, m0: number, d: number) => {
   const t = new Date(Date.UTC(y, m0, d));
@@ -109,27 +114,55 @@ export function cubetasSerie(periodo: PeriodoImportaciones, ancla: string): { la
   });
 }
 
-export type ExpedienteImportacion = { id: string; created_at: string };
+export type ExpedienteImportacion = { id: string; estado: string | null; fecha_llegada_real: string | null };
+/** Factura o gasto con su propia fecha (YYYY-MM-DD). */
+export type MovimientoImportacion = { monto: number; fecha: string };
 export type ResumenImportaciones = { cantidad: number; facturado: number; gastos: number; utilidad: number; margen: number };
 
-export const enRango = (fecha: string, r: Rango) => !!fecha && fecha >= r.desde && fecha <= r.hasta;
+export const enRango = (fecha: string | null | undefined, r: Rango) => !!fecha && fecha >= r.desde && fecha <= r.hasta;
 
-/** Totales de los Expedientes cuya fecha de registro (Santo Domingo) cae en el rango. */
+/** Fecha de llegada final (Fecha de Llegada Real) como YYYY-MM-DD, o "" si aún no está confirmada. */
+export const fechaLlegada = (e: Pick<ExpedienteImportacion, "fecha_llegada_real">) => (e.fecha_llegada_real ?? "").slice(0, 10);
+
+/** Fecha propia de una factura/gasto; si falta, el día de su registro en hora de Santo Domingo. */
+export const fechaMovimiento = (fecha: string | null | undefined, creado: string | null | undefined) =>
+  (fecha ?? "").slice(0, 10) || fechaSantoDomingo(creado);
+
+/** Estados anteriores a la llegada: Recibido y En Tránsito. */
+const ESTADOS_ANTES_DE_LLEGADA = new Set(["digitar", "en_transito"]);
+
+/**
+ * Expedientes que todavía no cuentan en ningún período por no tener Fecha de Llegada Real:
+ * `enTransito` (Recibido / En Tránsito) y `sinFecha` (su estado ya pasó la llegada, pero falta la fecha).
+ */
+export function pendientesDeLlegada(expedientes: readonly ExpedienteImportacion[]) {
+  let enTransito = 0, sinFecha = 0;
+  for (const e of expedientes) {
+    if (fechaLlegada(e)) continue;
+    if (!e.estado || ESTADOS_ANTES_DE_LLEGADA.has(e.estado)) enTransito++;
+    else sinFecha++;
+  }
+  return { enTransito, sinFecha };
+}
+
+const sumaEnRango = (movs: readonly MovimientoImportacion[], r: Rango) =>
+  movs.reduce((s, m) => (enRango(m.fecha, r) ? s + (Number(m.monto) || 0) : s), 0);
+
+/**
+ * Totales del rango: Importaciones = Expedientes cuya Fecha de Llegada Real cae en el rango
+ * (sin fecha no cuentan); Facturado y Gastos = facturas y gastos por su propia fecha.
+ */
 export function resumenImportaciones(
   expedientes: readonly ExpedienteImportacion[],
-  facturadoPorExp: ReadonlyMap<string, number>,
-  gastosPorExp: ReadonlyMap<string, number>,
+  facturas: readonly MovimientoImportacion[],
+  gastos: readonly MovimientoImportacion[],
   rango: Rango,
 ): ResumenImportaciones {
-  let cantidad = 0, facturado = 0, gastos = 0;
-  for (const e of expedientes) {
-    if (!enRango(fechaSantoDomingo(e.created_at), rango)) continue;
-    cantidad++;
-    facturado += facturadoPorExp.get(e.id) ?? 0;
-    gastos += gastosPorExp.get(e.id) ?? 0;
-  }
-  const utilidad = facturado - gastos;
-  return { cantidad, facturado, gastos, utilidad, margen: facturado > 0 ? (utilidad / facturado) * 100 : 0 };
+  const cantidad = expedientes.reduce((n, e) => (enRango(fechaLlegada(e), rango) ? n + 1 : n), 0);
+  const facturado = sumaEnRango(facturas, rango);
+  const gastado = sumaEnRango(gastos, rango);
+  const utilidad = facturado - gastado;
+  return { cantidad, facturado, gastos: gastado, utilidad, margen: facturado > 0 ? (utilidad / facturado) * 100 : 0 };
 }
 
 /** Variación % contra el período anterior; null («sin base») si el anterior es 0. */

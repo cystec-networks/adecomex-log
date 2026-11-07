@@ -14,13 +14,15 @@ import {
 } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  CartesianGrid, Legend,
+  CartesianGrid, Legend, LabelList,
 } from "recharts";
-import { FilaRecuadrosOrdenable, useOrdenPreferencia } from "@/components/orden-arrastrable";
+import { BloquesOrdenables, FilaRecuadrosOrdenable, useOrdenPreferencia } from "@/components/orden-arrastrable";
 import {
-  CLAVE_KPI_DASH_IMPORTACIONES, KPI_DASH_IMPORTACIONES_IDS, cubetasSerie, enRango, fechaSantoDomingo,
-  lunesIso, periodoComparado, resumenImportaciones, semanaIso, sumarDias, variacionPct,
-  type KpiDashImportacionesId, type PeriodoImportaciones, type Rango,
+  BLOQUES_DASH_IMPORTACIONES_IDS, CLAVE_BLOQUES_DASH_IMPORTACIONES,
+  CLAVE_KPI_DASH_IMPORTACIONES, KPI_DASH_IMPORTACIONES_IDS, cubetasSerie, enRango, fechaLlegada, fechaMovimiento,
+  fechaSantoDomingo, lunesIso, pendientesDeLlegada, periodoComparado, resumenImportaciones, semanaIso, sumarDias,
+  variacionPct,
+  type BloqueDashImportacionesId, type KpiDashImportacionesId, type PeriodoImportaciones, type Rango,
 } from "@/lib/importaciones-dashboard";
 
 export const Route = createFileRoute("/_authenticated/expedientes/dashboard")({
@@ -53,12 +55,22 @@ const mesLargo = (s: string) => aFecha(s).toLocaleDateString("es-DO", { month: "
 const ETIQUETAS_KPI: Record<KpiDashImportacionesId, string> = {
   importaciones: "Importaciones", facturado: "Facturado", gastos: "Gastos", utilidad: "Utilidad", margen: "Margen %",
 };
+const ETIQUETAS_BLOQUES: Record<BloqueDashImportacionesId, string> = {
+  kpis: "Resumen del período", importaciones: "Importaciones por mes", "facturado-gastos": "Facturado vs Gastos",
+  margen: "Evolución del margen", rankings: "Rankings de rentabilidad", cxc: "Cuentas por cobrar",
+};
 const NOMBRE_ANTERIOR: Record<PeriodoImportaciones, string> = { semanal: "semana anterior", mensual: "mes anterior", anual: "año anterior" };
 
 function ExpedientesDashboard() {
   const [periodo, setPeriodo] = useState<PeriodoImportaciones>("mensual");
   const [anchor, setAnchor] = useState<Date>(() => aFecha(fechaSantoDomingo(new Date())));
   const ordenKpi = useOrdenPreferencia(CLAVE_KPI_DASH_IMPORTACIONES, KPI_DASH_IMPORTACIONES_IDS, "No se pudo guardar el orden de los recuadros");
+  const ordenBloques = useOrdenPreferencia(CLAVE_BLOQUES_DASH_IMPORTACIONES, BLOQUES_DASH_IMPORTACIONES_IDS, "No se pudo guardar el orden de los bloques");
+  const personalizado = ordenKpi.personalizado || ordenBloques.personalizado;
+  const restablecerDisposicion = () => {
+    if (ordenKpi.personalizado) ordenKpi.restablecer();
+    if (ordenBloques.personalizado) ordenBloques.restablecer();
+  };
 
   const hoy = fechaSantoDomingo(new Date());
   const ancla = isoLocal(anchor);
@@ -81,13 +93,13 @@ function ExpedientesDashboard() {
     queryFn: async () => {
       const [expRes, facRes, gasRes, cliRes] = await Promise.all([
         supabase.from("expedientes")
-          .select("id, numero, tipo_operacion, estado, cliente_id, created_at, total_cif")
+          .select("id, numero, tipo_operacion, estado, cliente_id, fecha_llegada_real")
           .is("eliminado_en", null),
         supabase.from("facturas")
-          .select("expediente_id, monto, estado, fecha_emision")
+          .select("expediente_id, monto, estado, fecha_emision, created_at")
           .is("deleted_at", null),
         supabase.from("gastos")
-          .select("expediente_id, monto, es_reembolso, fecha")
+          .select("expediente_id, monto, es_reembolso, fecha, created_at")
           .is("deleted_at", null),
         supabase.from("clientes").select("id, nombre"),
       ]);
@@ -110,29 +122,30 @@ function ExpedientesDashboard() {
     const cliMap = new Map(clientes.map((c: any) => [c.id, c.nombre]));
     const expIds = new Set(expedientes.map((e: any) => e.id));
 
-    const facByExp = new Map<string, number>();
-    for (const f of facturas) {
-      if (!expIds.has(f.expediente_id)) continue;
-      facByExp.set(f.expediente_id, (facByExp.get(f.expediente_id) || 0) + Number(f.monto || 0));
-    }
-    const gasByExp = new Map<string, number>();
-    for (const g of gastos) {
-      if (!expIds.has(g.expediente_id)) continue;
-      if (g.es_reembolso) continue;
-      gasByExp.set(g.expediente_id, (gasByExp.get(g.expediente_id) || 0) + Number(g.monto || 0));
-    }
+    // Facturas y gastos (sin reembolsos) de Expedientes de importación, cada uno con su propia fecha.
+    const facturasExp = facturas.filter((f: any) => expIds.has(f.expediente_id));
+    const gastosExp = gastos.filter((g: any) => expIds.has(g.expediente_id) && !g.es_reembolso);
+    const facturasMov = facturasExp.map((f: any) => ({ monto: Number(f.monto || 0), fecha: fechaMovimiento(f.fecha_emision, f.created_at) }));
+    const gastosMov = gastosExp.map((g: any) => ({ monto: Number(g.monto || 0), fecha: fechaMovimiento(g.fecha, g.created_at) }));
 
-    const cur = resumenImportaciones(expedientes, facByExp, gasByExp, comp.actual);
-    const prev = resumenImportaciones(expedientes, facByExp, gasByExp, comp.previo);
+    // Totales por Expediente (para los rankings)
+    const facByExp = new Map<string, number>();
+    for (const f of facturasExp) facByExp.set(f.expediente_id, (facByExp.get(f.expediente_id) || 0) + Number(f.monto || 0));
+    const gasByExp = new Map<string, number>();
+    for (const g of gastosExp) gasByExp.set(g.expediente_id, (gasByExp.get(g.expediente_id) || 0) + Number(g.monto || 0));
+
+    const cur = resumenImportaciones(expedientes, facturasMov, gastosMov, comp.actual);
+    const prev = resumenImportaciones(expedientes, facturasMov, gastosMov, comp.previo);
+    const pendientes = pendientesDeLlegada(expedientes);
 
     const series = cubetas.map((c) => {
-      const r = resumenImportaciones(expedientes, facByExp, gasByExp, c.rango);
+      const r = resumenImportaciones(expedientes, facturasMov, gastosMov, c.rango);
       return { mes: c.label, cantidad: r.cantidad, facturado: r.facturado, gastos: r.gastos, utilidad: r.utilidad, margen: Number(r.margen.toFixed(1)) };
     });
 
-    // Ranking de rentabilidad del período elegido
+    // Ranking de rentabilidad: Expedientes que llegaron en el período, con todo lo facturado y gastado.
     const rentList = expedientes
-      .filter((e: any) => enRango(fechaSantoDomingo(e.created_at), comp.actual))
+      .filter((e: any) => enRango(fechaLlegada(e), comp.actual))
       .map((e: any) => {
         const f = facByExp.get(e.id) || 0;
         const g = gasByExp.get(e.id) || 0;
@@ -178,7 +191,7 @@ function ExpedientesDashboard() {
         dGas: variacionPct(cur.gastos, prev.gastos), dUtil: variacionPct(cur.utilidad, prev.utilidad),
         dMar: prev.facturado > 0 ? cur.margen - prev.margen : null,
       },
-      series, topRent, bottomRent, cxc, cxcTotal,
+      series, topRent, bottomRent, cxc, cxcTotal, pendientes,
     };
   }, [data, comp, cubetas]);
 
@@ -221,138 +234,173 @@ function ExpedientesDashboard() {
           <div className="text-muted-foreground">Cargando…</div>
         ) : (
           <>
-            {/* KPIs */}
-            <div className="space-y-2">
-            {ordenKpi.personalizado && (
-              <div className="flex justify-end">
-                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={ordenKpi.restablecer}>
+            {personalizado && (
+              <div className="-mb-3 flex justify-end">
+                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={restablecerDisposicion}>
                   <RotateCcw className="mr-1 h-3.5 w-3.5" /> Restablecer orden
                 </Button>
               </div>
             )}
-            <FilaRecuadrosOrdenable
-              ariaLabel="Resumen del período"
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"
-              orden={ordenKpi.orden}
-              onMover={ordenKpi.mover}
-              etiquetas={ETIQUETAS_KPI}
-              recuadros={{
-                importaciones: <KpiCard icon={<FolderKanban className="h-4 w-4" />} label="Importaciones" value={String(view.kpis.cantidad)} delta={view.kpis.dCant} />,
-                facturado: <KpiCard icon={<DollarSign className="h-4 w-4" />} label="Facturado" value={fmtRD(view.kpis.facturado)} delta={view.kpis.dFac} />,
-                gastos: <KpiCard icon={<TrendingDown className="h-4 w-4" />} label="Gastos" value={fmtRD(view.kpis.gastos)} delta={view.kpis.dGas} invert />,
-                utilidad: <KpiCard icon={<TrendingUp className="h-4 w-4" />} label="Utilidad" value={fmtRD(view.kpis.utilidad)} delta={view.kpis.dUtil} />,
-                margen: <KpiCard icon={<Percent className="h-4 w-4" />} label="Margen %" value={fmtPct(view.kpis.margen)} delta={view.kpis.dMar} suffix="pp" />,
-              } satisfies Record<KpiDashImportacionesId, React.ReactNode>}
-            />
-            </div>
-
-            {/* Cantidad de importaciones */}
-            <Card>
-              <CardHeader><CardTitle>{tituloSerie}</CardTitle></CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer>
-                    <BarChart data={view.series}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                      <XAxis dataKey="mes" stroke="var(--muted-foreground)" fontSize={12} />
-                      <YAxis allowDecimals={false} stroke="var(--muted-foreground)" fontSize={12} />
-                      <Tooltip cursor={{ fill: "var(--muted)" }} contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", color: "var(--popover-foreground)" }} />
-                      <Bar dataKey="cantidad" fill="var(--primary)" name="Expedientes" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                <p className="mt-2 text-[11px] text-muted-foreground">
-                  Cada Expediente cuenta en la fecha en que se registró en la plataforma (hora de Santo Domingo).
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Facturado vs Gastos */}
-            <Card>
-              <CardHeader><CardTitle>Facturado vs Gastos (RD$)</CardTitle></CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer>
-                    <BarChart data={view.series}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                      <XAxis dataKey="mes" stroke="var(--muted-foreground)" fontSize={12} />
-                      <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} stroke="var(--muted-foreground)" fontSize={12} />
-                      <Tooltip formatter={(v: any) => fmtRD(Number(v))} cursor={{ fill: "var(--muted)" }} contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", color: "var(--popover-foreground)" }} />
-                      <Legend />
-                      <Bar dataKey="facturado" fill="var(--primary)" name="Facturado" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="gastos" fill="var(--destructive)" name="Gastos" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Margen % */}
-            <Card>
-              <CardHeader><CardTitle>Evolución del margen %</CardTitle></CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer>
-                    <LineChart data={view.series}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                      <XAxis dataKey="mes" stroke="var(--muted-foreground)" fontSize={12} />
-                      <YAxis tickFormatter={(v) => `${v}%`} stroke="var(--muted-foreground)" fontSize={12} />
-                      <Tooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", color: "var(--popover-foreground)" }} />
-                      <Line type="monotone" dataKey="margen" stroke="var(--primary)" strokeWidth={2} dot />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Rankings */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <RentTable title={`Top 5 más rentables (${sufijoRanking})`} rows={view.topRent} vacio={`Sin datos en ${sufijoRanking === "semana" ? "la" : "el"} ${sufijoRanking}.`} />
-              <RentTable title={`Top 5 menos rentables (${sufijoRanking})`} rows={view.bottomRent} vacio={`Sin datos en ${sufijoRanking === "semana" ? "la" : "el"} ${sufijoRanking}.`} />
-            </div>
-
-            {/* Cuentas por cobrar */}
-            <Card>
-              <CardHeader className="flex-row items-center justify-between space-y-0">
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-[var(--warning)]" />
-                  Cuentas por cobrar
-                </CardTitle>
-                <Badge variant="secondary" className="text-base">{fmtRD(view.cxcTotal)}</Badge>
-              </CardHeader>
-              <CardContent>
-                {view.cxc.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">Sin facturas pendientes.</div>
-                ) : (
-                  <div className="overflow-auto max-h-[70vh]">
-                    <table className="w-full text-sm">
-                      <thead className="sticky-table-header">
-                        <tr className="text-left text-muted-foreground border-b">
-                          <th className="py-2">Cliente</th>
-                          <th className="py-2">Expedientes</th>
-                          <th className="py-2 text-right">Monto pendiente</th>
-                          <th className="py-2 text-right">Antigüedad máx.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {view.cxc.map((r, i) => (
-                          <tr key={i} className="border-b last:border-0">
-                            <td className="py-2 font-medium">{r.cliente}</td>
-                            <td className="py-2">{r.count}</td>
-                            <td className="py-2 text-right">{fmtRD(r.monto)}</td>
-                            <td className="py-2 text-right">
-                              <Badge variant={r.diasMax > 60 ? "destructive" : r.diasMax > 30 ? "secondary" : "outline"}>
-                                {r.diasMax} días
-                              </Badge>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+            <BloquesOrdenables
+              ariaLabel="Bloques del dashboard"
+              className="space-y-6"
+              orden={ordenBloques.orden}
+              onMover={ordenBloques.mover}
+              etiquetas={ETIQUETAS_BLOQUES}
+              bloques={{
+                kpis: (
+                  <div className="space-y-2">
+                    <div className="flex h-8 items-center pr-8 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Resumen del período
+                    </div>
+                    <FilaRecuadrosOrdenable
+                      ariaLabel="Resumen del período"
+                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"
+                      orden={ordenKpi.orden}
+                      onMover={ordenKpi.mover}
+                      etiquetas={ETIQUETAS_KPI}
+                      recuadros={{
+                        importaciones: <KpiCard icon={<FolderKanban className="h-4 w-4" />} label="Importaciones" value={String(view.kpis.cantidad)} delta={view.kpis.dCant} hint="Por Fecha de Llegada Real" />,
+                        facturado: <KpiCard icon={<DollarSign className="h-4 w-4" />} label="Facturado" value={fmtRD(view.kpis.facturado)} delta={view.kpis.dFac} hint="Por fecha de emisión de cada factura" />,
+                        gastos: <KpiCard icon={<TrendingDown className="h-4 w-4" />} label="Gastos" value={fmtRD(view.kpis.gastos)} delta={view.kpis.dGas} invert hint="Por fecha de cada gasto" />,
+                        utilidad: <KpiCard icon={<TrendingUp className="h-4 w-4" />} label="Utilidad" value={fmtRD(view.kpis.utilidad)} delta={view.kpis.dUtil} hint="Facturado − Gastos del período" />,
+                        margen: <KpiCard icon={<Percent className="h-4 w-4" />} label="Margen %" value={fmtPct(view.kpis.margen)} delta={view.kpis.dMar} suffix="pp" hint="Utilidad ÷ Facturado del período" />,
+                      } satisfies Record<KpiDashImportacionesId, React.ReactNode>}
+                    />
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                ),
+                importaciones: (
+                  <Card>
+                    <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 space-y-0 pr-12">
+                      <CardTitle>{tituloSerie}</CardTitle>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary" className="text-xs" title="Recibidos o En Tránsito, sin Fecha de Llegada Real todavía. Aparecerán en el mes de su llegada al confirmarla.">
+                          En tránsito: {view.pendientes.enTransito}
+                        </Badge>
+                        {view.pendientes.sinFecha > 0 && (
+                          <Badge variant="outline" className="text-xs" title="Su estado ya pasó la llegada (Manifestado o posterior), pero no tienen Fecha de Llegada Real registrada. No cuentan en ningún mes hasta completarla.">
+                            Sin fecha de llegada: {view.pendientes.sinFecha}
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-64">
+                        <ResponsiveContainer>
+                          <BarChart data={view.series} margin={{ top: 20, right: 8, left: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                            <XAxis dataKey="mes" stroke="var(--muted-foreground)" fontSize={12} />
+                            <YAxis allowDecimals={false} stroke="var(--muted-foreground)" fontSize={12} />
+                            <Tooltip cursor={{ fill: "var(--muted)" }} contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", color: "var(--popover-foreground)" }} />
+                            <Bar dataKey="cantidad" fill="var(--primary)" name="Expedientes" radius={[4, 4, 0, 0]}>
+                              <LabelList dataKey="cantidad" position="top" fill="var(--foreground)" fontSize={12} fontWeight={600} formatter={(v: any) => (Number(v) > 0 ? v : "")} />
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        Cada Expediente cuenta en el período de su Fecha de Llegada Real. Los que aún no la tienen no cuentan en ningún período y se muestran aparte.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ),
+                "facturado-gastos": (
+                  <Card>
+                    <CardHeader className="pr-12"><CardTitle>Facturado vs Gastos (RD$)</CardTitle></CardHeader>
+                    <CardContent>
+                      <div className="h-64">
+                        <ResponsiveContainer>
+                          <BarChart data={view.series}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                            <XAxis dataKey="mes" stroke="var(--muted-foreground)" fontSize={12} />
+                            <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} stroke="var(--muted-foreground)" fontSize={12} />
+                            <Tooltip formatter={(v: any) => fmtRD(Number(v))} cursor={{ fill: "var(--muted)" }} contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", color: "var(--popover-foreground)" }} />
+                            <Legend />
+                            <Bar dataKey="facturado" fill="var(--primary)" name="Facturado" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="gastos" fill="var(--destructive)" name="Gastos" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        Facturado por fecha de emisión de cada factura; Gastos por la fecha de cada gasto (sin reembolsos).
+                      </p>
+                    </CardContent>
+                  </Card>
+                ),
+                margen: (
+                  <Card>
+                    <CardHeader className="pr-12"><CardTitle>Evolución del margen %</CardTitle></CardHeader>
+                    <CardContent>
+                      <div className="h-64">
+                        <ResponsiveContainer>
+                          <LineChart data={view.series}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                            <XAxis dataKey="mes" stroke="var(--muted-foreground)" fontSize={12} />
+                            <YAxis tickFormatter={(v) => `${v}%`} stroke="var(--muted-foreground)" fontSize={12} />
+                            <Tooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", color: "var(--popover-foreground)" }} />
+                            <Line type="monotone" dataKey="margen" stroke="var(--primary)" strokeWidth={2} dot />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ),
+                rankings: (
+                  <div className="space-y-2">
+                    <div className="flex h-8 items-center pr-8 text-[11px] text-muted-foreground">
+                      Expedientes con llegada en {sufijoRanking === "semana" ? "la" : "el"} {sufijoRanking}, con todo lo facturado y gastado en cada uno.
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <RentTable title={`Top 5 más rentables (${sufijoRanking})`} rows={view.topRent} vacio={`Sin datos en ${sufijoRanking === "semana" ? "la" : "el"} ${sufijoRanking}.`} />
+                      <RentTable title={`Top 5 menos rentables (${sufijoRanking})`} rows={view.bottomRent} vacio={`Sin datos en ${sufijoRanking === "semana" ? "la" : "el"} ${sufijoRanking}.`} />
+                    </div>
+                  </div>
+                ),
+                cxc: (
+                  <Card>
+                    <CardHeader className="flex-row items-center justify-between space-y-0 pr-12">
+                      <CardTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-[var(--warning)]" />
+                        Cuentas por cobrar
+                      </CardTitle>
+                      <Badge variant="secondary" className="text-base">{fmtRD(view.cxcTotal)}</Badge>
+                    </CardHeader>
+                    <CardContent>
+                      {view.cxc.length === 0 ? (
+                        <div className="text-sm text-muted-foreground">Sin facturas pendientes.</div>
+                      ) : (
+                        <div className="overflow-auto max-h-[70vh]">
+                          <table className="w-full text-sm">
+                            <thead className="sticky-table-header">
+                              <tr className="text-left text-muted-foreground border-b">
+                                <th className="py-2">Cliente</th>
+                                <th className="py-2">Expedientes</th>
+                                <th className="py-2 text-right">Monto pendiente</th>
+                                <th className="py-2 text-right">Antigüedad máx.</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {view.cxc.map((r, i) => (
+                                <tr key={i} className="border-b last:border-0">
+                                  <td className="py-2 font-medium">{r.cliente}</td>
+                                  <td className="py-2">{r.count}</td>
+                                  <td className="py-2 text-right">{fmtRD(r.monto)}</td>
+                                  <td className="py-2 text-right">
+                                    <Badge variant={r.diasMax > 60 ? "destructive" : r.diasMax > 30 ? "secondary" : "outline"}>
+                                      {r.diasMax} días
+                                    </Badge>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ),
+              } satisfies Record<BloqueDashImportacionesId, React.ReactNode>}
+            />
           </>
         )}
       </div>
@@ -360,15 +408,15 @@ function ExpedientesDashboard() {
   );
 }
 
-function KpiCard({ icon, label, value, delta, invert, suffix }: {
-  icon: React.ReactNode; label: string; value: string; delta: number | null; invert?: boolean; suffix?: string;
+function KpiCard({ icon, label, value, delta, invert, suffix, hint }: {
+  icon: React.ReactNode; label: string; value: string; delta: number | null; invert?: boolean; suffix?: string; hint?: string;
 }) {
   const good = delta != null && (invert ? delta < 0 : delta > 0);
   const neutral = delta == null || delta === 0;
   return (
     <Card className="h-full">
       <CardContent className="p-4">
-        <div className="flex items-center gap-2 pr-5 text-muted-foreground text-xs mb-2">
+        <div className="flex items-center gap-2 pr-5 text-muted-foreground text-xs mb-2" title={hint}>
           {icon}<span>{label}</span>
         </div>
         <div className="text-2xl font-bold">{value}</div>
