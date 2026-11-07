@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Download, FileText, Undo2 } from "lucide-react";
 import { cambioPagoHonorario, honorariosParaCambio, type EstadoPagoHonorario } from "@/lib/honorarios-pago";
@@ -49,6 +50,8 @@ type Honorario = {
   expedienteId: string;
   expediente: string;
   cliente: string;
+  declaracion: string;
+  descripcion: string;
   mercanciaBl: string;
   proveedor: string;
   fecha: string;
@@ -70,6 +73,23 @@ function lunesDe(d: Date) {
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 const normProv = (p: string | null | undefined) => (p ?? "").trim().replace(/\s+/g, " ").toUpperCase() || "SIN PROVEEDOR";
 
+/** Número DUA; al pasar el mouse muestra la Descripción del Expediente (ficha General). */
+function CeldaDeclaracion({ h }: { h: Honorario }) {
+  const descripcion = h.descripcion || "Sin descripción registrada";
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span tabIndex={0} aria-label={`Declaración ${h.declaracion || "sin número"}: ${descripcion}`} className="cursor-help underline decoration-dotted underline-offset-2">
+          {h.declaracion || "—"}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" align="start" className="max-w-sm whitespace-pre-wrap break-words text-xs">
+        {descripcion}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function HonorariosPage() {
   const [modo, setModo] = useState<Modo>("semana");
   const [ancla, setAncla] = useState(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
@@ -88,7 +108,7 @@ function HonorariosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gastos")
-        .select("id, monto, fecha, created_at, proveedor, pago_estado, fecha_pago, expediente_id, expedientes!inner(id, numero, bl_awb, descripcion_mercancia, clientes(nombre))")
+        .select("id, monto, fecha, created_at, proveedor, pago_estado, fecha_pago, expediente_id, expedientes!inner(id, numero, numero_dua, bl_awb, descripcion_mercancia, clientes(nombre))")
         .ilike("concepto", CONCEPTO_HONORARIOS)
         .eq("es_reembolso", false)
         .is("deleted_at", null);
@@ -100,6 +120,8 @@ function HonorariosPage() {
           expedienteId: r.expedientes.id,
           expediente: r.expedientes.numero ?? "",
           cliente: r.expedientes.clientes?.nombre ?? "—",
+          declaracion: String(r.expedientes.numero_dua ?? "").trim(),
+          descripcion: String(r.expedientes.descripcion_mercancia ?? "").trim(),
           mercanciaBl: [r.expedientes.descripcion_mercancia, r.expedientes.bl_awb ? `BL: ${r.expedientes.bl_awb}` : ""].filter(Boolean).join("\n"),
           proveedor: normProv(r.proveedor),
           fecha: r.fecha ?? String(r.created_at ?? "").slice(0, 10),
@@ -120,7 +142,7 @@ function HonorariosPage() {
       s.fecha >= d && s.fecha <= h &&
       (proveedor === "todos" || s.proveedor === proveedor) &&
       (estadoFiltro === "todos" || s.estado === estadoFiltro) &&
-      (!q || s.cliente.toLowerCase().includes(q) || s.expediente.toLowerCase().includes(q)),
+      (!q || s.cliente.toLowerCase().includes(q) || s.expediente.toLowerCase().includes(q) || s.declaracion.toLowerCase().includes(q)),
     );
   }, [honorarios, desde, hasta, proveedor, busqueda, estadoFiltro]);
 
@@ -394,6 +416,7 @@ function HonorariosPage() {
           ) : visibles.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">No hay honorarios de terceros en este período.</div>
           ) : (
+            <TooltipProvider delayDuration={200}>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
@@ -402,6 +425,7 @@ function HonorariosPage() {
                   <th className="py-2 pr-3">Proveedor</th>
                   <th className="py-2 pr-3">Expediente</th>
                   <th className="py-2 pr-3">Cliente</th>
+                  <th className="py-2 pr-3">Declaración</th>
                   <th className="py-2 pr-3 text-right">Monto</th>
                   <th className="py-2 pr-3">Estado</th>
                   <th className="py-2">Fecha de pago</th>
@@ -417,7 +441,8 @@ function HonorariosPage() {
                     <td className="py-1.5 pr-3">
                       <Link to="/expedientes/$id" params={{ id: s.expedienteId }} className="expediente-numero hover:underline">{s.expediente}</Link>
                     </td>
-                    <td className="py-1.5 pr-3 max-w-[260px] truncate" title={s.cliente}>{s.cliente}</td>
+                    <td className="py-1.5 pr-3 max-w-[170px] truncate" title={s.cliente}>{s.cliente}</td>
+                    <td className="py-1.5 pr-3"><CeldaDeclaracion h={s} /></td>
                     <td className="py-1.5 pr-3 text-right font-semibold">{fmtMoney(s.monto)}</td>
                     <td className="py-1.5 pr-3">
                       {selectorEstado([s], s.estado, `Estado del gasto ${s.expediente} ${fmtLocalDate(s.fecha)} ${fmtMoney(s.monto)}`)}
@@ -450,7 +475,8 @@ function HonorariosPage() {
                             <Badge variant="outline" className="font-normal">{fila.gastos.length} gastos</Badge>
                           </div>
                         </td>
-                        <td className="py-1.5 pr-3 max-w-[260px] truncate" title={primero.cliente}>{primero.cliente}</td>
+                        <td className="py-1.5 pr-3 max-w-[170px] truncate" title={primero.cliente}>{primero.cliente}</td>
+                        <td className="py-1.5 pr-3"><CeldaDeclaracion h={primero} /></td>
                         <td className="py-1.5 pr-3 text-right font-semibold">{fmtMoney(fila.total)}</td>
                         <td className="py-1.5 pr-3">{selectorEstado(fila.gastos, "pendiente", `Estado del grupo ${primero.expediente} ${fila.proveedor}`)}</td>
                         <td className="py-1.5">—</td>
@@ -460,22 +486,23 @@ function HonorariosPage() {
                   );
                 })}
                 <tr className="border-t-2 bg-muted/50 font-semibold">
-                  <td className="py-2 pr-3 text-xs uppercase tracking-wide" colSpan={5}>Total pendiente</td>
+                  <td className="py-2 pr-3 text-xs uppercase tracking-wide" colSpan={6}>Total pendiente</td>
                   <td className="py-2 pr-3 text-right text-destructive">{fmtMoney(totales.pendiente)}</td>
                   <td colSpan={2} />
                 </tr>
                 <tr className="bg-muted/50 font-semibold">
-                  <td className="py-2 pr-3 text-xs uppercase tracking-wide" colSpan={5}>Total pagado</td>
+                  <td className="py-2 pr-3 text-xs uppercase tracking-wide" colSpan={6}>Total pagado</td>
                   <td className="py-2 pr-3 text-right">{fmtMoney(totales.pagado)}</td>
                   <td colSpan={2} />
                 </tr>
                 <tr className="border-t-2 bg-primary/10 font-bold">
-                  <td className="py-2 pr-3 text-xs uppercase tracking-wide" colSpan={5}>Total del período</td>
+                  <td className="py-2 pr-3 text-xs uppercase tracking-wide" colSpan={6}>Total del período</td>
                   <td className="py-2 pr-3 text-right">{fmtMoney(totales.general)}</td>
                   <td colSpan={2} />
                 </tr>
               </tbody>
             </table>
+            </TooltipProvider>
           )}
         </CardContent>
       </Card>
