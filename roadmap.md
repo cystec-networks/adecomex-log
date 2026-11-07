@@ -128,3 +128,4 @@
 - [x] Transportes: columnas Ganancia y Descuento CxC, filtros Semana/Mes/Año y totales del período
 - [x] Transportes: columna Total Pagado (Neto a Pagar del comprobante, distinta de Flete), recuadros Total Flete/Pagado/Ganancia/Descuento CxC del período y reordenamiento de recuadros y columnas guardado por usuario
 - [x] Transportes: Flete muestra el Monto a Facturar al Cliente (bruto) y Total Pagado el Neto a Pagar
+- [x] Dashboard de Transportes: contenedores reales, Facturado por e-CF vinculada, ingreso = Monto a Facturar, colores y leyenda por estado, variaciones contra el período anterior equivalente

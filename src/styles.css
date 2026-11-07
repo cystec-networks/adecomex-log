@@ -287,9 +287,20 @@
   --sidebar-ring: oklch(0.78 0.16 70);
   --brand-surface: oklch(1 0 0);
   --brand-red: oklch(0.56 0.23 27);
+  /* Estados de transporte (mismos tonos que sus etiquetas del listado) */
+  --estado-programado: oklch(0.554 0.046 257.4);
+  --estado-en-transito: oklch(0.546 0.245 262.9);
+  --estado-retrasado: oklch(0.577 0.245 27.3);
+  --estado-entregado: oklch(0.596 0.145 163.2);
+  --estado-facturado: oklch(0.541 0.281 293);
 }
 
 .dark {
+  --estado-programado: oklch(0.704 0.04 256.8);
+  --estado-en-transito: oklch(0.707 0.165 254.6);
+  --estado-retrasado: oklch(0.704 0.191 22.2);
+  --estado-entregado: oklch(0.765 0.177 163.2);
+  --estado-facturado: oklch(0.702 0.183 293.5);
   --background: oklch(0.18 0.04 258);
   --foreground: oklch(0.96 0.01 240);
   --card: oklch(0.24 0.05 258);
