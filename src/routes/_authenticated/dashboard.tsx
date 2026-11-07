@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck, RefreshCw, Mail, Banknote, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { daysFromToday } from "@/lib/dates";
 import { ESTADO_LABEL } from "@/lib/estados-expediente";
@@ -18,6 +17,8 @@ import { useDatosAlertasListado } from "@/lib/use-alertas-expediente";
 import { usePlazosRegimen } from "@/lib/plazo-presentacion";
 import { recordatoriosAlertasExpedientes } from "@/lib/alertas-expediente-panel";
 import { KpiFilaOrdenable, useOrdenKpiPanel } from "@/components/kpi-fila-ordenable";
+import { AlertasColumnasOrdenables, useDisposicionAlertas } from "@/components/alertas-columnas-ordenables";
+import type { GrupoAlertaId } from "@/lib/panel-alertas-disposicion";
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -261,7 +262,7 @@ function PrioridadBadge({ value }: { value: string }) {
   return <Badge className={`${map[value] ?? "bg-muted"} border-transparent`}>{value}</Badge>;
 }
 
-type GroupDef = { key: string; label: string; emoji: string; kinds: ReminderKind[] };
+type GroupDef = { key: GrupoAlertaId; label: string; emoji: string; kinds: ReminderKind[] };
 
 const REMINDER_GROUPS: GroupDef[] = [
   { key: "hitos", label: "Hitos atrasados / críticos", emoji: "🔴", kinds: ["hito_atrasado", "hito_proximo"] },
@@ -317,19 +318,9 @@ function RemindersPanel() {
   const grouped = REMINDER_GROUPS
     .map((g) => ({ ...g, items: ordenarPorUrgencia(reminders.filter((r) => g.kinds.includes(r.kind))) }))
     .filter((g) => g.items.length > 0);
+  // Orden y columna de cada bloque: preferencia del usuario o reparto balanceado automático.
+  const disposicion = useDisposicionAlertas();
 
-  // Reparto balanceado: cada categoría va a la columna con menos ítems (encabezado cuenta 1).
-  const columnas: (typeof grouped)[] = [[], []];
-  const pesos = [0, 0];
-  for (const g of [...grouped].sort((a, b) => b.items.length - a.items.length)) {
-    const i = pesos[0] <= pesos[1] ? 0 : 1;
-    columnas[i].push(g);
-    pesos[i] += g.items.length + 1;
-  }
-  const orden = new Map(grouped.map((g, i) => [g.key, i]));
-  // Con una sola categoría activa, usar todo el ancho para que las alertas quepan en dos filas.
-  const dosColumnas = columnas[0].length > 0 && columnas[1].length > 0;
-  columnas.forEach((c) => c.sort((a, b) => (orden.get(a.key) ?? 0) - (orden.get(b.key) ?? 0)));
   // Categorías colapsadas por defecto; se recuerda en el navegador cuáles dejó abiertas.
   const [abiertas, setAbiertas] = useState<Set<string>>(new Set());
   useEffect(() => {
@@ -347,50 +338,8 @@ function RemindersPanel() {
     });
   };
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-base font-display flex items-center gap-2">
-          <Bell className="h-4 w-4" /> Atención requerida
-        </CardTitle>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline">{reminders.length}</Badge>
-          {reminders.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => reminders.forEach((r) => dismiss(r.id))}
-            >
-              Marcar todo visto
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        {isError && <div role="alert" className="px-4 py-2 text-sm text-destructive">No se pudieron consultar todas las alertas de expedientes. Intente refrescar.</div>}
-        {isLoading ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Cargando alertas…</div>
-        ) : reminders.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Sin alertas pendientes 🎉</div>
-        ) : (
-          <div className={`grid grid-cols-1 items-start ${dosColumnas ? "lg:grid-cols-2 lg:divide-x" : ""}`}>
-            {columnas.map((col, ci) =>
-              col.length === 0 ? null : (
-            <Accordion key={ci} type="multiple" value={col.map((g) => g.key).filter((k) => abiertas.has(k))}
-              onValueChange={(vals) => alternar(col.map((g) => g.key), vals)} className="w-full">
-              {col.map((g) => (
-                <AccordionItem key={g.key} value={g.key} className="border-b">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/40">
-                    <div className="flex items-center gap-2 flex-1">
-                      <span className="text-base leading-none">{g.emoji}</span>
-                      <span className="text-sm font-medium">{g.label}</span>
-                      <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[11px]">
-                        {g.items.length}
-                      </Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pb-0">
+  const contenidoGrupo = (g: (typeof grouped)[number]) => (
+    <>
                     <div className="flex items-center gap-2 px-3 py-1.5 border-t bg-muted/30 text-[11px] uppercase text-muted-foreground">
                           <span className="h-2 w-2 shrink-0" aria-hidden />
                           <div className="min-w-0 flex-1" />
@@ -449,13 +398,48 @@ function RemindersPanel() {
                         </li>
                       ))}
                     </ul>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-              ),
-            )}
-          </div>
+                  </>
+  );
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardTitle className="text-base font-display flex items-center gap-2">
+          <Bell className="h-4 w-4" /> Atención requerida
+        </CardTitle>
+        <div className="flex items-center gap-2">
+          {disposicion.personalizada && (
+            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={disposicion.restablecer} title="Volver a la distribución automática de los bloques">
+              Restablecer orden
+            </Button>
+          )}
+          <Badge variant="outline">{reminders.length}</Badge>
+          {reminders.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => reminders.forEach((r) => dismiss(r.id))}
+            >
+              Marcar todo visto
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        {isError && <div role="alert" className="px-4 py-2 text-sm text-destructive">No se pudieron consultar todas las alertas de expedientes. Intente refrescar.</div>}
+        {isLoading ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">Cargando alertas…</div>
+        ) : reminders.length === 0 ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">Sin alertas pendientes 🎉</div>
+        ) : (
+          <AlertasColumnasOrdenables
+            grupos={Object.fromEntries(grouped.map((g) => [g.key, { label: g.label, emoji: g.emoji, cantidad: g.items.length, contenido: contenidoGrupo(g) }]))}
+            guardada={disposicion.guardada}
+            onCambiar={disposicion.cambiar}
+            abiertas={abiertas}
+            onAlternar={alternar}
+          />
         )}
       </CardContent>
     </Card>
