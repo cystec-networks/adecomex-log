@@ -8,9 +8,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /**
  * Convierte un valor guardado en un orden completo y válido: descarta ids
  * desconocidos o repetidos y agrega al final (en su orden por defecto) los
- * que falten, p. ej. cuando se incorpora una columna nueva.
+ * que falten, p. ej. cuando se incorpora una columna nueva. Los ids de
+ * `alInicio` que falten se anteponen (para elementos nuevos que siempre
+ * estuvieron arriba en pantalla y no deben saltar al final).
  */
-export function normalizarOrden<T extends string>(valor: unknown, ids: readonly T[]): T[] {
+export function normalizarOrden<T extends string>(valor: unknown, ids: readonly T[], alInicio: readonly T[] = []): T[] {
   const validos = new Set<string>(ids);
   const resultado: T[] = [];
   if (Array.isArray(valor)) {
@@ -18,8 +20,10 @@ export function normalizarOrden<T extends string>(valor: unknown, ids: readonly 
       if (typeof id === "string" && validos.has(id) && !resultado.includes(id as T)) resultado.push(id as T);
     }
   }
-  for (const id of ids) if (!resultado.includes(id)) resultado.push(id);
-  return resultado;
+  const guardado = resultado.length > 0;
+  const inicio = guardado ? ids.filter((id) => alInicio.includes(id) && !resultado.includes(id)) : [];
+  for (const id of ids) if (!resultado.includes(id) && !inicio.includes(id)) resultado.push(id);
+  return [...inicio, ...resultado];
 }
 
 /** Mueve `activo` a la posición que ocupa `destino`. Sin cambios si alguno no existe. */
@@ -42,6 +46,7 @@ export async function leerOrdenPreferencia<T extends string>(
   userId: string,
   clave: string,
   ids: readonly T[],
+  alInicio: readonly T[] = [],
 ): Promise<T[]> {
   const { data, error } = await supabase
     .from("preferencias_usuario")
@@ -50,7 +55,7 @@ export async function leerOrdenPreferencia<T extends string>(
     .eq("clave", clave)
     .maybeSingle();
   if (error) throw error;
-  return normalizarOrden(data?.valor, ids);
+  return normalizarOrden(data?.valor, ids, alInicio);
 }
 
 export async function guardarOrdenPreferencia<T extends string>(

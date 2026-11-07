@@ -9,8 +9,11 @@ export const ESTADOS_DASH_TRANSPORTES_IDS = ["programado", "en_transito", "retra
 export type EstadoDashTransportesId = (typeof ESTADOS_DASH_TRANSPORTES_IDS)[number];
 export const CLAVE_ESTADOS_DASH_TRANSPORTES = "transportes-dashboard-estados-orden";
 
-export const BLOQUES_DASH_TRANSPORTES_IDS = ["contenedores", "rentabilidad"] as const;
+/** Bloques grandes de la página, incluido «Estados» (recuadros + gráfica) como una sola unidad. */
+export const BLOQUES_DASH_TRANSPORTES_IDS = ["estados", "contenedores", "rentabilidad"] as const;
 export type BloqueDashTransportesId = (typeof BLOQUES_DASH_TRANSPORTES_IDS)[number];
+/** «Estados» se incorporó después y siempre estuvo arriba: en órdenes guardados sin él, va primero. */
+export const BLOQUES_DASH_TRANSPORTES_AL_INICIO: readonly BloqueDashTransportesId[] = ["estados"];
 export const CLAVE_BLOQUES_DASH_TRANSPORTES = "transportes-dashboard-bloques-orden";
 
 /** Ordena elementos con `key` según el orden elegido (los desconocidos quedan al final). */

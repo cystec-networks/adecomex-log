@@ -24,7 +24,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { esOrdenPorDefecto, guardarOrdenPreferencia, leerOrdenPreferencia, moverEnOrden } from "@/lib/orden-preferencia";
 
 /** Orden personal (por usuario) de un conjunto de elementos, guardado en sus preferencias. */
-export function useOrdenPreferencia<T extends string>(clave: string, ids: readonly T[], mensajeError: string) {
+export function useOrdenPreferencia<T extends string>(
+  clave: string,
+  ids: readonly T[],
+  mensajeError: string,
+  /** Ids nuevos que, si faltan en un orden ya guardado, se anteponen en vez de ir al final. */
+  alInicio: readonly T[] = [],
+) {
   const qc = useQueryClient();
   const { data: userId } = useQuery({
     queryKey: ["auth-user-id"],
@@ -35,7 +41,7 @@ export function useOrdenPreferencia<T extends string>(clave: string, ids: readon
   const { data: orden } = useQuery({
     queryKey,
     enabled: !!userId,
-    queryFn: () => leerOrdenPreferencia(supabase, userId!, clave, ids),
+    queryFn: () => leerOrdenPreferencia(supabase, userId!, clave, ids, alInicio),
     staleTime: Infinity,
   });
 
