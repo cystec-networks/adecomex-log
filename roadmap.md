@@ -126,3 +126,4 @@
 - [x] Reordenar las ocho tarjetas KPI del Panel de operaciones arrastrando (ratón, táctil o teclado), guardando el orden por usuario entre sesiones y con «Restablecer orden»; 5 pruebas y comprobado con sesión real (arrastre, recarga, teclado, restablecer y clic normal).
 - [x] Reordenar los bloques de «Atención requerida» arrastrando por el asa (ratón, táctil o teclado), también entre las dos columnas, guardado por usuario y con «Restablecer orden» para volver al reparto automático; 8 pruebas y comprobado con sesión real (cruce de columnas, recarga, teclado, apertura y restablecer).
 - [x] Transportes: columnas Ganancia y Descuento CxC, filtros Semana/Mes/Año y totales del período
+- [x] Transportes: columna Total Pagado (Neto a Pagar del comprobante, distinta de Flete), recuadros Total Flete/Pagado/Ganancia/Descuento CxC del período y reordenamiento de recuadros y columnas guardado por usuario

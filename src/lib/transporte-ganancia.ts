@@ -65,6 +65,8 @@ export type GananciaTransporte = {
   /** null si ninguna solicitud del viaje permite calcular la ganancia. */
   ganancia: number | null;
   descuentoCxc: number;
+  /** Monto Neto a Pagar al transportista (Costo del Viaje − Descuento CxC), igual que el comprobante. */
+  netoPagar: number;
   moneda: string;
   solicitudes: number;
 };
@@ -95,9 +97,10 @@ export function gananciaPorTransporte(
     const destino = s.transporte_id ?? primeroPorSolicitud.get(s.id)?.id ?? null;
     if (!destino || !existentes.has(destino)) continue;
     const d = desgloseSolicitudPago(s);
-    const acc = res.get(destino) ?? { ganancia: null, descuentoCxc: 0, moneda: s.moneda || "DOP", solicitudes: 0 };
+    const acc = res.get(destino) ?? { ganancia: null, descuentoCxc: 0, netoPagar: 0, moneda: s.moneda || "DOP", solicitudes: 0 };
     if (d.ganancia != null) acc.ganancia = redondear((acc.ganancia ?? 0) + d.ganancia);
     acc.descuentoCxc = redondear(acc.descuentoCxc + d.descuentoCxc);
+    acc.netoPagar = redondear(acc.netoPagar + d.netoPagar);
     acc.solicitudes += 1;
     res.set(destino, acc);
   }
@@ -115,6 +118,42 @@ export function totalesGananciaPorMoneda(valores: Iterable<GananciaTransporte | 
     totales.set(v.moneda, t);
   }
   return totales;
+}
+
+export type TotalesPeriodoTransportes = { flete: number; pagado: number; ganancia: number; descuentoCxc: number };
+
+/**
+ * Totales del período por moneda para los recuadros y la fila final:
+ * Flete (lo registrado en cada viaje, en su moneda) y Total Pagado, Ganancia
+ * y Descuento CxC (desglose de las solicitudes de pago, en su moneda).
+ * Siempre devuelve al menos DOP para que los recuadros muestren 0.
+ */
+export function totalesPeriodoTransportes(
+  viajes: { id: string; flete_monto?: number | string | null; flete_moneda?: string | null }[],
+  ganancias: Map<string, GananciaTransporte>,
+): [string, TotalesPeriodoTransportes][] {
+  const totales = new Map<string, TotalesPeriodoTransportes>();
+  const de = (m: string) => {
+    let t = totales.get(m);
+    if (!t) { t = { flete: 0, pagado: 0, ganancia: 0, descuentoCxc: 0 }; totales.set(m, t); }
+    return t;
+  };
+  for (const v of viajes) {
+    if (v.flete_monto != null && v.flete_monto !== "") {
+      const t = de(v.flete_moneda || "USD");
+      t.flete = redondear(t.flete + num(v.flete_monto));
+    }
+    const g = ganancias.get(v.id);
+    if (g) {
+      const t = de(g.moneda);
+      t.pagado = redondear(t.pagado + g.netoPagar);
+      t.ganancia = redondear(t.ganancia + (g.ganancia ?? 0));
+      t.descuentoCxc = redondear(t.descuentoCxc + g.descuentoCxc);
+    }
+  }
+  if (totales.size === 0) de("DOP");
+  const peso = (m: string) => (m === "DOP" ? 0 : m === "USD" ? 1 : 2);
+  return [...totales.entries()].sort((a, b) => peso(a[0]) - peso(b[0]) || a[0].localeCompare(b[0]));
 }
 
 // ---------- Período (Semana / Mes / Año) ----------
