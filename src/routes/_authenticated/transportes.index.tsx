@@ -10,15 +10,35 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { TruncatedCell } from "@/components/truncated-cell";
-import { Trash2, Plus, Truck, Pencil } from "lucide-react";
-import { Fragment, useEffect, useState } from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Trash2, Plus, Truck, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { TRANSPORTE_ESTADOS, TRANSPORTE_TIPOS, estadoBadgeTransporte } from "@/components/transporte-form";
-import { parseLocalDate, fmtLocalDateShort } from "@/lib/dates";
+import { parseLocalDate, fmtLocalDate, fmtLocalDateShort } from "@/lib/dates";
 import { useGruposColapsados, EstadoDivider } from "@/lib/grupos-colapsados";
+import {
+  fechaViajePeriodo, gananciaPorTransporte, isoLocal, moverPeriodo, rangoPeriodo,
+  totalesGananciaPorMoneda, type ModoPeriodo,
+} from "@/lib/transporte-ganancia";
+
+const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+const simboloMoneda = (m: string) => (m === "USD" ? "US$" : m === "EUR" ? "€" : "RD$");
+const fmtImporte = (n: number, m: string) =>
+  `${n < 0 ? "-" : ""}${simboloMoneda(m)}${Math.abs(n).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 
 export const Route = createFileRoute("/_authenticated/transportes/")({
+  head: () => ({
+    meta: [
+      { title: "Transportes | ADECOMEX" },
+      { name: "description", content: "Viajes de transporte con ganancia, descuentos por CxC y totales por semana, mes o año." },
+      { property: "og:title", content: "Transportes | ADECOMEX" },
+      { property: "og:description", content: "Viajes de transporte con ganancia, descuentos por CxC y totales por semana, mes o año." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   validateSearch: (s: Record<string, unknown>): { estado?: string } => {
     const estadosValidos = new Set(TRANSPORTE_ESTADOS.map((item) => item.v));
     const estado = typeof s.estado === "string"
@@ -48,6 +68,26 @@ function Transportes() {
       .order("created_at", { ascending: false })).data ?? [],
   });
 
+  // Solicitudes de pago: fuente del desglose del comprobante (Ganancia y Descuento CxC).
+  // Bajo RLS solo las ven admin/transporte; para el resto las columnas muestran «—».
+  const { data: solicitudes } = useQuery({
+    queryKey: ["transportes-solicitudes-ganancia"],
+    queryFn: async () => (await supabase
+      .from("solicitudes_pago_transporte")
+      .select("id, transporte_id, estado, moneda, cantidad_viajes, precio_viaje, porcentaje_margen, monto, descuento_cxc")).data ?? [],
+  });
+  const ganancias = useMemo(
+    () => gananciaPorTransporte((data ?? []) as any[], (solicitudes ?? []) as any[]),
+    [data, solicitudes],
+  );
+
+  const [modo, setModo] = useState<ModoPeriodo>("todo");
+  const [ancla, setAncla] = useState(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
+  const rango = useMemo(() => rangoPeriodo(modo, ancla), [modo, ancla]);
+  const etiquetaPeriodo = !rango ? "Todos los períodos"
+    : modo === "semana" ? `Semana del ${fmtLocalDate(rango.desde)} al ${fmtLocalDate(rango.hasta)}`
+    : modo === "mes" ? `${MESES[ancla.getMonth()]} ${ancla.getFullYear()}` : `Año ${ancla.getFullYear()}`;
+
   const { data: clientes } = useQuery({
     queryKey: ["clientes-select"],
     queryFn: async () => (await supabase.from("clientes").select("id,nombre").order("nombre")).data ?? [],
@@ -74,9 +114,14 @@ function Transportes() {
     const estados = estado === "todos" ? [] : estado.split(",");
     if (estados.length > 0 && !estados.includes(t.estado)) return false;
     if (cliente !== "todos" && t.cliente_id !== cliente) return false;
+    if (rango) {
+      const f = fechaViajePeriodo(t);
+      if (!f || f < rango.desde || f > rango.hasta) return false;
+    }
     if (q && !norm(JSON.stringify(t)).includes(norm(q))) return false;
     return true;
   });
+  const totales = [...totalesGananciaPorMoneda(filtered.map((t: any) => ganancias.get(t.id))).entries()];
 
   type SortKey = "numero_viaje" | "cliente" | "expediente" | "tipo" | "transportista" | "origen" | "destino" | "fecha_salida" | "eta" | "estado";
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
@@ -144,6 +189,35 @@ function Transportes() {
       </div>
 
       <Card className="overflow-hidden">
+        <CardHeader className="flex-row items-center gap-3 flex-wrap border-b pb-3">
+          <Tabs value={modo} onValueChange={(v) => setModo(v as ModoPeriodo)}>
+            <TabsList>
+              <TabsTrigger value="todo">Todo</TabsTrigger>
+              <TabsTrigger value="semana">Semana</TabsTrigger>
+              <TabsTrigger value="mes">Mes</TabsTrigger>
+              <TabsTrigger value="anio">Año</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="flex items-center gap-2">
+            <Button size="icon" variant="outline" onClick={() => setAncla((a) => moverPeriodo(modo, a, -1))} disabled={modo === "todo"} title="Período anterior" aria-label="Período anterior"><ChevronLeft className="h-4 w-4" /></Button>
+            <Input type="date" className="w-[160px]" value={isoLocal(ancla)} disabled={modo === "todo"} aria-label="Fecha del período"
+              onChange={(e) => e.target.value && setAncla(parseLocalDate(e.target.value))} />
+            <Button size="icon" variant="outline" onClick={() => setAncla((a) => moverPeriodo(modo, a, 1))} disabled={modo === "todo"} title="Período siguiente" aria-label="Período siguiente"><ChevronRight className="h-4 w-4" /></Button>
+          </div>
+          <span className="text-sm font-semibold">{etiquetaPeriodo}</span>
+          <div className="ml-auto flex flex-wrap items-center gap-2 text-[13px]" aria-label="Totales del período">
+            {(totales.length ? totales : [["DOP", { ganancia: 0, descuentoCxc: 0 }] as const]).map(([moneda, tot]) => (
+              <Fragment key={moneda}>
+                <span className="rounded-md border bg-muted/40 px-2.5 py-1">
+                  Total Ganancia: <strong className="tabular-nums">{fmtImporte(tot.ganancia, moneda)}</strong>
+                </span>
+                <span className="rounded-md border bg-muted/40 px-2.5 py-1">
+                  Total Descuento CxC: <strong className="tabular-nums text-destructive">{fmtImporte(-tot.descuentoCxc, moneda)}</strong>
+                </span>
+              </Fragment>
+            ))}
+          </div>
+        </CardHeader>
         <CardHeader className="flex-row items-center gap-3 flex-wrap">
           <CardTitle className="text-base flex-1 min-w-[160px]">{rows.length} transportes</CardTitle>
           <Select value={estado} onValueChange={setEstado}>
@@ -165,7 +239,7 @@ function Transportes() {
         </CardHeader>
         <CardContent className="p-0">
           {rows.length === 0 ? (
-            <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin transportes.</div>
+            <div className="px-4 py-8 text-center text-muted-foreground text-sm">{rango ? "Sin transportes en este período." : "Sin transportes."}</div>
           ) : (
             <div className="overflow-auto max-h-[70vh]">
               <table className="w-full text-[13px] border-collapse">
@@ -182,6 +256,8 @@ function Transportes() {
                     <Th k="fecha_salida" align="right" className="whitespace-nowrap">Salida</Th>
                     <Th k="eta" align="right" className="whitespace-nowrap">ETA</Th>
                     <th className="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Flete</th>
+                    <th className="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Ganancia</th>
+                    <th className="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Descuento CxC</th>
                     <Th k="estado" align="center" className="whitespace-nowrap">Estado</Th>
                     <th className="px-2"></th>
                   </tr>
@@ -190,7 +266,7 @@ function Transportes() {
                   {grupos.map(([est, gRows]) => (
                     <Fragment key={est}>
                       <EstadoDivider
-                        colSpan={13}
+                        colSpan={15}
                         count={gRows.length}
                         colapsado={esColapsado(est)}
                         onToggle={() => toggleGrupo(est)}
@@ -206,15 +282,28 @@ function Transportes() {
                               <Link to="/expedientes/$id" params={{ id: t.expediente_id }} className="expediente-numero hover:underline">{t.expedientes.numero} ↗</Link>
                             ) : "—"}
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap">{t.clientes?.nombre ?? "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap max-w-[180px] truncate" title={t.clientes?.nombre ?? undefined}>{t.clientes?.nombre ?? "—"}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{TRANSPORTE_TIPOS.find((x) => x.v === t.tipo)?.l ?? "—"}</td>
-                          <td className="px-3 py-2 whitespace-nowrap">{t.transportista ?? "—"}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground text-xs tabular-nums"><TruncatedCell value={t.placa_contenedor} maxClass="max-w-[140px]" /></td>
+                          <td className="px-3 py-2 whitespace-nowrap max-w-[150px] truncate" title={t.transportista ?? undefined}>{t.transportista ?? "—"}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-muted-foreground text-xs tabular-nums"><TruncatedCell value={t.placa_contenedor} maxClass="max-w-[110px]" /></td>
                           <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{t.origen ?? "—"}</td>
                           <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{t.destino ?? "—"}</td>
                           <td className="px-3 py-2 text-right tabular-nums text-muted-foreground whitespace-nowrap">{fmt(t.fecha_salida)}</td>
                           <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{fmt(t.eta)}</td>
                           <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{fmtFlete(t)}</td>
+                          {(() => {
+                            const g = ganancias.get(t.id);
+                            return (
+                              <>
+                                <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap font-medium">
+                                  {g?.ganancia != null ? fmtImporte(g.ganancia, g.moneda) : "—"}
+                                </td>
+                                <td className={`px-3 py-2 text-right tabular-nums whitespace-nowrap ${g && g.descuentoCxc > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                                  {g && g.descuentoCxc > 0 ? fmtImporte(-g.descuentoCxc, g.moneda) : "—"}
+                                </td>
+                              </>
+                            );
+                          })()}
                           <td className="px-3 py-2 text-center whitespace-nowrap">{estadoBadgeTransporte(t.estado)}</td>
                           <td className="px-2 py-2 text-right whitespace-nowrap">
                             <Button variant="ghost" size="icon" className="h-8 w-8" asChild title="Editar">
@@ -229,7 +318,16 @@ function Transportes() {
                       ))}
                     </Fragment>
                   ))}
-
+                  {(totales.length ? totales : [["DOP", { ganancia: 0, descuentoCxc: 0 }] as const]).map(([moneda, tot], i) => (
+                    <tr key={moneda} className={`bg-primary/10 font-bold ${i === 0 ? "border-t-2" : ""}`}>
+                      <td className="px-3 py-2 text-xs uppercase tracking-wide" colSpan={11}>
+                        Total del período{totales.length > 1 ? ` (${moneda})` : ""} · Total Ganancia / Total Descuento CxC
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{fmtImporte(tot.ganancia, moneda)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap text-destructive">{fmtImporte(-tot.descuentoCxc, moneda)}</td>
+                      <td colSpan={2} />
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

@@ -1,4 +1,5 @@
 import { fmtLocalDate } from "@/lib/dates";
+import { desgloseSolicitudPago } from "@/lib/transporte-ganancia";
 
 export type SolicitudPagoPrintData = {
   numero_control: string;
@@ -110,13 +111,11 @@ export function SolicitudPagoPrintView({ solicitud }: { solicitud: SolicitudPago
             <div className="col-span-2">
               {(() => {
                 const hayMargen = s.cantidad_viajes != null && s.precio_viaje != null;
-                const montoFacturar = hayMargen ? Number(s.cantidad_viajes) * Number(s.precio_viaje) : null;
-                const costoCalc = montoFacturar != null && s.porcentaje_margen != null
-                  ? montoFacturar * (1 - Number(s.porcentaje_margen) / 100)
-                  : null;
-                const costoFinal = costoCalc ?? Number(s.monto);
-                const descuento = Number(s.descuento_cxc ?? 0);
-                const neto = costoFinal - descuento;
+                const d = desgloseSolicitudPago(s);
+                const montoFacturar = d.montoFacturar;
+                const costoFinal = d.costoViaje;
+                const descuento = d.descuentoCxc;
+                const neto = d.netoPagar;
                 return hayMargen || descuento > 0 ? (
                   <div className="space-y-1">
                     <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Desglose del pago</div>
