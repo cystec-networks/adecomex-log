@@ -729,6 +729,13 @@
       "when": 1793919332234,
       "tag": "0103_expedientes_automatico_primer_numero_libre",
       "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "7",
+      "when": 1794065064868,
+      "tag": "0104_catalogo_gestores_honorarios_lectura_staff",
+      "breakpoints": true
     }
   ]
 }
