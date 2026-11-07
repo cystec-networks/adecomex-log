@@ -17,6 +17,7 @@ import { obtenerPagosTransportistaPendientes } from "@/lib/pagos-transportista-k
 import { useDatosAlertasListado } from "@/lib/use-alertas-expediente";
 import { usePlazosRegimen } from "@/lib/plazo-presentacion";
 import { recordatoriosAlertasExpedientes } from "@/lib/alertas-expediente-panel";
+import { KpiFilaOrdenable, useOrdenKpiPanel } from "@/components/kpi-fila-ordenable";
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -43,7 +44,7 @@ function KPI({ icon: Icon, label, value, tone = "primary", sub }: any) {
     <Card className={`h-full cursor-pointer transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${tone === "danger" ? "border-destructive/30 bg-destructive/10" : ""}`}>
       <CardContent className="p-2.5">
         <div className="min-w-0">
-          <div className="min-h-12 text-xs leading-4 text-muted-foreground">{label}</div>
+          <div className="min-h-12 pr-4 text-xs leading-4 text-muted-foreground">{label}</div>
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
             <div className="min-w-0 text-2xl font-display font-bold tabular-nums">{value ?? "—"}</div>
             <div className={`h-8 w-8 shrink-0 grid place-items-center rounded-md ${toneMap[tone]}`}>
@@ -92,6 +93,7 @@ function Dashboard() {
   });
 
   const { reminders, isLoading: isLoadingReminders } = useAlertasPanel();
+  const ordenKpi = useOrdenKpiPanel();
 
   const operacionesLogisticaActivas = stats?.operacionesLogistica.filter((o) => o.estado !== "arribo").length ?? 0;
   const expedientesEnTransito = stats?.expedientes.filter((e) => e.estado === "en_transito").length ?? 0;
@@ -116,6 +118,12 @@ function Dashboard() {
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold">Panel de operaciones</h1>
+        <div className="flex items-center gap-2">
+        {ordenKpi.personalizado && (
+          <Button variant="ghost" size="sm" onClick={ordenKpi.restablecer} title="Volver al orden original de las tarjetas">
+            Restablecer orden
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"
@@ -132,18 +140,19 @@ function Dashboard() {
         >
           <RefreshCw className="h-4 w-4 mr-1" /> Refrescar
         </Button>
+        </div>
       </div>
 
-      <div aria-label="Indicadores de operaciones" className="grid grid-flow-col auto-cols-[168px] gap-2 overflow-x-auto pb-2 xl:grid-flow-row xl:auto-cols-auto xl:grid-cols-[repeat(8,minmax(0,1fr))] xl:overflow-x-visible">
-        <Link to="/expedientes/correo" aria-label="Ver correos pendientes" className="h-full min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Mail} label="Correos pendientes" value={correosPendientes?.total} tone={correosPendientes?.total ? "danger" : "primary"} sub={correosPendientes ? `${correosPendientes.porConvertir} por convertir · ${correosPendientes.porResponder} por responder` : errorCorreos ? "No disponible" : "Consultando…"} /></Link>
-        <Link to="/admin/solicitudes-pago-transporte" search={{ estado: "pendiente" }} aria-label="Ver pagos de transportista pendientes" className="h-full min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Banknote} label="Pagos transportista pendientes" value={pagosTransportista?.total} tone={pagosTransportista?.total ? "danger" : "primary"} sub={pagosTransportista ? pagosTransportista.sub : errorPagos ? "No disponible" : "Consultando…"} /></Link>
-        <Link to="/logistica" search={{ estado: "activas" }} aria-label="Ver operaciones de logística activas" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Ship} label="Logística en curso" value={operacionesLogisticaActivas} tone="info" /></Link>
-        <Link to="/expedientes" search={{ estado: "en_transito" }} aria-label="Ver expedientes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Ship} label="Expedientes en tránsito" value={expedientesEnTransito} tone="info" /></Link>
-        <Link to="/expedientes" search={{ eta: 7 }} aria-label="Ver expedientes por llegar" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Clock} label="Expedientes por llegar" value={expedientesPorLlegar} tone={expedientesPorLlegar ? "danger" : "primary"} sub="Próximos 7 días" /></Link>
-        <Link to="/permisos" search={{ vencimiento: 15 }} aria-label="Ver permisos VUCE por vencer" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FileWarning} label="Permisos VUCE por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" /></Link>
-        <Link to="/transportes" search={{ estado: "en_transito,programado" }} aria-label="Ver transportes en tránsito" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" /></Link>
-        <Link to="/dashboard" hash="atencion-requerida" aria-label="Ver alertas activas" className="h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={AlertTriangle} label="Alertas activas" value={isLoadingReminders ? null : reminders.length} tone="danger" /></Link>
-      </div>
+      <KpiFilaOrdenable tarjetas={{
+      "correos": <Link to="/expedientes/correo" aria-label="Ver correos pendientes" className="block h-full min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Mail} label="Correos pendientes" value={correosPendientes?.total} tone={correosPendientes?.total ? "danger" : "primary"} sub={correosPendientes ? `${correosPendientes.porConvertir} por convertir · ${correosPendientes.porResponder} por responder` : errorCorreos ? "No disponible" : "Consultando…"} /></Link>,
+      "pagos-transportista": <Link to="/admin/solicitudes-pago-transporte" search={{ estado: "pendiente" }} aria-label="Ver pagos de transportista pendientes" className="block h-full min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Banknote} label="Pagos transportista pendientes" value={pagosTransportista?.total} tone={pagosTransportista?.total ? "danger" : "primary"} sub={pagosTransportista ? pagosTransportista.sub : errorPagos ? "No disponible" : "Consultando…"} /></Link>,
+      "logistica": <Link to="/logistica" search={{ estado: "activas" }} aria-label="Ver operaciones de logística activas" className="block h-full min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Ship} label="Logística en curso" value={operacionesLogisticaActivas} tone="info" /></Link>,
+      "expedientes-transito": <Link to="/expedientes" search={{ estado: "en_transito" }} aria-label="Ver expedientes en tránsito" className="block h-full min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Ship} label="Expedientes en tránsito" value={expedientesEnTransito} tone="info" /></Link>,
+      "expedientes-por-llegar": <Link to="/expedientes" search={{ eta: 7 }} aria-label="Ver expedientes por llegar" className="block h-full min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Clock} label="Expedientes por llegar" value={expedientesPorLlegar} tone={expedientesPorLlegar ? "danger" : "primary"} sub="Próximos 7 días" /></Link>,
+      "permisos-vuce": <Link to="/permisos" search={{ vencimiento: 15 }} aria-label="Ver permisos VUCE por vencer" className="block h-full min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={FileWarning} label="Permisos VUCE por vencer" value={permisosPorVencer} tone="warning" sub="Próximos 15 días" /></Link>,
+      "transportes": <Link to="/transportes" search={{ estado: "en_transito,programado" }} aria-label="Ver transportes en tránsito" className="block h-full min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={Truck} label="Transportes en tránsito" value={transportesEnTransito} tone="info" /></Link>,
+      "alertas": <Link to="/dashboard" hash="atencion-requerida" aria-label="Ver alertas activas" className="block h-full min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><KPI icon={AlertTriangle} label="Alertas activas" value={isLoadingReminders ? null : reminders.length} tone="danger" /></Link>,
+      }} orden={ordenKpi.orden} onCambiar={ordenKpi.cambiar} />
 
       <div id="atencion-requerida" className="scroll-mt-4"><RemindersPanel /></div>
 
