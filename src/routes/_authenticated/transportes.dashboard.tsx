@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Truck, Package, DollarSign, TrendingUp, TrendingDown, AlertTriangle, Minus } from "lucide-react";
+import { ChevronLeft, ChevronRight, RotateCcw, Truck, Package, DollarSign, TrendingUp, TrendingDown, AlertTriangle, Minus } from "lucide-react";
 import {
   BarChart, Bar, Cell, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
@@ -17,6 +17,12 @@ import {
   ESTADOS_DASHBOARD, estadoDashboard, resumenTransportes, variacionPct,
   type EstadoDashboard, type ViajeDashboard,
 } from "@/lib/transportes-dashboard";
+import { BloquesOrdenables, FilaRecuadrosOrdenable, useOrdenPreferencia } from "@/components/orden-arrastrable";
+import {
+  BLOQUES_DASH_TRANSPORTES_IDS, CLAVE_BLOQUES_DASH_TRANSPORTES, CLAVE_ESTADOS_DASH_TRANSPORTES, CLAVE_KPI_DASH_TRANSPORTES,
+  ESTADOS_DASH_TRANSPORTES_IDS, KPI_DASH_TRANSPORTES_IDS, ordenarPorClave,
+  type BloqueDashTransportesId, type EstadoDashTransportesId, type KpiDashTransportesId,
+} from "@/lib/transportes-dashboard-disposicion";
 
 export const Route = createFileRoute("/_authenticated/transportes/dashboard")({
   head: () => ({
@@ -71,6 +77,13 @@ const COLOR_ESTADO: Record<EstadoDashboard, string> = {
   facturado: "var(--estado-facturado)",
 };
 
+const ETIQUETAS_KPI: Record<KpiDashTransportesId, string> = {
+  viajes: "Viajes", contenedores: "Contenedores", ingreso: "Ingreso Total", margen: "Margen",
+};
+const ETIQUETAS_BLOQUES: Record<BloqueDashTransportesId, string> = {
+  contenedores: "Contenedores", rentabilidad: "Rentabilidad",
+};
+
 /** Rango inclusivo en YYYY-MM-DD; se compara con la fecha del viaje (Salida o creación en hora de Santo Domingo). */
 type Rango = { desde: string; hasta: string };
 
@@ -79,6 +92,15 @@ function TransporteDashboard() {
   const [anchor, setAnchor] = useState<Date>(() => new Date());
   const [clienteId, setClienteId] = useState<string>("all");
   const [transportista, setTransportista] = useState<string>("all");
+  const ordenKpi = useOrdenPreferencia(CLAVE_KPI_DASH_TRANSPORTES, KPI_DASH_TRANSPORTES_IDS, "No se pudo guardar el orden de los recuadros");
+  const ordenEstados = useOrdenPreferencia(CLAVE_ESTADOS_DASH_TRANSPORTES, ESTADOS_DASH_TRANSPORTES_IDS, "No se pudo guardar el orden de los estados");
+  const ordenBloques = useOrdenPreferencia(CLAVE_BLOQUES_DASH_TRANSPORTES, BLOQUES_DASH_TRANSPORTES_IDS, "No se pudo guardar el orden de los bloques");
+  const personalizado = ordenKpi.personalizado || ordenEstados.personalizado || ordenBloques.personalizado;
+  const restablecerDisposicion = () => {
+    if (ordenKpi.personalizado) ordenKpi.restablecer();
+    if (ordenEstados.personalizado) ordenEstados.restablecer();
+    if (ordenBloques.personalizado) ordenBloques.restablecer();
+  };
 
   const range = useMemo(() => {
     if (periodo === "semanal") {
@@ -177,8 +199,9 @@ function TransporteDashboard() {
       const e = estadoDashboard(r as ViajeDashboard, conFactura);
       cuenta.set(e, (cuenta.get(e) ?? 0) + 1);
     }
-    return ESTADOS_DASHBOARD.map((e) => ({ ...e, count: cuenta.get(e.key) ?? 0, color: COLOR_ESTADO[e.key] }));
-  }, [current, conFactura]);
+    return ordenarPorClave(ESTADOS_DASHBOARD, ordenEstados.orden)
+      .map((e) => ({ ...e, count: cuenta.get(e.key) ?? 0, color: COLOR_ESTADO[e.key] }));
+  }, [current, conFactura, ordenEstados.orden]);
 
   const atrasados = useMemo(() => {
     const hoy = isoLocal(new Date());
@@ -250,34 +273,53 @@ function TransporteDashboard() {
       </div>
 
       {/* Resumen ejecutivo */}
-      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-        <KpiCard icon={<Truck className="h-4 w-4" />} title="Viajes" value={res.viajes.toString()} delta={deltas.viajes} />
-        <KpiCard icon={<Package className="h-4 w-4" />} title="Contenedores" value={res.contenedores.toString()} delta={deltas.contenedores} />
-        <KpiCard icon={<DollarSign className="h-4 w-4" />} title="Ingreso Total" hint="Monto a Facturar al Cliente" value={fmtRD(res.ingreso)} delta={deltas.ingreso} />
-        <KpiCard icon={<TrendingUp className="h-4 w-4" />} title="Margen" hint="Ganancia ÷ Ingreso" value={`${res.margenPct.toFixed(1)}%`} delta={deltas.margenPP} pp />
-      </div>
+      {personalizado && (
+        <div className="-mb-2 flex justify-end">
+          <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={restablecerDisposicion}>
+            <RotateCcw className="mr-1 h-3.5 w-3.5" /> Restablecer orden
+          </Button>
+        </div>
+      )}
+      <FilaRecuadrosOrdenable
+        ariaLabel="Resumen del período"
+        className="grid gap-3 grid-cols-2 lg:grid-cols-4"
+        orden={ordenKpi.orden}
+        onMover={ordenKpi.mover}
+        etiquetas={ETIQUETAS_KPI}
+        recuadros={{
+          viajes: <KpiCard icon={<Truck className="h-4 w-4" />} title="Viajes" value={res.viajes.toString()} delta={deltas.viajes} />,
+          contenedores: <KpiCard icon={<Package className="h-4 w-4" />} title="Contenedores" value={res.contenedores.toString()} delta={deltas.contenedores} />,
+          ingreso: <KpiCard icon={<DollarSign className="h-4 w-4" />} title="Ingreso Total" hint="Monto a Facturar al Cliente" value={fmtRD(res.ingreso)} delta={deltas.ingreso} />,
+          margen: <KpiCard icon={<TrendingUp className="h-4 w-4" />} title="Margen" hint="Ganancia ÷ Ingreso" value={`${res.margenPct.toFixed(1)}%`} delta={deltas.margenPP} pp />,
+        } satisfies Record<KpiDashTransportesId, React.ReactNode>}
+      />
 
       {/* Estados */}
       <Card>
         <CardHeader className="pb-2 flex-row items-center justify-between">
           <CardTitle className="text-base">Estados</CardTitle>
           {atrasados > 0 && (
-            <Badge variant="destructive" className="gap-1">
+            <Badge variant="destructive" className="mr-6 gap-1">
               <AlertTriangle className="h-3 w-3" /> {atrasados} atrasado{atrasados !== 1 ? "s" : ""}
             </Badge>
           )}
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-            {estadosData.map((e) => (
-              <div key={e.key} className="rounded-md border p-3" style={{ borderLeft: `4px solid ${e.color}` }}>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <FilaRecuadrosOrdenable
+            ariaLabel="Viajes por estado"
+            className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4"
+            orden={ordenEstados.orden}
+            onMover={ordenEstados.mover}
+            etiquetas={Object.fromEntries(ESTADOS_DASHBOARD.map((e) => [e.key, e.label])) as Record<EstadoDashTransportesId, string>}
+            recuadros={Object.fromEntries(estadosData.map((e) => [e.key, (
+              <div className="h-full rounded-md border bg-card p-3" style={{ borderLeft: `4px solid ${e.color}` }}>
+                <div className="flex items-center gap-1.5 pr-5 text-xs text-muted-foreground">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ background: e.color }} />{e.label}
                 </div>
                 <div className="text-2xl font-semibold">{e.count}</div>
               </div>
-            ))}
-          </div>
+            )])) as Record<EstadoDashTransportesId, React.ReactNode>}
+          />
           <div className="h-48">
             <ResponsiveContainer>
               <BarChart data={estadosData}>
@@ -305,65 +347,75 @@ function TransporteDashboard() {
         </CardContent>
       </Card>
 
-      {/* Contenedores */}
-      <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-base">Contenedores</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-md border p-3">
-              <div className="text-xs text-muted-foreground">Total movilizados</div>
-              <div className="text-2xl font-semibold">{res.contenedores}</div>
-            </div>
-            <div className="rounded-md border p-3">
-              <div className="text-xs text-muted-foreground">Promedio por viaje</div>
-              <div className="text-2xl font-semibold">{promedioCont.toFixed(2)}</div>
-            </div>
-          </div>
-          <div className="h-56">
-            <ResponsiveContainer>
-              <BarChart data={trend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="label" fontSize={12} stroke="var(--muted-foreground)" />
-                <YAxis fontSize={12} allowDecimals={false} stroke="var(--muted-foreground)" />
-                <Tooltip cursor={{ fill: "var(--muted)" }} formatter={(v: number) => [v, "Contenedores"]}
-                  contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", color: "var(--popover-foreground)" }} />
-                <Bar dataKey="contenedores" fill="var(--info)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Rentabilidad */}
-      <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-base">Rentabilidad (Terrestre)</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <MiniStat label="Costo del viaje" value={fmtRD(res.costo)} />
-            <MiniStat label="Ingresos (Monto a Facturar)" value={fmtRD(res.ingreso)} />
-            <MiniStat label="Ganancia RD$" value={fmtRD(res.ganancia)} />
-            <MiniStat label="Margen %" value={`${res.margenPct.toFixed(1)}%`}
-              trend={deltas.margenPP == null ? undefined : deltas.margenPP >= 0 ? "up" : "down"}
-              extra={deltas.margenPP == null ? "Sin período anterior" : `${deltas.margenPP >= 0 ? "↑" : "↓"} ${Math.abs(deltas.margenPP).toFixed(1)}pp`} />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <MiniStat label="Pendiente de cobro (Clientes)" value={fmtRD(res.pendienteCobro)} tone="warning" />
-            <MiniStat label="Neto a pagar a Transportistas (Monto Neto a Pagar)" value={fmtRD(res.netoPagar)} tone="info" />
-          </div>
-          <div className="h-56">
-            <ResponsiveContainer>
-              <LineChart data={trend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="label" fontSize={12} stroke="var(--muted-foreground)" />
-                <YAxis fontSize={12} unit="%" stroke="var(--muted-foreground)" />
-                <Tooltip formatter={(v: number) => [`${v}%`, "Margen"]}
-                  contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", color: "var(--popover-foreground)" }} />
-                <Line type="monotone" dataKey="margen" stroke="var(--success)" strokeWidth={2} dot />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      <BloquesOrdenables
+        ariaLabel="Bloques del dashboard"
+        className="space-y-4"
+        orden={ordenBloques.orden}
+        onMover={ordenBloques.mover}
+        etiquetas={ETIQUETAS_BLOQUES}
+        bloques={{
+          contenedores: (
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-base">Contenedores</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-md border p-3">
+                  <div className="text-xs text-muted-foreground">Total movilizados</div>
+                  <div className="text-2xl font-semibold">{res.contenedores}</div>
+                </div>
+                <div className="rounded-md border p-3">
+                  <div className="text-xs text-muted-foreground">Promedio por viaje</div>
+                  <div className="text-2xl font-semibold">{promedioCont.toFixed(2)}</div>
+                </div>
+              </div>
+              <div className="h-56">
+                <ResponsiveContainer>
+                  <BarChart data={trend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="label" fontSize={12} stroke="var(--muted-foreground)" />
+                    <YAxis fontSize={12} allowDecimals={false} stroke="var(--muted-foreground)" />
+                    <Tooltip cursor={{ fill: "var(--muted)" }} formatter={(v: number) => [v, "Contenedores"]}
+                      contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", color: "var(--popover-foreground)" }} />
+                    <Bar dataKey="contenedores" fill="var(--info)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+          ),
+          rentabilidad: (
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-base">Rentabilidad (Terrestre)</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <MiniStat label="Costo del viaje" value={fmtRD(res.costo)} />
+                <MiniStat label="Ingresos (Monto a Facturar)" value={fmtRD(res.ingreso)} />
+                <MiniStat label="Ganancia RD$" value={fmtRD(res.ganancia)} />
+                <MiniStat label="Margen %" value={`${res.margenPct.toFixed(1)}%`}
+                  trend={deltas.margenPP == null ? undefined : deltas.margenPP >= 0 ? "up" : "down"}
+                  extra={deltas.margenPP == null ? "Sin período anterior" : `${deltas.margenPP >= 0 ? "↑" : "↓"} ${Math.abs(deltas.margenPP).toFixed(1)}pp`} />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <MiniStat label="Pendiente de cobro (Clientes)" value={fmtRD(res.pendienteCobro)} tone="warning" />
+                <MiniStat label="Neto a pagar a Transportistas (Monto Neto a Pagar)" value={fmtRD(res.netoPagar)} tone="info" />
+              </div>
+              <div className="h-56">
+                <ResponsiveContainer>
+                  <LineChart data={trend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="label" fontSize={12} stroke="var(--muted-foreground)" />
+                    <YAxis fontSize={12} unit="%" stroke="var(--muted-foreground)" />
+                    <Tooltip formatter={(v: number) => [`${v}%`, "Margen"]}
+                      contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", color: "var(--popover-foreground)" }} />
+                    <Line type="monotone" dataKey="margen" stroke="var(--success)" strokeWidth={2} dot />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+          ),
+        } satisfies Record<BloqueDashTransportesId, React.ReactNode>}
+      />
     </div>
   );
 }
@@ -371,9 +423,9 @@ function TransporteDashboard() {
 function KpiCard({ icon, title, hint, value, delta, pp }: { icon: React.ReactNode; title: string; hint?: string; value: string; delta: number | null; pp?: boolean }) {
   const up = (delta ?? 0) >= 0;
   return (
-    <Card>
+    <Card className="h-full">
       <CardContent className="p-4">
-        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center justify-between gap-2 pr-5 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5" title={hint}>{icon}<span>{title}</span></div>
           {delta == null ? (
             <span className="flex items-center gap-0.5" title="El período anterior no tiene datos para comparar">

@@ -143,6 +143,71 @@ export function FilaRecuadrosOrdenable<T extends string>({
   );
 }
 
+// ---------- Bloques grandes (tarjetas con gráficas) ----------
+
+function BloqueOrdenable({ id, etiqueta, children }: { id: string; etiqueta: string; children: ReactNode }) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      data-bloque-id={id}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
+      className={`group relative min-w-0 ${isDragging ? "z-10 opacity-80 shadow-lg" : ""}`}
+    >
+      {children}
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        {...attributes}
+        {...listeners}
+        aria-label={`Mover bloque ${etiqueta}`}
+        title="Arrastra para reordenar"
+        className={`absolute right-2 top-2 touch-none ${isDragging ? "cursor-grabbing" : "cursor-grab"} ${claseAsa}`}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+/**
+ * Bloques apilados reordenables arrastrando su asa (arriba a la derecha);
+ * el contenido (gráficas, recuadros anidados) sigue funcionando con normalidad.
+ */
+export function BloquesOrdenables<T extends string>({
+  orden,
+  bloques,
+  etiquetas,
+  onMover,
+  ariaLabel,
+  className,
+}: {
+  orden: T[];
+  bloques: Record<T, ReactNode>;
+  etiquetas: Record<T, string>;
+  onMover: (activo: string, destino: string) => void;
+  ariaLabel: string;
+  className?: string;
+}) {
+  const sensors = useSensoresOrden(4);
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={(e) => { if (e.over && e.active.id !== e.over.id) onMover(String(e.active.id), String(e.over.id)); }}
+      accessibility={{ screenReaderInstructions: { draggable: "Pulsa espacio para tomar el bloque, usa las flechas arriba y abajo para moverlo y espacio para soltarlo." } }}
+    >
+      <SortableContext items={orden} strategy={rectSortingStrategy}>
+        <div aria-label={ariaLabel} className={className}>
+          {orden.map((id) => (
+            <BloqueOrdenable key={id} id={id} etiqueta={etiquetas[id]}>{bloques[id]}</BloqueOrdenable>
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
 // ---------- Columnas de tabla ----------
 
 /** Envuelve la fila de encabezados: sus `ThOrdenable` se reordenan arrastrando el asa. */
