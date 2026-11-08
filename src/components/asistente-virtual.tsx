@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useQuery } from "@tanstack/react-query";
-import { Minus, X, MessageCircleQuestion, RotateCcw } from "lucide-react";
+import { Minus, X, MessageCircleQuestion, RotateCcw, Square, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,8 @@ import {
   guardarHistorialSesion,
   leerHistorialSesion,
 } from "@/lib/asistente-virtual";
+import { ASISTENTE_CLAVE_MODO_VOZ } from "@/lib/asistente-voz";
+import { useLecturaVoz } from "@/hooks/use-lectura-voz";
 import avatar from "@/assets/asistente-avatar.png";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,6 +83,40 @@ export function AsistenteVirtual() {
 
   const ocupado = status === "submitted" || status === "streaming";
 
+  // Lectura en voz alta (síntesis nativa del navegador, en español).
+  const { soportado: vozSoportada, hablandoId, leer, detener } = useLecturaVoz();
+  const [modoVoz, setModoVoz] = useState(false);
+  useEffect(() => {
+    try {
+      setModoVoz(window.localStorage.getItem(ASISTENTE_CLAVE_MODO_VOZ) === "1");
+    } catch {
+      /* sin acceso a localStorage */
+    }
+  }, []);
+  const alternarModoVoz = () => {
+    const activo = !modoVoz;
+    setModoVoz(activo);
+    if (!activo) detener();
+    try {
+      window.localStorage.setItem(ASISTENTE_CLAVE_MODO_VOZ, activo ? "1" : "0");
+    } catch {
+      /* sin acceso a localStorage */
+    }
+  };
+
+  // Modo voz: leer cada respuesta nueva en cuanto termina de llegar.
+  const estadoAnterior = useRef(status);
+  useEffect(() => {
+    const antes = estadoAnterior.current;
+    estadoAnterior.current = status;
+    if (!(antes === "streaming" || antes === "submitted") || status !== "ready") return;
+    if (!modoVoz || !abierto || !vozSoportada) return;
+    const final = messages[messages.length - 1];
+    if (final?.role !== "assistant") return;
+    const texto = textoMensaje(final);
+    if (texto) leer(final.id, texto);
+  }, [status, messages, modoVoz, abierto, vozSoportada, leer]);
+
   // Historial solo durante la sesión de esta pestaña.
   useEffect(() => {
     if (!ocupado) guardarHistorialSesion(messages);
@@ -109,6 +145,7 @@ export function AsistenteVirtual() {
   const preguntar = (texto: string) => {
     const limpio = texto.trim().slice(0, ASISTENTE_MAX_CARACTERES);
     if (!limpio || ocupado) return;
+    detener();
     clearError();
     void sendMessage({ text: limpio });
   };
@@ -117,6 +154,7 @@ export function AsistenteVirtual() {
 
   const nuevaConversacion = () => {
     if (ocupado) void stop();
+    detener();
     setMessages([]);
     clearError();
     borrarHistorialSesion();
@@ -125,6 +163,30 @@ export function AsistenteVirtual() {
   const cerrar = () => {
     nuevaConversacion();
     setAbierto(false);
+  };
+
+  const minimizar = () => {
+    detener();
+    setAbierto(false);
+  };
+
+  const botonLectura = (id: string, texto: string) => {
+    if (!vozSoportada) return null;
+    const leyendo = hablandoId === id;
+    return (
+      <Button
+        type="button"
+        size="icon-xs"
+        variant="ghost"
+        className="-mt-1 self-start text-muted-foreground hover:text-foreground"
+        onClick={() => (leyendo ? detener() : leer(id, texto))}
+        title={leyendo ? "Detener lectura" : "Escuchar respuesta"}
+        aria-label={leyendo ? "Detener lectura" : "Escuchar respuesta"}
+        aria-pressed={leyendo}
+      >
+        {leyendo ? <Square className="h-3.5 w-3.5 fill-current" /> : <Volume2 className="h-3.5 w-3.5" />}
+      </Button>
+    );
   };
 
   const ultimo = messages[messages.length - 1];
@@ -144,6 +206,22 @@ export function AsistenteVirtual() {
               <p className="truncate text-[14px] font-semibold leading-tight">{ASISTENTE_NOMBRE}</p>
               <p className="truncate text-[11px] opacity-80">Orientación general · uso interno</p>
             </div>
+            {vozSoportada && (
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                className={cn(
+                  "text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground",
+                  modoVoz && "bg-primary-foreground/20",
+                )}
+                onClick={alternarModoVoz}
+                aria-pressed={modoVoz}
+                title={modoVoz ? "Modo voz activado: lee cada respuesta nueva" : "Activar modo voz"}
+                aria-label="Modo voz"
+              >
+                {modoVoz ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+              </Button>
+            )}
             {messages.length > 0 && (
               <Button
                 size="icon-sm"
@@ -160,7 +238,7 @@ export function AsistenteVirtual() {
               size="icon-sm"
               variant="ghost"
               className="text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground"
-              onClick={() => setAbierto(false)}
+              onClick={minimizar}
               title="Minimizar"
               aria-label="Minimizar asistente"
             >
@@ -182,6 +260,7 @@ export function AsistenteVirtual() {
             <ConversationContent className="gap-4 p-3">
               <Message from="assistant">
                 <MessageContent className="text-[13px] leading-relaxed">{SALUDO}</MessageContent>
+                {botonLectura("saludo", SALUDO)}
               </Message>
 
               {preguntas.length > 0 && (
@@ -220,6 +299,7 @@ export function AsistenteVirtual() {
                         <p className="whitespace-pre-wrap">{texto}</p>
                       )}
                     </MessageContent>
+                    {m.role === "assistant" && !(ocupado && m.id === ultimo?.id) && botonLectura(m.id, texto)}
                   </Message>
                 );
               })}
@@ -250,7 +330,9 @@ export function AsistenteVirtual() {
                 className="min-h-10 text-[13px]"
               />
               <PromptInputFooter className="justify-between">
-                <span className="px-1 text-[11px] text-muted-foreground">No consulta datos del sistema</span>
+                <span className="px-1 text-[11px] text-muted-foreground">
+                  {modoVoz && vozSoportada ? "Modo voz activo · No consulta datos del sistema" : "No consulta datos del sistema"}
+                </span>
                 <PromptInputSubmit status={status} onStop={() => void stop()} />
               </PromptInputFooter>
             </PromptInput>
@@ -260,7 +342,10 @@ export function AsistenteVirtual() {
 
       <button
         type="button"
-        onClick={() => setAbierto((v) => !v)}
+        onClick={() => {
+          if (abierto) detener();
+          setAbierto((v) => !v);
+        }}
         aria-label={abierto ? "Minimizar asistente" : `Abrir ${ASISTENTE_NOMBRE}`}
         title={abierto ? "Minimizar asistente" : ASISTENTE_NOMBRE}
         className="fixed bottom-4 right-4 z-50 flex h-16 w-16 items-center justify-center rounded-full border-2 border-primary bg-card shadow-xl transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
