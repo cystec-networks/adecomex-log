@@ -5344,12 +5344,14 @@ export type Database = {
           created_by: string | null
           estado_vigencia: string
           fecha_emision: string | null
+          fecha_emision_detectada: boolean
           fragmentos_listos: number
           fragmentos_total: number
           fuente_url: string | null
           id: string
           notas: string | null
           numero: string | null
+          numero_detectado: boolean
           paginas: number | null
           paginas_sin_texto: number | null
           procesado_at: string | null
@@ -5367,12 +5369,14 @@ export type Database = {
           created_by?: string | null
           estado_vigencia?: string
           fecha_emision?: string | null
+          fecha_emision_detectada?: boolean
           fragmentos_listos?: number
           fragmentos_total?: number
           fuente_url?: string | null
           id?: string
           notas?: string | null
           numero?: string | null
+          numero_detectado?: boolean
           paginas?: number | null
           paginas_sin_texto?: number | null
           procesado_at?: string | null
@@ -5390,12 +5394,14 @@ export type Database = {
           created_by?: string | null
           estado_vigencia?: string
           fecha_emision?: string | null
+          fecha_emision_detectada?: boolean
           fragmentos_listos?: number
           fragmentos_total?: number
           fuente_url?: string | null
           id?: string
           notas?: string | null
           numero?: string | null
+          numero_detectado?: boolean
           paginas?: number | null
           paginas_sin_texto?: number | null
           procesado_at?: string | null
@@ -5454,6 +5460,8 @@ export type Database = {
       novedades_comercio_exterior: {
         Row: {
           categoria: string
+          clasificacion_criterio: number | null
+          clasificacion_manual: boolean
           created_at: string
           created_by: string | null
           fecha_captura: string
@@ -5473,6 +5481,8 @@ export type Database = {
         }
         Insert: {
           categoria: string
+          clasificacion_criterio?: number | null
+          clasificacion_manual?: boolean
           created_at?: string
           created_by?: string | null
           fecha_captura?: string
@@ -5492,6 +5502,8 @@ export type Database = {
         }
         Update: {
           categoria?: string
+          clasificacion_criterio?: number | null
+          clasificacion_manual?: boolean
           created_at?: string
           created_by?: string | null
           fecha_captura?: string

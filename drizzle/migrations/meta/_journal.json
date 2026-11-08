@@ -764,6 +764,13 @@
       "when": 1794152826049,
       "tag": "0108_base_normativa_y_clasificacion_novedades",
       "breakpoints": true
+    },
+    {
+      "idx": 109,
+      "version": "7",
+      "when": 1794155777089,
+      "tag": "0109_novedades_criterio_y_normativa_detectada",
+      "breakpoints": true
     }
   ]
 }

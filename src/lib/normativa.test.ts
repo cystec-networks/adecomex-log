@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   analizarTextoPaginas,
+  detectarDatosDocumento,
+  formatearFichasNormativaParaPrompt,
   formatearNormativaParaPrompt,
   fragmentarDocumento,
   nombreArchivoSeguro,
@@ -81,5 +83,70 @@ describe("base normativa · artículos al inicio de página", () => {
     const art3 = f.find((x) => x.contenido.startsWith("Artículo 3"));
     expect(art3?.articulo).toBe("Artículo 3");
     expect(art3?.pagina_inicio).toBe(2);
+  });
+});
+
+describe("detección de número y fecha de emisión", () => {
+  const HOY = new Date("2026-11-08T12:00:00Z");
+  const cuerpo = relleno(4);
+
+  it("ley: número del encabezado y fecha de promulgación del cierre (no las de las cámaras)", () => {
+    const paginas = [
+      `LEY NÚM. 168-21\nLEY GENERAL DE ADUANAS\nVISTA: La Ley núm. 3489 del 14 de febrero de 1953.\n${cuerpo}`,
+      cuerpo,
+      `DADA en la Sala de Sesiones del Senado a los diez (10) días del mes de junio del año dos mil veintiuno (2021).\nDADA en Santo Domingo de Guzmán, a los nueve (9) días del mes de agosto del año dos mil veintiuno (2021).\n${cuerpo}`,
+    ];
+    expect(detectarDatosDocumento(paginas, "Ley", HOY)).toEqual({ numero: "168-21", fecha_emision: "2021-08-09" });
+  });
+
+  it("norma general con nombre intermedio y fecha simple en el encabezado", () => {
+    const paginas = [`Santo Domingo, 15 de enero de 2026\nNORMA GENERAL SOBRE FACTURACIÓN No. 07-2018\n${cuerpo}`, cuerpo];
+    expect(detectarDatosDocumento(paginas, "Norma general", HOY)).toEqual({ numero: "07-2018", fecha_emision: "2026-01-15" });
+  });
+
+  it("resolución con prefijo de institución y fecha numérica", () => {
+    const paginas = [`RESOLUCIÓN DGA-001-2024\n${cuerpo}`, `Dada el 03/04/2024.\n${cuerpo}`];
+    expect(detectarDatosDocumento(paginas, "Resolución", HOY)).toEqual({ numero: "DGA-001-2024", fecha_emision: "2024-04-03" });
+  });
+
+  it("sin datos reconocibles no inventa nada; fechas futuras o imposibles se descartan", () => {
+    expect(detectarDatosDocumento([`Guía práctica de importación\n${cuerpo}`], "Guía", HOY)).toEqual({ numero: null, fecha_emision: null });
+    expect(detectarDatosDocumento([`Decreto 12-27 del 31 de febrero de 2027\n${cuerpo}`], "Decreto", HOY).fecha_emision).toBeNull();
+    expect(detectarDatosDocumento([], "Ley", HOY)).toEqual({ numero: null, fecha_emision: null });
+  });
+
+  it("decreto real escaneado: «NÚMERO: 755-22» y fecha con espacios y «a110» del reconocimiento de texto", () => {
+    const paginas = [
+      `L U I S A B I N A D E R\nNÚMERO: 755-22\nCONSIDERANDO: Que el 9 de agosto de202 l fue promulgada la Ley núm. 1 6 8 - 2 1 , de Aduanas\n${cuerpo}`,
+      cuerpo,
+      `ARTÍCULO 318. Envíese a las instituciones correspondientes.\nDADO en la ciudad de Santo Domingo de Guzmán, Distrito Nacional, a los veintitrés ( 23 )dias del mes de diciembre del a110 dos mil\nveintidós (2022); año 179 de la Independencia.\n${cuerpo}`,
+    ];
+    expect(detectarDatosDocumento(paginas, "Decreto", HOY)).toEqual({ numero: "755-22", fecha_emision: "2022-12-23" });
+  });
+
+  it("un número suelto de una o dos cifras no se toma como número del documento", () => {
+    expect(detectarDatosDocumento([`Circular 3 a los importadores\n${cuerpo}`], "Circular", HOY).numero).toBeNull();
+  });
+
+  it("las fichas avisan si el documento aún se procesa y si los datos están sin confirmar", () => {
+    const texto = formatearFichasNormativaParaPrompt([
+      {
+        titulo: "Ley General de Aduanas",
+        tipo: "Ley",
+        numero: "168-21",
+        numero_detectado: true,
+        fecha_emision: "2021-08-09",
+        fecha_emision_detectada: false,
+        estado_vigencia: "vigente",
+        procesamiento_estado: "procesando",
+        fragmentos_total: 120,
+        fragmentos_listos: 40,
+        fuente_url: null,
+      },
+    ]);
+    expect(texto).toContain("Número: 168-21 (detectado automáticamente, sin confirmar)");
+    expect(texto).toContain("Fecha de emisión: 09/08/2021 |");
+    expect(texto).toContain("AÚN SE ESTÁ PROCESANDO (40 de 120 fragmentos listos)");
+    expect(formatearFichasNormativaParaPrompt([])).toContain("no tiene documentos");
   });
 });

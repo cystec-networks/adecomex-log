@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { normalizarClasificacion, novedadEnPanel } from "./novedades-comercio";
-import { ordenarNovedadesPanel, type NovedadPanel } from "./novedades-panel";
+import { filtrarNovedadesPanel, ordenarNovedadesPanel, type NovedadPanel } from "./novedades-panel";
 
 // 8 de noviembre de 2026, 11:00 en Santo Domingo.
 const HOY = new Date("2026-11-08T15:00:00Z");
@@ -65,5 +65,60 @@ describe("novedades relevantes en el Panel", () => {
       sectores: ["General"],
       relevancia: "Baja",
     });
+  });
+});
+
+describe("relevancia del Panel y criterio de «Alta»", () => {
+  const n = (id: string, relevancia: string): NovedadPanel => ({
+    id,
+    titulo: id,
+    fuente_nombre: "VUCE",
+    url: `https://x/${id}`,
+    fecha_publicacion: null,
+    fecha_captura: "2026-11-08T12:00:00Z",
+    impacto: "Permisos",
+    sectores: ["General"],
+    relevancia,
+  });
+
+  it("por defecto solo muestra Alta; con la opción, también Media", () => {
+    const lista = [n("a", "Alta"), n("m", "Media")];
+    expect(filtrarNovedadesPanel(lista, false).map((x) => x.id)).toEqual(["a"]);
+    expect(filtrarNovedadesPanel(lista, true).map((x) => x.id)).toEqual(["a", "m"]);
+  });
+
+  const alta = {
+    relevancia: "Alta",
+    impacto: "Arancel/Impuestos",
+    sectores: ["Lácteos"],
+    naturaleza: "cambio_obligatorio",
+    vigencia: "vigente",
+    afecta_sectores_adecomex: true,
+  };
+
+  it("conserva Alta para un cambio obligatorio vigente o por entrar en vigor que afecta a los sectores", () => {
+    expect(normalizarClasificacion(alta).relevancia).toBe("Alta");
+    expect(normalizarClasificacion({ ...alta, vigencia: "por_entrar_en_vigor" }).relevancia).toBe("Alta");
+  });
+
+  it("baja a Media un aviso informativo o listado aunque la IA diga Alta", () => {
+    expect(normalizarClasificacion({ ...alta, naturaleza: "informativo" }).relevancia).toBe("Media");
+  });
+
+  it("baja a Media lo que no está vigente ni por entrar en vigor", () => {
+    expect(normalizarClasificacion({ ...alta, vigencia: "sin_aplicacion" }).relevancia).toBe("Media");
+  });
+
+  it("baja a Media lo que no afecta a los sectores de ADECOMEX", () => {
+    expect(normalizarClasificacion({ ...alta, afecta_sectores_adecomex: false }).relevancia).toBe("Media");
+  });
+
+  it("baja a Media si el impacto es «Otro»", () => {
+    expect(normalizarClasificacion({ ...alta, impacto: "Otro" }).relevancia).toBe("Media");
+  });
+
+  it("no sube nunca la relevancia: Media y Baja se mantienen", () => {
+    expect(normalizarClasificacion({ ...alta, relevancia: "Baja" }).relevancia).toBe("Baja");
+    expect(normalizarClasificacion({ ...alta, relevancia: "Media" }).relevancia).toBe("Media");
   });
 });

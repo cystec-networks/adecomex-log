@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck, Refre
 import { toast } from "sonner";
 import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { daysFromToday } from "@/lib/dates";
 import { ESTADO_LABEL } from "@/lib/estados-expediente";
 import { cotizacionEstadoLabel, COTIZACION_ESTADO_CLASS } from "@/lib/estados-cotizacion";
@@ -19,7 +20,15 @@ import { recordatoriosAlertasExpedientes } from "@/lib/alertas-expediente-panel"
 import { KpiFilaOrdenable, useOrdenKpiPanel } from "@/components/kpi-fila-ordenable";
 import { AlertasColumnasOrdenables, useDisposicionAlertas } from "@/components/alertas-columnas-ordenables";
 import type { GrupoAlertaId } from "@/lib/panel-alertas-disposicion";
-import { marcarNovedadesVistas, obtenerNovedadesPanel, type NovedadPanel } from "@/lib/novedades-panel";
+import {
+  CLAVE_NOVEDADES_INCLUIR_MEDIA,
+  filtrarNovedadesPanel,
+  guardarIncluirMedia,
+  leerIncluirMedia,
+  marcarNovedadesVistas,
+  obtenerNovedadesPanel,
+  type NovedadPanel,
+} from "@/lib/novedades-panel";
 import { textoFechaNovedad } from "@/lib/novedades-comercio";
 
 
@@ -314,7 +323,10 @@ function ordenarPorUrgencia(items: Reminder[]): Reminder[] {
     .map((x) => x.r);
 }
 
-/** «Novedades relevantes»: Alta/Media de los últimos 7 días no vistas por el usuario. */
+/**
+ * «Novedades relevantes»: últimos 7 días no vistas por el usuario. Por defecto
+ * solo relevancia Alta; cada usuario puede incluir también Media.
+ */
 function useNovedadesPanel() {
   const qc = useQueryClient();
   const { data: userId } = useQuery({
@@ -329,6 +341,25 @@ function useNovedadesPanel() {
     queryFn: () => obtenerNovedadesPanel(supabase, userId!),
     refetchInterval: 10 * 60_000,
   });
+  const clavePreferencia = ["preferencia-usuario", CLAVE_NOVEDADES_INCLUIR_MEDIA, userId];
+  const { data: incluirMedia = false } = useQuery({
+    queryKey: clavePreferencia,
+    enabled: !!userId,
+    queryFn: () => leerIncluirMedia(supabase, userId!),
+    staleTime: Infinity,
+  });
+  const cambiarIncluirMedia = useMutation({
+    mutationFn: (valor: boolean) => guardarIncluirMedia(supabase, userId!, valor),
+    onMutate: (valor) => {
+      const anterior = qc.getQueryData<boolean>(clavePreferencia);
+      qc.setQueryData(clavePreferencia, valor);
+      return { anterior };
+    },
+    onError: (_e, _v, ctx) => {
+      qc.setQueryData(clavePreferencia, ctx?.anterior ?? false);
+      toast.error("No se pudo guardar la preferencia de relevancia");
+    },
+  });
   const marcarVistas = async (ids: string[]) => {
     if (!userId || ids.length === 0) return;
     const anterior = qc.getQueryData<NovedadPanel[]>(queryKey);
@@ -337,10 +368,22 @@ function useNovedadesPanel() {
       await marcarNovedadesVistas(supabase, userId, ids);
     } catch {
       qc.setQueryData(queryKey, anterior);
-      toast.error("No se pudo marcar la novedad como vista");
+      toast.error(ids.length > 1 ? "No se pudieron marcar las novedades como vistas" : "No se pudo marcar la novedad como vista");
     }
   };
-  return { novedades: consulta.data ?? [], isLoading: consulta.isLoading, isError: consulta.isError, marcarVistas };
+  const todas = consulta.data ?? [];
+  const novedades = filtrarNovedadesPanel(todas, incluirMedia);
+  return {
+    /** Las que se muestran y cuentan (Alta, o Alta + Media). */
+    novedades,
+    /** Media pendientes que quedan ocultas mientras no se incluyan. */
+    mediaOcultas: incluirMedia ? 0 : todas.filter((n) => n.relevancia === "Media").length,
+    incluirMedia,
+    setIncluirMedia: (v: boolean) => { if (userId) cambiarIncluirMedia.mutate(v); },
+    isLoading: consulta.isLoading,
+    isError: consulta.isError,
+    marcarVistas,
+  };
 }
 
 const RELEVANCIA_CLASE: Record<string, string> = {
@@ -361,12 +404,41 @@ function RemindersPanel() {
 
   const contenidoNovedades = (
     <>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t px-3 py-2">
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Switch
+            checked={novedadesPanel.incluirMedia}
+            onCheckedChange={novedadesPanel.setIncluirMedia}
+            aria-label="Incluir también relevancia Media"
+          />
+          Incluir también relevancia Media
+          {novedadesPanel.mediaOcultas > 0 && ` (${novedadesPanel.mediaOcultas} oculta${novedadesPanel.mediaOcultas === 1 ? "" : "s"})`}
+        </label>
+        {novedadesPanel.novedades.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => void novedadesPanel.marcarVistas(novedadesPanel.novedades.map((n) => n.id))}
+            title="Ocultar de tu Panel todas las novedades mostradas; siguen en la lista de Novedades"
+          >
+            Marcar todas como vistas ({novedadesPanel.novedades.length})
+          </Button>
+        )}
+      </div>
+      {novedadesPanel.novedades.length === 0 && (
+        <p className="border-t px-3 py-3 text-xs text-muted-foreground">
+          No hay novedades de relevancia Alta pendientes.
+        </p>
+      )}
+      {novedadesPanel.novedades.length > 0 && (
       <div className="flex items-center gap-2 px-3 py-1.5 border-t bg-muted/30 text-[11px] uppercase text-muted-foreground">
         <span className="h-2 w-2 shrink-0" aria-hidden />
         <div className="min-w-0 flex-1" />
         <span className="w-[60px] shrink-0 text-center">Relevancia</span>
         <span className="w-[44px] shrink-0 text-center">Vista</span>
       </div>
+      )}
       <ul className="divide-y border-t">
         {novedadesPanel.novedades.map((n) => (
           <li key={n.id} className="px-3 py-2.5 flex flex-wrap sm:flex-nowrap items-center gap-2 hover:bg-muted/40">
@@ -517,14 +589,23 @@ function RemindersPanel() {
         {isError && <div role="alert" className="px-4 py-2 text-sm text-destructive">No se pudieron consultar todas las alertas de expedientes. Intente refrescar.</div>}
         {isLoading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Cargando alertas…</div>
-        ) : total === 0 ? (
+        ) : grouped.length === 0 && novedadesPanel.novedades.length === 0 && novedadesPanel.mediaOcultas === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Sin alertas pendientes 🎉</div>
         ) : (
           <AlertasColumnasOrdenables
             grupos={{
               ...Object.fromEntries(grouped.map((g) => [g.key, { label: g.label, emoji: g.emoji, cantidad: g.items.length, contenido: contenidoGrupo(g) }])),
-              ...(novedadesPanel.novedades.length > 0
-                ? { novedades: { label: "Novedades relevantes", emoji: "📰", cantidad: novedadesPanel.novedades.length, contenido: contenidoNovedades } }
+              ...(novedadesPanel.novedades.length > 0 || novedadesPanel.mediaOcultas > 0
+                ? {
+                    novedades: {
+                      label: "Novedades relevantes",
+                      emoji: "📰",
+                      cantidad: novedadesPanel.novedades.length,
+                      contenido: contenidoNovedades,
+                      // Con Media oculta y sin Alta pendientes, el bloque sigue visible (en 0) para poder incluir Media.
+                      mostrarVacio: novedadesPanel.mediaOcultas > 0,
+                    },
+                  }
                 : {}),
             }}
             guardada={disposicion.guardada}

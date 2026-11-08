@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/select";
 import {
   CATEGORIAS_NOVEDAD,
+  CRITERIO_RELEVANCIA_VERSION,
   IMPACTOS_NOVEDAD,
   RELEVANCIAS_NOVEDAD,
   SECTORES_NOVEDAD,
@@ -203,17 +204,35 @@ function NovedadesAdmin() {
         (!q || `${n.titulo} ${n.resumen} ${n.fuente_nombre}`.toLowerCase().includes(q)),
     );
   }, [novedades, busqueda, categoria, relevancia]);
-  const sinClasificar = novedades.filter((n) => !n.relevancia).length;
+  // Sin clasificar o clasificadas con un criterio anterior, y nunca corregidas a mano.
+  const sinClasificar = novedades.filter(
+    (n) => !n.clasificacion_manual && (n.clasificacion_criterio ?? 0) < CRITERIO_RELEVANCIA_VERSION,
+  ).length;
 
+  /** Clasifica/reevalúa por lotes hasta terminar (o hasta el primer fallo) y resume los cambios. */
   async function clasificarPendientes() {
     setClasificando(true);
     try {
-      const r = await clasificar();
-      if (!r.ok) toast.error(r.mensaje);
-      else
-        toast.success(
-          r.mensaje + (r.restantes ? ` Quedan ${r.restantes}; pulsa de nuevo para continuar.` : ""),
-        );
+      let total = 0;
+      const cambios: Record<string, number> = {};
+      for (let vuelta = 0; vuelta < 20; vuelta++) {
+        const r = await clasificar();
+        refrescar();
+        if (!r.ok) {
+          toast.error(total ? `${r.mensaje} Se alcanzaron a reevaluar ${total}.` : r.mensaje);
+          return;
+        }
+        total += r.clasificadas;
+        for (const [k, v] of Object.entries(r.cambios)) cambios[k] = (cambios[k] ?? 0) + v;
+        if (!r.restantes || r.clasificadas === 0) break;
+      }
+      const resumen = Object.entries(cambios)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(" · ");
+      toast.success(
+        `${total} novedad(es) evaluada(s) con el criterio actual.${resumen ? ` Cambios de relevancia — ${resumen}.` : " Sin cambios de relevancia."}`,
+        { duration: 10_000 },
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "No se pudo clasificar");
     } finally {
@@ -335,6 +354,17 @@ function NovedadesAdmin() {
         sectores: n.relevancia || n.impacto ? normalizarSectores(n.sectores) : (n.sectores ?? []),
         relevancia: n.relevancia ?? null,
       };
+      // Si el administrador cambia la clasificación, queda como corrección manual
+      // y la reevaluación con IA ya no la toca.
+      const original = n.id ? novedades.find((x) => x.id === n.id) : undefined;
+      const mismaClasificacion =
+        !!original &&
+        original.impacto === fila.impacto &&
+        original.relevancia === fila.relevancia &&
+        [...(original.sectores ?? [])].sort().join("|") === [...fila.sectores].sort().join("|");
+      const clasificacion_manual = original
+        ? original.clasificacion_manual || !mismaClasificacion
+        : !!fila.relevancia;
       if (n.id) {
         const { error } = await supabase
           .from("novedades_comercio_exterior")
@@ -550,10 +580,10 @@ function NovedadesAdmin() {
                 variant="outline"
                 onClick={clasificarPendientes}
                 disabled={clasificando}
-                title="La IA asigna impacto, sectores y relevancia a las novedades que aún no los tienen"
+                title="La IA asigna impacto, sectores y relevancia con el criterio actual a las novedades sin clasificar o evaluadas con un criterio anterior. No cambia las que corregiste a mano."
               >
                 <Sparkles className={`h-4 w-4 ${clasificando ? "animate-pulse" : ""}`} />
-                {clasificando ? "Clasificando…" : `Clasificar sin clasificar (${sinClasificar})`}
+                {clasificando ? "Evaluando…" : `Reevaluar relevancia (${sinClasificar})`}
               </Button>
             )}
             <Button
@@ -636,6 +666,7 @@ function NovedadesAdmin() {
                         {mayuscula(textoFechaNovedad(n.fecha_publicacion, n.fecha_captura))}
                       </span>
                       {n.origen === "manual" && <span>· manual</span>}
+                      {n.clasificacion_manual && <span>· clasificación corregida a mano</span>}
                     </div>
                     <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px]">
                       {n.relevancia ? (

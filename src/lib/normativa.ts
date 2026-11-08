@@ -245,3 +245,181 @@ export function nombreArchivoSeguro(nombre: string): string {
     .slice(-120);
   return /\.pdf$/i.test(base) ? base : `${base}.pdf`;
 }
+
+// ===================== Detección de número y fecha de emisión =====================
+
+const MESES: Record<string, number> = {
+  enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6, julio: 7, agosto: 8,
+  septiembre: 9, setiembre: 9, octubre: 10, noviembre: 11, diciembre: 12,
+};
+const RE_MES = "(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)";
+
+/** Palabras con las que el encabezado nombra a cada tipo de documento. */
+const PALABRAS_TIPO: Record<TipoNormativa, string> = {
+  Ley: "ley",
+  Reglamento: "reglamento",
+  Decreto: "decreto",
+  Resolución: "resoluci[óo]n",
+  "Norma general": "norma\\s+general",
+  Circular: "circular",
+  Guía: "gu[íi]a",
+  Otro: "ley|reglamento|decreto|resoluci[óo]n|norma\\s+general|circular|aviso|acuerdo",
+};
+const TODOS_LOS_TIPOS = "ley|reglamento|decreto|resoluci[óo]n|norma\\s+general|circular|aviso|acuerdo";
+/** «No.», «Núm.», «Número», «N.º», «N°», «#». */
+const RE_NUM = "(?:n[úu]m(?:ero|\\.)?|no\\.?|n\\.?\\s?[°ºo]\\.?|#)\\s*:?";
+/** Número: «168-21», «07-2018», «DGA-001-2024», «3489», «265/2023». */
+const RE_VALOR_NUMERO = "((?:[A-Z]{1,8}-)?\\d{1,5}(?:\\s?[-/]\\s?(?:\\d{1,4}|[A-Z]{1,8}))*)";
+
+/** Caracteres iniciales del texto que se consideran «encabezado». */
+export const CARACTERES_ENCABEZADO = 1500;
+
+function fechaValida(a: number, m: number, d: number, hoy: Date): string | null {
+  if (a < 1900 || m < 1 || m > 12 || d < 1 || d > 31) return null;
+  const f = new Date(Date.UTC(a, m - 1, d));
+  if (f.getUTCMonth() !== m - 1 || f.getTime() > hoy.getTime() + 86_400_000) return null;
+  return f.toISOString().slice(0, 10);
+}
+
+type FechaEncontrada = { iso: string; pos: number };
+
+/** «año», también como lo deja el reconocimiento de texto de escaneos («a110», «afio»). */
+const RE_ANO = "a(?:ñ|n|11|fi)[o0]";
+
+/** «a los quince (15) días del mes de enero del año dos mil veintiséis (2026)». */
+function fechasFormales(texto: string, hoy: Date): FechaEncontrada[] {
+  const re = new RegExp(
+    `\\(?\\s*(\\d{1,2})\\s*\\)?\\s*d[íi]as?\\s+del\\s+mes\\s+de\\s+${RE_MES}\\s+del?\\s+${RE_ANO}\\s+(?:[a-záéíóúñ\\s]{0,60}\\(\\s*(\\d{4})\\s*\\)|(\\d{4}))`,
+    "gi",
+  );
+  const out: FechaEncontrada[] = [];
+  for (const m of texto.matchAll(re)) {
+    const iso = fechaValida(Number(m[3] ?? m[4]), MESES[m[2].toLowerCase()], Number(m[1]), hoy);
+    if (iso) out.push({ iso, pos: m.index ?? 0 });
+  }
+  return out;
+}
+
+/** «15 de enero de 2026», «15 de enero del año 2026», «15/01/2026». */
+function fechasSimples(texto: string, hoy: Date): FechaEncontrada[] {
+  const out: FechaEncontrada[] = [];
+  const re = new RegExp(`\\b(\\d{1,2})\\s+de\\s+${RE_MES}\\s+(?:de|del)\\s+(?:a[ñn]o\\s+)?(\\d{4})\\b`, "gi");
+  for (const m of texto.matchAll(re)) {
+    const iso = fechaValida(Number(m[3]), MESES[m[2].toLowerCase()], Number(m[1]), hoy);
+    if (iso) out.push({ iso, pos: m.index ?? 0 });
+  }
+  for (const m of texto.matchAll(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/g)) {
+    const iso = fechaValida(Number(m[3]), Number(m[2]), Number(m[1]), hoy);
+    if (iso) out.push({ iso, pos: m.index ?? 0 });
+  }
+  return out.sort((a, b) => a.pos - b.pos);
+}
+
+export type DatosDetectados = { numero: string | null; fecha_emision: string | null };
+
+/**
+ * Sugiere el número y la fecha de emisión de un documento a partir de su texto
+ * (una cadena por página). Número: la primera mención «<tipo> núm. X» del
+ * encabezado. Fecha: la última fecha formal del cierre («Dado en … a los X días
+ * del mes de …», que en leyes y decretos es la promulgación); si no la hay, la
+ * primera fecha del encabezado y, por último, la última del cierre. Es solo una
+ * sugerencia: el administrador la confirma.
+ */
+export function detectarDatosDocumento(
+  paginas: string[],
+  tipo: string = "Otro",
+  hoy: Date = new Date(),
+): DatosDetectados {
+  const limpias = paginas.map(limpiarTextoPagina).filter((p) => caracteresUtiles(p) >= MIN_CARACTERES_PAGINA);
+  if (limpias.length === 0) return { numero: null, fecha_emision: null };
+  const encabezado = limpias.slice(0, 2).join("\n").slice(0, CARACTERES_ENCABEZADO);
+  const cierre = limpias.slice(-2).join("\n");
+
+  const palabras = PALABRAS_TIPO[tipo as TipoNormativa] ?? TODOS_LOS_TIPOS;
+  const buscarNumero = (patronTipo: string) => {
+    // «Ley núm. 168-21» / «Decreto 265-23», o con palabras intermedias y «núm.»
+    // obligatorio: «Ley General de Aduanas No. 168-21». Gana la mención más temprana.
+    const directo = new RegExp(`(?:^|[^\\p{L}])(?:${patronTipo})\\s+(?:${RE_NUM}\\s*)?${RE_VALOR_NUMERO}`, "iu").exec(encabezado);
+    const conNombre = new RegExp(
+      `(?:^|[^\\p{L}])(?:${patronTipo})(?:\\s+[\\p{L},]+){1,8}?\\s+${RE_NUM}\\s*${RE_VALOR_NUMERO}`,
+      "iu",
+    ).exec(encabezado);
+    const m = [directo, conNombre]
+      .filter((x): x is RegExpExecArray => !!x)
+      .sort((a, b) => a.index - b.index)[0];
+    return m ? m[1].replace(/\s+/g, "").toUpperCase() : null;
+  };
+  // Decretos: «NÚMERO: 755-22» en una línea propia del encabezado.
+  const lineaNumero = () => {
+    const m = new RegExp(`(?:^|\\n)\\s*n[úu]mero\\s*:?\\s*${RE_VALOR_NUMERO}`, "iu").exec(encabezado);
+    return m ? m[1].replace(/\s+/g, "").toUpperCase() : null;
+  };
+  // Un número suelto de 1–2 cifras sin año suele ser un artículo o apartado (o un
+  // número partido por el reconocimiento de texto), no el número del documento.
+  const util = (n: string | null) => (n && !/^\d{1,2}$/.test(n) ? n : null);
+  // Primero con la palabra del tipo elegido, luego «NÚMERO:» y, si el tipo no es
+  // «Otro»/«Guía», la primera mención de cualquier tipo.
+  const numero =
+    util(buscarNumero(palabras)) ??
+    util(lineaNumero()) ??
+    (tipo === "Otro" || tipo === "Guía" ? null : util(buscarNumero(TODOS_LOS_TIPOS)));
+
+  const formales = fechasFormales(cierre, hoy);
+  const fecha =
+    formales.at(-1)?.iso ??
+    fechasFormales(encabezado, hoy)[0]?.iso ??
+    fechasSimples(encabezado, hoy)[0]?.iso ??
+    fechasSimples(cierre, hoy).at(-1)?.iso ??
+    null;
+  return { numero, fecha_emision: fecha };
+}
+
+export type FichaNormativa = {
+  titulo: string;
+  tipo: string;
+  numero: string | null;
+  numero_detectado: boolean;
+  fecha_emision: string | null;
+  fecha_emision_detectada: boolean;
+  estado_vigencia: string;
+  procesamiento_estado: string;
+  fragmentos_total: number;
+  fragmentos_listos: number;
+  fuente_url: string | null;
+};
+
+/** Estado de procesamiento en palabras, para que el asistente avise si aún no se puede consultar. */
+export function textoProcesamiento(f: Pick<FichaNormativa, "procesamiento_estado" | "fragmentos_total" | "fragmentos_listos">): string {
+  switch (f.procesamiento_estado) {
+    case "listo":
+      return "procesado: su texto está disponible para consulta";
+    case "procesando":
+      return f.fragmentos_total > 0
+        ? `AÚN SE ESTÁ PROCESANDO (${f.fragmentos_listos} de ${f.fragmentos_total} fragmentos listos): su texto puede estar incompleto`
+        : "AÚN SE ESTÁ PROCESANDO: su texto todavía no se puede consultar";
+    case "pendiente":
+      return "PENDIENTE DE PROCESAR: su texto todavía no se puede consultar";
+    case "escaneado":
+      return "PDF ESCANEADO SIN TEXTO: su contenido no se puede consultar";
+    default:
+      return "ERROR AL PROCESAR: su texto no está disponible (o está incompleto)";
+  }
+}
+
+/** Fichas (datos registrados por el administrador) de los documentos de la base normativa. */
+export function formatearFichasNormativaParaPrompt(fichas: FichaNormativa[] | null): string {
+  if (fichas === null) return "(No se pudieron consultar las fichas de la base normativa en este momento.)";
+  if (fichas.length === 0) return "(La base normativa no tiene documentos cargados.)";
+  const una = (s: string, max: number) => s.replace(/\s+/g, " ").trim().slice(0, max);
+  return fichas
+    .map((f) => {
+      const numero = f.numero
+        ? `${una(f.numero, 60)}${f.numero_detectado ? " (detectado automáticamente, sin confirmar)" : ""}`
+        : "no registrado";
+      const fecha = f.fecha_emision
+        ? `${fechaDmy(f.fecha_emision)}${f.fecha_emision_detectada ? " (detectada automáticamente, sin confirmar)" : ""}`
+        : "no registrada";
+      return `- ${una(f.titulo, 250)} | Tipo: ${f.tipo} | Número: ${numero} | Fecha de emisión: ${fecha} | Vigencia: ${etiquetaVigencia(f.estado_vigencia)} | Estado: ${textoProcesamiento(f)}${f.fuente_url ? ` | Fuente oficial: ${f.fuente_url}` : ""}`;
+    })
+    .join("\n");
+}

@@ -33,7 +33,14 @@ import {
   type GrupoAlertaId,
 } from "@/lib/panel-alertas-disposicion";
 
-export type GrupoAlertaVista = { label: string; emoji: string; cantidad: number; contenido: ReactNode };
+export type GrupoAlertaVista = {
+  label: string;
+  emoji: string;
+  cantidad: number;
+  contenido: ReactNode;
+  /** Mostrar el bloque aunque su contador esté en 0 (p. ej. para ofrecer un filtro). */
+  mostrarVacio?: boolean;
+};
 
 /** Disposición de los bloques de «Atención requerida» del usuario actual (por usuario). */
 export function useDisposicionAlertas() {
@@ -173,7 +180,10 @@ export function AlertasColumnasOrdenables({
   abiertas: Set<string>;
   onAlternar: (claves: string[], abiertasAqui: string[]) => void;
 }) {
-  const conteos = Object.fromEntries(Object.entries(grupos).map(([k, g]) => [k, g?.cantidad ?? 0])) as Partial<Record<GrupoAlertaId, number>>;
+  // Conteo para decidir visibilidad y reparto; un bloque «mostrarVacio» cuenta como 1 aunque esté en 0.
+  const conteos = Object.fromEntries(
+    Object.entries(grupos).map(([k, g]) => [k, Math.max(g?.cantidad ?? 0, g?.mostrarVacio ? 1 : 0)]),
+  ) as Partial<Record<GrupoAlertaId, number>>;
   const efectiva = disposicionEfectiva(guardada, conteos);
   const [borrador, setBorrador] = useState<DisposicionAlertas | null>(null);
   const [activo, setActivo] = useState<GrupoAlertaId | null>(null);

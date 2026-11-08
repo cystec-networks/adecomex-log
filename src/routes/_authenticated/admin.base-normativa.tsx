@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ExternalLink, FileText, Pencil, Play, Plus, RotateCcw, Search, Trash2, Upload } from "lucide-react";
+import { Check, ExternalLink, FileText, Pencil, Play, Plus, RotateCcw, Search, Sparkles, Trash2, Upload } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -185,6 +185,9 @@ function BaseNormativa() {
         estado_vigencia: b.estado_vigencia ?? "no_verificado",
         fuente_url: fuente,
         notas: b.notas?.trim() || null,
+        // Un dato detectado sigue «sin confirmar» hasta que el administrador lo confirma o lo cambia.
+        numero_detectado: !!b.numero_detectado && !!b.numero?.trim(),
+        fecha_emision_detectada: !!b.fecha_emision_detectada && !!b.fecha_emision,
       };
       let id = b.id ?? null;
       if (id) {
@@ -246,6 +249,21 @@ function BaseNormativa() {
     onError: (e: Error) => toast.error(e.message || "No se pudo eliminar"),
   });
 
+  const confirmarDetectados = useMutation({
+    mutationFn: async (d: Documento) => {
+      const { error } = await supabase
+        .from("normativa_documentos")
+        .update({ numero_detectado: false, fecha_emision_detectada: false })
+        .eq("id", d.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Número y fecha de emisión confirmados");
+      refrescar();
+    },
+    onError: (e: Error) => toast.error(e.message || "No se pudo confirmar"),
+  });
+
   async function verPdf(d: Documento) {
     if (!d.archivo_path) return;
     const ventana = window.open("", "_blank");
@@ -285,7 +303,9 @@ function BaseNormativa() {
           </CardTitle>
           <CardDescription className="text-[12px]">
             Al subir un PDF se extrae su texto, se divide en fragmentos con su página y artículo, y se
-            prepara para la búsqueda. Los PDF escaneados sin texto no se pueden consultar.
+            prepara para la búsqueda. Si el número o la fecha de emisión están vacíos, se intentan
+            detectar del encabezado o del cierre y se marcan como «Detectado automáticamente» hasta
+            que los confirmes. Los PDF escaneados sin texto no se pueden consultar.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -343,6 +363,7 @@ function BaseNormativa() {
                       onEditar={() => setEditando({ ...d, archivo: null })}
                       onProcesar={(desdeCero) => procesar(d.id, desdeCero)}
                       onVer={() => verPdf(d)}
+                      onConfirmar={() => confirmarDetectados.mutate(d)}
                       onEliminar={() => {
                         if (confirm(`¿Eliminar «${d.titulo}» y su PDF de la base normativa?`))
                           eliminar.mutate(d);
@@ -372,6 +393,7 @@ function FilaDocumento({
   onEditar,
   onProcesar,
   onVer,
+  onConfirmar,
   onEliminar,
 }: {
   d: Documento;
@@ -379,8 +401,10 @@ function FilaDocumento({
   onEditar: () => void;
   onProcesar: (desdeCero: boolean) => void;
   onVer: () => void;
+  onConfirmar: () => void;
   onEliminar: () => void;
 }) {
+  const porConfirmar = (d.numero_detectado && !!d.numero) || (d.fecha_emision_detectada && !!d.fecha_emision);
   const p = PROCESO[d.procesamiento_estado];
   const pct = d.fragmentos_total ? Math.round((d.fragmentos_listos / d.fragmentos_total) * 100) : 0;
   const vigencia = d.estado_vigencia as EstadoVigencia;
@@ -397,6 +421,7 @@ function FilaDocumento({
         <div className="text-[11px] text-muted-foreground">
           {d.tipo}
           {d.numero ? ` núm. ${d.numero}` : ""}
+          {d.numero && d.numero_detectado && <DetectadoBadge />}
           {d.archivo_nombre ? ` · ${d.archivo_nombre}` : ""}
           {d.archivo_bytes ? ` (${fmtTamano(d.archivo_bytes)})` : ""}
           {d.paginas ? ` · ${d.paginas} pág.` : ""}
@@ -414,7 +439,26 @@ function FilaDocumento({
         )}
         {d.notas && <div className="text-[11px] text-muted-foreground">{d.notas}</div>}
       </td>
-      <td className="whitespace-nowrap py-2 pr-3">{fmtFecha(d.fecha_emision)}</td>
+      <td className="whitespace-nowrap py-2 pr-3">
+        {fmtFecha(d.fecha_emision)}
+        {d.fecha_emision && d.fecha_emision_detectada && (
+          <div>
+            <DetectadoBadge />
+          </div>
+        )}
+        {porConfirmar && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-1 h-6 px-2 text-[11px]"
+            onClick={onConfirmar}
+            disabled={corriendo}
+            title="Confirmar el número y la fecha de emisión detectados automáticamente"
+          >
+            <Check className="h-3 w-3" /> Confirmar
+          </Button>
+        )}
+      </td>
       <td className="py-2 pr-3">
         <Badge variant="outline" className={`text-[11px] ${VIGENCIA_CLASE[vigencia] ?? ""}`}>
           {VIGENCIA_NORMATIVA[vigencia] ?? d.estado_vigencia}
@@ -510,6 +554,18 @@ function FilaDocumento({
   );
 }
 
+function DetectadoBadge() {
+  return (
+    <Badge
+      variant="outline"
+      className="ml-1 gap-1 border-transparent bg-[var(--warning)]/25 px-1.5 py-0 text-[10px] font-normal text-[var(--warning-foreground)]"
+      title="Detectado automáticamente del texto del PDF. Revísalo y confírmalo."
+    >
+      <Sparkles className="h-3 w-3" /> Detectado automáticamente
+    </Badge>
+  );
+}
+
 function DialogoDocumento({
   borrador,
   onCambiar,
@@ -592,9 +648,12 @@ function DialogoDocumento({
                   id="bn-numero"
                   value={b.numero ?? ""}
                   placeholder="Ej. 168-21"
-                  onChange={(e) => set({ numero: e.target.value })}
+                  onChange={(e) => set({ numero: e.target.value, numero_detectado: false })}
                   className="text-[13px]"
                 />
+                {b.numero_detectado && !!b.numero && (
+                  <ConfirmarDetectado onConfirmar={() => set({ numero_detectado: false })} />
+                )}
               </div>
               <div className="min-w-0 space-y-1">
                 <Label htmlFor="bn-fecha">Fecha de emisión</Label>
@@ -602,9 +661,12 @@ function DialogoDocumento({
                   id="bn-fecha"
                   type="date"
                   value={b.fecha_emision ?? ""}
-                  onChange={(e) => set({ fecha_emision: e.target.value || null })}
+                  onChange={(e) => set({ fecha_emision: e.target.value || null, fecha_emision_detectada: false })}
                   className="text-[13px]"
                 />
+                {b.fecha_emision_detectada && !!b.fecha_emision && (
+                  <ConfirmarDetectado onConfirmar={() => set({ fecha_emision_detectada: false })} />
+                )}
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -653,5 +715,16 @@ function DialogoDocumento({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ConfirmarDetectado({ onConfirmar }: { onConfirmar: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      <DetectadoBadge />
+      <Button type="button" size="sm" variant="ghost" className="h-6 px-1.5 text-[11px]" onClick={onConfirmar}>
+        <Check className="h-3 w-3" /> Confirmar
+      </Button>
+    </div>
   );
 }

@@ -7,7 +7,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import {
   CATEGORIAS_NOVEDAD,
+  CRITERIO_RELEVANCIA_VERSION,
   IMPACTOS_NOVEDAD,
+  NATURALEZAS_NOVEDAD,
+  VIGENCIAS_NOVEDAD,
   MAX_FUENTES_POR_REVISION,
   RELEVANCIAS_NOVEDAD,
   SECTORES_NOVEDAD,
@@ -77,17 +80,34 @@ async function enLotes<T, R>(items: T[], tam: number, fn: (x: T) => Promise<R>):
   return out;
 }
 
-const CAMPOS_CLASIFICACION = ["impacto", "sectores", "relevancia"] as const;
+const CAMPOS_CLASIFICACION = [
+  "naturaleza",
+  "vigencia",
+  "afecta_sectores_adecomex",
+  "impacto",
+  "sectores",
+  "relevancia",
+] as const;
 const PROPIEDADES_CLASIFICACION = {
+  naturaleza: { type: "string", enum: [...NATURALEZAS_NOVEDAD] },
+  vigencia: { type: "string", enum: [...VIGENCIAS_NOVEDAD] },
+  afecta_sectores_adecomex: { type: "boolean" },
   impacto: { type: "string", enum: [...IMPACTOS_NOVEDAD] },
   sectores: { type: "array", items: { type: "string", enum: [...SECTORES_NOVEDAD] } },
   relevancia: { type: "string", enum: [...RELEVANCIAS_NOVEDAD] },
 } as const;
 
 const CRITERIOS_CLASIFICACION = `Clasificación para la agencia (sus clientes importan cosméticos, materias primas industriales, productos de ferretería, lácteos, productos agrícolas y agroquímicos):
-- impacto: el efecto principal sobre las operaciones. Arancel/Impuestos (gravamen, ITBIS, selectivo, exenciones, valoración), Permisos (registros, licencias, permisos VUCE o de instituciones), Plazos (fechas límite, vencimientos, prórrogas, horarios), Procedimiento (cambios en trámites, sistemas como SIGA, requisitos documentales), Tasas (cargos por servicios, tarifas portuarias o de instituciones), Otro (informativo, estadísticas, eventos).
+- naturaleza: «cambio_obligatorio» solo si la publicación crea, modifica o elimina una obligación (requisito, plazo, tasa, arancel/impuesto o permiso) que importadores o exportadores deben cumplir. «informativo» para avisos informativos, listados (de productos, empresas, registros, permisos otorgados, laboratorios, etc.), comunicados generales, recordatorios de obligaciones que no cambian, mantenimientos de sistemas, estadísticas, eventos, capacitaciones, consultas públicas o proyectos todavía no aprobados.
+- vigencia: «vigente» si el cambio ya aplica; «por_entrar_en_vigor» si está aprobado y tiene fecha de entrada en vigor próxima; «sin_aplicacion» si es histórico, ya vencido, una propuesta/consulta o no hay un cambio que aplicar.
+- afecta_sectores_adecomex: true si el cambio alcanza a importaciones de alguno de esos sectores o a todos los importadores en general; false si solo afecta a otros sectores (p. ej. combustibles, vehículos, medicamentos, telecomunicaciones) o a otro tipo de operadores.
+- impacto: el efecto principal sobre las operaciones. Arancel/Impuestos (gravamen, ITBIS, selectivo, exenciones, valoración), Permisos (registros, licencias, permisos VUCE o de instituciones), Plazos (fechas límite, vencimientos, prórrogas, horarios), Procedimiento (cambios en trámites o requisitos documentales, sistemas como SIGA), Tasas (cargos por servicios, tarifas portuarias o de instituciones), Otro (informativo, estadísticas, eventos).
 - sectores: uno o varios de ${SECTORES_NOVEDAD.join(", ")}. Usa «General» si afecta a todos los importadores o no es específico de un sector; no inventes sectores que el texto no permita deducir.
-- relevancia: Alta si cambia de forma directa y próxima impuestos, permisos, plazos o procedimientos obligatorios para importar o exportar; Media si es un aviso operativo importante o un cambio que conviene conocer pero sin efecto inmediato; Baja si es informativo (estadísticas, eventos, acuerdos sin aplicación aún).`;
+- relevancia (sé exigente con «Alta»):
+  · Alta SOLO si se cumplen las tres condiciones: naturaleza «cambio_obligatorio», vigencia «vigente» o «por_entrar_en_vigor», y afecta_sectores_adecomex true. Ejemplos: nuevo arancel o cambio de ITBIS para un producto de esos sectores, nuevo requisito o permiso obligatorio para importarlos, cambio de un plazo legal de presentación, nueva tasa de una institución.
+  · Media: avisos operativos útiles o cambios que conviene conocer pero que no cumplen las tres condiciones (cambios que afectan a otros sectores, proyectos o consultas públicas, recordatorios de plazos, mantenimientos o interrupciones de sistemas, cambios de horario).
+  · Baja: avisos informativos, listados, comunicados generales, estadísticas, eventos, capacitaciones, acuerdos sin aplicación aún.
+  Ante la duda entre Alta y Media, elige Media.`;
 
 const ESQUEMA = {
   name: "novedades",
@@ -133,7 +153,7 @@ Para cada publicación (identificada por su índice):
 - resumen: 1 o 2 frases (máximo 300 caracteres) en español, basadas SOLO en el texto recibido. Si solo hay título, resume lo que dice el título sin añadir detalles.
 - categoria: una de ${CATEGORIAS_NOVEDAD.join(", ")}.
 - fecha_publicacion: AAAA-MM-DD solo si la fecha de publicación aparece explícitamente en el texto; si no, null.
-- impacto, sectores y relevancia según los criterios siguientes (para publicaciones no relevantes usa Otro, General y Baja).
+- naturaleza, vigencia, afecta_sectores_adecomex, impacto, sectores y relevancia según los criterios siguientes (para publicaciones no relevantes usa informativo, sin_aplicacion, false, Otro, General y Baja).
 ${CRITERIOS_CLASIFICACION}
 Devuelve una entrada por cada índice recibido.`;
 
@@ -199,7 +219,14 @@ async function pedirJson(esquema: object, sistema: string, usuario: string): Pro
   return JSON.parse(msg.content);
 }
 
-type ClasificacionIa = { impacto: string; sectores: string[]; relevancia: string };
+type ClasificacionIa = {
+  naturaleza: string;
+  vigencia: string;
+  afecta_sectores_adecomex: boolean;
+  impacto: string;
+  sectores: string[];
+  relevancia: string;
+};
 
 async function analizarConIa(fuente: Fuente, items: Array<Candidata & { texto: string }>) {
   const contenido = items
@@ -356,6 +383,7 @@ async function procesarFuente(
       url: c.url,
       origen: "automatica",
       ...normalizarClasificacion(a),
+      clasificacion_criterio: CRITERIO_RELEVANCIA_VERSION,
     });
   }
   if (relevantes.length) {
@@ -492,27 +520,39 @@ const ESQUEMA_CLASIFICACION = {
 /** Lote máximo de novedades ya registradas que se clasifican por llamada. */
 export const MAX_CLASIFICAR_POR_LLAMADA = 30;
 
+/** Filas que la IA puede (re)clasificar: sin corrección manual y con un criterio anterior o sin clasificar. */
+const PENDIENTE_CRITERIO = `clasificacion_criterio.is.null,clasificacion_criterio.lt.${CRITERIO_RELEVANCIA_VERSION}`;
+
+export type ResultadoClasificacion = {
+  ok: boolean;
+  clasificadas: number;
+  restantes: number;
+  /** Cambios de relevancia de este lote, p. ej. { "Alta→Media": 4 }. */
+  cambios: Record<string, number>;
+  mensaje: string;
+};
+
 /**
- * Clasifica (impacto, sectores, relevancia) novedades registradas antes de que
- * existiera la clasificación. Solo toca filas sin relevancia: nunca pisa una
- * corrección manual.
+ * Clasifica o reevalúa con el criterio vigente (impacto, sectores, relevancia)
+ * las novedades registradas sin clasificar o clasificadas con un criterio
+ * anterior. Nunca toca una clasificación corregida a mano.
  */
-export async function clasificarNovedadesPendientes(
-  admin: Admin,
-): Promise<{ ok: boolean; clasificadas: number; restantes: number; mensaje: string }> {
+export async function clasificarNovedadesPendientes(admin: Admin): Promise<ResultadoClasificacion> {
   const { data: filas, error } = await admin
     .from("novedades_comercio_exterior")
-    .select("id, titulo, resumen, categoria, fuente_nombre")
-    .is("relevancia", null)
+    .select("id, titulo, resumen, categoria, fuente_nombre, fecha_publicacion, relevancia")
+    .eq("clasificacion_manual", false)
+    .or(PENDIENTE_CRITERIO)
     .order("fecha_captura", { ascending: false })
     .limit(MAX_CLASIFICAR_POR_LLAMADA);
-  if (error) throw new Error("No se pudieron leer las novedades sin clasificar.");
-  if (!filas?.length) return { ok: true, clasificadas: 0, restantes: 0, mensaje: "No hay novedades sin clasificar." };
+  if (error) throw new Error("No se pudieron leer las novedades pendientes de clasificar.");
+  if (!filas?.length)
+    return { ok: true, clasificadas: 0, restantes: 0, cambios: {}, mensaje: "Todas las novedades están clasificadas con el criterio actual." };
 
   const contenido = filas
     .map(
       (n, i) =>
-        `### Novedad ${i}\nFuente: ${n.fuente_nombre}\nCategoría: ${n.categoria}\nTítulo: ${n.titulo}\nResumen: ${n.resumen}`,
+        `### Novedad ${i}\nFuente: ${n.fuente_nombre}\nCategoría: ${n.categoria}${n.fecha_publicacion ? `\nPublicada: ${n.fecha_publicacion}` : ""}\nTítulo: ${n.titulo}\nResumen: ${n.resumen}`,
     )
     .join("\n\n");
   let r: { novedades: Array<{ indice: number } & ClasificacionIa> };
@@ -527,28 +567,40 @@ export async function clasificarNovedadesPendientes(
       ok: false,
       clasificadas: 0,
       restantes: filas.length,
+      cambios: {},
       mensaje: e instanceof Error ? e.message : "No se pudo clasificar con IA.",
     };
   }
   let clasificadas = 0;
+  const cambios: Record<string, number> = {};
   await enLotes(r.novedades, 5, async (c) => {
     const fila = filas[c.indice];
     if (!fila) return;
-    const { error: e } = await admin
+    const nueva = normalizarClasificacion(c);
+    const { data: actualizadas, error: e } = await admin
       .from("novedades_comercio_exterior")
-      .update(normalizarClasificacion(c))
+      .update({ ...nueva, clasificacion_criterio: CRITERIO_RELEVANCIA_VERSION })
       .eq("id", fila.id)
-      .is("relevancia", null);
-    if (!e) clasificadas++;
+      .eq("clasificacion_manual", false)
+      .or(PENDIENTE_CRITERIO)
+      .select("id");
+    if (e || !actualizadas?.length) return;
+    clasificadas++;
+    if (fila.relevancia !== nueva.relevancia) {
+      const clave = `${fila.relevancia ?? "Sin clasificar"}→${nueva.relevancia}`;
+      cambios[clave] = (cambios[clave] ?? 0) + 1;
+    }
   });
   const { count } = await admin
     .from("novedades_comercio_exterior")
     .select("id", { count: "exact", head: true })
-    .is("relevancia", null);
+    .eq("clasificacion_manual", false)
+    .or(PENDIENTE_CRITERIO);
   return {
     ok: true,
     clasificadas,
     restantes: count ?? 0,
-    mensaje: `${clasificadas} novedad(es) clasificada(s).`,
+    cambios,
+    mensaje: `${clasificadas} novedad(es) clasificada(s) con el criterio actual.`,
   };
 }

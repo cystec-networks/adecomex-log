@@ -76,3 +76,36 @@ export async function marcarNovedadesVistas(
     );
   if (error) throw error;
 }
+
+/** Clave en `preferencias_usuario`: si el usuario incluye también la relevancia Media. */
+export const CLAVE_NOVEDADES_INCLUIR_MEDIA = "panel-novedades-incluir-media";
+
+/** Por defecto solo relevancia Alta; con `incluirMedia`, también Media. */
+export function filtrarNovedadesPanel(lista: NovedadPanel[], incluirMedia: boolean): NovedadPanel[] {
+  return lista.filter((n) => n.relevancia === "Alta" || (incluirMedia && n.relevancia === "Media"));
+}
+
+export async function leerIncluirMedia(supabase: SupabaseClient<any>, userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("preferencias_usuario")
+    .select("valor")
+    .eq("user_id", userId)
+    .eq("clave", CLAVE_NOVEDADES_INCLUIR_MEDIA)
+    .maybeSingle();
+  if (error) throw error;
+  return (data?.valor as { incluirMedia?: unknown } | null)?.incluirMedia === true;
+}
+
+export async function guardarIncluirMedia(
+  supabase: SupabaseClient<any>,
+  userId: string,
+  incluirMedia: boolean,
+): Promise<void> {
+  const { error } = await supabase
+    .from("preferencias_usuario")
+    .upsert(
+      { user_id: userId, clave: CLAVE_NOVEDADES_INCLUIR_MEDIA, valor: { incluirMedia } },
+      { onConflict: "user_id,clave" },
+    );
+  if (error) throw error;
+}

@@ -10,6 +10,7 @@ import {
   MAX_FRAGMENTOS_NORMATIVA,
   MAX_PAGINAS_NORMATIVA,
   analizarTextoPaginas,
+  detectarDatosDocumento,
   fragmentarDocumento,
   textoParaVectorizar,
 } from "./normativa";
@@ -37,7 +38,7 @@ async function marcar(
 export async function extraerDocumento(admin: Admin, id: string): Promise<ResultadoProcesamiento> {
   const { data: doc, error } = await admin
     .from("normativa_documentos")
-    .select("id, archivo_path")
+    .select("id, archivo_path, tipo, numero, numero_detectado, fecha_emision, fecha_emision_detectada")
     .eq("id", id)
     .maybeSingle();
   if (error || !doc) throw new Error("Documento no encontrado.");
@@ -108,8 +109,30 @@ export async function extraerDocumento(admin: Admin, id: string): Promise<Result
   const aviso = analisis.sinTexto
     ? ` Atención: ${analisis.sinTexto} de ${analisis.total} página(s) no tienen texto legible (posiblemente escaneadas) y no se podrán consultar.`
     : "";
-  const mensaje = `Texto extraído: ${fragmentos.length} fragmento(s) de ${analisis.total} página(s). Preparando la búsqueda…${aviso}`;
+  // Número y fecha de emisión desde el encabezado o el cierre: solo como sugerencia
+  // en campos vacíos o aún no confirmados; nunca pisa un dato confirmado por el administrador.
+  const detectado = detectarDatosDocumento(paginas, doc.tipo);
+  const sugerencias: Database["public"]["Tables"]["normativa_documentos"]["Update"] = {};
+  const textoDetectado: string[] = [];
+  if (!doc.numero || doc.numero_detectado) {
+    sugerencias.numero = detectado.numero ?? (doc.numero_detectado ? null : doc.numero);
+    sugerencias.numero_detectado = !!detectado.numero;
+    if (detectado.numero) textoDetectado.push(`número ${detectado.numero}`);
+  }
+  if (!doc.fecha_emision || doc.fecha_emision_detectada) {
+    sugerencias.fecha_emision = detectado.fecha_emision ?? (doc.fecha_emision_detectada ? null : doc.fecha_emision);
+    sugerencias.fecha_emision_detectada = !!detectado.fecha_emision;
+    if (detectado.fecha_emision) {
+      const [a, m, d] = detectado.fecha_emision.split("-");
+      textoDetectado.push(`fecha de emisión ${d}/${m}/${a}`);
+    }
+  }
+  const avisoDetectado = textoDetectado.length
+    ? ` Detectado automáticamente: ${textoDetectado.join(" y ")} (confírmalo).`
+    : "";
+  const mensaje = `Texto extraído: ${fragmentos.length} fragmento(s) de ${analisis.total} página(s). Preparando la búsqueda…${aviso}${avisoDetectado}`;
   await marcar(admin, id, {
+    ...sugerencias,
     paginas: analisis.total,
     paginas_sin_texto: analisis.sinTexto,
     fragmentos_total: fragmentos.length,

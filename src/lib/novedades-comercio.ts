@@ -52,16 +52,61 @@ export function normalizarSectores(valor: unknown): SectorNovedad[] {
   return validos.length ? validos : ["General"];
 }
 
-/** Clasificación de la IA validada contra los catálogos (valores desconocidos → «Otro» / «Baja»). */
+/**
+ * Versión del criterio de relevancia de la IA. Las novedades clasificadas con
+ * un criterio anterior (y no corregidas a mano) se pueden reevaluar.
+ */
+export const CRITERIO_RELEVANCIA_VERSION = 2;
+
+/** Naturaleza de la publicación según la IA: solo un cambio obligatorio puede ser «Alta». */
+export const NATURALEZAS_NOVEDAD = ["cambio_obligatorio", "informativo"] as const;
+/** Vigencia del cambio según la IA: solo vigente o por entrar en vigor puede ser «Alta». */
+export const VIGENCIAS_NOVEDAD = ["vigente", "por_entrar_en_vigor", "sin_aplicacion"] as const;
+/** Impactos que pueden justificar «Alta» (requisitos/procedimiento, plazos, tasas, aranceles, permisos). */
+export const IMPACTOS_ALTA: readonly ImpactoNovedad[] = ["Arancel/Impuestos", "Permisos", "Plazos", "Tasas", "Procedimiento"];
+
+/**
+ * «Alta» se reserva para cambios que alteran requisitos, plazos, tasas,
+ * aranceles o permisos, que afectan a los sectores de ADECOMEX (o a todos los
+ * importadores) y que están vigentes o por entrar en vigor. Si la IA marca
+ * «Alta» sin cumplir alguna condición, queda en «Media».
+ */
+export function ajustarRelevancia(c: {
+  relevancia: RelevanciaNovedad;
+  impacto: ImpactoNovedad;
+  naturaleza?: unknown;
+  vigencia?: unknown;
+  afecta_sectores_adecomex?: unknown;
+}): RelevanciaNovedad {
+  if (c.relevancia !== "Alta") return c.relevancia;
+  const cumple =
+    c.naturaleza === "cambio_obligatorio" &&
+    (c.vigencia === "vigente" || c.vigencia === "por_entrar_en_vigor") &&
+    c.afecta_sectores_adecomex === true &&
+    IMPACTOS_ALTA.includes(c.impacto);
+  return cumple ? "Alta" : "Media";
+}
+
+/**
+ * Clasificación de la IA validada contra los catálogos (valores desconocidos →
+ * «Otro» / «Baja»). Si trae las señales del criterio (naturaleza, vigencia,
+ * sectores de ADECOMEX), «Alta» solo se conserva cuando las cumple todas.
+ */
 export function normalizarClasificacion(c: {
   impacto?: unknown;
   sectores?: unknown;
   relevancia?: unknown;
+  naturaleza?: unknown;
+  vigencia?: unknown;
+  afecta_sectores_adecomex?: unknown;
 }): { impacto: ImpactoNovedad; sectores: SectorNovedad[]; relevancia: RelevanciaNovedad } {
+  const impacto = esImpactoNovedad(c.impacto) ? c.impacto : "Otro";
+  const relevancia = esRelevanciaNovedad(c.relevancia) ? c.relevancia : "Baja";
+  const conCriterio = c.naturaleza !== undefined || c.vigencia !== undefined || c.afecta_sectores_adecomex !== undefined;
   return {
-    impacto: esImpactoNovedad(c.impacto) ? c.impacto : "Otro",
+    impacto,
     sectores: normalizarSectores(c.sectores),
-    relevancia: esRelevanciaNovedad(c.relevancia) ? c.relevancia : "Baja",
+    relevancia: conCriterio ? ajustarRelevancia({ ...c, impacto, relevancia }) : relevancia,
   };
 }
 
