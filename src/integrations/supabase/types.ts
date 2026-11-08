@@ -5335,6 +5335,122 @@ export type Database = {
           },
         ]
       }
+      normativa_documentos: {
+        Row: {
+          archivo_bytes: number | null
+          archivo_nombre: string | null
+          archivo_path: string | null
+          created_at: string
+          created_by: string | null
+          estado_vigencia: string
+          fecha_emision: string | null
+          fragmentos_listos: number
+          fragmentos_total: number
+          fuente_url: string | null
+          id: string
+          notas: string | null
+          numero: string | null
+          paginas: number | null
+          paginas_sin_texto: number | null
+          procesado_at: string | null
+          procesamiento_estado: string
+          procesamiento_mensaje: string | null
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          archivo_bytes?: number | null
+          archivo_nombre?: string | null
+          archivo_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado_vigencia?: string
+          fecha_emision?: string | null
+          fragmentos_listos?: number
+          fragmentos_total?: number
+          fuente_url?: string | null
+          id?: string
+          notas?: string | null
+          numero?: string | null
+          paginas?: number | null
+          paginas_sin_texto?: number | null
+          procesado_at?: string | null
+          procesamiento_estado?: string
+          procesamiento_mensaje?: string | null
+          tipo?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          archivo_bytes?: number | null
+          archivo_nombre?: string | null
+          archivo_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado_vigencia?: string
+          fecha_emision?: string | null
+          fragmentos_listos?: number
+          fragmentos_total?: number
+          fuente_url?: string | null
+          id?: string
+          notas?: string | null
+          numero?: string | null
+          paginas?: number | null
+          paginas_sin_texto?: number | null
+          procesado_at?: string | null
+          procesamiento_estado?: string
+          procesamiento_mensaje?: string | null
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      normativa_fragmentos: {
+        Row: {
+          articulo: string | null
+          contenido: string
+          created_at: string
+          documento_id: string
+          embedding: string | null
+          id: string
+          orden: number
+          pagina_fin: number
+          pagina_inicio: number
+        }
+        Insert: {
+          articulo?: string | null
+          contenido: string
+          created_at?: string
+          documento_id: string
+          embedding?: string | null
+          id?: string
+          orden: number
+          pagina_fin: number
+          pagina_inicio: number
+        }
+        Update: {
+          articulo?: string | null
+          contenido?: string
+          created_at?: string
+          documento_id?: string
+          embedding?: string | null
+          id?: string
+          orden?: number
+          pagina_fin?: number
+          pagina_inicio?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "normativa_fragmentos_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "normativa_documentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       novedades_comercio_exterior: {
         Row: {
           categoria: string
@@ -5345,8 +5461,11 @@ export type Database = {
           fuente_id: string | null
           fuente_nombre: string
           id: string
+          impacto: string | null
           origen: string
+          relevancia: string | null
           resumen: string
+          sectores: string[]
           titulo: string
           updated_at: string
           url: string
@@ -5361,8 +5480,11 @@ export type Database = {
           fuente_id?: string | null
           fuente_nombre: string
           id?: string
+          impacto?: string | null
           origen?: string
+          relevancia?: string | null
           resumen: string
+          sectores?: string[]
           titulo: string
           updated_at?: string
           url: string
@@ -5377,8 +5499,11 @@ export type Database = {
           fuente_id?: string | null
           fuente_nombre?: string
           id?: string
+          impacto?: string | null
           origen?: string
+          relevancia?: string | null
           resumen?: string
+          sectores?: string[]
           titulo?: string
           updated_at?: string
           url?: string
@@ -5461,6 +5586,32 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      novedades_vistas: {
+        Row: {
+          novedad_id: string
+          user_id: string
+          vista_at: string
+        }
+        Insert: {
+          novedad_id: string
+          user_id: string
+          vista_at?: string
+        }
+        Update: {
+          novedad_id?: string
+          user_id?: string
+          vista_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novedades_vistas_novedad_id_fkey"
+            columns: ["novedad_id"]
+            isOneToOne: false
+            referencedRelation: "novedades_comercio_exterior"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       numeracion_expedientes_referencia: {
         Row: {
@@ -8037,6 +8188,24 @@ export type Database = {
         }
         Returns: string
       }
+      buscar_normativa: {
+        Args: { p_embedding: string; p_limite?: number }
+        Returns: {
+          articulo: string
+          contenido: string
+          documento_id: string
+          estado_vigencia: string
+          fecha_emision: string
+          fragmento_id: string
+          fuente_url: string
+          numero: string
+          pagina_fin: number
+          pagina_inicio: number
+          similitud: number
+          tipo: string
+          titulo: string
+        }[]
+      }
       calc_itbis_periodo: { Args: { _periodo: string }; Returns: Json }
       calcular_interes_prestamo_tercero: {
         Args: { _fecha_prestamo: string; _monto: number; _tasa_pct: number }
@@ -8111,6 +8280,7 @@ export type Database = {
       }
       marcar_password_cambiada_cliente: { Args: never; Returns: undefined }
       marcar_password_cambiada_estudiante: { Args: never; Returns: undefined }
+      normativa_guardar_embeddings: { Args: { p_lote: Json }; Returns: number }
       novedad_url_clave: { Args: { p_url: string }; Returns: string }
       novedades_token_valido: { Args: { p_token: string }; Returns: boolean }
       novedades_tomar_lock: { Args: { p_minutos?: number }; Returns: boolean }

@@ -15,6 +15,88 @@ export type CategoriaNovedad = (typeof CATEGORIAS_NOVEDAD)[number];
 export const esCategoriaNovedad = (v: unknown): v is CategoriaNovedad =>
   typeof v === "string" && (CATEGORIAS_NOVEDAD as readonly string[]).includes(v);
 
+export const IMPACTOS_NOVEDAD = [
+  "Arancel/Impuestos",
+  "Permisos",
+  "Plazos",
+  "Procedimiento",
+  "Tasas",
+  "Otro",
+] as const;
+export type ImpactoNovedad = (typeof IMPACTOS_NOVEDAD)[number];
+
+export const SECTORES_NOVEDAD = [
+  "Cosméticos",
+  "Materias primas industriales",
+  "Ferretero",
+  "Lácteos",
+  "Agrícola",
+  "Agroquímica",
+  "General",
+] as const;
+export type SectorNovedad = (typeof SECTORES_NOVEDAD)[number];
+
+export const RELEVANCIAS_NOVEDAD = ["Alta", "Media", "Baja"] as const;
+export type RelevanciaNovedad = (typeof RELEVANCIAS_NOVEDAD)[number];
+
+export const esImpactoNovedad = (v: unknown): v is ImpactoNovedad =>
+  typeof v === "string" && (IMPACTOS_NOVEDAD as readonly string[]).includes(v);
+export const esRelevanciaNovedad = (v: unknown): v is RelevanciaNovedad =>
+  typeof v === "string" && (RELEVANCIAS_NOVEDAD as readonly string[]).includes(v);
+
+/** Sectores válidos, sin repetir y en el orden del catálogo; vacío se trata como «General». */
+export function normalizarSectores(valor: unknown): SectorNovedad[] {
+  const lista = Array.isArray(valor) ? valor : [];
+  const set = new Set(lista.filter((s): s is string => typeof s === "string"));
+  const validos = SECTORES_NOVEDAD.filter((s) => set.has(s));
+  return validos.length ? validos : ["General"];
+}
+
+/** Clasificación de la IA validada contra los catálogos (valores desconocidos → «Otro» / «Baja»). */
+export function normalizarClasificacion(c: {
+  impacto?: unknown;
+  sectores?: unknown;
+  relevancia?: unknown;
+}): { impacto: ImpactoNovedad; sectores: SectorNovedad[]; relevancia: RelevanciaNovedad } {
+  return {
+    impacto: esImpactoNovedad(c.impacto) ? c.impacto : "Otro",
+    sectores: normalizarSectores(c.sectores),
+    relevancia: esRelevanciaNovedad(c.relevancia) ? c.relevancia : "Baja",
+  };
+}
+
+/** Días hacia atrás que cubre la categoría «Novedades relevantes» del Panel. */
+export const DIAS_NOVEDADES_PANEL = 7;
+
+/** Día AAAA-MM-DD de un instante en hora de Santo Domingo. */
+export function isoDiaSantoDomingo(instante: Date | string): string {
+  const f = typeof instante === "string" ? new Date(instante) : instante;
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Santo_Domingo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(f);
+}
+
+/**
+ * ¿Va al Panel? Relevancia Alta o Media, no marcada como vista por el usuario y
+ * de los últimos 7 días: por fecha de publicación cuando existe (un aviso viejo
+ * recién descubierto no es novedad); si no la hay, por el día de registro.
+ */
+export function novedadEnPanel(
+  n: { relevancia: string | null; fecha_publicacion: string | null; fecha_captura: string },
+  hoy: Date,
+  vista: boolean,
+): boolean {
+  if (vista || (n.relevancia !== "Alta" && n.relevancia !== "Media")) return false;
+  const dia = n.fecha_publicacion ? n.fecha_publicacion.slice(0, 10) : isoDiaSantoDomingo(n.fecha_captura);
+  const hoyIso = isoDiaSantoDomingo(hoy);
+  const desde = new Date(`${hoyIso}T00:00:00Z`);
+  desde.setUTCDate(desde.getUTCDate() - DIAS_NOVEDADES_PANEL);
+  return dia >= desde.toISOString().slice(0, 10) && dia <= hoyIso;
+}
+
 /** Máximo de publicaciones nuevas que se analizan por fuente en cada revisión. */
 export const MAX_NUEVAS_POR_FUENTE = 8;
 /** Máximo de fuentes revisadas por ejecución. */
@@ -332,6 +414,9 @@ export type NovedadContexto = {
   fuente_nombre: string;
   url: string;
   categoria: string;
+  impacto?: string | null;
+  sectores?: string[] | null;
+  relevancia?: string | null;
 };
 
 const fechaDmy = (iso: string) => {
@@ -396,7 +481,14 @@ export function formatearNovedadesParaPrompt(novedades: NovedadContexto[]): stri
     .map((n, i) => {
       const fecha = textoFechaNovedad(n.fecha_publicacion, n.fecha_captura);
       const sinSaltos = (s: string, max: number) => s.replace(/\s+/g, " ").trim().slice(0, max);
-      return `[${i + 1}] ${sinSaltos(n.titulo, 250)}\nCategoría: ${n.categoria} | Fuente: ${sinSaltos(n.fuente_nombre, 120)} | ${fecha}\nEnlace: ${n.url}\nResumen: ${sinSaltos(n.resumen, 600)}`;
+      const clasif = [
+        n.impacto ? `Impacto: ${n.impacto}` : null,
+        n.sectores?.length ? `Sectores: ${n.sectores.join(", ")}` : null,
+        n.relevancia ? `Relevancia: ${n.relevancia}` : null,
+      ]
+        .filter(Boolean)
+        .join(" | ");
+      return `[${i + 1}] ${sinSaltos(n.titulo, 250)}\nCategoría: ${n.categoria} | Fuente: ${sinSaltos(n.fuente_nombre, 120)} | ${fecha}${clasif ? `\n${clasif}` : ""}\nEnlace: ${n.url}\nResumen: ${sinSaltos(n.resumen, 600)}`;
     })
     .join("\n\n");
 }

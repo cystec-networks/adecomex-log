@@ -757,6 +757,13 @@
       "when": 1794151544553,
       "tag": "0107_fuentes_novedades_intentos",
       "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "7",
+      "when": 1794152826049,
+      "tag": "0108_base_normativa_y_clasificacion_novedades",
+      "breakpoints": true
     }
   ]
 }

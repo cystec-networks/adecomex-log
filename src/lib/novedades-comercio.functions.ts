@@ -25,3 +25,19 @@ export const revisarNovedadesAhora = createServerFn({ method: "POST" })
       fuenteId: data.fuenteId ?? undefined,
     });
   });
+
+/** Clasifica con IA un lote de novedades registradas que aún no tienen clasificación. */
+export const clasificarNovedadesSinClasificar = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: rol } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!rol) throw new Error("Solo un administrador puede clasificar las novedades.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { clasificarNovedadesPendientes } = await import("./novedades-comercio.server");
+    return clasificarNovedadesPendientes(supabaseAdmin);
+  });

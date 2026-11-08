@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ExternalLink, History, Pencil, PlayCircle, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { ExternalLink, History, Pencil, PlayCircle, Plus, RefreshCw, Search, Sparkles, Trash2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -31,12 +32,19 @@ import {
 } from "@/components/ui/select";
 import {
   CATEGORIAS_NOVEDAD,
+  IMPACTOS_NOVEDAD,
+  RELEVANCIAS_NOVEDAD,
+  SECTORES_NOVEDAD,
+  normalizarSectores,
   patronIntentos,
   textoFechaNovedad,
   type CategoriaNovedad,
   type PatronIntentos,
 } from "@/lib/novedades-comercio";
-import { revisarNovedadesAhora } from "@/lib/novedades-comercio.functions";
+import {
+  clasificarNovedadesSinClasificar,
+  revisarNovedadesAhora,
+} from "@/lib/novedades-comercio.functions";
 
 type Fuente = Database["public"]["Tables"]["fuentes_novedades"]["Row"];
 type Novedad = Database["public"]["Tables"]["novedades_comercio_exterior"]["Row"];
@@ -118,6 +126,9 @@ const TIPO_FUENTE: Record<Fuente["tipo"], string> = {
 function NovedadesAdmin() {
   const qc = useQueryClient();
   const revisar = useServerFn(revisarNovedadesAhora);
+  const clasificar = useServerFn(clasificarNovedadesSinClasificar);
+  const [clasificando, setClasificando] = useState(false);
+  const [relevancia, setRelevancia] = useState<string>("todas");
   const [revisando, setRevisando] = useState<string | null>(null);
   const [fuenteEditando, setFuenteEditando] = useState<Partial<Fuente> | null>(null);
   const [novedadEditando, setNovedadEditando] = useState<Partial<Novedad> | null>(null);
@@ -187,9 +198,29 @@ function NovedadesAdmin() {
     return novedades.filter(
       (n) =>
         (categoria === "todas" || n.categoria === categoria) &&
+        (relevancia === "todas" ||
+          (relevancia === "sin" ? !n.relevancia : n.relevancia === relevancia)) &&
         (!q || `${n.titulo} ${n.resumen} ${n.fuente_nombre}`.toLowerCase().includes(q)),
     );
-  }, [novedades, busqueda, categoria]);
+  }, [novedades, busqueda, categoria, relevancia]);
+  const sinClasificar = novedades.filter((n) => !n.relevancia).length;
+
+  async function clasificarPendientes() {
+    setClasificando(true);
+    try {
+      const r = await clasificar();
+      if (!r.ok) toast.error(r.mensaje);
+      else
+        toast.success(
+          r.mensaje + (r.restantes ? ` Quedan ${r.restantes}; pulsa de nuevo para continuar.` : ""),
+        );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo clasificar");
+    } finally {
+      setClasificando(false);
+      refrescar();
+    }
+  }
 
   const refrescar = () => qc.invalidateQueries({ queryKey: CLAVE });
   const fallo = (e: Error) => toast.error(e.message || "No se pudo guardar");
@@ -300,6 +331,9 @@ function NovedadesAdmin() {
         fuente_id: n.fuente_id ?? null,
         categoria: n.categoria,
         fecha_publicacion: n.fecha_publicacion || null,
+        impacto: n.impacto ?? null,
+        sectores: n.relevancia || n.impacto ? normalizarSectores(n.sectores) : (n.sectores ?? []),
+        relevancia: n.relevancia ?? null,
       };
       if (n.id) {
         const { error } = await supabase
@@ -504,16 +538,39 @@ function NovedadesAdmin() {
           <div>
             <CardTitle className="text-sm">Novedades registradas ({novedades.length})</CardTitle>
             <CardDescription className="text-[12px]">
-              Puedes corregir los resúmenes automáticos o cargar novedades manualmente.
+              Puedes corregir los resúmenes, el impacto, los sectores y la relevancia, o cargar
+              novedades manualmente. Las de relevancia Alta y Media de los últimos 7 días aparecen
+              en el Panel de operaciones.
             </CardDescription>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setNovedadEditando({ categoria: "Aduanas" })}
-          >
-            <Plus className="h-4 w-4" /> Agregar novedad
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {sinClasificar > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={clasificarPendientes}
+                disabled={clasificando}
+                title="La IA asigna impacto, sectores y relevancia a las novedades que aún no los tienen"
+              >
+                <Sparkles className={`h-4 w-4 ${clasificando ? "animate-pulse" : ""}`} />
+                {clasificando ? "Clasificando…" : `Clasificar sin clasificar (${sinClasificar})`}
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                setNovedadEditando({
+                  categoria: "Aduanas",
+                  impacto: "Otro",
+                  sectores: ["General"],
+                  relevancia: "Media",
+                })
+              }
+            >
+              <Plus className="h-4 w-4" /> Agregar novedad
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
@@ -537,6 +594,20 @@ function NovedadesAdmin() {
                     {c}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+            <Select value={relevancia} onValueChange={setRelevancia}>
+              <SelectTrigger className="h-9 w-[12rem] text-[13px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Toda relevancia</SelectItem>
+                {RELEVANCIAS_NOVEDAD.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    Relevancia {r.toLowerCase()}
+                  </SelectItem>
+                ))}
+                <SelectItem value="sin">Sin clasificar</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -565,6 +636,30 @@ function NovedadesAdmin() {
                         {mayuscula(textoFechaNovedad(n.fecha_publicacion, n.fecha_captura))}
                       </span>
                       {n.origen === "manual" && <span>· manual</span>}
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px]">
+                      {n.relevancia ? (
+                        <Badge
+                          className={`text-[11px] ${RELEVANCIA_CLASE[n.relevancia] ?? ""}`}
+                          variant="outline"
+                        >
+                          Relevancia {n.relevancia.toLowerCase()}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[11px] text-muted-foreground">
+                          Sin clasificar
+                        </Badge>
+                      )}
+                      {n.impacto && (
+                        <Badge variant="outline" className="text-[11px]">
+                          Impacto: {n.impacto}
+                        </Badge>
+                      )}
+                      {n.sectores.map((sec) => (
+                        <Badge key={sec} variant="outline" className="text-[11px] font-normal">
+                          {sec}
+                        </Badge>
+                      ))}
                     </div>
                     <a
                       href={n.url}
@@ -796,6 +891,68 @@ function NovedadesAdmin() {
                   />
                 </div>
               </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="min-w-0 space-y-1">
+                  <Label>Impacto</Label>
+                  <Select
+                    value={novedadEditando.impacto ?? ""}
+                    onValueChange={(v) => setNovedadEditando({ ...novedadEditando, impacto: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sin clasificar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {IMPACTOS_NOVEDAD.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="min-w-0 space-y-1">
+                  <Label>Relevancia</Label>
+                  <Select
+                    value={novedadEditando.relevancia ?? ""}
+                    onValueChange={(v) => setNovedadEditando({ ...novedadEditando, relevancia: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sin clasificar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RELEVANCIAS_NOVEDAD.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label>Sectores afectados</Label>
+                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                  {SECTORES_NOVEDAD.map((sec) => {
+                    const actuales = novedadEditando.sectores ?? [];
+                    return (
+                      <label key={sec} className="flex items-center gap-1.5 text-[13px]">
+                        <Checkbox
+                          checked={actuales.includes(sec)}
+                          onCheckedChange={(v) =>
+                            setNovedadEditando({
+                              ...novedadEditando,
+                              sectores: v
+                                ? [...actuales, sec]
+                                : actuales.filter((x) => x !== sec),
+                            })
+                          }
+                        />
+                        {sec}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
           <DialogFooter>
@@ -814,6 +971,12 @@ function NovedadesAdmin() {
     </div>
   );
 }
+
+const RELEVANCIA_CLASE: Record<string, string> = {
+  Alta: "border-transparent bg-destructive/15 text-destructive",
+  Media: "border-transparent bg-[var(--warning)]/25 text-[var(--warning-foreground)]",
+  Baja: "text-muted-foreground",
+};
 
 const mayuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 

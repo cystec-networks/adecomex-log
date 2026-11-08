@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck, RefreshCw, Mail, Banknote, Paperclip } from "lucide-react";
+import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck, RefreshCw, Mail, Banknote, Paperclip, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,8 @@ import { recordatoriosAlertasExpedientes } from "@/lib/alertas-expediente-panel"
 import { KpiFilaOrdenable, useOrdenKpiPanel } from "@/components/kpi-fila-ordenable";
 import { AlertasColumnasOrdenables, useDisposicionAlertas } from "@/components/alertas-columnas-ordenables";
 import type { GrupoAlertaId } from "@/lib/panel-alertas-disposicion";
+import { marcarNovedadesVistas, obtenerNovedadesPanel, type NovedadPanel } from "@/lib/novedades-panel";
+import { textoFechaNovedad } from "@/lib/novedades-comercio";
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -312,12 +314,94 @@ function ordenarPorUrgencia(items: Reminder[]): Reminder[] {
     .map((x) => x.r);
 }
 
+/** «Novedades relevantes»: Alta/Media de los últimos 7 días no vistas por el usuario. */
+function useNovedadesPanel() {
+  const qc = useQueryClient();
+  const { data: userId } = useQuery({
+    queryKey: ["auth-user-id"],
+    queryFn: async () => (await supabase.auth.getSession()).data.session?.user.id ?? null,
+    staleTime: Infinity,
+  });
+  const queryKey = ["novedades-panel", userId];
+  const consulta = useQuery({
+    queryKey,
+    enabled: !!userId,
+    queryFn: () => obtenerNovedadesPanel(supabase, userId!),
+    refetchInterval: 10 * 60_000,
+  });
+  const marcarVistas = async (ids: string[]) => {
+    if (!userId || ids.length === 0) return;
+    const anterior = qc.getQueryData<NovedadPanel[]>(queryKey);
+    qc.setQueryData<NovedadPanel[]>(queryKey, (l) => (l ?? []).filter((n) => !ids.includes(n.id)));
+    try {
+      await marcarNovedadesVistas(supabase, userId, ids);
+    } catch {
+      qc.setQueryData(queryKey, anterior);
+      toast.error("No se pudo marcar la novedad como vista");
+    }
+  };
+  return { novedades: consulta.data ?? [], isLoading: consulta.isLoading, isError: consulta.isError, marcarVistas };
+}
+
+const RELEVANCIA_CLASE: Record<string, string> = {
+  Alta: "bg-destructive/15 text-destructive border-transparent",
+  Media: "bg-[var(--warning)]/25 text-[var(--warning-foreground)] border-transparent",
+};
+
 function RemindersPanel() {
-  const { reminders, dismiss, isLoading, isError } = useAlertasPanel();
+  const { reminders, dismiss, isLoading: cargandoAlertas, isError: errorAlertas } = useAlertasPanel();
+  const novedadesPanel = useNovedadesPanel();
+  const isLoading = cargandoAlertas || novedadesPanel.isLoading;
+  const isError = errorAlertas || novedadesPanel.isError;
+  const total = reminders.length + novedadesPanel.novedades.length;
 
   const grouped = REMINDER_GROUPS
     .map((g) => ({ ...g, items: ordenarPorUrgencia(reminders.filter((r) => g.kinds.includes(r.kind))) }))
     .filter((g) => g.items.length > 0);
+
+  const contenidoNovedades = (
+    <>
+      <div className="flex items-center gap-2 px-3 py-1.5 border-t bg-muted/30 text-[11px] uppercase text-muted-foreground">
+        <span className="h-2 w-2 shrink-0" aria-hidden />
+        <div className="min-w-0 flex-1" />
+        <span className="w-[60px] shrink-0 text-center">Relevancia</span>
+        <span className="w-[44px] shrink-0 text-center">Vista</span>
+      </div>
+      <ul className="divide-y border-t">
+        {novedadesPanel.novedades.map((n) => (
+          <li key={n.id} className="px-3 py-2.5 flex flex-wrap sm:flex-nowrap items-center gap-2 hover:bg-muted/40">
+            <span className={`h-2 w-2 rounded-full shrink-0 ${n.relevancia === "Alta" ? "bg-destructive" : "bg-[var(--warning)]"}`} />
+            <div className="min-w-0 flex-1 basis-[calc(100%-16px)] sm:basis-auto">
+              <a href={n.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[13px] font-medium hover:underline">
+                {n.titulo} <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
+              </a>
+              <div className="text-xs text-muted-foreground break-words">
+                {n.fuente_nombre} · {textoFechaNovedad(n.fecha_publicacion, n.fecha_captura)}
+              </div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {n.impacto && <Badge variant="secondary" className="text-[11px] font-normal">{n.impacto}</Badge>}
+                {n.sectores.map((s) => (
+                  <Badge key={s} variant="outline" className="text-[11px] font-normal">{s}</Badge>
+                ))}
+              </div>
+            </div>
+            <Badge className={`text-[10px] uppercase w-[60px] px-1 justify-center shrink-0 ${RELEVANCIA_CLASE[n.relevancia ?? ""] ?? ""}`}>
+              {n.relevancia}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-[11px] px-1 w-[44px] justify-center shrink-0"
+              onClick={() => novedadesPanel.marcarVistas([n.id])}
+              title="Ocultar del Panel; sigue en la lista de Novedades"
+            >
+              Vista
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
   // Orden y columna de cada bloque: preferencia del usuario o reparto balanceado automático.
   const disposicion = useDisposicionAlertas();
 
@@ -413,13 +497,16 @@ function RemindersPanel() {
               Restablecer orden
             </Button>
           )}
-          <Badge variant="outline">{reminders.length}</Badge>
-          {reminders.length > 0 && (
+          <Badge variant="outline">{total}</Badge>
+          {total > 0 && (
             <Button
               variant="ghost"
               size="sm"
               className="h-7 text-xs"
-              onClick={() => reminders.forEach((r) => dismiss(r.id))}
+              onClick={() => {
+                reminders.forEach((r) => dismiss(r.id));
+                void novedadesPanel.marcarVistas(novedadesPanel.novedades.map((n) => n.id));
+              }}
             >
               Marcar todo visto
             </Button>
@@ -430,11 +517,16 @@ function RemindersPanel() {
         {isError && <div role="alert" className="px-4 py-2 text-sm text-destructive">No se pudieron consultar todas las alertas de expedientes. Intente refrescar.</div>}
         {isLoading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Cargando alertas…</div>
-        ) : reminders.length === 0 ? (
+        ) : total === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Sin alertas pendientes 🎉</div>
         ) : (
           <AlertasColumnasOrdenables
-            grupos={Object.fromEntries(grouped.map((g) => [g.key, { label: g.label, emoji: g.emoji, cantidad: g.items.length, contenido: contenidoGrupo(g) }]))}
+            grupos={{
+              ...Object.fromEntries(grouped.map((g) => [g.key, { label: g.label, emoji: g.emoji, cantidad: g.items.length, contenido: contenidoGrupo(g) }])),
+              ...(novedadesPanel.novedades.length > 0
+                ? { novedades: { label: "Novedades relevantes", emoji: "📰", cantidad: novedadesPanel.novedades.length, contenido: contenidoNovedades } }
+                : {}),
+            }}
             guardada={disposicion.guardada}
             onCambiar={disposicion.cambiar}
             abiertas={abiertas}
