@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  abreEnVisorPdf,
+  claveDocumento,
   claveUrl,
+  estadoEnlacePorCodigo,
+  normalizarUrlNovedad,
   esFeed,
   extraerEnlacesListado,
   fechaIso,
@@ -21,6 +25,51 @@ describe("novedades de comercio exterior", () => {
     expect(claveUrl("http://aduanas.gob.do/noticias/abc")).toBe(
       claveUrl("https://www.aduanas.gob.do/noticias/abc/"),
     );
+  });
+
+  it("el mismo aviso publicado en otra carpeta de VUCE es duplicado (mismo documento)", () => {
+    const a = "https://vucerd.gob.do/media/2415/aviso-importante-entr%C3%B3-en-vigor-el-formulario-de-importancion-de-az%C3%BAcar.pdf";
+    const b = "https://www.vucerd.gob.do/media/2434/aviso-importante-entr%C3%B3-en-vigor-el-formulario-de-importancion-de-az%C3%BAcar.pdf";
+    expect(claveUrl(a)).not.toBe(claveUrl(b));
+    expect(claveDocumento(a)).toBe(claveDocumento(b));
+    expect(claveDocumento(a)).toBe(
+      "vucerd.gob.do/aviso-importante-entr%c3%b3-en-vigor-el-formulario-de-importancion-de-az%c3%bacar.pdf",
+    );
+  });
+
+  it("no une documentos distintos ni páginas web por la clave de documento", () => {
+    expect(claveDocumento("https://vucerd.gob.do/media/1/aviso.pdf")).toBeNull();
+    expect(claveDocumento("https://aduanas.gob.do/noticias/aviso-importante-de-aduanas/")).toBeNull();
+    expect(claveDocumento("https://vucerd.gob.do/media/1/aviso-importante-uno.pdf")).not.toBe(
+      claveDocumento("https://vucerd.gob.do/media/2/aviso-importante-dos.pdf"),
+    );
+  });
+
+  it("normaliza el enlace: absoluto, sin espacios y con acentos codificados", () => {
+    expect(normalizarUrlNovedad(" https://vucerd.gob.do/media/9/aviso azúcar.pdf ")).toBe(
+      "https://vucerd.gob.do/media/9/aviso%20az%C3%BAcar.pdf",
+    );
+    expect(normalizarUrlNovedad("https://vucerd.gob.do/media/9/az%C3%BAcar.pdf")).toBe(
+      "https://vucerd.gob.do/media/9/az%C3%BAcar.pdf",
+    );
+    expect(normalizarUrlNovedad("/media/9/aviso.pdf")).toBeNull();
+    expect(normalizarUrlNovedad("javascript:alert(1)")).toBeNull();
+  });
+
+  it("solo marca «no disponible» los enlaces que no responden o dan error", () => {
+    expect(estadoEnlacePorCodigo(200)).toBe("ok");
+    expect(estadoEnlacePorCodigo(301)).toBe("ok");
+    expect(estadoEnlacePorCodigo(403)).toBe("restringido");
+    expect(estadoEnlacePorCodigo(404)).toBe("no_disponible");
+    expect(estadoEnlacePorCodigo(503)).toBe("no_disponible");
+    expect(estadoEnlacePorCodigo(null)).toBe("no_disponible");
+  });
+
+  it("los avisos PDF se abren en el visor integrado", () => {
+    expect(abreEnVisorPdf({ url: "https://vucerd.gob.do/media/1/aviso.pdf" })).toBe(true);
+    expect(abreEnVisorPdf({ url: "https://dgii.gov.do/noticias/x", enlace_es_pdf: true })).toBe(true);
+    expect(abreEnVisorPdf({ url: "https://x.gob.do/descarga.pdf", enlace_es_pdf: false })).toBe(false);
+    expect(abreEnVisorPdf({ url: "https://aduanas.gob.do/noticias/x" })).toBe(false);
   });
 
   it("interpreta fechas RSS, ISO y dd/mm/aaaa", () => {

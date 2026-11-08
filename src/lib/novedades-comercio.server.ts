@@ -16,7 +16,9 @@ import {
   SECTORES_NOVEDAD,
   normalizarClasificacion,
   MAX_NUEVAS_POR_FUENTE,
+  claveDocumento,
   claveUrl,
+  estadoEnlacePorCodigo,
   esCategoriaNovedad,
   esFeed,
   esPdf,
@@ -27,6 +29,7 @@ import {
   parsearFeed,
   textoPlanoHtml,
   type Candidata,
+  type EstadoEnlace,
   type EstadoIntento,
 } from "./novedades-comercio";
 
@@ -320,17 +323,37 @@ async function procesarFuente(
       "No se encontraron publicaciones en la página (puede cargarse con programación del navegador). Carga sus novedades manualmente o usa otra dirección.",
     );
 
+  // Duplicado = mismo enlace o mismo documento (nombre de archivo en el sitio),
+  // ya sea guardado, descartado o repetido dentro de esta misma lectura.
   const claves = candidatas.map((c) => claveUrl(c.url));
-  const [{ data: guardadas, error: e1 }, { data: descartadas, error: e2 }] = await Promise.all([
+  const docs = [...new Set(candidatas.map((c) => claveDocumento(c.url)).filter((d): d is string => !!d))];
+  const sinDocs = Promise.resolve({ data: [] as { url_clave: string }[], error: null });
+  const [r1, r2, r3, r4] = await Promise.all([
     admin.from("novedades_comercio_exterior").select("url_clave").in("url_clave", claves),
     admin.from("novedades_descartadas").select("url_clave").in("url_clave", claves),
+    docs.length
+      ? admin.from("novedades_comercio_exterior").select("documento_clave").in("documento_clave", docs)
+      : sinDocs,
+    docs.length
+      ? admin.from("novedades_descartadas").select("documento_clave").in("documento_clave", docs)
+      : sinDocs,
   ]);
-  if (e1 || e2)
+  if (r1.error || r2.error || r3.error || r4.error)
     return fin("error", "No se pudo comprobar qué publicaciones ya estaban registradas.");
-  const conocidas = new Set([...(guardadas ?? []), ...(descartadas ?? [])].map((r) => r.url_clave));
-  const nuevas = candidatas
-    .filter((c) => !conocidas.has(claveUrl(c.url)))
-    .slice(0, MAX_NUEVAS_POR_FUENTE);
+  const conocidas = new Set<string>([
+    ...[...(r1.data ?? []), ...(r2.data ?? [])].map((r) => r.url_clave ?? ""),
+    ...[...(r3.data ?? []), ...(r4.data ?? [])].map((r) => `doc:${(r as { documento_clave?: string | null }).documento_clave ?? ""}`),
+  ]);
+  const nuevas: Candidata[] = [];
+  for (const c of candidatas) {
+    const k = claveUrl(c.url);
+    const d = claveDocumento(c.url);
+    if (conocidas.has(k) || (d && conocidas.has(`doc:${d}`))) continue;
+    conocidas.add(k);
+    if (d) conocidas.add(`doc:${d}`);
+    nuevas.push(c);
+    if (nuevas.length >= MAX_NUEVAS_POR_FUENTE) break;
+  }
   if (nuevas.length === 0)
     return fin("sin_novedades", `Sin publicaciones nuevas (${candidatas.length} revisadas).`);
 
@@ -390,7 +413,16 @@ async function procesarFuente(
     const { error } = await admin
       .from("novedades_comercio_exterior")
       .upsert(relevantes, { onConflict: "url_clave", ignoreDuplicates: true });
-    if (error) return fin("error", "No se pudieron guardar las novedades detectadas.");
+    if (error?.code === "23505") {
+      // Otro registro con el mismo documento apareció a la vez: guarda una a una
+      // y omite solo las repetidas.
+      for (const fila of relevantes) {
+        const { error: e } = await admin
+          .from("novedades_comercio_exterior")
+          .upsert(fila, { onConflict: "url_clave", ignoreDuplicates: true });
+        if (e && e.code !== "23505") return fin("error", "No se pudieron guardar las novedades detectadas.");
+      }
+    } else if (error) return fin("error", "No se pudieron guardar las novedades detectadas.");
   }
   if (irrelevantes.length) {
     await admin
@@ -468,6 +500,9 @@ export async function revisarNovedades(
       }
     }
     const nuevas = resultados.reduce((s, r) => s + r.nuevas, 0);
+    // Comprueba los enlaces de las novedades (nuevas y vencidas) para avisar de
+    // los que ya no responden; un fallo aquí no afecta a la revisión.
+    if (!prueba) await verificarEnlacesVencidos(admin).catch((e) => console.error("[novedades] enlaces", e));
     return { ok: true, fuentes: resultados, nuevas, detenida };
   } finally {
     const p = pausa as PausaIa | null;
@@ -603,4 +638,158 @@ export async function clasificarNovedadesPendientes(admin: Admin): Promise<Resul
     cambios,
     mensaje: `${clasificadas} novedad(es) clasificada(s) con el criterio actual.`,
   };
+}
+
+// ── Enlaces de las novedades ────────────────────────────────────────────────
+// Se comprueba que el enlace del sitio oficial responda para mostrar «Enlace no
+// disponible» en lugar de abrir una pestaña en blanco, y se sirven los PDF al
+// visor integrado (el navegador no puede leerlos directamente desde otro sitio).
+
+/** Horas tras las que se vuelve a comprobar un enlace en la revisión diaria. */
+export const HORAS_REVERIFICAR_ENLACE = 20;
+const MAX_ENLACES_POR_REVISION = 60;
+/** Tamaño máximo de un PDF servido al visor integrado. */
+export const MAX_BYTES_PDF_NOVEDAD = 25 * 1024 * 1024;
+
+export type ResultadoEnlace = {
+  estado: EstadoEnlace;
+  codigo: number | null;
+  esPdf: boolean | null;
+  mensaje: string;
+};
+
+function mensajeFallo(e: unknown): string {
+  const tiempo = e instanceof Error && /timeout|abort/i.test(e.name + e.message);
+  return tiempo ? "El sitio oficial no respondió a tiempo." : "No se pudo conectar con el sitio oficial.";
+}
+
+function mensajeCodigo(estado: EstadoEnlace, codigo: number): string {
+  if (estado === "ok") return "El enlace responde.";
+  if (estado === "restringido")
+    return `El sitio no permite comprobarlo automáticamente (código ${codigo}); puede abrirse desde el navegador.`;
+  return codigo === 404 || codigo === 410
+    ? "El sitio oficial ya no tiene esta página (código 404)."
+    : `El sitio oficial respondió con un error (código ${codigo}).`;
+}
+
+/** Pide el enlace y solo lee las cabeceras (el cuerpo se descarta). */
+export async function comprobarEnlace(url: string): Promise<ResultadoEnlace> {
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": AGENTE, Accept: "*/*" },
+      redirect: "follow",
+      signal: AbortSignal.timeout(12_000),
+    });
+    const tipo = res.headers.get("content-type") ?? "";
+    await res.body?.cancel().catch(() => undefined);
+    const estado = estadoEnlacePorCodigo(res.status);
+    return {
+      estado,
+      codigo: res.status,
+      esPdf: res.ok ? /pdf/i.test(tipo) : null,
+      mensaje: mensajeCodigo(estado, res.status),
+    };
+  } catch (e) {
+    return { estado: "no_disponible", codigo: null, esPdf: null, mensaje: mensajeFallo(e) };
+  }
+}
+
+export async function guardarEstadoEnlace(admin: Admin, id: string, r: ResultadoEnlace): Promise<void> {
+  await admin
+    .from("novedades_comercio_exterior")
+    .update({
+      enlace_estado: r.estado,
+      enlace_codigo_http: r.codigo,
+      enlace_mensaje: r.mensaje.slice(0, 300),
+      enlace_verificado_at: new Date().toISOString(),
+      ...(r.esPdf === null ? {} : { enlace_es_pdf: r.esPdf }),
+    })
+    .eq("id", id);
+}
+
+export async function verificarEnlacesNovedades(
+  admin: Admin,
+  filas: Array<{ id: string; url: string }>,
+): Promise<Array<{ id: string } & ResultadoEnlace>> {
+  return enLotes(filas, 6, async (f) => {
+    const r = await comprobarEnlace(f.url);
+    await guardarEstadoEnlace(admin, f.id, r);
+    return { id: f.id, ...r };
+  });
+}
+
+/** Comprueba los enlaces nunca verificados o verificados hace más de un día. */
+export async function verificarEnlacesVencidos(admin: Admin): Promise<number> {
+  const limite = new Date(Date.now() - HORAS_REVERIFICAR_ENLACE * 3_600_000).toISOString();
+  const { data } = await admin
+    .from("novedades_comercio_exterior")
+    .select("id, url")
+    .or(`enlace_verificado_at.is.null,enlace_verificado_at.lt.${limite}`)
+    .order("enlace_verificado_at", { ascending: true, nullsFirst: true })
+    .limit(MAX_ENLACES_POR_REVISION);
+  if (!data?.length) return 0;
+  await verificarEnlacesNovedades(admin, data);
+  return data.length;
+}
+
+export type PdfNovedad =
+  | { ok: true; base64: string; bytes: number; nombre: string }
+  | { ok: false; motivo: "no_disponible" | "restringido" | "no_es_pdf" | "muy_grande"; mensaje: string };
+
+function aBase64(bytes: Uint8Array): string {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000)
+    bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+function nombreArchivo(url: string): string {
+  try {
+    const seg = new URL(url).pathname.split("/").filter(Boolean).pop() ?? "";
+    const nombre = decodeURIComponent(seg).replace(/[\\/:*?"<>|]+/g, "-").trim();
+    return /\.pdf$/i.test(nombre) ? nombre : `${nombre || "documento"}.pdf`;
+  } catch {
+    return "documento.pdf";
+  }
+}
+
+/** Descarga el PDF del sitio oficial para el visor integrado y actualiza el estado del enlace. */
+export async function descargarPdfNovedad(admin: Admin, fila: { id: string; url: string }): Promise<PdfNovedad> {
+  let res: Response;
+  try {
+    res = await fetch(fila.url, {
+      headers: { "User-Agent": AGENTE, Accept: "application/pdf,*/*;q=0.5" },
+      redirect: "follow",
+      signal: AbortSignal.timeout(25_000),
+    });
+  } catch (e) {
+    const mensaje = mensajeFallo(e);
+    await guardarEstadoEnlace(admin, fila.id, { estado: "no_disponible", codigo: null, esPdf: null, mensaje });
+    return { ok: false, motivo: "no_disponible", mensaje };
+  }
+  const estado = estadoEnlacePorCodigo(res.status);
+  if (!res.ok) {
+    await res.body?.cancel().catch(() => undefined);
+    const mensaje = mensajeCodigo(estado, res.status);
+    await guardarEstadoEnlace(admin, fila.id, { estado, codigo: res.status, esPdf: null, mensaje });
+    return { ok: false, motivo: estado === "restringido" ? "restringido" : "no_disponible", mensaje };
+  }
+  const largo = Number(res.headers.get("content-length"));
+  if (largo > MAX_BYTES_PDF_NOVEDAD) {
+    await res.body?.cancel().catch(() => undefined);
+    return { ok: false, motivo: "muy_grande", mensaje: "El documento es demasiado grande para el visor; ábrelo en el sitio oficial." };
+  }
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  const esPdfReal = new TextDecoder("latin1").decode(bytes.subarray(0, 1024)).includes("%PDF-");
+  await guardarEstadoEnlace(admin, fila.id, {
+    estado: "ok",
+    codigo: res.status,
+    esPdf: esPdfReal,
+    mensaje: "El enlace responde.",
+  });
+  if (!esPdfReal)
+    return { ok: false, motivo: "no_es_pdf", mensaje: "El enlace no lleva a un PDF; ábrelo en el sitio oficial." };
+  if (bytes.length > MAX_BYTES_PDF_NOVEDAD)
+    return { ok: false, motivo: "muy_grande", mensaje: "El documento es demasiado grande para el visor; ábrelo en el sitio oficial." };
+  return { ok: true, base64: aBase64(bytes), bytes: bytes.length, nombre: nombreArchivo(res.url || fila.url) };
 }

@@ -165,6 +165,56 @@ export function claveUrl(url: string): string {
     .replace(/\/+$/, "");
 }
 
+/**
+ * Misma regla que la función SQL `novedad_documento_clave`: sitio + nombre del
+ * archivo enlazado (PDF/Word/Excel). Detecta el mismo aviso publicado de nuevo
+ * bajo otra carpeta (VUCE: /media/2415/… y /media/2434/…). Nombres cortos o
+ * genéricos (< 15 caracteres) no cuentan para no unir documentos distintos.
+ */
+export function claveDocumento(url: string): string | null {
+  const s = url.trim().replace(/[?#].*$/, "").toLowerCase();
+  const host = s.match(/^https?:\/\/(?:www\.)?([^/:]+)/)?.[1];
+  const m = s.match(/\/([^/]+)\.(pdf|docx?|xlsx?)$/);
+  if (!host || !m || m[1].length < 15) return null;
+  return `${host}/${m[1]}.${m[2]}`;
+}
+
+/**
+ * Normaliza el enlace de una novedad: absoluto (http/https), sin espacios y con
+ * los caracteres acentuados codificados (%C3%A9). Devuelve `null` si no es válido.
+ */
+export function normalizarUrlNovedad(url: string | null | undefined): string | null {
+  const t = (url ?? "").trim();
+  if (!/^https?:\/\//i.test(t)) return null;
+  try {
+    const u = new URL(t);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    const href = u.href;
+    return /^https?:\/\/[!-~]+$/.test(href) ? href : null;
+  } catch {
+    return null;
+  }
+}
+
+export type EstadoEnlace = "ok" | "restringido" | "no_disponible";
+
+/**
+ * Interpreta la respuesta del sitio oficial al comprobar un enlace. 401/403/429
+ * suelen ser bloqueos a lecturas automáticas (el navegador del usuario sí
+ * abre la página), así que no se marcan como «no disponible».
+ */
+export function estadoEnlacePorCodigo(codigo: number | null): EstadoEnlace {
+  if (codigo === null) return "no_disponible";
+  if (codigo >= 200 && codigo < 400) return "ok";
+  if (codigo === 401 || codigo === 403 || codigo === 429) return "restringido";
+  return "no_disponible";
+}
+
+/** Abre en el visor integrado: el enlace termina en .pdf o el sitio respondió con un PDF. */
+export function abreEnVisorPdf(n: { url: string; enlace_es_pdf?: boolean | null }): boolean {
+  return n.enlace_es_pdf === true || (n.enlace_es_pdf !== false && esPdf(n.url));
+}
+
 const ENTIDADES: Record<string, string> = {
   amp: "&",
   lt: "<",

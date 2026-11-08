@@ -5464,6 +5464,12 @@ export type Database = {
           clasificacion_manual: boolean
           created_at: string
           created_by: string | null
+          documento_clave: string | null
+          enlace_codigo_http: number | null
+          enlace_es_pdf: boolean | null
+          enlace_estado: string | null
+          enlace_mensaje: string | null
+          enlace_verificado_at: string | null
           fecha_captura: string
           fecha_publicacion: string | null
           fuente_id: string | null
@@ -5485,6 +5491,12 @@ export type Database = {
           clasificacion_manual?: boolean
           created_at?: string
           created_by?: string | null
+          documento_clave?: string | null
+          enlace_codigo_http?: number | null
+          enlace_es_pdf?: boolean | null
+          enlace_estado?: string | null
+          enlace_mensaje?: string | null
+          enlace_verificado_at?: string | null
           fecha_captura?: string
           fecha_publicacion?: string | null
           fuente_id?: string | null
@@ -5506,6 +5518,12 @@ export type Database = {
           clasificacion_manual?: boolean
           created_at?: string
           created_by?: string | null
+          documento_clave?: string | null
+          enlace_codigo_http?: number | null
+          enlace_es_pdf?: boolean | null
+          enlace_estado?: string | null
+          enlace_mensaje?: string | null
+          enlace_verificado_at?: string | null
           fecha_captura?: string
           fecha_publicacion?: string | null
           fuente_id?: string | null
@@ -5534,6 +5552,7 @@ export type Database = {
       novedades_descartadas: {
         Row: {
           created_at: string
+          documento_clave: string | null
           fuente_id: string | null
           id: string
           titulo: string | null
@@ -5542,6 +5561,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          documento_clave?: string | null
           fuente_id?: string | null
           id?: string
           titulo?: string | null
@@ -5550,6 +5570,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          documento_clave?: string | null
           fuente_id?: string | null
           id?: string
           titulo?: string | null
@@ -8293,6 +8314,7 @@ export type Database = {
       marcar_password_cambiada_cliente: { Args: never; Returns: undefined }
       marcar_password_cambiada_estudiante: { Args: never; Returns: undefined }
       normativa_guardar_embeddings: { Args: { p_lote: Json }; Returns: number }
+      novedad_documento_clave: { Args: { p_url: string }; Returns: string }
       novedad_url_clave: { Args: { p_url: string }; Returns: string }
       novedades_token_valido: { Args: { p_token: string }; Returns: boolean }
       novedades_tomar_lock: { Args: { p_minutos?: number }; Returns: boolean }

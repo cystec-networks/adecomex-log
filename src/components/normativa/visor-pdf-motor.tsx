@@ -35,6 +35,8 @@ export type MotorPdfProps = {
   obtenerUrl: (renovar: boolean) => Promise<string>;
   /** Tamaño conocido del archivo; si falta se consulta al almacenamiento. */
   bytes?: number | null;
+  /** El archivo ya está completo en memoria (URL local): se abre sin pedir partes. */
+  sinRangos?: boolean;
   paginaInicial?: number | null;
   onPaginas: (total: number) => void;
   onPagina: (n: number) => void;
@@ -166,7 +168,7 @@ export const MotorPdf = forwardRef<MotorPdfApi, MotorPdfProps>(function MotorPdf
         // Archivos pequeños: una sola descarga. Pesados: por partes.
         const obtener = cb.current.obtenerUrl;
         let bytes = cb.current.bytes ?? null;
-        if (!bytes || bytes <= 0) bytes = await tamanoArchivo(obtener).catch(() => null);
+        if (!cb.current.sinRangos && (!bytes || bytes <= 0)) bytes = await tamanoArchivo(obtener).catch(() => null);
         // Recursos de pdf.js servidos por la propia app: imágenes JPEG 2000/JBIG2
         // (sellos y escudos de documentos oficiales) y fuentes estándar no incrustadas.
         const base = `${window.location.origin}/pdfjs`;
@@ -180,7 +182,7 @@ export const MotorPdf = forwardRef<MotorPdfApi, MotorPdfProps>(function MotorPdf
           cMapPacked: true,
           iccUrl: `${base}/iccs/`,
         };
-        if (!bytes || bytes <= UMBRAL_CARGA_POR_PARTES) {
+        if (cb.current.sinRangos || !bytes || bytes <= UMBRAL_CARGA_POR_PARTES) {
           tarea = pdfjs.getDocument({ ...comun, url: await obtener(false) });
         } else {
           const primera = await pedirRango(obtener, 0, Math.min(bytes, BYTES_INICIALES_PDF), abortar.signal);

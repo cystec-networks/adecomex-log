@@ -49,6 +49,9 @@ describe("novedades relevantes en el Panel", () => {
       impacto: "Otro",
       sectores: ["General"],
       relevancia,
+      enlace_estado: null,
+      enlace_es_pdf: null,
+      enlace_mensaje: null,
     });
     const r = ordenarNovedadesPanel([n("m1", "Media", "2026-11-08"), n("a1", "Alta", "2026-11-02"), n("a2", "Alta", "2026-11-05")]);
     expect(r.map((x) => x.id)).toEqual(["a2", "a1", "m1"]);
@@ -79,6 +82,9 @@ describe("relevancia del Panel y criterio de «Alta»", () => {
     impacto: "Permisos",
     sectores: ["General"],
     relevancia,
+    enlace_estado: null,
+    enlace_es_pdf: null,
+    enlace_mensaje: null,
   });
 
   it("por defecto solo muestra Alta; con la opción, también Media", () => {

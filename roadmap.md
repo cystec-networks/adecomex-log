@@ -129,3 +129,4 @@
 - [x] Transportes: columna Total Pagado (Neto a Pagar del comprobante, distinta de Flete), recuadros Total Flete/Pagado/Ganancia/Descuento CxC del período y reordenamiento de recuadros y columnas guardado por usuario
 - [x] Transportes: Flete muestra el Monto a Facturar al Cliente (bruto) y Total Pagado el Neto a Pagar
 - [x] Dashboard de Transportes: contenedores reales, Facturado por e-CF vinculada, ingreso = Monto a Facturar, colores y leyenda por estado, variaciones contra el período anterior equivalente
+- [x] Novedades: enlaces web normales en otra pestaña, avisos PDF en el visor integrado con «Abrir en el sitio oficial», «Enlace no disponible» con reintento y aviso en la lista; duplicados por enlace o mismo documento (VUCE /media/<n>/) y limpieza conservando el más antiguo con sus «Vista». 38 enlaces comprobados (35 responden, 3 restringidos), aviso de azúcar abierto en el visor. Pendiente publicar.

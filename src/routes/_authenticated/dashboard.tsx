@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck, RefreshCw, Mail, Banknote, Paperclip, ExternalLink } from "lucide-react";
+import { AlertTriangle, Ship, Clock, FileWarning, TrendingUp, Bell, Truck, RefreshCw, Mail, Banknote, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { useReminders, type Reminder, type ReminderKind } from "@/lib/reminders";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ import {
   type NovedadPanel,
 } from "@/lib/novedades-panel";
 import { textoFechaNovedad } from "@/lib/novedades-comercio";
+import { EnlaceNovedad } from "@/components/novedades/enlace-novedad";
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -444,9 +445,7 @@ function RemindersPanel() {
           <li key={n.id} className="px-3 py-2.5 flex flex-wrap sm:flex-nowrap items-center gap-2 hover:bg-muted/40">
             <span className={`h-2 w-2 rounded-full shrink-0 ${n.relevancia === "Alta" ? "bg-destructive" : "bg-[var(--warning)]"}`} />
             <div className="min-w-0 flex-1 basis-[calc(100%-16px)] sm:basis-auto">
-              <a href={n.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[13px] font-medium hover:underline">
-                {n.titulo} <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
-              </a>
+              <EnlaceNovedad novedad={n} />
               <div className="text-xs text-muted-foreground break-words">
                 {n.fuente_nombre} · {textoFechaNovedad(n.fecha_publicacion, n.fecha_captura)}
               </div>

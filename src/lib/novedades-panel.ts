@@ -16,6 +16,9 @@ export type NovedadPanel = {
   impacto: string | null;
   sectores: string[];
   relevancia: string | null;
+  enlace_estado: string | null;
+  enlace_es_pdf: boolean | null;
+  enlace_mensaje: string | null;
 };
 
 const PESO: Record<string, number> = { Alta: 0, Media: 1 };
@@ -41,7 +44,7 @@ export async function obtenerNovedadesPanel(
   const desde = new Date(hoy.getTime() - (DIAS_NOVEDADES_PANEL + 1) * 86_400_000).toISOString();
   const { data, error } = await supabase
     .from("novedades_comercio_exterior")
-    .select("id, titulo, fuente_nombre, url, fecha_publicacion, fecha_captura, impacto, sectores, relevancia")
+    .select("id, titulo, fuente_nombre, url, fecha_publicacion, fecha_captura, impacto, sectores, relevancia, enlace_estado, enlace_es_pdf, enlace_mensaje")
     .in("relevancia", ["Alta", "Media"])
     .gte("fecha_captura", desde)
     .limit(200);

@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ExternalLink, History, Pencil, PlayCircle, Plus, RefreshCw, Search, Sparkles, Trash2 } from "lucide-react";
+import { AlertTriangle, History, Link2, Pencil, PlayCircle, Plus, RefreshCw, Search, Sparkles, Trash2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -37,6 +37,7 @@ import {
   RELEVANCIAS_NOVEDAD,
   SECTORES_NOVEDAD,
   normalizarSectores,
+  normalizarUrlNovedad,
   patronIntentos,
   textoFechaNovedad,
   type CategoriaNovedad,
@@ -45,7 +46,16 @@ import {
 import {
   clasificarNovedadesSinClasificar,
   revisarNovedadesAhora,
+  verificarEnlacesNovedad,
 } from "@/lib/novedades-comercio.functions";
+import { EnlaceNovedad } from "@/components/novedades/enlace-novedad";
+
+/** Mensaje claro cuando la novedad ya existe (mismo enlace o mismo documento). */
+function mensajeDuplicado(detalle: string): string {
+  return /documento_clave/.test(detalle)
+    ? "Ya existe una novedad con el mismo documento (mismo archivo publicado en el sitio oficial)"
+    : "Ya existe una novedad con ese mismo enlace";
+}
 
 type Fuente = Database["public"]["Tables"]["fuentes_novedades"]["Row"];
 type Novedad = Database["public"]["Tables"]["novedades_comercio_exterior"]["Row"];
@@ -128,6 +138,8 @@ function NovedadesAdmin() {
   const qc = useQueryClient();
   const revisar = useServerFn(revisarNovedadesAhora);
   const clasificar = useServerFn(clasificarNovedadesSinClasificar);
+  const verificar = useServerFn(verificarEnlacesNovedad);
+  const [verificandoEnlaces, setVerificandoEnlaces] = useState(false);
   const [clasificando, setClasificando] = useState(false);
   const [relevancia, setRelevancia] = useState<string>("todas");
   const [revisando, setRevisando] = useState<string | null>(null);
@@ -243,6 +255,21 @@ function NovedadesAdmin() {
 
   const refrescar = () => qc.invalidateQueries({ queryKey: CLAVE });
   const fallo = (e: Error) => toast.error(e.message || "No se pudo guardar");
+  const enlacesCaidos = novedades.filter((n) => n.enlace_estado === "no_disponible").length;
+  async function verificarEnlaces() {
+    setVerificandoEnlaces(true);
+    try {
+      const r = await verificar({ data: { ids: novedades.map((n) => n.id) } });
+      const caidos = r.filter((x) => x.estado === "no_disponible").length;
+      if (caidos) toast.warning(`${caidos} enlace(s) no disponible(s) de ${r.length} comprobados`);
+      else toast.success(`Los ${r.length} enlaces responden`);
+      refrescar();
+    } catch {
+      toast.error("No se pudieron comprobar los enlaces");
+    } finally {
+      setVerificandoEnlaces(false);
+    }
+  }
 
   async function ejecutarRevision(fuenteId: string | null) {
     setRevisando(fuenteId ?? "todas");
@@ -334,12 +361,11 @@ function NovedadesAdmin() {
     mutationFn: async (n: Partial<Novedad>) => {
       const titulo = n.titulo?.trim() ?? "";
       const resumen = n.resumen?.trim() ?? "";
-      const url = n.url?.trim() ?? "";
+      const url = normalizarUrlNovedad(n.url);
       const fuente = fuentes.find((f) => f.id === n.fuente_id);
       const fuente_nombre = (fuente?.nombre ?? n.fuente_nombre ?? "").trim();
       if (!titulo || !resumen) throw new Error("Escribe el título y el resumen");
-      if (!/^https?:\/\//i.test(url))
-        throw new Error("Indica el enlace original (http:// o https://)");
+      if (!url) throw new Error("Indica el enlace original completo (http:// o https://)");
       if (!fuente_nombre) throw new Error("Indica la fuente");
       if (!n.categoria) throw new Error("Elige la categoría");
       const fila = {
@@ -354,6 +380,12 @@ function NovedadesAdmin() {
         sectores: n.relevancia || n.impacto ? normalizarSectores(n.sectores) : (n.sectores ?? []),
         relevancia: n.relevancia ?? null,
       };
+      // Enlace nuevo o cambiado: se vuelve a comprobar tras guardar.
+      const original0 = n.id ? novedades.find((x) => x.id === n.id) : undefined;
+      const enlaceCambiado = !original0 || original0.url !== url;
+      const reinicioEnlace = enlaceCambiado
+        ? { enlace_estado: null, enlace_codigo_http: null, enlace_es_pdf: null, enlace_mensaje: null, enlace_verificado_at: null }
+        : {};
       // Si el administrador cambia la clasificación, queda como corrección manual
       // y la reevaluación con IA ya no la toca.
       const original = n.id ? novedades.find((x) => x.id === n.id) : undefined;
@@ -368,16 +400,23 @@ function NovedadesAdmin() {
       if (n.id) {
         const { error } = await supabase
           .from("novedades_comercio_exterior")
-          .update(fila)
+          .update({ ...fila, ...reinicioEnlace })
           .eq("id", n.id);
-        if (error) throw error;
+        if (error) {
+          if (error.code === "23505") throw new Error(mensajeDuplicado(error.message));
+          throw error;
+        }
+        if (enlaceCambiado) void verificar({ data: { ids: [n.id] } }).then(refrescar).catch(() => undefined);
       } else {
         const { data: u } = await supabase.auth.getUser();
-        const { error } = await supabase
+        const { data: creada, error } = await supabase
           .from("novedades_comercio_exterior")
-          .insert({ ...fila, origen: "manual", created_by: u.user?.id ?? null });
+          .insert({ ...fila, origen: "manual", created_by: u.user?.id ?? null })
+          .select("id")
+          .maybeSingle();
+        if (creada?.id) void verificar({ data: { ids: [creada.id] } }).then(refrescar).catch(() => undefined);
         if (error) {
-          if (error.code === "23505") throw new Error("Ya existe una novedad con ese mismo enlace");
+          if (error.code === "23505") throw new Error(mensajeDuplicado(error.message));
           throw error;
         }
       }
@@ -589,6 +628,18 @@ function NovedadesAdmin() {
             <Button
               size="sm"
               variant="outline"
+              onClick={verificarEnlaces}
+              disabled={verificandoEnlaces || novedades.length === 0}
+              title="Comprueba ahora que los enlaces de las novedades respondan en el sitio oficial. La revisión diaria también lo hace."
+            >
+              <Link2 className={`h-4 w-4 ${verificandoEnlaces ? "animate-pulse" : ""}`} />
+              {verificandoEnlaces
+                ? "Comprobando…"
+                : `Verificar enlaces${enlacesCaidos > 0 ? ` (${enlacesCaidos} sin respuesta)` : ""}`}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() =>
                 setNovedadEditando({
                   categoria: "Aduanas",
@@ -686,20 +737,22 @@ function NovedadesAdmin() {
                           Impacto: {n.impacto}
                         </Badge>
                       )}
+                      {n.enlace_estado === "no_disponible" && (
+                        <Badge
+                          variant="outline"
+                          className="border-destructive/40 text-[11px] text-destructive"
+                          title={`${n.enlace_mensaje ?? "El sitio oficial no respondió"}${n.enlace_verificado_at ? ` · comprobado ${fmtFechaHora(n.enlace_verificado_at)}` : ""}`}
+                        >
+                          <AlertTriangle className="mr-1 h-3 w-3" /> Enlace no disponible
+                        </Badge>
+                      )}
                       {n.sectores.map((sec) => (
                         <Badge key={sec} variant="outline" className="text-[11px] font-normal">
                           {sec}
                         </Badge>
                       ))}
                     </div>
-                    <a
-                      href={n.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-[13px] font-medium hover:underline"
-                    >
-                      {n.titulo} <ExternalLink className="h-3 w-3 shrink-0" />
-                    </a>
+                    <EnlaceNovedad novedad={n} />
                     <p className="text-[12px] text-muted-foreground">{n.resumen}</p>
                   </div>
                   <div className="flex shrink-0 gap-1">
