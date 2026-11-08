@@ -39,11 +39,36 @@ export function claveUrl(url: string): string {
 }
 
 const ENTIDADES: Record<string, string> = {
-  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ",
-  aacute: "á", eacute: "é", iacute: "í", oacute: "ó", uacute: "ú", ntilde: "ñ",
-  Aacute: "Á", Eacute: "É", Iacute: "Í", Oacute: "Ó", Uacute: "Ú", Ntilde: "Ñ",
-  uuml: "ü", laquo: "«", raquo: "»", ldquo: "“", rdquo: "”", lsquo: "‘", rsquo: "’",
-  ndash: "–", mdash: "—", hellip: "…", iexcl: "¡", iquest: "¿",
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+  aacute: "á",
+  eacute: "é",
+  iacute: "í",
+  oacute: "ó",
+  uacute: "ú",
+  ntilde: "ñ",
+  Aacute: "Á",
+  Eacute: "É",
+  Iacute: "Í",
+  Oacute: "Ó",
+  Uacute: "Ú",
+  Ntilde: "Ñ",
+  uuml: "ü",
+  laquo: "«",
+  raquo: "»",
+  ldquo: "“",
+  rdquo: "”",
+  lsquo: "‘",
+  rsquo: "’",
+  ndash: "–",
+  mdash: "—",
+  hellip: "…",
+  iexcl: "¡",
+  iquest: "¿",
 };
 
 export function decodificarEntidades(s: string): string {
@@ -58,6 +83,7 @@ export function decodificarEntidades(s: string): string {
 
 const limpiar = (s: string) =>
   decodificarEntidades(s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/<[^>]+>/g, " "))
+    .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -71,8 +97,23 @@ export function textoPlanoHtml(html: string, max = 3000): string {
 }
 
 const MESES: Record<string, number> = {
-  jan: 1, ene: 1, feb: 2, mar: 3, apr: 4, abr: 4, may: 5, jun: 6, jul: 7,
-  aug: 8, ago: 8, sep: 9, set: 9, oct: 10, nov: 11, dec: 12, dic: 12,
+  jan: 1,
+  ene: 1,
+  feb: 2,
+  mar: 3,
+  apr: 4,
+  abr: 4,
+  may: 5,
+  jun: 6,
+  jul: 7,
+  aug: 8,
+  ago: 8,
+  sep: 9,
+  set: 9,
+  oct: 10,
+  nov: 11,
+  dec: 12,
+  dic: 12,
 };
 
 const dos = (n: number) => String(n).padStart(2, "0");
@@ -101,8 +142,12 @@ export function fechaIso(texto: string | null | undefined): string | null {
 /** Fecha declarada en metadatos de un artículo (Open Graph / schema.org). */
 export function fechaMetaHtml(html: string): string | null {
   const m =
-    html.match(/<meta[^>]+(?:property|name|itemprop)=["'](?:article:published_time|datePublished|date|pubdate|DC\.date)["'][^>]*content=["']([^"']+)["']/i) ??
-    html.match(/<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name|itemprop)=["'](?:article:published_time|datePublished)["']/i) ??
+    html.match(
+      /<meta[^>]+(?:property|name|itemprop)=["'](?:article:published_time|datePublished|date|pubdate|DC\.date)["'][^>]*content=["']([^"']+)["']/i,
+    ) ??
+    html.match(
+      /<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name|itemprop)=["'](?:article:published_time|datePublished)["']/i,
+    ) ??
     html.match(/"datePublished"\s*:\s*"([^"]+)"/i) ??
     html.match(/<time[^>]+datetime=["']([^"']+)["']/i);
   return fechaIso(m?.[1]);
@@ -130,7 +175,8 @@ export function parsearFeed(xml: string, base: string): Candidata[] {
   const vistos = new Set<string>();
   const salida: Candidata[] = [];
   for (const b of bloques) {
-    const campo = (n: string) => b.match(new RegExp(`<${n}\\b[^>]*>([\\s\\S]*?)</${n}>`, "i"))?.[1] ?? "";
+    const campo = (n: string) =>
+      b.match(new RegExp(`<${n}\\b[^>]*>([\\s\\S]*?)</${n}>`, "i"))?.[1] ?? "";
     const titulo = limpiar(campo("title"));
     const enlace =
       limpiar(campo("link")) ||
@@ -142,14 +188,23 @@ export function parsearFeed(xml: string, base: string): Candidata[] {
     salida.push({
       titulo: titulo.slice(0, 300),
       url,
-      fecha: fechaIso(limpiar(campo("pubDate")) || limpiar(campo("published")) || limpiar(campo("updated")) || limpiar(campo("dc:date"))),
-      extracto: limpiar(campo("description") || campo("summary") || campo("content:encoded")).slice(0, 1200),
+      fecha: fechaIso(
+        limpiar(campo("pubDate")) ||
+          limpiar(campo("published")) ||
+          limpiar(campo("updated")) ||
+          limpiar(campo("dc:date")),
+      ),
+      extracto: limpiar(campo("description") || campo("summary") || campo("content:encoded")).slice(
+        0,
+        1200,
+      ),
     });
   }
   return salida;
 }
 
-const NAVEGACION = /^(inicio|contacto|transparencia|servicios|sobre nosotros|ver m[aá]s|leer m[aá]s|m[aá]s noticias|siguiente|anterior|pol[ií]tica|t[eé]rminos|mapa del sitio)/i;
+const NAVEGACION =
+  /^(inicio|contacto|transparencia|servicios|sobre nosotros|ver m[aá]s|leer m[aá]s|m[aá]s noticias|siguiente|anterior|pol[ií]tica|t[eé]rminos|mapa del sitio)/i;
 
 /**
  * Extrae enlaces de publicaciones de una página de listado. Prefiere los
@@ -164,7 +219,10 @@ export function extraerEnlacesListado(html: string, urlListado: string): Candida
     return [];
   }
   const anfitrion = base.hostname.replace(/^www\./, "");
-  const rutaListado = base.pathname.replace(/\/(Paginas\/)?(default\.aspx|index\.\w+)?$/i, "").replace(/\/+$/, "").toLowerCase();
+  const rutaListado = base.pathname
+    .replace(/\/(Paginas\/)?(default\.aspx|index\.\w+)?$/i, "")
+    .replace(/\/+$/, "")
+    .toLowerCase();
   const limpio = html.replace(/<(script|style|noscript)[\s\S]*?<\/\1>/gi, " ");
   const todos: Array<Candidata & { bajoRuta: boolean }> = [];
   const vistos = new Set<string>();
@@ -187,7 +245,10 @@ export function extraerEnlacesListado(html: string, urlListado: string): Candida
       url,
       fecha,
       extracto: "",
-      bajoRuta: rutaListado.length > 1 && ruta.startsWith(`${rutaListado}/`) && ruta.length > rutaListado.length + 2,
+      bajoRuta:
+        rutaListado.length > 1 &&
+        ruta.startsWith(`${rutaListado}/`) &&
+        ruta.length > rutaListado.length + 2,
     });
   }
   const bajoRuta = todos.filter((c) => c.bajoRuta);
@@ -198,11 +259,59 @@ export function extraerEnlacesListado(html: string, urlListado: string): Candida
 export const esPdf = (url: string) => /\.pdf(\?|$)/i.test(url);
 
 const VACIAS = new Set([
-  "que", "qué", "hay", "sobre", "para", "como", "cómo", "cual", "cuál", "cuales", "cuáles", "esta", "este",
-  "estos", "estas", "novedad", "novedades", "noticia", "noticias", "reciente", "recientes", "ultima", "última",
-  "ultimas", "últimas", "nuevo", "nueva", "nuevos", "nuevas", "algo", "alguna", "algún", "tiene", "tienen",
-  "desde", "entre", "semana", "dime", "puedes", "favor", "hola", "donde", "dónde", "cuando", "cuándo", "sabes",
-  "saber", "informar", "información", "comercio", "exterior", "república", "dominicana",
+  "que",
+  "qué",
+  "hay",
+  "sobre",
+  "para",
+  "como",
+  "cómo",
+  "cual",
+  "cuál",
+  "cuales",
+  "cuáles",
+  "esta",
+  "este",
+  "estos",
+  "estas",
+  "novedad",
+  "novedades",
+  "noticia",
+  "noticias",
+  "reciente",
+  "recientes",
+  "ultima",
+  "última",
+  "ultimas",
+  "últimas",
+  "nuevo",
+  "nueva",
+  "nuevos",
+  "nuevas",
+  "algo",
+  "alguna",
+  "algún",
+  "tiene",
+  "tienen",
+  "desde",
+  "entre",
+  "semana",
+  "dime",
+  "puedes",
+  "favor",
+  "hola",
+  "donde",
+  "dónde",
+  "cuando",
+  "cuándo",
+  "sabes",
+  "saber",
+  "informar",
+  "información",
+  "comercio",
+  "exterior",
+  "república",
+  "dominicana",
 ]);
 
 /** Palabras útiles de la pregunta para buscar novedades relacionadas. */

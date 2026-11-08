@@ -46,6 +46,7 @@ import { Route as AuthenticatedAdminDashboardFinancieroRouteImport } from './rou
 import { Route as AuthenticatedAdminFacturacionRouteImport } from './routes/_authenticated/admin.facturacion'
 import { Route as AuthenticatedAdminGastosOperativosRouteImport } from './routes/_authenticated/admin.gastos-operativos'
 import { Route as AuthenticatedAdminHonorariosTercerosRouteImport } from './routes/_authenticated/admin.honorarios-terceros'
+import { Route as AuthenticatedAdminNovedadesRouteImport } from './routes/_authenticated/admin.novedades'
 import { Route as AuthenticatedAdminPlantillasDocumentosRouteImport } from './routes/_authenticated/admin.plantillas-documentos'
 import { Route as AuthenticatedAdminReembolsosRouteImport } from './routes/_authenticated/admin.reembolsos'
 import { Route as AuthenticatedAdminRegistroDiarioRouteImport } from './routes/_authenticated/admin.registro-diario'
@@ -100,6 +101,7 @@ import { Route as AuthenticatedRrhhPrestamosTercerosIndexRouteImport } from './r
 import { Route as AuthenticatedRrhhPrestamosIndexRouteImport } from './routes/_authenticated/rrhh.prestamos.index'
 import { Route as PortalEstudiantePortalEstudianteProgramasIdRouteImport } from './routes/_portal-estudiante/portal-estudiante.programas.$id'
 import { Route as PortalPortalExpedientesIdRouteImport } from './routes/_portal/portal.expedientes.$id'
+import { Route as ApiPublicNovedadesRevisarRouteImport } from './routes/api/public/novedades.revisar'
 import { Route as ApiPublicReciboPagoIdRouteImport } from './routes/api/public/recibo-pago.$id'
 import { Route as ApiPublicSolicitudPagoTransporteIdRouteImport } from './routes/api/public/solicitud-pago-transporte.$id'
 import { Route as ApiPublicConfirmacionesPendientesIdEnviadoRouteImport } from './routes/api/public/confirmaciones-pendientes.$id.enviado'
@@ -305,6 +307,12 @@ const AuthenticatedAdminHonorariosTercerosRoute =
   AuthenticatedAdminHonorariosTercerosRouteImport.update({
     id: '/admin/honorarios-terceros',
     path: '/admin/honorarios-terceros',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminNovedadesRoute =
+  AuthenticatedAdminNovedadesRouteImport.update({
+    id: '/admin/novedades',
+    path: '/admin/novedades',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminPlantillasDocumentosRoute =
@@ -624,6 +632,12 @@ const PortalPortalExpedientesIdRoute =
     path: '/portal/expedientes/$id',
     getParentRoute: () => PortalRouteRoute,
   } as any)
+const ApiPublicNovedadesRevisarRoute =
+  ApiPublicNovedadesRevisarRouteImport.update({
+    id: '/api/public/novedades/revisar',
+    path: '/api/public/novedades/revisar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicReciboPagoIdRoute = ApiPublicReciboPagoIdRouteImport.update({
   id: '/api/public/recibo-pago/$id',
   path: '/api/public/recibo-pago/$id',
@@ -677,6 +691,7 @@ export interface FileRoutesByFullPath {
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/admin/honorarios-terceros': typeof AuthenticatedAdminHonorariosTercerosRoute
+  '/admin/novedades': typeof AuthenticatedAdminNovedadesRoute
   '/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
   '/admin/reembolsos': typeof AuthenticatedAdminReembolsosRoute
   '/admin/registro-diario': typeof AuthenticatedAdminRegistroDiarioRoute
@@ -727,6 +742,7 @@ export interface FileRoutesByFullPath {
   '/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
+  '/api/public/novedades/revisar': typeof ApiPublicNovedadesRevisarRoute
   '/api/public/recibo-pago/$id': typeof ApiPublicReciboPagoIdRoute
   '/api/public/solicitud-pago-transporte/$id': typeof ApiPublicSolicitudPagoTransporteIdRoute
   '/legal/documentos/': typeof AuthenticatedLegalDocumentosIndexRoute
@@ -770,6 +786,7 @@ export interface FileRoutesByTo {
   '/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/admin/honorarios-terceros': typeof AuthenticatedAdminHonorariosTercerosRoute
+  '/admin/novedades': typeof AuthenticatedAdminNovedadesRoute
   '/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
   '/admin/reembolsos': typeof AuthenticatedAdminReembolsosRoute
   '/admin/registro-diario': typeof AuthenticatedAdminRegistroDiarioRoute
@@ -820,6 +837,7 @@ export interface FileRoutesByTo {
   '/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
+  '/api/public/novedades/revisar': typeof ApiPublicNovedadesRevisarRoute
   '/api/public/recibo-pago/$id': typeof ApiPublicReciboPagoIdRoute
   '/api/public/solicitud-pago-transporte/$id': typeof ApiPublicSolicitudPagoTransporteIdRoute
   '/legal/documentos': typeof AuthenticatedLegalDocumentosIndexRoute
@@ -867,6 +885,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/facturacion': typeof AuthenticatedAdminFacturacionRoute
   '/_authenticated/admin/gastos-operativos': typeof AuthenticatedAdminGastosOperativosRoute
   '/_authenticated/admin/honorarios-terceros': typeof AuthenticatedAdminHonorariosTercerosRoute
+  '/_authenticated/admin/novedades': typeof AuthenticatedAdminNovedadesRoute
   '/_authenticated/admin/plantillas-documentos': typeof AuthenticatedAdminPlantillasDocumentosRoute
   '/_authenticated/admin/reembolsos': typeof AuthenticatedAdminReembolsosRoute
   '/_authenticated/admin/registro-diario': typeof AuthenticatedAdminRegistroDiarioRoute
@@ -917,6 +936,7 @@ export interface FileRoutesById {
   '/_authenticated/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/_portal-estudiante/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/_portal/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
+  '/api/public/novedades/revisar': typeof ApiPublicNovedadesRevisarRoute
   '/api/public/recibo-pago/$id': typeof ApiPublicReciboPagoIdRoute
   '/api/public/solicitud-pago-transporte/$id': typeof ApiPublicSolicitudPagoTransporteIdRoute
   '/_authenticated/legal/documentos/': typeof AuthenticatedLegalDocumentosIndexRoute
@@ -962,6 +982,7 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/gastos-operativos'
     | '/admin/honorarios-terceros'
+    | '/admin/novedades'
     | '/admin/plantillas-documentos'
     | '/admin/reembolsos'
     | '/admin/registro-diario'
@@ -1012,6 +1033,7 @@ export interface FileRouteTypes {
     | '/rrhh/empleados/$id'
     | '/portal-estudiante/programas/$id'
     | '/portal/expedientes/$id'
+    | '/api/public/novedades/revisar'
     | '/api/public/recibo-pago/$id'
     | '/api/public/solicitud-pago-transporte/$id'
     | '/legal/documentos/'
@@ -1055,6 +1077,7 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/gastos-operativos'
     | '/admin/honorarios-terceros'
+    | '/admin/novedades'
     | '/admin/plantillas-documentos'
     | '/admin/reembolsos'
     | '/admin/registro-diario'
@@ -1105,6 +1128,7 @@ export interface FileRouteTypes {
     | '/rrhh/empleados/$id'
     | '/portal-estudiante/programas/$id'
     | '/portal/expedientes/$id'
+    | '/api/public/novedades/revisar'
     | '/api/public/recibo-pago/$id'
     | '/api/public/solicitud-pago-transporte/$id'
     | '/legal/documentos'
@@ -1151,6 +1175,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/facturacion'
     | '/_authenticated/admin/gastos-operativos'
     | '/_authenticated/admin/honorarios-terceros'
+    | '/_authenticated/admin/novedades'
     | '/_authenticated/admin/plantillas-documentos'
     | '/_authenticated/admin/reembolsos'
     | '/_authenticated/admin/registro-diario'
@@ -1201,6 +1226,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rrhh/empleados/$id'
     | '/_portal-estudiante/portal-estudiante/programas/$id'
     | '/_portal/portal/expedientes/$id'
+    | '/api/public/novedades/revisar'
     | '/api/public/recibo-pago/$id'
     | '/api/public/solicitud-pago-transporte/$id'
     | '/_authenticated/legal/documentos/'
@@ -1232,6 +1258,7 @@ export interface RootRouteChildren {
   ImprimirReciboPagoIdRoute: typeof ImprimirReciboPagoIdRoute
   ImprimirSolicitudPagoIdRoute: typeof ImprimirSolicitudPagoIdRoute
   ImprimirSolicitudTransferenciaIdRoute: typeof ImprimirSolicitudTransferenciaIdRoute
+  ApiPublicNovedadesRevisarRoute: typeof ApiPublicNovedadesRevisarRoute
   ApiPublicReciboPagoIdRoute: typeof ApiPublicReciboPagoIdRoute
 }
 
@@ -1494,6 +1521,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/honorarios-terceros'
       fullPath: '/admin/honorarios-terceros'
       preLoaderRoute: typeof AuthenticatedAdminHonorariosTercerosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/novedades': {
+      id: '/_authenticated/admin/novedades'
+      path: '/admin/novedades'
+      fullPath: '/admin/novedades'
+      preLoaderRoute: typeof AuthenticatedAdminNovedadesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/plantillas-documentos': {
@@ -1874,6 +1908,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalPortalExpedientesIdRouteImport
       parentRoute: typeof PortalRouteRoute
     }
+    '/api/public/novedades/revisar': {
+      id: '/api/public/novedades/revisar'
+      path: '/api/public/novedades/revisar'
+      fullPath: '/api/public/novedades/revisar'
+      preLoaderRoute: typeof ApiPublicNovedadesRevisarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/recibo-pago/$id': {
       id: '/api/public/recibo-pago/$id'
       path: '/api/public/recibo-pago/$id'
@@ -1923,6 +1964,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminFacturacionRoute: typeof AuthenticatedAdminFacturacionRoute
   AuthenticatedAdminGastosOperativosRoute: typeof AuthenticatedAdminGastosOperativosRoute
   AuthenticatedAdminHonorariosTercerosRoute: typeof AuthenticatedAdminHonorariosTercerosRoute
+  AuthenticatedAdminNovedadesRoute: typeof AuthenticatedAdminNovedadesRoute
   AuthenticatedAdminPlantillasDocumentosRoute: typeof AuthenticatedAdminPlantillasDocumentosRoute
   AuthenticatedAdminReembolsosRoute: typeof AuthenticatedAdminReembolsosRoute
   AuthenticatedAdminRegistroDiarioRoute: typeof AuthenticatedAdminRegistroDiarioRoute
@@ -2000,6 +2042,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAdminGastosOperativosRoute,
   AuthenticatedAdminHonorariosTercerosRoute:
     AuthenticatedAdminHonorariosTercerosRoute,
+  AuthenticatedAdminNovedadesRoute: AuthenticatedAdminNovedadesRoute,
   AuthenticatedAdminPlantillasDocumentosRoute:
     AuthenticatedAdminPlantillasDocumentosRoute,
   AuthenticatedAdminReembolsosRoute: AuthenticatedAdminReembolsosRoute,
@@ -2149,6 +2192,7 @@ const rootRouteChildren: RootRouteChildren = {
   ImprimirReciboPagoIdRoute: ImprimirReciboPagoIdRoute,
   ImprimirSolicitudPagoIdRoute: ImprimirSolicitudPagoIdRoute,
   ImprimirSolicitudTransferenciaIdRoute: ImprimirSolicitudTransferenciaIdRoute,
+  ApiPublicNovedadesRevisarRoute: ApiPublicNovedadesRevisarRoute,
   ApiPublicReciboPagoIdRoute: ApiPublicReciboPagoIdRoute,
 }
 export const routeTree = rootRouteImport
