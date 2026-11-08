@@ -4451,6 +4451,50 @@ export type Database = {
         }
         Relationships: []
       }
+      fuentes_novedades_intentos: {
+        Row: {
+          codigo_http: number | null
+          created_at: string
+          estado: string
+          exito: boolean
+          fuente_id: string
+          id: string
+          mensaje: string | null
+          modo: string | null
+          nuevas: number
+        }
+        Insert: {
+          codigo_http?: number | null
+          created_at?: string
+          estado: string
+          exito: boolean
+          fuente_id: string
+          id?: string
+          mensaje?: string | null
+          modo?: string | null
+          nuevas?: number
+        }
+        Update: {
+          codigo_http?: number | null
+          created_at?: string
+          estado?: string
+          exito?: boolean
+          fuente_id?: string
+          id?: string
+          mensaje?: string | null
+          modo?: string | null
+          nuevas?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuentes_novedades_intentos_fuente_id_fkey"
+            columns: ["fuente_id"]
+            isOneToOne: false
+            referencedRelation: "fuentes_novedades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gastos: {
         Row: {
           adjunto_path: string | null

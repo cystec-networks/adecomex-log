@@ -339,14 +339,62 @@ const fechaDmy = (iso: string) => {
   return `${d}/${m}/${a}`;
 };
 
+/** Día DD/MM/AAAA de un instante, en hora de Santo Domingo. */
+export function diaSantoDomingo(instante: string): string {
+  const f = new Date(instante);
+  if (Number.isNaN(f.getTime())) return fechaDmy(instante);
+  const p = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Santo_Domingo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(f);
+  return fechaDmy(p);
+}
+
+/**
+ * Texto de fecha de una novedad. Sin fecha de publicación lo dice expresamente
+ * y muestra el día de registro, para no confundir una fecha con la otra.
+ */
+export function textoFechaNovedad(
+  fechaPublicacion: string | null,
+  fechaCaptura: string,
+): string {
+  return fechaPublicacion
+    ? `publicada el ${fechaDmy(fechaPublicacion)}`
+    : `fecha de publicación no disponible; registrada en la plataforma el ${diaSantoDomingo(fechaCaptura)}`;
+}
+
+export type EstadoIntento = "ok" | "sin_novedades" | "error" | "no_legible";
+/** La fuente se pudo leer (con o sin publicaciones nuevas). */
+export const intentoExitoso = (estado: string) => estado === "ok" || estado === "sin_novedades";
+
+export type PatronIntentos = "sin_datos" | "estable" | "intermitente" | "siempre_falla";
+/** Clasifica el historial de intentos de una fuente. */
+export function patronIntentos(intentos: Array<{ exito: boolean }>): {
+  patron: PatronIntentos;
+  total: number;
+  fallos: number;
+} {
+  const total = intentos.length;
+  const fallos = intentos.filter((i) => !i.exito).length;
+  const patron: PatronIntentos =
+    total === 0
+      ? "sin_datos"
+      : fallos === 0
+        ? "estable"
+        : fallos === total
+          ? "siempre_falla"
+          : "intermitente";
+  return { patron, total, fallos };
+}
+
 /** Bloque de datos que recibe el asistente; el texto proviene de sitios externos. */
 export function formatearNovedadesParaPrompt(novedades: NovedadContexto[]): string {
   if (novedades.length === 0) return "(No hay novedades registradas.)";
   return novedades
     .map((n, i) => {
-      const fecha = n.fecha_publicacion
-        ? `publicada el ${fechaDmy(n.fecha_publicacion)}`
-        : `fecha de publicación no indicada; registrada el ${fechaDmy(n.fecha_captura)}`;
+      const fecha = textoFechaNovedad(n.fecha_publicacion, n.fecha_captura);
       const sinSaltos = (s: string, max: number) => s.replace(/\s+/g, " ").trim().slice(0, max);
       return `[${i + 1}] ${sinSaltos(n.titulo, 250)}\nCategoría: ${n.categoria} | Fuente: ${sinSaltos(n.fuente_nombre, 120)} | ${fecha}\nEnlace: ${n.url}\nResumen: ${sinSaltos(n.resumen, 600)}`;
     })

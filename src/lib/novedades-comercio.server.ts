@@ -16,9 +16,11 @@ import {
   extraerEnlacesListado,
   fechaIso,
   fechaMetaHtml,
+  intentoExitoso,
   parsearFeed,
   textoPlanoHtml,
   type Candidata,
+  type EstadoIntento,
 } from "./novedades-comercio";
 
 type Admin = SupabaseClient<Database>;
@@ -194,27 +196,47 @@ function fechaValida(f: string | null): string | null {
   return new Date(`${iso}T00:00:00Z`).getTime() <= Date.now() + 2 * 86_400_000 ? iso : null;
 }
 
-async function procesarFuente(admin: Admin, fuente: Fuente): Promise<ResultadoFuente> {
+async function procesarFuente(
+  admin: Admin,
+  fuente: Fuente,
+  modo: "cron" | "manual",
+): Promise<ResultadoFuente> {
+  let codigoHttp: number | null = null;
   const fin = async (
-    estado: Fuente["ultimo_estado"],
+    estado: EstadoIntento,
     mensaje: string,
     nuevas = 0,
     descartadas = 0,
   ) => {
-    await admin
-      .from("fuentes_novedades")
-      .update({
-        ultimo_estado: estado,
-        ultimo_mensaje: mensaje.slice(0, 500),
-        ultima_revision: new Date().toISOString(),
-      })
-      .eq("id", fuente.id);
+    const ahora = new Date().toISOString();
+    await Promise.all([
+      admin
+        .from("fuentes_novedades")
+        .update({
+          ultimo_estado: estado,
+          ultimo_mensaje: mensaje.slice(0, 500),
+          ultima_revision: ahora,
+        })
+        .eq("id", fuente.id),
+      // Historial de intentos: permite ver si una fuente falla siempre o a ratos.
+      admin.from("fuentes_novedades_intentos").insert({
+        fuente_id: fuente.id,
+        created_at: ahora,
+        exito: intentoExitoso(estado),
+        estado,
+        codigo_http: codigoHttp,
+        mensaje: mensaje.slice(0, 500),
+        nuevas,
+        modo,
+      }),
+    ]);
     return { fuente: fuente.nombre, estado, nuevas, descartadas, mensaje };
   };
 
   let pagina: Awaited<ReturnType<typeof leer>>;
   try {
     pagina = await leer(fuente.url, 20_000);
+    codigoHttp = pagina.status;
   } catch (e) {
     const tiempo = e instanceof Error && /timeout|abort/i.test(e.name + e.message);
     return fin(
@@ -371,7 +393,7 @@ export async function revisarNovedades(
     }
     for (let i = 0; i < fuentes.length && !detenida; i += 3) {
       const lote = await Promise.allSettled(
-        fuentes.slice(i, i + 3).map((f) => procesarFuente(admin, f)),
+        fuentes.slice(i, i + 3).map((f) => procesarFuente(admin, f, opciones.modo)),
       );
       for (const r of lote) {
         if (r.status === "fulfilled") resultados.push(r.value);
@@ -386,6 +408,11 @@ export async function revisarNovedades(
     return { ok: true, fuentes: resultados, nuevas, detenida };
   } finally {
     const p = pausa as PausaIa | null;
+    // Conserva un año de historial de intentos por fuente.
+    await admin
+      .from("fuentes_novedades_intentos")
+      .delete()
+      .lt("created_at", new Date(Date.now() - 365 * 86_400_000).toISOString());
     await admin
       .from("novedades_revision_estado")
       .update({

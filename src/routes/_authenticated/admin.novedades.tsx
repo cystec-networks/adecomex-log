@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ExternalLink, Pencil, PlayCircle, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { ExternalLink, History, Pencil, PlayCircle, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -29,12 +29,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CATEGORIAS_NOVEDAD, type CategoriaNovedad } from "@/lib/novedades-comercio";
+import {
+  CATEGORIAS_NOVEDAD,
+  patronIntentos,
+  textoFechaNovedad,
+  type CategoriaNovedad,
+  type PatronIntentos,
+} from "@/lib/novedades-comercio";
 import { revisarNovedadesAhora } from "@/lib/novedades-comercio.functions";
 
 type Fuente = Database["public"]["Tables"]["fuentes_novedades"]["Row"];
 type Novedad = Database["public"]["Tables"]["novedades_comercio_exterior"]["Row"];
 type EstadoRevision = Database["public"]["Tables"]["novedades_revision_estado"]["Row"];
+type Intento = Database["public"]["Tables"]["fuentes_novedades_intentos"]["Row"];
 
 const TITULO = "Novedades de comercio exterior | ADECOMEX";
 const DESCRIPCION =
@@ -68,11 +75,6 @@ export const Route = createFileRoute("/_authenticated/admin/novedades")({
 
 const CLAVE = ["novedades-comercio"];
 
-const fmtFecha = (iso: string | null) => {
-  if (!iso) return "—";
-  const [a, m, d] = iso.slice(0, 10).split("-");
-  return `${d}/${m}/${a}`;
-};
 const fmtFechaHora = (iso: string | null) =>
   iso
     ? new Intl.DateTimeFormat("es-DO", {
@@ -92,6 +94,21 @@ const ESTADO_FUENTE: Record<
   error: { texto: "Error", variante: "destructive" },
   no_legible: { texto: "No se puede leer", variante: "destructive" },
 };
+const PATRON: Record<PatronIntentos, { texto: string; clase: string }> = {
+  sin_datos: { texto: "Sin intentos registrados", clase: "text-muted-foreground" },
+  estable: { texto: "Lectura estable", clase: "text-muted-foreground" },
+  intermitente: { texto: "Falla de forma intermitente", clase: "text-destructive" },
+  siempre_falla: { texto: "Falla siempre", clase: "text-destructive" },
+};
+const ESTADO_INTENTO: Record<string, string> = {
+  ok: "Leída · con nuevas",
+  sin_novedades: "Leída · sin nuevas",
+  error: "Error",
+  no_legible: "No se pudo leer",
+};
+/** Intentos mostrados como puntos junto a cada fuente. */
+const PUNTOS_HISTORIAL = 10;
+
 const TIPO_FUENTE: Record<Fuente["tipo"], string> = {
   web: "Página web",
   rss: "RSS",
@@ -104,6 +121,7 @@ function NovedadesAdmin() {
   const [revisando, setRevisando] = useState<string | null>(null);
   const [fuenteEditando, setFuenteEditando] = useState<Partial<Fuente> | null>(null);
   const [novedadEditando, setNovedadEditando] = useState<Partial<Novedad> | null>(null);
+  const [historialDe, setHistorialDe] = useState<Fuente | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const [categoria, setCategoria] = useState<string>("todas");
 
@@ -127,6 +145,29 @@ function NovedadesAdmin() {
       return data as EstadoRevision | null;
     },
   });
+  const { data: intentos = [] } = useQuery({
+    queryKey: [...CLAVE, "intentos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("fuentes_novedades_intentos")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1000);
+      if (error) throw error;
+      return data as Intento[];
+    },
+  });
+  const intentosPorFuente = useMemo(() => {
+    const m = new Map<string, Intento[]>();
+    for (const i of intentos) {
+      const lista = m.get(i.fuente_id) ?? [];
+      lista.push(i);
+      m.set(i.fuente_id, lista);
+    }
+    return m;
+  }, [intentos]);
+  const modoUltima = (estado?.ultimo_resultado as { modo?: string } | null)?.modo;
+
   const { data: novedades = [], isLoading } = useQuery({
     queryKey: [...CLAVE, "lista"],
     queryFn: async () => {
@@ -303,8 +344,9 @@ function NovedadesAdmin() {
         <div>
           <h1 className="text-base font-semibold">Novedades de comercio exterior</h1>
           <p className="text-[12px] text-muted-foreground">
-            El Asistente ADECOMEX responde sobre novedades usando solo esta lista. Se revisa sola
-            cada día a las 7:00 a. m.
+            El Asistente ADECOMEX responde sobre novedades usando solo esta lista. La revisión
+            automática corre en el servidor cada día a las 7:00 a. m., aunque nadie tenga la
+            plataforma abierta.
           </p>
         </div>
         <Button
@@ -318,7 +360,10 @@ function NovedadesAdmin() {
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-muted-foreground">
-        <span>Última revisión: {fmtFechaHora(estado?.ultima_ejecucion ?? null)}</span>
+        <span>
+          Última revisión: {fmtFechaHora(estado?.ultima_ejecucion ?? null)}
+          {modoUltima === "cron" ? " (automática)" : modoUltima === "manual" ? " (manual)" : ""}
+        </span>
         {estado?.estado === "pausado" && (
           <span className="flex flex-wrap items-center gap-2 text-destructive">
             Revisión automática pausada: {estado.motivo_pausa}
@@ -399,6 +444,10 @@ function NovedadesAdmin() {
                         {fmtFechaHora(f.ultima_revision)}
                       </div>
                       {f.ultimo_mensaje && <div className="text-[11px]">{f.ultimo_mensaje}</div>}
+                      <HistorialResumen
+                        intentos={intentosPorFuente.get(f.id) ?? []}
+                        onVer={() => setHistorialDe(f)}
+                      />
                     </td>
                     <td className="py-2">
                       <div className="flex justify-end gap-1">
@@ -513,9 +562,7 @@ function NovedadesAdmin() {
                       <span>{n.fuente_nombre}</span>
                       <span>
                         ·{" "}
-                        {n.fecha_publicacion
-                          ? fmtFecha(n.fecha_publicacion)
-                          : `registrada ${fmtFechaHora(n.fecha_captura)}`}
+                        {mayuscula(textoFechaNovedad(n.fecha_publicacion, n.fecha_captura))}
                       </span>
                       {n.origen === "manual" && <span>· manual</span>}
                     </div>
@@ -559,6 +606,23 @@ function NovedadesAdmin() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!historialDe} onOpenChange={(o) => !o && setHistorialDe(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Historial de lectura</DialogTitle>
+            <DialogDescription>{historialDe?.nombre}</DialogDescription>
+          </DialogHeader>
+          {historialDe && (
+            <HistorialDetalle intentos={intentosPorFuente.get(historialDe.id) ?? []} />
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHistorialDe(null)}>
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!fuenteEditando} onOpenChange={(o) => !o && setFuenteEditando(null)}>
         <DialogContent>
@@ -747,6 +811,87 @@ function NovedadesAdmin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+const mayuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+function HistorialResumen({ intentos, onVer }: { intentos: Intento[]; onVer: () => void }) {
+  const r = patronIntentos(intentos);
+  const p = PATRON[r.patron];
+  // Más antiguo a la izquierda, más reciente a la derecha.
+  const recientes = intentos.slice(0, PUNTOS_HISTORIAL).reverse();
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+      {recientes.length > 0 && (
+        <span className="flex items-center gap-0.5" aria-hidden>
+          {recientes.map((i) => (
+            <span
+              key={i.id}
+              title={`${fmtFechaHora(i.created_at)} · ${i.exito ? "Éxito" : "Fallo"}`}
+              className={`h-2 w-2 rounded-full ${i.exito ? "bg-primary" : "bg-destructive"}`}
+            />
+          ))}
+        </span>
+      )}
+      <span className={p.clase}>
+        {p.texto}
+        {r.total > 0 && ` · ${r.fallos} fallo(s) en ${r.total} intento(s)`}
+      </span>
+      {r.total > 0 && (
+        <button
+          type="button"
+          onClick={onVer}
+          className="inline-flex items-center gap-1 text-primary hover:underline"
+        >
+          <History className="h-3 w-3" /> Ver historial
+        </button>
+      )}
+    </div>
+  );
+}
+
+function HistorialDetalle({ intentos }: { intentos: Intento[] }) {
+  const r = patronIntentos(intentos);
+  return (
+    <div className="space-y-2">
+      <p className={`text-[12px] ${PATRON[r.patron].clase}`}>
+        {PATRON[r.patron].texto}: {r.total - r.fallos} con éxito y {r.fallos} fallido(s) de{" "}
+        {r.total} intento(s) registrados.
+      </p>
+      <div className="max-h-[60vh] overflow-auto">
+        <table className="w-full text-[12px]">
+          <thead className="sticky top-0 bg-background text-left text-[11px] uppercase text-muted-foreground">
+            <tr className="border-b">
+              <th className="py-2 pr-3">Fecha</th>
+              <th className="py-2 pr-3">Revisión</th>
+              <th className="py-2 pr-3">Resultado</th>
+              <th className="py-2">Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            {intentos.map((i) => (
+              <tr key={i.id} className="border-b align-top last:border-0">
+                <td className="py-2 pr-3 whitespace-nowrap">{fmtFechaHora(i.created_at)}</td>
+                <td className="py-2 pr-3 whitespace-nowrap">
+                  {i.modo === "cron" ? "Automática" : "Manual"}
+                </td>
+                <td className="py-2 pr-3 whitespace-nowrap">
+                  <Badge variant={i.exito ? "secondary" : "destructive"} className="text-[11px]">
+                    {i.exito ? "Éxito" : "Fallo"}
+                  </Badge>
+                  <div className="text-[11px] text-muted-foreground">
+                    {ESTADO_INTENTO[i.estado] ?? i.estado}
+                    {i.codigo_http ? ` · código ${i.codigo_http}` : ""}
+                  </div>
+                </td>
+                <td className="py-2 text-[11px]">{i.mensaje}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

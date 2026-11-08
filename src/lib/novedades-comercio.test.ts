@@ -6,8 +6,11 @@ import {
   extraerEnlacesListado,
   fechaIso,
   formatearNovedadesParaPrompt,
+  intentoExitoso,
   palabrasClave,
   parsearFeed,
+  patronIntentos,
+  textoFechaNovedad,
 } from "./novedades-comercio";
 
 describe("novedades de comercio exterior", () => {
@@ -92,7 +95,10 @@ describe("novedades de comercio exterior", () => {
     ]);
     expect(t).toContain("Fuente: VUCE | publicada el 01/06/2026");
     expect(t).toContain("Enlace: https://vucerd.gob.do/a.pdf");
-    expect(t).toContain("fecha de publicación no indicada; registrada el 08/11/2026");
+    expect(t).toContain(
+      "fecha de publicación no disponible; registrada en la plataforma el 08/11/2026",
+    );
+    expect(t).not.toContain("publicada el 08/11/2026");
     expect(formatearNovedadesParaPrompt([])).toBe("(No hay novedades registradas.)");
   });
 
@@ -101,5 +107,27 @@ describe("novedades de comercio exterior", () => {
       "marbete",
       "dgii",
     ]);
+  });
+
+  it("sin fecha de publicación dice que no está disponible y usa el día de registro en Santo Domingo", () => {
+    expect(textoFechaNovedad("2026-06-01", "2026-11-08T10:00:00Z")).toBe("publicada el 01/06/2026");
+    // 02:30 UTC del 9 de noviembre es todavía 8 de noviembre en Santo Domingo.
+    expect(textoFechaNovedad(null, "2026-11-09T02:30:00Z")).toBe(
+      "fecha de publicación no disponible; registrada en la plataforma el 08/11/2026",
+    );
+  });
+
+  it("el historial distingue fuentes estables, intermitentes y que siempre fallan", () => {
+    expect(intentoExitoso("ok")).toBe(true);
+    expect(intentoExitoso("sin_novedades")).toBe(true);
+    expect(intentoExitoso("no_legible")).toBe(false);
+    expect(patronIntentos([]).patron).toBe("sin_datos");
+    expect(patronIntentos([{ exito: true }, { exito: true }]).patron).toBe("estable");
+    expect(patronIntentos([{ exito: false }, { exito: true }, { exito: false }])).toEqual({
+      patron: "intermitente",
+      total: 3,
+      fallos: 2,
+    });
+    expect(patronIntentos([{ exito: false }, { exito: false }]).patron).toBe("siempre_falla");
   });
 });
