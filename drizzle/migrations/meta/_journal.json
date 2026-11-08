@@ -743,6 +743,13 @@
       "when": 1794107237925,
       "tag": "0105_asistente_preguntas_frecuentes",
       "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1794149122346,
+      "tag": "0106_novedades_comercio_exterior",
+      "breakpoints": true
     }
   ]
 }

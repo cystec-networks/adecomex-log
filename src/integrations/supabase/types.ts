@@ -4409,6 +4409,48 @@ export type Database = {
           },
         ]
       }
+      fuentes_novedades: {
+        Row: {
+          activa: boolean
+          created_at: string
+          id: string
+          nombre: string
+          notas: string | null
+          tipo: string
+          ultima_revision: string | null
+          ultimo_estado: string
+          ultimo_mensaje: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          activa?: boolean
+          created_at?: string
+          id?: string
+          nombre: string
+          notas?: string | null
+          tipo?: string
+          ultima_revision?: string | null
+          ultimo_estado?: string
+          ultimo_mensaje?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          activa?: boolean
+          created_at?: string
+          id?: string
+          nombre?: string
+          notas?: string | null
+          tipo?: string
+          ultima_revision?: string | null
+          ultimo_estado?: string
+          ultimo_mensaje?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       gastos: {
         Row: {
           adjunto_path: string | null
@@ -5248,6 +5290,133 @@ export type Database = {
             referencedColumns: ["expediente_id"]
           },
         ]
+      }
+      novedades_comercio_exterior: {
+        Row: {
+          categoria: string
+          created_at: string
+          created_by: string | null
+          fecha_captura: string
+          fecha_publicacion: string | null
+          fuente_id: string | null
+          fuente_nombre: string
+          id: string
+          origen: string
+          resumen: string
+          titulo: string
+          updated_at: string
+          url: string
+          url_clave: string | null
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          created_by?: string | null
+          fecha_captura?: string
+          fecha_publicacion?: string | null
+          fuente_id?: string | null
+          fuente_nombre: string
+          id?: string
+          origen?: string
+          resumen: string
+          titulo: string
+          updated_at?: string
+          url: string
+          url_clave?: string | null
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          created_by?: string | null
+          fecha_captura?: string
+          fecha_publicacion?: string | null
+          fuente_id?: string | null
+          fuente_nombre?: string
+          id?: string
+          origen?: string
+          resumen?: string
+          titulo?: string
+          updated_at?: string
+          url?: string
+          url_clave?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novedades_comercio_exterior_fuente_id_fkey"
+            columns: ["fuente_id"]
+            isOneToOne: false
+            referencedRelation: "fuentes_novedades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      novedades_descartadas: {
+        Row: {
+          created_at: string
+          fuente_id: string | null
+          id: string
+          titulo: string | null
+          url: string
+          url_clave: string | null
+        }
+        Insert: {
+          created_at?: string
+          fuente_id?: string | null
+          id?: string
+          titulo?: string | null
+          url: string
+          url_clave?: string | null
+        }
+        Update: {
+          created_at?: string
+          fuente_id?: string | null
+          id?: string
+          titulo?: string | null
+          url?: string
+          url_clave?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novedades_descartadas_fuente_id_fkey"
+            columns: ["fuente_id"]
+            isOneToOne: false
+            referencedRelation: "fuentes_novedades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      novedades_revision_estado: {
+        Row: {
+          estado: string
+          id: number
+          lock_hasta: string | null
+          motivo_pausa: string | null
+          pausa_tipo: string | null
+          ultima_ejecucion: string | null
+          ultimo_resultado: Json | null
+          updated_at: string
+        }
+        Insert: {
+          estado?: string
+          id?: number
+          lock_hasta?: string | null
+          motivo_pausa?: string | null
+          pausa_tipo?: string | null
+          ultima_ejecucion?: string | null
+          ultimo_resultado?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          estado?: string
+          id?: number
+          lock_hasta?: string | null
+          motivo_pausa?: string | null
+          pausa_tipo?: string | null
+          ultima_ejecucion?: string | null
+          ultimo_resultado?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       numeracion_expedientes_referencia: {
         Row: {
@@ -7898,6 +8067,9 @@ export type Database = {
       }
       marcar_password_cambiada_cliente: { Args: never; Returns: undefined }
       marcar_password_cambiada_estudiante: { Args: never; Returns: undefined }
+      novedad_url_clave: { Args: { p_url: string }; Returns: string }
+      novedades_token_valido: { Args: { p_token: string }; Returns: boolean }
+      novedades_tomar_lock: { Args: { p_minutos?: number }; Returns: boolean }
       reemplazar_servicio_aduanero: {
         Args: { _expediente_id: string; _filas: Json }
         Returns: number
