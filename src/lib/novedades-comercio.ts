@@ -179,6 +179,60 @@ export function claveDocumento(url: string): string | null {
   return `${host}/${m[1]}.${m[2]}`;
 }
 
+/** Tamaño y huella del contenido del documento enlazado (null = desconocido). */
+export type HuellaDocumento = { bytes: number | null; sha256: string | null };
+
+// Metadatos que cambian al volver a guardar o subir el mismo archivo sin tocar
+// su contenido visible: fechas, identificador del archivo y posiciones xref.
+const METADATOS_VOLATILES_PDF: RegExp[] = [
+  /\/(?:ModDate|CreationDate)\s*\((?:\\.|[^\\)])*\)/g,
+  /\/ID\s*\[[^\]]*\]/g,
+  /<(xmp:(?:ModifyDate|CreateDate|MetadataDate)|xmpMM:(?:DocumentID|InstanceID))>[^<]*<\/\1>/g,
+  /\bxref\s[\d\sfn]*?(?=trailer)/g,
+  /\bstartxref\s+\d+/g,
+  /\/Prev\s+\d+/g,
+];
+
+/** Contenido del documento sin los metadatos volátiles (para comparar). */
+export function contenidoComparable(bytes: Uint8Array): Uint8Array {
+  if (!new TextDecoder("latin1").decode(bytes.subarray(0, 1024)).includes("%PDF-")) return bytes;
+  let s = new TextDecoder("latin1").decode(bytes);
+  for (const re of METADATOS_VOLATILES_PDF) s = s.replace(re, "");
+  return new TextEncoder().encode(s);
+}
+
+/** SHA-256 (hex) del contenido comparable del documento. */
+export async function sha256Contenido(bytes: Uint8Array): Promise<string> {
+  const datos = contenidoComparable(bytes);
+  const hash = await crypto.subtle.digest("SHA-256", datos as BufferSource);
+  return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * ¿Mismo contenido? `true`/`false` cuando se puede afirmar; `null` si falta la
+ * huella de alguno. Decide el hash del contenido; sin hash, el tamaño en bytes.
+ */
+export function mismoContenido(
+  a: HuellaDocumento | null | undefined,
+  b: HuellaDocumento | null | undefined,
+): boolean | null {
+  if (a?.sha256 && b?.sha256) return a.sha256 === b.sha256;
+  if (a?.bytes && b?.bytes) return a.bytes === b.bytes;
+  return null;
+}
+
+/**
+ * Dos novedades con el mismo nombre de documento son la misma salvo que su
+ * tamaño o contenido sea distinto. Si no se pudo comparar, se mantiene como
+ * duplicado (no se guarda hoy; la revisión siguiente vuelve a intentarlo).
+ */
+export function esMismoDocumento(
+  a: HuellaDocumento | null | undefined,
+  b: HuellaDocumento | null | undefined,
+): boolean {
+  return mismoContenido(a, b) !== false;
+}
+
 /**
  * Normaliza el enlace de una novedad: absoluto (http/https), sin espacios y con
  * los caracteres acentuados codificados (%C3%A9). Devuelve `null` si no es válido.

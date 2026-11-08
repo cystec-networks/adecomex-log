@@ -45,6 +45,7 @@ import {
 } from "@/lib/novedades-comercio";
 import {
   clasificarNovedadesSinClasificar,
+  comprobarDocumentoNovedad,
   revisarNovedadesAhora,
   verificarEnlacesNovedad,
 } from "@/lib/novedades-comercio.functions";
@@ -53,7 +54,7 @@ import { EnlaceNovedad } from "@/components/novedades/enlace-novedad";
 /** Mensaje claro cuando la novedad ya existe (mismo enlace o mismo documento). */
 function mensajeDuplicado(detalle: string): string {
   return /documento_clave/.test(detalle)
-    ? "Ya existe una novedad con el mismo documento (mismo archivo publicado en el sitio oficial)"
+    ? "Ya existe una novedad con el mismo documento y el mismo contenido"
     : "Ya existe una novedad con ese mismo enlace";
 }
 
@@ -139,6 +140,7 @@ function NovedadesAdmin() {
   const revisar = useServerFn(revisarNovedadesAhora);
   const clasificar = useServerFn(clasificarNovedadesSinClasificar);
   const verificar = useServerFn(verificarEnlacesNovedad);
+  const comprobarDocumento = useServerFn(comprobarDocumentoNovedad);
   const [verificandoEnlaces, setVerificandoEnlaces] = useState(false);
   const [clasificando, setClasificando] = useState(false);
   const [relevancia, setRelevancia] = useState<string>("todas");
@@ -386,6 +388,19 @@ function NovedadesAdmin() {
       const reinicioEnlace = enlaceCambiado
         ? { enlace_estado: null, enlace_codigo_http: null, enlace_es_pdf: null, enlace_mensaje: null, enlace_verificado_at: null }
         : {};
+      // Mismo nombre de documento que otra novedad: solo es la misma si
+      // coinciden tamaño y contenido; con contenido distinto se guarda.
+      let huellaDocumento = {};
+      if (enlaceCambiado) {
+        const r = await comprobarDocumento({ data: { url, excluirId: n.id ?? null } });
+        if (r.duplicado)
+          throw new Error(
+            r.duplicado.motivo === "mismo_contenido"
+              ? `Ya existe una novedad con el mismo documento y el mismo contenido: «${r.duplicado.titulo}»`
+              : `Ya existe una novedad con un documento del mismo nombre («${r.duplicado.titulo}») y no se pudo descargar el archivo para comparar su contenido. Inténtalo más tarde.`,
+          );
+        huellaDocumento = { documento_bytes: r.huella?.bytes ?? null, documento_sha256: r.huella?.sha256 ?? null };
+      }
       // Si el administrador cambia la clasificación, queda como corrección manual
       // y la reevaluación con IA ya no la toca.
       const original = n.id ? novedades.find((x) => x.id === n.id) : undefined;
@@ -400,7 +415,7 @@ function NovedadesAdmin() {
       if (n.id) {
         const { error } = await supabase
           .from("novedades_comercio_exterior")
-          .update({ ...fila, ...reinicioEnlace })
+          .update({ ...fila, ...reinicioEnlace, ...huellaDocumento })
           .eq("id", n.id);
         if (error) {
           if (error.code === "23505") throw new Error(mensajeDuplicado(error.message));
@@ -411,7 +426,7 @@ function NovedadesAdmin() {
         const { data: u } = await supabase.auth.getUser();
         const { data: creada, error } = await supabase
           .from("novedades_comercio_exterior")
-          .insert({ ...fila, origen: "manual", created_by: u.user?.id ?? null })
+          .insert({ ...fila, ...huellaDocumento, origen: "manual", created_by: u.user?.id ?? null })
           .select("id")
           .maybeSingle();
         if (creada?.id) void verificar({ data: { ids: [creada.id] } }).then(refrescar).catch(() => undefined);

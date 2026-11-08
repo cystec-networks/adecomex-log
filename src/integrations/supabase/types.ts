@@ -5464,7 +5464,9 @@ export type Database = {
           clasificacion_manual: boolean
           created_at: string
           created_by: string | null
+          documento_bytes: number | null
           documento_clave: string | null
+          documento_sha256: string | null
           enlace_codigo_http: number | null
           enlace_es_pdf: boolean | null
           enlace_estado: string | null
@@ -5491,7 +5493,9 @@ export type Database = {
           clasificacion_manual?: boolean
           created_at?: string
           created_by?: string | null
+          documento_bytes?: number | null
           documento_clave?: string | null
+          documento_sha256?: string | null
           enlace_codigo_http?: number | null
           enlace_es_pdf?: boolean | null
           enlace_estado?: string | null
@@ -5518,7 +5522,9 @@ export type Database = {
           clasificacion_manual?: boolean
           created_at?: string
           created_by?: string | null
+          documento_bytes?: number | null
           documento_clave?: string | null
+          documento_sha256?: string | null
           enlace_codigo_http?: number | null
           enlace_es_pdf?: boolean | null
           enlace_estado?: string | null
@@ -5552,7 +5558,9 @@ export type Database = {
       novedades_descartadas: {
         Row: {
           created_at: string
+          documento_bytes: number | null
           documento_clave: string | null
+          documento_sha256: string | null
           fuente_id: string | null
           id: string
           titulo: string | null
@@ -5561,7 +5569,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          documento_bytes?: number | null
           documento_clave?: string | null
+          documento_sha256?: string | null
           fuente_id?: string | null
           id?: string
           titulo?: string | null
@@ -5570,7 +5580,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          documento_bytes?: number | null
           documento_clave?: string | null
+          documento_sha256?: string | null
           fuente_id?: string | null
           id?: string
           titulo?: string | null

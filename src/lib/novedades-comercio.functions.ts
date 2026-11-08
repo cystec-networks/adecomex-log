@@ -89,3 +89,29 @@ export const leerPdfNovedad = createServerFn({ method: "POST" })
     const { descargarPdfNovedad } = await import("./novedades-comercio.server");
     return descargarPdfNovedad(supabaseAdmin, fila);
   });
+
+/**
+ * Antes de guardar una novedad manual: si otra novedad tiene el mismo nombre de
+ * documento, compara tamaño y contenido. Devuelve la huella para guardarla.
+ */
+export const comprobarDocumentoNovedad = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { url: string; excluirId?: string | null }) => {
+    const url = typeof input?.url === "string" ? input.url.trim() : "";
+    if (!/^https?:\/\/[!-~]+$/.test(url) || url.length > 2000) throw new Error("Enlace inválido");
+    const excluirId = input?.excluirId ?? null;
+    if (excluirId !== null && !UUID_RE.test(excluirId)) throw new Error("Novedad inválida");
+    return { url, excluirId };
+  })
+  .handler(async ({ data, context }) => {
+    const { data: rol } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!rol) throw new Error("Solo un administrador puede registrar novedades.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { compararDocumentoNovedad } = await import("./novedades-comercio.server");
+    return compararDocumentoNovedad(supabaseAdmin, data.url, data.excluirId);
+  });

@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   abreEnVisorPdf,
   claveDocumento,
+  esMismoDocumento,
+  mismoContenido,
+  sha256Contenido,
   claveUrl,
   estadoEnlacePorCodigo,
   normalizarUrlNovedad,
@@ -178,5 +181,41 @@ describe("novedades de comercio exterior", () => {
       fallos: 2,
     });
     expect(patronIntentos([{ exito: false }, { exito: false }]).patron).toBe("siempre_falla");
+  });
+});
+
+describe("huella del documento para duplicados", () => {
+  const pdf = (cuerpo: string, fecha: string, id: string) =>
+    new TextEncoder().encode(
+      `%PDF-1.7\n1 0 obj\n<< /Title (Aviso) /ModDate (D:${fecha}Z) >>\nendobj\n2 0 obj\n(${cuerpo})\nendobj\n` +
+        `xref\n0 3\n0000000000 65535 f \n0000000009 00000 n \ntrailer\n<< /ID [<${id}> <${id}>] >>\nstartxref\n${fecha.length * 7}\n%%EOF`,
+    );
+
+  it("mismo nombre y mismo contenido, subido de nuevo con otra fecha e /ID: es la misma novedad", async () => {
+    const a = pdf("Formulario de azucar", "20260727130905", "BB1E7CA9");
+    const b = pdf("Formulario de azucar", "20260901175842", "DDA18EF3");
+    const ha = { bytes: a.length, sha256: await sha256Contenido(a) };
+    const hb = { bytes: b.length, sha256: await sha256Contenido(b) };
+    expect(ha.sha256).toBe(hb.sha256);
+    expect(esMismoDocumento(ha, hb)).toBe(true);
+  });
+
+  it("mismo nombre pero contenido distinto: son novedades diferentes", async () => {
+    const a = pdf("Formulario de azucar", "20260727130905", "BB1E7CA9");
+    const b = pdf("Formulario de arroz.", "20260727130905", "BB1E7CA9");
+    const ha = { bytes: a.length, sha256: await sha256Contenido(a) };
+    const hb = { bytes: b.length, sha256: await sha256Contenido(b) };
+    expect(ha.bytes).toBe(hb.bytes);
+    expect(esMismoDocumento(ha, hb)).toBe(false);
+  });
+
+  it("sin hash, un tamaño distinto basta para tratarlas como diferentes", () => {
+    expect(esMismoDocumento({ bytes: 91642, sha256: null }, { bytes: 91700, sha256: null })).toBe(false);
+    expect(esMismoDocumento({ bytes: 91642, sha256: null }, { bytes: 91642, sha256: null })).toBe(true);
+  });
+
+  it("si no se pudo leer alguno de los archivos, se mantiene como duplicado", () => {
+    expect(mismoContenido(null, { bytes: 10, sha256: "x" })).toBeNull();
+    expect(esMismoDocumento(null, { bytes: 10, sha256: "x" })).toBe(true);
   });
 });

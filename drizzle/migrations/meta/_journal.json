@@ -785,6 +785,13 @@
       "when": 1794160313991,
       "tag": "0111_novedades_enlaces_y_documento_unico",
       "breakpoints": true
+    },
+    {
+      "idx": 112,
+      "version": "7",
+      "when": 1794161940101,
+      "tag": "0112_novedades_huella_contenido_documento",
+      "breakpoints": true
     }
   ]
 }

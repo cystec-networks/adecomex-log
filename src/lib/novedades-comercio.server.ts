@@ -21,14 +21,17 @@ import {
   estadoEnlacePorCodigo,
   esCategoriaNovedad,
   esFeed,
+  esMismoDocumento,
   esPdf,
   extraerEnlacesListado,
   fechaIso,
   fechaMetaHtml,
   intentoExitoso,
   parsearFeed,
+  sha256Contenido,
   textoPlanoHtml,
   type Candidata,
+  type HuellaDocumento,
   type EstadoEnlace,
   type EstadoIntento,
 } from "./novedades-comercio";
@@ -323,35 +326,51 @@ async function procesarFuente(
       "No se encontraron publicaciones en la página (puede cargarse con programación del navegador). Carga sus novedades manualmente o usa otra dirección.",
     );
 
-  // Duplicado = mismo enlace o mismo documento (nombre de archivo en el sitio),
-  // ya sea guardado, descartado o repetido dentro de esta misma lectura.
+  // Duplicado = mismo enlace, o mismo documento (nombre de archivo en el sitio)
+  // con el mismo tamaño/contenido, ya sea guardado, descartado o repetido
+  // dentro de esta misma lectura. Mismo nombre con contenido distinto = nueva.
   const claves = candidatas.map((c) => claveUrl(c.url));
   const docs = [...new Set(candidatas.map((c) => claveDocumento(c.url)).filter((d): d is string => !!d))];
-  const sinDocs = Promise.resolve({ data: [] as { url_clave: string }[], error: null });
+  const sinDocs = Promise.resolve({ data: [] as FilaDocumento[], error: null });
+  const camposDoc = "id, url, documento_clave, documento_bytes, documento_sha256";
   const [r1, r2, r3, r4] = await Promise.all([
     admin.from("novedades_comercio_exterior").select("url_clave").in("url_clave", claves),
     admin.from("novedades_descartadas").select("url_clave").in("url_clave", claves),
     docs.length
-      ? admin.from("novedades_comercio_exterior").select("documento_clave").in("documento_clave", docs)
+      ? admin.from("novedades_comercio_exterior").select(camposDoc).in("documento_clave", docs)
       : sinDocs,
     docs.length
-      ? admin.from("novedades_descartadas").select("documento_clave").in("documento_clave", docs)
+      ? admin.from("novedades_descartadas").select(camposDoc).in("documento_clave", docs)
       : sinDocs,
   ]);
   if (r1.error || r2.error || r3.error || r4.error)
-    return fin("error", "No se pudo comprobar qué publicaciones ya estaban registradas.");
-  const conocidas = new Set<string>([
-    ...[...(r1.data ?? []), ...(r2.data ?? [])].map((r) => r.url_clave ?? ""),
-    ...[...(r3.data ?? []), ...(r4.data ?? [])].map((r) => `doc:${(r as { documento_clave?: string | null }).documento_clave ?? ""}`),
-  ]);
-  const nuevas: Candidata[] = [];
+    return fin("error", "No se pudieron comprobar qué publicaciones ya estaban registradas.");
+  const conocidas = new Set<string>([...(r1.data ?? []), ...(r2.data ?? [])].map((r) => r.url_clave ?? ""));
+  const porDocumento = new Map<string, DocumentoPrevio[]>();
+  const agregarPrevio = (tabla: TablaDocumento | null, f: FilaDocumento) => {
+    if (!f.documento_clave) return;
+    const lista = porDocumento.get(f.documento_clave) ?? [];
+    lista.push({ tabla, id: f.id, url: f.url, huella: huellaDeFila(f) });
+    porDocumento.set(f.documento_clave, lista);
+  };
+  for (const f of (r3.data ?? []) as FilaDocumento[]) agregarPrevio("novedades_comercio_exterior", f);
+  for (const f of (r4.data ?? []) as FilaDocumento[]) agregarPrevio("novedades_descartadas", f);
+
+  const nuevas: Array<Candidata & { huella: HuellaDocumento | null }> = [];
   for (const c of candidatas) {
     const k = claveUrl(c.url);
-    const d = claveDocumento(c.url);
-    if (conocidas.has(k) || (d && conocidas.has(`doc:${d}`))) continue;
+    if (conocidas.has(k)) continue;
     conocidas.add(k);
-    if (d) conocidas.add(`doc:${d}`);
-    nuevas.push(c);
+    const d = claveDocumento(c.url);
+    let huella: HuellaDocumento | null = null;
+    if (d) {
+      huella = await huellaDocumentoUrl(c.url);
+      if (await coincideConPrevio(admin, porDocumento.get(d) ?? [], huella)) continue;
+      const lista = porDocumento.get(d) ?? [];
+      lista.push({ tabla: null, id: "", url: c.url, huella });
+      porDocumento.set(d, lista);
+    }
+    nuevas.push({ ...c, huella });
     if (nuevas.length >= MAX_NUEVAS_POR_FUENTE) break;
   }
   if (nuevas.length === 0)
@@ -390,7 +409,13 @@ async function procesarFuente(
     const c = conTexto[a.indice];
     if (!c) continue;
     if (!a.relevante) {
-      irrelevantes.push({ fuente_id: fuente.id, url: c.url, titulo: c.titulo.slice(0, 300) });
+      irrelevantes.push({
+        fuente_id: fuente.id,
+        url: c.url,
+        titulo: c.titulo.slice(0, 300),
+        documento_bytes: c.huella?.bytes ?? null,
+        documento_sha256: c.huella?.sha256 ?? null,
+      });
       continue;
     }
     const titulo = (a.titulo || c.titulo).trim().slice(0, 300);
@@ -404,6 +429,8 @@ async function procesarFuente(
       fuente_id: fuente.id,
       fuente_nombre: fuente.nombre,
       url: c.url,
+      documento_bytes: c.huella?.bytes ?? null,
+      documento_sha256: c.huella?.sha256 ?? null,
       origen: "automatica",
       ...normalizarClasificacion(a),
       clasificacion_criterio: CRITERIO_RELEVANCIA_VERSION,
@@ -503,6 +530,9 @@ export async function revisarNovedades(
     // Comprueba los enlaces de las novedades (nuevas y vencidas) para avisar de
     // los que ya no responden; un fallo aquí no afecta a la revisión.
     if (!prueba) await verificarEnlacesVencidos(admin).catch((e) => console.error("[novedades] enlaces", e));
+    // Completa la huella (tamaño/contenido) de documentos guardados sin ella,
+    // mientras el enlace original siga disponible.
+    if (!prueba) await completarHuellasDocumentos(admin).catch((e) => console.error("[novedades] huellas", e));
     return { ok: true, fuentes: resultados, nuevas, detenida };
   } finally {
     const p = pausa as PausaIa | null;
@@ -792,4 +822,140 @@ export async function descargarPdfNovedad(admin: Admin, fila: { id: string; url:
   if (bytes.length > MAX_BYTES_PDF_NOVEDAD)
     return { ok: false, motivo: "muy_grande", mensaje: "El documento es demasiado grande para el visor; ábrelo en el sitio oficial." };
   return { ok: true, base64: aBase64(bytes), bytes: bytes.length, nombre: nombreArchivo(res.url || fila.url) };
+}
+
+// ── Huella del documento enlazado ───────────────────────────────────────────
+// Mismo nombre de archivo no basta para dar dos novedades por iguales: se
+// compara el tamaño en bytes y el SHA-256 del contenido (sin metadatos que
+// cambian al volver a subir el mismo archivo).
+
+type TablaDocumento = "novedades_comercio_exterior" | "novedades_descartadas";
+type FilaDocumento = {
+  id: string;
+  url: string;
+  documento_clave: string | null;
+  documento_bytes: number | null;
+  documento_sha256: string | null;
+};
+type DocumentoPrevio = { tabla: TablaDocumento | null; id: string; url: string; huella: HuellaDocumento | null };
+
+function huellaDeFila(f: Pick<FilaDocumento, "documento_bytes" | "documento_sha256">): HuellaDocumento | null {
+  return f.documento_bytes || f.documento_sha256
+    ? { bytes: f.documento_bytes ? Number(f.documento_bytes) : null, sha256: f.documento_sha256 }
+    : null;
+}
+
+/** Descarga el documento y calcula su huella; `null` si no se pudo leer. */
+export async function huellaDocumentoUrl(url: string): Promise<HuellaDocumento | null> {
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": AGENTE, Accept: "application/pdf,*/*;q=0.5" },
+      redirect: "follow",
+      signal: AbortSignal.timeout(25_000),
+    });
+    if (!res.ok) {
+      await res.body?.cancel().catch(() => undefined);
+      return null;
+    }
+    const largo = Number(res.headers.get("content-length")) || null;
+    if (largo && largo > MAX_BYTES_PDF_NOVEDAD) {
+      await res.body?.cancel().catch(() => undefined);
+      return { bytes: largo, sha256: null };
+    }
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.length === 0) return null;
+    if (bytes.length > MAX_BYTES_PDF_NOVEDAD) return { bytes: bytes.length, sha256: null };
+    return { bytes: bytes.length, sha256: await sha256Contenido(bytes) };
+  } catch {
+    return null;
+  }
+}
+
+async function guardarHuella(admin: Admin, tabla: TablaDocumento, id: string, h: HuellaDocumento) {
+  const { error } = await admin
+    .from(tabla)
+    .update({ documento_bytes: h.bytes, documento_sha256: h.sha256 })
+    .eq("id", id);
+  if (error && error.code !== "23505") console.error("[novedades] huella", error.message);
+}
+
+/**
+ * ¿La huella coincide con alguno de los documentos previos del mismo nombre?
+ * Los previos sin huella la obtienen ahora (y se guarda). Sin poder comparar,
+ * cuenta como coincidencia: se omite hoy y la revisión siguiente reintenta.
+ */
+async function coincideConPrevio(
+  admin: Admin,
+  previos: DocumentoPrevio[],
+  huella: HuellaDocumento | null,
+): Promise<DocumentoPrevio | null> {
+  for (const p of previos) {
+    if (!p.huella && huella) {
+      p.huella = await huellaDocumentoUrl(p.url);
+      if (p.huella && p.tabla && p.id) await guardarHuella(admin, p.tabla, p.id, p.huella);
+    }
+    if (esMismoDocumento(huella, p.huella)) return p;
+  }
+  return null;
+}
+
+export type ComparacionDocumento = {
+  huella: HuellaDocumento | null;
+  duplicado: { id: string; titulo: string; motivo: "mismo_contenido" | "sin_comparar" } | null;
+};
+
+/** Comprueba, antes de guardar una novedad manual, si su documento ya está registrado. */
+export async function compararDocumentoNovedad(
+  admin: Admin,
+  url: string,
+  excluirId: string | null,
+): Promise<ComparacionDocumento> {
+  const d = claveDocumento(url);
+  if (!d) return { huella: null, duplicado: null };
+  let q = admin
+    .from("novedades_comercio_exterior")
+    .select("id, url, titulo, documento_clave, documento_bytes, documento_sha256")
+    .eq("documento_clave", d)
+    .neq("url_clave", claveUrl(url));
+  if (excluirId) q = q.neq("id", excluirId);
+  const [{ data: filas, error }, huella] = await Promise.all([q, huellaDocumentoUrl(url)]);
+  if (error) throw new Error("No se pudo comprobar si el documento ya estaba registrado.");
+  for (const f of filas ?? []) {
+    const previo: DocumentoPrevio = {
+      tabla: "novedades_comercio_exterior",
+      id: f.id,
+      url: f.url,
+      huella: huellaDeFila(f),
+    };
+    if (await coincideConPrevio(admin, [previo], huella)) {
+      const motivo = huella && previo.huella ? "mismo_contenido" : "sin_comparar";
+      return { huella, duplicado: { id: f.id, titulo: f.titulo, motivo } };
+    }
+  }
+  return { huella, duplicado: null };
+}
+
+const MAX_HUELLAS_POR_REVISION = 20;
+
+/** Calcula la huella de los documentos guardados que aún no la tienen. */
+export async function completarHuellasDocumentos(admin: Admin): Promise<number> {
+  let hechas = 0;
+  for (const tabla of ["novedades_comercio_exterior", "novedades_descartadas"] as const) {
+    const { data } = await admin
+      .from(tabla)
+      .select("id, url")
+      .not("documento_clave", "is", null)
+      .is("documento_bytes", null)
+      .is("documento_sha256", null)
+      .order("created_at", { ascending: false })
+      .limit(MAX_HUELLAS_POR_REVISION);
+    await enLotes(data ?? [], 4, async (f) => {
+      const h = await huellaDocumentoUrl(f.url);
+      if (h) {
+        await guardarHuella(admin, tabla, f.id, h);
+        hechas++;
+      }
+    });
+  }
+  return hechas;
 }
