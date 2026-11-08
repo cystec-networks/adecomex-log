@@ -5,9 +5,9 @@
 import { useEffect, useImperativeHandle, useRef, useState, forwardRef } from "react";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import workerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
-import "pdfjs-dist/legacy/web/pdf_viewer.css";
+import "./pdf-visor.css";
 
-import { TAMANO_PARTE_PDF, UMBRAL_CARGA_POR_PARTES } from "@/lib/normativa-visor";
+import { BYTES_INICIALES_PDF, TAMANO_PARTE_PDF, UMBRAL_CARGA_POR_PARTES } from "@/lib/normativa-visor";
 
 type ViewerMod = typeof import("pdfjs-dist/legacy/web/pdf_viewer.mjs");
 let modViewer: Promise<ViewerMod> | null = null;
@@ -167,11 +167,23 @@ export const MotorPdf = forwardRef<MotorPdfApi, MotorPdfProps>(function MotorPdf
         const obtener = cb.current.obtenerUrl;
         let bytes = cb.current.bytes ?? null;
         if (!bytes || bytes <= 0) bytes = await tamanoArchivo(obtener).catch(() => null);
-        const comun = { isEvalSupported: false, disableAutoFetch: true, rangeChunkSize: TAMANO_PARTE_PDF };
+        // Recursos de pdf.js servidos por la propia app: imágenes JPEG 2000/JBIG2
+        // (sellos y escudos de documentos oficiales) y fuentes estándar no incrustadas.
+        const base = `${window.location.origin}/pdfjs`;
+        const comun = {
+          isEvalSupported: false,
+          disableAutoFetch: true,
+          rangeChunkSize: TAMANO_PARTE_PDF,
+          wasmUrl: `${base}/wasm/`,
+          standardFontDataUrl: `${base}/standard_fonts/`,
+          cMapUrl: `${base}/cmaps/`,
+          cMapPacked: true,
+          iccUrl: `${base}/iccs/`,
+        };
         if (!bytes || bytes <= UMBRAL_CARGA_POR_PARTES) {
           tarea = pdfjs.getDocument({ ...comun, url: await obtener(false) });
         } else {
-          const primera = await pedirRango(obtener, 0, Math.min(bytes, TAMANO_PARTE_PDF), abortar.signal);
+          const primera = await pedirRango(obtener, 0, Math.min(bytes, BYTES_INICIALES_PDF), abortar.signal);
           const datos = new Uint8Array(await primera.arrayBuffer());
           if (primera.status === 200) {
             // El almacenamiento devolvió el archivo completo (sin rangos).

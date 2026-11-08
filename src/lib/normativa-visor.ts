@@ -6,8 +6,15 @@ const RUTA_CITA = new RegExp(`^/normativa/(${UUID})/?$`, "i");
 
 /** Bytes a partir de los cuales el visor carga el PDF por partes (rangos). */
 export const UMBRAL_CARGA_POR_PARTES = 4 * 1024 * 1024;
-/** Tamaño de cada parte pedida al almacenamiento. */
-export const TAMANO_PARTE_PDF = 256 * 1024;
+/**
+ * Tamaño mínimo de cada parte pedida al almacenamiento. Partes pequeñas evitan
+ * descargar el archivo entero en PDF cuyas fichas de página están repartidas
+ * (p. ej. el Reglamento 755-22: 2,3 MB para abrir en lugar de 23 MB); las
+ * partes contiguas se piden juntas en una sola solicitud.
+ */
+export const TAMANO_PARTE_PDF = 16 * 1024;
+/** Bytes iniciales que se piden de una vez (cabecera y primera página). */
+export const BYTES_INICIALES_PDF = 256 * 1024;
 
 export type CitaNormativa = { documentoId: string; pagina: number | null };
 
