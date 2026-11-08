@@ -193,6 +193,33 @@ export type Database = {
         }
         Relationships: []
       }
+      asistente_preguntas_frecuentes: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          orden: number
+          pregunta: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          orden?: number
+          pregunta: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          orden?: number
+          pregunta?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       auditoria: {
         Row: {
           accion: string

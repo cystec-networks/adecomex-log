@@ -31,6 +31,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { AdecomexFlowLogo } from "@/components/adecomex-flow-logo";
+import { AsistenteVirtual } from "@/components/asistente-virtual";
+import { borrarHistorialSesion } from "@/lib/asistente-virtual";
 
 type SubItem = {
   to: string;
@@ -470,6 +472,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await qc.cancelQueries();
     qc.clear();
+    borrarHistorialSesion();
     await supabase.auth.signOut();
     toast.success("Sesión cerrada");
     navigate({ to: "/auth", replace: true });
@@ -494,6 +497,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </main>
         </div>
       </div>
+      <AsistenteVirtual />
     </SidebarProvider>
   );
 }

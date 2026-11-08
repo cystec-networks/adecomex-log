@@ -18,6 +18,7 @@ import {
 } from "@/lib/reembolso-config";
 import { OficioConfigCard } from "@/components/oficio-config-card";
 import { PlazosRegimenCard } from "@/components/plazos-regimen-card";
+import { AsistentePreguntasCard } from "@/components/asistente-preguntas-card";
 
 export const Route = createFileRoute("/_authenticated/admin/configuracion")({
   ssr: false,
@@ -320,6 +321,7 @@ function AdminConfiguracion() {
       </Card>
       <PlazosRegimenCard />
       <OficioConfigCard />
+      <AsistentePreguntasCard />
     </div>
   );
 }

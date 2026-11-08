@@ -736,6 +736,13 @@
       "when": 1794065064868,
       "tag": "0104_catalogo_gestores_honorarios_lectura_staff",
       "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1794107237925,
+      "tag": "0105_asistente_preguntas_frecuentes",
+      "breakpoints": true
     }
   ]
 }
