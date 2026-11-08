@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { elegirVozEspanol, fragmentosParaVoz, textoParaVoz, VOZ_MAX_FRAGMENTO } from "./asistente-voz";
+import {
+  elegirVozEspanol,
+  esErrorVozEsperado,
+  fragmentosParaVoz,
+  mensajeFalloVoz,
+  textoParaVoz,
+  VOZ_MAX_FRAGMENTO,
+} from "./asistente-voz";
 
 describe("elegirVozEspanol", () => {
   it("solo elige voces en español", () => {
@@ -10,6 +17,14 @@ describe("elegirVozEspanol", () => {
     const v = elegirVozEspanol([{ lang: "en-US" }, { lang: "es-ES" }, { lang: "es-MX" }]);
     expect(v?.lang).toBe("es-MX");
     expect(elegirVozEspanol([{ lang: "es-MX" }, { lang: "es-DO" }])?.lang).toBe("es-DO");
+  });
+
+  it("prioriza voces instaladas en el equipo sobre voces de red", () => {
+    const v = elegirVozEspanol([
+      { lang: "es-US", name: "Google español de Estados Unidos", localService: false },
+      { lang: "es-ES", name: "Microsoft Helena", localService: true },
+    ]);
+    expect(v?.name).toBe("Microsoft Helena");
   });
 
   it("acepta cualquier variante de español si no hay preferida", () => {
@@ -42,5 +57,17 @@ describe("fragmentosParaVoz", () => {
     const f = fragmentosParaVoz(larga, 50);
     expect(f.every((p) => p.length <= 50)).toBe(true);
     expect(f.join(" ")).toBe(larga);
+  });
+});
+
+describe("errores de voz", () => {
+  it("cancelar o interrumpir no es un fallo", () => {
+    expect(esErrorVozEsperado("canceled")).toBe(true);
+    expect(esErrorVozEsperado("interrupted")).toBe(true);
+    expect(esErrorVozEsperado("synthesis-failed")).toBe(false);
+  });
+
+  it("bloqueo del navegador indica pulsar el altavoz", () => {
+    expect(mensajeFalloVoz("not-allowed")).toMatch(/altavoz/);
   });
 });

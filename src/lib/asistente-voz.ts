@@ -8,9 +8,13 @@ export const VOZ_MAX_FRAGMENTO = 220;
 /** Preferencia de acento: dominicano, luego latinoamericano, luego España. */
 const PREFERENCIA_IDIOMA = ["es-do", "es-us", "es-mx", "es-419", "es-co", "es-ve", "es-pr", "es-ar", "es-cl", "es-es"];
 
-type VozBasica = { lang: string; default?: boolean; name?: string };
+type VozBasica = { lang: string; default?: boolean; name?: string; localService?: boolean };
 
-/** Elige la mejor voz en español disponible; null si el navegador no tiene ninguna. */
+/**
+ * Elige la mejor voz en español disponible; null si el navegador no tiene ninguna.
+ * Prioriza voces instaladas en el equipo (las de red de Chrome fallan en silencio
+ * con más frecuencia) y, entre ellas, el acento más cercano.
+ */
 export function elegirVozEspanol<T extends VozBasica>(voces: readonly T[]): T | null {
   const espanol = voces.filter((v) => /^es([-_]|$)/i.test(v.lang ?? ""));
   if (espanol.length === 0) return null;
@@ -18,7 +22,31 @@ export function elegirVozEspanol<T extends VozBasica>(voces: readonly T[]): T | 
     const i = PREFERENCIA_IDIOMA.indexOf(v.lang.toLowerCase().replace("_", "-"));
     return i === -1 ? PREFERENCIA_IDIOMA.length - 1 : i;
   };
-  return [...espanol].sort((a, b) => rango(a) - rango(b) || Number(!!b.default) - Number(!!a.default))[0];
+  const local = (v: T) => (v.localService === false ? 1 : 0);
+  return [...espanol].sort(
+    (a, b) => local(a) - local(b) || rango(a) - rango(b) || Number(!!b.default) - Number(!!a.default),
+  )[0];
+}
+
+/** Errores que produce la propia app al detener o reemplazar una lectura. */
+export function esErrorVozEsperado(codigo: string | undefined) {
+  return codigo === "canceled" || codigo === "interrupted";
+}
+
+/** Mensaje para el usuario cuando el navegador no logra leer en voz alta. */
+export function mensajeFalloVoz(codigo: string | undefined): string {
+  switch (codigo) {
+    case "not-allowed":
+      return "El navegador bloqueó la lectura en voz. Pulsa el altavoz de la respuesta para escucharla.";
+    case "voice-unavailable":
+    case "language-unavailable":
+      return "Este equipo no tiene una voz en español disponible. Instálala en la configuración de voz del sistema.";
+    case "audio-busy":
+    case "audio-hardware":
+      return "El audio del equipo está ocupado o no disponible. Revisa la salida de sonido.";
+    default:
+      return "No se pudo reproducir la voz en este navegador. Revisa el volumen del equipo o prueba en Chrome o Edge.";
+  }
 }
 
 /** Convierte la respuesta en Markdown a texto natural para leer (sin símbolos ni enlaces). */

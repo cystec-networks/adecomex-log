@@ -84,7 +84,9 @@ export function AsistenteVirtual() {
   const ocupado = status === "submitted" || status === "streaming";
 
   // Lectura en voz alta (síntesis nativa del navegador, en español).
-  const { soportado: vozSoportada, hablandoId, leer, detener } = useLecturaVoz();
+  const { soportado: vozSoportada, hablandoId, leer, detener } = useLecturaVoz({
+    onFallo: (mensaje) => toast.error(mensaje),
+  });
   const [modoVoz, setModoVoz] = useState(false);
   useEffect(() => {
     try {
@@ -96,7 +98,10 @@ export function AsistenteVirtual() {
   const alternarModoVoz = () => {
     const activo = !modoVoz;
     setModoVoz(activo);
-    if (!activo) detener();
+    // Confirmación audible dentro del clic: habilita el audio en navegadores que
+    // exigen un gesto del usuario y comprueba al momento que la voz funciona.
+    if (activo) leer("modo-voz", "Modo voz activado.");
+    else detener();
     try {
       window.localStorage.setItem(ASISTENTE_CLAVE_MODO_VOZ, activo ? "1" : "0");
     } catch {
