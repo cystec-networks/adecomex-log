@@ -567,14 +567,14 @@ function DialogoDocumento({
               )}
             </div>
             <div className="space-y-1">
-              <Label>Título</Label>
-              <Input value={b.titulo ?? ""} onChange={(e) => set({ titulo: e.target.value })} className="text-[13px]" />
+              <Label htmlFor="bn-titulo">Título</Label>
+              <Input id="bn-titulo" value={b.titulo ?? ""} onChange={(e) => set({ titulo: e.target.value })} className="text-[13px]" />
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="min-w-0 space-y-1">
-                <Label>Tipo</Label>
+                <Label htmlFor="bn-tipo">Tipo</Label>
                 <Select value={b.tipo ?? "Otro"} onValueChange={(v) => set({ tipo: v })}>
-                  <SelectTrigger className="text-[13px]">
+                  <SelectTrigger id="bn-tipo" className="text-[13px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -587,8 +587,9 @@ function DialogoDocumento({
                 </Select>
               </div>
               <div className="min-w-0 space-y-1">
-                <Label>Número (si aplica)</Label>
+                <Label htmlFor="bn-numero">Número (si aplica)</Label>
                 <Input
+                  id="bn-numero"
                   value={b.numero ?? ""}
                   placeholder="Ej. 168-21"
                   onChange={(e) => set({ numero: e.target.value })}
@@ -596,8 +597,9 @@ function DialogoDocumento({
                 />
               </div>
               <div className="min-w-0 space-y-1">
-                <Label>Fecha de emisión</Label>
+                <Label htmlFor="bn-fecha">Fecha de emisión</Label>
                 <Input
+                  id="bn-fecha"
                   type="date"
                   value={b.fecha_emision ?? ""}
                   onChange={(e) => set({ fecha_emision: e.target.value || null })}
@@ -607,12 +609,12 @@ function DialogoDocumento({
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="min-w-0 space-y-1">
-                <Label>Estado</Label>
+                <Label htmlFor="bn-estado">Estado</Label>
                 <Select
                   value={b.estado_vigencia ?? "no_verificado"}
                   onValueChange={(v) => set({ estado_vigencia: v })}
                 >
-                  <SelectTrigger className="text-[13px]">
+                  <SelectTrigger id="bn-estado" className="text-[13px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -625,8 +627,9 @@ function DialogoDocumento({
                 </Select>
               </div>
               <div className="min-w-0 space-y-1 sm:col-span-2">
-                <Label>Fuente (URL oficial)</Label>
+                <Label htmlFor="bn-fuente">Fuente (URL oficial)</Label>
                 <Input
+                  id="bn-fuente"
                   value={b.fuente_url ?? ""}
                   placeholder="https://"
                   onChange={(e) => set({ fuente_url: e.target.value })}
@@ -635,8 +638,8 @@ function DialogoDocumento({
               </div>
             </div>
             <div className="space-y-1">
-              <Label>Notas</Label>
-              <Textarea rows={2} value={b.notas ?? ""} onChange={(e) => set({ notas: e.target.value })} className="text-[13px]" />
+              <Label htmlFor="bn-notas">Notas</Label>
+              <Textarea id="bn-notas" rows={2} value={b.notas ?? ""} onChange={(e) => set({ notas: e.target.value })} className="text-[13px]" />
             </div>
           </div>
         )}

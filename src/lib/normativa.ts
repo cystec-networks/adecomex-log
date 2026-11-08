@@ -27,6 +27,8 @@ export const MAX_FRAGMENTOS_NORMATIVA = 2500;
 /** Tamaño objetivo de cada fragmento (caracteres) y solape al partir textos largos. */
 export const MAX_CARACTERES_FRAGMENTO = 1800;
 export const SOLAPE_FRAGMENTO = 200;
+/** Un artículo nuevo abre fragmento propio si el actual ya tiene este contenido (citas más precisas). */
+export const MIN_CARACTERES_ANTES_DE_ARTICULO = 400;
 /** Fragmentos vectorizados por llamada (cada llamada es corta y se puede reanudar). */
 export const LOTE_VECTORIZACION = 40;
 /** Una página con menos caracteres útiles se considera sin texto (posible escaneo). */
@@ -94,14 +96,16 @@ function unidadesPorArticulo(paginas: string[]): Unidad[] {
       cortes.push({ pos: (m.index ?? 0) + m[1].length, articulo: normalizarArticulo(m[3]) });
     }
     let desde = 0;
+    let abre = false; // el tramo actual empieza con un artículo
     for (const c of cortes) {
       const previo = texto.slice(desde, c.pos).trim();
-      if (previo) unidades.push({ texto: previo, pagina: i + 1, articulo: actual, inicioArticulo: desde > 0 });
+      if (previo) unidades.push({ texto: previo, pagina: i + 1, articulo: actual, inicioArticulo: abre });
       actual = c.articulo;
       desde = c.pos;
+      abre = true;
     }
     const resto = texto.slice(desde).trim();
-    if (resto) unidades.push({ texto: resto, pagina: i + 1, articulo: actual, inicioArticulo: desde > 0 });
+    if (resto) unidades.push({ texto: resto, pagina: i + 1, articulo: actual, inicioArticulo: abre });
   });
   return unidades;
 }
@@ -175,7 +179,7 @@ export function fragmentarDocumento(
       continue;
     }
     // Un artículo nuevo empieza fragmento si el actual ya tiene contenido suficiente.
-    if (largo() + u.texto.length > max || (u.inicioArticulo && largo() > max * 0.6)) vaciar();
+    if (largo() + u.texto.length > max || (u.inicioArticulo && largo() >= MIN_CARACTERES_ANTES_DE_ARTICULO)) vaciar();
     buffer.push(u);
   }
   vaciar();
