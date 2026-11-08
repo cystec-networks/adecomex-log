@@ -3,6 +3,7 @@ import {
   elegirVozEspanol,
   esErrorVozEsperado,
   fragmentosParaVoz,
+  generoVoz,
   mensajeFalloVoz,
   textoParaVoz,
   VOZ_MAX_FRAGMENTO,
@@ -21,14 +22,61 @@ describe("elegirVozEspanol", () => {
 
   it("prioriza voces instaladas en el equipo sobre voces de red", () => {
     const v = elegirVozEspanol([
-      { lang: "es-US", name: "Google español de Estados Unidos", localService: false },
-      { lang: "es-ES", name: "Microsoft Helena", localService: true },
+      { lang: "es-MX", name: "Microsoft Jorge Online (Natural)", localService: false },
+      { lang: "es-ES", name: "Microsoft Pablo", localService: true },
     ]);
-    expect(v?.name).toBe("Microsoft Helena");
+    expect(v?.name).toBe("Microsoft Pablo");
   });
 
   it("acepta cualquier variante de español si no hay preferida", () => {
     expect(elegirVozEspanol([{ lang: "de-DE" }, { lang: "es_GT" }])?.lang).toBe("es_GT");
+  });
+
+  it("elige una voz masculina aunque la femenina tenga mejor acento o sea predeterminada", () => {
+    const v = elegirVozEspanol([
+      { lang: "es-DO", name: "Microsoft Ramona Online (Natural) - Spanish (Dominican Republic)", default: true },
+      { lang: "es-MX", name: "Paulina" },
+      { lang: "es-ES", name: "Jorge" },
+    ]);
+    expect(v?.name).toBe("Jorge");
+  });
+
+  it("reconoce voces masculinas de Windows con acentos en el nombre", () => {
+    const v = elegirVozEspanol([
+      { lang: "es-ES", name: "Microsoft Helena - Spanish (Spain)", localService: true },
+      { lang: "es-ES", name: "Microsoft Álvaro Online (Natural) - Spanish (Spain)", localService: false },
+    ]);
+    expect(v?.name).toMatch(/Álvaro/);
+  });
+
+  it("usa una voz femenina solo si no hay ninguna masculina", () => {
+    const v = elegirVozEspanol([
+      { lang: "en-US", name: "Microsoft David - English (United States)" },
+      { lang: "es-MX", name: "Paulina" },
+    ]);
+    expect(v?.name).toBe("Paulina");
+  });
+
+  it("prefiere una voz de género desconocido antes que una femenina", () => {
+    const v = elegirVozEspanol([
+      { lang: "es-ES", name: "Mónica" },
+      { lang: "es-US", name: "Voz genérica es-US" },
+    ]);
+    expect(v?.name).toBe("Voz genérica es-US");
+  });
+});
+
+describe("generoVoz", () => {
+  it("no confunde «female» con «male»", () => {
+    expect(generoVoz("Spanish Female")).toBe("femenina");
+    expect(generoVoz("Spanish Male")).toBe("masculina");
+  });
+
+  it("deduce el género por nombres conocidos", () => {
+    expect(generoVoz("Diego")).toBe("masculina");
+    expect(generoVoz("Microsoft Raul - Spanish (Mexico)")).toBe("masculina");
+    expect(generoVoz("Google español")).toBe("desconocido");
+    expect(generoVoz("Microsoft Sabina - Spanish (Mexico)")).toBe("femenina");
   });
 });
 

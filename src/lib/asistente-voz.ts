@@ -11,9 +11,50 @@ const PREFERENCIA_IDIOMA = ["es-do", "es-us", "es-mx", "es-419", "es-co", "es-ve
 type VozBasica = { lang: string; default?: boolean; name?: string; localService?: boolean };
 
 /**
+ * Nombres de voces masculinas en español conocidas (Windows/Edge, macOS/iOS,
+ * Android). La Web Speech API no expone el género: se deduce por el nombre.
+ */
+const NOMBRES_MASCULINOS = [
+  "jorge", "diego", "carlos", "juan", "pablo", "raul", "alvaro", "emilio", "gerardo",
+  "tomas", "lorenzo", "gonzalo", "sebastian", "victor", "alonso", "mario", "andres",
+  "enrique", "miguel", "javier", "jose", "luis", "antonio", "manuel", "fernando",
+  "alejandro", "arnau", "dario", "elias", "saul", "teo", "nil", "cristian", "eddy",
+  "reed", "rocko", "grandpa", "abuelo", "liberto", "yago", "jaime", "federico",
+];
+const NOMBRES_FEMENINOS = [
+  "helena", "laura", "sabina", "elvira", "dalia", "ramona", "paloma", "elena", "salome",
+  "catalina", "karina", "paola", "monica", "paulina", "marisol", "angelica", "isabela",
+  "soledad", "francisca", "shelley", "sandy", "flo", "grandma", "abuela", "lucia",
+  "conchita", "penelope", "mia", "lupe", "sofia", "maria", "ximena", "irene", "estrella",
+  "renata", "valentina", "camila", "beatriz", "carlota", "larissa", "candela", "marina",
+  "nuria", "triana", "vera", "abril", "linda", "esperanza", "andrea", "tania", "yolanda",
+];
+
+export type GeneroVoz = "masculina" | "femenina" | "desconocido";
+
+/** Deduce el género de una voz por su nombre o por marcas male/female explícitas. */
+export function generoVoz(nombre: string | undefined): GeneroVoz {
+  const palabras = (nombre ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .split(/[^a-z]+/)
+    .filter(Boolean);
+  // «female» contiene «male»: se comparan palabras completas, femenino primero.
+  if (palabras.some((p) => ["female", "femenina", "femenino", "mujer", "woman"].includes(p))) return "femenina";
+  if (palabras.some((p) => ["male", "masculina", "masculino", "hombre", "man"].includes(p))) return "masculina";
+  if (palabras.some((p) => NOMBRES_MASCULINOS.includes(p))) return "masculina";
+  if (palabras.some((p) => NOMBRES_FEMENINOS.includes(p))) return "femenina";
+  return "desconocido";
+}
+
+const RANGO_GENERO: Record<GeneroVoz, number> = { masculina: 0, desconocido: 1, femenina: 2 };
+
+/**
  * Elige la mejor voz en español disponible; null si el navegador no tiene ninguna.
- * Prioriza voces instaladas en el equipo (las de red de Chrome fallan en silencio
- * con más frecuencia) y, entre ellas, el acento más cercano.
+ * Primero una voz masculina (femenina solo si no hay otra); después prioriza voces
+ * instaladas en el equipo (las de red de Chrome fallan en silencio con más
+ * frecuencia) y, entre ellas, el acento más cercano.
  */
 export function elegirVozEspanol<T extends VozBasica>(voces: readonly T[]): T | null {
   const espanol = voces.filter((v) => /^es([-_]|$)/i.test(v.lang ?? ""));
@@ -22,9 +63,14 @@ export function elegirVozEspanol<T extends VozBasica>(voces: readonly T[]): T | 
     const i = PREFERENCIA_IDIOMA.indexOf(v.lang.toLowerCase().replace("_", "-"));
     return i === -1 ? PREFERENCIA_IDIOMA.length - 1 : i;
   };
+  const genero = (v: T) => RANGO_GENERO[generoVoz(v.name)];
   const local = (v: T) => (v.localService === false ? 1 : 0);
   return [...espanol].sort(
-    (a, b) => local(a) - local(b) || rango(a) - rango(b) || Number(!!b.default) - Number(!!a.default),
+    (a, b) =>
+      genero(a) - genero(b) ||
+      local(a) - local(b) ||
+      rango(a) - rango(b) ||
+      Number(!!b.default) - Number(!!a.default),
   )[0];
 }
 
