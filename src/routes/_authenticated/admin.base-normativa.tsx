@@ -30,6 +30,7 @@ import {
   type EstadoVigencia,
 } from "@/lib/normativa";
 import { extraerDocumentoNormativa, vectorizarDocumentoNormativa } from "@/lib/normativa.functions";
+import { VisorNormativaDialog } from "@/components/normativa/visor-normativa-dialog";
 
 type Documento = Database["public"]["Tables"]["normativa_documentos"]["Row"];
 type Borrador = Partial<Documento> & { archivo?: File | null };
@@ -109,6 +110,7 @@ function BaseNormativa() {
   const [enCurso, setEnCurso] = useState<Set<string>>(new Set());
   const [busqueda, setBusqueda] = useState("");
   const [vigencia, setVigencia] = useState("todas");
+  const [viendo, setViendo] = useState<Documento | null>(null);
 
   const { data: documentos = [], isLoading } = useQuery({
     queryKey: [...CLAVE, "lista"],
@@ -264,19 +266,6 @@ function BaseNormativa() {
     onError: (e: Error) => toast.error(e.message || "No se pudo confirmar"),
   });
 
-  async function verPdf(d: Documento) {
-    if (!d.archivo_path) return;
-    const ventana = window.open("", "_blank");
-    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(d.archivo_path, 300);
-    if (error || !data) {
-      ventana?.close();
-      toast.error("No se pudo abrir el PDF");
-      return;
-    }
-    if (ventana) ventana.location.href = data.signedUrl;
-    else window.location.assign(data.signedUrl);
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -362,7 +351,7 @@ function BaseNormativa() {
                       corriendo={enCurso.has(d.id)}
                       onEditar={() => setEditando({ ...d, archivo: null })}
                       onProcesar={(desdeCero) => procesar(d.id, desdeCero)}
-                      onVer={() => verPdf(d)}
+                      onVer={() => d.archivo_path && setViendo(d)}
                       onConfirmar={() => confirmarDetectados.mutate(d)}
                       onEliminar={() => {
                         if (confirm(`¿Eliminar «${d.titulo}» y su PDF de la base normativa?`))
@@ -376,6 +365,13 @@ function BaseNormativa() {
           )}
         </CardContent>
       </Card>
+
+      <VisorNormativaDialog
+        abierto={!!viendo}
+        onCerrar={() => setViendo(null)}
+        documentoId={viendo?.id ?? null}
+        documento={viendo}
+      />
 
       <DialogoDocumento
         borrador={editando}
@@ -417,7 +413,18 @@ function FilaDocumento({
   return (
     <tr className="border-b align-top last:border-0">
       <td className="max-w-[26rem] py-2 pr-3">
-        <div className="font-medium text-[13px]">{d.titulo}</div>
+        {d.archivo_path ? (
+          <button
+            type="button"
+            onClick={onVer}
+            className="text-left text-[13px] font-medium text-primary hover:underline focus-visible:underline focus-visible:outline-none"
+            title="Abrir en el visor"
+          >
+            {d.titulo}
+          </button>
+        ) : (
+          <div className="font-medium text-[13px]">{d.titulo}</div>
+        )}
         <div className="text-[11px] text-muted-foreground">
           {d.tipo}
           {d.numero ? ` núm. ${d.numero}` : ""}
@@ -519,8 +526,8 @@ function FilaDocumento({
             size="icon"
             variant="ghost"
             className="h-8 w-8"
-            title="Ver PDF"
-            aria-label={`Ver PDF de ${d.titulo}`}
+            title="Abrir en el visor"
+            aria-label={`Abrir ${d.titulo} en el visor`}
             disabled={!d.archivo_path}
             onClick={onVer}
           >

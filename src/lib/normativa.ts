@@ -1,6 +1,7 @@
 // Utilidades puras de la «Base normativa» del Asistente ADECOMEX: fragmentación
 // del texto de un PDF con referencia a página y artículo, detección de PDF
 // escaneado y bloque de datos para el asistente. Sin dependencias de servidor.
+import { enlaceCitaNormativa } from "./normativa-visor";
 
 export const TIPOS_NORMATIVA = [
   "Ley",
@@ -192,6 +193,7 @@ export function textoParaVectorizar(titulo: string, f: Pick<Fragmento, "articulo
 }
 
 export type FragmentoContexto = {
+  documento_id?: string | null;
   titulo: string;
   tipo: string;
   numero: string | null;
@@ -230,7 +232,7 @@ export function formatearNormativaParaPrompt(fragmentos: FragmentoContexto[] | n
     .map((f, i) => {
       const doc = [f.tipo, f.numero ? `núm. ${f.numero}` : null].filter(Boolean).join(" ");
       const fecha = f.fecha_emision ? `emitido el ${fechaDmy(f.fecha_emision)}` : "fecha de emisión no indicada";
-      return `[N${i + 1}] Documento: ${sinSaltos(f.titulo, 250)} (${doc}) | ${fecha} | Vigencia: ${etiquetaVigencia(f.estado_vigencia)}\nUbicación: ${f.articulo ? `${f.articulo}, ` : ""}${textoPaginas(f.pagina_inicio, f.pagina_fin)}${f.fuente_url ? `\nFuente oficial: ${f.fuente_url}` : ""}\nTexto: ${sinSaltos(f.contenido, 2000)}`;
+      return `[N${i + 1}] Documento: ${sinSaltos(f.titulo, 250)} (${doc}) | ${fecha} | Vigencia: ${etiquetaVigencia(f.estado_vigencia)}\nUbicación: ${f.articulo ? `${f.articulo}, ` : ""}${textoPaginas(f.pagina_inicio, f.pagina_fin)}${f.documento_id ? `\nEnlace al visor: ${enlaceCitaNormativa(f.documento_id, f.pagina_inicio)}` : ""}${f.fuente_url ? `\nFuente oficial: ${f.fuente_url}` : ""}\nTexto: ${sinSaltos(f.contenido, 2000)}`;
     })
     .join("\n\n");
 }

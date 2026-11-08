@@ -771,6 +771,13 @@
       "when": 1794155777089,
       "tag": "0109_novedades_criterio_y_normativa_detectada",
       "breakpoints": true
+    },
+    {
+      "idx": 110,
+      "version": "7",
+      "when": 1794158324473,
+      "tag": "0110_base_normativa_staff_lee_pdf",
+      "breakpoints": true
     }
   ]
 }

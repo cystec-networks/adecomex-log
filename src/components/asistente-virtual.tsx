@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useQuery } from "@tanstack/react-query";
-import { Minus, X, MessageCircleQuestion, RotateCcw, Square, Volume2, VolumeX } from "lucide-react";
+import { FileText, Minus, X, MessageCircleQuestion, RotateCcw, Square, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +24,9 @@ import {
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import { defaultComponents, type Components } from "streamdown";
+import { VisorNormativaDialog } from "@/components/normativa/visor-normativa-dialog";
+import { parsearEnlaceCita, type CitaNormativa } from "@/lib/normativa-visor";
 import {
   PromptInput,
   PromptInputFooter,
@@ -82,6 +85,32 @@ export function AsistenteVirtual() {
   });
 
   const ocupado = status === "submitted" || status === "streaming";
+
+  // Citas de la Base normativa: abren el visor integrado en la página citada.
+  const [cita, setCita] = useState<CitaNormativa | null>(null);
+  const componentesRespuesta = useMemo<Components>(() => {
+    const EnlaceDefecto = defaultComponents.a as unknown as React.ComponentType<Record<string, unknown>>;
+    return {
+      a: (props) => {
+        const datos = parsearEnlaceCita(
+          props.href,
+          typeof window !== "undefined" ? window.location.origin : undefined,
+        );
+        if (!datos) return <EnlaceDefecto {...(props as Record<string, unknown>)} />;
+        return (
+          <button
+            type="button"
+            onClick={() => setCita(datos)}
+            className="inline-flex items-baseline gap-0.5 text-left font-medium text-primary underline underline-offset-2"
+            title={datos.pagina ? `Abrir el documento en la página ${datos.pagina}` : "Abrir el documento"}
+          >
+            <FileText className="h-3 w-3 shrink-0 self-center" aria-hidden />
+            {props.children}
+          </button>
+        );
+      },
+    };
+  }, []);
 
   // Lectura en voz alta (síntesis nativa del navegador, en español).
   const { soportado: vozSoportada, hablandoId, leer, detener } = useLecturaVoz({
@@ -299,7 +328,9 @@ export function AsistenteVirtual() {
                       )}
                     >
                       {m.role === "assistant" ? (
-                        <MessageResponse isAnimating={ocupado && m.id === ultimo?.id}>{texto}</MessageResponse>
+                        <MessageResponse isAnimating={ocupado && m.id === ultimo?.id} components={componentesRespuesta}>
+                          {texto}
+                        </MessageResponse>
                       ) : (
                         <p className="whitespace-pre-wrap">{texto}</p>
                       )}
@@ -360,6 +391,13 @@ export function AsistenteVirtual() {
           <span className="absolute right-0 top-0 h-3.5 w-3.5 rounded-full border-2 border-card bg-brand-red" />
         )}
       </button>
+
+      <VisorNormativaDialog
+        abierto={!!cita}
+        onCerrar={() => setCita(null)}
+        documentoId={cita?.documentoId ?? null}
+        pagina={cita?.pagina ?? null}
+      />
     </>
   );
 }
