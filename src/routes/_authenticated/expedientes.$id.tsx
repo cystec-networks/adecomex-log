@@ -1435,8 +1435,10 @@ function DetalleExpediente() {
           <CampoHeader etiqueta="N.º de despacho" valor={expData.numero_igra} />
           <div className="flex min-h-8 min-w-0 items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Tipo de Inspección:</Label>
-            <div ref={setInspeccionHost} className="min-w-0">
-              {tabActiva !== "info" && <span className="text-xs font-medium text-foreground md:text-sm">{expData.canal_riesgo || "—"}</span>}
+            {/* El selector de la ficha Generales se monta en este host; el texto de respaldo solo se ve mientras ese selector no esté montado, para no mostrar el valor dos veces. */}
+            <div className="min-w-0 [&:has([role=combobox])>[data-inspeccion-respaldo]]:hidden">
+              <div ref={setInspeccionHost} className="contents" />
+              <span data-inspeccion-respaldo className="text-xs font-medium text-foreground md:text-sm">{expData.canal_riesgo || "—"}</span>
             </div>
           </div>
           <CampoHeader etiqueta="N.º de permiso" valor={permisosNumeros} largo />
