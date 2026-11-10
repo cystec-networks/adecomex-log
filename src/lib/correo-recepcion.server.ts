@@ -64,3 +64,11 @@ export async function expedientesPorBl(db: Db, bl: string | null): Promise<{ id:
   if (error) throw new Error(`No se pudo buscar el BL: ${error.message}`);
   return data ?? [];
 }
+
+/** Expedientes activos con ese trámite VUCE (en el Expediente o en sus permisos). */
+export async function expedientesPorVuce(db: Db, vuce: string | null): Promise<{ id: string; numero: string }[]> {
+  if (!vuce) return [];
+  const { data, error } = await db.rpc("buscar_expedientes_por_vuce", { p_vuce: vuce });
+  if (error) throw new Error(`No se pudo buscar el trámite VUCE: ${error.message}`);
+  return data ?? [];
+}

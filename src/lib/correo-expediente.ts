@@ -117,7 +117,15 @@ export const RE_ANUNCIA_ADJUNTOS = /\b(adjunt[oa]s?|adjuntamos|adjunto|anex[oa]s
 
 export const AVISO_POSIBLE_SEGUIMIENTO = "Posible seguimiento: revisar";
 
-export type DecisionSinExpediente = { descartar: true; motivo: string } | { descartar: false; aviso: string | null };
+export type DecisionSinExpediente = { descartar: true; motivo: string } | { descartar: false; avisos: string[] };
+
+/** Aviso cuando el correo dice traer documentos (o Gmail tenía adjuntos) que no llegaron a la plataforma. */
+export function avisoAdjuntosFaltantes(c: { documentos: number; adjuntosRecibidos: number; adjuntosEnGmail?: number | null; texto: string }): string | null {
+  const enGmail = c.adjuntosEnGmail ?? 0;
+  if (enGmail > c.adjuntosRecibidos) return `Gmail tenía ${enGmail} adjunto${enGmail === 1 ? "" : "s"} y a la plataforma llegaron ${c.adjuntosRecibidos}; búscalos en el correo original.`;
+  if (c.documentos === 0 && RE_ANUNCIA_ADJUNTOS.test(c.texto)) return "El correo dice traer documentos adjuntos, pero no llegó ningún archivo a la plataforma; búscalos en el correo original en Gmail.";
+  return null;
+}
 
 /**
  * Qué hacer con un correo que no se relacionó con ningún Expediente. Solo se descarta un correo sin
@@ -130,20 +138,15 @@ export function decidirCorreoSinExpediente(c: {
   documentos: number; adjuntosRecibidos: number; adjuntosEnGmail?: number | null; texto: string;
 }): DecisionSinExpediente {
   const motivo = (c.motivoIa ?? "").trim() || "No es una solicitud nueva";
-  if (c.esSolicitudNueva) return { descartar: false, aviso: null };
-  if (c.forzado) return { descartar: false, aviso: `${AVISO_POSIBLE_SEGUIMIENTO}. Creada manualmente desde el registro de correos; antes se había descartado: ${motivo}` };
-  if (c.hiloCompra || c.otrosAvisos) return { descartar: false, aviso: null };
+  const faltantes = avisoAdjuntosFaltantes(c);
+  const conFaltantes = (aviso: string | null) => ({ descartar: false as const, avisos: [aviso, faltantes].filter((x): x is string => !!x) });
+  if (c.esSolicitudNueva || c.hiloCompra || c.otrosAvisos) return conFaltantes(null);
+  if (c.forzado) return conFaltantes(`${AVISO_POSIBLE_SEGUIMIENTO}. Creada manualmente desde el registro de correos; antes se había descartado: ${motivo}`);
   if (c.documentos > 0) {
-    return { descartar: false, aviso: `${AVISO_POSIBLE_SEGUIMIENTO}. La IA lo consideró seguimiento (${motivo}), pero trae ${c.documentos} documento${c.documentos === 1 ? "" : "s"} adjunto${c.documentos === 1 ? "" : "s"}.` };
+    return conFaltantes(`${AVISO_POSIBLE_SEGUIMIENTO}. La IA lo consideró seguimiento (${motivo}), pero trae ${c.documentos} documento${c.documentos === 1 ? "" : "s"} adjunto${c.documentos === 1 ? "" : "s"}.`);
   }
-  const enGmail = c.adjuntosEnGmail ?? 0;
-  if (enGmail > c.adjuntosRecibidos) {
-    return { descartar: false, aviso: `${AVISO_POSIBLE_SEGUIMIENTO}. Gmail tenía ${enGmail} adjunto${enGmail === 1 ? "" : "s"} y a la plataforma llegaron ${c.adjuntosRecibidos}; búscalos en el correo original.` };
-  }
-  if (RE_ANUNCIA_ADJUNTOS.test(c.texto)) {
-    return { descartar: false, aviso: `${AVISO_POSIBLE_SEGUIMIENTO}. El correo dice traer documentos adjuntos, pero no llegó ningún archivo a la plataforma; búscalos en el correo original en Gmail.` };
-  }
-  if (c.dudaIa) return { descartar: false, aviso: `${AVISO_POSIBLE_SEGUIMIENTO}. La IA no está segura de que sea un seguimiento: ${motivo}` };
+  if (faltantes) return { descartar: false, avisos: [`${AVISO_POSIBLE_SEGUIMIENTO}. ${faltantes}`] };
+  if (c.dudaIa) return conFaltantes(`${AVISO_POSIBLE_SEGUIMIENTO}. La IA no está segura de que sea un seguimiento: ${motivo}`);
   return { descartar: true, motivo };
 }
 

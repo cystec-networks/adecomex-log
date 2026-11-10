@@ -258,7 +258,7 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
       }
       return ok({ resultado: "descartada", motivo: decision.motivo, advertencias: entradaAdjuntos.advertencias, adjuntos_respaldo: respaldo }, { motivo: decision.motivo });
     }
-    if (decision.aviso) avisos.unshift(decision.aviso);
+    avisos.unshift(...decision.avisos);
   }
 
   // Un adjunto ilegible no bloquea a los demás: queda como «Otro».

@@ -80,7 +80,8 @@ export function avisoFechaLlegada(mensaje: string): string | null {
 export function extraerPorEtiquetas(mensaje: string): DatosSolicitudCorreo {
   const bl = linea(mensaje, "B/?L|AWB|BL/AWB|Bill of Lading|Gu[ií]a a[ée]rea|Conocimiento de embarque");
   return {
-    bl_awb: bl ? (bl.match(/[A-Z0-9][A-Z0-9-]{5,}/i)?.[0]?.toUpperCase() ?? null) : null,
+    // Un BL siempre lleva dígitos: «BL original» (lista de pendientes) no es un número de BL.
+    bl_awb: bl ? (bl.match(/\b(?=[A-Z-]*\d)[A-Z0-9][A-Z0-9-]{5,}/i)?.[0]?.toUpperCase() ?? null) : null,
     eta: fechaCorreo(linea(mensaje, ETIQUETAS_LLEGADA)),
     producto: linea(mensaje, "Producto|Mercanc[ií]a|Descripci[óo]n"),
     cantidad: linea(mensaje, "Cantidad|Qty|Quantity"),
@@ -107,7 +108,8 @@ export function combinarDatos(
   };
   const etaIa = typeof ia.eta === "string" ? fechaCorreo(ia.eta) : null;
   return {
-    bl_awb: etiquetas.bl_awb ?? ok(ia.bl_awb)?.toUpperCase() ?? null,
+    // Un BL siempre lleva dígitos («BL original» en una lista de pendientes no es un número).
+    bl_awb: etiquetas.bl_awb ?? (/\d/.test(ok(ia.bl_awb) ?? "") ? ok(ia.bl_awb)!.toUpperCase() : null),
     eta: etiquetas.eta ?? (etaIa && typeof ia.eta === "string" && fuente.includes(norm(ia.eta)) ? etaIa : null),
     producto: etiquetas.producto ?? ok(ia.producto),
     cantidad: etiquetas.cantidad ?? ok(ia.cantidad),

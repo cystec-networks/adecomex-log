@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { claveCorreo, conservarPorDocumentos, extraerNumeroVuce, extraerNumerosExpediente, normalizarBl, numerosExpedienteCorreo, propuestasParaExpediente, remitenteCorresponde } from "./correo-expediente";
+import { AVISO_POSIBLE_SEGUIMIENTO, claveCorreo, decidirCorreoSinExpediente, esDocumentoAdjunto, extraerNumeroVuce, extraerNumerosExpediente, normalizarBl, numerosExpedienteCorreo, propuestasParaExpediente, remitenteCorresponde } from "./correo-expediente";
 
 const ASUNTO = "4 CONT. DE HAB. CRANBERRY Detalles y el PIN TRM-1026-2551297 : REGISTRO #202610I358. : HACER VUCE 2006 - 1 - 2000 QQ HABICHUELAS CRANBERRY- LOMI / MAGUANA";
 
@@ -58,11 +58,41 @@ describe("datos propuestos", () => {
 });
 
 describe("descartes", () => {
-  it("documentos de importación adjuntos no se descartan", () => {
-    expect(conservarPorDocumentos("DOCUMENTOS IMPORTACIÓN MACE", ["application/pdf"], false)).toBe(true);
-    expect(conservarPorDocumentos("Saludos", ["application/pdf"], true)).toBe(true);
-    expect(conservarPorDocumentos("Saludos", ["application/pdf"], false)).toBe(false);
-    expect(conservarPorDocumentos("DOCUMENTOS", [], true)).toBe(false);
+  const MACE = "DOCUMENTOS IMPORTACIÓN MACE\nAdjunto documentos importación Mace de UPL, para Agrodetalles.\nNúmero de trámite VUCE TRM-1126-2587885.\nFecha de llegada 11/011/2026";
+  const base = { esSolicitudNueva: false, dudaIa: false, motivoIa: "Remite documentos con trámite VUCE ya identificado", documentos: 0, adjuntosRecibidos: 0, texto: "Gracias, recibido." };
+
+  it("un correo con documentos de importación adjuntos nunca se descarta: crea solicitud con «Posible seguimiento»", () => {
+    const d = decidirCorreoSinExpediente({ ...base, documentos: 3, adjuntosRecibidos: 3, texto: MACE });
+    expect(d.descartar).toBe(false);
+    expect(!d.descartar && d.avisos[0]?.startsWith(AVISO_POSIBLE_SEGUIMIENTO)).toBe(true);
+  });
+  it("si el correo anuncia adjuntos que no llegaron (caso MACE real), no se descarta", () => {
+    const d = decidirCorreoSinExpediente({ ...base, texto: MACE });
+    expect(d.descartar).toBe(false);
+  });
+  it("aunque la IA la vea como solicitud nueva, avisa de los adjuntos anunciados que no llegaron", () => {
+    const d = decidirCorreoSinExpediente({ ...base, esSolicitudNueva: true, texto: MACE });
+    expect(!d.descartar && d.avisos.some((a) => a.includes("no llegó ningún archivo"))).toBe(true);
+  });
+  it("si Gmail tenía más adjuntos que los recibidos, no se descarta", () => {
+    expect(decidirCorreoSinExpediente({ ...base, adjuntosEnGmail: 4 }).descartar).toBe(false);
+  });
+  it("si la IA duda entre seguimiento y solicitud nueva, se crea con aviso", () => {
+    const d = decidirCorreoSinExpediente({ ...base, dudaIa: true });
+    expect(!d.descartar && d.avisos[0]?.startsWith(AVISO_POSIBLE_SEGUIMIENTO)).toBe(true);
+  });
+  it("solo se descarta sin documentos, sin adjuntos anunciados y sin dudas", () => {
+    const d = decidirCorreoSinExpediente(base);
+    expect(d.descartar).toBe(true);
+  });
+  it("crear desde el registro nunca descarta", () => {
+    expect(decidirCorreoSinExpediente({ ...base, forzado: true }).descartar).toBe(false);
+  });
+  it("un logo de firma no cuenta como documento; un PDF o un escaneo sí", () => {
+    expect(esDocumentoAdjunto({ nombre: "image001.png", mime: "image/png", bytes: 4_000 })).toBe(false);
+    expect(esDocumentoAdjunto({ nombre: "factura.jpg", mime: "image/jpeg", bytes: 350_000 })).toBe(true);
+    expect(esDocumentoAdjunto({ nombre: "BL.pdf", mime: "application/pdf", bytes: 1_000 })).toBe(true);
+    expect(esDocumentoAdjunto({ nombre: "packing.xlsx", mime: "application/octet-stream", bytes: 9_000 })).toBe(true);
   });
 });
 

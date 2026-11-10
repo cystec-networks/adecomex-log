@@ -95,3 +95,38 @@ describe("adjuntos del correo", () => {
     expect(tipoAdjuntoCorreo("foto de perfil")).toBe("Otro");
   });
 });
+
+describe("fecha de llegada con ceros de más", () => {
+  it("«11/011/2026» se lee como 11/11/2026 y avisa del ajuste", async () => {
+    const m = await import("./correo-solicitud");
+    expect(m.fechaCorreo("11/011/2026")).toBe("2026-11-11");
+    expect(m.extraerPorEtiquetas("Fecha de llegada 11/011/2026").eta).toBe("2026-11-11");
+    expect(m.avisoFechaLlegada("Fecha de llegada 11/011/2026")?.includes("11/11/2026")).toBe(true);
+  });
+  it("una fecha imposible no se inventa y pide revisar", async () => {
+    const m = await import("./correo-solicitud");
+    expect(m.fechaCorreo("31/02/2026")).toBe(null);
+    expect(m.avisoFechaLlegada("Fecha de llegada 31/02/2026")?.startsWith("ETA: no se pudo interpretar")).toBe(true);
+  });
+  it("una fecha normal no genera aviso", async () => {
+    const m = await import("./correo-solicitud");
+    expect(m.avisoFechaLlegada("Fecha estimada de llegada 25/11/2026")).toBe(null);
+  });
+});
+
+describe("BL en listas de pendientes", () => {
+  it("«BL original» no se toma como número de BL", async () => {
+    const m = await import("./correo-solicitud");
+    expect(m.extraerPorEtiquetas("Pendientes:\n-          BL original").bl_awb).toBe(null);
+    expect(m.extraerPorEtiquetas("BL: MEDURT884588").bl_awb).toBe("MEDURT884588");
+  });
+});
+
+describe("BL propuesto por la IA", () => {
+  it("sin dígitos no se acepta aunque aparezca en el texto", async () => {
+    const m = await import("./correo-solicitud");
+    const vacio = { bl_awb: null, eta: null, producto: null, cantidad: null, cliente_nombre: null };
+    expect(m.combinarDatos(vacio, { bl_awb: "original" }, "-  BL original").bl_awb).toBe(null);
+    expect(m.combinarDatos(vacio, { bl_awb: "MEDURT884588" }, "BL MEDURT884588").bl_awb).toBe("MEDURT884588");
+  });
+});

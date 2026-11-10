@@ -53,7 +53,7 @@ export function CorreosExpediente({ expedienteId }: { expedienteId: string }) {
                   <span className="font-medium min-w-0 break-words">{c.asunto || "(sin asunto)"}</span>
                 </div>
                 <div className="text-[11px] text-muted-foreground break-words">
-                  {c.remitente_correo ?? c.remitente} · {c.adjuntos_total} adjunto{c.adjuntos_total === 1 ? "" : "s"} guardado{c.adjuntos_total === 1 ? "" : "s"} en Documentos · {c.vinculo === "bl" ? "relacionado por BL" : "relacionado por número de Expediente"}
+                  {c.remitente_correo ?? c.remitente} · {c.adjuntos_total} adjunto{c.adjuntos_total === 1 ? "" : "s"} guardado{c.adjuntos_total === 1 ? "" : "s"} en Documentos · {c.vinculo === "bl" ? "relacionado por BL" : c.vinculo === "vuce" ? "relacionado por trámite VUCE" : "relacionado por número de Expediente"}
                 </div>
                 {(c.advertencias ?? []).map((a) => <div key={a} className="text-[11px] text-warning-foreground">⚠ {a}</div>)}
                 {pendientes.length > 0 && (

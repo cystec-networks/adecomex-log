@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ListChecks } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { FilePlus2, ListChecks, Loader2, Paperclip } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RESULTADO_CORREO, correoAtascado, registroCorreos } from "@/lib/correos-recibidos";
+import { crearSolicitudDesdeCorreo } from "@/lib/correos-recibidos.functions";
 
 const FILTROS = [
   { id: "todos", etiqueta: "Todos" },
@@ -30,6 +33,19 @@ export function RegistroCorreos({ filtroInicial }: { filtroInicial?: string }) {
   const [filtro, setFiltro] = useState<string>(FILTROS.some((f) => f.id === filtroInicial) ? filtroInicial! : "todos");
   useEffect(() => { if (filtroInicial) document.getElementById("registro-correos")?.scrollIntoView({ block: "start" }); }, [filtroInicial]);
   const { data = [], isLoading, isError } = useQuery({ queryKey: ["registro-correos", filtro], queryFn: () => registroCorreos(supabase, filtro), refetchInterval: 60_000 });
+  const qc = useQueryClient();
+  const crear = useServerFn(crearSolicitudDesdeCorreo);
+  const crearSolicitud = useMutation({
+    mutationFn: (registroId: string) => crear({ data: { registroId } }),
+    onSuccess: (r) => {
+      if (r.resultado === "adjuntada") toast.success(`El correo corresponde al Expediente ${r.expediente_numero}; sus documentos se adjuntaron allí.`);
+      else toast.success(r.resultado === "actualizada" ? "Se actualizó la solicitud pendiente de este remitente." : "Solicitud creada. Revísala en la bandeja de solicitudes.");
+      qc.invalidateQueries({ queryKey: ["registro-correos"] });
+      qc.invalidateQueries({ queryKey: ["solicitudes-correo"] });
+      qc.invalidateQueries({ queryKey: ["correos-pendientes-kpi"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "No se pudo crear la solicitud"),
+  });
   return (
     <section className="space-y-2" id="registro-correos">
       <div className="flex flex-wrap items-center gap-2">
@@ -40,7 +56,7 @@ export function RegistroCorreos({ filtroInicial }: { filtroInicial?: string }) {
           ))}
         </div>
       </div>
-      <p className="text-[11px] text-muted-foreground">Últimos 200 correos que el buzón entregó a la plataforma. Un correo con error se reintenta automáticamente; aquí se ve el motivo y los intentos.</p>
+      <p className="text-[11px] text-muted-foreground">Últimos 200 correos que el buzón entregó a la plataforma. Un correo con error se reintenta automáticamente; aquí se ve el motivo y los intentos. Si un correo descartado sí era un embarque, usa «Crear solicitud».</p>
       <Card>
         <CardContent className="p-0 overflow-auto">
           {isLoading ? <p className="p-6 text-sm text-muted-foreground">Cargando…</p> : isError ? <p className="p-6 text-sm text-destructive">No se pudo cargar el registro.</p> : data.length === 0 ? (
@@ -67,7 +83,19 @@ export function RegistroCorreos({ filtroInicial }: { filtroInicial?: string }) {
                       <td className="px-2 py-1.5 text-center">{c.intentos}</td>
                       <td className="px-2 py-1.5 whitespace-nowrap">
                         {c.expediente_id ? <Link to="/expedientes/$id" params={{ id: c.expediente_id }} search={{ ficha: "checklist" }} className="text-primary hover:underline expediente-numero">{c.expediente_numero}</Link>
-                          : c.solicitud_id ? <span className="text-muted-foreground">Solicitud por correo</span> : "—"}
+                          : c.solicitud_id ? <span className="text-muted-foreground">Solicitud por correo</span>
+                          : c.resultado === "descartada" ? (
+                            <div className="space-y-1">
+                              <Button size="sm" variant="outline" className="h-7 px-2 text-[12px]" disabled={crearSolicitud.isPending}
+                                onClick={() => crearSolicitud.mutate(c.id)} title="Crear la solicitud con el texto y los adjuntos guardados de este correo">
+                                {crearSolicitud.isPending && crearSolicitud.variables === c.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FilePlus2 className="h-3.5 w-3.5" />}
+                                Crear solicitud
+                              </Button>
+                              {Array.isArray(c.adjuntos_respaldo) && c.adjuntos_respaldo.length > 0 && (
+                                <div className="text-[11px] text-muted-foreground flex items-center gap-1"><Paperclip className="h-3 w-3" />{c.adjuntos_respaldo.length} adjunto{c.adjuntos_respaldo.length === 1 ? "" : "s"} guardado{c.adjuntos_respaldo.length === 1 ? "" : "s"}</div>
+                              )}
+                            </div>
+                          ) : "—"}
                       </td>
                     </tr>
                   );
