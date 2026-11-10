@@ -101,16 +101,50 @@ export function propuestasParaExpediente(
 export const propuestasPendientes = (p: unknown): [CampoPropuesto, PropuestaCampo][] =>
   Object.entries((p && typeof p === "object" ? p : {}) as Propuestas).filter(([, v]) => v?.estado === "pendiente") as [CampoPropuesto, PropuestaCampo][];
 
-const RE_IMPORTACION = /\b(DOCUMENTOS?|DOCS?|IMPORTACI[OÓ]N(?:ES)?|VUCE|TRM-\d|EMBARQUES?|DESPACHO|BL|AWB|B\/L|CONTENEDOR(?:ES)?|CONT\.?|FACTURA|PACKING)\b/i;
-const MIME_DOCUMENTO = /^(application\/pdf|image\/)/i;
+const MIME_DOCUMENTO = /^(application\/(pdf|msword|vnd\.openxmlformats|vnd\.ms-excel|vnd\.ms-outlook|zip|x-zip|x-zip-compressed|vnd\.rar|x-rar|rtf)|message\/rfc822)/i;
+const EXT_DOCUMENTO = /\.(pdf|xlsx?|xlsm|docx?|zip|rar|7z|msg|eml|rtf|tiff?)$/i;
+/** Imágenes menores que esto suelen ser logos de firma, no documentos escaneados. */
+export const BYTES_MIN_IMAGEN_DOCUMENTO = 20_000;
+
+/** ¿El adjunto puede ser un documento de importación? (PDF, ofimática, comprimidos o imagen escaneada, no un logo). */
+export function esDocumentoAdjunto(a: { nombre: string; mime: string; bytes: number }): boolean {
+  if (/^image\//i.test(a.mime) || /\.(png|jpe?g|gif|webp|bmp|heic)$/i.test(a.nombre)) return a.bytes >= BYTES_MIN_IMAGEN_DOCUMENTO;
+  return MIME_DOCUMENTO.test(a.mime) || EXT_DOCUMENTO.test(a.nombre);
+}
+
+/** El texto del correo dice que trae archivos («adjunto documentos», «attached», «anexo»…). */
+export const RE_ANUNCIA_ADJUNTOS = /\b(adjunt[oa]s?|adjuntamos|adjunto|anex[oa]s?|anexamos|attached|attachments?|enclosed)\b/i;
+
+export const AVISO_POSIBLE_SEGUIMIENTO = "Posible seguimiento: revisar";
+
+export type DecisionSinExpediente = { descartar: true; motivo: string } | { descartar: false; aviso: string | null };
 
 /**
- * Un correo con documentos de importación adjuntos no se descarta solo porque la IA lo crea
- * seguimiento: con palabras de importación en el asunto o de un cliente registrado se registra.
+ * Qué hacer con un correo que no se relacionó con ningún Expediente. Solo se descarta un correo sin
+ * documentos de importación (ni recibidos ni anunciados) y que la IA considera, sin dudas, que no es
+ * una solicitud nueva. Ante cualquier duda se crea la solicitud con «Posible seguimiento: revisar»
+ * para que una persona la vea. Un número de trámite VUCE por sí solo no indica que el embarque exista.
  */
-export function conservarPorDocumentos(asunto: string, mimes: string[], remitenteEsCliente: boolean): boolean {
-  if (!mimes.some((m) => MIME_DOCUMENTO.test(m))) return false;
-  return remitenteEsCliente || RE_IMPORTACION.test(asunto ?? "");
+export function decidirCorreoSinExpediente(c: {
+  esSolicitudNueva: boolean; dudaIa: boolean; motivoIa: string | null; forzado?: boolean; otrosAvisos?: boolean; hiloCompra?: boolean;
+  documentos: number; adjuntosRecibidos: number; adjuntosEnGmail?: number | null; texto: string;
+}): DecisionSinExpediente {
+  const motivo = (c.motivoIa ?? "").trim() || "No es una solicitud nueva";
+  if (c.esSolicitudNueva) return { descartar: false, aviso: null };
+  if (c.forzado) return { descartar: false, aviso: `${AVISO_POSIBLE_SEGUIMIENTO}. Creada manualmente desde el registro de correos; antes se había descartado: ${motivo}` };
+  if (c.hiloCompra || c.otrosAvisos) return { descartar: false, aviso: null };
+  if (c.documentos > 0) {
+    return { descartar: false, aviso: `${AVISO_POSIBLE_SEGUIMIENTO}. La IA lo consideró seguimiento (${motivo}), pero trae ${c.documentos} documento${c.documentos === 1 ? "" : "s"} adjunto${c.documentos === 1 ? "" : "s"}.` };
+  }
+  const enGmail = c.adjuntosEnGmail ?? 0;
+  if (enGmail > c.adjuntosRecibidos) {
+    return { descartar: false, aviso: `${AVISO_POSIBLE_SEGUIMIENTO}. Gmail tenía ${enGmail} adjunto${enGmail === 1 ? "" : "s"} y a la plataforma llegaron ${c.adjuntosRecibidos}; búscalos en el correo original.` };
+  }
+  if (RE_ANUNCIA_ADJUNTOS.test(c.texto)) {
+    return { descartar: false, aviso: `${AVISO_POSIBLE_SEGUIMIENTO}. El correo dice traer documentos adjuntos, pero no llegó ningún archivo a la plataforma; búscalos en el correo original en Gmail.` };
+  }
+  if (c.dudaIa) return { descartar: false, aviso: `${AVISO_POSIBLE_SEGUIMIENTO}. La IA no está segura de que sea un seguimiento: ${motivo}` };
+  return { descartar: true, motivo };
 }
 
 async function sha256Hex(texto: string) {

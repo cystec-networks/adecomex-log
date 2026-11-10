@@ -1780,13 +1780,18 @@ export type Database = {
       }
       correos_recibidos: {
         Row: {
+          adjuntos_en_gmail: number | null
+          adjuntos_respaldo: Json
           adjuntos_total: number
           advertencias: string[]
           alerta_vista_en: string | null
           alerta_vista_por: string | null
           asunto: string
+          cc: string | null
           clave: string
           created_at: string
+          cuerpo: string | null
+          destinatarios: string | null
           expediente_id: string | null
           expediente_numero: string | null
           id: string
@@ -1796,6 +1801,8 @@ export type Database = {
           motivo: string | null
           primer_intento_at: string
           propuestas: Json
+          recuperado_en: string | null
+          recuperado_por: string | null
           reintentable: boolean
           remitente: string
           remitente_correo: string | null
@@ -1806,13 +1813,18 @@ export type Database = {
           vinculo: string | null
         }
         Insert: {
+          adjuntos_en_gmail?: number | null
+          adjuntos_respaldo?: Json
           adjuntos_total?: number
           advertencias?: string[]
           alerta_vista_en?: string | null
           alerta_vista_por?: string | null
           asunto?: string
+          cc?: string | null
           clave: string
           created_at?: string
+          cuerpo?: string | null
+          destinatarios?: string | null
           expediente_id?: string | null
           expediente_numero?: string | null
           id?: string
@@ -1822,6 +1834,8 @@ export type Database = {
           motivo?: string | null
           primer_intento_at?: string
           propuestas?: Json
+          recuperado_en?: string | null
+          recuperado_por?: string | null
           reintentable?: boolean
           remitente?: string
           remitente_correo?: string | null
@@ -1832,13 +1846,18 @@ export type Database = {
           vinculo?: string | null
         }
         Update: {
+          adjuntos_en_gmail?: number | null
+          adjuntos_respaldo?: Json
           adjuntos_total?: number
           advertencias?: string[]
           alerta_vista_en?: string | null
           alerta_vista_por?: string | null
           asunto?: string
+          cc?: string | null
           clave?: string
           created_at?: string
+          cuerpo?: string | null
+          destinatarios?: string | null
           expediente_id?: string | null
           expediente_numero?: string | null
           id?: string
@@ -1848,6 +1867,8 @@ export type Database = {
           motivo?: string | null
           primer_intento_at?: string
           propuestas?: Json
+          recuperado_en?: string | null
+          recuperado_por?: string | null
           reintentable?: boolean
           remitente?: string
           remitente_correo?: string | null
@@ -8359,6 +8380,13 @@ export type Database = {
       }
       buscar_expedientes_por_bl: {
         Args: { p_bl: string }
+        Returns: {
+          id: string
+          numero: string
+        }[]
+      }
+      buscar_expedientes_por_vuce: {
+        Args: { p_vuce: string }
         Returns: {
           id: string
           numero: string

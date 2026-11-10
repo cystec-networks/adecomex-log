@@ -35,20 +35,45 @@ const linea = (texto: string, etiquetas: string) => {
   return v ? v.replace(/\s+/g, " ") : null;
 };
 
-/** DD/MM/YYYY, DD-MM-YYYY o YYYY-MM-DD → YYYY-MM-DD; inválida → null. */
-export function fechaCorreo(v: string | null | undefined): string | null {
+/**
+ * DD/MM/YYYY, DD-MM-YYYY o YYYY-MM-DD → YYYY-MM-DD; inválida → null.
+ * Tolera ceros de más a la izquierda («11/011/2026» = 11/11/2026) e indica que hubo ajuste.
+ */
+export function fechaCorreoDetalle(v: string | null | undefined): { fecha: string | null; ajustada: boolean } {
   const s = (v ?? "").trim();
   let y: number, m: number, d: number;
+  let ajustada = false;
   let r = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
   if (r) { y = +r[1]; m = +r[2]; d = +r[3]; }
   else {
-    r = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})/.exec(s);
-    if (!r) return null;
+    r = /^(0*\d{1,2})\s*[/.-]\s*(0*\d{1,2})\s*[/.-]\s*(\d{4})(?!\d)/.exec(s);
+    if (!r) return { fecha: null, ajustada: false };
+    ajustada = r[1].length > 2 || r[2].length > 2;
     d = +r[1]; m = +r[2]; y = +r[3];
   }
   const f = new Date(Date.UTC(y, m - 1, d));
-  if (f.getUTCFullYear() !== y || f.getUTCMonth() !== m - 1 || f.getUTCDate() !== d) return null;
-  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  if (f.getUTCFullYear() !== y || f.getUTCMonth() !== m - 1 || f.getUTCDate() !== d) return { fecha: null, ajustada: false };
+  return { fecha: `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`, ajustada };
+}
+
+export const fechaCorreo = (v: string | null | undefined): string | null => fechaCorreoDetalle(v).fecha;
+
+const ETIQUETAS_LLEGADA = "(?:ETA|Fecha\\s+(?:estimada\\s+)?de\\s+(?:llegada|arribo)|Llegada(?:\\s+estimada)?|Arribo(?:\\s+estimado)?)(?![A-Za-z\u00C0-\u00FF])";
+
+const fechaLegible = (iso: string) => iso.split("-").reverse().join("/");
+
+/**
+ * Aviso sobre la fecha de llegada escrita en el correo: si tenía ceros de más se dice cómo se
+ * interpretó; si no se pudo interpretar, se pide revisarla. Sin fecha escrita no hay aviso.
+ */
+export function avisoFechaLlegada(mensaje: string): string | null {
+  const crudo = linea(mensaje, ETIQUETAS_LLEGADA);
+  if (!crudo || !/\d/.test(crudo)) return null;
+  const valor = crudo.replace(/[.\s]+$/, "");
+  const { fecha, ajustada } = fechaCorreoDetalle(valor);
+  if (fecha && ajustada) return `ETA: verificar: el correo dice «${valor}» (con un cero de más); se interpretó como ${fechaLegible(fecha)}.`;
+  if (!fecha) return `ETA: no se pudo interpretar la fecha de llegada «${valor.slice(0, 40)}»; revisarla en el correo.`;
+  return null;
 }
 
 /** Extracción determinista por etiquetas del mensaje aislado. */
@@ -56,7 +81,7 @@ export function extraerPorEtiquetas(mensaje: string): DatosSolicitudCorreo {
   const bl = linea(mensaje, "B/?L|AWB|BL/AWB|Bill of Lading|Gu[ií]a a[ée]rea|Conocimiento de embarque");
   return {
     bl_awb: bl ? (bl.match(/[A-Z0-9][A-Z0-9-]{5,}/i)?.[0]?.toUpperCase() ?? null) : null,
-    eta: fechaCorreo(linea(mensaje, "ETA|Fecha estimada de llegada|Llegada estimada")),
+    eta: fechaCorreo(linea(mensaje, ETIQUETAS_LLEGADA)),
     producto: linea(mensaje, "Producto|Mercanc[ií]a|Descripci[óo]n"),
     cantidad: linea(mensaje, "Cantidad|Qty|Quantity"),
     cliente_nombre: null,
