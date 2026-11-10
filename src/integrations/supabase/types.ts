@@ -1778,6 +1778,130 @@ export type Database = {
           },
         ]
       }
+      correos_recibidos: {
+        Row: {
+          adjuntos_total: number
+          advertencias: string[]
+          alerta_vista_en: string | null
+          alerta_vista_por: string | null
+          asunto: string
+          clave: string
+          created_at: string
+          expediente_id: string | null
+          expediente_numero: string | null
+          id: string
+          id_hilo: string | null
+          id_mensaje: string | null
+          intentos: number
+          motivo: string | null
+          primer_intento_at: string
+          propuestas: Json
+          reintentable: boolean
+          remitente: string
+          remitente_correo: string | null
+          resultado: string
+          solicitud_id: string | null
+          ultimo_intento_at: string
+          updated_at: string
+          vinculo: string | null
+        }
+        Insert: {
+          adjuntos_total?: number
+          advertencias?: string[]
+          alerta_vista_en?: string | null
+          alerta_vista_por?: string | null
+          asunto?: string
+          clave: string
+          created_at?: string
+          expediente_id?: string | null
+          expediente_numero?: string | null
+          id?: string
+          id_hilo?: string | null
+          id_mensaje?: string | null
+          intentos?: number
+          motivo?: string | null
+          primer_intento_at?: string
+          propuestas?: Json
+          reintentable?: boolean
+          remitente?: string
+          remitente_correo?: string | null
+          resultado?: string
+          solicitud_id?: string | null
+          ultimo_intento_at?: string
+          updated_at?: string
+          vinculo?: string | null
+        }
+        Update: {
+          adjuntos_total?: number
+          advertencias?: string[]
+          alerta_vista_en?: string | null
+          alerta_vista_por?: string | null
+          asunto?: string
+          clave?: string
+          created_at?: string
+          expediente_id?: string | null
+          expediente_numero?: string | null
+          id?: string
+          id_hilo?: string | null
+          id_mensaje?: string | null
+          intentos?: number
+          motivo?: string | null
+          primer_intento_at?: string
+          propuestas?: Json
+          reintentable?: boolean
+          remitente?: string
+          remitente_correo?: string | null
+          resultado?: string
+          solicitud_id?: string | null
+          ultimo_intento_at?: string
+          updated_at?: string
+          vinculo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "correos_recibidos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "correos_recibidos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "correos_recibidos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "correos_recibidos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "correos_recibidos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "correos_recibidos_solicitud_id_fkey"
+            columns: ["solicitud_id"]
+            isOneToOne: false
+            referencedRelation: "solicitudes_correo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       costos: {
         Row: {
           concepto: string
@@ -8233,6 +8357,13 @@ export type Database = {
         }
         Returns: string
       }
+      buscar_expedientes_por_bl: {
+        Args: { p_bl: string }
+        Returns: {
+          id: string
+          numero: string
+        }[]
+      }
       buscar_normativa: {
         Args: { p_embedding: string; p_limite?: number }
         Returns: {
@@ -8334,6 +8465,7 @@ export type Database = {
         Args: { _expediente_id: string; _filas: Json }
         Returns: number
       }
+      registrar_intento_correo: { Args: { p: Json }; Returns: Json }
       reservar_documento_combinado: {
         Args: { p_id?: string }
         Returns: {

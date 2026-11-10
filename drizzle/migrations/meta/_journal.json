@@ -792,6 +792,13 @@
       "when": 1794161940101,
       "tag": "0112_novedades_huella_contenido_documento",
       "breakpoints": true
+    },
+    {
+      "idx": 113,
+      "version": "7",
+      "when": 1794350626192,
+      "tag": "0113_correos_recibidos_bitacora",
+      "breakpoints": true
     }
   ]
 }

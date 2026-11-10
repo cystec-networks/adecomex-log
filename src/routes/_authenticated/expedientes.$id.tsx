@@ -89,6 +89,7 @@ import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
 import { SearchEmailButton } from "@/components/search-email-button";
 import { ChecklistHitos } from "@/components/checklist-hitos";
+import { CorreosExpediente } from "@/components/correos/correos-expediente";
 import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
@@ -179,6 +180,7 @@ const searchSchema = z.object({
   solicitud: fallback(z.string(), "").default(""),
   correo: fallback(z.string(), "").default(""),
   tipo: fallback(z.string(), "").default(""),
+  ficha: fallback(z.string(), "").default(""),
 });
 
 export const Route = createFileRoute("/_authenticated/expedientes/$id")({
@@ -619,6 +621,9 @@ function DetalleExpediente() {
   const [tabActiva, setTabActiva] = useState("info");
   const [fichasVisitadas, setFichasVisitadas] = useState<string[]>(["info"]);
   const activarFicha = (value: string) => { setTabActiva(value); setFichasVisitadas((prev) => prev.includes(value) ? prev : [...prev, value]); };
+  // Enlaces del Panel (p. ej. documentos nuevos por correo) abren directamente una ficha.
+  const { ficha: fichaParam } = Route.useSearch();
+  useEffect(() => { if (fichaParam && fichaParam in TAB_LABELS) activarFicha(fichaParam); }, [fichaParam]);
   const [nuevoAccionesHost, setNuevoAccionesHost] = useState<HTMLDivElement | null>(null);
   const [inspeccionHost, setInspeccionHost] = useState<HTMLDivElement | null>(null);
   const [solicitudEndoso, setSolicitudEndoso] = useState(0);
@@ -1596,6 +1601,7 @@ function DetalleExpediente() {
         {!isNuevo && (
         <>
         <TabsContent value="checklist" forceMount={fichasVisitadas.includes("checklist") ? true : undefined} className="data-[state=inactive]:hidden">
+          <CorreosExpediente expedienteId={id} />
           <ChecklistHitos expedienteId={id} />
         </TabsContent>
 

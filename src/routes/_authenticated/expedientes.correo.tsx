@@ -16,6 +16,11 @@ import { useMyRoles } from "@/lib/auth-hooks";
 import { extractSolicitudFromDocument } from '@/lib/ai-ocr.functions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { z } from "zod";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { RegistroCorreos } from "@/components/correos/registro-correos";
+
+const searchSchema = z.object({ registro: fallback(z.string(), "").default("") });
 
 export const Route = createFileRoute("/_authenticated/expedientes/correo")({
   head: () => ({ meta: [
@@ -26,10 +31,12 @@ export const Route = createFileRoute("/_authenticated/expedientes/correo")({
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
+  validateSearch: zodValidator(searchSchema),
   component: BandejaCorreo,
 });
 
 function BandejaCorreo() {
+  const { registro } = Route.useSearch();
   const qc = useQueryClient();
   const nav = useNavigate();
   const { data: roles = [] } = useMyRoles();
@@ -186,6 +193,7 @@ function BandejaCorreo() {
           )}
         </CardContent>
       </Card>
+      <RegistroCorreos key={registro} filtroInicial={registro || undefined} />
       <Dialog open={!!compra} onOpenChange={(open) => { if (!open && !convertir.isPending) setCompra(null); }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Convertir en Cotización de Compra</DialogTitle></DialogHeader>

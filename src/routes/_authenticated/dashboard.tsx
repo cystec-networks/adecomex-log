@@ -31,6 +31,8 @@ import {
 } from "@/lib/novedades-panel";
 import { textoFechaNovedad } from "@/lib/novedades-comercio";
 import { EnlaceNovedad } from "@/components/novedades/enlace-novedad";
+import { obtenerAlertasCorreo, marcarAlertasCorreoVistas, correoAtascado, type CorreoRecibido } from "@/lib/correos-recibidos";
+import { propuestasPendientes } from "@/lib/correo-expediente";
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -387,6 +389,61 @@ function useNovedadesPanel() {
   };
 }
 
+/** Correos con error de recepción y documentos nuevos llegados por correo a Expedientes. */
+function useAlertasCorreo() {
+  const qc = useQueryClient();
+  const { data: userId } = useQuery({
+    queryKey: ["auth-user-id"],
+    queryFn: async () => (await supabase.auth.getSession()).data.session?.user.id ?? null,
+    staleTime: Infinity,
+  });
+  const queryKey = ["alertas-correo"];
+  const consulta = useQuery({ queryKey, queryFn: () => obtenerAlertasCorreo(supabase), refetchInterval: 5 * 60_000 });
+  const marcarVistas = async (ids: string[]) => {
+    if (!userId || ids.length === 0) return;
+    const anterior = qc.getQueryData(queryKey);
+    qc.setQueryData<{ errores: CorreoRecibido[]; documentos: CorreoRecibido[] }>(queryKey, (d) => d && ({
+      errores: d.errores.filter((c) => !ids.includes(c.id)), documentos: d.documentos.filter((c) => !ids.includes(c.id)),
+    }));
+    try { await marcarAlertasCorreoVistas(supabase, ids, userId); }
+    catch { qc.setQueryData(queryKey, anterior); toast.error("No se pudo marcar como visto"); }
+  };
+  return { errores: consulta.data?.errores ?? [], documentos: consulta.data?.documentos ?? [], isLoading: consulta.isLoading, isError: consulta.isError, marcarVistas };
+}
+
+const fechaHoraPanel = (s: string) => new Date(s).toLocaleString("es-DO", { timeZone: "America/Santo_Domingo", dateStyle: "short", timeStyle: "short" });
+
+function ListaAlertasCorreo({ items, tipo, onVisto }: { items: CorreoRecibido[]; tipo: "error" | "expediente"; onVisto: (ids: string[]) => void }) {
+  return (
+    <ul className="divide-y border-t">
+      {items.map((c) => {
+        const pendientes = propuestasPendientes(c.propuestas).length;
+        return (
+          <li key={c.id} className="px-3 py-2.5 flex flex-wrap sm:flex-nowrap items-center gap-2 hover:bg-muted/40">
+            <span className={`h-2 w-2 rounded-full shrink-0 ${tipo === "error" ? "bg-destructive" : "bg-[var(--info)]"}`} />
+            <div className="min-w-0 flex-1 basis-[calc(100%-16px)] sm:basis-auto">
+              {tipo === "error" ? (
+                <Link to="/expedientes/correo" search={{ registro: "error" }} className="text-[13px] font-medium hover:underline break-words">{c.asunto || "(sin asunto)"}</Link>
+              ) : (
+                <Link to="/expedientes/$id" params={{ id: c.expediente_id! }} search={{ ficha: "checklist" }} className="text-[13px] font-medium hover:underline break-words">
+                  {c.expediente_numero} · documentos nuevos por correo
+                </Link>
+              )}
+              <div className="text-xs text-muted-foreground break-words">
+                {tipo === "error"
+                  ? `${c.remitente_correo ?? c.remitente} · ${correoAtascado(c) ? "El proceso se interrumpió sin terminar" : c.motivo ?? "Error sin detalle"} · ${c.intentos} intento${c.intentos === 1 ? "" : "s"} · ${fechaHoraPanel(c.ultimo_intento_at)}`
+                  : `${c.asunto || "(sin asunto)"} · ${c.remitente_correo ?? c.remitente} · ${c.adjuntos_total} adjunto${c.adjuntos_total === 1 ? "" : "s"} · ${fechaHoraPanel(c.created_at)}`}
+              </div>
+              {pendientes > 0 && <Badge variant="outline" className="mt-1 text-[11px] border-warning/40 text-warning-foreground">{pendientes} dato{pendientes === 1 ? "" : "s"} por confirmar</Badge>}
+            </div>
+            <Button variant="ghost" size="sm" className="h-6 text-[11px] px-1 w-[44px] justify-center shrink-0" onClick={() => onVisto([c.id])}>Visto</Button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 const RELEVANCIA_CLASE: Record<string, string> = {
   Alta: "bg-destructive/15 text-destructive border-transparent",
   Media: "bg-[var(--warning)]/25 text-[var(--warning-foreground)] border-transparent",
@@ -395,9 +452,11 @@ const RELEVANCIA_CLASE: Record<string, string> = {
 function RemindersPanel() {
   const { reminders, dismiss, isLoading: cargandoAlertas, isError: errorAlertas } = useAlertasPanel();
   const novedadesPanel = useNovedadesPanel();
-  const isLoading = cargandoAlertas || novedadesPanel.isLoading;
-  const isError = errorAlertas || novedadesPanel.isError;
-  const total = reminders.length + novedadesPanel.novedades.length;
+  const alertasCorreo = useAlertasCorreo();
+  const isLoading = cargandoAlertas || novedadesPanel.isLoading || alertasCorreo.isLoading;
+  const isError = errorAlertas || novedadesPanel.isError || alertasCorreo.isError;
+  const totalCorreo = alertasCorreo.errores.length + alertasCorreo.documentos.length;
+  const total = reminders.length + novedadesPanel.novedades.length + totalCorreo;
 
   const grouped = REMINDER_GROUPS
     .map((g) => ({ ...g, items: ordenarPorUrgencia(reminders.filter((r) => g.kinds.includes(r.kind))) }))
@@ -577,6 +636,7 @@ function RemindersPanel() {
               onClick={() => {
                 reminders.forEach((r) => dismiss(r.id));
                 void novedadesPanel.marcarVistas(novedadesPanel.novedades.map((n) => n.id));
+                void alertasCorreo.marcarVistas([...alertasCorreo.errores, ...alertasCorreo.documentos].map((c) => c.id));
               }}
             >
               Marcar todo visto
@@ -588,7 +648,7 @@ function RemindersPanel() {
         {isError && <div role="alert" className="px-4 py-2 text-sm text-destructive">No se pudieron consultar todas las alertas de expedientes. Intente refrescar.</div>}
         {isLoading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Cargando alertas…</div>
-        ) : grouped.length === 0 && novedadesPanel.novedades.length === 0 && novedadesPanel.mediaOcultas === 0 ? (
+        ) : grouped.length === 0 && novedadesPanel.novedades.length === 0 && novedadesPanel.mediaOcultas === 0 && totalCorreo === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Sin alertas pendientes 🎉</div>
         ) : (
           <AlertasColumnasOrdenables
@@ -605,6 +665,14 @@ function RemindersPanel() {
                       mostrarVacio: novedadesPanel.mediaOcultas > 0,
                     },
                   }
+                : {}),
+              ...(alertasCorreo.errores.length > 0
+                ? { "correos-error": { label: "Correos con error de recepción", emoji: "📧", cantidad: alertasCorreo.errores.length,
+                    contenido: <ListaAlertasCorreo items={alertasCorreo.errores} tipo="error" onVisto={alertasCorreo.marcarVistas} /> } }
+                : {}),
+              ...(alertasCorreo.documentos.length > 0
+                ? { "correos-expediente": { label: "Documentos nuevos por correo", emoji: "📨", cantidad: alertasCorreo.documentos.length,
+                    contenido: <ListaAlertasCorreo items={alertasCorreo.documentos} tipo="expediente" onVisto={alertasCorreo.marcarVistas} /> } }
                 : {}),
             }}
             guardada={disposicion.guardada}

@@ -15,6 +15,8 @@ export const GRUPOS_ALERTAS_IDS = [
   "solicitudes",
   "plazo",
   "novedades",
+  "correos-error",
+  "correos-expediente",
 ] as const;
 
 export type GrupoAlertaId = (typeof GRUPOS_ALERTAS_IDS)[number];
