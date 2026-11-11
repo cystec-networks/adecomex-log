@@ -1,7 +1,7 @@
 /** Lecturas y acciones del registro de correos recibidos, siempre bajo RLS del personal. */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { MINUTOS_PROCESANDO_ATASCADO, propuestasPendientes, type CampoPropuesto, type Propuestas } from "@/lib/correo-expediente";
+import { MINUTOS_PROCESANDO_ATASCADO, remitenteIgnorado } from "@/lib/correo-expediente";
 
 type Db = SupabaseClient<Database>;
 export type CorreoRecibido = Database["public"]["Tables"]["correos_recibidos"]["Row"];
@@ -45,49 +45,60 @@ export async function marcarAlertasCorreoVistas(db: Db, ids: string[], userId: s
   if (error) throw error;
 }
 
-export async function correosDeExpediente(db: Db, expedienteId: string) {
-  const { data, error } = await db.from("correos_recibidos").select("*").eq("expediente_id", expedienteId)
-    .order("created_at", { ascending: false }).limit(100);
-  if (error) throw error;
-  return data ?? [];
-}
+/** Vista por defecto del Registro: lo que importa revisar; los descartados van en su propia pestaña. */
+export const RESULTADOS_PRINCIPALES = ["error", "procesando", "creada", "actualizada", "adjuntada"] as const;
 
 export async function registroCorreos(db: Db, filtro: string) {
   let q = db.from("correos_recibidos").select("*").order("ultimo_intento_at", { ascending: false }).limit(200);
-  if (filtro === "error") q = q.in("resultado", ["error", "procesando"]);
+  if (filtro === "principal") q = q.in("resultado", [...RESULTADOS_PRINCIPALES]);
+  else if (filtro === "error") q = q.in("resultado", ["error", "procesando"]);
+  else if (filtro === "creada") q = q.in("resultado", ["creada", "actualizada"]);
   else if (filtro !== "todos") q = q.eq("resultado", filtro);
   const { data, error } = await q;
   if (error) throw error;
-  return data ?? [];
+  const filas = data ?? [];
+  if (filtro !== "descartada") return filas;
+  // El catálogo vigente también ordena los descartes manuales antiguos de remitentes ignorados.
+  const { data: patrones } = await db.from("remitentes_ignorados").select("patron").eq("activo", true);
+  return ordenarDescartados(filas, (patrones ?? []).map((p) => p.patron));
 }
 
-async function guardarEstadoPropuesta(db: Db, registroId: string, campo: CampoPropuesto, estado: "aplicada" | "descartada") {
-  const { data, error } = await db.from("correos_recibidos").select("propuestas").eq("id", registroId).single();
-  if (error) throw error;
-  const actual = (data?.propuestas ?? {}) as Propuestas;
-  if (!actual[campo]) return;
-  const nuevas = { ...actual, [campo]: { ...actual[campo]!, estado } };
-  const { error: e2 } = await db.from("correos_recibidos").update({ propuestas: nuevas as any }).eq("id", registroId);
-  if (e2) throw e2;
+/** Retención de los descartados: adjuntos guardados 30 días, línea del Registro 90 días. */
+export const DIAS_ADJUNTOS_DESCARTADOS = 30;
+export const DIAS_REGISTRO_DESCARTADOS = 90;
+
+/** Días que faltan (0 = hoy) desde el descarte; null si no aplica. */
+export function diasRestantes(desde: string | null | undefined, dias: number, ahora = Date.now()): number | null {
+  if (!desde) return null;
+  const t = new Date(desde).getTime();
+  if (!Number.isFinite(t)) return null;
+  return Math.max(0, Math.ceil((t + dias * 86_400_000 - ahora) / 86_400_000));
 }
 
-/**
- * Aplica un dato propuesto solo si el campo del Expediente sigue vacío; si ya se cargó
- * otro valor, no se sobrescribe y la propuesta queda descartada.
- */
-export async function aplicarPropuestaCorreo(db: Db, registro: Pick<CorreoRecibido, "id" | "expediente_id" | "propuestas">, campo: CampoPropuesto) {
-  const propuesta = propuestasPendientes(registro.propuestas).find(([c]) => c === campo)?.[1];
-  if (!propuesta || !registro.expediente_id) throw new Error("La propuesta ya no está pendiente");
-  let q = db.from("expedientes").update({ [campo]: propuesta.valor } as any).eq("id", registro.expediente_id);
-  q = campo === "fecha_llegada_real" ? q.is(campo, null) : q.or(`${campo}.is.null,${campo}.eq.""`);
-  const { data, error } = await q.select("id");
-  if (error) throw error;
-  if (!data?.length) {
-    await guardarEstadoPropuesta(db, registro.id, campo, "descartada");
-    return { aplicada: false as const };
-  }
-  await guardarEstadoPropuesta(db, registro.id, campo, "aplicada");
-  return { aplicada: true as const };
+type FilaDescarte = Pick<CorreoRecibido, "descarte_categoria" | "motivo" | "adjuntos_respaldo" | "pdfs_en_gmail" | "ultimo_intento_at"> & { remitente_correo?: string | null };
+
+/** Descartadas: primero las de remitente no ignorado que traían PDF, luego sin PDF, al final remitentes ignorados. */
+export function prioridadDescarte(c: FilaDescarte, patrones: string[] = []): 0 | 1 | 2 {
+  const ignorado = c.descarte_categoria === "ignorado" || (!c.descarte_categoria && /^Remitente ignorado/i.test(c.motivo ?? ""))
+    || !!remitenteIgnorado(c.remitente_correo, patrones);
+  if (ignorado) return 2;
+  const conPdf = (Array.isArray(c.adjuntos_respaldo) && c.adjuntos_respaldo.length > 0) || (c.pdfs_en_gmail ?? 0) > 0
+    || c.descarte_categoria === "sin_documentos" || c.descarte_categoria === "ambiguo";
+  return conPdf ? 0 : 1;
 }
 
-export const descartarPropuestaCorreo = (db: Db, registroId: string, campo: CampoPropuesto) => guardarEstadoPropuesta(db, registroId, campo, "descartada");
+export function ordenarDescartados<T extends FilaDescarte>(filas: T[], patrones: string[] = []): (T & { prioridad: 0 | 1 | 2 })[] {
+  return filas.map((f, i) => ({ f: { ...f, prioridad: prioridadDescarte(f, patrones) }, i }))
+    .sort((a, b) => a.f.prioridad - b.f.prioridad || a.i - b.i).map((x) => x.f);
+}
+
+/** Copias que guarda el Registro (respaldo de descartados y casillas ocupadas); nunca archivos de Expedientes ni de solicitudes. */
+export function rutasCopiasCorreo(f: { id: string; adjuntos_respaldo?: unknown; conflictos?: unknown }): string[] {
+  const prefijo = `correo-recibido/${f.id}/`;
+  const de = (v: unknown) => (Array.isArray(v) ? v : []).map((a: any) => String(a?.storage_path ?? "")).filter((r) => r.startsWith(prefijo));
+  return [...new Set([...de(f.adjuntos_respaldo), ...de(f.conflictos)])];
+}
+
+/** Casillas ocupadas aún sin decidir. */
+export const conflictosPendientes = (v: unknown) =>
+  (Array.isArray(v) ? v : []).filter((c: any) => c?.estado === "pendiente" && typeof c?.storage_path === "string") as { nombre: string; tipo: string; storage_path: string }[];

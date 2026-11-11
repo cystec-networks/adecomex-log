@@ -89,7 +89,6 @@ import { WhatsAppButton } from "@/components/whatsapp-button";
 import { EmailButton } from "@/components/email-button";
 import { SearchEmailButton } from "@/components/search-email-button";
 import { ChecklistHitos } from "@/components/checklist-hitos";
-import { CorreosExpediente } from "@/components/correos/correos-expediente";
 import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
@@ -1601,7 +1600,6 @@ function DetalleExpediente() {
         {!isNuevo && (
         <>
         <TabsContent value="checklist" forceMount={fichasVisitadas.includes("checklist") ? true : undefined} className="data-[state=inactive]:hidden">
-          <CorreosExpediente expedienteId={id} />
           <ChecklistHitos expedienteId={id} />
         </TabsContent>
 

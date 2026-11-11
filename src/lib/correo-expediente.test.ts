@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AVISO_CREADA_MANUAL, claveCorreo, decidirCorreo, esDocumentoImportacion, esPdfAdjunto, extraerNumeroVuce, normalizarPatronRemitente, pdfsFaltantes, remitenteIgnorado, extraerNumerosExpediente, normalizarBl, numerosExpedienteCorreo, propuestasParaExpediente, remitenteCorresponde } from "./correo-expediente";
+import { AVISO_CREADA_MANUAL, DESCARTE_BREVE, ubicarDocumentosExpediente, claveCorreo, decidirCorreo, esDocumentoImportacion, esPdfAdjunto, extraerNumeroVuce, normalizarPatronRemitente, pdfsFaltantes, remitenteIgnorado, extraerNumerosExpediente, normalizarBl, numerosExpedienteCorreo, propuestasParaExpediente, remitenteCorresponde } from "./correo-expediente";
 
 const ASUNTO = "4 CONT. DE HAB. CRANBERRY Detalles y el PIN TRM-1026-2551297 : REGISTRO #202610I358. : HACER VUCE 2006 - 1 - 2000 QQ HABICHUELAS CRANBERRY- LOMI / MAGUANA";
 
@@ -142,5 +142,38 @@ describe("identidad del correo", () => {
     const a = await claveCorreo({ remitente: "A@x.com", asunto: "s", cuerpo: "c", adjuntos: ["1.pdf", "2.pdf"] });
     const b = await claveCorreo({ remitente: "a@x.com", asunto: "s", cuerpo: "c", adjuntos: ["2.pdf", "1.pdf"] });
     expect(a).toBe(b);
+  });
+});
+
+describe("descartes breves y casillas del Expediente", () => {
+  it("sin PDF y remitente ignorado son descartes breves (sin IA ni adjuntos)", () => {
+    const sinPdf = decidirCorreo({ pdfs: 0, documentos: null });
+    const ignorado = decidirCorreo({ pdfs: 3, documentos: null, ignorado: "dph.com.do" });
+    expect(sinPdf.accion === "descartar" && sinPdf.categoria).toBe("sin_pdf");
+    expect(ignorado.accion === "descartar" && ignorado.categoria).toBe("ignorado");
+    expect(DESCARTE_BREVE).toEqual(["ignorado", "sin_pdf"]);
+  });
+  it("PDF solo de «Otros documentos» se descarta conservando adjuntos (no es breve)", () => {
+    const d = decidirCorreo({ pdfs: 1, documentos: 0, otros: ["sys_Rep_Release.pdf"] });
+    expect(d.accion === "descartar" && d.categoria).toBe("sin_documentos");
+  });
+  it("cada documento va a la casilla libre de su tipo", () => {
+    expect(ubicarDocumentosExpediente([{ tipo: "Factura comercial", hash: "a" }], [])).toEqual([{ accion: "insertar" }]);
+  });
+  it("una casilla ocupada nunca se reemplaza: queda como conflicto", () => {
+    const r = ubicarDocumentosExpediente([{ tipo: "Bill of Lading", hash: "nuevo" }], [{ id: "d1", tipo: "Bill of Lading", storage_path: "x.pdf", file_hash: "viejo" }]);
+    expect(r).toEqual([{ accion: "conflicto", documento_id: "d1" }]);
+  });
+  it("el mismo archivo ya guardado se omite", () => {
+    const r = ubicarDocumentosExpediente([{ tipo: "Bill of Lading", hash: "igual" }], [{ id: "d1", tipo: "Bill of Lading", storage_path: "x.pdf", file_hash: "igual" }]);
+    expect(r[0].accion).toBe("duplicado");
+  });
+  it("dos PDF del mismo tipo en un correo: el segundo espera decisión", () => {
+    const r = ubicarDocumentosExpediente([{ tipo: "Factura comercial", hash: "a" }, { tipo: "Factura comercial", hash: "b" }], []);
+    expect(r.map((x) => x.accion)).toEqual(["insertar", "conflicto"]);
+  });
+  it("una fila sin archivo no ocupa la casilla", () => {
+    const r = ubicarDocumentosExpediente([{ tipo: "Lista de empaque", hash: "a" }], [{ id: "d1", tipo: "Lista de empaque", storage_path: null, file_hash: null }]);
+    expect(r[0].accion).toBe("insertar");
   });
 });
