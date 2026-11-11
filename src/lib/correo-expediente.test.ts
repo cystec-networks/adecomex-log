@@ -110,6 +110,14 @@ describe("solo PDF de importación crean solicitud", () => {
     expect(pdfsFaltantes({ pdfsEnGmail: null, pdfsRecibidos: 0, omitidos: [{ nombre: "logo.png", motivo: "pequeño" }] })).toBeNull();
     expect(pdfsFaltantes({ pdfsEnGmail: 2, pdfsRecibidos: 2, omitidos: [] })).toBeNull();
   });
+  it("recibo o PIN de pago de impuestos se adjunta a su Expediente existente", () => {
+    expect(decidirCorreo({ pdfs: 2, documentos: 0, pagos: 1, otros: ["DPH.pdf"], expediente: "202610I358" }).accion).toBe("adjuntar");
+  });
+  it("un pago de impuestos sin Expediente registrado no crea solicitud", () => {
+    const d = decidirCorreo({ pdfs: 1, documentos: 0, pagos: 1 });
+    expect(d.accion === "descartar" && d.categoria === "sin_documentos").toBe(true);
+    expect(decidirCorreo({ pdfs: 2, documentos: 1, pagos: 1 }).accion).toBe("crear");
+  });
   it("un PDF ilegible sin otros documentos se reintenta en vez de descartarse", () => {
     expect(decidirCorreo({ pdfs: 1, documentos: 0, ilegibles: ["BL.pdf"] }).accion).toBe("error");
   });

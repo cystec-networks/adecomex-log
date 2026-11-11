@@ -163,12 +163,25 @@ export const TIPOS_ADJUNTO_CORREO = [
   "Certificado Sanitario/Fitosanitario", "Certificado de análisis", "Permiso VUCE previo",
 ] as const;
 
+/**
+ * Documentos de pago de impuestos: van a su casilla de un Expediente existente, pero nunca crean
+ * una solicitud nueva (un pago no es un embarque nuevo).
+ */
+export const TIPOS_PAGO_CORREO = ["Recibo Pago de Impuestos", "PIN de Pago de Impuestos"] as const;
+
+/** Todo tipo que la lectura de un adjunto de correo puede reconocer (embarque + pagos de impuestos). */
+export const TIPOS_RECONOCIDOS_CORREO: readonly string[] = [...TIPOS_ADJUNTO_CORREO, ...TIPOS_PAGO_CORREO];
+
 /** Normaliza el tipo propuesto por la IA; lo no reconocido queda en «Otro». */
 export function tipoAdjuntoCorreo(v: unknown): string {
   const n = norm(typeof v === "string" ? v : "");
   if (!n) return "Otro";
-  const exacto = TIPOS_ADJUNTO_CORREO.find((t) => norm(t) === n);
+  const exacto = TIPOS_RECONOCIDOS_CORREO.find((t) => norm(t) === n);
   if (exacto) return exacto;
+  // Pagos del permiso VUCE no son el permiso ni un pago de impuestos.
+  if (/VUCE/.test(n) && /PIN|PAGO|RECIBO|COMPROBANTE/.test(n)) return "Otro";
+  if (/PIN/.test(n) && /PAGO|IMPUESTO|DGA|ADUANA/.test(n)) return "PIN de Pago de Impuestos";
+  if (/RECIBO|COMPROBANTE/.test(n) && /IMPUESTO|DGA|ADUANA/.test(n)) return "Recibo Pago de Impuestos";
   if (/BILLOFLADING|^BL$|CONOCIMIENTO/.test(n)) return "Bill of Lading";
   if (/VUCE|PERMISOPREVIO|IMPORTPERMIT|PERMISODEIMPORTACION/.test(n)) return "Permiso VUCE previo";
   if (/AIRWAYBILL|AIRWAYBILL|AWB|GUIAAEREA/.test(n)) return "Guía aérea";

@@ -6,7 +6,7 @@ import { z } from "zod";
 import { aislarMensajeReciente, avisoFechaLlegada, combinarDatos, extraerPorEtiquetas, fusionarAsunto, fusionarAdjuntos } from "@/lib/correo-solicitud";
 import { adjuntoCorreoSchema, normalizarAdjuntosCorreo, mimeAdjuntoCorreo, deduplicarAdjuntosCorreo } from "@/lib/correo-adjuntos";
 import { decidirCorreo, DESCARTE_BREVE, esDocumentoImportacion, esPdfAdjunto, extraerNumeroVuce, normalizarBl, numerosExpedienteCorreo, pdfsFaltantes, propuestasParaExpediente, remitenteIgnorado, sha256Bytes, ubicarDocumentosExpediente, type CategoriaDescarte, type ConflictoDocumento } from "@/lib/correo-expediente";
-import { TIPOS_ADJUNTO_CORREO } from "@/lib/correo-solicitud";
+import { TIPOS_ADJUNTO_CORREO, TIPOS_PAGO_CORREO } from "@/lib/correo-solicitud";
 import { contextoExpediente, expedientesPorBl, expedientesPorNumero, expedientesPorVuce, verificarRemitente, type ExpedienteCorreo } from "@/lib/correo-recepcion.server";
 import { leerArchivoCorreo, MIME_OK, type AdjuntoProcesado } from "@/lib/correo-adjunto-lectura.server";
 import { contarPaginasPdf } from "@/lib/correo-documento-combinado.server";
@@ -262,16 +262,20 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
   const adjuntos: AdjuntoProcesado[] = [];
   for (const a of adjuntosIn) adjuntos.push(await leerAdjunto(a));
   const esImportacion = (a: AdjuntoProcesado) => esDocumentoImportacion(a, TIPOS_ADJUNTO_CORREO);
+  // Recibo/PIN de pago de impuestos: van a su casilla de un Expediente existente, nunca crean solicitud.
+  const esPago = (a: AdjuntoProcesado) => !a.combinado && (TIPOS_PAGO_CORREO as readonly string[]).includes(a.tipo);
   const documentos = adjuntos.filter(esImportacion);
-  const ilegibles = adjuntos.filter((a) => !esImportacion(a) && a.error).map((a) => a.nombre);
-  const otros = adjuntos.filter((a) => !esImportacion(a) && !a.error).map((a) => a.nombre);
+  const pagos = adjuntos.filter(esPago);
+  const reconocido = (a: AdjuntoProcesado) => esImportacion(a) || esPago(a);
+  const ilegibles = adjuntos.filter((a) => !reconocido(a) && a.error).map((a) => a.nombre);
+  const otros = adjuntos.filter((a) => !reconocido(a) && !a.error).map((a) => a.nombre);
 
   // 3) BL leído de los documentos (p. ej. "SMLU 9221768A" = "SMLU9221768A"): un Expediente
   // registrado tiene prioridad sobre crear o fusionar una solicitud.
   const blDocumento = documentos.find((a) => (a.tipo === "Bill of Lading" || a.tipo === "Guía aérea") && a.bl_awb)?.bl_awb;
   await probarBl(blDocumento);
 
-  const decision = decidirCorreo({ forzado: opciones.forzado, ignorado, faltantes, pdfs: adjuntosIn.length, documentos: documentos.length, ilegibles, otros, expediente: numeroDestino(), ambiguos });
+  const decision = decidirCorreo({ forzado: opciones.forzado, ignorado, faltantes, pdfs: adjuntosIn.length, documentos: documentos.length, pagos: pagos.length, ilegibles, otros, expediente: numeroDestino(), ambiguos });
   if (decision.accion === "descartar") return descartar(decision.motivo, decision.categoria);
   if (decision.accion === "error") return errorConRespaldo(decision.motivo, decision.reintentar);
   if (decision.accion === "leer") return fallo(500, "Decisión incompleta del correo");
@@ -294,7 +298,7 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
     const remitenteOk = await verificarRemitente(db, exp, remitenteCorreo);
     const notaRemitente = remitenteOk.corresponde ? "" : " (remitente distinto al cliente)";
     const { datos, advertencias } = fusionarAdjuntos(datosTexto, [], documentos);
-    const sueltos = documentos.filter((a) => !a.combinado && a.bytes.length);
+    const sueltos = [...documentos, ...pagos].filter((a) => !a.combinado && a.bytes.length);
     const combinados = documentos.filter((a) => a.combinado && a.bytes.length);
     const { data: existentes, error: errorExistentes } = await db.from("documentos").select("id,tipo,storage_path,file_hash").eq("expediente_id", exp.id);
     if (errorExistentes) return fallo(503, `No se pudieron leer los documentos del Expediente: ${errorExistentes.message}`);

@@ -182,11 +182,14 @@ export const AVISO_CREADA_MANUAL = "Creada manualmente desde el registro de corr
 export function decidirCorreo(c: {
   forzado?: boolean; ignorado?: string | null; faltantes?: PdfsFaltantes | null; pdfs: number;
   documentos: number | null; ilegibles?: string[]; otros?: string[]; expediente?: string | null; ambiguos?: string | null;
+  /** PDF reconocidos como pago de impuestos (Recibo/PIN): solo se adjuntan a un Expediente existente. */
+  pagos?: number;
 }): DecisionCorreo {
+  const pagos = c.pagos ?? 0;
   const exp = c.expediente ?? null;
   if (c.forzado) {
     if (c.documentos == null && c.pdfs > 0) return { accion: "leer" };
-    if (exp && (c.documentos ?? 0) > 0) return { accion: "adjuntar" };
+    if (exp && (c.documentos ?? 0) + pagos > 0) return { accion: "adjuntar" };
     return { accion: "crear", avisos: [AVISO_CREADA_MANUAL] };
   }
   if (c.ignorado) return { accion: "descartar", categoria: "ignorado", motivo: `Remitente ignorado (${c.ignorado}): sus correos nunca crean solicitud.` };
@@ -195,6 +198,11 @@ export function decidirCorreo(c: {
     return { accion: "descartar", categoria: "sin_pdf", motivo: exp ? `Corresponde al Expediente ${exp}, pero no trae documentos PDF; no se agregó nada.` : "Sin documentos PDF: no es una solicitud nueva de embarque." };
   }
   if (c.documentos == null) return { accion: "leer" };
+  if (exp && c.documentos + pagos > 0) return { accion: "adjuntar" };
+  if (c.documentos === 0 && pagos > 0) {
+    if (c.ambiguos) return { accion: "descartar", categoria: "ambiguo", motivo: `Pago de impuestos de varios Expedientes posibles (${c.ambiguos}); revisar y adjuntarlo a mano.` };
+    return { accion: "descartar", categoria: "sin_documentos", motivo: `Solo trae ${pagos === 1 ? "un pago" : `${pagos} pagos`} de impuestos y no corresponde a ningún Expediente registrado; un pago no crea solicitud.` };
+  }
   if (c.documentos === 0) {
     const ilegibles = c.ilegibles ?? [];
     if (ilegibles.length) return { accion: "error", motivo: `No se pudo leer ${ilegibles.join(", ")}; se reintentará antes de decidir.`, reintentar: true };

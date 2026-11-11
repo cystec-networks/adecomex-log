@@ -94,6 +94,14 @@ describe("adjuntos del correo", () => {
     expect(tipoAdjuntoCorreo("Commercial Invoice")).toBe("Factura comercial");
     expect(tipoAdjuntoCorreo("foto de perfil")).toBe("Otro");
   });
+  it("pagos de impuestos: recibo bancario/DGA y PIN de la DGA tienen su propio tipo; pagos VUCE no", () => {
+    expect(tipoAdjuntoCorreo("Recibo Pago de Impuestos")).toBe("Recibo Pago de Impuestos");
+    expect(tipoAdjuntoCorreo("PIN de Pago de Impuestos")).toBe("PIN de Pago de Impuestos");
+    expect(tipoAdjuntoCorreo("Comprobante pago impuestos DGA")).toBe("Recibo Pago de Impuestos");
+    expect(tipoAdjuntoCorreo("PIN de pago DGA")).toBe("PIN de Pago de Impuestos");
+    expect(tipoAdjuntoCorreo("PIN de Pago Permiso VUCE")).toBe("Otro");
+    expect(tipoAdjuntoCorreo("Recibo Pago Permiso VUCE")).toBe("Otro");
+  });
 });
 
 describe("fecha de llegada con ceros de más", () => {
