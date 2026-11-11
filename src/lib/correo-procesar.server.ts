@@ -198,7 +198,9 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
   };
   const errorConRespaldo = async (motivo: string, reintentar: boolean): Promise<ResultadoProceso> => {
     const respaldo = await guardarRespaldo();
-    return { tipo: "fallo", status: reintentar ? 503 : 422, motivo, reintentar, adjuntos_respaldo: typeof respaldo === "string" ? undefined : respaldo };
+    // Resultado previsto (PDF faltantes o ilegibles), no una caída del servidor: 409 = reintentar, 422 = definitivo.
+    // El script decide por `reintentar` en el cuerpo, no por el código.
+    return { tipo: "fallo", status: reintentar ? 409 : 422, motivo, reintentar, adjuntos_respaldo: typeof respaldo === "string" ? undefined : respaldo };
   };
 
   // 0) Remitentes ignorados y PDF que no llegaron: antes de leer nada.
