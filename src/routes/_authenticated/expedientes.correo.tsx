@@ -19,6 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { z } from "zod";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { RegistroCorreos } from "@/components/correos/registro-correos";
+import { RemitentesIgnorados } from "@/components/correos/remitentes-ignorados";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const searchSchema = z.object({ registro: fallback(z.string(), "").default("") });
 
@@ -110,12 +112,27 @@ function BandejaCorreo() {
     },
   });
   const combinados = useDocumentosCombinados({ solicitudIds: data.map((s: any) => s.id) });
+  const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
+  const visibles = new Set(data.map((s: any) => s.id as string));
+  const seleccionadas = [...seleccion].filter((id) => visibles.has(id));
+  const alternar = (id: string, marcar: boolean) => setSeleccion((prev) => { const n = new Set(prev); if (marcar) n.add(id); else n.delete(id); return n; });
+  // Al descartar, la solicitud pasa al Registro de correos como «Descartado» (recuperable con «Crear solicitud»).
   const descartar = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("solicitudes_correo").update({ estado: "descartada" }).eq("id", id);
+    mutationFn: async (ids: string[]) => {
+      if (!ids.length) throw new Error("Selecciona al menos una solicitud");
+      const motivo = ids.length > 1 ? "Descartada manualmente desde la bandeja (selección múltiple)" : "Descartada manualmente desde la bandeja";
+      const { data: hechas, error } = await supabase.from("solicitudes_correo").update({ estado: "descartada", motivo_descarte: motivo })
+        .in("id", ids).eq("estado", "pendiente").select("id");
       if (error) throw error;
+      return hechas?.length ?? 0;
     },
-    onSuccess: () => { toast.success("Solicitud descartada"); qc.invalidateQueries({ queryKey: ["solicitudes-correo"] }); },
+    onSuccess: (n) => {
+      toast.success(n === 1 ? "Solicitud descartada; queda en el Registro de correos." : `${n} solicitudes descartadas; quedan en el Registro de correos.`);
+      setSeleccion(new Set());
+      qc.invalidateQueries({ queryKey: ["solicitudes-correo"] });
+      qc.invalidateQueries({ queryKey: ["registro-correos"] });
+      qc.invalidateQueries({ queryKey: ["correos-pendientes-kpi"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -125,8 +142,17 @@ function BandejaCorreo() {
         <Button variant="ghost" size="sm" asChild><Link to="/expedientes"><ArrowLeft className="h-4 w-4 mr-1" />Expedientes</Link></Button>
         <h1 className="font-display text-lg font-bold flex items-center gap-2"><Mail className="h-4 w-4" />Solicitudes recibidas por correo</h1>
         <Badge variant="secondary">{data.length}</Badge>
+        <div className="ml-auto flex items-center gap-2">
+          {seleccionadas.length > 0 && (
+            <Button size="sm" variant="destructive" className="h-8" disabled={descartar.isPending}
+              onClick={() => { if (confirm(`¿Descartar ${seleccionadas.length} solicitud${seleccionadas.length === 1 ? "" : "es"}? Quedarán en el Registro de correos y se pueden recuperar con «Crear solicitud».`)) descartar.mutate(seleccionadas); }}>
+              <Trash2 className="h-3.5 w-3.5 mr-1" />Descartar seleccionadas ({seleccionadas.length})
+            </Button>
+          )}
+          <RemitentesIgnorados />
+        </div>
       </div>
-      <p className="text-xs text-muted-foreground">Borradores pendientes de confirmar. No cuentan en reportes, Costos, Finanzas ni dashboards hasta «Confirmar y activar».</p>
+      <p className="text-xs text-muted-foreground">Solo embarques nuevos con documentos de importación en PDF. Borradores pendientes de confirmar: no cuentan en reportes, Costos, Finanzas ni dashboards hasta «Confirmar y activar».</p>
       <AvisoDocumentosCombinados documentos={combinados} />
       <Card>
         <CardContent className="p-0 overflow-auto">
@@ -135,14 +161,16 @@ function BandejaCorreo() {
           ) : (
             <table className="w-full text-[12px]">
               <thead className="bg-muted/30 text-left text-muted-foreground">
-                <tr><th className="px-2 py-1.5">Recibido</th><th className="px-2">Remitente / Cliente</th><th className="px-2">BL/AWB</th><th className="px-2">ETA</th><th className="px-2">Producto</th><th className="px-2">Cantidad</th><th className="px-2">Falta</th><th className="px-2 text-right">Acciones</th></tr>
+                <tr><th className="px-2 py-1.5 w-8"><Checkbox aria-label="Seleccionar todas" checked={data.length > 0 && seleccionadas.length === data.length ? true : seleccionadas.length > 0 ? "indeterminate" : false}
+                  onCheckedChange={(v) => setSeleccion(v === true ? new Set(data.map((s: any) => s.id)) : new Set())} /></th><th className="px-2 py-1.5">Recibido</th><th className="px-2">Remitente / Cliente</th><th className="px-2">BL/AWB</th><th className="px-2">ETA</th><th className="px-2">Producto</th><th className="px-2">Cantidad</th><th className="px-2">Falta</th><th className="px-2 text-right">Acciones</th></tr>
               </thead>
               <tbody>
                 {data.map((s) => {
                   const falta = camposFaltantes(s);
                   return (
                     <Fragment key={s.id}>
-                      <tr className="border-t align-top">
+                      <tr className={`border-t align-top ${seleccion.has(s.id) ? "bg-muted/40" : ""}`}>
+                        <td className="px-2 py-1.5"><Checkbox aria-label={`Seleccionar ${s.asunto ?? "solicitud"}`} checked={seleccion.has(s.id)} onCheckedChange={(v) => alternar(s.id, v === true)} /></td>
                         <td className="px-2 py-1.5 whitespace-nowrap">{new Date(s.created_at).toLocaleString("es-DO", { timeZone: "America/Santo_Domingo" })}</td>
                         <td className="px-2 py-1.5">
                           <div>{s.clientes?.nombre ?? s.cliente_nombre ?? "—"}</div>
@@ -173,13 +201,13 @@ function BandejaCorreo() {
                             <Link to="/expedientes/$id" params={{ id: "nuevo" }} search={{ nuevo: "", solicitud: "", correo: s.id }}><CheckCircle2 className="h-3.5 w-3.5 mr-1" />Confirmar y activar</Link>
                           </Button>
                           <Button size="sm" variant="outline" className={sugerirCotizacionCorreo(s) ? 'h-7 px-2 border-warning/40 bg-warning/10' : 'h-7 px-2'} disabled={!canCompra} title={!canCompra ? 'Solo Administrador o Gestor de Compra' : undefined} onClick={() => { setCompra(s); setDestino('nueva'); }}><FilePlus2 className="h-3.5 w-3.5 mr-1" />Convertir en Cotización de Compra</Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="Descartar" onClick={() => descartar.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="Descartar" disabled={descartar.isPending} onClick={() => descartar.mutate([s.id])}><Trash2 className="h-4 w-4" /></Button>
                           </div>
                           {sugerirCotizacionCorreo(s) && <Badge variant="outline" className="mt-1 text-[11px] border-warning/40 text-warning-foreground">Sugerido: aún no hay embarque</Badge>}
                         </td>
                       </tr>
                       {abierto === s.id && (
-                        <tr key={`${s.id}-txt`} className="bg-muted/20"><td colSpan={8} className="px-3 py-2">
+                        <tr key={`${s.id}-txt`} className="bg-muted/20"><td colSpan={9} className="px-3 py-2">
                           <div className="text-[11px] text-muted-foreground mb-1">Mensaje procesado</div>
                           <pre className="whitespace-pre-wrap text-[12px]">{s.mensaje_aislado}</pre>
                           <details className="mt-2"><summary className="text-[11px] cursor-pointer text-muted-foreground">Correo completo</summary><pre className="whitespace-pre-wrap text-[11px] mt-1">{s.cuerpo}</pre></details>

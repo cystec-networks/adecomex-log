@@ -17,12 +17,13 @@ describe("recepción de archivos de correo", () => {
     assert.equal(r.advertencias.length, 0);
   });
   it("sin adjuntos acepta vacío, ausente y null", () => {
-    for (const v of [[], undefined, null]) assert.deepEqual(normalizarAdjuntosCorreo(v), { adjuntos: [], advertencias: [] });
+    for (const v of [[], undefined, null]) assert.deepEqual(normalizarAdjuntosCorreo(v), { adjuntos: [], advertencias: [], rechazados: [] });
   });
   it("un archivo inválido genera aviso pero no pierde los demás", () => {
     const r = normalizarAdjuntosCorreo([{ nombre: "dañado.pdf" }, { nombre: "BL.pdf", contenido: "JVBERi0=" }]);
     assert.equal(r.adjuntos.length, 1);
     assert.equal(r.advertencias.length, 1);
+    assert.deepEqual(r.rechazados.map((x) => x.nombre), ["dañado.pdf"]);
     assert.match(r.advertencias[0], /dañado.pdf/);
   });
   it("PDF con parámetros e imágenes sin MIME se reconocen por tipo real", () => {

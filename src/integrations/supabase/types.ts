@@ -1799,6 +1799,7 @@ export type Database = {
           id_mensaje: string | null
           intentos: number
           motivo: string | null
+          pdfs_en_gmail: number | null
           primer_intento_at: string
           propuestas: Json
           recuperado_en: string | null
@@ -1832,6 +1833,7 @@ export type Database = {
           id_mensaje?: string | null
           intentos?: number
           motivo?: string | null
+          pdfs_en_gmail?: number | null
           primer_intento_at?: string
           propuestas?: Json
           recuperado_en?: string | null
@@ -1865,6 +1867,7 @@ export type Database = {
           id_mensaje?: string | null
           intentos?: number
           motivo?: string | null
+          pdfs_en_gmail?: number | null
           primer_intento_at?: string
           propuestas?: Json
           recuperado_en?: string | null
@@ -7108,6 +7111,36 @@ export type Database = {
         }
         Relationships: []
       }
+      remitentes_ignorados: {
+        Row: {
+          activo: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          motivo: string | null
+          patron: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          motivo?: string | null
+          patron: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          motivo?: string | null
+          patron?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       solicitud_productos: {
         Row: {
           aplica_isc: boolean | null
@@ -7316,6 +7349,7 @@ export type Database = {
           id: string
           id_hilo: string | null
           mensaje_aislado: string | null
+          motivo_descarte: string | null
           peso_bruto_kg: number | null
           producto: string | null
           remitente: string | null
@@ -7342,6 +7376,7 @@ export type Database = {
           id?: string
           id_hilo?: string | null
           mensaje_aislado?: string | null
+          motivo_descarte?: string | null
           peso_bruto_kg?: number | null
           producto?: string | null
           remitente?: string | null
@@ -7368,6 +7403,7 @@ export type Database = {
           id?: string
           id_hilo?: string | null
           mensaje_aislado?: string | null
+          motivo_descarte?: string | null
           peso_bruto_kg?: number | null
           producto?: string | null
           remitente?: string | null

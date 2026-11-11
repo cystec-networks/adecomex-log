@@ -56,7 +56,7 @@ export function RegistroCorreos({ filtroInicial }: { filtroInicial?: string }) {
           ))}
         </div>
       </div>
-      <p className="text-[11px] text-muted-foreground">Últimos 200 correos que el buzón entregó a la plataforma. Un correo con error se reintenta automáticamente; aquí se ve el motivo y los intentos. Si un correo descartado sí era un embarque, usa «Crear solicitud».</p>
+      <p className="text-[11px] text-muted-foreground">Últimos 200 correos que el buzón entregó a la plataforma. Solo crean solicitud los correos con documentos de importación en PDF que no corresponden a un Expediente. Un correo con error se reintenta automáticamente. Si un correo descartado sí era un embarque, usa «Crear solicitud».</p>
       <Card>
         <CardContent className="p-0 overflow-auto">
           {isLoading ? <p className="p-6 text-sm text-muted-foreground">Cargando…</p> : isError ? <p className="p-6 text-sm text-destructive">No se pudo cargar el registro.</p> : data.length === 0 ? (
@@ -82,12 +82,12 @@ export function RegistroCorreos({ filtroInicial }: { filtroInicial?: string }) {
                       <td className="px-2 py-1.5 max-w-[360px] break-words">{atascado ? "El proceso se interrumpió sin terminar; se reintentará." : c.motivo ?? "—"}</td>
                       <td className="px-2 py-1.5 text-center">{c.intentos}</td>
                       <td className="px-2 py-1.5 whitespace-nowrap">
-                        {c.expediente_id ? <Link to="/expedientes/$id" params={{ id: c.expediente_id }} search={{ ficha: "checklist" }} className="text-primary hover:underline expediente-numero">{c.expediente_numero}</Link>
-                          : c.solicitud_id ? <span className="text-muted-foreground">Solicitud por correo</span>
-                          : c.resultado === "descartada" ? (
+                        {c.expediente_id && c.resultado === "adjuntada" ? <Link to="/expedientes/$id" params={{ id: c.expediente_id }} search={{ ficha: "checklist" }} className="text-primary hover:underline expediente-numero">{c.expediente_numero}</Link>
+                          : c.solicitud_id && c.resultado !== "descartada" ? <span className="text-muted-foreground">Solicitud por correo</span>
+                          : (c.resultado === "descartada" || (c.resultado === "error" && !atascado && (c.cuerpo || c.asunto))) ? (
                             <div className="space-y-1">
                               <Button size="sm" variant="outline" className="h-7 px-2 text-[12px]" disabled={crearSolicitud.isPending}
-                                onClick={() => crearSolicitud.mutate(c.id)} title="Crear la solicitud con el texto y los adjuntos guardados de este correo">
+                                onClick={() => crearSolicitud.mutate(c.id)} title={c.solicitud_id ? "Restaurar la solicitud descartada en la bandeja" : "Crear la solicitud con el texto y los PDF guardados de este correo"}>
                                 {crearSolicitud.isPending && crearSolicitud.variables === c.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FilePlus2 className="h-3.5 w-3.5" />}
                                 Crear solicitud
                               </Button>

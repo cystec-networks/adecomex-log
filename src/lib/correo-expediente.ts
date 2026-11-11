@@ -101,53 +101,104 @@ export function propuestasParaExpediente(
 export const propuestasPendientes = (p: unknown): [CampoPropuesto, PropuestaCampo][] =>
   Object.entries((p && typeof p === "object" ? p : {}) as Propuestas).filter(([, v]) => v?.estado === "pendiente") as [CampoPropuesto, PropuestaCampo][];
 
-const MIME_DOCUMENTO = /^(application\/(pdf|msword|vnd\.openxmlformats|vnd\.ms-excel|vnd\.ms-outlook|zip|x-zip|x-zip-compressed|vnd\.rar|x-rar|rtf)|message\/rfc822)/i;
-const EXT_DOCUMENTO = /\.(pdf|xlsx?|xlsm|docx?|zip|rar|7z|msg|eml|rtf|tiff?)$/i;
-/** Imágenes menores que esto suelen ser logos de firma, no documentos escaneados. */
-export const BYTES_MIN_IMAGEN_DOCUMENTO = 20_000;
-
-/** ¿El adjunto puede ser un documento de importación? (PDF, ofimática, comprimidos o imagen escaneada, no un logo). */
-export function esDocumentoAdjunto(a: { nombre: string; mime: string; bytes: number }): boolean {
-  if (/^image\//i.test(a.mime) || /\.(png|jpe?g|gif|webp|bmp|heic)$/i.test(a.nombre)) return a.bytes >= BYTES_MIN_IMAGEN_DOCUMENTO;
-  return MIME_DOCUMENTO.test(a.mime) || EXT_DOCUMENTO.test(a.nombre);
-}
-
-/** El texto del correo dice que trae archivos («adjunto documentos», «attached», «anexo»…). */
-export const RE_ANUNCIA_ADJUNTOS = /\b(adjunt[oa]s?|adjuntamos|adjunto|anex[oa]s?|anexamos|attached|attachments?|enclosed)\b/i;
-
-export const AVISO_POSIBLE_SEGUIMIENTO = "Posible seguimiento: revisar";
-
-export type DecisionSinExpediente = { descartar: true; motivo: string } | { descartar: false; avisos: string[] };
-
-/** Aviso cuando el correo dice traer documentos (o Gmail tenía adjuntos) que no llegaron a la plataforma. */
-export function avisoAdjuntosFaltantes(c: { documentos: number; adjuntosRecibidos: number; adjuntosEnGmail?: number | null; texto: string }): string | null {
-  const enGmail = c.adjuntosEnGmail ?? 0;
-  if (enGmail > c.adjuntosRecibidos) return `Gmail tenía ${enGmail} adjunto${enGmail === 1 ? "" : "s"} y a la plataforma llegaron ${c.adjuntosRecibidos}; búscalos en el correo original.`;
-  if (c.documentos === 0 && RE_ANUNCIA_ADJUNTOS.test(c.texto)) return "El correo dice traer documentos adjuntos, pero no llegó ningún archivo a la plataforma; búscalos en el correo original en Gmail.";
-  return null;
+/** Solo los PDF cuentan: imágenes, capturas, logos de firma y archivos de ofimática se ignoran. */
+export function esPdfAdjunto(a: { nombre?: string | null; mime?: string | null }): boolean {
+  return /^application\/pdf\b/i.test(a.mime ?? "") || /\.pdf\s*$/i.test(a.nombre ?? "");
 }
 
 /**
- * Qué hacer con un correo que no se relacionó con ningún Expediente. Solo se descarta un correo sin
- * documentos de importación (ni recibidos ni anunciados) y que la IA considera, sin dudas, que no es
- * una solicitud nueva. Ante cualquier duda se crea la solicitud con «Posible seguimiento: revisar»
- * para que una persona la vea. Un número de trámite VUCE por sí solo no indica que el embarque exista.
+ * Documento de importación = PDF clasificado en uno de los tipos definidos (factura comercial,
+ * packing list, BL, certificados, permiso VUCE…). «Otros documentos» no cuenta. Un PDF largo que
+ * se separará por tipo en segundo plano cuenta, porque son juegos de documentos del embarque.
  */
-export function decidirCorreoSinExpediente(c: {
-  esSolicitudNueva: boolean; dudaIa: boolean; motivoIa: string | null; forzado?: boolean; otrosAvisos?: boolean; hiloCompra?: boolean;
-  documentos: number; adjuntosRecibidos: number; adjuntosEnGmail?: number | null; texto: string;
-}): DecisionSinExpediente {
-  const motivo = (c.motivoIa ?? "").trim() || "No es una solicitud nueva";
-  const faltantes = avisoAdjuntosFaltantes(c);
-  const conFaltantes = (aviso: string | null) => ({ descartar: false as const, avisos: [aviso, faltantes].filter((x): x is string => !!x) });
-  if (c.esSolicitudNueva || c.hiloCompra || c.otrosAvisos) return conFaltantes(null);
-  if (c.forzado) return conFaltantes(`${AVISO_POSIBLE_SEGUIMIENTO}. Creada manualmente desde el registro de correos; antes se había descartado: ${motivo}`);
-  if (c.documentos > 0) {
-    return conFaltantes(`${AVISO_POSIBLE_SEGUIMIENTO}. La IA lo consideró seguimiento (${motivo}), pero trae ${c.documentos} documento${c.documentos === 1 ? "" : "s"} adjunto${c.documentos === 1 ? "" : "s"}.`);
+export function esDocumentoImportacion(a: { tipo?: string | null; combinado?: unknown }, tipos: readonly string[]): boolean {
+  return !!a.combinado || (!!a.tipo && tipos.includes(a.tipo));
+}
+
+/** Normaliza lo escrito en el catálogo: «@Banco.com.do», «https://www.banco.com.do» → «banco.com.do»; dirección completa se conserva. */
+export function normalizarPatronRemitente(v: string): string | null {
+  let p = (v ?? "").trim().toLowerCase().replace(/^mailto:/, "").replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  if (p.startsWith("@")) p = p.slice(1);
+  if (!p.includes("@")) p = p.replace(/^www\./, "");
+  return /^([a-z0-9._%+-]+@)?[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(p) ? p : null;
+}
+
+/** Patrón del catálogo «Remitentes ignorados» que coincide (dominio y subdominios, o dirección exacta). */
+export function remitenteIgnorado(correo: string | null | undefined, patrones: string[]): string | null {
+  const c = (correo ?? "").trim().toLowerCase();
+  if (!c.includes("@")) return null;
+  const d = dominio(c);
+  for (const raw of patrones) {
+    const p = raw.trim().toLowerCase();
+    if (!p) continue;
+    if (p.includes("@") ? c === p : d === p || d.endsWith(`.${p}`)) return p;
   }
-  if (faltantes) return { descartar: false, avisos: [`${AVISO_POSIBLE_SEGUIMIENTO}. ${faltantes}`] };
-  if (c.dudaIa) return conFaltantes(`${AVISO_POSIBLE_SEGUIMIENTO}. La IA no está segura de que sea un seguimiento: ${motivo}`);
-  return { descartar: true, motivo };
+  return null;
+}
+
+export type PdfsFaltantes = { motivo: string; reintentar: boolean };
+
+/**
+ * Gmail tenía PDF que no llegaron a la plataforma: el correo no se descarta, queda en error para
+ * reintentarse. Si solo faltan los omitidos por tamaño, reintentar no ayuda (queda en el Panel).
+ */
+export function pdfsFaltantes(c: { pdfsEnGmail: number | null; pdfsRecibidos: number; omitidos: { nombre?: string | null; motivo?: string | null; buzon?: boolean }[] }): PdfsFaltantes | null {
+  const omitidos = c.omitidos.filter((o) => esPdfAdjunto({ nombre: o.nombre }));
+  const enGmail = c.pdfsEnGmail ?? 0;
+  if (enGmail <= c.pdfsRecibidos && !omitidos.length) return null;
+  const total = Math.max(enGmail, c.pdfsRecibidos + omitidos.length);
+  const nombres = omitidos.map((o) => `${o.nombre} (${o.motivo || "omitido por el buzón"})`).join(", ");
+  // Lo que el script omitió a propósito (tamaño, límite) volverá a omitirse: reintentar no ayuda.
+  const explicados = omitidos.filter((o) => o.buzon !== false).length;
+  const definitivo = explicados > 0 && explicados >= total - c.pdfsRecibidos;
+  return {
+    motivo: `Gmail tenía ${total} PDF y a la plataforma llegaron ${c.pdfsRecibidos}${nombres ? `: falta ${nombres}` : ""}. ${definitivo ? "Descarga los PDF del correo original y usa «Crear solicitud» o súbelos al Expediente." : "Se reintentará el envío."}`,
+    reintentar: !definitivo,
+  };
+}
+
+export type DecisionCorreo =
+  | { accion: "leer" }
+  | { accion: "descartar"; motivo: string }
+  | { accion: "error"; motivo: string; reintentar: boolean }
+  | { accion: "adjuntar" }
+  | { accion: "crear"; avisos: string[] };
+
+export const AVISO_CREADA_MANUAL = "Creada manualmente desde el registro de correos";
+
+/**
+ * Regla única: solo crea solicitud un correo con al menos un documento de importación en PDF que no
+ * corresponde a un Expediente existente. Un Expediente existente recibe solo sus documentos de
+ * importación. Todo lo demás se descarta con su motivo (recuperable con «Crear solicitud»). La IA no
+ * decide; solo extrae datos. `documentos` = null antes de leer los PDF (primera pasada).
+ */
+export function decidirCorreo(c: {
+  forzado?: boolean; ignorado?: string | null; faltantes?: PdfsFaltantes | null; pdfs: number;
+  documentos: number | null; ilegibles?: string[]; otros?: string[]; expediente?: string | null; ambiguos?: string | null;
+}): DecisionCorreo {
+  const exp = c.expediente ?? null;
+  if (c.forzado) {
+    if (c.documentos == null && c.pdfs > 0) return { accion: "leer" };
+    if (exp && (c.documentos ?? 0) > 0) return { accion: "adjuntar" };
+    return { accion: "crear", avisos: [AVISO_CREADA_MANUAL] };
+  }
+  if (c.ignorado) return { accion: "descartar", motivo: `Remitente ignorado (${c.ignorado}): sus correos nunca crean solicitud.` };
+  if (c.faltantes) return { accion: "error", motivo: c.faltantes.motivo, reintentar: c.faltantes.reintentar };
+  if (c.pdfs === 0) {
+    return { accion: "descartar", motivo: exp ? `Corresponde al Expediente ${exp}, pero no trae documentos PDF; no se agregó nada.` : "Sin documentos PDF: no es una solicitud nueva de embarque." };
+  }
+  if (c.documentos == null) return { accion: "leer" };
+  if (c.documentos === 0) {
+    const ilegibles = c.ilegibles ?? [];
+    if (ilegibles.length) return { accion: "error", motivo: `No se pudo leer ${ilegibles.join(", ")}; se reintentará antes de decidir.`, reintentar: true };
+    const otros = c.otros?.length ? ` (${c.otros.slice(0, 5).join(", ")})` : "";
+    return { accion: "descartar", motivo: exp
+      ? `Corresponde al Expediente ${exp}, pero sus PDF no son documentos de importación${otros}; no se agregó nada.`
+      : `Sin documentos de importación: sus PDF son «Otros documentos»${otros}.` };
+  }
+  if (exp) return { accion: "adjuntar" };
+  if (c.ambiguos) return { accion: "descartar", motivo: `Corresponde a varios Expedientes (${c.ambiguos}); revisar y adjuntar o crear la solicitud a mano.` };
+  return { accion: "crear", avisos: [] };
 }
 
 async function sha256Hex(texto: string) {

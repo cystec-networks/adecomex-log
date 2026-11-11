@@ -44,7 +44,8 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         const { error: errorTexto } = await db.from("correos_recibidos").update({
           cuerpo: str(normal?.cuerpo).slice(0, 200_000) || null, destinatarios: str(normal?.destinatarios ?? "").slice(0, 2000) || null,
           cc: str(normal?.cc ?? "").slice(0, 2000) || null,
-          adjuntos_en_gmail: Number.isFinite(Number(normal?.adjuntos_en_gmail)) ? Number(normal?.adjuntos_en_gmail) : null,
+          adjuntos_en_gmail: normal?.adjuntos_en_gmail != null && Number.isFinite(Number(normal?.adjuntos_en_gmail)) ? Number(normal?.adjuntos_en_gmail) : null,
+          pdfs_en_gmail: normal?.pdfs_en_gmail != null && Number.isFinite(Number(normal?.pdfs_en_gmail)) ? Number(normal?.pdfs_en_gmail) : null,
         }).eq("id", registro_id);
         if (errorTexto) console.error("No se pudo guardar el texto del correo", registro_id, errorTexto.message);
 
@@ -62,14 +63,14 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
           await finalizar(c);
           return Response.json({ ok: true, etiqueta: ETIQUETA_OK, registro_id, resultado: RESULTADO_LEGADO[c.resultado], motivo: c.motivo ?? undefined, ...respuesta });
         };
-        const fallo = async (status: number, motivo: string, reintentar = true) => {
-          await finalizar({ resultado: "error", motivo, reintentable: reintentar });
+        const fallo = async (status: number, motivo: string, reintentar = true, adjuntos_respaldo?: CamposBitacora["adjuntos_respaldo"]) => {
+          await finalizar({ resultado: "error", motivo, reintentable: reintentar, adjuntos_respaldo });
           return error(status, motivo, reintentar, { registro_id });
         };
 
         try {
           const r = await procesarCorreo(db, normal, { registroId: registro_id });
-          if (r.tipo === "fallo") return await fallo(r.status, r.motivo, r.reintentar);
+          if (r.tipo === "fallo") return await fallo(r.status, r.motivo, r.reintentar, r.adjuntos_respaldo);
           return await exito(r.campos, r.respuesta);
         } catch (e: any) {
           console.error("Error procesando correo", registro_id, e?.message ?? e);

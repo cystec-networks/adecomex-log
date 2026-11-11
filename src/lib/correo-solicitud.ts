@@ -160,7 +160,7 @@ export function fusionarAsunto(cuerpo: DatosSolicitudCorreo, asunto: string): { 
 /** Tipos de la ficha Documentos que puede recibir un adjunto de correo. */
 export const TIPOS_ADJUNTO_CORREO = [
   "Bill of Lading", "Guía aérea", "Factura comercial", "Factura proforma", "Lista de empaque", "Certificado de origen",
-  "Certificado Sanitario/Fitosanitario", "Certificado de análisis",
+  "Certificado Sanitario/Fitosanitario", "Certificado de análisis", "Permiso VUCE previo",
 ] as const;
 
 /** Normaliza el tipo propuesto por la IA; lo no reconocido queda en «Otro». */
@@ -170,6 +170,7 @@ export function tipoAdjuntoCorreo(v: unknown): string {
   const exacto = TIPOS_ADJUNTO_CORREO.find((t) => norm(t) === n);
   if (exacto) return exacto;
   if (/BILLOFLADING|^BL$|CONOCIMIENTO/.test(n)) return "Bill of Lading";
+  if (/VUCE|PERMISOPREVIO|IMPORTPERMIT|PERMISODEIMPORTACION/.test(n)) return "Permiso VUCE previo";
   if (/AIRWAYBILL|AIRWAYBILL|AWB|GUIAAEREA/.test(n)) return "Guía aérea";
   if (/PACKING|EMPAQUE/.test(n)) return "Lista de empaque";
   if (/PROFORMA/.test(n)) return "Factura proforma";

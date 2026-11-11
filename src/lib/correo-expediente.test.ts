@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AVISO_POSIBLE_SEGUIMIENTO, claveCorreo, decidirCorreoSinExpediente, esDocumentoAdjunto, extraerNumeroVuce, extraerNumerosExpediente, normalizarBl, numerosExpedienteCorreo, propuestasParaExpediente, remitenteCorresponde } from "./correo-expediente";
+import { AVISO_CREADA_MANUAL, claveCorreo, decidirCorreo, esDocumentoImportacion, esPdfAdjunto, extraerNumeroVuce, normalizarPatronRemitente, pdfsFaltantes, remitenteIgnorado, extraerNumerosExpediente, normalizarBl, numerosExpedienteCorreo, propuestasParaExpediente, remitenteCorresponde } from "./correo-expediente";
 
 const ASUNTO = "4 CONT. DE HAB. CRANBERRY Detalles y el PIN TRM-1026-2551297 : REGISTRO #202610I358. : HACER VUCE 2006 - 1 - 2000 QQ HABICHUELAS CRANBERRY- LOMI / MAGUANA";
 
@@ -57,42 +57,82 @@ describe("datos propuestos", () => {
   });
 });
 
-describe("descartes", () => {
-  const MACE = "DOCUMENTOS IMPORTACIÓN MACE\nAdjunto documentos importación Mace de UPL, para Agrodetalles.\nNúmero de trámite VUCE TRM-1126-2587885.\nFecha de llegada 11/011/2026";
-  const base = { esSolicitudNueva: false, dudaIa: false, motivoIa: "Remite documentos con trámite VUCE ya identificado", documentos: 0, adjuntosRecibidos: 0, texto: "Gracias, recibido." };
+describe("solo PDF de importación crean solicitud", () => {
+  const TIPOS = ["Factura comercial", "Packing list", "Bill of Lading", "Permiso VUCE previo"];
+  const base = { pdfs: 0, documentos: null as number | null };
 
-  it("un correo con documentos de importación adjuntos nunca se descarta: crea solicitud con «Posible seguimiento»", () => {
-    const d = decidirCorreoSinExpediente({ ...base, documentos: 3, adjuntosRecibidos: 3, texto: MACE });
-    expect(d.descartar).toBe(false);
-    expect(!d.descartar && d.avisos[0]?.startsWith(AVISO_POSIBLE_SEGUIMIENTO)).toBe(true);
+  it("solo cuentan los PDF: imágenes, capturas y logos de firma no", () => {
+    expect(esPdfAdjunto({ nombre: "image001.png", mime: "image/png" })).toBe(false);
+    expect(esPdfAdjunto({ nombre: "captura.jpg", mime: "image/jpeg" })).toBe(false);
+    expect(esPdfAdjunto({ nombre: "packing.xlsx", mime: "application/octet-stream" })).toBe(false);
+    expect(esPdfAdjunto({ nombre: "BL.PDF", mime: "" })).toBe(true);
+    expect(esPdfAdjunto({ nombre: "documento", mime: "application/pdf" })).toBe(true);
   });
-  it("si el correo anuncia adjuntos que no llegaron (caso MACE real), no se descarta", () => {
-    const d = decidirCorreoSinExpediente({ ...base, texto: MACE });
-    expect(d.descartar).toBe(false);
+  it("«Otros documentos» no es documento de importación; Permiso VUCE previo sí", () => {
+    expect(esDocumentoImportacion({ tipo: "Otro" }, TIPOS)).toBe(false);
+    expect(esDocumentoImportacion({ tipo: null }, TIPOS)).toBe(false);
+    expect(esDocumentoImportacion({ tipo: "Permiso VUCE previo" }, TIPOS)).toBe(true);
+    expect(esDocumentoImportacion({ tipo: "Otro", combinado: { paginas: 12 } }, TIPOS)).toBe(true);
   });
-  it("aunque la IA la vea como solicitud nueva, avisa de los adjuntos anunciados que no llegaron", () => {
-    const d = decidirCorreoSinExpediente({ ...base, esSolicitudNueva: true, texto: MACE });
-    expect(!d.descartar && d.avisos.some((a) => a.includes("no llegó ningún archivo"))).toBe(true);
+  it("ticket DPH, respuesta DGA o confirmación con imagen (sin PDF) se descartan", () => {
+    const d = decidirCorreo({ ...base });
+    expect(d.accion).toBe("descartar");
   });
-  it("si Gmail tenía más adjuntos que los recibidos, no se descarta", () => {
-    expect(decidirCorreoSinExpediente({ ...base, adjuntosEnGmail: 4 }).descartar).toBe(false);
+  it("estado de cuenta en PDF clasificado «Otro» se descarta con su motivo", () => {
+    const d = decidirCorreo({ pdfs: 1, documentos: 0, otros: ["ESTADO DE CUENTA.pdf"] });
+    expect(d.accion === "descartar" && d.motivo.includes("Otros documentos")).toBe(true);
   });
-  it("si la IA duda entre seguimiento y solicitud nueva, se crea con aviso", () => {
-    const d = decidirCorreoSinExpediente({ ...base, dudaIa: true });
-    expect(!d.descartar && d.avisos[0]?.startsWith(AVISO_POSIBLE_SEGUIMIENTO)).toBe(true);
+  it("MACE nuevo con PDF de importación (aunque traiga trámite VUCE no registrado) crea solicitud", () => {
+    expect(decidirCorreo({ pdfs: 3, documentos: null }).accion).toBe("leer");
+    expect(decidirCorreo({ pdfs: 3, documentos: 2 })).toEqual({ accion: "crear", avisos: [] });
   });
-  it("solo se descarta sin documentos, sin adjuntos anunciados y sin dudas", () => {
-    const d = decidirCorreoSinExpediente(base);
-    expect(d.descartar).toBe(true);
+  it("correo del Expediente 202610I358 con PDF de importación se adjunta, nunca crea solicitud", () => {
+    expect(decidirCorreo({ pdfs: 2, documentos: 2, expediente: "202610I358" }).accion).toBe("adjuntar");
   });
-  it("crear desde el registro nunca descarta", () => {
-    expect(decidirCorreoSinExpediente({ ...base, forzado: true }).descartar).toBe(false);
+  it("correo de un Expediente sin documentos de importación se descarta sin tocarlo", () => {
+    const d = decidirCorreo({ pdfs: 0, documentos: null, expediente: "202610I358" });
+    expect(d.accion === "descartar" && d.motivo.includes("no se agregó nada")).toBe(true);
+    expect(decidirCorreo({ pdfs: 1, documentos: 0, expediente: "202610I358" }).accion).toBe("descartar");
   });
-  it("un logo de firma no cuenta como documento; un PDF o un escaneo sí", () => {
-    expect(esDocumentoAdjunto({ nombre: "image001.png", mime: "image/png", bytes: 4_000 })).toBe(false);
-    expect(esDocumentoAdjunto({ nombre: "factura.jpg", mime: "image/jpeg", bytes: 350_000 })).toBe(true);
-    expect(esDocumentoAdjunto({ nombre: "BL.pdf", mime: "application/pdf", bytes: 1_000 })).toBe(true);
-    expect(esDocumentoAdjunto({ nombre: "packing.xlsx", mime: "application/octet-stream", bytes: 9_000 })).toBe(true);
+  it("remitente ignorado se descarta aunque traiga PDF", () => {
+    const d = decidirCorreo({ pdfs: 2, documentos: null, ignorado: "dph.com.do" });
+    expect(d.accion === "descartar" && d.motivo.includes("dph.com.do")).toBe(true);
+  });
+  it("PDF que Gmail tenía y no llegaron: error, nunca descarte", () => {
+    const faltantes = pdfsFaltantes({ pdfsEnGmail: 3, pdfsRecibidos: 0, omitidos: [] });
+    expect(faltantes?.reintentar).toBe(true);
+    expect(decidirCorreo({ pdfs: 0, documentos: null, faltantes }).accion).toBe("error");
+  });
+  it("un PDF omitido por tamaño no se reintenta (volvería a omitirse), pero tampoco se descarta", () => {
+    const f = pdfsFaltantes({ pdfsEnGmail: 2, pdfsRecibidos: 1, omitidos: [{ nombre: "BL.pdf", motivo: "supera 15 MB" }] });
+    expect(f?.reintentar).toBe(false);
+    expect(pdfsFaltantes({ pdfsEnGmail: null, pdfsRecibidos: 1, omitidos: [{ nombre: "BL.pdf", motivo: "base64 inválido", buzon: false }] })?.reintentar).toBe(true);
+    expect(pdfsFaltantes({ pdfsEnGmail: null, pdfsRecibidos: 0, omitidos: [{ nombre: "logo.png", motivo: "pequeño" }] })).toBeNull();
+    expect(pdfsFaltantes({ pdfsEnGmail: 2, pdfsRecibidos: 2, omitidos: [] })).toBeNull();
+  });
+  it("un PDF ilegible sin otros documentos se reintenta en vez de descartarse", () => {
+    expect(decidirCorreo({ pdfs: 1, documentos: 0, ilegibles: ["BL.pdf"] }).accion).toBe("error");
+  });
+  it("crear desde el registro: lee los PDF y nunca descarta", () => {
+    expect(decidirCorreo({ forzado: true, pdfs: 1, documentos: null, ignorado: "dph.com.do" }).accion).toBe("leer");
+    expect(decidirCorreo({ forzado: true, pdfs: 0, documentos: null })).toEqual({ accion: "crear", avisos: [AVISO_CREADA_MANUAL] });
+  });
+});
+
+describe("remitentes ignorados", () => {
+  const catalogo = ["dph.com.do", "aduanas.gob.do", "avisos@naviera.com"];
+  it("coincide dominio y subdominios, no dominios parecidos", () => {
+    expect(remitenteIgnorado("tickets@dph.com.do", catalogo)).toBe("dph.com.do");
+    expect(remitenteIgnorado("no-reply@sistema.aduanas.gob.do", catalogo)).toBe("aduanas.gob.do");
+    expect(remitenteIgnorado("ventas@nodph.com.do", catalogo)).toBeNull();
+    expect(remitenteIgnorado("avisos@naviera.com", catalogo)).toBe("avisos@naviera.com");
+    expect(remitenteIgnorado("ventas@naviera.com", catalogo)).toBeNull();
+  });
+  it("normaliza lo escrito en el catálogo", () => {
+    expect(normalizarPatronRemitente(" @DPH.com.do ")).toBe("dph.com.do");
+    expect(normalizarPatronRemitente("https://www.aduanas.gob.do/x")).toBe("aduanas.gob.do");
+    expect(normalizarPatronRemitente("Persona@Banco.com")).toBe("persona@banco.com");
+    expect(normalizarPatronRemitente("banco")).toBeNull();
   });
 });
 

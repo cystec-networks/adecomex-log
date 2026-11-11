@@ -28,7 +28,7 @@ export async function leerArchivoCorreo(nombre: string, mime: string, base64: st
     temperature: 0,
     response_format: { type: "json_object" },
     messages: [
-      { role: "system", content: PROMPT_DOCUMENTO_IMPORTACION + ` Agrega también la clave 'tipo_documento': exactamente uno de ${TIPOS_ADJUNTO_CORREO.map((t) => `'${t}'`).join(", ")} u 'Otro' si el documento no es ninguno de ellos. Agrega 'cantidad': la cantidad total de bultos/unidades tal como aparece (ej. '2,000 BAGS'), o null.` },
+      { role: "system", content: PROMPT_DOCUMENTO_IMPORTACION + ` Agrega también la clave 'tipo_documento': exactamente uno de ${TIPOS_ADJUNTO_CORREO.map((t) => `'${t}'`).join(", ")} u 'Otro' si el documento no es ninguno de ellos. 'Factura comercial' es solo la factura del proveedor o exportador por la mercancía importada. Son 'Otro': estados de cuenta, facturas o cotizaciones de servicios locales (agencia, naviera, transporte, almacén, puerto), tarifas, presentaciones comerciales, reportes o tickets de sistemas (p. ej. DPH, sys_Rep_Release), cartas y notificaciones. Agrega 'cantidad': la cantidad total de bultos/unidades tal como aparece (ej. '2,000 BAGS'), o null.` },
       { role: "user", content: [
         { type: "text", text: "Extrae los campos del documento adjunto." },
         mime === "application/pdf"
