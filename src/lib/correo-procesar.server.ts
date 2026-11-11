@@ -5,7 +5,7 @@
 import { z } from "zod";
 import { aislarMensajeReciente, avisoFechaLlegada, combinarDatos, extraerPorEtiquetas, fusionarAsunto, fusionarAdjuntos } from "@/lib/correo-solicitud";
 import { adjuntoCorreoSchema, normalizarAdjuntosCorreo, mimeAdjuntoCorreo, deduplicarAdjuntosCorreo } from "@/lib/correo-adjuntos";
-import { decidirCorreo, esDocumentoImportacion, esPdfAdjunto, extraerNumeroVuce, normalizarBl, numerosExpedienteCorreo, pdfsFaltantes, propuestasParaExpediente, remitenteIgnorado } from "@/lib/correo-expediente";
+import { decidirCorreo, DESCARTE_BREVE, esDocumentoImportacion, esPdfAdjunto, extraerNumeroVuce, normalizarBl, numerosExpedienteCorreo, pdfsFaltantes, propuestasParaExpediente, remitenteIgnorado, sha256Bytes, ubicarDocumentosExpediente, type CategoriaDescarte, type ConflictoDocumento } from "@/lib/correo-expediente";
 import { TIPOS_ADJUNTO_CORREO } from "@/lib/correo-solicitud";
 import { contextoExpediente, expedientesPorBl, expedientesPorNumero, expedientesPorVuce, verificarRemitente, type ExpedienteCorreo } from "@/lib/correo-recepcion.server";
 import { leerArchivoCorreo, MIME_OK, type AdjuntoProcesado } from "@/lib/correo-adjunto-lectura.server";
@@ -144,6 +144,9 @@ export type CamposBitacora = {
   motivo?: string | null; reintentable?: boolean; solicitud_id?: string | null; expediente_id?: string | null;
   expediente_numero?: string | null; vinculo?: "numero" | "bl" | "vuce" | null; advertencias?: string[]; propuestas?: Record<string, unknown>;
   adjuntos_respaldo?: { nombre: string; mime: string; bytes: number; storage_path: string }[];
+  /** Por qué se descartó; las categorías breves no guardan texto ni adjuntos. */
+  descarte_categoria?: CategoriaDescarte | null;
+  conflictos?: ConflictoDocumento[];
 };
 
 export type ResultadoProceso =
@@ -191,10 +194,12 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
     }
     return respaldo;
   };
-  const descartar = async (motivo: string, advertencias: string[] = []): Promise<ResultadoProceso> => {
+  const descartar = async (motivo: string, categoria: CategoriaDescarte): Promise<ResultadoProceso> => {
+    // Sin PDF o remitente ignorado: solo una línea breve, sin guardar adjuntos.
+    if (DESCARTE_BREVE.includes(categoria)) return ok({ resultado: "descartada", motivo, descarte_categoria: categoria, adjuntos_respaldo: [] }, { motivo });
     const respaldo = await guardarRespaldo();
     if (typeof respaldo === "string") return fallo(500, respaldo);
-    return ok({ resultado: "descartada", motivo, advertencias, adjuntos_respaldo: respaldo }, { motivo });
+    return ok({ resultado: "descartada", motivo, descarte_categoria: categoria, adjuntos_respaldo: respaldo }, { motivo });
   };
   const errorConRespaldo = async (motivo: string, reintentar: boolean): Promise<ResultadoProceso> => {
     const respaldo = await guardarRespaldo();
@@ -250,7 +255,7 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
   const numeroDestino = () => (destino as ExpedienteCorreo | null)?.numero ?? null;
 
   const previa = decidirCorreo({ forzado: opciones.forzado, ignorado, faltantes, pdfs: adjuntosIn.length, documentos: null, expediente: numeroDestino(), ambiguos });
-  if (previa.accion === "descartar") return descartar(previa.motivo);
+  if (previa.accion === "descartar") return descartar(previa.motivo, previa.categoria);
   if (previa.accion === "error") return errorConRespaldo(previa.motivo, previa.reintentar);
 
   // 2) Lectura de los PDF: un PDF ilegible no bloquea a los demás.
@@ -267,7 +272,7 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
   await probarBl(blDocumento);
 
   const decision = decidirCorreo({ forzado: opciones.forzado, ignorado, faltantes, pdfs: adjuntosIn.length, documentos: documentos.length, ilegibles, otros, expediente: numeroDestino(), ambiguos });
-  if (decision.accion === "descartar") return descartar(decision.motivo);
+  if (decision.accion === "descartar") return descartar(decision.motivo, decision.categoria);
   if (decision.accion === "error") return errorConRespaldo(decision.motivo, decision.reintentar);
   if (decision.accion === "leer") return fallo(500, "Decisión incompleta del correo");
 
@@ -284,22 +289,51 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
 
   const exp = destino as ExpedienteCorreo | null;
   if (decision.accion === "adjuntar" && exp) {
-    // Expediente existente: SOLO los documentos de importación; ni el texto del correo ni «Otros documentos».
+    // Expediente existente: SOLO documentos de importación, cada uno en la casilla de su tipo. Nunca el
+    // texto del correo, imágenes ni «Otros documentos»; una casilla ocupada no se reemplaza.
     const remitenteOk = await verificarRemitente(db, exp, remitenteCorreo);
-    const notaRemitente = remitenteOk.corresponde ? "" : ` (remitente distinto al cliente: ${remitenteCorreo ?? remitente})`;
+    const notaRemitente = remitenteOk.corresponde ? "" : " (remitente distinto al cliente)";
     const { datos, advertencias } = fusionarAdjuntos(datosTexto, [], documentos);
-    await subirAdjuntos(exp.id, documentos);
+    const sueltos = documentos.filter((a) => !a.combinado && a.bytes.length);
+    const combinados = documentos.filter((a) => a.combinado && a.bytes.length);
+    const { data: existentes, error: errorExistentes } = await db.from("documentos").select("id,tipo,storage_path,file_hash").eq("expediente_id", exp.id);
+    if (errorExistentes) return fallo(503, `No se pudieron leer los documentos del Expediente: ${errorExistentes.message}`);
+    const hashes = await Promise.all(sueltos.map((a) => sha256Bytes(a.bytes)));
+    const ubicacion = ubicarDocumentosExpediente(sueltos.map((a, i) => ({ tipo: a.tipo, hash: hashes[i] })), existentes ?? []);
+    const insertar = sueltos.filter((_, i) => ubicacion[i].accion === "insertar");
+    const repetidos = sueltos.filter((_, i) => ubicacion[i].accion === "duplicado");
+    const enConflicto = sueltos.map((a, i) => ({ a, hash: hashes[i] })).filter((_, i) => ubicacion[i].accion === "conflicto");
+
+    await subirAdjuntos(exp.id, insertar);
     const hoy = hoySantoDomingo();
-    const filas = resumen(documentos).map((a) => ({
+    const filas = insertar.filter((a) => a.storage_path).map((a) => ({
       expediente_id: exp.id, tipo: a.tipo, storage_path: a.storage_path, estado: "recibido", fecha_recepcion: hoy,
+      file_hash: hashes[sueltos.indexOf(a)] ?? null,
       observaciones: `Adjunto de correo: ${a.nombre}${notaRemitente}`.slice(0, 500),
     }));
-    const { data: insertados, error: e2 } = await db.from("documentos").insert(filas).select("id,storage_path");
-    if (e2) return fallo(500, `No se pudieron registrar los documentos en el Expediente: ${e2.message}`);
-    await encolarCombinados(db, documentos, { expediente_id: exp.id, documentos: new Map((insertados ?? []).map((d: any) => [d.storage_path, d.id])) });
+    if (filas.length) {
+      const { error: e2 } = await db.from("documentos").insert(filas);
+      if (e2) return fallo(500, `No se pudieron registrar los documentos en el Expediente: ${e2.message}`);
+    }
+    // Casilla ocupada: el PDF queda guardado en el Registro hasta que una persona decida.
+    const conflictos: ConflictoDocumento[] = [];
+    for (const [i, { a, hash }] of enConflicto.entries()) {
+      const path = `correo-recibido/${opciones.registroId}/casilla_${i}_${nombreSeguro(a.nombre)}`;
+      const up = await db.storage.from("documentos").upload(path, new Blob([a.bytes as BlobPart], { type: "application/pdf" }), { contentType: "application/pdf", upsert: true });
+      if (up.error) return fallo(500, `No se pudo guardar el adjunto ${a.nombre}: ${up.error.message}`);
+      conflictos.push({ nombre: a.nombre, tipo: a.tipo, storage_path: path, bytes: a.bytes.length, file_hash: hash, estado: "pendiente" });
+    }
+    // Juegos de varios documentos: el original queda en el Registro y solo sus partes reconocidas
+    // llegan a las casillas (la ruta identifica el registro para anotar casillas ocupadas).
+    await subirAdjuntos(`correo-recibido/${opciones.registroId}`, combinados);
+    await encolarCombinados(db, combinados, { expediente_id: exp.id });
+
     const prop = propuestasParaExpediente(exp, { bl_awb: datos.bl_awb, numero_vuce: numeroVuce, eta: datos.eta }, hoy);
     const todas = [
       ...(notaRemitente ? [`Remitente distinto al cliente: ${remitenteCorreo ?? remitente} (${remitenteOk.motivo}).`] : []),
+      ...conflictos.map((c) => `La casilla «${c.tipo}» ya tiene un archivo; «${c.nombre}» no la reemplazó. Decide en el Registro de correos: reemplazar o descartar.`),
+      ...(repetidos.length ? [`${repetidos.length} PDF ya estaba${repetidos.length === 1 ? "" : "n"} en el Expediente (mismo archivo): ${repetidos.slice(0, 5).map((a) => a.nombre).join(", ")}.`] : []),
+      ...combinados.map((a) => `${a.nombre}: juego de varios documentos; sus partes reconocidas se agregarán a sus casillas en segundo plano.`),
       ...advertencias.filter((a) => !a.startsWith("Cliente:")),
       ...prop.advertencias,
       ...(otros.length ? [`No se agregaron ${otros.length} PDF de «Otros documentos»: ${otros.slice(0, 5).join(", ")}.`] : []),
@@ -307,9 +341,14 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
     ];
     const v = vinculo as "numero" | "bl" | "vuce" | null;
     const como = v === "bl" ? "por BL" : v === "vuce" ? "por trámite VUCE" : "por número en el correo";
+    const partes = [
+      `${filas.length} documento${filas.length === 1 ? "" : "s"} adjuntado${filas.length === 1 ? "" : "s"} al Expediente ${exp.numero} (${como})`,
+      ...(conflictos.length ? [`${conflictos.length} pendiente${conflictos.length === 1 ? "" : "s"} de decidir (casilla ocupada)`] : []),
+      ...(repetidos.length ? [`${repetidos.length} ya estaba${repetidos.length === 1 ? "" : "n"}`] : []),
+    ];
     return ok(
-      { resultado: "adjuntada", motivo: `${filas.length} documento${filas.length === 1 ? "" : "s"} adjuntado${filas.length === 1 ? "" : "s"} al Expediente ${exp.numero} (${como})`, expediente_id: exp.id, expediente_numero: exp.numero, vinculo: v, advertencias: todas, propuestas: prop.propuestas },
-      { expediente: exp.numero, expediente_id: exp.id, adjuntos: filas.map((f) => f.tipo), propuestas: Object.keys(prop.propuestas), advertencias: todas },
+      { resultado: "adjuntada", motivo: partes.join("; "), expediente_id: exp.id, expediente_numero: exp.numero, vinculo: v, advertencias: todas, propuestas: {}, conflictos },
+      { expediente: exp.numero, expediente_id: exp.id, adjuntos: filas.map((f) => f.tipo), pendientes_decidir: conflictos.length, advertencias: todas },
     );
   }
 

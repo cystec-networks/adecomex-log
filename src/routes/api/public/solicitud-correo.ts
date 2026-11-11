@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { claveCorreo, ETIQUETA_ERROR, ETIQUETA_OK } from "@/lib/correo-expediente";
+import { claveCorreo, DESCARTE_BREVE, ETIQUETA_ERROR, ETIQUETA_OK } from "@/lib/correo-expediente";
 import { autorizadoWebhook } from "@/lib/webhook-auth";
 import { correoDe, normalizarDestinatarios, procesarCorreo, RESULTADO_LEGADO, str, type CamposBitacora } from "@/lib/correo-procesar.server";
 
@@ -55,6 +55,10 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
             solicitud_id: c.solicitud_id ?? null, expediente_id: c.expediente_id ?? null, expediente_numero: c.expediente_numero ?? null,
             vinculo: c.vinculo ?? null, advertencias: (c.advertencias ?? []).slice(0, 50), propuestas: c.propuestas ?? {},
             ...(c.adjuntos_respaldo ? { adjuntos_respaldo: c.adjuntos_respaldo } : {}),
+            ...(c.conflictos?.length ? { conflictos: c.conflictos } : {}),
+            descarte_categoria: c.resultado === "descartada" ? c.descarte_categoria ?? null : null,
+            // Sin PDF o remitente ignorado: solo una línea breve con el motivo, sin el texto del correo.
+            ...(c.descarte_categoria && DESCARTE_BREVE.includes(c.descarte_categoria) ? { cuerpo: null, destinatarios: null, cc: null } : {}),
             ...(c.resultado === "error" ? { alerta_vista_en: null, alerta_vista_por: null } : {}),
           }).eq("id", registro_id);
           if (e) console.error("No se pudo cerrar el registro del correo", registro_id, e.message);

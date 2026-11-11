@@ -813,6 +813,13 @@
       "when": 1794434035298,
       "tag": "0115_correos_solo_pdf_remitentes_ignorados",
       "breakpoints": true
+    },
+    {
+      "idx": 116,
+      "version": "7",
+      "when": 1794435916940,
+      "tag": "0116_correos_retencion_casillas_registro",
+      "breakpoints": true
     }
   ]
 }

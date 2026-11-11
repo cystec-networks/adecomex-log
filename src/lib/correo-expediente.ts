@@ -159,10 +159,17 @@ export function pdfsFaltantes(c: { pdfsEnGmail: number | null; pdfsRecibidos: nu
 
 export type DecisionCorreo =
   | { accion: "leer" }
-  | { accion: "descartar"; motivo: string }
+  | { accion: "descartar"; motivo: string; categoria: CategoriaDescarte }
   | { accion: "error"; motivo: string; reintentar: boolean }
   | { accion: "adjuntar" }
   | { accion: "crear"; avisos: string[] };
+
+/**
+ * Por qué se descartó: ordena la pestaña Descartadas (con PDF primero) y decide qué se guarda.
+ * «ignorado» y «sin_pdf» quedan como una línea breve: sin texto, sin adjuntos y sin IA.
+ */
+export type CategoriaDescarte = "ignorado" | "sin_pdf" | "sin_documentos" | "ambiguo" | "manual";
+export const DESCARTE_BREVE: readonly CategoriaDescarte[] = ["ignorado", "sin_pdf"];
 
 export const AVISO_CREADA_MANUAL = "Creada manualmente desde el registro de correos";
 
@@ -182,23 +189,62 @@ export function decidirCorreo(c: {
     if (exp && (c.documentos ?? 0) > 0) return { accion: "adjuntar" };
     return { accion: "crear", avisos: [AVISO_CREADA_MANUAL] };
   }
-  if (c.ignorado) return { accion: "descartar", motivo: `Remitente ignorado (${c.ignorado}): sus correos nunca crean solicitud.` };
+  if (c.ignorado) return { accion: "descartar", categoria: "ignorado", motivo: `Remitente ignorado (${c.ignorado}): sus correos nunca crean solicitud.` };
   if (c.faltantes) return { accion: "error", motivo: c.faltantes.motivo, reintentar: c.faltantes.reintentar };
   if (c.pdfs === 0) {
-    return { accion: "descartar", motivo: exp ? `Corresponde al Expediente ${exp}, pero no trae documentos PDF; no se agregó nada.` : "Sin documentos PDF: no es una solicitud nueva de embarque." };
+    return { accion: "descartar", categoria: "sin_pdf", motivo: exp ? `Corresponde al Expediente ${exp}, pero no trae documentos PDF; no se agregó nada.` : "Sin documentos PDF: no es una solicitud nueva de embarque." };
   }
   if (c.documentos == null) return { accion: "leer" };
   if (c.documentos === 0) {
     const ilegibles = c.ilegibles ?? [];
     if (ilegibles.length) return { accion: "error", motivo: `No se pudo leer ${ilegibles.join(", ")}; se reintentará antes de decidir.`, reintentar: true };
     const otros = c.otros?.length ? ` (${c.otros.slice(0, 5).join(", ")})` : "";
-    return { accion: "descartar", motivo: exp
+    return { accion: "descartar", categoria: "sin_documentos", motivo: exp
       ? `Corresponde al Expediente ${exp}, pero sus PDF no son documentos de importación${otros}; no se agregó nada.`
       : `Sin documentos de importación: sus PDF son «Otros documentos»${otros}.` };
   }
   if (exp) return { accion: "adjuntar" };
-  if (c.ambiguos) return { accion: "descartar", motivo: `Corresponde a varios Expedientes (${c.ambiguos}); revisar y adjuntar o crear la solicitud a mano.` };
+  if (c.ambiguos) return { accion: "descartar", categoria: "ambiguo", motivo: `Corresponde a varios Expedientes (${c.ambiguos}); revisar y adjuntar o crear la solicitud a mano.` };
   return { accion: "crear", avisos: [] };
+}
+
+export type DocumentoExistente = { id: string; tipo: string | null; storage_path: string | null; file_hash: string | null };
+export type UbicacionDocumento =
+  | { accion: "insertar" }
+  | { accion: "duplicado"; documento_id: string | null }
+  | { accion: "conflicto"; documento_id: string | null };
+
+/**
+ * Casilla de cada documento recibido para un Expediente existente: va a la casilla de su tipo;
+ * el mismo archivo ya guardado se omite; una casilla ya ocupada (antes o por otro PDF del mismo
+ * correo) nunca se reemplaza: queda como conflicto para que una persona decida.
+ */
+export function ubicarDocumentosExpediente(
+  documentos: { tipo: string; hash: string | null }[],
+  existentes: DocumentoExistente[],
+): UbicacionDocumento[] {
+  const conArchivo = existentes.filter((d) => d.storage_path);
+  const ocupadas = new Map<string, string | null>();
+  for (const d of conArchivo) if (d.tipo && !ocupadas.has(d.tipo)) ocupadas.set(d.tipo, d.id);
+  const hashes = new Map<string, string | null>(conArchivo.filter((d) => d.file_hash).map((d) => [d.file_hash!, d.id]));
+  return documentos.map((d) => {
+    if (d.hash && hashes.has(d.hash)) return { accion: "duplicado", documento_id: hashes.get(d.hash) ?? null };
+    if (d.hash) hashes.set(d.hash, null);
+    if (ocupadas.has(d.tipo)) return { accion: "conflicto", documento_id: ocupadas.get(d.tipo) ?? null };
+    ocupadas.set(d.tipo, null);
+    return { accion: "insertar" };
+  });
+}
+
+/** PDF recibido cuya casilla ya estaba ocupada: espera la decisión de una persona en el Registro. */
+export type ConflictoDocumento = {
+  nombre: string; tipo: string; storage_path: string; bytes: number; file_hash: string | null;
+  estado: "pendiente" | "reemplazado" | "descartado"; resuelto_por?: string; resuelto_en?: string;
+};
+
+export async function sha256Bytes(bytes: Uint8Array) {
+  const h = await crypto.subtle.digest("SHA-256", bytes as BufferSource);
+  return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 async function sha256Hex(texto: string) {

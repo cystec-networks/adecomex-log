@@ -1780,6 +1780,7 @@ export type Database = {
       }
       correos_recibidos: {
         Row: {
+          adjuntos_borrados_en: string | null
           adjuntos_en_gmail: number | null
           adjuntos_respaldo: Json
           adjuntos_total: number
@@ -1789,8 +1790,11 @@ export type Database = {
           asunto: string
           cc: string | null
           clave: string
+          conflictos: Json
           created_at: string
           cuerpo: string | null
+          descartado_en: string | null
+          descarte_categoria: string | null
           destinatarios: string | null
           expediente_id: string | null
           expediente_numero: string | null
@@ -1814,6 +1818,7 @@ export type Database = {
           vinculo: string | null
         }
         Insert: {
+          adjuntos_borrados_en?: string | null
           adjuntos_en_gmail?: number | null
           adjuntos_respaldo?: Json
           adjuntos_total?: number
@@ -1823,8 +1828,11 @@ export type Database = {
           asunto?: string
           cc?: string | null
           clave: string
+          conflictos?: Json
           created_at?: string
           cuerpo?: string | null
+          descartado_en?: string | null
+          descarte_categoria?: string | null
           destinatarios?: string | null
           expediente_id?: string | null
           expediente_numero?: string | null
@@ -1848,6 +1856,7 @@ export type Database = {
           vinculo?: string | null
         }
         Update: {
+          adjuntos_borrados_en?: string | null
           adjuntos_en_gmail?: number | null
           adjuntos_respaldo?: Json
           adjuntos_total?: number
@@ -1857,8 +1866,11 @@ export type Database = {
           asunto?: string
           cc?: string | null
           clave?: string
+          conflictos?: Json
           created_at?: string
           cuerpo?: string | null
+          descartado_en?: string | null
+          descarte_categoria?: string | null
           destinatarios?: string | null
           expediente_id?: string | null
           expediente_numero?: string | null

@@ -100,14 +100,31 @@ async function aplicarASolicitud(db: Db, job: Job, segmentos: (AdjuntoProcesado 
   return s2?.expediente_id ?? null;
 }
 
+/** Juego llegado directo de un correo a un Expediente existente: `correo-recibido/<registro>/…`. */
+export function registroDeRutaCorreo(storagePath: string): string | null {
+  return /^correo-recibido\/([0-9a-f-]{36})\//i.exec(storagePath)?.[1] ?? null;
+}
+
 async function aplicarAExpediente(db: Db, expedienteId: string, job: Job, segmentos: (AdjuntoProcesado & { storage_path: string })[]) {
   const hoy = new Date().toISOString().slice(0, 10);
-  const { data: existentes } = await db.from("documentos").select("observaciones").eq("expediente_id", expedienteId);
+  const { data: existentes } = await db.from("documentos").select("observaciones,tipo,storage_path").eq("expediente_id", expedienteId);
   const ya = new Set((existentes ?? []).map((d: any) => d.observaciones));
+  // Correo directo a un Expediente: solo partes reconocidas, en casillas libres; las ocupadas esperan decisión.
+  const registroId = job.solicitud_id ? null : registroDeRutaCorreo(job.storage_path);
+  const ocupadas = new Set((existentes ?? []).filter((d: any) => d.storage_path && d.tipo).map((d: any) => d.tipo as string));
+  const conflictos: any[] = [];
   const codigos: string[] = [];
   for (const s of segmentos) {
     const obs = `Separado de documento combinado: ${s.nombre}`.slice(0, 500);
     if (ya.has(obs)) continue;
+    if (registroId) {
+      if (!s.tipo || s.tipo === "Otro" || s.error) continue;
+      if (ocupadas.has(s.tipo)) {
+        conflictos.push({ nombre: s.nombre, tipo: s.tipo, storage_path: s.storage_path, bytes: s.bytes.length, file_hash: null, estado: "pendiente" });
+        continue;
+      }
+      ocupadas.add(s.tipo);
+    }
     const codigo = await siguienteCodigo(db, expedienteId, prefijoSiga(s.tipo));
     const ruta = `${expedienteId}/${Date.now()}_${nombreDocumentoSiga(codigo, s.tipo, s.nombre)}`;
     const cp = await db.storage.from("documentos").copy(s.storage_path, ruta);
@@ -117,6 +134,21 @@ async function aplicarAExpediente(db: Db, expedienteId: string, job: Job, segmen
     });
     if (error) throw new Error(error.message);
     codigos.push(codigo);
+  }
+  if (registroId) {
+    // El original nunca entra en «Otros documentos»: queda en el Registro del correo.
+    const { data: reg } = await db.from("correos_recibidos").select("conflictos,advertencias").eq("id", registroId).maybeSingle();
+    if (reg) {
+      const previos = Array.isArray(reg.conflictos) ? reg.conflictos : [];
+      const nuevos = conflictos.filter((c) => !previos.some((p: any) => p.storage_path === c.storage_path));
+      const avisos = nuevos.map((c) => `La casilla «${c.tipo}» ya tiene un archivo; «${c.nombre}» no la reemplazó. Decide en el Registro de correos: reemplazar o descartar.`);
+      await db.from("correos_recibidos").update({
+        conflictos: [...previos, ...nuevos],
+        advertencias: [...(reg.advertencias ?? []), ...(codigos.length ? [`${job.nombre}: ${codigos.length} parte(s) agregada(s) a sus casillas (${codigos.join(", ")}).`] : []), ...avisos].slice(0, 50),
+        ...(nuevos.length ? { alerta_vista_en: null, alerta_vista_por: null } : {}),
+      }).eq("id", registroId);
+    }
+    return;
   }
   // El original queda como respaldo en «Otros documentos».
   const respaldo = `Original — ya incluido en ${codigos.join(", ") || "documentos separados"} · ${job.nombre}`.slice(0, 500);
