@@ -17,6 +17,7 @@ import {
   DIAS_ADJUNTOS_DESCARTADOS, DIAS_REGISTRO_DESCARTADOS, RESULTADO_CORREO, conflictosPendientes, correoAtascado, diasRestantes, prioridadDescarte, registroCorreos,
   type CorreoRecibido,
 } from "@/lib/correos-recibidos";
+import { SimularLimpieza } from "@/components/correos/simular-limpieza";
 import { crearSolicitudDesdeCorreo, quitarCorreosDelRegistro, resolverConflictoCorreo } from "@/lib/correos-recibidos.functions";
 
 const FILTROS = [
@@ -111,6 +112,7 @@ export function RegistroCorreos({ filtroInicial }: { filtroInicial?: string }) {
             <Button key={f.id} size="sm" variant={filtro === f.id ? "default" : "outline"} className="h-7 px-2 text-[12px]" onClick={() => setFiltro(f.id)}>{f.etiqueta}</Button>
           ))}
         </div>
+        <SimularLimpieza />
         {seleccion.size > 0 && (
           <Button size="sm" variant="destructive" className="h-7 px-2 text-[12px] ml-auto" disabled={quitarSeleccion.isPending} onClick={() => setConfirmarQuitar(true)}>
             {quitarSeleccion.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}

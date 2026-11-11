@@ -27,16 +27,20 @@ export const esFalloCorreo = (c: Pick<CorreoRecibido, "resultado" | "ultimo_inte
 export async function obtenerAlertasCorreo(db: Db) {
   const limiteAtasco = new Date(Date.now() - MINUTOS_PROCESANDO_ATASCADO * 60_000).toISOString();
   const desde = new Date(Date.now() - 14 * 86_400_000).toISOString();
-  const [errores, documentos] = await Promise.all([
+  const [errores, documentos, casillas] = await Promise.all([
     db.from("correos_recibidos").select("*").is("alerta_vista_en", null)
       .or(`resultado.eq.error,and(resultado.eq.procesando,ultimo_intento_at.lt.${limiteAtasco})`)
       .order("ultimo_intento_at", { ascending: false }).limit(50),
     db.from("correos_recibidos").select("*").is("alerta_vista_en", null).eq("resultado", "adjuntada")
       .gte("created_at", desde).order("created_at", { ascending: false }).limit(50),
+    // Casillas ocupadas: siguen en el Panel hasta decidir Reemplazar/Descartar (no se ocultan con «Visto» ni por antigüedad).
+    db.from("correos_recibidos").select("id,expediente_id,expediente_numero,conflictos,asunto,remitente,remitente_correo,created_at")
+      .filter("conflictos", "cs", JSON.stringify([{ estado: "pendiente" }])).order("created_at", { ascending: false }).limit(100),
   ]);
   if (errores.error) throw errores.error;
   if (documentos.error) throw documentos.error;
-  return { errores: errores.data ?? [], documentos: documentos.data ?? [] };
+  if (casillas.error) throw casillas.error;
+  return { errores: errores.data ?? [], documentos: documentos.data ?? [], casillas: casillasPendientes(casillas.data ?? []) };
 }
 
 export async function marcarAlertasCorreoVistas(db: Db, ids: string[], userId: string) {
@@ -102,3 +106,62 @@ export function rutasCopiasCorreo(f: { id: string; adjuntos_respaldo?: unknown; 
 /** Casillas ocupadas aún sin decidir. */
 export const conflictosPendientes = (v: unknown) =>
   (Array.isArray(v) ? v : []).filter((c: any) => c?.estado === "pendiente" && typeof c?.storage_path === "string") as { nombre: string; tipo: string; storage_path: string }[];
+
+/**
+ * Archivos que la limpieza diaria borra de un descartado: sus copias del Registro y, si quedó una
+ * solicitud descartada, sus adjuntos `correo/`. Compartido por la limpieza real y por «Simular limpieza».
+ */
+export function rutasRetencion(f: { id: string; adjuntos_respaldo?: unknown; solicitud_id?: string | null }): string[] {
+  return (Array.isArray(f.adjuntos_respaldo) ? f.adjuntos_respaldo : []).map((a: any) => String(a?.storage_path ?? ""))
+    .filter((r: string) => r.startsWith(`correo-recibido/${f.id}/`) || (!!f.solicitud_id && r.startsWith("correo/")));
+}
+
+export const haceDias = (d: number, ahora = Date.now()) => new Date(ahora - d * 86_400_000).toISOString();
+
+/** Hora de la limpieza programada: 3:15 a. m. de Santo Domingo (07:15 UTC, sin horario de verano). */
+export function proximaLimpiezaCorreos(ahora = Date.now()): Date {
+  const d = new Date(ahora);
+  const hoy = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 7, 15);
+  return new Date(hoy > ahora ? hoy : hoy + 86_400_000);
+}
+
+export type SimulacionLimpieza = {
+  adjuntos: number; correosConAdjuntos: number; lineas: number; ejecucion: string;
+  ejemplos: { asunto: string | null; remitente: string; adjuntos: number; quitaLinea: boolean }[];
+};
+
+/**
+ * Lo que borraría la limpieza si se ejecutara ahora, sin borrar nada. Mismos criterios que
+ * `aplicarRetencionCorreos`: adjuntos de descartados con más de 30 días y líneas con más de 90
+ * (la limpieza borra primero sus adjuntos y luego la línea en la misma ejecución).
+ */
+export async function simularLimpiezaCorreos(db: Db, ahora = Date.now()): Promise<SimulacionLimpieza> {
+  const [adj, lin] = await Promise.all([
+    db.from("correos_recibidos").select("id,asunto,remitente,remitente_correo,adjuntos_respaldo,solicitud_id,descartado_en")
+      .eq("resultado", "descartada").lt("descartado_en", haceDias(DIAS_ADJUNTOS_DESCARTADOS, ahora)).is("adjuntos_borrados_en", null)
+      .order("descartado_en", { ascending: true }).limit(1000),
+    db.from("correos_recibidos").select("id", { count: "exact", head: true })
+      .eq("resultado", "descartada").lt("descartado_en", haceDias(DIAS_REGISTRO_DESCARTADOS, ahora)),
+  ]);
+  if (adj.error) throw adj.error;
+  if (lin.error) throw lin.error;
+  const limite90 = haceDias(DIAS_REGISTRO_DESCARTADOS, ahora);
+  let adjuntos = 0, correosConAdjuntos = 0;
+  const ejemplos: SimulacionLimpieza["ejemplos"] = [];
+  for (const f of adj.data ?? []) {
+    const n = rutasRetencion(f).length;
+    if (n) { adjuntos += n; correosConAdjuntos++; }
+    if (n && ejemplos.length < 10) ejemplos.push({ asunto: f.asunto, remitente: f.remitente_correo ?? f.remitente, adjuntos: n, quitaLinea: !!f.descartado_en && f.descartado_en < limite90 });
+  }
+  return { adjuntos, correosConAdjuntos, lineas: lin.count ?? 0, ejecucion: proximaLimpiezaCorreos(ahora).toISOString(), ejemplos };
+}
+
+/** Casillas ocupadas pendientes de decidir, una por PDF, para el Panel de Operaciones. */
+export type CasillaPendiente = { correo_id: string; expediente_id: string | null; expediente_numero: string | null; tipo: string; nombre: string; asunto: string | null; remitente: string; recibido: string };
+
+export function casillasPendientes(filas: Pick<CorreoRecibido, "id" | "expediente_id" | "expediente_numero" | "conflictos" | "asunto" | "remitente" | "remitente_correo" | "created_at">[]): CasillaPendiente[] {
+  return filas.flatMap((f) => conflictosPendientes(f.conflictos).map((c) => ({
+    correo_id: f.id, expediente_id: f.expediente_id, expediente_numero: f.expediente_numero, tipo: c.tipo, nombre: c.nombre,
+    asunto: f.asunto, remitente: f.remitente_correo ?? f.remitente, recibido: f.created_at,
+  })));
+}

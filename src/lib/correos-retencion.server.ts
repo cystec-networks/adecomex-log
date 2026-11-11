@@ -3,9 +3,7 @@
  * adjuntos guardados y a los 90 la línea. Creadas, adjuntadas y errores nunca se borran.
  * Solo servidor: recibe el cliente de servicio.
  */
-import { DIAS_ADJUNTOS_DESCARTADOS, DIAS_REGISTRO_DESCARTADOS } from "@/lib/correos-recibidos";
-
-const haceDias = (d: number) => new Date(Date.now() - d * 86_400_000).toISOString();
+import { DIAS_ADJUNTOS_DESCARTADOS, DIAS_REGISTRO_DESCARTADOS, haceDias, rutasRetencion } from "@/lib/correos-recibidos";
 
 export async function aplicarRetencionCorreos(db: any) {
   let adjuntosBorrados = 0;
@@ -17,8 +15,7 @@ export async function aplicarRetencionCorreos(db: any) {
     if (error) throw new Error(`No se pudo leer el registro: ${error.message}`);
     if (!data?.length) break;
     for (const f of data) {
-      const rutas = (Array.isArray(f.adjuntos_respaldo) ? f.adjuntos_respaldo : []).map((a: any) => String(a?.storage_path ?? ""))
-        .filter((r: string) => r.startsWith(`correo-recibido/${f.id}/`) || (f.solicitud_id && r.startsWith("correo/")));
+      const rutas = rutasRetencion(f);
       if (rutas.length) {
         const { error: e } = await db.storage.from("documentos").remove(rutas);
         if (e) throw new Error(`No se pudieron borrar los adjuntos de ${f.id}: ${e.message}`);

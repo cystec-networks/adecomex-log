@@ -31,7 +31,7 @@ import {
 } from "@/lib/novedades-panel";
 import { textoFechaNovedad } from "@/lib/novedades-comercio";
 import { EnlaceNovedad } from "@/components/novedades/enlace-novedad";
-import { obtenerAlertasCorreo, marcarAlertasCorreoVistas, correoAtascado, conflictosPendientes, type CorreoRecibido } from "@/lib/correos-recibidos";
+import { obtenerAlertasCorreo, marcarAlertasCorreoVistas, correoAtascado, conflictosPendientes, type CasillaPendiente, type CorreoRecibido } from "@/lib/correos-recibidos";
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -401,13 +401,13 @@ function useAlertasCorreo() {
   const marcarVistas = async (ids: string[]) => {
     if (!userId || ids.length === 0) return;
     const anterior = qc.getQueryData(queryKey);
-    qc.setQueryData<{ errores: CorreoRecibido[]; documentos: CorreoRecibido[] }>(queryKey, (d) => d && ({
-      errores: d.errores.filter((c) => !ids.includes(c.id)), documentos: d.documentos.filter((c) => !ids.includes(c.id)),
+    qc.setQueryData<{ errores: CorreoRecibido[]; documentos: CorreoRecibido[]; casillas: CasillaPendiente[] }>(queryKey, (d) => d && ({
+      ...d, errores: d.errores.filter((c) => !ids.includes(c.id)), documentos: d.documentos.filter((c) => !ids.includes(c.id)),
     }));
     try { await marcarAlertasCorreoVistas(supabase, ids, userId); }
     catch { qc.setQueryData(queryKey, anterior); toast.error("No se pudo marcar como visto"); }
   };
-  return { errores: consulta.data?.errores ?? [], documentos: consulta.data?.documentos ?? [], isLoading: consulta.isLoading, isError: consulta.isError, marcarVistas };
+  return { errores: consulta.data?.errores ?? [], documentos: consulta.data?.documentos ?? [], casillas: consulta.data?.casillas ?? [], isLoading: consulta.isLoading, isError: consulta.isError, marcarVistas };
 }
 
 const fechaHoraPanel = (s: string) => new Date(s).toLocaleString("es-DO", { timeZone: "America/Santo_Domingo", dateStyle: "short", timeStyle: "short" });
@@ -443,6 +443,33 @@ function ListaAlertasCorreo({ items, tipo, onVisto }: { items: CorreoRecibido[];
   );
 }
 
+/** Casillas ocupadas por un PDF de correo: quedan aquí hasta decidir Reemplazar/Descartar en el Registro. */
+function ListaCasillasPendientes({ items }: { items: CasillaPendiente[] }) {
+  return (
+    <ul className="divide-y border-t">
+      {items.map((c, i) => (
+        <li key={`${c.correo_id}-${i}`} className="px-3 py-2.5 flex flex-wrap sm:flex-nowrap items-center gap-2 hover:bg-muted/40">
+          <span className="h-2 w-2 rounded-full shrink-0 bg-[var(--warning)]" />
+          <div className="min-w-0 flex-1 basis-[calc(100%-16px)] sm:basis-auto">
+            <div className="text-[13px] font-medium break-words">
+              {c.expediente_id
+                ? <Link to="/expedientes/$id" params={{ id: c.expediente_id }} search={{ ficha: "docs" }} className="expediente-numero hover:underline">{c.expediente_numero}</Link>
+                : <span className="expediente-numero">{c.expediente_numero ?? "Expediente"}</span>}
+              {" · "}{c.tipo}
+            </div>
+            <div className="text-xs text-muted-foreground break-words">
+              Casilla ocupada: «{c.nombre}» espera decisión · {c.remitente} · {fechaHoraPanel(c.recibido)}
+            </div>
+          </div>
+          <Button asChild variant="outline" size="sm" className="h-6 text-[11px] px-2 shrink-0">
+            <Link to="/expedientes/correo" search={{ registro: "adjuntada" }}>Decidir</Link>
+          </Button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 const RELEVANCIA_CLASE: Record<string, string> = {
   Alta: "bg-destructive/15 text-destructive border-transparent",
   Media: "bg-[var(--warning)]/25 text-[var(--warning-foreground)] border-transparent",
@@ -454,7 +481,7 @@ function RemindersPanel() {
   const alertasCorreo = useAlertasCorreo();
   const isLoading = cargandoAlertas || novedadesPanel.isLoading || alertasCorreo.isLoading;
   const isError = errorAlertas || novedadesPanel.isError || alertasCorreo.isError;
-  const totalCorreo = alertasCorreo.errores.length + alertasCorreo.documentos.length;
+  const totalCorreo = alertasCorreo.errores.length + alertasCorreo.documentos.length + alertasCorreo.casillas.length;
   const total = reminders.length + novedadesPanel.novedades.length + totalCorreo;
 
   const grouped = REMINDER_GROUPS
@@ -668,6 +695,10 @@ function RemindersPanel() {
               ...(alertasCorreo.errores.length > 0
                 ? { "correos-error": { label: "Correos con error de recepción", emoji: "📧", cantidad: alertasCorreo.errores.length,
                     contenido: <ListaAlertasCorreo items={alertasCorreo.errores} tipo="error" onVisto={alertasCorreo.marcarVistas} /> } }
+                : {}),
+              ...(alertasCorreo.casillas.length > 0
+                ? { "correos-casillas": { label: "Casillas ocupadas por correo", emoji: "📥", cantidad: alertasCorreo.casillas.length,
+                    contenido: <ListaCasillasPendientes items={alertasCorreo.casillas} /> } }
                 : {}),
               ...(alertasCorreo.documentos.length > 0
                 ? { "correos-expediente": { label: "Documentos nuevos por correo", emoji: "📨", cantidad: alertasCorreo.documentos.length,

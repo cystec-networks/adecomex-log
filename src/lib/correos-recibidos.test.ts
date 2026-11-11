@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { correoAtascado, DIAS_ADJUNTOS_DESCARTADOS, DIAS_REGISTRO_DESCARTADOS, diasRestantes, esFalloCorreo, ordenarDescartados, prioridadDescarte, rutasCopiasCorreo } from "./correos-recibidos";
+import { casillasPendientes, correoAtascado, proximaLimpiezaCorreos, rutasRetencion, DIAS_ADJUNTOS_DESCARTADOS, DIAS_REGISTRO_DESCARTADOS, diasRestantes, esFalloCorreo, ordenarDescartados, prioridadDescarte, rutasCopiasCorreo } from "./correos-recibidos";
 
 const ahora = Date.parse("2026-11-10T12:00:00Z");
 describe("alertas de correos recibidos", () => {
@@ -42,5 +42,27 @@ describe("descartes antiguos de remitentes del catálogo", () => {
     const f = { descarte_categoria: "manual", motivo: "Limpieza", adjuntos_respaldo: [{ storage_path: "x" }], pdfs_en_gmail: null, ultimo_intento_at: "", remitente_correo: "atencionalcliente@dph.com.do" };
     expect(prioridadDescarte(f as any, ["dph.com.do"])).toBe(2);
     expect(prioridadDescarte(f as any, [])).toBe(0);
+  });
+});
+
+describe("simulación de la limpieza y casillas del Panel", () => {
+  it("la limpieza programada es a las 3:15 a. m. de Santo Domingo (07:15 UTC)", () => {
+    expect(proximaLimpiezaCorreos(Date.parse("2026-11-11T22:40:00Z")).toISOString()).toBe("2026-11-12T07:15:00.000Z");
+    expect(proximaLimpiezaCorreos(Date.parse("2026-11-12T07:00:00Z")).toISOString()).toBe("2026-11-12T07:15:00.000Z");
+  });
+  it("simulación y limpieza borran las mismas rutas: copias propias y adjuntos de su solicitud descartada", () => {
+    const id = "22222222-2222-2222-2222-222222222222";
+    const adj = [{ storage_path: `correo-recibido/${id}/0_a.pdf` }, { storage_path: "correo/s1/b.pdf" }, { storage_path: "exp1/c.pdf" }];
+    expect(rutasRetencion({ id, adjuntos_respaldo: adj, solicitud_id: null })).toEqual([`correo-recibido/${id}/0_a.pdf`]);
+    expect(rutasRetencion({ id, adjuntos_respaldo: adj, solicitud_id: "s1" })).toEqual([`correo-recibido/${id}/0_a.pdf`, "correo/s1/b.pdf"]);
+  });
+  it("cada PDF pendiente de decidir es una alerta con Expediente y tipo; los decididos no", () => {
+    const filas = [{ id: "c1", expediente_id: "e1", expediente_numero: "202610I358", asunto: "x", remitente: "r", remitente_correo: "a@b.com", created_at: "2026-11-11T00:00:00Z",
+      conflictos: [
+        { nombre: "FAC.pdf", tipo: "Factura comercial", storage_path: "p1", estado: "pendiente" },
+        { nombre: "BL.pdf", tipo: "Bill of Lading", storage_path: "p2", estado: "reemplazado" },
+      ] }];
+    const r = casillasPendientes(filas as any);
+    expect(r.map((c) => [c.expediente_numero, c.tipo])).toEqual([["202610I358", "Factura comercial"]]);
   });
 });

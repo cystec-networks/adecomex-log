@@ -16,6 +16,7 @@ export const GRUPOS_ALERTAS_IDS = [
   "plazo",
   "novedades",
   "correos-error",
+  "correos-casillas",
   "correos-expediente",
 ] as const;
 
