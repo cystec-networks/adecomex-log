@@ -274,7 +274,7 @@ function SolicitudesPagoTransportePage() {
         const { error: errT } = await supabase
           .from("transportes")
           .update({ flete_monto: neto })
-          .eq("numero_control_pago", editing.numero_control);
+          .eq("solicitud_pago_id", editing.id);
         if (errT) throw errT;
       }
     },

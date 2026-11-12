@@ -13,8 +13,13 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Landmark, Upload, Link2, Unlink } from "lucide-react";
+import { Landmark, Upload, Link2, Unlink, Settings2, Sparkles, FilePlus2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { fmtLocalDate } from "@/lib/dates";
+import { filasNuevas, pagoDeComision, reglaAplicable, sugerirEntradas, validarBalance, type Sugerencia } from "@/lib/conciliacion-diario";
+import { useConciliarDiario, useCuentasBeneficiario, useEntradasDiario, useMarcarMovimiento, useReglasBanco } from "@/components/conciliacion/datos";
+import { DebitoDialog, type PestanaDebito } from "@/components/conciliacion/debito-dialog";
+import { DeshacerConciliacionDialog } from "@/components/conciliacion/deshacer-dialog";
+import { ReglasCuentasDialog } from "@/components/conciliacion/reglas-cuentas-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/conciliacion-bancaria")({
   ssr: false,
@@ -64,6 +69,9 @@ type Movimiento = {
   conciliado_id: string | null;
   conciliado_en: string | null;
   notas: string | null;
+  diferencia_diario?: number | null;
+  motivo_diferencia?: string | null;
+  vinculado_movimiento_id?: string | null;
 };
 
 type Candidato = {
@@ -79,6 +87,9 @@ const TIPO_LABEL: Record<string, string> = {
   cxp: "Cuenta por Pagar",
   gasto_operativo: "Gasto Operativo",
   manual: "Manual / Sin vincular",
+  diario: "Registro de Diario",
+  ignorado: "No aplica",
+  comision: "Comisión de un pago",
 };
 
 function fmtRD(n: number) {
@@ -154,6 +165,15 @@ function ConciliacionBancariaPage() {
   const [balanceBanco, setBalanceBanco] = useState("");
   const [importando, setImportando] = useState(false);
   const [movSel, setMovSel] = useState<Movimiento | null>(null);
+  const [debSel, setDebSel] = useState<{ mov: Movimiento; pestana: PestanaDebito } | null>(null);
+  const [deshacerSel, setDeshacerSel] = useState<Movimiento | null>(null);
+  const [reglasOpen, setReglasOpen] = useState(false);
+
+  const { data: entradasDiario = [] } = useEntradasDiario();
+  const { data: reglas = [] } = useReglasBanco();
+  const { data: cuentas = [] } = useCuentasBeneficiario();
+  const conciliarRapido = useConciliarDiario();
+  const marcarRapido = useMarcarMovimiento();
 
   const { data: movimientos = [], isLoading } = useQuery({
     queryKey: ["banco_movimientos"],
@@ -169,6 +189,16 @@ function ConciliacionBancariaPage() {
     },
   });
 
+  // Sugerencias del Diario para cada débito pendiente (nunca concilian solas).
+  const sugerencias = useMemo(() => {
+    const map = new Map<string, Sugerencia[]>();
+    for (const m of movimientos) {
+      if (m.tipo !== "debito" || m.conciliado) continue;
+      map.set(m.id, sugerirEntradas({ ...m, monto: Number(m.monto) }, entradasDiario, cuentas, reglas));
+    }
+    return map;
+  }, [movimientos, entradasDiario, cuentas, reglas]);
+
   const filtrados = useMemo(() => {
     return movimientos.filter((m) => {
       if (desde && m.fecha < desde) return false;
@@ -176,9 +206,17 @@ function ConciliacionBancariaPage() {
       if (fTipo !== "todos" && m.tipo !== fTipo) return false;
       if (fEstado === "conciliado" && !m.conciliado) return false;
       if (fEstado === "pendiente" && m.conciliado) return false;
+      if (fEstado === "con-sugerencia" && !(sugerencias.get(m.id)?.length)) return false;
+      if (fEstado === "sin-coincidencia" && (m.conciliado || m.tipo !== "debito" || (sugerencias.get(m.id)?.length ?? 0) > 0)) return false;
       return true;
     });
-  }, [movimientos, desde, hasta, fTipo, fEstado]);
+  }, [movimientos, desde, hasta, fTipo, fEstado, sugerencias]);
+
+  const conteoSugerencias = useMemo(() => {
+    let con = 0, sin = 0;
+    for (const v of sugerencias.values()) { if (v.length) con++; else sin++; }
+    return { con, sin };
+  }, [sugerencias]);
 
   // Parseo tolerante: acepta "6,905,883.27", "RD$ 6.905.883,27", etc.
   const balanceBancoNum = useMemo(() => {
@@ -239,16 +277,11 @@ function ConciliacionBancariaPage() {
       const texto = await file.text();
       const lineas = texto.split("\n");
       const filas: ParsedLinea[] = [];
-      const contador = new Map<string, number>();
       let invalidas = 0;
       for (const l of lineas) {
         if (!l.trim()) continue;
         const p = parseLinea(l);
         if (!p) { invalidas++; continue; }
-        const base = p.hash_linea;
-        const n = (contador.get(base) ?? 0) + 1;
-        contador.set(base, n);
-        p.hash_linea = `${base}-${n}`;
         filas.push(p);
       }
 
@@ -257,30 +290,33 @@ function ConciliacionBancariaPage() {
         return;
       }
 
-      // Incluye también los hashes "legacy" (sin sufijo de ocurrencia) para no
-      // reimportar filas guardadas antes de este cambio.
-      const hashes = Array.from(
-        new Set(filas.flatMap((f) => [f.hash_linea, f.hash_linea.replace(/-\d+$/, "")])),
-      );
-      const existentes = new Set<string>();
-      for (let i = 0; i < hashes.length; i += 500) {
-        const chunk = hashes.slice(i, i + 500);
+      // Duplicado = misma fecha + referencia + monto + descripción (ya guardado).
+      const fechas = filas.map((f) => f.fecha).sort();
+      const existentes: Array<{ fecha: string; referencia: string | null; monto: number; descripcion: string | null; hash_linea: string }> = [];
+      for (let desdeFila = 0; ; desdeFila += 1000) {
         const { data, error } = await supabase
-          .from("banco_movimientos").select("hash_linea").in("hash_linea", chunk);
+          .from("banco_movimientos")
+          .select("fecha, referencia, monto, descripcion, hash_linea")
+          .gte("fecha", fechas[0]).lte("fecha", fechas[fechas.length - 1])
+          .range(desdeFila, desdeFila + 999);
         if (error) throw error;
-        for (const r of data ?? []) existentes.add((r as { hash_linea: string }).hash_linea);
+        existentes.push(...((data ?? []) as typeof existentes).map((r) => ({ ...r, monto: Number(r.monto) })));
+        if (!data || data.length < 1000) break;
       }
-
-      const nuevas = filas.filter(
-        (f) => !existentes.has(f.hash_linea)
-          && !(f.hash_linea.endsWith("-1") && existentes.has(f.hash_linea.replace(/-\d+$/, ""))),
-      );
+      const hashesUsados = new Set(existentes.map((e) => e.hash_linea));
+      const nuevas = filasNuevas(filas, existentes).map((f) => {
+        let n = 1;
+        let h = `${f.hash_linea}-${n}`;
+        while (hashesUsados.has(h)) h = `${f.hash_linea}-${++n}`;
+        hashesUsados.add(h);
+        return { ...f, hash_linea: h };
+      });
 
       if (nuevas.length > 0) {
         for (let i = 0; i < nuevas.length; i += 500) {
           const { error } = await supabase
             .from("banco_movimientos")
-            .upsert(nuevas.slice(i, i + 500) as never, { onConflict: "hash_linea", ignoreDuplicates: true });
+            .insert(nuevas.slice(i, i + 500) as never);
           if (error) throw error;
         }
       }
@@ -328,6 +364,9 @@ function ConciliacionBancariaPage() {
           ref={fileRef} type="file" accept=".txt,text/plain" className="hidden"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) onImportar(f); }}
         />
+        <Button variant="outline" onClick={() => setReglasOpen(true)}>
+          <Settings2 className="h-4 w-4 mr-2" /> Reglas y cuentas
+        </Button>
         <Button onClick={() => fileRef.current?.click()} disabled={importando}>
           <Upload className="h-4 w-4 mr-2" />
           {importando ? "Importando…" : "Importar movimientos (.txt)"}
@@ -348,6 +387,9 @@ function ConciliacionBancariaPage() {
           <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Conciliados / Pendientes</CardTitle></CardHeader>
           <CardContent className="text-xl font-semibold">
             {resumen.conciliados} <span className="text-muted-foreground">/</span> {resumen.pendientes}
+            <div className="text-[11px] font-normal text-muted-foreground">
+              Débitos pendientes: {conteoSugerencias.con} con sugerencia · {conteoSugerencias.sin} sin coincidencia
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -362,15 +404,10 @@ function ConciliacionBancariaPage() {
               {balanceActual !== null && (
                 <>
                   <br />Balance actual (calculado): <strong>{fmtRD(balanceActual)}</strong>
-                  {balanceBancoNum !== null && (
-                    <> · Dif. vs banco: {fmtRD(balanceBancoNum - balanceActual)}</>
-                  )}
                 </>
               )}
-              {balanceActual === null && balanceBancoNum !== null && (
-                <> · Dif. vs neto: {fmtRD(balanceBancoNum - resumen.neto)}</>
-              )}
             </div>
+            <ValidacionBalance banco={balanceBancoNum} calculado={balanceActual} />
           </CardContent>
         </Card>
       </div>
@@ -408,6 +445,8 @@ function ConciliacionBancariaPage() {
                 <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="conciliado">Conciliado</SelectItem>
                 <SelectItem value="pendiente">Pendiente</SelectItem>
+                <SelectItem value="con-sugerencia">Débito con sugerencia</SelectItem>
+                <SelectItem value="sin-coincidencia">Débito sin coincidencia</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -430,15 +469,16 @@ function ConciliacionBancariaPage() {
                 <th className="py-2 pr-3 text-right">Monto</th>
                 <th className="py-2 pr-3 text-right">Balance calculado</th>
                 <th className="py-2 pr-3">Estado</th>
+                <th className="py-2 pr-3">Sugerencia del Diario</th>
                 <th className="py-2 pr-3 text-right">Acción</th>
               </tr>
             </thead>
             <tbody>
               {isLoading && (
-                <tr><td colSpan={8} className="py-6 text-center text-muted-foreground">Cargando…</td></tr>
+                <tr><td colSpan={9} className="py-6 text-center text-muted-foreground">Cargando…</td></tr>
               )}
               {!isLoading && filtrados.length === 0 && (
-                <tr><td colSpan={8} className="py-6 text-center text-muted-foreground">
+                <tr><td colSpan={9} className="py-6 text-center text-muted-foreground">
                   No hay movimientos. Importa un archivo .txt del banco.
                 </td></tr>
               )}
@@ -468,19 +508,40 @@ function ConciliacionBancariaPage() {
                           {TIPO_LABEL[m.conciliado_tipo ?? ""] ?? m.conciliado_tipo}
                           {m.notas ? ` · ${m.notas}` : ""}
                         </div>
+                        {m.diferencia_diario != null && Math.abs(Number(m.diferencia_diario)) >= 0.01 && (
+                          <div className="text-[11px] text-amber-700 dark:text-amber-400">
+                            Diferencia {fmtRD(Number(m.diferencia_diario))} · {m.motivo_diferencia}
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <Badge variant="secondary">Pendiente</Badge>
                     )}
                   </td>
+                  <td className="py-2 pr-3 min-w-[220px]">
+                    <CeldaSugerencia
+                      m={m}
+                      sugerencias={sugerencias.get(m.id)}
+                      tieneRegla={!!reglaAplicable(m.descripcion, reglas)}
+                      pagoComision={m.tipo === "debito" && !m.conciliado ? pagoDeComision(m, movimientos) : null}
+                      ocupado={conciliarRapido.isPending || marcarRapido.isPending}
+                      onConciliar={(s) => conciliarRapido.mutate({ movimientoId: m.id, entradas: s.entradas })}
+                      onVincularComision={(pagoId) => marcarRapido.mutate({ movimientoId: m.id, tipo: "comision", vinculado: pagoId })}
+                      onAbrir={(pestana) => setDebSel({ mov: m, pestana })}
+                    />
+                  </td>
                   <td className="py-2 pr-3 text-right whitespace-nowrap">
                     {m.conciliado ? (
-                      <Button size="sm" variant="ghost" onClick={() => desvincular.mutate(m.id)}>
-                        <Unlink className="h-4 w-4 mr-1" /> Desvincular
+                      <Button size="sm" variant="ghost" onClick={() => (
+                        ["diario", "ignorado", "comision"].includes(m.conciliado_tipo ?? "") ? setDeshacerSel(m) : desvincular.mutate(m.id)
+                      )}>
+                        <Unlink className="h-4 w-4 mr-1" /> Deshacer
                       </Button>
                     ) : (
-                      <Button size="sm" variant="outline" onClick={() => setMovSel(m)}>
-                        <Link2 className="h-4 w-4 mr-1" /> Conciliar
+                      <Button size="sm" variant="outline" onClick={() => (
+                        m.tipo === "debito" ? setDebSel({ mov: m, pestana: "diario" }) : setMovSel(m)
+                      )}>
+                        <Link2 className="h-4 w-4 mr-1" /> {m.tipo === "debito" ? "Opciones" : "Conciliar"}
                       </Button>
                     )}
                   </td>
@@ -492,6 +553,90 @@ function ConciliacionBancariaPage() {
       </Card>
 
       <ConciliarDialog mov={movSel} onClose={() => setMovSel(null)} />
+      <DebitoDialog
+        mov={debSel ? { ...debSel.mov, monto: Number(debSel.mov.monto) } : null}
+        movimientos={movimientos.map((x) => ({ ...x, monto: Number(x.monto) }))}
+        pestana={debSel?.pestana ?? "diario"}
+        onClose={() => setDebSel(null)}
+      />
+      <DeshacerConciliacionDialog mov={deshacerSel} onClose={() => setDeshacerSel(null)} />
+      <ReglasCuentasDialog open={reglasOpen} onOpenChange={setReglasOpen} />
+    </div>
+  );
+}
+
+function ValidacionBalance({ banco, calculado }: { banco: number | null; calculado: number | null }) {
+  if (banco !== null && calculado === null) {
+    return <div className="text-[11px] text-amber-700 dark:text-amber-400">Configura el balance inicial para poder validar.</div>;
+  }
+  const v = validarBalance(banco, calculado);
+  if (v.estado === "sin-datos") return null;
+  if (v.estado === "coincide") {
+    return (
+      <div className="flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[12px] text-emerald-700 dark:text-emerald-400">
+        <CheckCircle2 className="h-3.5 w-3.5" /> Coincide con el balance calculado
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-start gap-1 rounded-md border border-destructive/50 bg-destructive/10 px-2 py-1 text-[12px] text-destructive">
+      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+      <span>No coincide con el balance calculado. Diferencia: <strong>{fmtRD(v.diferencia)}</strong></span>
+    </div>
+  );
+}
+
+function CeldaSugerencia({
+  m, sugerencias, tieneRegla, pagoComision, ocupado, onConciliar, onVincularComision, onAbrir,
+}: {
+  m: Movimiento;
+  sugerencias: Sugerencia[] | undefined;
+  tieneRegla: boolean;
+  pagoComision: Movimiento | null;
+  ocupado: boolean;
+  onConciliar: (s: Sugerencia) => void;
+  onVincularComision: (pagoId: string) => void;
+  onAbrir: (p: PestanaDebito) => void;
+}) {
+  if (m.tipo !== "debito" || m.conciliado) return <span className="text-muted-foreground">—</span>;
+  const s = sugerencias?.[0];
+  if (s) {
+    const total = s.entradas.reduce((t, e) => t + e.neto, 0);
+    return (
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1 text-[12px]">
+          <div className="flex items-center gap-1 font-medium">
+            <Sparkles className="h-3 w-3 text-primary" />
+            <span className="font-mono">{s.entradas.map((e) => e.secuencia).join(" + ")}</span>
+          </div>
+          <div className="truncate text-[11px] text-muted-foreground" title={s.entradas[0].beneficiario}>
+            {s.entradas[0].beneficiario} · {fmtLocalDate(s.entradas[0].fecha)} · {fmtRD(total)}
+          </div>
+          {!s.beneficiarioVerificado && <div className="text-[11px] text-amber-700 dark:text-amber-400">Beneficiario sin verificar</div>}
+          {(sugerencias?.length ?? 0) > 1 && (
+            <button type="button" className="text-[11px] text-primary underline" onClick={() => onAbrir("diario")}>
+              {sugerencias!.length - 1} opción(es) más
+            </button>
+          )}
+        </div>
+        <Button size="sm" disabled={ocupado} onClick={() => onConciliar(s)}>Conciliar</Button>
+      </div>
+    );
+  }
+  if (pagoComision) {
+    return (
+      <div className="flex items-start gap-2 text-[12px]">
+        <div className="min-w-0 flex-1 text-muted-foreground">Comisión del pago {fmtRD(Number(pagoComision.monto))} con la misma referencia</div>
+        <Button size="sm" variant="outline" disabled={ocupado} onClick={() => onVincularComision(pagoComision.id)}>Vincular</Button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-2 text-[12px]">
+      <span className="flex-1 text-muted-foreground">Sin coincidencia{tieneRegla ? " · regla disponible" : ""}</span>
+      <Button size="sm" variant="outline" onClick={() => onAbrir("crear")}>
+        <FilePlus2 className="h-3.5 w-3.5 mr-1" /> Crear entrada
+      </Button>
     </div>
   );
 }

@@ -21,6 +21,8 @@ import { fmtLocalDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { AutoField } from "@/components/auto-field";
 import { SolicitudPagoPdfDialog } from "@/components/solicitud-pago-pdf-dialog";
+import { Badge } from "@/components/ui/badge";
+import { CATEGORIAS_TRANSFERENCIA } from "@/lib/conciliacion-diario";
 
 export const Route = createFileRoute("/_authenticated/admin/solicitudes-pago-transferencia")({
   ssr: false,
@@ -57,9 +59,12 @@ type Row = {
   descuento_cxc: number | null;
   solicitud_transporte_id: string | null;
   created_at: string;
+  origen?: string | null;
+  estado?: string | null;
+  anulado_motivo?: string | null;
 };
 
-const CATEGORIAS = ["Gastos Menores", "Impuestos", "Nómina", "Compras con NCF", "Otro"];
+const CATEGORIAS = CATEGORIAS_TRANSFERENCIA;
 const SIN_VINCULO = "__none__";
 
 const fmtMoney = (n: number) =>
@@ -274,8 +279,12 @@ function SolicitudesPagoTransferenciaPage() {
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={9} className="py-6 text-center text-muted-foreground">Sin solicitudes</td></tr>
               ) : filtered.map((r) => (
-                <tr key={r.id} className="border-b last:border-0 whitespace-nowrap">
-                  <td className="py-1.5 pr-3 font-mono font-medium">{r.secuencia}</td>
+                <tr key={r.id} className={cn("border-b last:border-0 whitespace-nowrap", r.estado === "anulada" && "text-muted-foreground line-through decoration-muted-foreground/50")}>
+                  <td className="py-1.5 pr-3 font-mono font-medium">
+                    {r.secuencia}
+                    {r.origen === "banco" && <Badge variant="outline" className="ml-1 px-1 py-0 text-[11px] font-normal no-underline">Desde banco</Badge>}
+                    {r.estado === "anulada" && <Badge variant="secondary" className="ml-1 px-1 py-0 text-[11px] font-normal" title={r.anulado_motivo ?? undefined}>Anulada</Badge>}
+                  </td>
                   <td className="py-1.5 pr-3">{fmtLocalDate(r.fecha)}</td>
                   <td className="py-1.5 pr-3">{r.categoria}</td>
                   <td className="py-1.5 pr-3 max-w-[180px] truncate">{r.beneficiario}</td>
@@ -289,7 +298,7 @@ function SolicitudesPagoTransferenciaPage() {
                   </td>
                   <td className="py-1.5 text-right">
                     <div className="flex justify-end gap-1">
-                      <Button size="icon" variant="ghost" title="Editar" onClick={() => abrirEdicion(r)}>
+                      <Button size="icon" variant="ghost" title="Editar" disabled={r.estado === "anulada"} onClick={() => abrirEdicion(r)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
@@ -302,7 +311,9 @@ function SolicitudesPagoTransferenciaPage() {
                         <Printer className="h-3.5 w-3.5" />
                       </Button>
                       <Button
-                        size="icon" variant="ghost" title="Eliminar"
+                        size="icon" variant="ghost"
+                        title={r.origen === "banco" ? "Creada desde banco: se anula deshaciendo la conciliación" : "Eliminar"}
+                        disabled={r.origen === "banco" || r.estado === "anulada"}
                         className="text-destructive hover:text-destructive"
                         onClick={() => setBorrar(r)}
                       >

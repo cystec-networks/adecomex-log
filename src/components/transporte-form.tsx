@@ -313,6 +313,15 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial, embedde
       if (form.estado === "facturado" && !idsFacturas.length) {
         throw new Error("Para marcar como Facturado debes vincular una Factura e-CF real.");
       }
+      // El número de control de pago debe ser una Solicitud de Pago existente: un TF escrito a mano
+      // que aún no existe acaba apuntando al pago de otro transporte cuando el sistema lo asigna.
+      const ncPago = (form.numero_control_pago ?? "").trim();
+      if (ncPago) {
+        const { data: existe, error: errNc } = await (supabase as any)
+          .from("solicitudes_pago_transporte").select("id").eq("numero_control", ncPago).maybeSingle();
+        if (errNc) throw errNc;
+        if (!existe) throw new Error(`No existe una solicitud de pago con el número ${ncPago}. Revisa el número de control de pago.`);
+      }
       const payload: any = { ...form };
       delete payload.factura_ecf_id;
       if (idsFacturas.length) delete payload.ingreso_facturado;

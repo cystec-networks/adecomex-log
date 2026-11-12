@@ -50,6 +50,12 @@ type Fila = {
   monto: number;
   descuento_cxc: number;
   neto: number;
+  origen?: string | null;
+  referencia_bancaria?: string | null;
+  fecha_banco?: string | null;
+  diferencia_banco?: number | null;
+  motivo_diferencia?: string | null;
+  conciliado?: boolean | null;
 };
 
 const fmtMoney = (n: number) =>
@@ -263,8 +269,23 @@ function Encabezado() {
 
 function FilaDatos({ f }: { f: Fila }) {
   return (
-    <tr className="border-b last:border-0 whitespace-nowrap">
-      <td className="py-1.5 pr-3 font-mono font-medium">{f.secuencia}</td>
+    <tr className="border-b last:border-0 whitespace-nowrap align-top">
+      <td className="py-1.5 pr-3">
+        <div className="font-mono font-medium">{f.secuencia}</div>
+        {(f.origen === "banco" || f.conciliado) && (
+          <div className="flex flex-wrap gap-1 pt-0.5 text-[11px] font-normal">
+            {f.origen === "banco" && <Badge variant="outline" className="px-1 py-0 text-[11px] font-normal">Creada desde banco</Badge>}
+            {f.conciliado && (
+              <span className="text-muted-foreground" title={f.motivo_diferencia ? `Diferencia ${fmtMoney(Number(f.diferencia_banco))} · ${f.motivo_diferencia}` : undefined}>
+                Banco {f.referencia_bancaria ?? ""}{f.fecha_banco ? ` · ${fmtLocalDate(f.fecha_banco)}` : ""}
+                {f.diferencia_banco != null && Math.abs(Number(f.diferencia_banco)) >= 0.01 && (
+                  <span className="text-amber-700 dark:text-amber-400"> · Dif. {fmtMoney(Number(f.diferencia_banco))} ({f.motivo_diferencia})</span>
+                )}
+              </span>
+            )}
+          </div>
+        )}
+      </td>
       <td className="py-1.5 pr-3">
         <Badge variant="secondary" className="font-normal">{f.categoria}</Badge>
       </td>
