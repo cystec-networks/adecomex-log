@@ -34,6 +34,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ActualizadoBadge, HistorialDocumentoButton, useNombresUsuarios } from "@/components/documento-historial";
+import { describirAuditoria } from "@/lib/documento-versiones";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -303,8 +305,8 @@ const BLOQUE_LIQUIDACION: { tipo: string; label: string }[] = [
 const TIPO_OTROS_DECLARACION = "Otro";
 const TIPO_OTROS_LIQUIDACION = "Otro (Liquidación)";
 
-function FilaDocumento({ label, obligatorio, doc, onUpload, onMarcarRecibido, onEstado, onEliminar }: {
-  label: string; obligatorio?: boolean; doc?: any;
+function FilaDocumento({ label, obligatorio, doc, nombres = {}, onUpload, onMarcarRecibido, onEstado, onEliminar }: {
+  label: string; obligatorio?: boolean; doc?: any; nombres?: Record<string, string>;
   onUpload: () => void; onMarcarRecibido?: () => void; onEstado: (v: string) => void; onEliminar: () => void;
 }) {
   const st = DOC_ESTADO_STYLE[doc?.estado ?? "pendiente"] ?? DOC_ESTADO_STYLE.pendiente;
@@ -334,8 +336,9 @@ function FilaDocumento({ label, obligatorio, doc, onUpload, onMarcarRecibido, on
       ) : (
         <span className="w-[6.5rem] shrink-0 text-[11px] text-muted-foreground">Pendiente</span>
       )}
-      <span className="shrink-0 whitespace-nowrap text-[11px] text-muted-foreground">
-        {doc?.fecha_recepcion ? fmtLocalDate(doc.fecha_recepcion) : "—"}
+      <span className="shrink-0 whitespace-nowrap text-[11px] text-muted-foreground inline-flex items-center gap-1">
+        <span title="Recibido (primera carga)">{doc?.fecha_recepcion ? fmtLocalDate(doc.fecha_recepcion) : "—"}</span>
+        {doc && <ActualizadoBadge doc={doc} nombres={nombres} />}
         {doc?.fecha_vencimiento && (
           <span className={`ml-1 ${vencido ? "text-destructive font-medium" : "text-[10px]"}`} title="Vencimiento">
             {fmtLocalDate(doc.fecha_vencimiento)}
@@ -349,6 +352,7 @@ function FilaDocumento({ label, obligatorio, doc, onUpload, onMarcarRecibido, on
           </Popover>
         )}
         {doc?.storage_path && <DocumentoPreviewButton path={doc.storage_path} variant="ghost" size="sm" label="Ver" />}
+        {doc && <HistorialDocumentoButton doc={doc} nombres={nombres} />}
         <Button variant="outline" size="sm" className="h-6 px-1.5 text-[11px]" onClick={onUpload}>
           <Upload className="h-3 w-3 mr-0.5" />{doc?.storage_path ? "Reemplazar" : "Subir"}
         </Button>
@@ -368,8 +372,8 @@ function FilaDocumento({ label, obligatorio, doc, onUpload, onMarcarRecibido, on
   );
 }
 
-function FilaOtros({ archivos, onAgregar, onEditar, onEstado, onEliminar }: {
-  archivos: any[]; onAgregar: () => void; onEditar: (d: any) => void; onEstado: (id: string, v: string) => void; onEliminar: (d: any) => void;
+function FilaOtros({ archivos, nombres = {}, onAgregar, onEditar, onEstado, onEliminar }: {
+  archivos: any[]; nombres?: Record<string, string>; onAgregar: () => void; onEditar: (d: any) => void; onEstado: (id: string, v: string) => void; onEliminar: (d: any) => void;
 }) {
   return (
     <div className="flex items-start gap-2 py-[3px] text-[12px]">
@@ -384,11 +388,12 @@ function FilaOtros({ archivos, onAgregar, onEditar, onEstado, onEliminar }: {
               {o.storage_path && <DocumentoTamano path={o.storage_path} />}
             </div>
             {o.storage_path && <DocumentoPreviewButton path={o.storage_path} variant="ghost" size="sm" label="Ver" />}
+            <HistorialDocumentoButton doc={o} nombres={nombres} />
             <Select value={o.estado ?? "pendiente"} onValueChange={(v) => onEstado(o.id, v)}>
               <SelectTrigger className="w-[6.5rem] shrink-0 h-5 text-[10px] px-1.5"><SelectValue /></SelectTrigger>
               <SelectContent>{["pendiente", "recibido", "observado", "aprobado", "vencido"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
             </Select>
-            <span className="shrink-0 whitespace-nowrap text-muted-foreground">{o.fecha_recepcion ? fmtLocalDate(o.fecha_recepcion) : "—"}</span>
+            <span className="shrink-0 whitespace-nowrap text-muted-foreground inline-flex items-center gap-1"><span title="Recibido (primera carga)">{o.fecha_recepcion ? fmtLocalDate(o.fecha_recepcion) : "—"}</span><ActualizadoBadge doc={o} nombres={nombres} /></span>
             <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onEditar(o)} title="Editar datos"><Pencil className="h-3 w-3" /></Button>
             <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => onEliminar(o)} title="Eliminar"><Trash2 className="h-3 w-3" /></Button>
           </div>
@@ -3490,6 +3495,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
     queryKey: ["documentos", expedienteId],
     queryFn: async () => (await supabase.from("documentos").select("*").eq("expediente_id", expedienteId).order("created_at", { ascending: false })).data ?? [],
   });
+  const nombres = useNombresUsuarios((docs ?? []).map((d: any) => d.actualizado_por));
 
   const resetForm = () => { setEditId(null); setEditPath(null); setTipo(TIPOS_DOC[0]); setVenc(""); setObs(""); setFile(null); };
 
@@ -3582,7 +3588,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           const newPath = `${expedienteId}/${Date.now()}_${file.name}`;
           const { error } = await supabase.storage.from("documentos").upload(newPath, file);
           if (error) throw error;
-          if (editPath) await supabase.storage.from("documentos").remove([editPath]);
+          // El archivo anterior se conserva: el trigger lo guarda como versión (Historial).
           path = newPath;
         }
         const { error: e2 } = await supabase.from("documentos").update({
@@ -3610,6 +3616,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
         toast.success(codigo ? `Documento agregado · ${codigo}` : "Documento agregado");
       }
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
+      qc.invalidateQueries({ queryKey: ["auditoria", expedienteId] });
       if (cartaRuta?.solicitud) {
         try {
           const solicitudRegistrada = tipo === TIPO_CARTA_RUTA ? leerReferenciaSolicitudDespacho((docs ?? []).find((d: any) => d.tipo === TIPO_SOLICITUD_DESPACHO)?.observaciones) : "";
@@ -3727,9 +3734,11 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const eliminar = async (d: any) => {
     if (!confirm("¿Eliminar este documento? Esta acción no se puede deshacer.")) return;
     try {
-      if (d.storage_path) await supabase.storage.from("documentos").remove([d.storage_path]);
+      const { data: versiones } = await supabase.from("documento_versiones").select("storage_path").eq("documento_id", d.id);
       const { error } = await supabase.from("documentos").delete().eq("id", d.id);
       if (error) throw error;
+      const rutas = [d.storage_path, ...(versiones ?? []).map((v) => v.storage_path)].filter((x): x is string => Boolean(x));
+      if (rutas.length) await supabase.storage.from("documentos").remove(rutas);
       toast.success("Documento eliminado");
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
     } catch (e: any) {
@@ -3795,6 +3804,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       label={item.label}
       obligatorio={item.obligatorio}
       doc={latestByTipo.get(item.tipo)}
+      nombres={nombres}
       onUpload={() => { const d = latestByTipo.get(item.tipo); if (d) openEdit(d); else openNuevo(item.tipo); }}
       onMarcarRecibido={() => marcarRecibido(item.tipo, latestByTipo.get(item.tipo))}
       onEstado={(v) => { const d = latestByTipo.get(item.tipo); if (d) cambiarEstado(d.id, v); }}
@@ -3852,6 +3862,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
               {BLOQUE_DECLARACION.map(filaBloque)}
               <FilaOtros
                 archivos={otrosDeclaracion}
+                nombres={nombres}
                 onAgregar={() => openNuevo(TIPO_OTROS_DECLARACION)}
                 onEditar={(d) => openEdit(d)}
                 onEstado={(id, v) => cambiarEstado(id, v)}
@@ -3872,6 +3883,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
               {BLOQUE_LIQUIDACION.map(filaBloque)}
               <FilaOtros
                 archivos={otrosLiquidacion}
+                nombres={nombres}
                 onAgregar={() => openNuevo(TIPO_OTROS_LIQUIDACION)}
                 onEditar={(d) => openEdit(d)}
                 onEstado={(id, v) => cambiarEstado(id, v)}
@@ -3896,6 +3908,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                     key={d.id}
                     label={d.tipo}
                     doc={d}
+                    nombres={nombres}
                     onUpload={() => openEdit(d)}
                     onMarcarRecibido={() => marcarRecibido(d.tipo, d)}
                     onEstado={(v) => cambiarEstado(d.id, v)}
@@ -5016,23 +5029,25 @@ function TabAuditoria({ expedienteId }: { expedienteId: string }) {
       .order("created_at", { ascending: false })
       .limit(100)).data ?? [],
   });
+  const nombresAud = useNombresUsuarios((data ?? []).map((a: any) => a.usuario_id));
   return (
     <Card>
       <CardHeader><CardTitle className="text-base">Bitácora</CardTitle></CardHeader>
       <CardContent className="p-0 overflow-auto max-h-[70vh]">
         <table className="w-full text-sm">
           <thead className="sticky-table-header text-xs text-muted-foreground border-b bg-muted/30">
-            <tr><th className="text-left px-4 py-2">Fecha</th><th className="text-left">Entidad</th><th className="text-left">Acción</th></tr>
+            <tr><th className="text-left px-4 py-2">Fecha</th><th className="text-left">Usuario</th><th className="text-left">Entidad</th><th className="text-left">Acción</th></tr>
           </thead>
           <tbody>
             {(data ?? []).map((a: any) => (
               <tr key={a.id} className="border-b last:border-0">
                 <td className="px-4 py-2 text-xs">{new Date(a.created_at).toLocaleString("es-DO")}</td>
+                <td className="text-xs">{a.usuario_id ? nombresAud[a.usuario_id] ?? "Usuario" : <span className="text-muted-foreground">Automático</span>}</td>
                 <td className="text-xs text-muted-foreground">{a.entidad}</td>
-                <td className="text-xs font-mono">{a.accion}</td>
+                <td className={`text-xs ${describirAuditoria(a) === a.accion ? "font-mono" : ""}`} title={a.cambios?.archivo_anterior ? `Anterior: ${a.cambios.archivo_anterior}\nNuevo: ${a.cambios.archivo_nuevo ?? ""}` : undefined}>{describirAuditoria(a)}</td>
               </tr>
             ))}
-            {(!data || data.length === 0) && <tr><td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">Sin registros aún.</td></tr>}
+            {(!data || data.length === 0) && <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">Sin registros aún.</td></tr>}
           </tbody>
         </table>
       </CardContent>

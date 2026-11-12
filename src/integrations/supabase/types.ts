@@ -2808,9 +2808,78 @@ export type Database = {
         }
         Relationships: []
       }
+      documento_versiones: {
+        Row: {
+          actualizado_en_previo: string | null
+          actualizado_origen_previo: string | null
+          actualizado_por_previo: string | null
+          codigo_siga: string | null
+          created_at: string
+          documento_id: string
+          expediente_id: string
+          file_hash: string | null
+          id: string
+          origen: string
+          reemplazado_en: string
+          reemplazado_por: string | null
+          storage_path: string
+          subido_en: string
+          subido_por: string | null
+          tipo: string
+        }
+        Insert: {
+          actualizado_en_previo?: string | null
+          actualizado_origen_previo?: string | null
+          actualizado_por_previo?: string | null
+          codigo_siga?: string | null
+          created_at?: string
+          documento_id: string
+          expediente_id: string
+          file_hash?: string | null
+          id?: string
+          origen?: string
+          reemplazado_en?: string
+          reemplazado_por?: string | null
+          storage_path: string
+          subido_en: string
+          subido_por?: string | null
+          tipo: string
+        }
+        Update: {
+          actualizado_en_previo?: string | null
+          actualizado_origen_previo?: string | null
+          actualizado_por_previo?: string | null
+          codigo_siga?: string | null
+          created_at?: string
+          documento_id?: string
+          expediente_id?: string
+          file_hash?: string | null
+          id?: string
+          origen?: string
+          reemplazado_en?: string
+          reemplazado_por?: string | null
+          storage_path?: string
+          subido_en?: string
+          subido_por?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documento_versiones_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documentos: {
         Row: {
+          actualizado_en: string | null
+          actualizado_origen: string | null
+          actualizado_por: string | null
           codigo_siga: string | null
+          creado_por: string | null
           created_at: string
           estado: Database["public"]["Enums"]["doc_estado"]
           expediente_id: string
@@ -2819,13 +2888,18 @@ export type Database = {
           file_hash: string | null
           id: string
           observaciones: string | null
+          origen_cambio: string | null
           responsable_id: string | null
           storage_path: string | null
           tipo: string
           updated_at: string
         }
         Insert: {
+          actualizado_en?: string | null
+          actualizado_origen?: string | null
+          actualizado_por?: string | null
           codigo_siga?: string | null
+          creado_por?: string | null
           created_at?: string
           estado?: Database["public"]["Enums"]["doc_estado"]
           expediente_id: string
@@ -2834,13 +2908,18 @@ export type Database = {
           file_hash?: string | null
           id?: string
           observaciones?: string | null
+          origen_cambio?: string | null
           responsable_id?: string | null
           storage_path?: string | null
           tipo: string
           updated_at?: string
         }
         Update: {
+          actualizado_en?: string | null
+          actualizado_origen?: string | null
+          actualizado_por?: string | null
           codigo_siga?: string | null
+          creado_por?: string | null
           created_at?: string
           estado?: Database["public"]["Enums"]["doc_estado"]
           expediente_id?: string
@@ -2849,6 +2928,7 @@ export type Database = {
           file_hash?: string | null
           id?: string
           observaciones?: string | null
+          origen_cambio?: string | null
           responsable_id?: string | null
           storage_path?: string | null
           tipo?: string

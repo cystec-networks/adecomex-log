@@ -123,10 +123,11 @@ export const resolverConflictoCorreo = createServerFn({ method: "POST" })
       if (cp.error) throw new Error(`No tienes permiso para cambiar documentos o el archivo no está disponible: ${cp.error.message}`);
       const { data: actuales, error: e1 } = await context.supabase.from("documentos").select("id").eq("expediente_id", fila.expediente_id).eq("tipo", c.tipo).not("storage_path", "is", null).order("created_at", { ascending: false }).limit(1);
       if (e1) throw new Error(e1.message);
-      const cambios = { storage_path: destino, file_hash: c.file_hash ?? null, estado: "recibido" as const, fecha_recepcion: hoySD(), observaciones: `Reemplazado con adjunto de correo: ${c.nombre}`.slice(0, 500) };
+      const cambios = { storage_path: destino, file_hash: c.file_hash ?? null, estado: "recibido" as const, observaciones: `Reemplazado con adjunto de correo: ${c.nombre}`.slice(0, 500) };
+      // El trigger de documentos guarda el archivo anterior como versión, conserva «Recibido» y registra la Auditoría.
       const r = actuales?.length
-        ? await context.supabase.from("documentos").update(cambios).eq("id", actuales[0].id).select("id")
-        : await context.supabase.from("documentos").insert({ expediente_id: fila.expediente_id, tipo: c.tipo, ...cambios }).select("id");
+        ? await context.supabase.from("documentos").update({ ...cambios, origen_cambio: "correo" }).eq("id", actuales[0].id).select("id")
+        : await context.supabase.from("documentos").insert({ expediente_id: fila.expediente_id, tipo: c.tipo, ...cambios, fecha_recepcion: hoySD() }).select("id");
       if (r.error || !r.data?.length) {
         await admin.storage.from("documentos").remove([destino]);
         throw new Error(r.error ? `No se pudo reemplazar el documento: ${r.error.message}` : "No tienes permiso para cambiar documentos del Expediente.");

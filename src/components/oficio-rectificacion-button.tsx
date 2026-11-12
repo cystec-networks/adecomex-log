@@ -108,7 +108,7 @@ export function OficioRectificacionButton({ expedienteId, disabled }: { expedien
           return data ?? [];
         },
         actualizar: async (id) => {
-          const { error } = await supabase.from("documentos").update({ ...registro, file_hash: null })
+          const { error } = await supabase.from("documentos").update({ ...registro, file_hash: null, origen_cambio: "generado" })
             .eq("id", id).eq("expediente_id", expedienteId).eq("tipo", OFICIO_RECTIFICACION.tipoDocumento);
           if (error) throw error;
         },

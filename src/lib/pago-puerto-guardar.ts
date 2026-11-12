@@ -164,7 +164,8 @@ export async function guardarComprobantePuerto(expedienteId: string, file: File,
       const { error } = await supabase.from("documentos").delete().in("id", sobrantes.map((d) => d.id)).eq("expediente_id", expedienteId);
       if (error) aviso = "Pago guardado; no se pudieron retirar documentos duplicados anteriores. Revisa la casilla en Documentos.";
     }
-    const antiguos = (aviso ? existentes.slice(0, 1) : existentes).map((d) => d.storage_path).filter((p): p is string => Boolean(p) && p !== path);
+    // El PDF reemplazado se conserva como versión (Historial); solo se retiran los de filas duplicadas borradas.
+    const antiguos = (aviso ? [] : sobrantes).map((d) => d.storage_path).filter((p): p is string => Boolean(p) && p !== path);
     if (antiguos.length) await supabase.storage.from("documentos").remove(antiguos);
     return { codigo, aviso, advertencia: nombre.advertencia };
   });

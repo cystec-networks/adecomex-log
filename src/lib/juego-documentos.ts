@@ -54,7 +54,7 @@ export async function guardarGrupoJuego(expedienteId: string, grupo: ArchivoJueg
   if (error) throw error;
   const payload = { expediente_id: expedienteId, tipo, codigo_siga: codigo, estado: "recibido" as const, fecha_recepcion: hoyRDISO(), storage_path: ruta, observaciones: `Juego de documentos: ${grupo.map((a) => a.nombre).join(", ")}`.slice(0, 500) };
   const reutilizar = grupo.length === 1 && primero.originalId;
-  const query = reutilizar ? supabase.from("documentos").update(payload).eq("id", primero.originalId ?? "").eq("expediente_id", expedienteId) : supabase.from("documentos").insert(payload);
+  const query = reutilizar ? supabase.from("documentos").update({ ...payload, origen_cambio: "sin_version" }).eq("id", primero.originalId ?? "").eq("expediente_id", expedienteId) : supabase.from("documentos").insert(payload);
   const { data, error: writeError } = await query.select("id");
   if (writeError || !data?.length) {
     await supabase.storage.from("documentos").remove([ruta]);

@@ -66,7 +66,7 @@ export function PaqueteFacturaCliente({ expedienteId, menu = false }: { expedien
             return data ?? [];
           },
           actualizar: async (id) => {
-            const { error } = await supabase.from("documentos").update(registro).eq("id", id).eq("expediente_id", expedienteId).eq("tipo", PAQUETE_FACTURA_CLIENTE);
+            const { error } = await supabase.from("documentos").update({ ...registro, origen_cambio: "generado" }).eq("id", id).eq("expediente_id", expedienteId).eq("tipo", PAQUETE_FACTURA_CLIENTE);
             if (error) throw error;
           },
           insertar: async () => {

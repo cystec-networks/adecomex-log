@@ -97,7 +97,7 @@ export function PaqueteRectificacionButton({ expedienteId }: { expedienteId: str
             return data ?? [];
           },
           actualizar: async (id) => {
-            const { error } = await supabase.from("documentos").update({ ...registro, file_hash: null })
+            const { error } = await supabase.from("documentos").update({ ...registro, file_hash: null, origen_cambio: "generado" })
               .eq("id", id).eq("expediente_id", expedienteId).eq("tipo", PAQUETE_TIPO_DOCUMENTO);
             if (error) throw error;
           },
