@@ -855,6 +855,13 @@
       "when": 1794500192700,
       "tag": "0121_documentos_versiones_reemplazo",
       "breakpoints": true
+    },
+    {
+      "idx": 122,
+      "version": "7",
+      "when": 1794508294369,
+      "tag": "0122_conceptos_gasto_reembolso_defecto",
+      "breakpoints": true
     }
   ]
 }

@@ -94,6 +94,7 @@ import { ChecklistHitos } from "@/components/checklist-hitos";
 import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
+import { reembolsoPorConcepto, tieneDatosFiscales, type ConceptoGastoCatalogo } from "@/lib/gasto-formulario";
 import { PortadaExpedienteButton } from "@/components/portada-expediente-button";
 import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado, fechasDespachoFaltantes, checksForzables, calcularEtapa, pendientesSiguienteEstado } from "@/lib/estados-expediente";
 import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
@@ -4632,20 +4633,40 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
   const [crearCxp, setCrearCxp] = useState(false);
   const [cxpVence, setCxpVence] = useState<string>("");
   const [conceptoOtro, setConceptoOtro] = useState(false);
+  const [fiscalAbierto, setFiscalAbierto] = useState(false);
 
   const { data: conceptosCatalogo } = useQuery({
-    queryKey: ["catalogo_conceptos_gasto"],
+    queryKey: ["catalogo_conceptos_gasto", "formulario-gasto"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("catalogo_conceptos_gasto")
-        .select("codigo,nombre")
+        .select("codigo,nombre,es_reembolso_defecto")
         .order("nombre");
       if (error) throw error;
-      return (data ?? []).map((r: any) => r.nombre as string);
+      return (data ?? []).map((r) => ({ nombre: r.nombre, es_reembolso_defecto: !!r.es_reembolso_defecto })) as ConceptoGastoCatalogo[];
     },
     staleTime: 5 * 60_000,
   });
-  const conceptos = conceptosCatalogo ?? [];
+  const conceptosDetalle = conceptosCatalogo ?? [];
+  const conceptos = conceptosDetalle.map((c) => c.nombre);
+
+  // Abre el bloque fiscal si el proveedor elegido ya tiene RNC/NCF guardados en otro gasto.
+  useEffect(() => {
+    const nombre = (f.proveedor || "").trim();
+    if (!open || fiscalAbierto || !nombre) return;
+    let cancelado = false;
+    const t = setTimeout(async () => {
+      const { data } = await supabase
+        .from("gastos")
+        .select("id")
+        .eq("proveedor", nombre)
+        .is("deleted_at", null)
+        .or("rnc_cedula_proveedor.not.is.null,ncf_proveedor.not.is.null")
+        .limit(1);
+      if (!cancelado && (data?.length ?? 0) > 0) setFiscalAbierto(true);
+    }, 500);
+    return () => { cancelado = true; clearTimeout(t); };
+  }, [open, fiscalAbierto, f.proveedor]);
 
 
 
@@ -4737,13 +4758,16 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
           : (editingId ? "Gasto actualizado" : "Gasto registrado")
       );
       qc.invalidateQueries({ queryKey: ["gastos", expedienteId] });
-      setOpen(false); setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence("");
+      setOpen(false); setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); setFiscalAbierto(false);
     },
     onError: (e: any) => toast.error(e.message),
   });
+  // Un solo punto de guardado para los botones del encabezado y del pie.
+  const guardarGasto = () => { if (!save.isPending) save.mutate(); };
+  const descartarGasto = () => { setOpen(false); setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); setConceptoOtro(false); setFiscalAbierto(false); };
 
   useBorradorExpediente([f, file?.name, crearCxp, cxpVence], open, save.isPending, () => save.mutateAsync(), save.isSuccess ? save.submittedAt : undefined,
-    () => { setOpen(false); setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); setConceptoOtro(false); });
+    descartarGasto);
 
   const softDel = useMutation({
     mutationFn: async (id: string) => {
@@ -4783,9 +4807,10 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
     });
     setFile(null);
     setConceptoOtro(Boolean(r.concepto) && !conceptos.includes(r.concepto));
+    setFiscalAbierto(tieneDatosFiscales(r));
     setOpen(true);
   };
-  const openNew = () => { setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); setConceptoOtro(false); setOpen(true); };
+  const openNew = () => { setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); setConceptoOtro(false); setFiscalAbierto(false); setOpen(true); };
 
   const subtotal = gastos.reduce((s, r) => s + (r.es_reembolso ? -Number(r.monto || 0) : Number(r.monto || 0)), 0);
 
@@ -4797,16 +4822,19 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
         <ReembolsoEstadoControl expedienteId={expedienteId} />
         <Dialog modal={false} open={open} onOpenChange={setOpen}>
           <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />Agregar gasto</Button>
-          <DialogContent className="max-h-[85vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>{editingId ? "Editar gasto" : "Nuevo gasto"}</DialogTitle></DialogHeader>
-            <div className="grid gap-3">
+          <DialogContent className="max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
+            <DialogHeader className="flex-row items-center justify-between gap-3 space-y-0 border-b px-6 py-3 pr-12">
+              <DialogTitle>{editingId ? "Editar gasto" : "Nuevo gasto"}</DialogTitle>
+              <Button size="sm" onClick={guardarGasto} disabled={save.isPending}>{save.isPending ? "Guardando…" : "Guardar"}</Button>
+            </DialogHeader>
+            <div className="grid gap-3 flex-1 min-h-0 overflow-y-auto px-6 py-4">
               <div className="grid gap-1.5"><Label>Concepto</Label>
                 <Select
                   value={(conceptoOtro || (!!f.concepto && conceptos.length > 0 && !conceptos.includes(f.concepto))) ? "__otro__" : (f.concepto || "")}
                   onValueChange={(v) => {
                     if (v === "__otro__") { setConceptoOtro(true); setF({ ...f, concepto: "" }); return; }
                     setConceptoOtro(false);
-                    setF({ ...f, concepto: v, es_reembolso: v === "Reembolsos" ? true : v === "Honorarios de terceros" ? false : f.es_reembolso });
+                    setF({ ...f, concepto: v, es_reembolso: reembolsoPorConcepto(v, conceptosDetalle, !!f.es_reembolso) });
                   }}
                 >
                   <SelectTrigger><SelectValue placeholder="Seleccione un concepto" /></SelectTrigger>
@@ -4828,14 +4856,23 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
                 <div className="grid gap-1.5"><Label>Monto (DOP)</Label><Input type="number" step="0.01" value={f.monto} onChange={(e) => setF({ ...f, monto: e.target.value })} /></div>
                 <div className="grid gap-1.5"><Label>Fecha</Label><Input type="date" value={f.fecha} onChange={(e) => setF({ ...f, fecha: e.target.value })} /></div>
               </div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={f.es_reembolso} onChange={(e) => setF({ ...f, es_reembolso: e.target.checked })} />
+                Es reembolso (resta del total)
+              </label>
               <div className="grid gap-1.5 min-w-0"><Label>Proveedor</Label>{f.concepto === "Honorarios de terceros"
                 ? <GestorHonorariosSelect value={f.proveedor} onChange={(v) => setF({ ...f, proveedor: v })} />
                 : <Input value={f.proveedor} onChange={(e) => setF({ ...f, proveedor: e.target.value })} />}</div>
 
-              <div className="border rounded-md p-3 space-y-3 bg-muted/20">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="text-sm font-semibold">Datos fiscales del proveedor <span className="text-xs font-normal text-muted-foreground">(opcional · Reporte 606)</span></div>
-                  <EscanearFacturaButton onExtracted={(d) => setF((prev: any) => ({
+              <Collapsible open={fiscalAbierto} onOpenChange={setFiscalAbierto} className="border rounded-md bg-muted/20">
+                <div className="flex items-center justify-between gap-2 flex-wrap p-3">
+                  <CollapsibleTrigger asChild>
+                    <button type="button" className="group flex items-center gap-1.5 text-left text-sm font-semibold min-w-0" aria-label="Mostrar u ocultar datos fiscales del proveedor">
+                      <ChevronDown className="h-4 w-4 shrink-0 -rotate-90 transition-transform motion-reduce:transition-none group-data-[state=open]:rotate-0" />
+                      <span>Datos fiscales del proveedor <span className="text-xs font-normal text-muted-foreground">(opcional · Reporte 606)</span></span>
+                    </button>
+                  </CollapsibleTrigger>
+                  <EscanearFacturaButton onExtracted={(d) => { setFiscalAbierto(true); setF((prev: any) => ({
                     ...prev,
                     proveedor: prev.proveedor || d.proveedor_nombre || "",
                     concepto: prev.concepto || d.concepto || "",
@@ -4847,8 +4884,9 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
                     monto_facturado_servicios: d.monto_facturado_servicios ?? prev.monto_facturado_servicios,
                     monto_facturado_bienes: d.monto_facturado_bienes ?? prev.monto_facturado_bienes,
                     itbis_facturado: d.itbis_facturado ?? prev.itbis_facturado,
-                  }))} />
+                  })); }} />
                 </div>
+                <CollapsibleContent className="space-y-3 px-3 pb-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="grid gap-1.5">
                     <Label>Tipo ID</Label>
@@ -4955,15 +4993,15 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
                     </div>
                   </div>
                 </details>
-              </div>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={f.es_reembolso} onChange={(e) => setF({ ...f, es_reembolso: e.target.checked })} />
-                Es reembolso (resta del total)
-              </label>
+                </CollapsibleContent>
+              </Collapsible>
               <div className="grid gap-1.5"><Label>Adjunto</Label><Input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></div>
               <div className="grid gap-1.5"><Label>Notas</Label><Textarea rows={2} value={f.notas} onChange={(e) => setF({ ...f, notas: e.target.value })} /></div>
             </div>
-            <DialogFooter><Button onClick={() => save.mutate()} disabled={save.isPending}>Guardar</Button></DialogFooter>
+            <DialogFooter className="border-t px-6 py-3 gap-2 sm:gap-0">
+              <Button variant="outline" onClick={descartarGasto} disabled={save.isPending}>Cancelar</Button>
+              <Button onClick={guardarGasto} disabled={save.isPending}>{save.isPending ? "Guardando…" : "Guardar"}</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </CardHeader>

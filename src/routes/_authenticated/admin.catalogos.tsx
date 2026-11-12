@@ -212,7 +212,10 @@ const FIELDS: Record<TableKey, Array<{ k: string; label: string; required?: bool
   catalogo_tipo_courier: BASIC_FIELDS,
   catalogo_tipo_consignatario: BASIC_FIELDS,
   catalogo_tipo_documento_siga: BASIC_FIELDS,
-  catalogo_conceptos_gasto: BASIC_WITH_ESTADO,
+  catalogo_conceptos_gasto: [
+    ...BASIC_WITH_ESTADO,
+    { k: "es_reembolso_defecto", label: "Es reembolso por defecto", type: "select" as const, options: ["Sí", "No"], bool: true },
+  ],
   catalogo_gestores_honorarios: [...BASIC_FIELDS, { k: "estado", label: "Estado", type: "select" as const, options: ["activo", "inactivo"] }],
 };
 

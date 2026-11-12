@@ -500,6 +500,7 @@ export type Database = {
         Row: {
           codigo: string
           created_at: string
+          es_reembolso_defecto: boolean
           estado: string
           id: string
           nombre: string
@@ -507,6 +508,7 @@ export type Database = {
         Insert: {
           codigo: string
           created_at?: string
+          es_reembolso_defecto?: boolean
           estado?: string
           id?: string
           nombre: string
@@ -514,6 +516,7 @@ export type Database = {
         Update: {
           codigo?: string
           created_at?: string
+          es_reembolso_defecto?: boolean
           estado?: string
           id?: string
           nombre?: string
