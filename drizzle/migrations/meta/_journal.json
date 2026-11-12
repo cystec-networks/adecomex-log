@@ -890,6 +890,13 @@
       "when": 1794519845881,
       "tag": "0126_hitos_lote_exclusiones",
       "breakpoints": true
+    },
+    {
+      "idx": 127,
+      "version": "7",
+      "when": 1794526832772,
+      "tag": "0127_conciliacion_banco_diario",
+      "breakpoints": true
     }
   ]
 }

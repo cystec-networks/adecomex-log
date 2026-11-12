@@ -1,0 +1,285 @@
+/**
+ * Reglas de la Conciliación Bancaria ↔ Registro de Diario (solo débitos).
+ * Funciones puras compartidas por la pantalla y sus pruebas: sugerencias,
+ * beneficiario por cuenta destino o regla, importación sin duplicados y
+ * validación del balance del estado de cuenta.
+ */
+
+export const DIAS_TOLERANCIA = 3;
+export const MOTIVOS_DIFERENCIA = ["Retención del 8%", "Descuento por viaje", "Otro"] as const;
+
+export type EntradaDiario = {
+  id: string;
+  origen_tipo: "transporte" | "transferencia" | string;
+  fecha: string;
+  secuencia: string;
+  categoria: string;
+  referencia: string | null;
+  beneficiario: string;
+  concepto: string;
+  neto: number;
+  conciliado?: boolean | null;
+  origen?: string | null;
+  estado?: string | null;
+};
+
+export type MovimientoBanco = {
+  id: string;
+  fecha: string;
+  monto: number;
+  tipo: string;
+  descripcion: string | null;
+  referencia: string | null;
+  conciliado: boolean;
+};
+
+export type ReglaBanco = {
+  id?: string;
+  palabra_clave: string;
+  categoria: string | null;
+  concepto: string | null;
+  beneficiario: string | null;
+  activo: boolean;
+  orden?: number | null;
+};
+
+export type CuentaBeneficiario = { cuenta: string; beneficiario: string; activo: boolean };
+
+const PALABRAS_VACIAS = new Set(["SRL", "SAS", "S", "A", "DE", "DEL", "LA", "LAS", "LOS", "Y", "EL", "INC", "EIRL", "CXA", "C", "POR"]);
+
+export function normalizarTexto(s: string | null | undefined): string {
+  return (s ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function tokens(s: string): string[] {
+  return normalizarTexto(s)
+    .split(/[^A-Z0-9]+/)
+    .filter((t) => t.length >= 4 && !PALABRAS_VACIAS.has(t));
+}
+
+/** Beneficiarios equivalentes si comparten alguna palabra significativa
+ * ("ASOCAPU/Richeily jimenez" = "ASOCAPU / RICHEILY JIMENEZ" = "Richeily Jiménez"). */
+export function beneficiarioCoincide(a: string | null | undefined, b: string | null | undefined): boolean {
+  const ta = tokens(a ?? "");
+  const tb = new Set(tokens(b ?? ""));
+  if (ta.length === 0 || tb.size === 0) return false;
+  return ta.some((t) => tb.has(t));
+}
+
+export function clavebeneficiario(s: string): string {
+  return normalizarTexto(s).replace(/[^A-Z]/g, "");
+}
+
+/** Cuenta destino de una transferencia "IB a 815697610". */
+export function cuentaDestino(descripcion: string | null | undefined): string | null {
+  const m = /\bIB a (\d+)/i.exec(descripcion ?? "");
+  return m ? m[1] : null;
+}
+
+export function reglaAplicable(descripcion: string | null | undefined, reglas: ReglaBanco[]): ReglaBanco | null {
+  const d = normalizarTexto(descripcion);
+  if (!d) return null;
+  const activas = reglas
+    .filter((r) => r.activo && normalizarTexto(r.palabra_clave))
+    .sort((x, y) => (x.orden ?? 100) - (y.orden ?? 100));
+  return activas.find((r) => d.includes(normalizarTexto(r.palabra_clave))) ?? null;
+}
+
+export function diasEntre(a: string, b: string): number {
+  const da = Date.UTC(+a.slice(0, 4), +a.slice(5, 7) - 1, +a.slice(8, 10));
+  const db = Date.UTC(+b.slice(0, 4), +b.slice(5, 7) - 1, +b.slice(8, 10));
+  return Math.round(Math.abs(da - db) / 86400000);
+}
+
+const centavos = (n: number) => Math.round(Number(n || 0) * 100);
+
+export type Expectativa = {
+  beneficiario: string | null;
+  categoria: string | null;
+  fuente: "cuenta" | "regla" | null;
+};
+
+/** Qué beneficiario/categoría se espera para un débito según su cuenta destino o una regla. */
+export function expectativaMovimiento(
+  mov: Pick<MovimientoBanco, "descripcion">,
+  cuentas: CuentaBeneficiario[],
+  reglas: ReglaBanco[],
+): Expectativa {
+  const cuenta = cuentaDestino(mov.descripcion);
+  if (cuenta) {
+    const c = cuentas.find((x) => x.activo && x.cuenta.replace(/^0+/, "") === cuenta.replace(/^0+/, ""));
+    if (c) return { beneficiario: c.beneficiario, categoria: null, fuente: "cuenta" };
+  }
+  const r = reglaAplicable(mov.descripcion, reglas);
+  if (r && (r.beneficiario || r.categoria)) {
+    return { beneficiario: r.beneficiario, categoria: r.categoria, fuente: "regla" };
+  }
+  return { beneficiario: null, categoria: null, fuente: null };
+}
+
+/** La entrada es compatible con lo esperado del débito (beneficiario de la cuenta,
+ * o beneficiario/categoría de la regla). Sin expectativa no se puede comprobar. */
+export function entradaCompatible(e: EntradaDiario, exp: Expectativa): boolean {
+  if (exp.fuente === "cuenta") return beneficiarioCoincide(e.beneficiario, exp.beneficiario);
+  if (exp.fuente === "regla") {
+    if (exp.beneficiario && beneficiarioCoincide(e.beneficiario, exp.beneficiario)) return true;
+    if (exp.categoria && normalizarTexto(e.categoria) === normalizarTexto(exp.categoria)) return true;
+    return false;
+  }
+  return true;
+}
+
+export type Sugerencia = {
+  entradas: EntradaDiario[];
+  dias: number;
+  beneficiarioVerificado: boolean;
+};
+
+/** Entradas del Diario que coinciden con un débito pendiente: monto neto igual,
+ * fecha dentro de ±3 días y beneficiario compatible. Incluye pagos agrupados
+ * (2–4 entradas del mismo beneficiario que suman el débito). Nunca concilia. */
+export function sugerirEntradas(
+  mov: MovimientoBanco,
+  entradas: EntradaDiario[],
+  cuentas: CuentaBeneficiario[],
+  reglas: ReglaBanco[],
+): Sugerencia[] {
+  if (mov.tipo !== "debito" || mov.conciliado) return [];
+  const exp = expectativaMovimiento(mov, cuentas, reglas);
+  const verificado = exp.fuente !== null;
+  const libres = entradas.filter(
+    (e) => !e.conciliado && e.estado !== "anulada" && diasEntre(e.fecha, mov.fecha) <= DIAS_TOLERANCIA && entradaCompatible(e, exp),
+  );
+  const objetivo = centavos(mov.monto);
+
+  const individuales: Sugerencia[] = libres
+    .filter((e) => centavos(e.neto) === objetivo)
+    .map((e) => ({ entradas: [e], dias: diasEntre(e.fecha, mov.fecha), beneficiarioVerificado: verificado }))
+    .sort((a, b) => a.dias - b.dias || a.entradas[0].secuencia.localeCompare(b.entradas[0].secuencia));
+
+  const grupos: Sugerencia[] = [];
+  const porBenef = new Map<string, EntradaDiario[]>();
+  for (const e of libres) {
+    if (centavos(e.neto) <= 0 || centavos(e.neto) >= objetivo) continue;
+    const k = clavebeneficiario(e.beneficiario);
+    porBenef.set(k, [...(porBenef.get(k) ?? []), e]);
+  }
+  for (const lista of porBenef.values()) {
+    const items = lista.slice(0, 12);
+    const buscar = (inicio: number, elegidas: EntradaDiario[], suma: number) => {
+      if (grupos.length >= 3) return;
+      if (elegidas.length >= 2 && suma === objetivo) {
+        grupos.push({
+          entradas: [...elegidas],
+          dias: Math.max(...elegidas.map((x) => diasEntre(x.fecha, mov.fecha))),
+          beneficiarioVerificado: verificado,
+        });
+        return;
+      }
+      if (elegidas.length >= 4 || suma >= objetivo) return;
+      for (let i = inicio; i < items.length; i++) {
+        buscar(i + 1, [...elegidas, items[i]], suma + centavos(items[i].neto));
+      }
+    };
+    buscar(0, [], 0);
+  }
+  return [...individuales, ...grupos];
+}
+
+/** Diferencia banco − Diario para una selección (en pesos, redondeada a centavos). */
+export function diferenciaSeleccion(montoBanco: number, entradas: Pick<EntradaDiario, "neto">[]): number {
+  return (centavos(montoBanco) - entradas.reduce((s, e) => s + centavos(e.neto), 0)) / 100;
+}
+
+export function requiereMotivo(diferencia: number): boolean {
+  return Math.abs(Math.round(diferencia * 100)) >= 1;
+}
+
+/** Prellenado de "Crear entrada de Diario" desde un débito sin coincidencia. */
+export function prellenarEntrada(
+  mov: Pick<MovimientoBanco, "descripcion" | "fecha">,
+  cuentas: CuentaBeneficiario[],
+  reglas: ReglaBanco[],
+): { fecha: string; categoria: string; beneficiario: string; concepto: string } {
+  const regla = reglaAplicable(mov.descripcion, reglas);
+  const cuenta = cuentaDestino(mov.descripcion);
+  const benefCuenta = cuenta
+    ? cuentas.find((c) => c.activo && c.cuenta.replace(/^0+/, "") === cuenta.replace(/^0+/, ""))?.beneficiario
+    : undefined;
+  return {
+    fecha: mov.fecha,
+    categoria: regla?.categoria || (benefCuenta ? "Gastos Menores" : "Otro"),
+    beneficiario: regla?.beneficiario || benefCuenta || "",
+    concepto: regla?.concepto || (mov.descripcion ?? "").trim(),
+  };
+}
+
+/** Pago con la misma referencia que una comisión (p. ej. COM DGA ↔ PAG DGA). */
+export function pagoDeComision<T extends MovimientoBanco>(com: T, movimientos: T[]): T | null {
+  if (!/\bCOM\b/i.test(com.descripcion ?? "")) return null;
+  const ref = (com.referencia ?? "").replace(/^0+/, "");
+  if (!ref) return null;
+  return (
+    movimientos.find(
+      (m) =>
+        m.id !== com.id &&
+        m.tipo === "debito" &&
+        (m.referencia ?? "").replace(/^0+/, "") === ref &&
+        !/\bCOM\b/i.test(m.descripcion ?? ""),
+    ) ?? null
+  );
+}
+
+// ---------- Importación sin duplicados ----------
+
+export type FilaImportable = {
+  fecha: string;
+  referencia: string | null;
+  monto: number;
+  descripcion: string | null;
+};
+
+/** Clave de duplicado: fecha + referencia + monto + descripción. */
+export function claveImportacion(f: FilaImportable): string {
+  const ref = (f.referencia ?? "").trim().replace(/^0+/, "");
+  return `${f.fecha}|${ref}|${centavos(f.monto)}|${normalizarTexto(f.descripcion)}`;
+}
+
+/** Devuelve solo las filas que faltan: si el archivo trae N filas con la misma
+ * clave y ya existen M guardadas, se importan N − M (las repetidas legítimas
+ * del mismo día se conservan, las ya importadas no se duplican). */
+export function filasNuevas<T extends FilaImportable>(archivo: T[], existentes: FilaImportable[]): T[] {
+  const guardadas = new Map<string, number>();
+  for (const e of existentes) {
+    const k = claveImportacion(e);
+    guardadas.set(k, (guardadas.get(k) ?? 0) + 1);
+  }
+  const vistas = new Map<string, number>();
+  const out: T[] = [];
+  for (const f of archivo) {
+    const k = claveImportacion(f);
+    const n = (vistas.get(k) ?? 0) + 1;
+    vistas.set(k, n);
+    if (n > (guardadas.get(k) ?? 0)) out.push(f);
+  }
+  return out;
+}
+
+// ---------- Balance ----------
+
+export function validarBalance(balanceBanco: number | null, balanceCalculado: number | null):
+  | { estado: "sin-datos" }
+  | { estado: "coincide"; diferencia: 0 }
+  | { estado: "no-coincide"; diferencia: number } {
+  if (balanceBanco === null || balanceCalculado === null) return { estado: "sin-datos" };
+  const dif = (centavos(balanceBanco) - centavos(balanceCalculado)) / 100;
+  return dif === 0 ? { estado: "coincide", diferencia: 0 } : { estado: "no-coincide", diferencia: dif };
+}
+
+/** Categorías de las Solicitudes de Pago por Transferencia (alimentan el Diario). */
+export const CATEGORIAS_TRANSFERENCIA = ["Gastos Menores", "Impuestos", "Comisión bancaria", "Nómina", "Compras con NCF", "Pago Transportes", "Otro"];

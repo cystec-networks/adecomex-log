@@ -253,6 +253,53 @@ export type Database = {
         }
         Relationships: []
       }
+      banco_conciliaciones: {
+        Row: {
+          creado_por: string | null
+          created_at: string
+          diferencia: number
+          id: string
+          monto_aplicado: number
+          monto_diario: number
+          motivo_diferencia: string | null
+          movimiento_id: string
+          origen_tipo: string
+          solicitud_id: string
+        }
+        Insert: {
+          creado_por?: string | null
+          created_at?: string
+          diferencia?: number
+          id?: string
+          monto_aplicado: number
+          monto_diario: number
+          motivo_diferencia?: string | null
+          movimiento_id: string
+          origen_tipo: string
+          solicitud_id: string
+        }
+        Update: {
+          creado_por?: string | null
+          created_at?: string
+          diferencia?: number
+          id?: string
+          monto_aplicado?: number
+          monto_diario?: number
+          motivo_diferencia?: string | null
+          movimiento_id?: string
+          origen_tipo?: string
+          solicitud_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banco_conciliaciones_movimiento_id_fkey"
+            columns: ["movimiento_id"]
+            isOneToOne: false
+            referencedRelation: "banco_movimientos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       banco_config: {
         Row: {
           actualizado_por: string | null
@@ -277,6 +324,42 @@ export type Database = {
         }
         Relationships: []
       }
+      banco_cuentas_beneficiario: {
+        Row: {
+          activo: boolean
+          beneficiario: string
+          created_at: string
+          cuenta: string
+          id: string
+          notas: string | null
+          origen: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          beneficiario: string
+          created_at?: string
+          cuenta: string
+          id?: string
+          notas?: string | null
+          origen?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          beneficiario?: string
+          created_at?: string
+          cuenta?: string
+          id?: string
+          notas?: string | null
+          origen?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       banco_movimientos: {
         Row: {
           codigo_transaccion: string | null
@@ -288,14 +371,17 @@ export type Database = {
           created_at: string
           cuenta: string
           descripcion: string | null
+          diferencia_diario: number | null
           fecha: string
           hash_linea: string
           id: string
           monto: number
+          motivo_diferencia: string | null
           notas: string | null
           numero_cheque: string | null
           referencia: string | null
           tipo: string
+          vinculado_movimiento_id: string | null
         }
         Insert: {
           codigo_transaccion?: string | null
@@ -307,14 +393,17 @@ export type Database = {
           created_at?: string
           cuenta?: string
           descripcion?: string | null
+          diferencia_diario?: number | null
           fecha: string
           hash_linea: string
           id?: string
           monto: number
+          motivo_diferencia?: string | null
           notas?: string | null
           numero_cheque?: string | null
           referencia?: string | null
           tipo: string
+          vinculado_movimiento_id?: string | null
         }
         Update: {
           codigo_transaccion?: string | null
@@ -326,14 +415,61 @@ export type Database = {
           created_at?: string
           cuenta?: string
           descripcion?: string | null
+          diferencia_diario?: number | null
           fecha?: string
           hash_linea?: string
           id?: string
           monto?: number
+          motivo_diferencia?: string | null
           notas?: string | null
           numero_cheque?: string | null
           referencia?: string | null
           tipo?: string
+          vinculado_movimiento_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banco_movimientos_vinculado_movimiento_id_fkey"
+            columns: ["vinculado_movimiento_id"]
+            isOneToOne: false
+            referencedRelation: "banco_movimientos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      banco_reglas: {
+        Row: {
+          activo: boolean
+          beneficiario: string | null
+          categoria: string | null
+          concepto: string | null
+          created_at: string
+          id: string
+          orden: number
+          palabra_clave: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          beneficiario?: string | null
+          categoria?: string | null
+          concepto?: string | null
+          created_at?: string
+          id?: string
+          orden?: number
+          palabra_clave: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          beneficiario?: string | null
+          categoria?: string | null
+          concepto?: string | null
+          created_at?: string
+          id?: string
+          orden?: number
+          palabra_clave?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -7874,6 +8010,10 @@ export type Database = {
       }
       solicitudes_pago_transferencia: {
         Row: {
+          anulado_en: string | null
+          anulado_motivo: string | null
+          anulado_por: string | null
+          banco_movimiento_id: string | null
           beneficiario: string
           categoria: string
           concepto: string
@@ -7881,14 +8021,20 @@ export type Database = {
           created_at: string
           descuento_cxc: number | null
           eliminado_en: string | null
+          estado: string
           factura_compra: string | null
           fecha: string
           id: string
           monto: number
+          origen: string
           secuencia: string
           solicitud_transporte_id: string | null
         }
         Insert: {
+          anulado_en?: string | null
+          anulado_motivo?: string | null
+          anulado_por?: string | null
+          banco_movimiento_id?: string | null
           beneficiario: string
           categoria: string
           concepto: string
@@ -7896,14 +8042,20 @@ export type Database = {
           created_at?: string
           descuento_cxc?: number | null
           eliminado_en?: string | null
+          estado?: string
           factura_compra?: string | null
           fecha?: string
           id?: string
           monto: number
+          origen?: string
           secuencia?: string
           solicitud_transporte_id?: string | null
         }
         Update: {
+          anulado_en?: string | null
+          anulado_motivo?: string | null
+          anulado_por?: string | null
+          banco_movimiento_id?: string | null
           beneficiario?: string
           categoria?: string
           concepto?: string
@@ -7911,14 +8063,23 @@ export type Database = {
           created_at?: string
           descuento_cxc?: number | null
           eliminado_en?: string | null
+          estado?: string
           factura_compra?: string | null
           fecha?: string
           id?: string
           monto?: number
+          origen?: string
           secuencia?: string
           solicitud_transporte_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "solicitudes_pago_transferencia_banco_movimiento_id_fkey"
+            columns: ["banco_movimiento_id"]
+            isOneToOne: false
+            referencedRelation: "banco_movimientos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "solicitudes_pago_transferencia_solicitud_transporte_id_fkey"
             columns: ["solicitud_transporte_id"]
@@ -8813,13 +8974,21 @@ export type Database = {
           beneficiario: string | null
           categoria: string | null
           concepto: string | null
+          conciliado: boolean | null
           descuento_cxc: number | null
+          diferencia_banco: number | null
+          estado: string | null
           fecha: string | null
+          fecha_banco: string | null
           id: string | null
           monto: number | null
+          motivo_diferencia: string | null
+          movimiento_id: string | null
           neto: number | null
+          origen: string | null
           origen_tipo: string | null
           referencia: string | null
+          referencia_bancaria: string | null
           secuencia: string | null
           solicitud_id: string | null
         }
@@ -8851,6 +9020,10 @@ export type Database = {
       aplicar_lote_hitos_retroactivos: {
         Args: { p_excluir?: string[] }
         Returns: string
+      }
+      aprender_cuenta_beneficiario: {
+        Args: { p_beneficiario: string; p_descripcion: string; p_tipo: string }
+        Returns: undefined
       }
       aprobar_confirmacion_correo: {
         Args: {
@@ -8927,6 +9100,10 @@ export type Database = {
         Args: { p_expediente: string; p_solicitud: string }
         Returns: boolean
       }
+      conciliar_movimiento_diario: {
+        Args: { p_entradas: Json; p_motivo?: string; p_movimiento: string }
+        Returns: Json
+      }
       convertir_correo_cotizacion: {
         Args: { p_cotizacion_id?: string; p_solicitud_id: string }
         Returns: string
@@ -8938,9 +9115,28 @@ export type Database = {
           fecha: string
         }[]
       }
+      crear_entrada_diario_desde_banco: {
+        Args: {
+          p_beneficiario: string
+          p_categoria: string
+          p_concepto: string
+          p_fecha: string
+          p_movimiento: string
+          p_tf_previsto?: string
+        }
+        Returns: Json
+      }
       crear_solicitud_correo_sin_duplicado: {
         Args: { p_solicitud: Json }
         Returns: string
+      }
+      deshacer_conciliacion_banco: {
+        Args: {
+          p_anular_creada?: boolean
+          p_motivo?: string
+          p_movimiento: string
+        }
+        Returns: Json
       }
       deshacer_lote_hitos: { Args: { p_lote: string }; Returns: Json }
       estado_presupuesto_ia: {
@@ -9036,6 +9232,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      marcar_movimiento_banco: {
+        Args: {
+          p_motivo?: string
+          p_movimiento: string
+          p_tipo: string
+          p_vinculado?: string
+        }
+        Returns: undefined
+      }
       marcar_password_cambiada_cliente: { Args: never; Returns: undefined }
       marcar_password_cambiada_estudiante: { Args: never; Returns: undefined }
       normativa_guardar_embeddings: { Args: { p_lote: Json }; Returns: number }
@@ -9100,6 +9305,7 @@ export type Database = {
       show_trgm: { Args: { "": string }; Returns: string[] }
       siguiente_numero_expediente: { Args: never; Returns: string }
       siguiente_numero_operacion: { Args: { p_tipo: string }; Returns: string }
+      siguiente_tf: { Args: never; Returns: string }
       soltar_turno_tarea: { Args: { p_nombre: string }; Returns: undefined }
       tomar_turno_tarea: {
         Args: { p_nombre: string; p_segundos: number }
