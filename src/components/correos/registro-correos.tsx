@@ -59,13 +59,20 @@ function Retencion({ c }: { c: CorreoRecibido }) {
 }
 
 /** Auditoría: cada correo entregado por el script con su resultado, para comprobar que ninguno se pierde. */
-export function RegistroCorreos({ filtroInicial }: { filtroInicial?: string }) {
-  const [filtro, setFiltro] = useState<string>(FILTROS.some((f) => f.id === filtroInicial) ? filtroInicial! : "principal");
+export function RegistroCorreos({ filtroInicial, correoDestacado }: { filtroInicial?: string; correoDestacado?: string }) {
+  const [filtro, setFiltro] = useState<string>(correoDestacado ? "enlazado" : FILTROS.some((f) => f.id === filtroInicial) ? filtroInicial! : "principal");
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
   const [confirmarQuitar, setConfirmarQuitar] = useState(false);
-  useEffect(() => { if (filtroInicial) document.getElementById("registro-correos")?.scrollIntoView({ block: "start" }); }, [filtroInicial]);
+  useEffect(() => { if (filtroInicial || correoDestacado) document.getElementById("registro-correos")?.scrollIntoView({ block: "start" }); }, [filtroInicial, correoDestacado]);
   useEffect(() => { setSeleccion(new Set()); }, [filtro]);
-  const { data = [], isLoading, isError } = useQuery({ queryKey: ["registro-correos", filtro], queryFn: () => registroCorreos(supabase, filtro), refetchInterval: 60_000 });
+  const { data = [], isLoading, isError } = useQuery({ queryKey: ["registro-correos", filtro, correoDestacado], refetchInterval: 60_000,
+    queryFn: async () => {
+      if (filtro !== "enlazado" || !correoDestacado) return registroCorreos(supabase, filtro);
+      const { data: fila, error } = await supabase.from("correos_recibidos").select("*").eq("id", correoDestacado).maybeSingle();
+      if (error) throw error;
+      return (fila ? [fila] : []) as Awaited<ReturnType<typeof registroCorreos>>;
+    },
+  });
   const qc = useQueryClient();
   const refrescar = () => {
     qc.invalidateQueries({ queryKey: ["registro-correos"] });
@@ -129,6 +136,9 @@ export function RegistroCorreos({ filtroInicial }: { filtroInicial?: string }) {
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="font-display text-[14px] font-bold flex items-center gap-2"><ListChecks className="h-4 w-4" />Registro de correos recibidos</h2>
         <div className="flex flex-wrap gap-1">
+          {correoDestacado && (
+            <Button size="sm" variant={filtro === "enlazado" ? "default" : "outline"} className="h-7 px-2 text-[12px]" onClick={() => setFiltro("enlazado")}>Correo enlazado</Button>
+          )}
           {FILTROS.map((f) => (
             <Button key={f.id} size="sm" variant={filtro === f.id ? "default" : "outline"} className="h-7 px-2 text-[12px]" onClick={() => setFiltro(f.id)}>{f.etiqueta}</Button>
           ))}
@@ -178,9 +188,12 @@ export function RegistroCorreos({ filtroInicial }: { filtroInicial?: string }) {
                     nuevoGrupo ? (
                       <tr key={`g-${grupo}`} className="border-t bg-muted/20"><td colSpan={7} className="px-2 py-1 text-[11px] font-medium text-muted-foreground">{GRUPO_DESCARTE[grupo!]}</td></tr>
                     ) : null,
-                    <tr key={c.id} className="border-t align-top">
+                    <tr key={c.id} className={`border-t align-top ${filtro === "enlazado" ? "bg-primary/5" : ""}`}>
                       <td className="pl-2 py-1.5"><Checkbox aria-label="Seleccionar correo" checked={seleccion.has(c.id)} onCheckedChange={() => alternar(c.id)} /></td>
-                      <td className="px-2 py-1.5 whitespace-nowrap">{fechaHora(c.ultimo_intento_at)}</td>
+                      <td className="px-2 py-1.5 whitespace-nowrap">
+                        {fechaHora(c.ultimo_intento_at)}
+                        {c.fecha_correo && <div className="text-[11px] text-muted-foreground" title="Fecha y hora en que llegó el correo a Gmail">Llegó {fechaHora(c.fecha_correo)}</div>}
+                      </td>
                       <td className="px-2 py-1.5 min-w-0 max-w-[420px]">
                         <div className="text-[11px] text-muted-foreground truncate" title={c.remitente}>{c.remitente_correo ?? c.remitente}</div>
                         <div className="break-words">{c.asunto || "(sin asunto)"}</div>

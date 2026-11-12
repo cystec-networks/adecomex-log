@@ -22,7 +22,11 @@ import { RegistroCorreos } from "@/components/correos/registro-correos";
 import { RemitentesIgnorados } from "@/components/correos/remitentes-ignorados";
 import { Checkbox } from "@/components/ui/checkbox";
 
-const searchSchema = z.object({ registro: fallback(z.string(), "").default("") });
+const searchSchema = z.object({
+  registro: fallback(z.string(), "").default(""),
+  /** Correo concreto del Registro (enlace desde el hito «Documentos digitales recibidos»). */
+  correo: fallback(z.string(), "").default(""),
+});
 
 export const Route = createFileRoute("/_authenticated/expedientes/correo")({
   head: () => ({ meta: [
@@ -38,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/expedientes/correo")({
 });
 
 function BandejaCorreo() {
-  const { registro } = Route.useSearch();
+  const { registro, correo } = Route.useSearch();
   const qc = useQueryClient();
   const nav = useNavigate();
   const { data: roles = [] } = useMyRoles();
@@ -221,7 +225,7 @@ function BandejaCorreo() {
           )}
         </CardContent>
       </Card>
-      <RegistroCorreos key={registro} filtroInicial={registro || undefined} />
+      <RegistroCorreos key={`${registro}|${correo}`} filtroInicial={registro || undefined} correoDestacado={correo || undefined} />
       <Dialog open={!!compra} onOpenChange={(open) => { if (!open && !convertir.isPending) setCompra(null); }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Convertir en Cotización de Compra</DialogTitle></DialogHeader>

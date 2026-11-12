@@ -3,6 +3,7 @@ import { claveCorreo, ETIQUETA_ERROR, ETIQUETA_OK } from "@/lib/correo-expedient
 import { textoCola } from "@/lib/correos-cola";
 import { causaEntradaCola, cerrarRegistroCorreo, ponerEnCola } from "@/lib/correos-cola.server";
 import { autorizadoWebhook } from "@/lib/webhook-auth";
+import { fechaCorreoValida } from "@/lib/hito-documentos-auto";
 import { correoDe, normalizarDestinatarios, procesarCorreo, RESULTADO_LEGADO, str, type CamposBitacora } from "@/lib/correo-procesar.server";
 
 export const Route = createFileRoute("/api/public/solicitud-correo")({
@@ -48,6 +49,8 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         const { error: errorTexto } = await db.from("correos_recibidos").update({
           cuerpo: str(normal?.cuerpo).slice(0, 200_000) || null, destinatarios: str(normal?.destinatarios ?? "").slice(0, 2000) || null,
           cc: str(normal?.cc ?? "").slice(0, 2000) || null,
+          // Llegada real a Gmail: fija el hito «Documentos digitales recibidos» al confirmar la solicitud.
+          fecha_correo: fechaCorreoValida(normal?.fecha ?? normal?.date),
           adjuntos_en_gmail: normal?.adjuntos_en_gmail != null && Number.isFinite(Number(normal?.adjuntos_en_gmail)) ? Number(normal?.adjuntos_en_gmail) : null,
           pdfs_en_gmail: normal?.pdfs_en_gmail != null && Number.isFinite(Number(normal?.pdfs_en_gmail)) ? Number(normal?.pdfs_en_gmail) : null,
         }).eq("id", registro_id);

@@ -10,6 +10,10 @@ import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, Clock, Circle, MinusCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { daysFromToday } from "@/lib/dates";
+import { Link } from "@tanstack/react-router";
+import { Sparkles } from "lucide-react";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { esHitoAutomatico, PARCHE_EDICION_MANUAL, textoHitoAutomatico } from "@/lib/hito-documentos-auto";
 
 type HitoRow = {
   id: string;
@@ -21,6 +25,9 @@ type HitoRow = {
   fecha_cumplimiento: string | null;
   responsable_id: string | null;
   notas: string | null;
+  auto_origen?: string | null;
+  auto_fecha?: string | null;
+  auto_correo_id?: string | null;
   catalogo_hitos?: { nombre: string; orden: number; con_alerta: boolean; activo: boolean } | null;
 };
 
@@ -86,6 +93,30 @@ function DeferredDateInput({ value, onSave, className }: DeferredDateInputProps)
   );
 }
 
+/** Etiqueta «Automático»: al pasar el mouse muestra de dónde salió la fecha y enlaza al correo. */
+function EtiquetaAutomatico({ h }: { h: HitoRow }) {
+  return (
+    <HoverCard openDelay={150} closeDelay={150}>
+      <HoverCardTrigger asChild>
+        <button type="button" className="inline-flex items-center gap-0.5 rounded border border-primary/30 bg-primary/5 px-1 py-px text-[11px] font-normal text-primary cursor-help">
+          <Sparkles className="h-3 w-3" />Automático
+        </button>
+      </HoverCardTrigger>
+      <HoverCardContent align="start" className="w-72 p-3 text-[12px] space-y-1">
+        <p className="font-medium">{textoHitoAutomatico(h)}</p>
+        {h.auto_origen === "correo" && (h.auto_correo_id ? (
+          <Link to="/expedientes/correo" search={{ registro: "", correo: h.auto_correo_id }} className="text-primary hover:underline">
+            Ver el correo en el Registro de correos recibidos
+          </Link>
+        ) : (
+          <p className="text-[11px] text-muted-foreground">Correo anterior al Registro de correos: es la hora en que llegó a la plataforma.</p>
+        ))}
+        <p className="text-[11px] text-muted-foreground">Puedes cambiar la fecha a mano.</p>
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
+
 function estadoBadge(e: HitoRow["estado"], atrasado: boolean, proximo: boolean) {
   if (e === "completado") return <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white gap-1"><CheckCircle2 className="h-3 w-3" />Completado</Badge>;
   if (e === "no_aplica") return <Badge variant="outline" className="gap-1"><MinusCircle className="h-3 w-3" />No aplica</Badge>;
@@ -118,6 +149,10 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
     fecha_cumplimiento?: string | null;
     notas?: string | null;
     responsable_id?: string | null;
+    auto_origen?: string | null;
+    auto_fecha?: string | null;
+    auto_correo_id?: string | null;
+    auto_solicitud_id?: string | null;
   };
 
   const [borradores, setBorradores] = useState<Record<string, HitoPatch>>({});
@@ -130,6 +165,8 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
       // El estado se deriva de la fecha de ejecución: con fecha = Completado, sin fecha = Pendiente.
       if ("fecha_cumplimiento" in p) {
         p.estado = p.fecha_cumplimiento ? "completado" : "pendiente";
+        // Fecha editada a mano: deja de ser automática y ningún correo o carga posterior la cambia.
+        Object.assign(p, PARCHE_EDICION_MANUAL);
       }
       const { error } = await supabase.from("expediente_hitos").update(p).eq("id", id);
       if (error) throw error;
@@ -252,6 +289,7 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
                           />
                           {estadoBadge(estadoEfectivo, atrasado, proximo)}
                         </div>
+                        {!fechaTocada && esHitoAutomatico(h) && <div className="mt-1"><EtiquetaAutomatico h={h} /></div>}
                       </td>
                       <td className="px-2 py-2">
                         <DeferredTextarea

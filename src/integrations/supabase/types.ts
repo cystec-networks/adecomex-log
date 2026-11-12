@@ -1806,6 +1806,7 @@ export type Database = {
           en_cola_desde: string | null
           expediente_id: string | null
           expediente_numero: string | null
+          fecha_correo: string | null
           id: string
           id_hilo: string | null
           id_mensaje: string | null
@@ -1846,6 +1847,7 @@ export type Database = {
           en_cola_desde?: string | null
           expediente_id?: string | null
           expediente_numero?: string | null
+          fecha_correo?: string | null
           id?: string
           id_hilo?: string | null
           id_mensaje?: string | null
@@ -1886,6 +1888,7 @@ export type Database = {
           en_cola_desde?: string | null
           expediente_id?: string | null
           expediente_numero?: string | null
+          fecha_correo?: string | null
           id?: string
           id_hilo?: string | null
           id_mensaje?: string | null
@@ -3709,6 +3712,10 @@ export type Database = {
       }
       expediente_hitos: {
         Row: {
+          auto_correo_id: string | null
+          auto_fecha: string | null
+          auto_origen: string | null
+          auto_solicitud_id: string | null
           created_at: string
           estado: Database["public"]["Enums"]["hito_estado"]
           expediente_id: string
@@ -3722,6 +3729,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auto_correo_id?: string | null
+          auto_fecha?: string | null
+          auto_origen?: string | null
+          auto_solicitud_id?: string | null
           created_at?: string
           estado?: Database["public"]["Enums"]["hito_estado"]
           expediente_id: string
@@ -3735,6 +3746,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auto_correo_id?: string | null
+          auto_fecha?: string | null
+          auto_origen?: string | null
+          auto_solicitud_id?: string | null
           created_at?: string
           estado?: Database["public"]["Enums"]["hito_estado"]
           expediente_id?: string
@@ -8717,9 +8732,20 @@ export type Database = {
         Args: { _dias_tomados_ultimo_anio: number; _fecha_ingreso: string }
         Returns: number
       }
+      completar_hito_documentos_correo: {
+        Args: { p_expediente: string; p_solicitud: string }
+        Returns: boolean
+      }
       convertir_correo_cotizacion: {
         Args: { p_cotizacion_id?: string; p_solicitud_id: string }
         Returns: string
+      }
+      correo_original_solicitud: {
+        Args: { p_solicitud: string }
+        Returns: {
+          correo_id: string
+          fecha: string
+        }[]
       }
       crear_solicitud_correo_sin_duplicado: {
         Args: { p_solicitud: Json }
@@ -8763,6 +8789,16 @@ export type Database = {
       guardar_solicitud_correo_pendiente: {
         Args: { p_solicitud: Json }
         Returns: Json
+      }
+      hitos_documentos_correo_pendientes: {
+        Args: never
+        Returns: {
+          correo_id: string
+          expediente_id: string
+          fecha_correo: string
+          numero: string
+          solicitud_id: string
+        }[]
       }
       immutable_unaccent: { Args: { "": string }; Returns: string }
       importar_capitulo_notas: { Args: { _filas: Json }; Returns: Json }

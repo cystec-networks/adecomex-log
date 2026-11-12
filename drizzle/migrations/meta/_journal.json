@@ -862,6 +862,13 @@
       "when": 1794508294369,
       "tag": "0122_conceptos_gasto_reembolso_defecto",
       "breakpoints": true
+    },
+    {
+      "idx": 123,
+      "version": "7",
+      "when": 1794517639301,
+      "tag": "0123_hito_documentos_recibidos_automatico",
+      "breakpoints": true
     }
   ]
 }
