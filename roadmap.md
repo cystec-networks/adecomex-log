@@ -138,9 +138,9 @@
 - [x] Borrados 18 textos «correo_solicitud.txt» y 1 imagen antiguos de 11 Expedientes (confirmado por Francisco).
 - [x] «Simular limpieza» en el Registro y alerta del Panel para casillas ocupadas por correo.
 - [ ] Publicar la app e instalar el script Gmail v3: lo hace el usuario.
-- [ ] Consumo de IA 1: registro central de cada llamada (función, modelo, tokens, costo, usuario) y pantalla admin «Consumo de IA» por función/día.
-- [ ] Consumo de IA 2: texto digital antes que imagen (Nuevo Expediente, e-CF, VUCE, correos) con lectura visual de respaldo.
-- [ ] Consumo de IA 3: resultados reutilizados por huella del archivo; reintentos de correo sin repetir lecturas.
-- [ ] Consumo de IA 4: reglas + modelo económico para clasificar, texto de correo y Novedades; factura del correo leída una vez.
-- [ ] Consumo de IA 5: respuestas fijas en preguntas frecuentes del Asistente; respuesta más corta y últimos 6 mensajes.
-- [ ] Consumo de IA 6: límite diario por función, presupuesto mensual con alerta <20 % y aviso de créditos agotados en el Panel.
+- [x] Consumo de IA 1: registro central (función, modelo, tokens, costo, usuario) y pantalla admin «Consumo de IA» por función/día; verificado en pantalla con llamadas reales del Asistente.
+- [x] Consumo de IA 2: medido con 6 PDFs reales; el texto no abarata la extracción (≈ mismo costo) y perdió datos, así que la extracción sigue con el archivo. El texto solo se usa para clasificar correos.
+- [x] Consumo de IA 3: resultados reutilizados por huella (modelo+instrucciones+archivo); segunda lectura del mismo PDF costó 0.
+- [x] Consumo de IA 4: título/reglas + modelo económico para tipo de adjunto, texto de correo y Novedades; «Otro» seguro no se extrae; factura leída una vez. Probado con 7 adjuntos reales y Novedades de ejemplo.
+- [x] Consumo de IA 5: respuestas fijas en preguntas frecuentes (probado en pantalla), últimos 6 mensajes y respuestas breves.
+- [x] Consumo de IA 6: límite diario por función (Asistente devolvió el aviso al superarlo), presupuesto mensual con alerta en el Panel y aviso de créditos agotados. Pendiente publicar.

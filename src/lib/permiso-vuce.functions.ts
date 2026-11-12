@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import type { ChatContent } from "./ai-gateway.server";
 import { leerPermisoVuce } from "./permiso-vuce";
 import { normalizarProductosVuce, PROMPT_PRODUCTOS_VUCE, PROMPT_PRODUCTOS_VUCE_AUTORIZACION } from "./permiso-vuce-productos";
 
@@ -19,27 +18,15 @@ export const extraerPermisoVuce = createServerFn({ method: "POST" })
     const { callGateway } = await import("./ai-gateway.server");
     const { MODELO_EXTRACCION } = await import("./ia-consumo");
     const productos = async (autorizacion: boolean) => {
-      const esperados = text.match(/Hay\s+(\d+)\s+productos/i)?.[1];
-      const pedir = (contenido: ChatContent, viaTexto: boolean) => callGateway({
-        funcion: "permiso_vuce", model: MODELO_EXTRACCION, temperature: 0, response_format: { type: "json_object" }, viaTexto,
+      const raw = await callGateway({
+        funcion: "permiso_vuce", model: MODELO_EXTRACCION, temperature: 0, response_format: { type: "json_object" },
         messages: [
           { role: "system", content: autorizacion ? PROMPT_PRODUCTOS_VUCE_AUTORIZACION : PROMPT_PRODUCTOS_VUCE },
-          { role: "user", content: contenido },
+          { role: "user", content: [{ type: "file", file: { filename: data.filename, file_data: `data:application/pdf;base64,${data.base64}` } }] },
         ],
       });
-      // Con el total «Hay N productos» se puede comprobar la lectura desde texto; si no cuadra, se lee la imagen.
-      if (!autorizacion && esperados) {
-        const { textoPdfDigital } = await import("./pdf-texto.server");
-        const texto = await textoPdfDigital(Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0)));
-        if (texto) {
-          try {
-            const r = normalizarProductosVuce(JSON.parse(await pedir([{ type: "text", text: `Texto del PDF digital renglón por renglón (" | " separa columnas):\n${texto}` }], true)).productos);
-            if (r.length === Number(esperados)) return r;
-          } catch { /* lectura visual abajo */ }
-        }
-      }
-      const raw = await pedir([{ type: "file", file: { filename: data.filename, file_data: `data:application/pdf;base64,${data.base64}` } }], false);
       const result = normalizarProductosVuce(JSON.parse(raw).productos);
+      const esperados = text.match(/Hay\s+(\d+)\s+productos/i)?.[1];
       if (!autorizacion && esperados && result.length !== Number(esperados)) throw new Error("No se leyeron todos los productos del PDF. Vuelve a subir el documento.");
       return result;
     };

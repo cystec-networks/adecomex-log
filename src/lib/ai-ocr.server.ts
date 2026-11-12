@@ -1,7 +1,6 @@
 import { callGateway, type ChatContent } from "./ai-gateway.server";
 import { MODELO_EXTRACCION, type FuncionIa } from "./ia-consumo";
-import { INSTRUCCION_CANTIDAD, lecturaTextoSuficiente, type ModoLectura } from "./lectura-texto";
-import { textoPdfDigital } from "./pdf-texto.server";
+import { INSTRUCCION_CANTIDAD } from "./lectura-texto";
 import { PROMPT_DOCUMENTO_IMPORTACION } from "./ocr-documento-prompt";
 import { normalizarPaisDocumento } from "./pais-documento";
 import { resolverConfianzaCarga } from './tipo-carga-documento';
@@ -89,30 +88,20 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
       } catch { /* PDFs escaneados conservan lectura OCR. */ }
     }
     if (data.extra_correo) system += INSTRUCCION_CANTIDAD;
-    const modo: ModoLectura = data.lineas_factura ? "lineas_factura" : data.pago_puerto ? "pago_puerto" : data.resultado_dga ? "resultado_dga" : data.certificado_origen_dga ? "certificado_origen_dga" : "general";
-    const pedir = (contenido: ChatContent, viaTexto: boolean) => callGateway({
+    const pedir = (contenido: ChatContent) => callGateway({
       funcion: data.funcion ?? "documento_expediente",
       model: MODELO_EXTRACCION,
       ...(data.lineas_factura || data.pago_puerto || data.certificado_origen_dga || data.resultado_dga || data.carta_ruta ? { temperature: 0 } : {}),
       response_format: { type: "json_object" },
-      viaTexto,
       messages: [{ role: "system", content: system }, { role: "user", content: contenido }],
     });
     let raw = cartaTexto ? JSON.stringify({ carta_ruta: cartaTexto }) : liquidacionTexto ? JSON.stringify({ resultado_dga: liquidacionTexto }) : "";
-    if (!raw && isPdf && !data.carta_ruta) {
-      // PDF digital: se envía su texto (mucho más barato que la imagen); sin los datos clave se repite con la imagen.
-      const texto = await textoPdfDigital(Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0)));
-      if (texto) {
-        const r = await pedir([{ type: "text", text: `Extrae los campos del documento. Texto del PDF digital renglón por renglón (" | " separa columnas):\n${texto}` }], true);
-        if (lecturaTextoSuficiente(modo, parsearJson(r))) raw = r;
-      }
-    }
     if (!raw) raw = await pedir([
       { type: "text", text: "Extrae los campos del documento adjunto." },
       isPdf
         ? { type: "file", file: { filename: data.filename, file_data: dataUrl } }
         : { type: "image_url", image_url: { url: dataUrl } },
-    ], false);
+    ]);
 
     const num = (v: unknown) => (v != null && v !== "" && !isNaN(Number(v)) ? Number(v) : null);
 

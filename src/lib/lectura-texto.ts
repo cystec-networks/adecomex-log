@@ -1,4 +1,4 @@
-// Reglas puras para decidir cuándo basta el texto digital de un PDF y para clasificar por encabezados.
+// Reglas puras: cuándo un PDF es digital completo y qué tipo indica su título (clasificación sin IA).
 
 export const MAX_CARACTERES_TEXTO = 60_000;
 
@@ -13,44 +13,6 @@ export function textoDigitalSuficiente(paginas: string[]): boolean {
   // Formularios con solo etiquetas (valores como imagen o campos de formulario) casi no tienen cifras.
   if (paginas.join("").replace(/\D/g, "").length < 15) return false;
   return paginas.every((p) => p.replace(/\s/g, "").length >= MIN_POR_PAGINA);
-}
-
-const lleno = (v: unknown): boolean =>
-  v != null && v !== "" && !(Array.isArray(v) && v.length === 0) && !(typeof v === "object" && !Array.isArray(v) && Object.values(v as object).every((x) => !lleno(x)));
-
-function contarLlenos(o: unknown): number {
-  if (!o || typeof o !== "object") return lleno(o) ? 1 : 0;
-  if (Array.isArray(o)) return o.length ? 1 : 0;
-  return Object.values(o as Record<string, unknown>).reduce<number>((s, v) => s + (v && typeof v === "object" && !Array.isArray(v) ? contarLlenos(v) : lleno(v) ? 1 : 0), 0);
-}
-
-export type ModoLectura = "lineas_factura" | "pago_puerto" | "resultado_dga" | "certificado_origen_dga" | "general" | "factura_venta" | "correo";
-
-/**
- * ¿La lectura desde texto trae los datos clave? Si no, se repite con la imagen del documento.
- * Criterio deliberadamente estricto: ante la duda se prefiere la lectura visual.
- */
-export function lecturaTextoSuficiente(modo: ModoLectura, r: Record<string, any> | null | undefined, tipo?: string): boolean {
-  if (!r || typeof r !== "object") return false;
-  switch (modo) {
-    case "lineas_factura":
-      return Array.isArray(r.lineas_factura) && r.lineas_factura.length > 0
-        && r.lineas_factura.every((l: any) => l && String(l.descripcion ?? "").trim())
-        && (lleno(r.fob_total) || lleno(r.total_factura) || r.lineas_factura.some((l: any) => lleno(l.valor_fob)));
-    case "pago_puerto":
-      return lleno(r.pago_puerto?.monto) && contarLlenos(r.pago_puerto) >= 3;
-    case "resultado_dga":
-      return contarLlenos(r.resultado_dga) >= 2;
-    case "certificado_origen_dga":
-      return lleno(r.certificado_origen_dga?.numero);
-    case "factura_venta":
-      return lleno(r.encf ?? r.e_ncf) && lleno(r.monto_total ?? r.total) && lleno(r.cliente_rnc ?? r.cliente_razon_social);
-    case "correo":
-      if (tipo === "Bill of Lading" || tipo === "Guía aérea") return lleno(r.bl);
-      return contarLlenos(r) >= 3;
-    default:
-      return contarLlenos(r) >= 4;
-  }
 }
 
 const REGLAS: Array<[string, RegExp]> = [

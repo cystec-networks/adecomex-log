@@ -57,3 +57,4 @@ Detail headers: content-sized rows, client label/value together, wrap IDs, warni
 - Fee payments: gastos.pago_estado/fecha_pago shared by Finance/expediente.
 - The expediente number reference moves only on INSERT or UPDATEs that write `numero` (the form save always sends it); background updates must not send `numero`, so they never rewind numbering.
 - Dialog drafts register a `reiniciar` with `useBorradorExpediente`; the header discard clears only those drafts, so closed dialogs never block Editar or get saved by accident.
+- AI calls go through `callGateway` with a `FuncionIa` (or call `ia-consumo.server` registrar/tope for SDK/embeddings), so every call is logged with estimated cost, honours per-function daily caps and reuses identical requests from `ia_cache`; email PDFs are typed by title rules/economy model before one extraction read.

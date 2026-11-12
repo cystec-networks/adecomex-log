@@ -52,12 +52,16 @@ const fecha = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("
 
 type Fila = { dia: string; funcion: string; modelo: string; llamadas: number; reutilizadas: number; via_texto: number; tokens_entrada: number; tokens_salida: number; costo: number };
 
+// Valores vacíos estables: un [] nuevo en cada render reiniciaría los borradores en bucle.
+const SIN_FILAS: Fila[] = [];
+const SIN_LIMITES: Array<{ funcion: string; limite_diario: number | null }> = [];
+
 function ConsumoIa() {
   const qc = useQueryClient();
   const [periodo, setPeriodo] = useState<Periodo>("mes");
   const { desde, hasta } = rango(periodo);
 
-  const { data: filas = [], isLoading } = useQuery({
+  const { data: filas = SIN_FILAS, isLoading } = useQuery({
     queryKey: ["consumo-ia", desde, hasta],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("resumen_consumo_ia", { p_desde: desde, p_hasta: hasta });
@@ -65,7 +69,7 @@ function ConsumoIa() {
       return (data ?? []).map((f) => ({ ...f, llamadas: Number(f.llamadas), reutilizadas: Number(f.reutilizadas), via_texto: Number(f.via_texto), tokens_entrada: Number(f.tokens_entrada), tokens_salida: Number(f.tokens_salida), costo: Number(f.costo) })) as Fila[];
     },
   });
-  const { data: limites = [] } = useQuery({
+  const { data: limites = SIN_LIMITES } = useQuery({
     queryKey: ["ia-limites"],
     queryFn: async () => {
       const { data, error } = await supabase.from("ia_limites").select("funcion, limite_diario");
@@ -82,7 +86,7 @@ function ConsumoIa() {
     },
   });
 
-  const totales = useMemo(() => filas.reduce((t, f) => ({ costo: t.costo + f.costo, llamadas: t.llamadas + f.llamadas, reutilizadas: t.reutilizadas + f.reutilizadas, texto: t.texto + f.via_texto }), { costo: 0, llamadas: 0, reutilizadas: 0, texto: 0 }), [filas]);
+  const totales = useMemo(() => filas.reduce((t, f) => ({ costo: t.costo + f.costo, llamadas: t.llamadas + f.llamadas, reutilizadas: t.reutilizadas + f.reutilizadas }), { costo: 0, llamadas: 0, reutilizadas: 0 }), [filas]);
   const porFuncion = useMemo(() => {
     const m = new Map<string, { funcion: string; llamadas: number; reutilizadas: number; via_texto: number; tokens: number; costo: number; modelos: Set<string> }>();
     for (const k of Object.keys(FUNCIONES_IA)) m.set(k, { funcion: k, llamadas: 0, reutilizadas: 0, via_texto: 0, tokens: 0, costo: 0, modelos: new Set() });
@@ -164,7 +168,7 @@ function ConsumoIa() {
         <Kpi titulo="Créditos estimados" valor={creditos(totales.costo)} />
         <Kpi titulo="Llamadas a IA" valor={entero(totales.llamadas)} />
         <Kpi titulo="Resultados reutilizados" valor={entero(totales.reutilizadas)} nota="sin costo" />
-        <Kpi titulo="Leídas por texto digital" valor={entero(totales.texto)} nota={totales.llamadas ? `${Math.round((100 * totales.texto) / totales.llamadas)} % de las llamadas` : undefined} />
+        <Kpi titulo="Promedio por llamada" valor={totales.llamadas ? creditos(totales.costo / totales.llamadas) : "—"} nota="créditos" />
       </div>
 
       <Card>
@@ -176,7 +180,7 @@ function ConsumoIa() {
           <Input value={presupuesto} onChange={(e) => setPresupuesto(e.target.value)} inputMode="decimal" placeholder="Créditos al mes" className="w-40" />
           <Button size="sm" onClick={() => guardarPresupuesto.mutate()} disabled={guardarPresupuesto.isPending}><Save className="mr-1 h-4 w-4" /> Guardar</Button>
           <span className="text-muted-foreground">Gastado este mes: <strong className="text-foreground">{creditos(Number(estado?.gastado_mes ?? 0))}</strong></span>
-          {restante != null && <Badge variant={presupuestoBajo(restante) ? "destructive" : "secondary"}>Queda {restante} %</Badge>}
+          {restante != null && <Badge variant={presupuestoBajo(restante) ? "destructive" : "secondary"}>{restante <= 0 ? "Presupuesto superado" : `Queda ${restante} %`}</Badge>}
         </CardContent>
       </Card>
 
@@ -186,9 +190,9 @@ function ConsumoIa() {
           <CardDescription className="text-[12px]">Límite diario en créditos: al alcanzarlo, esa función deja de usar IA hasta el día siguiente (los correos quedan para reintento). Vacío = sin límite.</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-[12px]">
+          <table className="w-full min-w-[820px] text-[12px] [&_td]:px-2 [&_th]:whitespace-nowrap [&_th]:px-2">
             <thead className="text-left text-[11px] uppercase text-muted-foreground">
-              <tr><th className="py-1.5">Función</th><th className="text-right">Llamadas</th><th className="text-right">Reutilizadas</th><th className="text-right">Por texto</th><th className="text-right">Tokens</th><th className="text-right">Créditos</th><th className="pl-3">Modelo</th><th className="pl-3">Límite diario</th></tr>
+              <tr><th className="py-1.5">Función</th><th className="text-right">Llamadas</th><th className="text-right">Reutilizadas</th><th className="text-right" title="Clasificaciones hechas con el texto del PDF en lugar de la imagen">Por texto</th><th className="text-right">Tokens</th><th className="text-right">Créditos</th><th className="pl-3">Modelo</th><th className="pl-3">Límite diario</th></tr>
             </thead>
             <tbody className="divide-y">
               {porFuncion.map((r) => (

@@ -27,7 +27,11 @@ export function AlertaConsumoIa() {
         {agotados ? (
           <p><strong>Créditos de IA agotados.</strong> La lectura automática de documentos y correos está detenida hasta que se añadan créditos al espacio de trabajo.</p>
         ) : (
-          <p><strong>Queda {restante} % del presupuesto mensual de IA.</strong> Revisa el consumo antes de que se agote.</p>
+          restante != null && restante <= 0 ? (
+            <p><strong>Se superó el presupuesto mensual de IA.</strong> Gastado este mes: {Number(data.gastado_mes ?? 0).toFixed(2)} de {Number(data.presupuesto ?? 0).toFixed(2)} créditos.</p>
+          ) : (
+            <p><strong>Queda {restante} % del presupuesto mensual de IA.</strong> Revisa el consumo antes de que se agote.</p>
+          )
         )}
         <Link to="/admin/consumo-ia" className="text-[12px] underline underline-offset-2">Ver Consumo de IA</Link>
       </div>

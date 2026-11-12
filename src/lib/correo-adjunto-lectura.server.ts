@@ -3,7 +3,7 @@ import { PROMPT_DOCUMENTO_IMPORTACION } from "@/lib/ocr-documento-prompt";
 import { callGateway } from "@/lib/ai-gateway.server";
 import { tipoPaginaConfiable } from "./juego-documentos-confianza";
 import { MODELO_ECONOMICO, MODELO_EXTRACCION } from "./ia-consumo";
-import { INSTRUCCION_CANTIDAD, lecturaTextoSuficiente, tipoPorEncabezado } from "./lectura-texto";
+import { INSTRUCCION_CANTIDAD, tipoPorEncabezado } from "./lectura-texto";
 import { textoPdfDigital } from "./pdf-texto.server";
 
 export type AdjuntoProcesado = DatosAdjunto & {
@@ -31,9 +31,10 @@ const PROMPT_COMBINADO = () => PROMPT_DOCUMENTO_IMPORTACION + ` Agrega también 
 type Contenido = Parameters<typeof callGateway>[0]["messages"][number]["content"];
 
 /** Paso 1 (modelo económico): solo el tipo, con confianza. */
-async function clasificarEconomico(contenido: Contenido): Promise<{ tipo: string; confianza: string }> {
+async function clasificarEconomico(contenido: Contenido, viaTexto: boolean): Promise<{ tipo: string; confianza: string }> {
   const raw = await callGateway({
     funcion: "correo_clasificacion",
+    viaTexto,
     model: MODELO_ECONOMICO,
     temperature: 0,
     response_format: { type: "json_object" },
@@ -49,7 +50,7 @@ async function clasificarEconomico(contenido: Contenido): Promise<{ tipo: string
 /**
  * Reconocimiento compartido de un archivo (webhook y documentos combinados). Lanza en fallo del gateway.
  * Orden económico: tipo por el título del PDF digital (sin IA) o con el modelo económico; «Otro» seguro
- * termina ahí; los demás se leen UNA sola vez con el modelo de extracción (texto digital primero).
+ * termina ahí; los demás se leen UNA sola vez con el modelo de extracción.
  */
 export async function leerArchivoCorreo(nombre: string, mime: string, base64: string, bytes: Uint8Array): Promise<AdjuntoProcesado> {
   const base: AdjuntoProcesado = { tipo: "Otro", nombre, mime, bytes };
@@ -65,7 +66,7 @@ export async function leerArchivoCorreo(nombre: string, mime: string, base64: st
   let tipo = texto ? tipoPorEncabezado(texto) : null;
   let j: Record<string, any> = {};
   if (!tipo) {
-    const c = await clasificarEconomico(texto ? contenidoTexto : [{ type: "text", text: "Clasifica el documento adjunto." }, archivo]);
+    const c = await clasificarEconomico(texto ? contenidoTexto : [{ type: "text", text: "Clasifica el documento adjunto." }, archivo], !!texto);
     if (c.tipo !== "Otro") tipo = c.tipo;
     else if (c.confianza === "alta") return base;
   }
@@ -81,17 +82,15 @@ export async function leerArchivoCorreo(nombre: string, mime: string, base64: st
     }
   } else {
     // Tipo conocido: extracción con el tipo fijado. Tipo dudoso: lectura completa que también decide el tipo.
-    const system = tipo ? PROMPT_DOCUMENTO_IMPORTACION + INSTRUCCION_CANTIDAD : PROMPT_COMBINADO();
-    const pedir = (contenido: Contenido, viaTexto: boolean) => callGateway({
-      funcion: "correo_adjunto", model: MODELO_EXTRACCION, temperature: 0, response_format: { type: "json_object" }, viaTexto,
-      messages: [{ role: "system", content: system }, { role: "user", content: contenido }],
+    // La extracción usa el archivo: medido con PDFs reales, enviar el texto no abarata la lectura y pierde datos.
+    const raw = await callGateway({
+      funcion: "correo_adjunto", model: MODELO_EXTRACCION, temperature: 0, response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: tipo ? PROMPT_DOCUMENTO_IMPORTACION + INSTRUCCION_CANTIDAD : PROMPT_COMBINADO() },
+        { role: "user", content: [{ type: "text", text: tipo ? `Extrae los campos del documento adjunto (${tipo}).` : "Extrae los campos del documento adjunto." }, archivo] },
+      ],
     });
-    const parsear = (raw: string) => JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? "{}");
-    if (texto && tipo) {
-      const r = parsear(await pedir([{ type: "text", text: `Extrae los campos del documento (${tipo}). ${contenidoTexto}` }], true));
-      if (lecturaTextoSuficiente("correo", r, tipo)) j = r;
-    }
-    if (!Object.keys(j).length) j = parsear(await pedir([{ type: "text", text: tipo ? `Extrae los campos del documento adjunto (${tipo}).` : "Extrae los campos del documento adjunto." }, archivo], false));
+    j = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? "{}");
     if (!tipo) tipo = tipoAdjuntoCorreo(j.tipo_documento);
   }
   const txt = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);

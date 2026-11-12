@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { lecturaTextoSuficiente, textoDigitalSuficiente, tipoPorEncabezado } from "./lectura-texto";
+import { textoDigitalSuficiente, tipoPorEncabezado } from "./lectura-texto";
 import { costoEstimadoIa, modeloCatalogo, presupuestoBajo, topeAlcanzado } from "./ia-consumo";
 
 describe("texto digital antes que imagen", () => {
@@ -11,18 +11,6 @@ describe("texto digital antes que imagen", () => {
   });
   it("un formulario con solo etiquetas (sin cifras) se lee como imagen", () => {
     assert.equal(textoDigitalSuficiente(["Exporter | Bill of Lading No | Pages\nBuyer's Reference\nConsignee\nPort of Loading | ETD\nDescription of Goods"]), false);
-  });
-  it("factura sin líneas de mercancía desde texto repite con la imagen", () => {
-    assert.equal(lecturaTextoSuficiente("lineas_factura", { fob_total: 1000, lineas_factura: [] }), false);
-    assert.equal(lecturaTextoSuficiente("lineas_factura", { fob_total: 1000, lineas_factura: [{ descripcion: "Arroz", valor_fob: 1000 }] }), true);
-  });
-  it("un BL desde texto exige el número de BL", () => {
-    assert.equal(lecturaTextoSuficiente("correo", { cliente: "A", eta: "2026-01-01", productos: "x" }, "Bill of Lading"), false);
-    assert.equal(lecturaTextoSuficiente("correo", { bl: "MEDU123" }, "Bill of Lading"), true);
-  });
-  it("e-CF exige e-NCF, total y cliente", () => {
-    assert.equal(lecturaTextoSuficiente("factura_venta", { encf: "E310000000001", cliente_rnc: "101" }), false);
-    assert.equal(lecturaTextoSuficiente("factura_venta", { encf: "E310000000001", monto_total: 100, cliente_rnc: "101" }), true);
   });
 });
 
