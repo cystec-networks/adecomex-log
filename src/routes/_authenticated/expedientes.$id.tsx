@@ -35,7 +35,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ActualizadoBadge, HistorialDocumentoButton, useNombresUsuarios } from "@/components/documento-historial";
-import { describirAuditoria } from "@/lib/documento-versiones";
+import { describirAuditoria, fmtFechaHora } from "@/lib/documento-versiones";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -5041,8 +5041,8 @@ function TabAuditoria({ expedienteId }: { expedienteId: string }) {
           <tbody>
             {(data ?? []).map((a: any) => (
               <tr key={a.id} className="border-b last:border-0">
-                <td className="px-4 py-2 text-xs">{new Date(a.created_at).toLocaleString("es-DO")}</td>
-                <td className="text-xs">{a.usuario_id ? nombresAud[a.usuario_id] ?? "Usuario" : <span className="text-muted-foreground">Automático</span>}</td>
+                <td className="px-4 py-2 text-xs whitespace-nowrap">{fmtFechaHora(a.created_at)}</td>
+                <td className="text-xs">{a.usuario_id ? nombresAud[a.usuario_id] ?? "Usuario" : <span className="text-muted-foreground">—</span>}</td>
                 <td className="text-xs text-muted-foreground">{a.entidad}</td>
                 <td className={`text-xs ${describirAuditoria(a) === a.accion ? "font-mono" : ""}`} title={a.cambios?.archivo_anterior ? `Anterior: ${a.cambios.archivo_anterior}\nNuevo: ${a.cambios.archivo_nuevo ?? ""}` : undefined}>{describirAuditoria(a)}</td>
               </tr>
