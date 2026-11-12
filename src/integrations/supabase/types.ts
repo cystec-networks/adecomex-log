@@ -8848,7 +8848,10 @@ export type Database = {
         }
         Returns: boolean
       }
-      aplicar_lote_hitos_retroactivos: { Args: never; Returns: string }
+      aplicar_lote_hitos_retroactivos: {
+        Args: { p_excluir?: string[] }
+        Returns: string
+      }
       aprobar_confirmacion_correo: {
         Args: {
           p_asunto: string
