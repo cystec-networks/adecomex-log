@@ -55,3 +55,5 @@ Detail headers: content-sized rows, client label/value together, wrap IDs, warni
 - ZIPs use `documentos-zip`: authenticated downloads, section folders, unique names, unchanged bytes; abort on any failed file.
 - Statement PDFs: local Blob preview/download, revoked on close, never stored.
 - Fee payments: gastos.pago_estado/fecha_pago shared by Finance/expediente.
+- The expediente number reference moves only on INSERT or UPDATEs that write `numero` (the form save always sends it); background updates must not send `numero`, so they never rewind numbering.
+- Dialog drafts register a `reiniciar` with `useBorradorExpediente`; the header discard clears only those drafts, so closed dialogs never block Editar or get saved by accident.

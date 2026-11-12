@@ -11,19 +11,25 @@ export function useGuardadoExpediente() {
   useSyncExternalStore(registro?.subscribe ?? (() => () => {}), () => registro?.revision ?? 0, () => 0);
   return registro;
 }
-export function useEditorExpediente(hayCambios: boolean, pendiente: boolean, guardar: () => Promise<unknown>) {
+export function useEditorExpediente(hayCambios: boolean, pendiente: boolean, guardar: () => Promise<unknown>, descartar?: () => void) {
   const registro = useContext(Context);
   const id = useId();
   const callback = useRef(guardar);
   callback.current = guardar;
+  const descarte = useRef(descartar);
+  descarte.current = descartar;
+  const descartable = Boolean(descartar);
   useEffect(() => {
-    registro?.registrar(id, { hayCambios, pendiente, guardar: () => callback.current() });
-  }, [registro, id, hayCambios, pendiente]);
+    registro?.registrar(id, { hayCambios, pendiente, guardar: () => callback.current(), descartar: descartable ? () => descarte.current?.() : undefined });
+  }, [registro, id, hayCambios, pendiente, descartable]);
   useEffect(() => () => registro?.retirar(id), [registro, id]);
 }
 
-/** Una ventana cerrada conserva su borrador hasta guardarlo o abrir otro registro. */
-export function useBorradorExpediente(valor: unknown, abierto: boolean, pendiente: boolean, guardar: () => Promise<unknown>, guardado?: number) {
+/**
+ * Una ventana cerrada conserva su borrador hasta guardarlo o descartarlo.
+ * `reiniciar` limpia el formulario y cierra la ventana cuando el usuario descarta desde el encabezado.
+ */
+export function useBorradorExpediente(valor: unknown, abierto: boolean, pendiente: boolean, guardar: () => Promise<unknown>, guardado?: number, reiniciar?: () => void) {
   const snapshot = JSON.stringify(valor);
   const [base, setBase] = useState<string | null>(null);
   const anterior = useRef(false);
@@ -33,6 +39,7 @@ export function useBorradorExpediente(valor: unknown, abierto: boolean, pendient
     anterior.current = abierto;
   }, [abierto, snapshot]);
   const dirty = base !== null && base !== snapshot;
-  useEditorExpediente(dirty, pendiente, async () => { await guardar(); setBase(null); });
-  return { hayCambios: dirty, descartar: () => setBase(null) };
+  const descartar = () => { reiniciar?.(); setBase(null); };
+  useEditorExpediente(dirty, pendiente, async () => { await guardar(); setBase(null); }, descartar);
+  return { hayCambios: dirty, descartar };
 }

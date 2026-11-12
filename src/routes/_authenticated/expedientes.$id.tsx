@@ -39,7 +39,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, ChevronRight, RefreshCw, Globe, Ship, Container, MoreVertical, Printer, Repeat2, Mail } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, ChevronRight, RefreshCw, Globe, Ship, Container, MoreVertical, Printer, Repeat2, Mail, Undo2 } from "lucide-react";
 import { Dispatch, Fragment, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
@@ -490,6 +490,17 @@ function ControlesGuardadoHeader({ expedienteId, compacto = false }: { expedient
         >
           {registro?.hayCambios && <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-background bg-warning" />}
           {registro?.pendiente ? "Guardando…" : compacto ? "Guardar" : "Guardar cambios"}
+        </Button>
+      )}
+      {registro?.hayDescartables && (
+        <Button
+          variant="outline" size="icon" className="h-8 w-8 shrink-0"
+          disabled={registro.pendiente}
+          onClick={() => { if (confirm("¿Descartar los formularios sin guardar (documento, costo, factura, gasto, incidencia, ítem o pago escaneado)? Los cambios de las fichas no se tocan.")) registro.descartar(); }}
+          title="Descartar formularios sin guardar"
+          aria-label="Descartar formularios sin guardar"
+        >
+          <Undo2 className="h-4 w-4" />
         </Button>
       )}
       <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={refrescar} disabled={refrescando} title="Refrescar datos del Expediente">
@@ -3711,7 +3722,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
 
   useBorradorExpediente([tipo, venc, obs, file?.name, file?.lastModified], open, uploading, async () => {
     const ok = await upload(); if (!ok) throw new Error("Documento pendiente");
-  }, documentoGuardado);
+  }, documentoGuardado, () => { setOpen(false); resetForm(); });
 
   const eliminar = async (d: any) => {
     if (!confirm("¿Eliminar este documento? Esta acción no se puede deshacer.")) return;
@@ -3935,7 +3946,8 @@ function TabIncidencias({ expedienteId }: { expedienteId: string }) {
     onSuccess: () => { toast.success("Incidencia registrada"); qc.invalidateQueries({ queryKey: ["incidencias", expedienteId] }); setOpen(false); setF({ tipo: TIPOS_INCIDENCIA[0], severidad: "media", descripcion: "" }); },
   });
 
-  useBorradorExpediente(f, open, add.isPending, () => add.mutateAsync(), add.isSuccess ? add.submittedAt : undefined);
+  useBorradorExpediente(f, open, add.isPending, () => add.mutateAsync(), add.isSuccess ? add.submittedAt : undefined,
+    () => { setOpen(false); setF({ tipo: TIPOS_INCIDENCIA[0], severidad: "media", descripcion: "" }); });
 
   const resolver = async (incId: string) => {
     await supabase.from("incidencias").update({ estado: "resuelta", fecha_resolucion: new Date().toISOString() }).eq("id", incId);
@@ -4106,7 +4118,8 @@ function TabCostosProducto({ expedienteId, exp, liqDraft }: { expedienteId: stri
     onError: (e: any) => toast.error(e.message ?? "No se pudo guardar"),
   });
 
-  useBorradorExpediente(f, open, save.isPending, () => save.mutateAsync(), save.isSuccess ? save.submittedAt : undefined);
+  useBorradorExpediente(f, open, save.isPending, () => save.mutateAsync(), save.isSuccess ? save.submittedAt : undefined,
+    () => { setOpen(false); setEditingId(null); setF(emptyForm); });
 
   const del = useMutation({
     mutationFn: async (id: string) => {
@@ -4459,7 +4472,8 @@ function FacturasBlock({ expedienteId, facturas }: { expedienteId: string; factu
     onError: (e: any) => toast.error(e.message),
   });
 
-  useBorradorExpediente(f, open, save.isPending, () => save.mutateAsync(), save.isSuccess ? save.submittedAt : undefined);
+  useBorradorExpediente(f, open, save.isPending, () => save.mutateAsync(), save.isSuccess ? save.submittedAt : undefined,
+    () => { setOpen(false); setEditingId(null); setF(empty); });
 
   const softDel = useMutation({
     mutationFn: async (id: string) => {
@@ -4715,7 +4729,8 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
     onError: (e: any) => toast.error(e.message),
   });
 
-  useBorradorExpediente([f, file?.name, crearCxp, cxpVence], open, save.isPending, () => save.mutateAsync(), save.isSuccess ? save.submittedAt : undefined);
+  useBorradorExpediente([f, file?.name, crearCxp, cxpVence], open, save.isPending, () => save.mutateAsync(), save.isSuccess ? save.submittedAt : undefined,
+    () => { setOpen(false); setEditingId(null); setF(empty); setFile(null); setCrearCxp(false); setCxpVence(""); setConceptoOtro(false); });
 
   const softDel = useMutation({
     mutationFn: async (id: string) => {
@@ -5339,7 +5354,8 @@ function MercanciaItemsBlock({
     onError: (e: any) => toast.error(e.message),
   });
 
-  useBorradorExpediente(f, open && !local, guardar.isPending, () => guardar.mutateAsync(), guardar.isSuccess ? guardar.submittedAt : undefined);
+  useBorradorExpediente(f, open && !local, guardar.isPending, () => guardar.mutateAsync(), guardar.isSuccess ? guardar.submittedAt : undefined,
+    () => { setOpen(false); setEditingId(null); setF(emptyForm); setValorUnitario(""); });
 
   const eliminar = useMutation({
     mutationFn: async (id: string) => {

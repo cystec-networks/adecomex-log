@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { datosOperativosOrden, guardarOperativosOrden } from './orden-operativa';
+import { datosOperativosOrden, guardarOperativosOrden, operativosOrdenSinCambios } from './orden-operativa';
 
 describe('Datos operativos independientes de la Orden', () => {
   const orden = { origen: 'Amberes', destino: 'Caucedo', incoterm: 'CIF', peso_kg: 143010,
@@ -23,5 +23,13 @@ describe('Datos operativos independientes de la Orden', () => {
       origen: null, destino: null, incoterm: null, peso_kg: null, volumen_m3: null,
       tarifa_propuesta: null, moneda: 'USD',
     });
+  });
+  it('tras guardar, peso escrito como texto y origen con espacios no bloquean la portada', () => {
+    const form = { ...datosOperativosOrden(orden), peso_kg: '12.5', origen: ' Amberes ' };
+    assert.equal(operativosOrdenSinCambios(form as any, { ...orden, peso_kg: 12.5 }), true);
+  });
+  it('un peso distinto al guardado sí bloquea la portada', () => {
+    const form = { ...datosOperativosOrden(orden), peso_kg: '12.6' };
+    assert.equal(operativosOrdenSinCambios(form as any, { ...orden, peso_kg: 12.5 }), false);
   });
 });

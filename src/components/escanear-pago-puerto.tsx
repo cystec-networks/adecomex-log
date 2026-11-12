@@ -103,7 +103,7 @@ export function EscanearPagoPuerto({ expedienteId, documento, onDone }: { expedi
   const iniciado = useRef(false);
   useEffect(() => { if (documento && !iniciado.current) { iniciado.current = true; analizar.mutate(); } }, [documento]);
   const pendiente = lecturaEnCurso || guardar.isPending;
-  useEditorExpediente(analizado, pendiente, async () => { await guardar.mutateAsync(); });
+  useEditorExpediente(analizado, pendiente, async () => { await guardar.mutateAsync(); }, () => { setOpen(false); reset(); });
   const editar = (values: Partial<BorradorPagoPuerto>) => {
     setBorrador((p) => {
       const n = { ...p, ...values };

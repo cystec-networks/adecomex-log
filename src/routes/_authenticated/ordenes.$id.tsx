@@ -21,7 +21,7 @@ import { copiarProductos } from "@/lib/copiar-productos";
 import { NumeroCompraInput } from "@/components/numero-compra-input";
 import { ImporteCotizacionInput } from "@/components/importe-cotizacion-input";
 import { CatalogoAutocomplete } from "@/components/catalogo-autocomplete";
-import { datosOperativosOrden, guardarOperativosOrden } from "@/lib/orden-operativa";
+import { datosOperativosOrden, guardarOperativosOrden, operativosOrdenSinCambios } from "@/lib/orden-operativa";
 import { PortadaOrdenButton } from "@/components/portada-orden-button";
 
 export const Route = createFileRoute("/_authenticated/ordenes/$id")({
@@ -258,7 +258,7 @@ function DetalleOrden() {
           )
         ) : null}
 
-        <PortadaOrdenButton ordenId={id} disabled={save.isPending || form.numero !== (o.numero ?? "") || form.estado !== o.estado || form.notas !== (o.notas ?? "") || Object.entries(datosOperativosOrden(o)).some(([key, value]) => form[key] !== value)} />
+        <PortadaOrdenButton ordenId={id} disabled={save.isPending || form.numero !== (o.numero ?? "") || form.estado !== o.estado || form.notas !== (o.notas ?? "") || !operativosOrdenSinCambios(form, o)} />
         {canEdit && (
           <Button onClick={() => save.mutate()} disabled={save.isPending} className="shadow-lg"><Save className="h-4 w-4 mr-1" />Guardar cambios</Button>
         )}

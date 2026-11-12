@@ -54,3 +54,13 @@ export function useEstadoSuspensivo(regimen: string | null | undefined, override
   const ov = !!override;
   return { suspensivo, override: ov, suspendido: suspensivo && !ov };
 }
+
+
+/** Tasa ITBIS capturada (línea, luego escenario); vacía = null para que el cálculo use el 18 % general. */
+export function tasaItbisCapturada(...valores: (string | null | undefined)[]): number | null {
+  for (const v of valores) {
+    const t = (v ?? "").trim();
+    if (t && Number.isFinite(Number(t))) return Number(t);
+  }
+  return null;
+}

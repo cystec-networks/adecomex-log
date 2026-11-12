@@ -2,6 +2,8 @@ export type EditorExpediente = {
   hayCambios: boolean;
   pendiente: boolean;
   guardar: () => Promise<unknown>;
+  /** Solo los formularios de ventana (borradores) se pueden descartar desde el encabezado. */
+  descartar?: () => void;
 };
 
 /** Los editores se consultan justo antes de guardar, no al cambiar de ficha. */
@@ -16,7 +18,15 @@ export class GuardadoExpediente {
   registrar(id: string, editor: EditorExpediente) { this.editores.set(id, editor); if (editor.hayCambios) this.estado = null; this.emitir(); }
   retirar(id: string) { this.editores.delete(id); this.emitir(); }
   get hayCambios() { return [...this.editores.values()].some((e) => e.hayCambios); }
+  get hayDescartables() { return [...this.editores.values()].some((e) => e.hayCambios && e.descartar); }
   get pendiente() { return this.guardando !== null || [...this.editores.values()].some((e) => e.pendiente); }
+  /** Abandona los borradores de ventanas sin tocar las fichas editadas directamente. */
+  descartar = () => {
+    if (this.pendiente) return;
+    for (const editor of [...this.editores.values()]) if (editor.hayCambios && editor.descartar) editor.descartar();
+    this.estado = null;
+    this.emitir();
+  };
   guardar = (): Promise<void> => {
     if (this.guardando) return this.guardando;
     const tareas = [...this.editores.values()].filter((e) => e.hayCambios);

@@ -22,4 +22,18 @@ describe("Guardado global del expediente", () => {
     r.registrar("costos", { hayCambios: true, pendiente: false, guardar: async () => { throw Error("Inválido"); } });
     await assert.rejects(r.guardar()); assert.equal(r.hayCambios, true); assert.equal(r.estado, "error"); assert.equal(r.pendiente, false);
   });
+  it("descartar abandona solo los formularios de ventana y vuelve a permitir Editar", () => {
+    const r = new GuardadoExpediente(); let descartados = 0;
+    r.registrar("documento", { hayCambios: true, pendiente: false, guardar: async () => { throw Error("No debe subir el archivo abandonado"); },
+      descartar: () => { descartados++; r.registrar("documento", { hayCambios: false, pendiente: false, guardar: async () => {} }); } });
+    assert.equal(r.hayDescartables, true);
+    r.descartar();
+    assert.equal(descartados, 1); assert.equal(r.hayCambios, false); assert.equal(r.hayDescartables, false);
+  });
+  it("descartar no toca las fichas editadas directamente", () => {
+    const r = new GuardadoExpediente();
+    r.registrar("generales", { hayCambios: true, pendiente: false, guardar: async () => {} });
+    assert.equal(r.hayDescartables, false);
+    r.descartar(); assert.equal(r.hayCambios, true);
+  });
 });

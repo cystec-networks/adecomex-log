@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { calcImpuestosLinea } from "@/lib/impuestos";
+import { calcImpuestosLinea, tasaItbisCapturada } from "@/lib/impuestos";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -164,7 +164,7 @@ function calcular(e: Escenario, tarifas: TarifaServicio[] = []): Resultado {
     const preferencial = conAcuerdo && prefCorresponde(l, e.acuerdo);
     const pctGrav = preferencial ? num(l.pctGravPref!) : gravGeneral;
     const pctIsc = (l.pctIsc ?? "").trim() ? num(l.pctIsc!) : 0;
-    const pctItbis = (l.pctItbis ?? "").trim() ? num(l.pctItbis!) : num(e.pctItbis);
+    const pctItbis = tasaItbisCapturada(l.pctItbis, e.pctItbis);
     const r = calcImpuestosLinea(fob, totalFob, seguro, flete, 0, pctGrav, pctIsc > 0, pctIsc, pctItbis, !!e.regimenSuspensivo);
     const gastos = r.cifLinea * (num(e.pctGastos) / 100);
     const servicioLinea = servicio * share;
@@ -501,7 +501,7 @@ function ColumnaEscenario({
                           {res?.sinTasaPref && <span className="ml-1 text-[10px] text-muted-foreground" title="No hay tasa preferencial registrada para este código y acuerdo; se usa el gravamen general.">(sin pref.)</span>}
                         </td>
                         <td className="p-2 text-right">{(l.pctIsc ?? "").trim() ? `${l.pctIsc}%` : "—"}</td>
-                        <td className="p-2 text-right">{(l.pctItbis ?? "").trim() || esc.pctItbis ? `${l.pctItbis || esc.pctItbis}%` : "—"}</td>
+                        <td className="p-2 text-right">{`${tasaItbisCapturada(l.pctItbis, esc.pctItbis) ?? 18}%`}</td>
                         <td className="p-2 text-right whitespace-nowrap">
                           <Button variant="ghost" size="icon" title="Modificar" onClick={() => modificar(i)}><Pencil className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="icon" title="Borrar" onClick={() => borrar(i)}><Trash2 className="h-4 w-4" /></Button>

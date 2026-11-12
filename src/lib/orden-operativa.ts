@@ -20,3 +20,10 @@ export function guardarOperativosOrden(form: ReturnType<typeof datosOperativosOr
     tarifa_propuesta: numero(form.tarifa_propuesta), moneda,
   };
 }
+
+/** Compara como se guardaría: números y textos recortados, para no bloquear tras un guardado exitoso. */
+export function operativosOrdenSinCambios(form: ReturnType<typeof datosOperativosOrden>, orden: Parameters<typeof datosOperativosOrden>[0]) {
+  const actual = guardarOperativosOrden(form);
+  const guardado = guardarOperativosOrden(datosOperativosOrden(orden));
+  return (Object.keys(guardado) as (keyof typeof guardado)[]).every((k) => actual[k] === guardado[k]);
+}

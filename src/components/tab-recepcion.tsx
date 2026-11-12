@@ -179,7 +179,7 @@ export function TabRecepcion({ expedienteId }: { expedienteId: string }) {
   const setLinea = (idx: number, patch: Partial<Linea>) =>
     setLineas((prev) => prev.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
 
-  useBorradorExpediente([lineas, obs, toleranciaPct], open, guardar.isPending, () => guardar.mutateAsync(), guardar.isSuccess ? guardar.submittedAt : undefined);
+  useBorradorExpediente([lineas, obs, toleranciaPct], open, guardar.isPending, () => guardar.mutateAsync(), guardar.isSuccess ? guardar.submittedAt : undefined, () => setOpen(false));
 
   return (
     <Card>
