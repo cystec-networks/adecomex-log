@@ -63,7 +63,8 @@ export function describirAuditoria(a: FilaAuditoria): string {
   const hito = typeof c.nombre === "string" && c.nombre ? c.nombre : typeof c.hito === "string" ? c.hito : "hito";
   if (a.accion === "hito_automatico") {
     const f = typeof c.fecha === "string" ? c.fecha.split("-").reverse().join("/") : "";
-    return `Fecha automática del hito «${hito}»${f ? `: ${f}` : ""}${ORIGEN_HITO[String(c.origen)] ? ` · ${ORIGEN_HITO[String(c.origen)]}` : ""}`;
+    const retro = c.detalle && typeof c.detalle === "object" && (c.detalle as Record<string, unknown>).retroactivo === true;
+    return `Fecha automática del hito «${hito}»${f ? `: ${f}` : ""}${ORIGEN_HITO[String(c.origen)] ? ` · ${ORIGEN_HITO[String(c.origen)]}` : ""}${retro ? " (completado retroactivamente)" : ""}`;
   }
   if (a.accion === "hito_automatico_retirado") return `Fecha automática retirada del hito «${hito}» (su origen ya no existe)`;
   if (a.accion === "enviado_gestor") return `Expediente enviado al gestor${typeof c.gestor === "string" && c.gestor ? ` ${c.gestor}` : ""}`;

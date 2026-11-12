@@ -876,6 +876,13 @@
       "when": 1794518773028,
       "tag": "0124_hitos_checklist_automaticos",
       "breakpoints": true
+    },
+    {
+      "idx": 125,
+      "version": "7",
+      "when": 1794519424337,
+      "tag": "0125_hitos_lote_retroactivo",
+      "breakpoints": true
     }
   ]
 }

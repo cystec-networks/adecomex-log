@@ -2,7 +2,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   FolderKanban, Users, UserCog, LogOut, Home,
   PackageOpen, PackageCheck, Sparkles, Trash2, FileCheck2, Truck,
-  ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3, Library, Settings, Newspaper, BookMarked, Gauge,
+  ChevronDown, Wrench, FileText, Bot, LayoutDashboard, BarChart3, Library, Settings, Newspaper, BookMarked, Gauge, History,
   DollarSign, PiggyBank, Shield, Receipt, ClipboardList, FileBarChart2, Wallet,
   GraduationCap, BookOpen, UserPlus, ClipboardCheck,
   Briefcase, IdCard, HandCoins,
@@ -167,6 +167,8 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/admin/base-normativa") },
       { to: "/admin/consumo-ia", label: "Consumo de IA", icon: Gauge, adminOnly: true,
         match: (p) => p.startsWith("/admin/consumo-ia") },
+      { to: "/admin/hitos-retroactivos", label: "Hitos retroactivos", icon: History, adminOnly: true,
+        match: (p) => p.startsWith("/admin/hitos-retroactivos") },
       { to: "/admin/configuracion", label: "Configuración", icon: Settings, adminOnly: true,
         match: (p) => p.startsWith("/admin/configuracion") },
       { to: "/admin/respaldo-datos", label: "Respaldo de Datos", icon: DatabaseBackup, adminOnly: true,

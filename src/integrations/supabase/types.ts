@@ -5111,6 +5111,96 @@ export type Database = {
         }
         Relationships: []
       }
+      hitos_lote_items: {
+        Row: {
+          evento_fecha: string
+          expediente_id: string
+          fecha: string
+          hito_codigo: string
+          hito_id: string
+          id: string
+          lote_id: string
+          origen: string
+          prev_estado: Database["public"]["Enums"]["hito_estado"]
+          revertido: boolean
+        }
+        Insert: {
+          evento_fecha: string
+          expediente_id: string
+          fecha: string
+          hito_codigo: string
+          hito_id: string
+          id?: string
+          lote_id: string
+          origen: string
+          prev_estado?: Database["public"]["Enums"]["hito_estado"]
+          revertido?: boolean
+        }
+        Update: {
+          evento_fecha?: string
+          expediente_id?: string
+          fecha?: string
+          hito_codigo?: string
+          hito_id?: string
+          id?: string
+          lote_id?: string
+          origen?: string
+          prev_estado?: Database["public"]["Enums"]["hito_estado"]
+          revertido?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hitos_lote_items_hito_id_fkey"
+            columns: ["hito_id"]
+            isOneToOne: false
+            referencedRelation: "expediente_hitos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hitos_lote_items_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "hitos_lotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hitos_lotes: {
+        Row: {
+          conservados: number | null
+          creado_en: string
+          creado_por: string | null
+          descripcion: string
+          deshecho_en: string | null
+          deshecho_por: string | null
+          id: string
+          revertidos: number | null
+          total: number
+        }
+        Insert: {
+          conservados?: number | null
+          creado_en?: string
+          creado_por?: string | null
+          descripcion?: string
+          deshecho_en?: string | null
+          deshecho_por?: string | null
+          id?: string
+          revertidos?: number | null
+          total?: number
+        }
+        Update: {
+          conservados?: number | null
+          creado_en?: string
+          creado_por?: string | null
+          descripcion?: string
+          deshecho_en?: string | null
+          deshecho_por?: string | null
+          id?: string
+          revertidos?: number | null
+          total?: number
+        }
+        Relationships: []
+      }
       ia_cache: {
         Row: {
           clave: string
@@ -8758,6 +8848,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      aplicar_lote_hitos_retroactivos: { Args: never; Returns: string }
       aprobar_confirmacion_correo: {
         Args: {
           p_asunto: string
@@ -8848,6 +8939,7 @@ export type Database = {
         Args: { p_solicitud: Json }
         Returns: string
       }
+      deshacer_lote_hitos: { Args: { p_lote: string }; Returns: Json }
       estado_presupuesto_ia: {
         Args: never
         Returns: {
@@ -8895,6 +8987,24 @@ export type Database = {
           expediente_id: string
           fecha_correo: string
           numero: string
+          solicitud_id: string
+        }[]
+      }
+      hitos_retroactivos_candidatos: {
+        Args: never
+        Returns: {
+          correo_id: string
+          detalle: Json
+          estado_expediente: string
+          evento_fecha: string
+          expediente_id: string
+          fecha: string
+          fecha_programada: string
+          hito_codigo: string
+          hito_id: string
+          numero: string
+          origen: string
+          ref_id: string
           solicitud_id: string
         }[]
       }

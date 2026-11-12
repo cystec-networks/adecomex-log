@@ -81,9 +81,12 @@ export function textoHitoAutomatico(h: HitoAuto): string {
 
 /** Aclaración adicional del evento cuando no confirma por sí mismo el hito. */
 export function notaHitoAutomatico(h: HitoAuto): string | null {
-  if (h.auto_origen === "correo_dga") return "Solo indica que se preparó el borrador en Gmail; no confirma que se haya enviado.";
-  if (h.auto_origen === "ecf") return "Primera e-CF de venta vinculada al Expediente.";
-  return null;
+  const notas: string[] = [];
+  if (h.auto_detalle && typeof h.auto_detalle === "object" && (h.auto_detalle as Record<string, unknown>).retroactivo === true)
+    notas.push("Completado retroactivamente.");
+  if (h.auto_origen === "correo_dga") notas.push("Solo indica que se preparó el borrador en Gmail; no confirma que se haya enviado.");
+  if (h.auto_origen === "ecf") notas.push("Primera e-CF de venta vinculada al Expediente.");
+  return notas.length ? notas.join(" ") : null;
 }
 
 /** Al editar la fecha a mano, el hito deja de ser automático y nunca se vuelve a llenar solo. */
