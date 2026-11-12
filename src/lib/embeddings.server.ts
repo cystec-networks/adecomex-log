@@ -2,6 +2,7 @@
 // `index` y reintento limitado ante límites temporales (429/5xx).
 const URL_EMBEDDINGS = "https://ai.gateway.lovable.dev/v1/embeddings";
 export const MODELO_EMBEDDINGS = "google/gemini-embedding-2";
+import { marcarCreditosAgotados, registrarConsumoIa } from "./ia-consumo.server";
 export const DIMENSIONES_EMBEDDINGS = 3072;
 /** El proveedor acepta como máximo 100 textos por solicitud. */
 const MAX_POR_SOLICITUD = 100;
@@ -31,7 +32,11 @@ async function solicitar(input: string[], intentos = 3): Promise<number[][]> {
       body: JSON.stringify({ model: MODELO_EMBEDDINGS, input }),
     });
     if (res.ok) {
-      const data = (await res.json()) as { data?: Array<{ index: number; embedding: number[] }> };
+      const data = (await res.json()) as { data?: Array<{ index: number; embedding: number[] }>; usage?: { prompt_tokens?: number; total_tokens?: number } };
+      await registrarConsumoIa({
+        funcion: "embeddings", modelo: MODELO_EMBEDDINGS,
+        tokensEntrada: data.usage?.prompt_tokens ?? data.usage?.total_tokens ?? Math.ceil(input.join(" ").length / 4),
+      });
       const ordenados: number[][] = Array.from({ length: input.length });
       for (const item of data.data ?? []) {
         if (Number.isInteger(item.index) && item.index >= 0 && item.index < input.length)
@@ -42,6 +47,8 @@ async function solicitar(input: string[], intentos = 3): Promise<number[][]> {
       return ordenados;
     }
     const cuerpo = await res.text();
+    if (res.status === 402 || (res.status === 403 && /credit|limit|disabled/i.test(cuerpo)))
+      await marcarCreditosAgotados(res.status === 402 ? "Créditos de IA agotados." : "El uso de IA del espacio de trabajo está limitado o desactivado.");
     if (res.status === 402)
       throw new ErrorEmbeddings(
         "Se agotaron los créditos de IA del espacio de trabajo. Un administrador puede recargarlos en Configuración → Planes y créditos.",

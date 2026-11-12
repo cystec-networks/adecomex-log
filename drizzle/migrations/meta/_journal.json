@@ -834,6 +834,13 @@
       "when": 1794449079196,
       "tag": "0118_expedientes_referencia_solo_guardado_numero",
       "breakpoints": true
+    },
+    {
+      "idx": 119,
+      "version": "7",
+      "when": 1794449933464,
+      "tag": "0119_ia_consumo_cache_limites",
+      "breakpoints": true
     }
   ]
 }

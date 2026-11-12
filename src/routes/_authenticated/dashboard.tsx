@@ -18,6 +18,7 @@ import { useDatosAlertasListado } from "@/lib/use-alertas-expediente";
 import { usePlazosRegimen } from "@/lib/plazo-presentacion";
 import { recordatoriosAlertasExpedientes } from "@/lib/alertas-expediente-panel";
 import { KpiFilaOrdenable, useOrdenKpiPanel } from "@/components/kpi-fila-ordenable";
+import { AlertaConsumoIa } from "@/components/alerta-consumo-ia";
 import { AlertasColumnasOrdenables, useDisposicionAlertas } from "@/components/alertas-columnas-ordenables";
 import type { GrupoAlertaId } from "@/lib/panel-alertas-disposicion";
 import {
@@ -130,6 +131,7 @@ function Dashboard() {
 
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+      <AlertaConsumoIa />
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold">Panel de operaciones</h1>
         <div className="flex items-center gap-2">

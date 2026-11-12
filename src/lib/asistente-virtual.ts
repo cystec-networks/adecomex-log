@@ -5,7 +5,7 @@ import type { UIMessage } from "ai";
 export const ASISTENTE_NOMBRE = "Asistente ADECOMEX";
 export const ASISTENTE_CLAVE_SESION = "adecomex.asistente.historial";
 /** Turnos (usuario + asistente) que se envían al modelo como contexto. */
-export const ASISTENTE_MAX_MENSAJES = 30;
+export const ASISTENTE_MAX_MENSAJES = 6;
 /** Longitud máxima de una pregunta escrita por el usuario. */
 export const ASISTENTE_MAX_CARACTERES = 2000;
 

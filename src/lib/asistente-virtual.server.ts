@@ -28,9 +28,11 @@ import {
 } from "./novedades-comercio";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1";
+import { modeloCatalogo } from "./ia-consumo";
+import { ErrorTopeIa, marcarCreditosAgotados, registrarConsumoIa, usuarioDeAutorizacion, verificarTopeIa } from "./ia-consumo.server";
 const MODELO = "openai/gpt-6-astra";
 
-const INSTRUCCIONES = `Eres el ${ASISTENTE_NOMBRE}, asistente virtual de uso interno del personal de ADECOMEX SRL, agencia de aduanas y comercio exterior en República Dominicana. Respondes siempre en español, con tono profesional, claro y breve (usa listas cuando ayuden).
+const INSTRUCCIONES = `Eres el ${ASISTENTE_NOMBRE}, asistente virtual de uso interno del personal de ADECOMEX SRL, agencia de aduanas y comercio exterior en República Dominicana. Respondes siempre en español, con tono profesional, claro y breve (usa listas cuando ayuden). Limita cada respuesta a unas 200 palabras salvo que el usuario pida más detalle.
 
 ALCANCE — solo orientación GENERAL sobre:
 1. Procedimientos aduaneros en República Dominicana (DGA, SIGA, regímenes, declaraciones DUA, aforo/canales de inspección, liquidación de impuestos, gravamen, ITBIS, selectivo, plazos de presentación).
@@ -204,6 +206,8 @@ async function cargarNovedades(
 
 function mensajeErrorIa(error: unknown): string {
   const status = APICallError.isInstance(error) ? error.statusCode : undefined;
+  if (status === 402 || (status === 403 && /credit|limit|disabled/i.test(APICallError.isInstance(error) ? String(error.responseBody ?? "") : "")))
+    void marcarCreditosAgotados(status === 402 ? "Créditos de IA agotados." : "El uso de IA del espacio de trabajo está limitado o desactivado.");
   if (status === 402)
     return "Se agotaron los créditos de IA del espacio de trabajo. Un administrador puede recargarlos en Configuración → Planes y créditos.";
   if (status === 429)
@@ -228,6 +232,13 @@ export async function manejarAsistente(request: Request): Promise<Response> {
   }
   const historial = historialParaModelo((cuerpo as { messages?: unknown })?.messages);
   if (!historial) return respuestaError(400, "Escribe una pregunta para el asistente.");
+  try {
+    await verificarTopeIa("asistente");
+  } catch (e) {
+    if (e instanceof ErrorTopeIa) return respuestaError(429, e.message);
+    throw e;
+  }
+  const usuarioId = usuarioDeAutorizacion(request.headers.get("authorization"));
 
   const ultima = historial[historial.length - 1];
   const textoDe = (m: (typeof historial)[number]) =>
@@ -271,6 +282,14 @@ export async function manejarAsistente(request: Request): Promise<Response> {
     messages: await convertToModelMessages(historial),
     abortSignal: request.signal,
     maxRetries: 1,
+    // Respuestas breves: el razonamiento y el texto comparten este presupuesto.
+    maxOutputTokens: 3000,
+    onFinish: ({ totalUsage, response }) => {
+      void registrarConsumoIa({
+        funcion: "asistente", modelo: modeloCatalogo(response?.modelId, MODELO), usuarioId,
+        tokensEntrada: totalUsage?.inputTokens, tokensSalida: totalUsage?.outputTokens,
+      });
+    },
     providerOptions: {
       openai: {
         forceReasoning: true,

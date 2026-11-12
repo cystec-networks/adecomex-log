@@ -1,4 +1,7 @@
-import { callGateway } from "./ai-gateway.server";
+import { callGateway, type ChatContent } from "./ai-gateway.server";
+import { MODELO_EXTRACCION, type FuncionIa } from "./ia-consumo";
+import { INSTRUCCION_CANTIDAD, lecturaTextoSuficiente, type ModoLectura } from "./lectura-texto";
+import { textoPdfDigital } from "./pdf-texto.server";
 import { PROMPT_DOCUMENTO_IMPORTACION } from "./ocr-documento-prompt";
 import { normalizarPaisDocumento } from "./pais-documento";
 import { resolverConfianzaCarga } from './tipo-carga-documento';
@@ -33,7 +36,18 @@ async function aplicarTotalTexto(p: PagoPuerto, base64: string | null): Promise<
   }
 }
 
-export type OcrDocumentoInput = { filename: string; mime: string; base64: string; lineas_factura?: boolean; pago_puerto?: boolean; resultado_dga?: typeof TIPOS_RESULTADO_DGA[number]; certificado_origen_dga?: boolean; carta_ruta?: boolean; solicitud_despacho?: boolean };
+export type OcrDocumentoInput = { filename: string; mime: string; base64: string; lineas_factura?: boolean; pago_puerto?: boolean; resultado_dga?: typeof TIPOS_RESULTADO_DGA[number]; certificado_origen_dga?: boolean; carta_ruta?: boolean; solicitud_despacho?: boolean;
+  /** Función que se registra en Consumo de IA (por defecto, lectura de documentos del Expediente). */
+  funcion?: FuncionIa;
+  /** Correo entrante: agrega la cantidad total de bultos a la misma lectura. */
+  extra_correo?: boolean };
+
+
+function parsearJson(raw: string): Record<string, any> {
+  try { return JSON.parse(raw); } catch { /* respuesta con texto alrededor */ }
+  const m = raw.match(/\{[\s\S]*\}/);
+  try { return m ? JSON.parse(m[0]) : {}; } catch { return {}; }
+}
 
 /** Shared OCR implementation; callers must authorize before invoking it. */
 export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise<OcrExtraction> {
@@ -74,33 +88,35 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
         liquidacionTexto = leerLiquidacionDga(text);
       } catch { /* PDFs escaneados conservan lectura OCR. */ }
     }
-    const raw = cartaTexto ? JSON.stringify({ carta_ruta: cartaTexto }) : liquidacionTexto ? JSON.stringify({ resultado_dga: liquidacionTexto }) : await callGateway({
-      model: "google/gemini-2.5-flash",
+    if (data.extra_correo) system += INSTRUCCION_CANTIDAD;
+    const modo: ModoLectura = data.lineas_factura ? "lineas_factura" : data.pago_puerto ? "pago_puerto" : data.resultado_dga ? "resultado_dga" : data.certificado_origen_dga ? "certificado_origen_dga" : "general";
+    const pedir = (contenido: ChatContent, viaTexto: boolean) => callGateway({
+      funcion: data.funcion ?? "documento_expediente",
+      model: MODELO_EXTRACCION,
       ...(data.lineas_factura || data.pago_puerto || data.certificado_origen_dga || data.resultado_dga || data.carta_ruta ? { temperature: 0 } : {}),
       response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: system },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Extrae los campos del documento adjunto." },
-            isPdf
-              ? { type: "file", file: { filename: data.filename, file_data: dataUrl } }
-              : { type: "image_url", image_url: { url: dataUrl } },
-          ],
-        },
-      ],
+      viaTexto,
+      messages: [{ role: "system", content: system }, { role: "user", content: contenido }],
     });
+    let raw = cartaTexto ? JSON.stringify({ carta_ruta: cartaTexto }) : liquidacionTexto ? JSON.stringify({ resultado_dga: liquidacionTexto }) : "";
+    if (!raw && isPdf && !data.carta_ruta) {
+      // PDF digital: se envía su texto (mucho más barato que la imagen); sin los datos clave se repite con la imagen.
+      const texto = await textoPdfDigital(Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0)));
+      if (texto) {
+        const r = await pedir([{ type: "text", text: `Extrae los campos del documento. Texto del PDF digital renglón por renglón (" | " separa columnas):\n${texto}` }], true);
+        if (lecturaTextoSuficiente(modo, parsearJson(r))) raw = r;
+      }
+    }
+    if (!raw) raw = await pedir([
+      { type: "text", text: "Extrae los campos del documento adjunto." },
+      isPdf
+        ? { type: "file", file: { filename: data.filename, file_data: dataUrl } }
+        : { type: "image_url", image_url: { url: dataUrl } },
+    ], false);
 
     const num = (v: unknown) => (v != null && v !== "" && !isNaN(Number(v)) ? Number(v) : null);
 
-    let parsed: Partial<OcrExtraction> = {};
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      const m = raw.match(/\{[\s\S]*\}/);
-      if (m) parsed = JSON.parse(m[0]);
-    }
+    let parsed = parsearJson(raw) as Partial<OcrExtraction>;
 
     if (isPdf && !data.pago_puerto && !data.resultado_dga && !data.certificado_origen_dga && !data.carta_ruta) {
       try {
@@ -166,6 +182,7 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
         valor_fob: num(l.valor_fob), peso: num(l.peso),
         costo_desglose_cif: num(l.costo_desglose_cif), codigo_producto_documento: l.codigo_producto_documento ? String(l.codigo_producto_documento).trim() : null,
       })) : [] } : {}),
+      ...(data.extra_correo ? { cantidad: typeof (parsed as any).cantidad === "string" ? (parsed as any).cantidad : null } : {}),
       tipo_carga_confianza:
         parsed.tipo_carga_confianza === "alta" || parsed.tipo_carga_confianza === "media"
           ? parsed.tipo_carga_confianza

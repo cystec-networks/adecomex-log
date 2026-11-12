@@ -20,12 +20,12 @@ describe("historialParaModelo", () => {
     expect(r?.[0].parts).toEqual([{ type: "text", text: "Hola" }]);
   });
 
-  it("conserva solo los últimos 30 mensajes", () => {
+  it("conserva solo los últimos 6 mensajes", () => {
     const largo = Array.from({ length: 40 }, (_, i) => (i % 2 === 0 ? user(`u${i}`, `p${i}`) : bot(`a${i}`, `r${i}`)));
     largo.push(user("ult", "última"));
     const r = historialParaModelo(largo)!;
-    expect(ASISTENTE_MAX_MENSAJES).toBe(30);
-    expect(r).toHaveLength(30);
+    expect(ASISTENTE_MAX_MENSAJES).toBe(6);
+    expect(r).toHaveLength(6);
     expect(r[r.length - 1].id).toBe("ult");
   });
 

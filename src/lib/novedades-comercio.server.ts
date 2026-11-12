@@ -1,4 +1,6 @@
 // Revisión de fuentes de «Novedades de comercio exterior» (solo servidor).
+import { MODELO_ECONOMICO, modeloCatalogo } from "./ia-consumo";
+import { ErrorTopeIa, marcarCreditosAgotados, registrarConsumoIa, verificarTopeIa } from "./ia-consumo.server";
 // Lee cada fuente activa, detecta publicaciones nuevas por enlace, pide a la IA
 // un resumen corto y la categoría, y guarda sin duplicar. Trabajo acotado por
 // ejecución, con bloqueo único y pausa ante falta de créditos o acceso a la IA.
@@ -39,7 +41,7 @@ import {
 type Admin = SupabaseClient<Database>;
 type Fuente = Database["public"]["Tables"]["fuentes_novedades"]["Row"];
 
-const MODELO = "openai/gpt-6-astra";
+const MODELO = MODELO_ECONOMICO;
 const AGENTE = "Mozilla/5.0 (compatible; ADECOMEX-Novedades/1.0; +https://app.adecomex.com)";
 
 class PausaIa extends Error {
@@ -166,6 +168,12 @@ Devuelve una entrada por cada índice recibido.`;
 async function pedirJson(esquema: object, sistema: string, usuario: string): Promise<unknown> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new PausaIa("acceso", "Falta la clave del servicio de IA.");
+  try {
+    await verificarTopeIa("novedades");
+  } catch (e) {
+    if (e instanceof ErrorTopeIa) throw new LimiteIa(`${e.message} La revisión continuará cuando haya margen.`);
+    throw e;
+  }
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -186,8 +194,10 @@ async function pedirJson(esquema: object, sistema: string, usuario: string): Pro
   });
   if (!res.ok) {
     const cuerpo = await res.text();
-    if (res.status === 402)
+    if (res.status === 402) {
+      await marcarCreditosAgotados("Créditos de IA agotados.");
       throw new PausaIa("creditos", "Se agotaron los créditos de IA del espacio de trabajo.");
+    }
     if (res.status === 403) {
       let requiere = "";
       try {
@@ -201,11 +211,13 @@ async function pedirJson(esquema: object, sistema: string, usuario: string): Pro
         requiere === "top_up" ||
         requiere === "admin_action" ||
         /credit|limit|disabled/i.test(cuerpo)
-      )
+      ) {
+        await marcarCreditosAgotados("El uso de IA del espacio de trabajo está limitado o desactivado.");
         throw new PausaIa(
           "creditos",
           "El uso de IA del espacio de trabajo está limitado o desactivado.",
         );
+      }
       throw new PausaIa("acceso", "El servicio de IA rechazó el acceso para esta tarea.");
     }
     if (res.status === 429)
@@ -215,8 +227,14 @@ async function pedirJson(esquema: object, sistema: string, usuario: string): Pro
     throw new Error(`El servicio de IA respondió ${res.status}.`);
   }
   const data = (await res.json()) as {
+    model?: string;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
     choices?: Array<{ message?: { content?: string; refusal?: string } }>;
   };
+  await registrarConsumoIa({
+    funcion: "novedades", modelo: modeloCatalogo(data.model, MODELO), usuarioId: null,
+    tokensEntrada: data.usage?.prompt_tokens, tokensSalida: data.usage?.completion_tokens,
+  });
   const msg = data.choices?.[0]?.message;
   if (!msg?.content)
     throw new Error(

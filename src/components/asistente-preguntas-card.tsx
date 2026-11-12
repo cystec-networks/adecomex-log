@@ -8,8 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 
-type Pregunta = { id: string; pregunta: string; orden: number; activo: boolean };
+type Pregunta = { id: string; pregunta: string; respuesta: string | null; orden: number; activo: boolean };
 
 const CLAVE = ["asistente_preguntas_frecuentes"];
 
@@ -17,14 +18,14 @@ const CLAVE = ["asistente_preguntas_frecuentes"];
 export function AsistentePreguntasCard() {
   const qc = useQueryClient();
   const [nueva, setNueva] = useState("");
-  const [editando, setEditando] = useState<{ id: string; texto: string } | null>(null);
+  const [editando, setEditando] = useState<{ id: string; texto: string; respuesta: string } | null>(null);
 
   const { data: preguntas = [], isLoading } = useQuery({
     queryKey: [...CLAVE, "admin"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("asistente_preguntas_frecuentes")
-        .select("id, pregunta, orden, activo")
+        .select("id, pregunta, respuesta, orden, activo")
         .order("orden", { ascending: true })
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -93,7 +94,8 @@ export function AsistentePreguntasCard() {
     if (!editando) return;
     const texto = editando.texto.trim();
     if (texto.length < 3) return toast.error("Escribe la pregunta (mínimo 3 caracteres)");
-    actualizar.mutate({ id: editando.id, cambios: { pregunta: texto } }, { onSuccess: () => setEditando(null) });
+    const respuesta = editando.respuesta.trim();
+    actualizar.mutate({ id: editando.id, cambios: { pregunta: texto, respuesta: respuesta || null } }, { onSuccess: () => setEditando(null) });
   };
 
   return (
@@ -103,7 +105,8 @@ export function AsistentePreguntasCard() {
           <MessageCircleQuestion className="h-4 w-4" /> Preguntas frecuentes del asistente virtual
         </CardTitle>
         <CardDescription>
-          Botones que aparecen al abrir el asistente. Solo se muestran las activas, en este orden.
+          Botones que aparecen al abrir el asistente. Solo se muestran las activas, en este orden. Las que tienen
+          respuesta fija se contestan al instante, sin usar IA.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -128,7 +131,7 @@ export function AsistentePreguntasCard() {
         ) : (
           <ul className="divide-y rounded-md border">
             {preguntas.map((p, i) => (
-              <li key={p.id} className="flex items-center gap-2 px-3 py-2">
+              <li key={p.id} className="flex items-start gap-2 px-3 py-2">
                 <div className="flex flex-col">
                   <Button
                     size="icon-xs"
@@ -151,19 +154,34 @@ export function AsistentePreguntasCard() {
                 </div>
                 <div className="min-w-0 flex-1">
                   {editando?.id === p.id ? (
-                    <Input
-                      autoFocus
-                      value={editando.texto}
-                      maxLength={300}
-                      onChange={(e) => setEditando({ id: p.id, texto: e.target.value })}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") guardarEdicion();
-                        if (e.key === "Escape") setEditando(null);
-                      }}
-                      className="text-[13px]"
-                    />
+                    <div className="space-y-2">
+                      <Input
+                        autoFocus
+                        value={editando.texto}
+                        maxLength={300}
+                        onChange={(e) => setEditando({ ...editando, texto: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") guardarEdicion();
+                          if (e.key === "Escape") setEditando(null);
+                        }}
+                        className="text-[13px]"
+                      />
+                      <Textarea
+                        value={editando.respuesta}
+                        maxLength={4000}
+                        rows={4}
+                        onChange={(e) => setEditando({ ...editando, respuesta: e.target.value })}
+                        placeholder="Respuesta fija (opcional). Si la dejas vacía, la responde la IA."
+                        className="text-[13px]"
+                      />
+                    </div>
                   ) : (
-                    <p className={`text-[13px] ${p.activo ? "" : "text-muted-foreground line-through"}`}>{p.pregunta}</p>
+                    <>
+                      <p className={`text-[13px] ${p.activo ? "" : "text-muted-foreground line-through"}`}>{p.pregunta}</p>
+                      <p className="line-clamp-2 text-[11px] text-muted-foreground" title={p.respuesta ?? undefined}>
+                        {p.respuesta ? `Respuesta fija: ${p.respuesta}` : "Sin respuesta fija: la responde la IA"}
+                      </p>
+                    </>
                   )}
                 </div>
                 {editando?.id === p.id ? (
@@ -188,7 +206,7 @@ export function AsistentePreguntasCard() {
                     <Button
                       size="icon-sm"
                       variant="ghost"
-                      onClick={() => setEditando({ id: p.id, texto: p.pregunta })}
+                      onClick={() => setEditando({ id: p.id, texto: p.pregunta, respuesta: p.respuesta ?? "" })}
                       aria-label="Editar"
                     >
                       <Pencil className="h-4 w-4" />

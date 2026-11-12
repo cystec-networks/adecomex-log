@@ -167,7 +167,7 @@ export function AsistenteVirtual() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("asistente_preguntas_frecuentes")
-        .select("id, pregunta")
+        .select("id, pregunta, respuesta")
         .eq("activo", true)
         .order("orden", { ascending: true })
         .order("created_at", { ascending: true });
@@ -182,6 +182,19 @@ export function AsistenteVirtual() {
     detener();
     clearError();
     void sendMessage({ text: limpio });
+  };
+
+  // Pregunta frecuente con respuesta fija del administrador: se muestra al instante, sin IA.
+  const preguntarFrecuente = (p: { pregunta: string; respuesta: string | null }) => {
+    const fija = p.respuesta?.trim();
+    if (!fija) return preguntar(p.pregunta);
+    if (ocupado) return;
+    detener();
+    clearError();
+    const marca = Date.now().toString(36);
+    const respuesta = { id: `faq-a-${marca}`, role: "assistant" as const, parts: [{ type: "text" as const, text: fija }] };
+    setMessages([...messages, { id: `faq-u-${marca}`, role: "user", parts: [{ type: "text", text: p.pregunta }] }, respuesta]);
+    if (modoVoz && vozSoportada) leer(respuesta.id, fija);
   };
 
   const onSubmit = (m: PromptInputMessage) => preguntar(m.text ?? "");
@@ -307,7 +320,7 @@ export function AsistenteVirtual() {
                       <Suggestion
                         key={p.id}
                         suggestion={p.pregunta}
-                        onClick={preguntar}
+                        onClick={() => preguntarFrecuente(p)}
                         disabled={ocupado}
                         className="h-auto whitespace-normal py-1.5 text-left text-[12px] leading-snug"
                       />

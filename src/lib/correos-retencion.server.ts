@@ -32,5 +32,8 @@ export async function aplicarRetencionCorreos(db: any) {
   const { data: quitadas, error: e3 } = await db.from("correos_recibidos").delete()
     .eq("resultado", "descartada").lt("descartado_en", haceDias(DIAS_REGISTRO_DESCARTADOS)).not("adjuntos_borrados_en", "is", null).select("id");
   if (e3) throw new Error(`No se pudieron quitar las líneas antiguas: ${e3.message}`);
+  // 3) Resultados de IA reutilizables sin uso en 90 días (mantenimiento, no afecta correos).
+  const { error: e4 } = await db.from("ia_cache").delete().lt("usado_at", haceDias(90));
+  if (e4) console.error("No se pudieron quitar resultados de IA antiguos", e4.message);
   return { adjuntosBorrados, correosConAdjuntos, lineasQuitadas: quitadas?.length ?? 0 };
 }

@@ -138,3 +138,9 @@
 - [x] Borrados 18 textos «correo_solicitud.txt» y 1 imagen antiguos de 11 Expedientes (confirmado por Francisco).
 - [x] «Simular limpieza» en el Registro y alerta del Panel para casillas ocupadas por correo.
 - [ ] Publicar la app e instalar el script Gmail v3: lo hace el usuario.
+- [ ] Consumo de IA 1: registro central de cada llamada (función, modelo, tokens, costo, usuario) y pantalla admin «Consumo de IA» por función/día.
+- [ ] Consumo de IA 2: texto digital antes que imagen (Nuevo Expediente, e-CF, VUCE, correos) con lectura visual de respaldo.
+- [ ] Consumo de IA 3: resultados reutilizados por huella del archivo; reintentos de correo sin repetir lecturas.
+- [ ] Consumo de IA 4: reglas + modelo económico para clasificar, texto de correo y Novedades; factura del correo leída una vez.
+- [ ] Consumo de IA 5: respuestas fijas en preguntas frecuentes del Asistente; respuesta más corta y últimos 6 mensajes.
+- [ ] Consumo de IA 6: límite diario por función, presupuesto mensual con alerta <20 % y aviso de créditos agotados en el Panel.

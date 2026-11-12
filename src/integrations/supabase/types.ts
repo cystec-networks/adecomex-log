@@ -200,6 +200,7 @@ export type Database = {
           id: string
           orden: number
           pregunta: string
+          respuesta: string | null
           updated_at: string
         }
         Insert: {
@@ -208,6 +209,7 @@ export type Database = {
           id?: string
           orden?: number
           pregunta: string
+          respuesta?: string | null
           updated_at?: string
         }
         Update: {
@@ -216,6 +218,7 @@ export type Database = {
           id?: string
           orden?: number
           pregunta?: string
+          respuesta?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -4922,6 +4925,123 @@ export type Database = {
         }
         Relationships: []
       }
+      ia_cache: {
+        Row: {
+          clave: string
+          created_at: string
+          funcion: string
+          modelo: string
+          resultado: string
+          usado_at: string
+          usos: number
+        }
+        Insert: {
+          clave: string
+          created_at?: string
+          funcion: string
+          modelo: string
+          resultado: string
+          usado_at?: string
+          usos?: number
+        }
+        Update: {
+          clave?: string
+          created_at?: string
+          funcion?: string
+          modelo?: string
+          resultado?: string
+          usado_at?: string
+          usos?: number
+        }
+        Relationships: []
+      }
+      ia_configuracion: {
+        Row: {
+          creditos_agotados_at: string | null
+          creditos_agotados_mensaje: string | null
+          presupuesto_mensual: number | null
+          singleton: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          creditos_agotados_at?: string | null
+          creditos_agotados_mensaje?: string | null
+          presupuesto_mensual?: number | null
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          creditos_agotados_at?: string | null
+          creditos_agotados_mensaje?: string | null
+          presupuesto_mensual?: number | null
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      ia_consumo: {
+        Row: {
+          costo_estimado: number
+          created_at: string
+          funcion: string
+          id: string
+          modelo: string
+          reutilizado: boolean
+          tokens_entrada: number
+          tokens_salida: number
+          usuario_id: string | null
+          via_texto: boolean
+        }
+        Insert: {
+          costo_estimado?: number
+          created_at?: string
+          funcion: string
+          id?: string
+          modelo: string
+          reutilizado?: boolean
+          tokens_entrada?: number
+          tokens_salida?: number
+          usuario_id?: string | null
+          via_texto?: boolean
+        }
+        Update: {
+          costo_estimado?: number
+          created_at?: string
+          funcion?: string
+          id?: string
+          modelo?: string
+          reutilizado?: boolean
+          tokens_entrada?: number
+          tokens_salida?: number
+          usuario_id?: string | null
+          via_texto?: boolean
+        }
+        Relationships: []
+      }
+      ia_limites: {
+        Row: {
+          funcion: string
+          limite_diario: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          funcion: string
+          limite_diario?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          funcion?: string
+          limite_diario?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       incidencias: {
         Row: {
           accion_correctiva: string | null
@@ -8479,6 +8599,16 @@ export type Database = {
         Args: { p_solicitud: Json }
         Returns: string
       }
+      estado_presupuesto_ia: {
+        Args: never
+        Returns: {
+          creditos_agotados_at: string
+          creditos_agotados_mensaje: string
+          gastado_mes: number
+          presupuesto: number
+          restante_pct: number
+        }[]
+      }
       expediente_docs_core_faltantes: { Args: { _id: string }; Returns: string }
       expirar_cotizaciones_vencidas: { Args: never; Returns: number }
       fusionar_adjuntos_correo: {
@@ -8567,6 +8697,20 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      resumen_consumo_ia: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: {
+          costo: number
+          dia: string
+          funcion: string
+          llamadas: number
+          modelo: string
+          reutilizadas: number
+          tokens_entrada: number
+          tokens_salida: number
+          via_texto: number
+        }[]
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }

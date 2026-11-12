@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { MODELO_EXTRACCION } from "./ia-consumo";
 import { callGateway } from "./ai-gateway.server";
 
 const Input = z.object({
@@ -48,7 +49,8 @@ export const extractCuentaPorPagarFromDocument = createServerFn({ method: "POST"
 
     const isPdf = data.mime === "application/pdf";
     const raw = await callGateway({
-      model: "google/gemini-2.5-flash",
+      funcion: "cuenta_por_pagar",
+      model: MODELO_EXTRACCION,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: system },

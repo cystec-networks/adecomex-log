@@ -40,6 +40,7 @@ import { Route as AuthenticatedAdminCatalogoViajesTransporteRouteImport } from '
 import { Route as AuthenticatedAdminCatalogosRouteImport } from './routes/_authenticated/admin.catalogos'
 import { Route as AuthenticatedAdminConciliacionBancariaRouteImport } from './routes/_authenticated/admin.conciliacion-bancaria'
 import { Route as AuthenticatedAdminConfiguracionRouteImport } from './routes/_authenticated/admin.configuracion'
+import { Route as AuthenticatedAdminConsumoIaRouteImport } from './routes/_authenticated/admin.consumo-ia'
 import { Route as AuthenticatedAdminCotizacionesServiciosRouteImport } from './routes/_authenticated/admin.cotizaciones-servicios'
 import { Route as AuthenticatedAdminCuentasPorCobrarRouteImport } from './routes/_authenticated/admin.cuentas-por-cobrar'
 import { Route as AuthenticatedAdminCuentasPorPagarRouteImport } from './routes/_authenticated/admin.cuentas-por-pagar'
@@ -274,6 +275,12 @@ const AuthenticatedAdminConfiguracionRoute =
   AuthenticatedAdminConfiguracionRouteImport.update({
     id: '/admin/configuracion',
     path: '/admin/configuracion',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminConsumoIaRoute =
+  AuthenticatedAdminConsumoIaRouteImport.update({
+    id: '/admin/consumo-ia',
+    path: '/admin/consumo-ia',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminCotizacionesServiciosRoute =
@@ -706,6 +713,7 @@ export interface FileRoutesByFullPath {
   '/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/admin/conciliacion-bancaria': typeof AuthenticatedAdminConciliacionBancariaRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
+  '/admin/consumo-ia': typeof AuthenticatedAdminConsumoIaRoute
   '/admin/cotizaciones-servicios': typeof AuthenticatedAdminCotizacionesServiciosRoute
   '/admin/cuentas-por-cobrar': typeof AuthenticatedAdminCuentasPorCobrarRoute
   '/admin/cuentas-por-pagar': typeof AuthenticatedAdminCuentasPorPagarRoute
@@ -804,6 +812,7 @@ export interface FileRoutesByTo {
   '/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/admin/conciliacion-bancaria': typeof AuthenticatedAdminConciliacionBancariaRoute
   '/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
+  '/admin/consumo-ia': typeof AuthenticatedAdminConsumoIaRoute
   '/admin/cotizaciones-servicios': typeof AuthenticatedAdminCotizacionesServiciosRoute
   '/admin/cuentas-por-cobrar': typeof AuthenticatedAdminCuentasPorCobrarRoute
   '/admin/cuentas-por-pagar': typeof AuthenticatedAdminCuentasPorPagarRoute
@@ -906,6 +915,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/catalogos': typeof AuthenticatedAdminCatalogosRoute
   '/_authenticated/admin/conciliacion-bancaria': typeof AuthenticatedAdminConciliacionBancariaRoute
   '/_authenticated/admin/configuracion': typeof AuthenticatedAdminConfiguracionRoute
+  '/_authenticated/admin/consumo-ia': typeof AuthenticatedAdminConsumoIaRoute
   '/_authenticated/admin/cotizaciones-servicios': typeof AuthenticatedAdminCotizacionesServiciosRoute
   '/_authenticated/admin/cuentas-por-cobrar': typeof AuthenticatedAdminCuentasPorCobrarRoute
   '/_authenticated/admin/cuentas-por-pagar': typeof AuthenticatedAdminCuentasPorPagarRoute
@@ -1006,6 +1016,7 @@ export interface FileRouteTypes {
     | '/admin/catalogos'
     | '/admin/conciliacion-bancaria'
     | '/admin/configuracion'
+    | '/admin/consumo-ia'
     | '/admin/cotizaciones-servicios'
     | '/admin/cuentas-por-cobrar'
     | '/admin/cuentas-por-pagar'
@@ -1104,6 +1115,7 @@ export interface FileRouteTypes {
     | '/admin/catalogos'
     | '/admin/conciliacion-bancaria'
     | '/admin/configuracion'
+    | '/admin/consumo-ia'
     | '/admin/cotizaciones-servicios'
     | '/admin/cuentas-por-cobrar'
     | '/admin/cuentas-por-pagar'
@@ -1205,6 +1217,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/catalogos'
     | '/_authenticated/admin/conciliacion-bancaria'
     | '/_authenticated/admin/configuracion'
+    | '/_authenticated/admin/consumo-ia'
     | '/_authenticated/admin/cotizaciones-servicios'
     | '/_authenticated/admin/cuentas-por-cobrar'
     | '/_authenticated/admin/cuentas-por-pagar'
@@ -1519,6 +1532,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/configuracion'
       fullPath: '/admin/configuracion'
       preLoaderRoute: typeof AuthenticatedAdminConfiguracionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/consumo-ia': {
+      id: '/_authenticated/admin/consumo-ia'
+      path: '/admin/consumo-ia'
+      fullPath: '/admin/consumo-ia'
+      preLoaderRoute: typeof AuthenticatedAdminConsumoIaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/cotizaciones-servicios': {
@@ -2019,6 +2039,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminCatalogosRoute: typeof AuthenticatedAdminCatalogosRoute
   AuthenticatedAdminConciliacionBancariaRoute: typeof AuthenticatedAdminConciliacionBancariaRoute
   AuthenticatedAdminConfiguracionRoute: typeof AuthenticatedAdminConfiguracionRoute
+  AuthenticatedAdminConsumoIaRoute: typeof AuthenticatedAdminConsumoIaRoute
   AuthenticatedAdminCotizacionesServiciosRoute: typeof AuthenticatedAdminCotizacionesServiciosRoute
   AuthenticatedAdminCuentasPorCobrarRoute: typeof AuthenticatedAdminCuentasPorCobrarRoute
   AuthenticatedAdminCuentasPorPagarRoute: typeof AuthenticatedAdminCuentasPorPagarRoute
@@ -2093,6 +2114,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminConciliacionBancariaRoute:
     AuthenticatedAdminConciliacionBancariaRoute,
   AuthenticatedAdminConfiguracionRoute: AuthenticatedAdminConfiguracionRoute,
+  AuthenticatedAdminConsumoIaRoute: AuthenticatedAdminConsumoIaRoute,
   AuthenticatedAdminCotizacionesServiciosRoute:
     AuthenticatedAdminCotizacionesServiciosRoute,
   AuthenticatedAdminCuentasPorCobrarRoute:

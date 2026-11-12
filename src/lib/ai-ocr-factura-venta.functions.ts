@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { callGateway } from "./ai-gateway.server";
+import { callGateway, type ChatContent } from "./ai-gateway.server";
+import { MODELO_EXTRACCION } from "./ia-consumo";
+import { lecturaTextoSuficiente } from "./lectura-texto";
 import { detectarContenedoresFactura, detectarTransportesFactura } from "./factura-venta-contenedores";
 import type { LineaInput } from './facturas-ecf';
 import { calcTotales } from './facturas-ecf';
@@ -78,22 +80,31 @@ export const extractFacturaVentaFromDocument = createServerFn({ method: "POST" }
       "No inventes datos. Usa null cuando el dato no aparezca claramente.";
 
     const isPdf = data.mime === "application/pdf";
-    const raw = await callGateway({
-      model: "google/gemini-2.5-flash",
+    const pedir = (contenido: ChatContent, viaTexto: boolean) => callGateway({
+      funcion: "factura_venta",
+      model: MODELO_EXTRACCION,
       response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: system },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Extrae los datos de esta factura de venta con e-NCF." },
-            isPdf
-              ? { type: "file", file: { filename: data.filename, file_data: dataUrl } }
-              : { type: "image_url", image_url: { url: dataUrl } },
-          ],
-        },
-      ],
+      viaTexto,
+      messages: [{ role: "system", content: system }, { role: "user", content: contenido }],
     });
+    let raw = "";
+    if (isPdf) {
+      // e-CF digital: su texto basta; si faltan e-NCF, total o cliente se lee la imagen.
+      const { textoPdfDigital } = await import("./pdf-texto.server");
+      const texto = await textoPdfDigital(Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0)));
+      if (texto) {
+        const r = await pedir([{ type: "text", text: `Extrae los datos de esta factura de venta con e-NCF. Texto del PDF digital renglón por renglón (" | " separa columnas):\n${texto}` }], true);
+        let j: Record<string, unknown> | null = null;
+        try { j = JSON.parse(r.match(/\{[\s\S]*\}/)?.[0] ?? "null"); } catch { j = null; }
+        if (lecturaTextoSuficiente("factura_venta", j)) raw = r;
+      }
+    }
+    if (!raw) raw = await pedir([
+      { type: "text", text: "Extrae los datos de esta factura de venta con e-NCF." },
+      isPdf
+        ? { type: "file", file: { filename: data.filename, file_data: dataUrl } }
+        : { type: "image_url", image_url: { url: dataUrl } },
+    ], false);
 
     let parsed: Partial<FacturaVentaExtraction> = {};
     try {
