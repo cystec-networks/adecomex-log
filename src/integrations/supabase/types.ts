@@ -3710,11 +3710,89 @@ export type Database = {
           },
         ]
       }
+      expediente_envios_gestor: {
+        Row: {
+          created_at: string
+          enviado_en: string
+          enviado_por: string | null
+          expediente_id: string
+          gestor_id: string | null
+          gestor_nombre: string
+          id: string
+          notas: string | null
+        }
+        Insert: {
+          created_at?: string
+          enviado_en?: string
+          enviado_por?: string | null
+          expediente_id: string
+          gestor_id?: string | null
+          gestor_nombre?: string
+          id?: string
+          notas?: string | null
+        }
+        Update: {
+          created_at?: string
+          enviado_en?: string
+          enviado_por?: string | null
+          expediente_id?: string
+          gestor_id?: string | null
+          gestor_nombre?: string
+          id?: string
+          notas?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expediente_envios_gestor_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_envios_gestor_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_envios_gestor_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "expediente_envios_gestor_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "expediente_envios_gestor_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "expediente_envios_gestor_gestor_id_fkey"
+            columns: ["gestor_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_gestores_honorarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expediente_hitos: {
         Row: {
           auto_correo_id: string | null
+          auto_detalle: Json | null
           auto_fecha: string | null
           auto_origen: string | null
+          auto_ref_id: string | null
           auto_solicitud_id: string | null
           created_at: string
           estado: Database["public"]["Enums"]["hito_estado"]
@@ -3730,8 +3808,10 @@ export type Database = {
         }
         Insert: {
           auto_correo_id?: string | null
+          auto_detalle?: Json | null
           auto_fecha?: string | null
           auto_origen?: string | null
+          auto_ref_id?: string | null
           auto_solicitud_id?: string | null
           created_at?: string
           estado?: Database["public"]["Enums"]["hito_estado"]
@@ -3747,8 +3827,10 @@ export type Database = {
         }
         Update: {
           auto_correo_id?: string | null
+          auto_detalle?: Json | null
           auto_fecha?: string | null
           auto_origen?: string | null
+          auto_ref_id?: string | null
           auto_solicitud_id?: string | null
           created_at?: string
           estado?: Database["public"]["Enums"]["hito_estado"]
@@ -6783,6 +6865,7 @@ export type Database = {
           fecha_aprobacion: string | null
           fecha_emision: string | null
           fecha_solicitud: string | null
+          fecha_solicitud_vuce: string | null
           fecha_vencimiento: string | null
           id: string
           institucion_emisora: string | null
@@ -6808,6 +6891,7 @@ export type Database = {
           fecha_aprobacion?: string | null
           fecha_emision?: string | null
           fecha_solicitud?: string | null
+          fecha_solicitud_vuce?: string | null
           fecha_vencimiento?: string | null
           id?: string
           institucion_emisora?: string | null
@@ -6833,6 +6917,7 @@ export type Database = {
           fecha_aprobacion?: string | null
           fecha_emision?: string | null
           fecha_solicitud?: string | null
+          fecha_solicitud_vuce?: string | null
           fecha_vencimiento?: string | null
           id?: string
           institucion_emisora?: string | null
@@ -8661,6 +8746,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      aplicar_hito_automatico: {
+        Args: {
+          p_codigo: string
+          p_detalle: Json
+          p_expediente: string
+          p_fecha: string
+          p_origen: string
+          p_recalcular: boolean
+          p_ref: string
+        }
+        Returns: boolean
+      }
       aprobar_confirmacion_correo: {
         Args: {
           p_asunto: string
@@ -8766,6 +8863,7 @@ export type Database = {
       }
       expediente_docs_core_faltantes: { Args: { _id: string }; Returns: string }
       expirar_cotizaciones_vencidas: { Args: never; Returns: number }
+      fecha_dia_sd: { Args: { p_fecha: string }; Returns: string }
       fusionar_adjuntos_correo: {
         Args: { p_anterior: Json; p_nuevo: Json }
         Returns: Json
@@ -8832,6 +8930,14 @@ export type Database = {
       novedad_url_clave: { Args: { p_url: string }; Returns: string }
       novedades_token_valido: { Args: { p_token: string }; Returns: boolean }
       novedades_tomar_lock: { Args: { p_minutos?: number }; Returns: boolean }
+      recalcular_hito_factura_venta: {
+        Args: { p_expediente: string }
+        Returns: boolean
+      }
+      recalcular_hito_permiso_vuce: {
+        Args: { p_expediente: string }
+        Returns: boolean
+      }
       reemplazar_servicio_aduanero: {
         Args: { _expediente_id: string; _filas: Json }
         Returns: number

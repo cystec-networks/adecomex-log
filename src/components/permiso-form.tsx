@@ -96,6 +96,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
     estado_vuce: null as string | null,
     fecha_aprobacion: "",
     fecha_solicitud: "",
+    fecha_solicitud_vuce: "",
     fecha_emision: "",
     fecha_vencimiento: "",
     documento_url: "",
@@ -119,6 +120,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
         estado_vuce: existing.estado_vuce ?? null,
         fecha_aprobacion: (existing as any).fecha_aprobacion ?? "",
         fecha_solicitud: existing.fecha_solicitud ?? "",
+        fecha_solicitud_vuce: (existing as any).fecha_solicitud_vuce ?? "",
         fecha_emision: existing.fecha_emision ?? "",
         fecha_vencimiento: existing.fecha_vencimiento ?? "",
         documento_url: existing.documento_url ?? "",
@@ -198,7 +200,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
     mutationFn: async () => {
       if (uploading) throw new Error("Espera a que termine la lectura del documento.");
       const payload: any = { ...form };
-      ["expediente_id","orden_id","cliente_id","tipo","fecha_solicitud","fecha_emision","fecha_vencimiento","fecha_aprobacion","documento_url","numero_resolucion","institucion_emisora","observaciones","numero"]
+      ["expediente_id","orden_id","cliente_id","tipo","fecha_solicitud","fecha_solicitud_vuce","fecha_emision","fecha_vencimiento","fecha_aprobacion","documento_url","numero_resolucion","institucion_emisora","observaciones","numero"]
         .forEach((k) => { if (payload[k] === "") payload[k] = null; });
       if (payload.documento_url && payload.expediente_id && !payload.codigo_siga) {
         const { siguienteCodigoSiga } = await import("@/lib/codigo-siga");
@@ -431,7 +433,8 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
           <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary">Fechas</CardTitle>
         </CardHeader>
         <CardContent className="pt-5 grid gap-4 md:grid-cols-3">
-          <div className="grid gap-1.5"><Label>Fecha de Solicitud</Label><Input type="date" value={form.fecha_solicitud} onChange={(e) => set("fecha_solicitud", e.target.value)} /></div>
+          <div className="grid gap-1.5"><Label>Fecha de Solicitud</Label><Input type="date" value={form.fecha_solicitud} onChange={(e) => set("fecha_solicitud", e.target.value)} />
+            {form.fecha_solicitud_vuce && <p className="text-[11px] text-muted-foreground">Según el PDF VUCE (Registrado/Aceptado): {form.fecha_solicitud_vuce.split("-").reverse().join("/")}</p>}</div>
           <div className="grid gap-1.5"><Label>Fecha de Emisión</Label><Input type="date" value={form.fecha_emision} onChange={(e) => set("fecha_emision", e.target.value)} /></div>
           <div className="grid gap-1.5"><Label>Fecha de Vencimiento</Label><Input type="date" value={form.fecha_vencimiento} onChange={(e) => set("fecha_vencimiento", e.target.value)} /></div>
         </CardContent>

@@ -26,6 +26,8 @@ export function fechaVuce(value: string): string | null {
 export type DatosPermisoVuce = {
   numero: string; institucion_emisora: string | null; estado: ReturnType<typeof clasificarEstadoVuce>;
   estado_vuce: string; fecha_vencimiento: string | null; fecha_aprobacion: string | null;
+  /** Fecha de la fila «Registrado/Aceptado» del historial (fecha de solicitud en VUCE), si el PDF la trae. */
+  fecha_solicitud_vuce?: string | null;
   productos?: ProductoVuce[];
   /** Reference values from the document, used only to verify the expediente (never overwrite). */
   verificacion?: { bl: string | null; puerto: string | null; transporte: string | null; solicitante: string | null; documento: string | null };
@@ -47,6 +49,8 @@ export function leerAutorizacionControlVuce(text: string): DatosPermisoVuce | nu
   }).filter((r): r is { fecha: string; estado: string } => !!r?.fecha);
   const ultima = filas.sort((a, b) => a.fecha.localeCompare(b.fecha)).at(-1);
   if (!ultima) return null;
+  // La primera fila «Registrado/Aceptado» es la fecha en que VUCE registró la solicitud.
+  const registrada = filas.find((f) => /^Registrado\/Aceptado$/i.test(f.estado))?.fecha ?? null;
   const estado = clasificarEstadoVuce(ultima.estado);
   const campo = (re: RegExp) => t.match(re)?.[1]?.trim() || null;
   const organismo = campo(/Organismo\s+Externo\s*:?\s*(.+?)(?=\s+Nombre\s+de\s+Formulario|\n|$)/i);
@@ -55,6 +59,7 @@ export function leerAutorizacionControlVuce(text: string): DatosPermisoVuce | nu
     numero, institucion_emisora: organismo, estado, estado_vuce: ultima.estado,
     fecha_vencimiento: null,
     fecha_aprobacion: estado === "aprobado" ? ultima.fecha : null,
+    fecha_solicitud_vuce: registrada,
     verificacion: {
       bl: campo(/No\.?\s*Doc\.?\s*de\s+Embarque\s*:?\s*(?:BL|AWB|HBL|MBL)?\s*([A-Z0-9-]+)/i),
       puerto: campo(/Puerto\s+de\s+Entrada\s*:?\s*(.+?)(?=\n|$)/i),
@@ -104,8 +109,12 @@ export function leerDetalleSolicitudVuce(text: string): DatosPermisoVuce | null 
 }
 
 /** Replacing a recognized document replaces its documentary dates, never manual-only fields. */
-export function aplicarDetalleVuce<T extends { numero: string; institucion_emisora: string; estado: string; estado_vuce: string | null; fecha_vencimiento: string; fecha_aprobacion: string }>(form: T, datos: DatosPermisoVuce): T {
-  return { ...form, numero: datos.numero, institucion_emisora: datos.institucion_emisora ?? form.institucion_emisora,
+export function aplicarDetalleVuce<T extends { numero: string; institucion_emisora: string; estado: string; estado_vuce: string | null; fecha_vencimiento: string; fecha_aprobacion: string; fecha_solicitud?: string; fecha_solicitud_vuce?: string }>(form: T, datos: DatosPermisoVuce): T {
+  // La fecha de solicitud del PDF se guarda aparte; solo completa la ficha si está vacía. Un PDF sin ella conserva la anterior.
+  const solicitud = datos.fecha_solicitud_vuce
+    ? { fecha_solicitud_vuce: datos.fecha_solicitud_vuce, ...(form.fecha_solicitud ? {} : { fecha_solicitud: datos.fecha_solicitud_vuce }) }
+    : {};
+  return { ...form, ...solicitud, numero: datos.numero, institucion_emisora: datos.institucion_emisora ?? form.institucion_emisora,
     estado: datos.estado, estado_vuce: datos.estado_vuce,
     // wcIC012003 has no expiry: keep the current value instead of clearing it.
     fecha_vencimiento: datos.verificacion ? form.fecha_vencimiento : datos.fecha_vencimiento ?? "",

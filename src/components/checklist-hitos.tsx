@@ -13,7 +13,8 @@ import { daysFromToday } from "@/lib/dates";
 import { Link } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { esHitoAutomatico, PARCHE_EDICION_MANUAL, textoHitoAutomatico } from "@/lib/hito-documentos-auto";
+import { esHitoAutomatico, etiquetaHitoAutomatico, notaHitoAutomatico, PARCHE_EDICION_MANUAL, textoHitoAutomatico } from "@/lib/hitos-automaticos";
+import { EnviarGestor } from "@/components/enviar-gestor";
 
 type HitoRow = {
   id: string;
@@ -28,6 +29,8 @@ type HitoRow = {
   auto_origen?: string | null;
   auto_fecha?: string | null;
   auto_correo_id?: string | null;
+  auto_detalle?: unknown;
+  auto_ref_id?: string | null;
   catalogo_hitos?: { nombre: string; orden: number; con_alerta: boolean; activo: boolean } | null;
 };
 
@@ -93,13 +96,14 @@ function DeferredDateInput({ value, onSave, className }: DeferredDateInputProps)
   );
 }
 
-/** Etiqueta «Automático»: al pasar el mouse muestra de dónde salió la fecha y enlaza al correo. */
+/** Etiqueta de fecha automática: al pasar el mouse muestra el evento que la originó (y enlaza al correo). */
 function EtiquetaAutomatico({ h }: { h: HitoRow }) {
+  const nota = notaHitoAutomatico(h);
   return (
     <HoverCard openDelay={150} closeDelay={150}>
       <HoverCardTrigger asChild>
         <button type="button" className="inline-flex items-center gap-0.5 rounded border border-primary/30 bg-primary/5 px-1 py-px text-[11px] font-normal text-primary cursor-help">
-          <Sparkles className="h-3 w-3" />Automático
+          <Sparkles className="h-3 w-3" />{etiquetaHitoAutomatico(h)}
         </button>
       </HoverCardTrigger>
       <HoverCardContent align="start" className="w-72 p-3 text-[12px] space-y-1">
@@ -111,6 +115,7 @@ function EtiquetaAutomatico({ h }: { h: HitoRow }) {
         ) : (
           <p className="text-[11px] text-muted-foreground">Correo anterior al Registro de correos: es la hora en que llegó a la plataforma.</p>
         ))}
+        {nota && <p className="text-[11px] text-muted-foreground">{nota}</p>}
         <p className="text-[11px] text-muted-foreground">Puedes cambiar la fecha a mano.</p>
       </HoverCardContent>
     </HoverCard>
@@ -153,6 +158,8 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
     auto_fecha?: string | null;
     auto_correo_id?: string | null;
     auto_solicitud_id?: string | null;
+    auto_detalle?: null;
+    auto_ref_id?: string | null;
   };
 
   const [borradores, setBorradores] = useState<Record<string, HitoPatch>>({});
@@ -271,6 +278,13 @@ export function ChecklistHitos({ expedienteId }: { expedienteId: string }) {
                           <p className="text-[11px] text-muted-foreground mt-0.5">
                             Cargos por demora/almacenaje en puerto si no se completa en fecha.
                           </p>
+                        )}
+                        {h.hito_codigo === "expediente_enviado_gestor" && (
+                          <EnviarGestor
+                            expedienteId={expedienteId}
+                            fechaManual={!!original.fecha_cumplimiento && !esHitoAutomatico(original)}
+                            yaAutomatico={original.auto_origen === "gestor"}
+                          />
                         )}
                       </td>
                       <td className="px-2 py-2">

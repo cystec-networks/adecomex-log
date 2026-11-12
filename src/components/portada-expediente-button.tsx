@@ -22,12 +22,8 @@ const fecha = (s?: string | null) => {
   return d ? `${d}/${m}/${y}` : s;
 };
 
-/** Portada del Expediente: PDF de una página carta, solo lectura. */
-export function PortadaExpedienteButton({ expedienteId }: { expedienteId: string }) {
-  const [cargando, setCargando] = useState(false);
-
-  const generar = async () => {
-    setCargando(true);
+/** Genera y descarga la Portada del Expediente (PDF de una página carta, solo lectura). */
+export async function descargarPortadaExpediente(expedienteId: string): Promise<void> {
     let host: HTMLDivElement | null = null;
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -97,11 +93,23 @@ ${CHECKLIST.map((t) => `<div><span style="display:inline-block;width:16px;font-w
         img.complete ? null : new Promise((r) => { img.onload = img.onerror = r; })));
       const pdf = await htmlAPdf(host);
       pdf.save(`Portada Expediente ${e.numero ?? ""}.pdf`.trim());
+    } finally {
+      host?.remove();
+    }
+}
+
+/** Portada del Expediente: PDF de una página carta, solo lectura. */
+export function PortadaExpedienteButton({ expedienteId }: { expedienteId: string }) {
+  const [cargando, setCargando] = useState(false);
+
+  const generar = async () => {
+    setCargando(true);
+    try {
+      await descargarPortadaExpediente(expedienteId);
       toast.success("Portada descargada");
     } catch (err: any) {
       toast.error(err?.message ?? "No se pudo generar la portada");
     } finally {
-      host?.remove();
       setCargando(false);
     }
   };

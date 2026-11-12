@@ -76,6 +76,19 @@ Fecha de Modificación Compañía Modificado por Estados
   test("No. de Solicitud, fila más reciente y No Objeción como aprobado, sin vencimiento", () => {
     expect(leerPermisoVuce(texto)).toMatchObject({ numero: "TRM-1026-2561110", estado: "aprobado", estado_vuce: "No Objeción", fecha_aprobacion: "2026-10-22", fecha_vencimiento: null });
   });
+  test("fecha de solicitud = fila Registrado/Aceptado y completa la ficha solo si está vacía", () => {
+    const d = leerPermisoVuce(texto)!;
+    expect(d.fecha_solicitud_vuce).toBe("2026-10-16");
+    const base = { numero: "", institucion_emisora: "", estado: "solicitado", estado_vuce: null as string | null, fecha_vencimiento: "", fecha_aprobacion: "", fecha_solicitud: "", fecha_solicitud_vuce: "" };
+    expect(aplicarDetalleVuce(base, d)).toMatchObject({ fecha_solicitud_vuce: "2026-10-16", fecha_solicitud: "2026-10-16" });
+    expect(aplicarDetalleVuce({ ...base, fecha_solicitud: "2026-10-10" }, d)).toMatchObject({ fecha_solicitud_vuce: "2026-10-16", fecha_solicitud: "2026-10-10" });
+  });
+  test("Detalle Solicitud sin fecha de solicitud conserva la anterior", () => {
+    const d = leerDetalleSolicitudVuce(aprobado)!;
+    expect(d.fecha_solicitud_vuce ?? null).toBeNull();
+    const form = { numero: "", institucion_emisora: "", estado: "solicitado", estado_vuce: null as string | null, fecha_vencimiento: "", fecha_aprobacion: "", fecha_solicitud_vuce: "2026-09-01" };
+    expect(aplicarDetalleVuce(form, d).fecha_solicitud_vuce).toBe("2026-09-01");
+  });
   test("verificación avisa BL distinto sin sobrescribir", () => {
     const d = leerPermisoVuce(texto)!;
     expect(avisosVerificacionVuce(d, { bl_awb: "MXO0813739", puerto_arribo: "RIO HAINA", cliente: "BIOAGRO INTERNACIONAL SRL", rnc: "101653469" }).length).toBe(0);
