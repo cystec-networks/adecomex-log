@@ -5,6 +5,7 @@ import { tipoPaginaConfiable } from "./juego-documentos-confianza";
 import { MODELO_ECONOMICO, MODELO_EXTRACCION } from "./ia-consumo";
 import { INSTRUCCION_CANTIDAD, tipoPorEncabezado } from "./lectura-texto";
 import { textoPdfDigital } from "./pdf-texto.server";
+import { causaPausaIa } from "./ia-consumo.server";
 
 export type AdjuntoProcesado = DatosAdjunto & {
   nombre: string; mime: string; bytes: Uint8Array; storage_path?: string; error?: string; firmado?: boolean;
@@ -78,6 +79,8 @@ export async function leerArchivoCorreo(nombre: string, mime: string, base64: st
     try {
       j = { ...(await leerDocumentoImportacion({ filename: nombre, mime, base64, lineas_factura: true, funcion: "correo_adjunto", extra_correo: true })) };
     } catch (e) {
+      // Límite diario o créditos agotados: el correo entero queda en cola, no se marca la factura como ilegible.
+      if (causaPausaIa(e)) throw e;
       error = `Factura reconocida; lectura de mercancías pendiente: ${String(e instanceof Error ? e.message : e).slice(0, 160)}`;
     }
   } else {

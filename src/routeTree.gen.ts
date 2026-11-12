@@ -104,6 +104,7 @@ import { Route as AuthenticatedRrhhPrestamosTercerosIndexRouteImport } from './r
 import { Route as AuthenticatedRrhhPrestamosIndexRouteImport } from './routes/_authenticated/rrhh.prestamos.index'
 import { Route as PortalEstudiantePortalEstudianteProgramasIdRouteImport } from './routes/_portal-estudiante/portal-estudiante.programas.$id'
 import { Route as PortalPortalExpedientesIdRouteImport } from './routes/_portal/portal.expedientes.$id'
+import { Route as ApiPublicCorreosColaRouteImport } from './routes/api/public/correos.cola'
 import { Route as ApiPublicCorreosRetencionRouteImport } from './routes/api/public/correos.retencion'
 import { Route as ApiPublicNovedadesRevisarRouteImport } from './routes/api/public/novedades.revisar'
 import { Route as ApiPublicReciboPagoIdRouteImport } from './routes/api/public/recibo-pago.$id'
@@ -654,6 +655,11 @@ const PortalPortalExpedientesIdRoute =
     path: '/portal/expedientes/$id',
     getParentRoute: () => PortalRouteRoute,
   } as any)
+const ApiPublicCorreosColaRoute = ApiPublicCorreosColaRouteImport.update({
+  id: '/api/public/correos/cola',
+  path: '/api/public/correos/cola',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCorreosRetencionRoute =
   ApiPublicCorreosRetencionRouteImport.update({
     id: '/api/public/correos/retencion',
@@ -773,6 +779,7 @@ export interface FileRoutesByFullPath {
   '/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
+  '/api/public/correos/cola': typeof ApiPublicCorreosColaRoute
   '/api/public/correos/retencion': typeof ApiPublicCorreosRetencionRoute
   '/api/public/novedades/revisar': typeof ApiPublicNovedadesRevisarRoute
   '/api/public/recibo-pago/$id': typeof ApiPublicReciboPagoIdRoute
@@ -872,6 +879,7 @@ export interface FileRoutesByTo {
   '/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
+  '/api/public/correos/cola': typeof ApiPublicCorreosColaRoute
   '/api/public/correos/retencion': typeof ApiPublicCorreosRetencionRoute
   '/api/public/novedades/revisar': typeof ApiPublicNovedadesRevisarRoute
   '/api/public/recibo-pago/$id': typeof ApiPublicReciboPagoIdRoute
@@ -975,6 +983,7 @@ export interface FileRoutesById {
   '/_authenticated/rrhh/empleados/$id': typeof AuthenticatedRrhhEmpleadosIdRoute
   '/_portal-estudiante/portal-estudiante/programas/$id': typeof PortalEstudiantePortalEstudianteProgramasIdRoute
   '/_portal/portal/expedientes/$id': typeof PortalPortalExpedientesIdRoute
+  '/api/public/correos/cola': typeof ApiPublicCorreosColaRoute
   '/api/public/correos/retencion': typeof ApiPublicCorreosRetencionRoute
   '/api/public/novedades/revisar': typeof ApiPublicNovedadesRevisarRoute
   '/api/public/recibo-pago/$id': typeof ApiPublicReciboPagoIdRoute
@@ -1076,6 +1085,7 @@ export interface FileRouteTypes {
     | '/rrhh/empleados/$id'
     | '/portal-estudiante/programas/$id'
     | '/portal/expedientes/$id'
+    | '/api/public/correos/cola'
     | '/api/public/correos/retencion'
     | '/api/public/novedades/revisar'
     | '/api/public/recibo-pago/$id'
@@ -1175,6 +1185,7 @@ export interface FileRouteTypes {
     | '/rrhh/empleados/$id'
     | '/portal-estudiante/programas/$id'
     | '/portal/expedientes/$id'
+    | '/api/public/correos/cola'
     | '/api/public/correos/retencion'
     | '/api/public/novedades/revisar'
     | '/api/public/recibo-pago/$id'
@@ -1277,6 +1288,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rrhh/empleados/$id'
     | '/_portal-estudiante/portal-estudiante/programas/$id'
     | '/_portal/portal/expedientes/$id'
+    | '/api/public/correos/cola'
     | '/api/public/correos/retencion'
     | '/api/public/novedades/revisar'
     | '/api/public/recibo-pago/$id'
@@ -1310,6 +1322,7 @@ export interface RootRouteChildren {
   ImprimirReciboPagoIdRoute: typeof ImprimirReciboPagoIdRoute
   ImprimirSolicitudPagoIdRoute: typeof ImprimirSolicitudPagoIdRoute
   ImprimirSolicitudTransferenciaIdRoute: typeof ImprimirSolicitudTransferenciaIdRoute
+  ApiPublicCorreosColaRoute: typeof ApiPublicCorreosColaRoute
   ApiPublicCorreosRetencionRoute: typeof ApiPublicCorreosRetencionRoute
   ApiPublicNovedadesRevisarRoute: typeof ApiPublicNovedadesRevisarRoute
   ApiPublicReciboPagoIdRoute: typeof ApiPublicReciboPagoIdRoute
@@ -1982,6 +1995,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalPortalExpedientesIdRouteImport
       parentRoute: typeof PortalRouteRoute
     }
+    '/api/public/correos/cola': {
+      id: '/api/public/correos/cola'
+      path: '/api/public/correos/cola'
+      fullPath: '/api/public/correos/cola'
+      preLoaderRoute: typeof ApiPublicCorreosColaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/correos/retencion': {
       id: '/api/public/correos/retencion'
       path: '/api/public/correos/retencion'
@@ -2279,6 +2299,7 @@ const rootRouteChildren: RootRouteChildren = {
   ImprimirReciboPagoIdRoute: ImprimirReciboPagoIdRoute,
   ImprimirSolicitudPagoIdRoute: ImprimirSolicitudPagoIdRoute,
   ImprimirSolicitudTransferenciaIdRoute: ImprimirSolicitudTransferenciaIdRoute,
+  ApiPublicCorreosColaRoute: ApiPublicCorreosColaRoute,
   ApiPublicCorreosRetencionRoute: ApiPublicCorreosRetencionRoute,
   ApiPublicNovedadesRevisarRoute: ApiPublicNovedadesRevisarRoute,
   ApiPublicReciboPagoIdRoute: ApiPublicReciboPagoIdRoute,

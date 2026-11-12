@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { claveCorreo, DESCARTE_BREVE, ETIQUETA_ERROR, ETIQUETA_OK } from "@/lib/correo-expediente";
+import { claveCorreo, ETIQUETA_ERROR, ETIQUETA_OK } from "@/lib/correo-expediente";
+import { textoCola } from "@/lib/correos-cola";
+import { causaEntradaCola, cerrarRegistroCorreo, ponerEnCola } from "@/lib/correos-cola.server";
 import { autorizadoWebhook } from "@/lib/webhook-auth";
 import { correoDe, normalizarDestinatarios, procesarCorreo, RESULTADO_LEGADO, str, type CamposBitacora } from "@/lib/correo-procesar.server";
 
@@ -35,7 +37,9 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         }
         const registro_id: string = intento.id;
         if (intento.ya_procesado) {
-          return Response.json({ ok: true, etiqueta: ETIQUETA_OK, registro_id, ya_procesado: true, resultado: RESULTADO_LEGADO[intento.resultado] ?? intento.resultado,
+          const enCola = intento.resultado === "en_cola";
+          return Response.json({ ok: true, etiqueta: ETIQUETA_OK, registro_id, ya_procesado: true, en_cola: enCola || undefined,
+            resultado: enCola ? textoCola(intento.cola_causa) : RESULTADO_LEGADO[intento.resultado] ?? intento.resultado,
             id: intento.solicitud_id ?? undefined, expediente: intento.expediente_numero ?? undefined, motivo: intento.motivo ?? "Correo ya procesado anteriormente" });
         }
         if (intento.en_proceso) return error(409, "El mismo correo se está procesando en otro intento", true, { registro_id });
@@ -49,20 +53,7 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         }).eq("id", registro_id);
         if (errorTexto) console.error("No se pudo guardar el texto del correo", registro_id, errorTexto.message);
 
-        const finalizar = async (c: CamposBitacora) => {
-          const { error: e } = await db.from("correos_recibidos").update({
-            resultado: c.resultado, motivo: c.motivo?.slice(0, 1000) ?? null, reintentable: c.reintentable ?? true,
-            solicitud_id: c.solicitud_id ?? null, expediente_id: c.expediente_id ?? null, expediente_numero: c.expediente_numero ?? null,
-            vinculo: c.vinculo ?? null, advertencias: (c.advertencias ?? []).slice(0, 50), propuestas: c.propuestas ?? {},
-            ...(c.adjuntos_respaldo ? { adjuntos_respaldo: c.adjuntos_respaldo } : {}),
-            ...(c.conflictos?.length ? { conflictos: c.conflictos } : {}),
-            descarte_categoria: c.resultado === "descartada" ? c.descarte_categoria ?? null : null,
-            // Sin PDF o remitente ignorado: solo una línea breve con el motivo, sin el texto del correo.
-            ...(c.descarte_categoria && DESCARTE_BREVE.includes(c.descarte_categoria) ? { cuerpo: null, destinatarios: null, cc: null } : {}),
-            ...(c.resultado === "error" ? { alerta_vista_en: null, alerta_vista_por: null } : {}),
-          }).eq("id", registro_id);
-          if (e) console.error("No se pudo cerrar el registro del correo", registro_id, e.message);
-        };
+        const finalizar = (c: CamposBitacora) => cerrarRegistroCorreo(db, registro_id, c);
         const exito = async (c: CamposBitacora, respuesta: Record<string, unknown>) => {
           await finalizar(c);
           return Response.json({ ok: true, etiqueta: ETIQUETA_OK, registro_id, resultado: RESULTADO_LEGADO[c.resultado], motivo: c.motivo ?? undefined, ...respuesta });
@@ -73,7 +64,13 @@ export const Route = createFileRoute("/api/public/solicitud-correo")({
         };
 
         try {
-          const r = await procesarCorreo(db, normal, { registroId: registro_id });
+          // Límite de IA, créditos agotados o correos anteriores esperando: va a la cola, nunca a error.
+          const encolarPor = await causaEntradaCola(db, registro_id);
+          const r = await procesarCorreo(db, normal, { registroId: registro_id, encolarPor });
+          if (r.tipo === "cola") {
+            await ponerEnCola(db, registro_id, r);
+            return Response.json({ ok: true, etiqueta: ETIQUETA_OK, registro_id, en_cola: true, resultado: textoCola(r.causa), motivo: r.motivo });
+          }
           if (r.tipo === "fallo") return await fallo(r.status, r.motivo, r.reintentar, r.adjuntos_respaldo);
           return await exito(r.campos, r.respuesta);
         } catch (e: any) {

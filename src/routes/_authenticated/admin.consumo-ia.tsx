@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FUNCIONES_IA, nombreFuncionIa, presupuestoBajo, type FuncionIa } from "@/lib/ia-consumo";
+import { useServerFn } from "@tanstack/react-start";
+import { accionLimiteIa, FUNCIONES_IA, nombreFuncionIa, presupuestoBajo, type AccionLimiteIa, type FuncionIa } from "@/lib/ia-consumo";
+import { procesarColaCorreosAhora } from "@/lib/correos-recibidos.functions";
 
 const TITULO = "Consumo de IA | ADECOMEX";
 const DESCRIPCION = "Créditos de IA estimados por función, día y modelo, con límites diarios y presupuesto mensual.";
@@ -54,7 +56,7 @@ type Fila = { dia: string; funcion: string; modelo: string; llamadas: number; re
 
 // Valores vacíos estables: un [] nuevo en cada render reiniciaría los borradores en bucle.
 const SIN_FILAS: Fila[] = [];
-const SIN_LIMITES: Array<{ funcion: string; limite_diario: number | null }> = [];
+const SIN_LIMITES: Array<{ funcion: string; limite_diario: number | null; accion: string | null }> = [];
 
 function ConsumoIa() {
   const qc = useQueryClient();
@@ -72,7 +74,7 @@ function ConsumoIa() {
   const { data: limites = SIN_LIMITES } = useQuery({
     queryKey: ["ia-limites"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("ia_limites").select("funcion, limite_diario");
+      const { data, error } = await supabase.from("ia_limites").select("funcion, limite_diario, accion");
       if (error) throw error;
       return data ?? [];
     },
@@ -108,16 +110,29 @@ function ConsumoIa() {
   useEffect(() => {
     setBorradorLimites(Object.fromEntries(limites.map((l) => [l.funcion, l.limite_diario != null ? String(l.limite_diario) : ""])));
   }, [limites]);
+  const procesarCola = useServerFn(procesarColaCorreosAhora);
   const guardarLimite = useMutation({
-    mutationFn: async (funcion: string) => {
-      const texto = (borradorLimites[funcion] ?? "").trim().replace(",", ".");
+    mutationFn: async (v: { funcion: string; accion?: AccionLimiteIa }) => {
+      const { funcion } = v;
+      const guardado = limites.find((l) => l.funcion === funcion)?.limite_diario ?? null;
+      // Cambiar solo la acción conserva el límite guardado (no un borrador sin guardar).
+      const texto = v.accion ? (guardado != null ? String(guardado) : "") : (borradorLimites[funcion] ?? "").trim().replace(",", ".");
       const valor = texto === "" ? null : Number(texto);
       if (valor != null && (!Number.isFinite(valor) || valor <= 0)) throw new Error("Escribe un límite mayor que 0 o déjalo vacío");
       const { data: u } = await supabase.auth.getUser();
-      const { error } = await supabase.from("ia_limites").upsert({ funcion, limite_diario: valor, updated_at: new Date().toISOString(), updated_by: u.user?.id ?? null }, { onConflict: "funcion" });
+      const accion = v.accion ?? limites.find((l) => l.funcion === funcion)?.accion ?? null;
+      const { error } = await supabase.from("ia_limites").upsert({ funcion, limite_diario: valor, accion, updated_at: new Date().toISOString(), updated_by: u.user?.id ?? null }, { onConflict: "funcion" });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Límite guardado"); qc.invalidateQueries({ queryKey: ["ia-limites"] }); },
+    onSuccess: () => {
+      toast.success("Límite guardado");
+      qc.invalidateQueries({ queryKey: ["ia-limites"] });
+      qc.invalidateQueries({ queryKey: ["ia-presupuesto"] });
+      // Si había correos en cola por el límite, se atienden ya (en orden de llegada) en lugar de esperar a la tarea programada.
+      if (Number(estado?.correos_en_cola ?? 0) > 0) {
+        procesarCola().then((r) => { if (r.procesados) toast.success(`${r.procesados} correo${r.procesados === 1 ? "" : "s"} de la cola procesado${r.procesados === 1 ? "" : "s"}.`); qc.invalidateQueries({ queryKey: ["ia-presupuesto"] }); }).catch(() => {});
+      }
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -160,7 +175,7 @@ function ConsumoIa() {
       {estado?.creditos_agotados_at && (
         <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-[13px] text-destructive">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{estado.creditos_agotados_mensaje ?? "Créditos de IA agotados."} Las lecturas con IA están detenidas hasta que se añadan créditos al espacio de trabajo.</span>
+          <span>{estado.creditos_agotados_mensaje ?? "Créditos de IA agotados."} Las lecturas con IA están detenidas hasta que se añadan créditos al espacio de trabajo; los correos que lleguen quedan en cola y se procesan solos al volver los créditos.</span>
         </div>
       )}
 
@@ -187,12 +202,12 @@ function ConsumoIa() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-[14px]">Por función</CardTitle>
-          <CardDescription className="text-[12px]">Límite diario en créditos: al alcanzarlo, esa función deja de usar IA hasta el día siguiente (los correos quedan para reintento). Vacío = sin límite.</CardDescription>
+          <CardDescription className="text-[12px]">Límite diario en créditos (vacío = sin límite). «Solo alerta» avisa en el Panel y la función sigue; «Detener» la frena hasta el día siguiente. Las funciones de correo usan «Solo alerta» por defecto; si se detienen, los correos quedan en cola y se procesan solos en orden de llegada.</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-[12px] [&_td]:px-2 [&_th]:whitespace-nowrap [&_th]:px-2">
+          <table className="w-full min-w-[960px] text-[12px] [&_td]:px-2 [&_th]:whitespace-nowrap [&_th]:px-2">
             <thead className="text-left text-[11px] uppercase text-muted-foreground">
-              <tr><th className="py-1.5">Función</th><th className="text-right">Llamadas</th><th className="text-right">Reutilizadas</th><th className="text-right" title="Clasificaciones hechas con el texto del PDF en lugar de la imagen">Por texto</th><th className="text-right">Tokens</th><th className="text-right">Créditos</th><th className="pl-3">Modelo</th><th className="pl-3">Límite diario</th></tr>
+              <tr><th className="py-1.5">Función</th><th className="text-right">Llamadas</th><th className="text-right">Reutilizadas</th><th className="text-right" title="Clasificaciones hechas con el texto del PDF en lugar de la imagen">Por texto</th><th className="text-right">Tokens</th><th className="text-right">Créditos</th><th className="pl-3">Modelo</th><th className="pl-3">Límite diario</th><th className="pl-3">Al alcanzarlo</th></tr>
             </thead>
             <tbody className="divide-y">
               {porFuncion.map((r) => (
@@ -209,9 +224,20 @@ function ConsumoIa() {
                       <div className="flex items-center gap-1">
                         <Input value={borradorLimites[r.funcion] ?? ""} onChange={(e) => setBorradorLimites((b) => ({ ...b, [r.funcion]: e.target.value }))} inputMode="decimal" placeholder="Sin límite" className="h-7 w-24 text-[12px]" aria-label={`Límite diario de ${nombreFuncionIa(r.funcion)}`} />
                         {(borradorLimites[r.funcion] ?? "") !== (limiteDe(r.funcion) != null ? String(limiteDe(r.funcion)) : "") && (
-                          <Button size="icon-sm" variant="ghost" onClick={() => guardarLimite.mutate(r.funcion as FuncionIa)} aria-label="Guardar límite"><Save className="h-3.5 w-3.5" /></Button>
+                          <Button size="icon-sm" variant="ghost" onClick={() => guardarLimite.mutate({ funcion: r.funcion as FuncionIa })} aria-label="Guardar límite"><Save className="h-3.5 w-3.5" /></Button>
                         )}
                       </div>
+                    ) : "—"}
+                  </td>
+                  <td className="pl-3">
+                    {r.funcion in FUNCIONES_IA ? (
+                      <Select value={accionLimiteIa(r.funcion, limites.find((l) => l.funcion === r.funcion)?.accion)} onValueChange={(v) => guardarLimite.mutate({ funcion: r.funcion, accion: v as AccionLimiteIa })}>
+                        <SelectTrigger className="h-7 w-32 text-[12px]" aria-label={`Acción al alcanzar el límite de ${nombreFuncionIa(r.funcion)}`}><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="alerta">Solo alerta</SelectItem>
+                          <SelectItem value="bloqueo">Detener</SelectItem>
+                        </SelectContent>
+                      </Select>
                     ) : "—"}
                   </td>
                 </tr>

@@ -1,5 +1,5 @@
 // Registro, caché y topes de IA (solo servidor). Nunca bloquea una lectura por fallar el registro.
-import { costoEstimadoIa, nombreFuncionIa, topeAlcanzado, type FuncionIa } from "./ia-consumo";
+import { costoEstimadoIa, FUNCIONES_LECTURA_CORREO, nombreFuncionIa, topeBloquea, type FuncionIa } from "./ia-consumo";
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -34,8 +34,6 @@ export async function sha256Hex(texto: string): Promise<string> {
   return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-let creditosMarcados = false;
-
 export async function registrarConsumoIa(r: {
   funcion: FuncionIa; modelo: string; tokensEntrada?: number; tokensSalida?: number; reutilizado?: boolean; viaTexto?: boolean; usuarioId?: string | null;
 }) {
@@ -49,10 +47,10 @@ export async function registrarConsumoIa(r: {
       usuario_id: r.usuarioId !== undefined ? r.usuarioId : await usuarioActual(),
       reutilizado: !!r.reutilizado, via_texto: !!r.viaTexto,
     });
-    // Una llamada exitosa demuestra que vuelve a haber créditos: retirar el aviso una vez por instancia.
-    if (!r.reutilizado && creditosMarcados) {
-      creditosMarcados = false;
-      await db.from("ia_configuracion").update({ creditos_agotados_at: null, creditos_agotados_mensaje: null }).eq("singleton", true);
+    // Una llamada exitosa demuestra que vuelve a haber créditos: retirar el aviso (en cualquier instancia).
+    if (!r.reutilizado) {
+      await db.from("ia_configuracion").update({ creditos_agotados_at: null, creditos_agotados_mensaje: null })
+        .eq("singleton", true).not("creditos_agotados_at", "is", null);
     }
   } catch (e) {
     console.error("[ia] no se pudo registrar el consumo", e instanceof Error ? e.message : e);
@@ -62,7 +60,6 @@ export async function registrarConsumoIa(r: {
 /** Lovable respondió créditos agotados o uso bloqueado: aviso inmediato en el Panel. */
 export async function marcarCreditosAgotados(mensaje: string) {
   try {
-    creditosMarcados = true;
     const db = await admin();
     await db.from("ia_configuracion").upsert({ singleton: true, creditos_agotados_at: new Date().toISOString(), creditos_agotados_mensaje: mensaje.slice(0, 300) }, { onConflict: "singleton" });
   } catch (e) {
@@ -83,21 +80,58 @@ function inicioDiaSantoDomingo(ahora = new Date()) {
   return new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate(), 4));
 }
 
+async function gastadoHoy(db: any, funcion: FuncionIa): Promise<number> {
+  const { data: filas } = await db.from("ia_consumo").select("costo_estimado").eq("funcion", funcion).gte("created_at", inicioDiaSantoDomingo().toISOString()).limit(10000);
+  return (filas ?? []).reduce((s: number, f: { costo_estimado: number | string }) => s + Number(f.costo_estimado || 0), 0);
+}
+
+/** Lanza ErrorTopeIa solo si el límite diario se alcanzó y su acción es «bloqueo» (correos: solo alerta por defecto). */
 export async function verificarTopeIa(funcion: FuncionIa) {
-  let limite: number | null = null;
-  let gastado = 0;
+  let bloquea = false;
   try {
     const db = await admin();
-    const { data } = await db.from("ia_limites").select("limite_diario").eq("funcion", funcion).maybeSingle();
-    limite = data?.limite_diario != null ? Number(data.limite_diario) : null;
+    const { data } = await db.from("ia_limites").select("limite_diario, accion").eq("funcion", funcion).maybeSingle();
+    const limite = data?.limite_diario != null ? Number(data.limite_diario) : null;
     if (!limite) return;
-    const { data: filas } = await db.from("ia_consumo").select("costo_estimado").eq("funcion", funcion).gte("created_at", inicioDiaSantoDomingo().toISOString()).limit(10000);
-    gastado = (filas ?? []).reduce((s: number, f: { costo_estimado: number | string }) => s + Number(f.costo_estimado || 0), 0);
+    bloquea = topeBloquea(funcion, await gastadoHoy(db, funcion), limite, data?.accion);
   } catch (e) {
     console.error("[ia] no se pudo verificar el tope", e instanceof Error ? e.message : e);
     return;
   }
-  if (topeAlcanzado(gastado, limite)) throw new ErrorTopeIa(funcion);
+  if (bloquea) throw new ErrorTopeIa(funcion);
+}
+
+export type CausaPausaIa = "limite_ia" | "creditos_ia";
+
+/** Error que detiene la IA por límite diario o por créditos agotados (no es un fallo del documento). */
+export function causaPausaIa(e: unknown): CausaPausaIa | null {
+  if (e instanceof ErrorTopeIa) return "limite_ia";
+  if (e && typeof e === "object" && (e as { creditosAgotados?: unknown }).creditosAgotados === true) return "creditos_ia";
+  return null;
+}
+
+/**
+ * ¿La lectura de PDF de correos está detenida? «limite_ia» si alguna función de lectura llegó a su
+ * límite con acción «bloqueo»; «creditos_ia» si Lovable respondió créditos agotados. null = puede leer.
+ */
+export async function pausaLecturaCorreos(): Promise<CausaPausaIa | null> {
+  try {
+    const db = await admin();
+    const [{ data: cfg }, { data: limites }] = await Promise.all([
+      db.from("ia_configuracion").select("creditos_agotados_at").eq("singleton", true).maybeSingle(),
+      db.from("ia_limites").select("funcion, limite_diario, accion").in("funcion", [...FUNCIONES_LECTURA_CORREO]),
+    ]);
+    for (const l of limites ?? []) {
+      const limite = l.limite_diario != null ? Number(l.limite_diario) : null;
+      if (!limite) continue;
+      if (topeBloquea(l.funcion, await gastadoHoy(db, l.funcion), limite, l.accion)) return "limite_ia";
+    }
+    if (cfg?.creditos_agotados_at) return "creditos_ia";
+    return null;
+  } catch (e) {
+    console.error("[ia] no se pudo leer la pausa de correos", e instanceof Error ? e.message : e);
+    return null;
+  }
 }
 
 export async function leerCacheIa(clave: string): Promise<{ resultado: string; modelo: string } | null> {

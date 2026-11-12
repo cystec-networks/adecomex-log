@@ -13,6 +13,7 @@ export const RESULTADO_CORREO: Record<string, { etiqueta: string; tono: "ok" | "
   descartada: { etiqueta: "Descartado", tono: "aviso" },
   error: { etiqueta: "Error", tono: "error" },
   procesando: { etiqueta: "Procesando", tono: "aviso" },
+  en_cola: { etiqueta: "En cola (IA)", tono: "aviso" },
 };
 
 /** Un «procesando» sin cierre tras unos minutos se trata como fallo: el proceso se interrumpió. */
@@ -50,13 +51,14 @@ export async function marcarAlertasCorreoVistas(db: Db, ids: string[], userId: s
 }
 
 /** Vista por defecto del Registro: lo que importa revisar; los descartados van en su propia pestaña. */
-export const RESULTADOS_PRINCIPALES = ["error", "procesando", "creada", "actualizada", "adjuntada"] as const;
+export const RESULTADOS_PRINCIPALES = ["error", "procesando", "en_cola", "creada", "actualizada", "adjuntada"] as const;
 
 export async function registroCorreos(db: Db, filtro: string) {
   let q = db.from("correos_recibidos").select("*").order("ultimo_intento_at", { ascending: false }).limit(200);
   if (filtro === "principal") q = q.in("resultado", [...RESULTADOS_PRINCIPALES]);
   else if (filtro === "error") q = q.in("resultado", ["error", "procesando"]);
   else if (filtro === "creada") q = q.in("resultado", ["creada", "actualizada"]);
+  else if (filtro === "en_cola") q = db.from("correos_recibidos").select("*").not("en_cola_desde", "is", null).in("resultado", ["en_cola", "procesando"]).order("primer_intento_at", { ascending: true }).limit(200);
   else if (filtro !== "todos") q = q.eq("resultado", filtro);
   const { data, error } = await q;
   if (error) throw error;

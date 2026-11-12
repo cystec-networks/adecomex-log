@@ -1793,12 +1793,14 @@ export type Database = {
           asunto: string
           cc: string | null
           clave: string
+          cola_causa: string | null
           conflictos: Json
           created_at: string
           cuerpo: string | null
           descartado_en: string | null
           descarte_categoria: string | null
           destinatarios: string | null
+          en_cola_desde: string | null
           expediente_id: string | null
           expediente_numero: string | null
           id: string
@@ -1831,12 +1833,14 @@ export type Database = {
           asunto?: string
           cc?: string | null
           clave: string
+          cola_causa?: string | null
           conflictos?: Json
           created_at?: string
           cuerpo?: string | null
           descartado_en?: string | null
           descarte_categoria?: string | null
           destinatarios?: string | null
+          en_cola_desde?: string | null
           expediente_id?: string | null
           expediente_numero?: string | null
           id?: string
@@ -1869,12 +1873,14 @@ export type Database = {
           asunto?: string
           cc?: string | null
           clave?: string
+          cola_causa?: string | null
           conflictos?: Json
           created_at?: string
           cuerpo?: string | null
           descartado_en?: string | null
           descarte_categoria?: string | null
           destinatarios?: string | null
+          en_cola_desde?: string | null
           expediente_id?: string | null
           expediente_numero?: string | null
           id?: string
@@ -5023,18 +5029,21 @@ export type Database = {
       }
       ia_limites: {
         Row: {
+          accion: string | null
           funcion: string
           limite_diario: number | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          accion?: string | null
           funcion: string
           limite_diario?: number | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          accion?: string | null
           funcion?: string
           limite_diario?: number | null
           updated_at?: string
@@ -5747,6 +5756,7 @@ export type Database = {
           documento_bytes: number | null
           documento_clave: string | null
           documento_sha256: string | null
+          embedding: string | null
           enlace_codigo_http: number | null
           enlace_es_pdf: boolean | null
           enlace_estado: string | null
@@ -5776,6 +5786,7 @@ export type Database = {
           documento_bytes?: number | null
           documento_clave?: string | null
           documento_sha256?: string | null
+          embedding?: string | null
           enlace_codigo_http?: number | null
           enlace_es_pdf?: boolean | null
           enlace_estado?: string | null
@@ -5805,6 +5816,7 @@ export type Database = {
           documento_bytes?: number | null
           documento_clave?: string | null
           documento_sha256?: string | null
+          embedding?: string | null
           enlace_codigo_http?: number | null
           enlace_es_pdf?: boolean | null
           enlace_estado?: string | null
@@ -7779,6 +7791,21 @@ export type Database = {
         }
         Relationships: []
       }
+      tareas_turno: {
+        Row: {
+          hasta: string
+          nombre: string
+        }
+        Insert: {
+          hasta?: string
+          nombre: string
+        }
+        Update: {
+          hasta?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
       transporte_facturas_ecf: {
         Row: {
           created_at: string
@@ -8578,6 +8605,22 @@ export type Database = {
           titulo: string
         }[]
       }
+      buscar_novedades: {
+        Args: { p_embedding: string; p_limite?: number }
+        Returns: {
+          categoria: string
+          fecha_captura: string
+          fecha_publicacion: string
+          fuente_nombre: string
+          impacto: string
+          relevancia: string
+          resumen: string
+          sectores: string[]
+          similitud: number
+          titulo: string
+          url: string
+        }[]
+      }
       calc_itbis_periodo: { Args: { _periodo: string }; Returns: Json }
       calcular_interes_prestamo_tercero: {
         Args: { _fecha_prestamo: string; _monto: number; _tasa_pct: number }
@@ -8602,8 +8645,11 @@ export type Database = {
       estado_presupuesto_ia: {
         Args: never
         Returns: {
+          correos_cola_causa: string
+          correos_en_cola: number
           creditos_agotados_at: string
           creditos_agotados_mensaje: string
+          funciones_sobre_limite: Json
           gastado_mes: number
           presupuesto: number
           restante_pct: number
@@ -8716,6 +8762,11 @@ export type Database = {
       show_trgm: { Args: { "": string }; Returns: string[] }
       siguiente_numero_expediente: { Args: never; Returns: string }
       siguiente_numero_operacion: { Args: { p_tipo: string }; Returns: string }
+      soltar_turno_tarea: { Args: { p_nombre: string }; Returns: undefined }
+      tomar_turno_tarea: {
+        Args: { p_nombre: string; p_segundos: number }
+        Returns: boolean
+      }
       unaccent: { Args: { "": string }; Returns: string }
       validar_token_tarea: {
         Args: { p_nombre: string; p_token: string }

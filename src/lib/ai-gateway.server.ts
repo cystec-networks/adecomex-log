@@ -19,6 +19,8 @@ export type ChatContent =
 export type ChatMessage = { role: "system" | "user" | "assistant"; content: ChatContent };
 
 export class ErrorGateway extends Error {
+  /** Créditos agotados o uso de IA bloqueado en el espacio de trabajo: los correos quedan en cola. */
+  creditosAgotados = false;
   constructor(mensaje: string, public status: number) { super(mensaje); }
 }
 
@@ -62,7 +64,9 @@ export async function callGateway(params: {
     if (res.status === 402 || (res.status === 403 && /credit|limit|disabled|top_up|admin_action/i.test(txt))) {
       const mensaje = res.status === 402 ? "Créditos de IA agotados. Añade créditos al workspace." : "El uso de IA del espacio de trabajo está limitado o desactivado.";
       await marcarCreditosAgotados(mensaje);
-      throw new ErrorGateway(mensaje, res.status);
+      const err = new ErrorGateway(mensaje, res.status);
+      err.creditosAgotados = true;
+      throw err;
     }
     throw new ErrorGateway(`AI Gateway error [${res.status}]: ${txt}`, res.status);
   }

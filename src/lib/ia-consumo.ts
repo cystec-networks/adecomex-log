@@ -55,3 +55,20 @@ export function presupuestoBajo(restantePct: number | null | undefined): boolean
 export function topeAlcanzado(gastadoHoy: number, limite: number | null | undefined): boolean {
   return limite != null && limite > 0 && gastadoHoy >= limite;
 }
+
+/** Qué hace un límite diario al alcanzarse: solo avisar o detener la función hasta el día siguiente. */
+export type AccionLimiteIa = "alerta" | "bloqueo";
+/** Funciones de correo: por defecto solo alerta, para que ningún correo se detenga por el límite. */
+export const FUNCIONES_SOLO_ALERTA: readonly FuncionIa[] = ["correo_adjunto", "correo_clasificacion", "correo_pagina", "correo_texto"];
+/** Funciones que leen los PDF de un correo: si se detienen, el correo queda en cola. */
+export const FUNCIONES_LECTURA_CORREO: readonly FuncionIa[] = ["correo_adjunto", "correo_clasificacion", "correo_pagina"];
+
+export function accionLimiteIa(funcion: string, guardada: string | null | undefined): AccionLimiteIa {
+  if (guardada === "alerta" || guardada === "bloqueo") return guardada;
+  return (FUNCIONES_SOLO_ALERTA as readonly string[]).includes(funcion) ? "alerta" : "bloqueo";
+}
+
+/** El límite detiene la función solo si se alcanzó y su acción es «bloqueo». */
+export function topeBloquea(funcion: string, gastadoHoy: number, limite: number | null | undefined, accion: string | null | undefined): boolean {
+  return topeAlcanzado(gastadoHoy, limite) && accionLimiteIa(funcion, accion) === "bloqueo";
+}

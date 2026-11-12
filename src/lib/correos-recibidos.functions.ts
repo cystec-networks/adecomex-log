@@ -52,19 +52,10 @@ export const crearSolicitudDesdeCorreo = createServerFn({ method: "POST" })
     const restaurar = () => db.from("correos_recibidos").update({ resultado: fila.resultado, motivo: fila.motivo, ultimo_intento_at: fila.ultimo_intento_at }).eq("id", fila.id);
 
     try {
-      const { bytesABase64 } = await import("./correo-adjunto-lectura.server");
-      const respaldo = (Array.isArray(fila.adjuntos_respaldo) ? fila.adjuntos_respaldo : []) as { nombre: string; mime: string; storage_path: string }[];
-      const adjuntos = [];
-      for (const a of respaldo) {
-        const { data: blob, error: e } = await db.storage.from("documentos").download(a.storage_path);
-        if (e || !blob) throw new Error(`No se pudo recuperar el adjunto ${a.nombre}: ${e?.message ?? "archivo no encontrado"}`);
-        adjuntos.push({ nombre: a.nombre, tipo: a.mime, contenido: bytesABase64(new Uint8Array(await blob.arrayBuffer())) });
-      }
+      const { reconstruirCorreo } = await import("./correos-cola.server");
       const { procesarCorreo } = await import("./correo-procesar.server");
-      const r = await procesarCorreo(db, {
-        remitente: fila.remitente, asunto: fila.asunto, cuerpo: fila.cuerpo ?? "", destinatarios: fila.destinatarios ?? undefined,
-        cc: fila.cc ?? undefined, id_hilo: fila.id_hilo ?? undefined, adjuntos,
-      }, { registroId: fila.id, forzado: true });
+      const r = await procesarCorreo(db, await reconstruirCorreo(db, fila), { registroId: fila.id, forzado: true });
+      if (r.tipo === "cola") { await restaurar(); throw new Error(`${r.motivo.split(":")[0]}: la IA está detenida ahora mismo. Inténtalo cuando haya margen.`); }
       if (r.tipo === "fallo") { await restaurar(); throw new Error(r.motivo); }
       const c = r.campos;
       const { error: e } = await db.from("correos_recibidos").update({
@@ -81,6 +72,22 @@ export const crearSolicitudDesdeCorreo = createServerFn({ method: "POST" })
       if (actual?.resultado === "procesando") await restaurar();
       throw e;
     }
+  });
+
+/**
+ * «Procesar cola ahora»: atiende los correos en cola (orden de llegada) sin esperar a la tarea
+ * programada, p. ej. después de subir un límite. Solo personal interno (la cola se lee bajo RLS).
+ */
+export const procesarColaCorreosAhora = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: visibles, error } = await context.supabase.from("correos_recibidos").select("id").not("en_cola_desde", "is", null).limit(1);
+    if (error) throw new Error(`No se pudo leer la cola: ${error.message}`);
+    if (!visibles?.length) return { procesados: 0, pendientes: 0, pausa: null as string | null, ocupado: false };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { procesarColaCorreos } = await import("./correos-cola.server");
+    const r = await procesarColaCorreos(supabaseAdmin as any, { maximo: 3, msMaximo: 45_000 });
+    return { procesados: r.procesados, pendientes: r.pendientes, pausa: r.pausa as string | null, ocupado: !!r.ocupado };
   });
 
 const hoySD = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santo_Domingo" }).format(new Date());

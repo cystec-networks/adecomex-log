@@ -14,6 +14,8 @@ import { contarPaginasPdf } from "@/lib/correo-documento-combinado.server";
 import { optimizarDocumento } from "@/lib/documento-optimizacion";
 import { bytesABase64 } from "@/lib/correo-adjunto-lectura.server";
 import { esTimeoutGateway, UMBRAL_PAGINAS_COMBINADO, AVISO_PROCESANDO_COMBINADO } from "@/lib/correo-documento-combinado";
+import { causaPausaIa } from "@/lib/ia-consumo.server";
+import { textoCola, type CausaCola } from "@/lib/correos-cola";
 
 const adjuntoSchema = adjuntoCorreoSchema;
 
@@ -39,9 +41,11 @@ async function leerAdjunto(a: z.infer<typeof adjuntoSchema>): Promise<AdjuntoPro
     }
     return { ...leido, firmado: base.firmado };
   } catch (e: any) {
+    // Límite diario o créditos agotados: no es un PDF ilegible; el correo completo queda en cola.
+    if (causaPausaIa(e)) throw e;
     if (optimizado.ahorro) {
       try { return await leerArchivoCorreo(a.nombre, mime, base64, original); }
-      catch { bytes = original; base.bytes = original; }
+      catch (e2) { if (causaPausaIa(e2)) throw e2; bytes = original; base.bytes = original; }
     }
     if (esPdf && esTimeoutGateway(e) && optimizado.motivo !== "firmado") return { ...base, combinado: { motivo: "timeout", paginas } };
     return { ...base, error: String(e?.message ?? e).slice(0, 200) };
@@ -144,6 +148,8 @@ export type CamposBitacora = {
 
 export type ResultadoProceso =
   | { tipo: "ok"; campos: CamposBitacora; respuesta: Record<string, unknown> }
+  /** La IA está detenida (límite diario o créditos): el correo y sus PDF quedan guardados en cola. */
+  | { tipo: "cola"; causa: CausaCola; motivo: string; adjuntos_respaldo: NonNullable<CamposBitacora["adjuntos_respaldo"]> }
   | { tipo: "fallo"; status: number; motivo: string; reintentar: boolean; adjuntos_respaldo?: CamposBitacora["adjuntos_respaldo"] };
 
 /**
@@ -152,7 +158,7 @@ export type ResultadoProceso =
  * guardando sus adjuntos para poder crear la solicitud más tarde. `forzado` = creado a mano desde el
  * registro (nunca descarta). Compartido por el webhook de Gmail y la recuperación manual.
  */
-export async function procesarCorreo(db: any, normal: Record<string, unknown> | undefined, opciones: { registroId: string; forzado?: boolean }): Promise<ResultadoProceso> {
+export async function procesarCorreo(db: any, normal: Record<string, unknown> | undefined, opciones: { registroId: string; forzado?: boolean; encolarPor?: CausaCola | null }): Promise<ResultadoProceso> {
   const fallo = (status: number, motivo: string, reintentar = true): ResultadoProceso => ({ tipo: "fallo", status, motivo, reintentar });
   const ok = (campos: CamposBitacora, respuesta: Record<string, unknown>): ResultadoProceso => ({ tipo: "ok", campos, respuesta });
 
@@ -193,6 +199,13 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
     const respaldo = await guardarRespaldo();
     if (typeof respaldo === "string") return fallo(500, respaldo);
     return ok({ resultado: "descartada", motivo, descarte_categoria: categoria, adjuntos_respaldo: respaldo }, { motivo });
+  };
+  // Cola: guarda los PDF (sin leerlos con IA) para procesarlos en orden de llegada cuando haya margen.
+  const encolar = async (causa: CausaCola, detalle?: string): Promise<ResultadoProceso> => {
+    const respaldo = await guardarRespaldo();
+    if (typeof respaldo === "string") return fallo(500, respaldo);
+    const motivo = `${textoCola(causa).replace(/^en cola/, "En cola")}: se procesará automáticamente en orden de llegada cuando haya margen.${detalle ? ` ${detalle}` : ""}`;
+    return { tipo: "cola", causa, motivo: motivo.slice(0, 1000), adjuntos_respaldo: respaldo };
   };
   const errorConRespaldo = async (motivo: string, reintentar: boolean): Promise<ResultadoProceso> => {
     const respaldo = await guardarRespaldo();
@@ -250,10 +263,19 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
   const previa = decidirCorreo({ forzado: opciones.forzado, ignorado, faltantes, pdfs: adjuntosIn.length, documentos: null, expediente: numeroDestino(), ambiguos });
   if (previa.accion === "descartar") return descartar(previa.motivo, previa.categoria);
   if (previa.accion === "error") return errorConRespaldo(previa.motivo, previa.reintentar);
+  // IA detenida o correos anteriores esperando: este correo va a la cola sin gastar IA.
+  if (opciones.encolarPor && !opciones.forzado) return encolar(opciones.encolarPor);
 
   // 2) Lectura de los PDF: un PDF ilegible no bloquea a los demás.
   const adjuntos: AdjuntoProcesado[] = [];
-  for (const a of adjuntosIn) adjuntos.push(await leerAdjunto(a));
+  try {
+    for (const a of adjuntosIn) adjuntos.push(await leerAdjunto(a));
+  } catch (e) {
+    const causa = causaPausaIa(e);
+    if (!causa) throw e;
+    // Las lecturas ya hechas quedan reutilizables sin costo al reanudar.
+    return encolar(causa, e instanceof Error ? e.message : undefined);
+  }
   const esImportacion = (a: AdjuntoProcesado) => esDocumentoImportacion(a, TIPOS_ADJUNTO_CORREO);
   // Recibo/PIN de pago de impuestos: van a su casilla de un Expediente existente, nunca crean solicitud.
   const esPago = (a: AdjuntoProcesado) => !a.combinado && (TIPOS_PAGO_CORREO as readonly string[]).includes(a.tipo);

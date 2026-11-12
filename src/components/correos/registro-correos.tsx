@@ -18,11 +18,13 @@ import {
   type CorreoRecibido,
 } from "@/lib/correos-recibidos";
 import { SimularLimpieza } from "@/components/correos/simular-limpieza";
-import { crearSolicitudDesdeCorreo, quitarCorreosDelRegistro, resolverConflictoCorreo } from "@/lib/correos-recibidos.functions";
+import { crearSolicitudDesdeCorreo, procesarColaCorreosAhora, quitarCorreosDelRegistro, resolverConflictoCorreo } from "@/lib/correos-recibidos.functions";
+import { textoCola } from "@/lib/correos-cola";
 
 const FILTROS = [
   { id: "principal", etiqueta: "Errores + Creadas + Adjuntadas" },
   { id: "error", etiqueta: "Errores" },
+  { id: "en_cola", etiqueta: "En cola (IA)" },
   { id: "creada", etiqueta: "Creadas" },
   { id: "adjuntada", etiqueta: "Adjuntadas a Expediente" },
   { id: "descartada", etiqueta: "Descartadas" },
@@ -74,6 +76,25 @@ export function RegistroCorreos({ filtroInicial }: { filtroInicial?: string }) {
   const crear = useServerFn(crearSolicitudDesdeCorreo);
   const quitar = useServerFn(quitarCorreosDelRegistro);
   const resolver = useServerFn(resolverConflictoCorreo);
+  const procesarCola = useServerFn(procesarColaCorreosAhora);
+  const { data: enCola = 0 } = useQuery({
+    queryKey: ["registro-correos", "cola"],
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { count } = await supabase.from("correos_recibidos").select("id", { count: "exact", head: true }).not("en_cola_desde", "is", null).in("resultado", ["en_cola", "procesando"]);
+      return count ?? 0;
+    },
+  });
+  const atenderCola = useMutation({
+    mutationFn: () => procesarCola(),
+    onSuccess: (r) => {
+      if (r.ocupado) toast.info("La cola ya se está procesando; espera unos minutos.");
+      else if (r.procesados === 0 && r.pausa) toast.warning(r.pausa === "creditos_ia" ? "Los créditos de IA siguen agotados; los correos siguen en cola." : "El límite diario de IA sigue alcanzado; los correos siguen en cola.");
+      else toast.success(`${r.procesados} correo${r.procesados === 1 ? "" : "s"} procesado${r.procesados === 1 ? "" : "s"}${r.pendientes ? `; quedan ${r.pendientes} en cola` : ""}.`);
+      refrescar();
+    },
+    onError: (e: Error) => toast.error(e.message || "No se pudo procesar la cola"),
+  });
   const crearSolicitud = useMutation({
     mutationFn: (registroId: string) => crear({ data: { registroId } }),
     onSuccess: (r) => {
@@ -113,6 +134,13 @@ export function RegistroCorreos({ filtroInicial }: { filtroInicial?: string }) {
           ))}
         </div>
         <SimularLimpieza />
+        {enCola > 0 && (
+          <Button size="sm" variant="outline" className="h-7 px-2 text-[12px]" disabled={atenderCola.isPending} onClick={() => atenderCola.mutate()}
+            title="Procesa ahora los correos en cola, en orden de llegada (por ejemplo, después de subir el límite de IA)">
+            {atenderCola.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Clock className="h-3.5 w-3.5" />}
+            Procesar cola ahora ({enCola})
+          </Button>
+        )}
         {seleccion.size > 0 && (
           <Button size="sm" variant="destructive" className="h-7 px-2 text-[12px] ml-auto" disabled={quitarSeleccion.isPending} onClick={() => setConfirmarQuitar(true)}>
             {quitarSeleccion.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
@@ -121,7 +149,7 @@ export function RegistroCorreos({ filtroInicial }: { filtroInicial?: string }) {
         )}
       </div>
       <p className="text-[11px] text-muted-foreground">
-        Últimos 200 correos que el buzón entregó a la plataforma. Solo crean solicitud los correos con documentos de importación en PDF que no corresponden a un Expediente. Un correo con error se reintenta automáticamente.
+        Últimos 200 correos que el buzón entregó a la plataforma. Solo crean solicitud los correos con documentos de importación en PDF que no corresponden a un Expediente. Un correo con error se reintenta automáticamente. Si la IA está detenida (límite diario o créditos agotados), el correo y sus PDF quedan «En cola» y se procesan solos en orden de llegada.
         {filtro === "descartada" && ` Si un correo descartado sí era un embarque, usa «Crear solicitud». Los adjuntos guardados se borran a los ${DIAS_ADJUNTOS_DESCARTADOS} días y la línea a los ${DIAS_REGISTRO_DESCARTADOS}.`}
       </p>
       <Card>
@@ -139,7 +167,7 @@ export function RegistroCorreos({ filtroInicial }: { filtroInicial?: string }) {
               <tbody>
                 {data.map((c, i) => {
                   const atascado = correoAtascado(c);
-                  const r = atascado ? { etiqueta: "Interrumpido", tono: "error" as const } : RESULTADO_CORREO[c.resultado] ?? { etiqueta: c.resultado, tono: "aviso" as const };
+                  const r = atascado ? { etiqueta: "Interrumpido", tono: "error" as const } : c.resultado === "en_cola" ? { etiqueta: textoCola(c.cola_causa).replace(/^en cola/, "En cola"), tono: "aviso" as const } : RESULTADO_CORREO[c.resultado] ?? { etiqueta: c.resultado, tono: "aviso" as const };
                   const breve = !!c.descarte_categoria && DESCARTE_BREVE.includes(c.descarte_categoria as CategoriaDescarte);
                   const recuperable = !c.adjuntos_borrados_en && !breve && (c.resultado === "descartada" || (c.resultado === "error" && !atascado && (c.cuerpo || c.asunto)));
                   const pendientes = conflictosPendientes(c.conflictos);
@@ -177,6 +205,9 @@ export function RegistroCorreos({ filtroInicial }: { filtroInicial?: string }) {
                       <td className="px-2 py-1.5 whitespace-nowrap">
                         {c.expediente_id && c.resultado === "adjuntada" ? <Link to="/expedientes/$id" params={{ id: c.expediente_id }} search={{ ficha: "docs" }} className="text-primary hover:underline expediente-numero">{c.expediente_numero}</Link>
                           : c.solicitud_id && c.resultado !== "descartada" ? <span className="text-muted-foreground">Solicitud por correo</span>
+                          : c.resultado === "en_cola" ? (
+                            <div className="text-[11px] text-muted-foreground flex items-center gap-1"><Paperclip className="h-3 w-3" />{Array.isArray(c.adjuntos_respaldo) ? c.adjuntos_respaldo.length : 0} PDF guardado{Array.isArray(c.adjuntos_respaldo) && c.adjuntos_respaldo.length === 1 ? "" : "s"}</div>
+                          )
                           : recuperable ? (
                             <div className="space-y-1">
                               <Button size="sm" variant="outline" className="h-7 px-2 text-[12px]" disabled={crearSolicitud.isPending}
