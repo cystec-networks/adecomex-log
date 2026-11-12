@@ -6,6 +6,13 @@
 export type ConceptoGastoCatalogo = { nombre: string; es_reembolso_defecto: boolean };
 
 /**
+ * Valor del interruptor «Es reembolso (resta del total)» al abrir «Nuevo gasto».
+ * Arranca siempre desmarcado: no recuerda la última marca ni la toma de ningún
+ * concepto. El valor por defecto del catálogo solo se aplica al elegir concepto.
+ */
+export const REEMBOLSO_INICIAL_NUEVO = false;
+
+/**
  * Valor del interruptor «Es reembolso» al elegir un concepto.
  * Si el concepto está en el catálogo toma su «Es reembolso por defecto»;
  * si no (texto libre, «Otro»), conserva el valor actual.

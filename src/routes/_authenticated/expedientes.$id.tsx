@@ -94,7 +94,7 @@ import { ChecklistHitos } from "@/components/checklist-hitos";
 import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
-import { reembolsoPorConcepto, tieneDatosFiscales, type ConceptoGastoCatalogo } from "@/lib/gasto-formulario";
+import { REEMBOLSO_INICIAL_NUEVO, reembolsoPorConcepto, tieneDatosFiscales, type ConceptoGastoCatalogo } from "@/lib/gasto-formulario";
 import { PortadaExpedienteButton } from "@/components/portada-expediente-button";
 import { ESTADO_LABEL, ESTADO_ORDEN, estadoIndex, validarAvanceEstado, fechasDespachoFaltantes, checksForzables, calcularEtapa, pendientesSiguienteEstado } from "@/lib/estados-expediente";
 import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
@@ -4617,7 +4617,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const empty = {
-    concepto: "", monto: 0, fecha: "", proveedor: "", es_reembolso: false, notas: "",
+    concepto: "", monto: 0, fecha: "", proveedor: "", es_reembolso: REEMBOLSO_INICIAL_NUEVO, notas: "",
     rnc_cedula_proveedor: "", tipo_id_proveedor: "", ncf_proveedor: "", tipo_ncf_proveedor: "",
     ncf_modificado: "", monto_facturado: 0, itbis_facturado: 0, itbis_retenido: 0, isr_retenido: 0,
     forma_pago: "",

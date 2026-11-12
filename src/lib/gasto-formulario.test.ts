@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { reembolsoPorConcepto, tieneDatosFiscales } from "./gasto-formulario";
+import { REEMBOLSO_INICIAL_NUEVO, reembolsoPorConcepto, tieneDatosFiscales } from "./gasto-formulario";
 
 const catalogo = [
   { nombre: "Honorarios de terceros", es_reembolso_defecto: false },
@@ -16,6 +16,25 @@ describe("reembolsoPorConcepto", () => {
   it("un concepto escrito a mano conserva el valor actual", () => {
     expect(reembolsoPorConcepto("Otro gasto", catalogo, true)).toBe(true);
     expect(reembolsoPorConcepto("Otro gasto", catalogo, false)).toBe(false);
+  });
+});
+
+describe("regla del catálogo actual: todos los conceptos en No", () => {
+  // Catálogo tal como está guardado hoy: ningún concepto trae el defecto en Sí.
+  const catalogoTodoNo = [
+    { nombre: "Reembolsos", es_reembolso_defecto: false },
+    { nombre: "Honorarios de terceros", es_reembolso_defecto: false },
+    { nombre: "Gastos de Verificación y Despacho", es_reembolso_defecto: false },
+  ];
+
+  it("un gasto nuevo arranca desmarcado, sin recordar la última marca", () => {
+    expect(REEMBOLSO_INICIAL_NUEVO).toBe(false);
+  });
+
+  it("con todos los conceptos en No, elegir cualquier concepto deja el interruptor desmarcado", () => {
+    for (const c of catalogoTodoNo) {
+      expect(reembolsoPorConcepto(c.nombre, catalogoTodoNo, REEMBOLSO_INICIAL_NUEVO)).toBe(false);
+    }
   });
 });
 
