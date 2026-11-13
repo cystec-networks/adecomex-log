@@ -59,6 +59,7 @@ type Fila = {
   conciliado?: boolean | null;
   retroactiva?: boolean | null;
   tf_retroactivo?: boolean | null;
+  tf_excel?: boolean | null;
 };
 
 const fmtMoney = (n: number) =>
@@ -278,10 +279,11 @@ function FilaDatos({ f }: { f: Fila }) {
     <tr className="border-b last:border-0 whitespace-nowrap align-top">
       <td className="py-1.5 pr-3">
         <div className="font-mono font-medium">{f.secuencia}</div>
-        {(f.origen === "banco" || f.conciliado || f.tf_retroactivo) && (
+        {(f.origen === "banco" || f.conciliado || f.tf_retroactivo || f.tf_excel) && (
           <div className="flex flex-wrap gap-1 pt-0.5 text-[11px] font-normal">
             {f.origen === "banco" && <Badge variant="outline" className="px-1 py-0 text-[11px] font-normal">{f.retroactiva ? "Creada desde banco (retroactiva)" : "Creada desde banco"}</Badge>}
             {f.tf_retroactivo && <Badge variant="outline" className="border-warning px-1 py-0 text-[11px] font-normal" title="El número TF se asignó al conciliar con el banco; la entrada no nació con su número en orden">TF asignado retroactivamente</Badge>}
+            {f.tf_excel && <Badge variant="outline" className="border-primary/60 px-1 py-0 text-[11px] font-normal" title="Número TF escrito a mano al conciliar, tomado del registro anterior en Excel">TF de registro anterior (Excel)</Badge>}
             {f.conciliado && (
               <span className="text-muted-foreground" title={f.motivo_diferencia ? `Diferencia ${fmtMoney(Number(f.diferencia_banco))} · ${f.motivo_diferencia}` : undefined}>
                 Banco {f.referencia_bancaria ?? ""}{f.fecha_banco ? ` · ${fmtLocalDate(f.fecha_banco)}` : ""}

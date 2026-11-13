@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { fmtLocalDate } from "@/lib/dates";
 import {
   CATEGORIAS_TRANSFERENCIA, anterioresAlDiario, comisionesConPago, compararParaTf, cuentaDeMovimiento, cuentasConVariosBeneficiarios,
-  estadoBeneficiario, gruposParaLote, ordenAsignacionTf, prellenarEntrada, sugerenciasExactas, tieneTf,
+  estadoBeneficiario, gruposParaLote, normalizarTfManual, ordenAsignacionTf, tfManualesRepetidos, prellenarEntrada, sugerenciasExactas, tieneTf,
   type MovimientoBanco, type Sugerencia,
 } from "@/lib/conciliacion-diario";
 import { fmtRD, useCuentasBeneficiario, useInvalidarConciliacion, useReglasBanco } from "./datos";
@@ -349,7 +349,10 @@ export function EntradasLoteDialog({
 
 type TfVecino = { tf: string; fecha: string } | null;
 type TfPrevisto = {
-  solicitud_id: string; tf: string; fuente: "nuevo" | "viaje";
+  /** null cuando el TF escrito a mano no es válido (ver error). */
+  solicitud_id: string; tf: string | null; fuente: "nuevo" | "viaje" | "manual";
+  /** Solo fuente «manual»: por qué no se acepta el TF escrito, o un aviso que no bloquea. */
+  error?: string | null; aviso?: string | null;
   /** TF anotado en los viajes y si encaja entre el TF guardado anterior y el siguiente. */
   viaje: { mencionado: string; fecha_referencia: string; encaja: boolean; anterior: TfVecino; siguiente: TfVecino } | null;
 };
@@ -381,6 +384,13 @@ export function ExactasLoteDialog({
   const [sel, setSel] = useState<string[]>([]);
   const [elegidoPor, setElegidoPor] = useState<Record<string, string>>({});
   const [asignarTf, setAsignarTf] = useState(false);
+  // TF de registro anterior (Excel) escrito a mano por entrada; vacío = siguiente disponible.
+  const [tfManual, setTfManual] = useState<Record<string, string>>({});
+  const [tfManualListo, setTfManualListo] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const t = setTimeout(() => setTfManualListo(tfManual), 400);
+    return () => clearTimeout(t);
+  }, [tfManual]);
 
   const opcionesDe = (m: Mov) => { const c = cuentaDeMovimiento(m); return c ? conflictos.get(c) : undefined; };
   const estadoDe = (x: (typeof exactas)[number]) => estadoBeneficiario(x.entrada.beneficiario, opcionesDe(x.movimiento), elegidoPor[x.movimiento.id]);
@@ -391,6 +401,8 @@ export function ExactasLoteDialog({
     if (!open) return;
     setElegidoPor({});
     setAsignarTf(false);
+    setTfManual({});
+    setTfManualListo({});
     setSel(exactas.filter((x) => x.beneficiarioVerificado && tieneTf(x.entrada.secuencia) && !opcionesDe(x.movimiento)).map((x) => x.movimiento.id));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -402,9 +414,13 @@ export function ExactasLoteDialog({
   const sinTfElegidos = useMemo(() => ordenAsignacionTf(elegidos), [elegidos]);
   const hayResolver = exactas.some((x) => opcionesDe(x.movimiento));
 
-  const entradasTf = sinTfElegidos.map((x) => ({ origen_tipo: x.entrada.origen_tipo, solicitud_id: x.entrada.id, movimiento_id: x.movimiento.id }));
+  const manualDe = (id: string) => (tfManualListo[id] ?? "").trim();
+  const entradasTf = sinTfElegidos.map((x) => ({
+    origen_tipo: x.entrada.origen_tipo, solicitud_id: x.entrada.id, movimiento_id: x.movimiento.id, tf_manual: manualDe(x.entrada.id) || null,
+  }));
+  const escribiendoTf = sinTfElegidos.some((x) => (tfManual[x.entrada.id] ?? "").trim() !== manualDe(x.entrada.id));
   const { data: previstos, isFetching: calculandoTf, error: errorTf } = useQuery({
-    queryKey: ["previsualizar-tf", "exactas", entradasTf.map((e) => e.solicitud_id).join(",")],
+    queryKey: ["previsualizar-tf", "exactas", entradasTf.map((e) => `${e.solicitud_id}:${e.tf_manual ?? ""}`).join(",")],
     enabled: open && asignarTf && entradasTf.length > 0,
     staleTime: 0,
     queryFn: async () => {
@@ -414,8 +430,11 @@ export function ExactasLoteDialog({
     },
   });
   const tfDe = useMemo(() => new Map((previstos ?? []).map((p) => [p.solicitud_id, p])), [previstos]);
+  const erroresTf = sinTfElegidos.filter((x) => tfDe.get(x.entrada.id)?.error).length;
   const tfListo = !asignarTf || sinTfElegidos.length === 0
-    || (!calculandoTf && sinTfElegidos.every((x) => tfDe.has(x.entrada.id)) && tfDe.size === sinTfElegidos.length);
+    || (!calculandoTf && !escribiendoTf && erroresTf === 0
+      && sinTfElegidos.every((x) => tfDe.get(x.entrada.id)?.tf) && tfDe.size === sinTfElegidos.length);
+  const repetidosLocal = useMemo(() => tfManualesRepetidos(Object.fromEntries(sinTfElegidos.map((x) => [x.entrada.id, tfManual[x.entrada.id] ?? ""]))), [sinTfElegidos, tfManual]);
 
   const lotes = useMemo(() => {
     const mapa = new Map<string, { lote: string; n: number; total: number; fecha: string }>();
@@ -436,16 +455,20 @@ export function ExactasLoteDialog({
         p_pares: elegidos.map((x) => ({
           movimiento_id: x.movimiento.id, origen_tipo: x.entrada.origen_tipo, solicitud_id: x.entrada.id,
           beneficiario_confirmado: estadoDe(x) === "corresponde" ? x.entrada.beneficiario : null,
+          tf_manual: usarTf && !tieneTf(x.entrada.secuencia) ? manualDe(x.entrada.id) || null : null,
         })),
         p_asignar_tf: usarTf,
         p_tf_previstos: usarTf ? (previstos ?? []).map((p) => ({ solicitud_id: p.solicitud_id, tf: p.tf })) : undefined,
       });
       if (error) throw error;
-      return data as unknown as { cantidad: number; total: number; tf_asignados?: { tf: string }[] };
+      return data as unknown as { cantidad: number; total: number; tf_asignados?: { tf: string; fuente: string }[] };
     },
     onSuccess: (r) => {
-      const tfs = (r.tf_asignados ?? []).map((t) => t.tf);
-      const extra = tfs.length ? ` · ${tfs.length} TF asignados (${tfs[0]}${tfs.length > 1 ? ` a ${tfs[tfs.length - 1]}` : ""})` : "";
+      const asig = r.tf_asignados ?? [];
+      const tfs = asig.filter((t) => t.fuente !== "manual").map((t) => t.tf);
+      const excel = asig.filter((t) => t.fuente === "manual").map((t) => t.tf);
+      const extra = (tfs.length ? ` · ${tfs.length} TF asignados (${tfs[0]}${tfs.length > 1 ? ` a ${tfs[tfs.length - 1]}` : ""})` : "")
+        + (excel.length ? ` · ${excel.length} TF del registro anterior (${excel.join(", ")})` : "");
       toast.success(`${r.cantidad} débitos conciliados en un lote (${fmtRD(Number(r.total))})${extra}`);
       invalidar();
       onClose();
@@ -473,6 +496,7 @@ export function ExactasLoteDialog({
   const conciliables = exactas.filter(conciliable);
   const totalSinTf = exactas.filter((x) => !tieneTf(x.entrada.secuencia)).length;
   const tfsPrevistos = asignarTf && tfListo ? sinTfElegidos.map((x) => tfDe.get(x.entrada.id)?.tf ?? "") : [];
+  const escribirTf = (id: string, v: string) => setTfManual((p) => ({ ...p, [id]: v }));
   const rangoTf = tfsPrevistos.length === 0 ? ""
     : ` · ${tfsPrevistos.length} TF: ${tfsPrevistos.length <= 3 ? tfsPrevistos.join(", ") : `${tfsPrevistos.slice(0, 2).join(", ")}… ${tfsPrevistos[tfsPrevistos.length - 1]}`}`;
 
@@ -496,9 +520,10 @@ export function ExactasLoteDialog({
             <div className="min-w-0 flex-1">
               <Label htmlFor="asignar-tf" className="text-[13px]">Asignar TF al conciliar</Label>
               <div className="text-[11px] text-muted-foreground">
-                {totalSinTf} {totalSinTf === 1 ? "entrada no tiene" : "entradas no tienen"} TF y empiezan desmarcadas. Con esta opción, cada fila marcada sin TF recibe al confirmar el siguiente número disponible (último guardado + 1, saltando los ocupados), en orden de fecha. Un TF anotado en el viaje solo se usa si encaja entre el TF guardado anterior y el siguiente según la fecha del débito. Quedan marcadas «TF asignado retroactivamente». Si cancelas, no se usa ningún número.
+                {totalSinTf} {totalSinTf === 1 ? "entrada no tiene" : "entradas no tienen"} TF y empiezan desmarcadas. Con esta opción, cada fila marcada sin TF recibe al confirmar el siguiente número disponible (último guardado + 1, saltando los ocupados), en orden de fecha. Un TF anotado en el viaje solo se usa si encaja entre el TF guardado anterior y el siguiente según la fecha del débito. Quedan marcadas «TF asignado retroactivamente». Si el número ya existía en el registro anterior (Excel), escríbelo en la fila: se valida que ninguna otra entrada lo use y queda marcado «TF de registro anterior (Excel)»; si lo dejas vacío, recibe el siguiente disponible. Si cancelas, no se usa ningún número.
               </div>
               {asignarTf && sinTfElegidos.length === 0 && <div className="mt-1 text-[11px]">Marca las filas «Sin TF» que quieras conciliar para ver el TF que recibiría cada una.</div>}
+              {asignarTf && erroresTf > 0 && <div className="mt-1 text-[11px] text-destructive">Corrige el TF escrito en {erroresTf} {erroresTf === 1 ? "fila" : "filas"} o déjalo vacío para asignar el siguiente disponible.</div>}
               {asignarTf && errorTf && <div className="mt-1 text-[11px] text-destructive">No se pudo calcular la vista previa de TF: {(errorTf as Error).message}</div>}
             </div>
           </div>
@@ -523,6 +548,11 @@ export function ExactasLoteDialog({
                   const estado = estadoDe(x);
                   const marcado = sel.includes(m.id) && conciliable(x);
                   const previsto = !conTf && asignarTf && marcado ? tfDe.get(e.id) : undefined;
+                  const escrito = tfManual[e.id] ?? "";
+                  const formato = normalizarTfManual(escrito);
+                  const errorLocal = formato === "invalido" ? "Escribe un número TF válido (p. ej. TF-0012700)."
+                    : repetidosLocal.has(e.id) ? `${repetidosLocal.get(e.id)} está repetido en otra fila de este lote.` : null;
+                  const vigente = previsto && escrito.trim() === manualDe(e.id) && !calculandoTf ? previsto : undefined;
                   return (
                     <tr key={m.id} className={`border-b last:border-0 align-top ${!conTf || opciones ? "bg-warning/10" : ""}`}>
                       <td className="px-2 py-1">
@@ -554,9 +584,23 @@ export function ExactasLoteDialog({
                           <div className="space-y-0.5 font-sans">
                             <Badge variant="outline" className="border-warning bg-warning/20 text-[11px] text-warning-foreground">Sin TF</Badge>
                             <div className="text-[11px] text-muted-foreground">{e.secuencia}</div>
-                            {previsto && <div className="font-mono text-[12px]">→ {previsto.tf}</div>}
-                            {previsto && <NotaTfViaje p={previsto} />}
-                            {!conTf && asignarTf && marcado && !previsto && <div className="text-[11px] text-muted-foreground">{calculandoTf ? "Calculando…" : "—"}</div>}
+                            {asignarTf && marcado && (
+                              <div className="space-y-0.5 pt-0.5">
+                                <Input value={escrito} onChange={(ev) => escribirTf(e.id, ev.target.value)} placeholder="TF del Excel"
+                                  aria-label={`TF de registro anterior para ${e.secuencia}`} title="Déjalo vacío para asignar el siguiente disponible"
+                                  className={`h-7 w-[150px] font-mono text-[12px] ${errorLocal || vigente?.error ? "border-destructive" : ""}`} />
+                                {errorLocal && <div className="max-w-[220px] whitespace-normal text-[11px] text-destructive">{errorLocal}</div>}
+                              </div>
+                            )}
+                            {!errorLocal && vigente?.error && <div className="max-w-[220px] whitespace-normal text-[11px] text-destructive">{vigente.error}</div>}
+                            {!errorLocal && vigente?.tf && <div className="font-mono text-[12px]">→ {vigente.tf}</div>}
+                            {!errorLocal && vigente?.tf && vigente.fuente === "manual" && (
+                              <Badge variant="outline" className="border-primary/60 text-[11px] font-normal">TF de registro anterior (Excel)</Badge>
+                            )}
+                            {!errorLocal && vigente?.tf && vigente.fuente !== "manual" && <div className="text-[11px] text-muted-foreground">Siguiente disponible · TF asignado retroactivamente</div>}
+                            {!errorLocal && vigente?.aviso && <div className="max-w-[220px] whitespace-normal text-[11px] text-muted-foreground">{vigente.aviso}</div>}
+                            {!errorLocal && vigente && <NotaTfViaje p={vigente} />}
+                            {asignarTf && marcado && !errorLocal && !vigente && <div className="text-[11px] text-muted-foreground">{calculandoTf || escrito.trim() !== manualDe(e.id) ? "Calculando…" : "—"}</div>}
                           </div>
                         )}
                       </td>

@@ -3,7 +3,7 @@ import {
   beneficiarioCoincide, claveImportacion, resumenImportacion, cuentaDestino, diferenciaSeleccion, filasNuevas,
   pagoDeComision, prellenarEntrada, anterioresAlDiario, beneficiarioProbable, comisionesConPago,
   gruposParaLote, inicioDiario, resumenCuentasPendientes, expectativaMovimiento, requiereMotivo, sugerirEntradas, sugerenciasExactas, validarBalance,
-  tieneTf, ordenAsignacionTf, cuentasConVariosBeneficiarios, estadoBeneficiario, titularesDe,
+  tieneTf, ordenAsignacionTf, normalizarTfManual, tfManualesRepetidos, cuentasConVariosBeneficiarios, estadoBeneficiario, titularesDe,
   type CuentaBeneficiario, type EntradaDiario, type MovimientoBanco, type ReglaBanco,
 } from "./conciliacion-diario";
 
@@ -334,5 +334,25 @@ describe("cuenta compartida 114101033 (Jefry M. De León y/o Francisco López)",
   it("una cuenta con un solo titular sigue igual", () => {
     expect(titularesDe({ titulares: ["ASOCAPU"] })).toBeNull();
     expect(prellenarEntrada(mov({}), [asocapu], reglas).beneficiario).toBe("ASOCAPU / RICHEILY JIMENEZ");
+  });
+});
+
+describe("TF de registro anterior (Excel) escrito a mano", () => {
+  it("se normaliza al formato guardado", () => {
+    expect(normalizarTfManual("tf12777")).toBe("TF-0012777");
+    expect(normalizarTfManual(" TF-0012790 ")).toBe("TF-0012790");
+  });
+  it("campo vacío: se asigna el siguiente disponible", () => {
+    expect(normalizarTfManual("")).toBeNull();
+    expect(normalizarTfManual("   ")).toBeNull();
+  });
+  it("un texto que no es TF se rechaza", () => {
+    expect(normalizarTfManual("TR-000028")).toBe("invalido");
+    expect(normalizarTfManual("12777")).toBe("invalido");
+    expect(normalizarTfManual("TF-0000")).toBe("invalido");
+  });
+  it("el mismo TF en dos filas del lote se marca repetido en la segunda", () => {
+    const r = tfManualesRepetidos({ a: "TF-12777", b: "tf0012777", c: "TF-0012790", d: "" });
+    expect([...r.entries()]).toEqual([["b", "TF-0012777"]]);
   });
 });

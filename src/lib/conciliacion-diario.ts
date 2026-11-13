@@ -504,6 +504,28 @@ export function sugerenciasExactas<T extends MovimientoBanco>(
 /** La entrada ya tiene número TF (TF-0012774, TF0012774). Los pagos de transporte antiguos llevan TR-…: «Sin TF». */
 export const tieneTf = (secuencia: string | null | undefined) => /^TF-?\d+$/i.test((secuencia ?? "").trim());
 
+/** TF escrito a mano (registro anterior en Excel) en formato guardado: «tf12777» → «TF-0012777». Vacío → null
+ * (se asigna el siguiente disponible); texto que no es un TF → "invalido". Igual que private.normalizar_tf. */
+export function normalizarTfManual(texto: string | null | undefined): string | null | "invalido" {
+  const t = (texto ?? "").trim();
+  if (!t) return null;
+  if (!/^TF-?\d+$/i.test(t)) return "invalido";
+  const digitos = t.replace(/\D/g, "").replace(/^0+/, "");
+  return digitos ? `TF-${digitos.padStart(7, "0")}` : "invalido";
+}
+
+/** TF escritos a mano que se repiten entre filas del mismo lote (entrada → TF repetido). */
+export function tfManualesRepetidos(manuales: Record<string, string>): Map<string, string> {
+  const vistos = new Map<string, string>();
+  const repetidos = new Map<string, string>();
+  for (const [id, texto] of Object.entries(manuales)) {
+    const tf = normalizarTfManual(texto);
+    if (!tf || tf === "invalido") continue;
+    if (vistos.has(tf)) repetidos.set(id, tf); else vistos.set(tf, id);
+  }
+  return repetidos;
+}
+
 /** Orden de fecha para asignar TF: fecha del banco, luego de la entrada y el id (igual en vista previa y confirmación). */
 export function compararParaTf<T extends MovimientoBanco>(a: SugerenciaExacta<T>, b: SugerenciaExacta<T>): number {
   return a.movimiento.fecha.localeCompare(b.movimiento.fecha)
