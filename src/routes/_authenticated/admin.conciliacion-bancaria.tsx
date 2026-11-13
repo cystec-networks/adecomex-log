@@ -16,8 +16,9 @@ import { toast } from "sonner";
 import { Landmark, Upload, Link2, Unlink, Settings2, Sparkles, FilePlus2, AlertTriangle, CheckCircle2, Layers, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { fmtLocalDate } from "@/lib/dates";
-import { cuentaCompartida, cuentaDestino, anterioresAlDiario, comisionesConPago, gruposParaLote, sugerenciasExactas, inicioDiario, pagoDeComision, reglaAplicable, resumenImportacion, sugerirEntradas, validarBalance, type Sugerencia } from "@/lib/conciliacion-diario";
-import { useConciliarDiario, useCuentasBeneficiario, useEntradasDiario, useMarcarMovimiento, useReglasBanco } from "@/components/conciliacion/datos";
+import { planConciliacionAutomatica, cuentaCompartida, cuentaDestino, anterioresAlDiario, comisionesConPago, gruposParaLote, sugerenciasExactas, inicioDiario, pagoDeComision, reglaAplicable, resumenImportacion, sugerirEntradas, validarBalance, type Sugerencia } from "@/lib/conciliacion-diario";
+import { leerCuentasBeneficiario, leerEntradasDiario, leerReglasBanco, useConciliarDiario, useCuentasBeneficiario, useEntradasDiario, useInvalidarConciliacion, useMarcarMovimiento, useReglasBanco } from "@/components/conciliacion/datos";
+import { LotesAutomaticosDialog, ResultadoAutomaticoDialog, type ResultadoAutomatico } from "@/components/conciliacion/automatica-dialogs";
 import { DebitoDialog, type PestanaDebito } from "@/components/conciliacion/debito-dialog";
 import { DeshacerConciliacionDialog } from "@/components/conciliacion/deshacer-dialog";
 import { ReglasCuentasDialog } from "@/components/conciliacion/reglas-cuentas-dialog";
@@ -76,7 +77,20 @@ type Movimiento = {
   vinculado_movimiento_id?: string | null;
   lote_marcado?: string | null;
   lote_conciliacion?: string | null;
+  conciliado_auto?: boolean | null;
+  revision_motivo?: string | null;
 };
+
+async function leerMovimientos(): Promise<Movimiento[]> {
+  const { data, error } = await supabase
+    .from("banco_movimientos")
+    .select("*")
+    .order("fecha", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(2000);
+  if (error) throw error;
+  return (data ?? []) as unknown as Movimiento[];
+}
 
 type Candidato = {
   tipo: "cxc_pago" | "cxp" | "gasto_operativo";
@@ -182,7 +196,9 @@ function ConciliacionBancariaPage() {
   const [debSel, setDebSel] = useState<{ mov: Movimiento; pestana: PestanaDebito } | null>(null);
   const [deshacerSel, setDeshacerSel] = useState<Movimiento | null>(null);
   const [reglasOpen, setReglasOpen] = useState(false);
-  const [bloque, setBloque] = useState<null | "anteriores" | "comisiones" | "lote" | "exactas">(null);
+  const [bloque, setBloque] = useState<null | "anteriores" | "comisiones" | "lote" | "exactas" | "automaticos">(null);
+  const [resultadoAuto, setResultadoAuto] = useState<ResultadoAutomatico | null>(null);
+  const invalidarConciliacion = useInvalidarConciliacion();
 
   const { data: entradasDiario = [] } = useEntradasDiario();
   const { data: reglas = [] } = useReglasBanco();
@@ -192,16 +208,7 @@ function ConciliacionBancariaPage() {
 
   const { data: movimientos = [], isLoading } = useQuery({
     queryKey: ["banco_movimientos"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("banco_movimientos")
-        .select("*")
-        .order("fecha", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(2000);
-      if (error) throw error;
-      return (data ?? []) as unknown as Movimiento[];
-    },
+    queryFn: leerMovimientos,
   });
 
   // Sugerencias del Diario para cada débito pendiente (nunca concilian solas).
@@ -231,6 +238,7 @@ function ConciliacionBancariaPage() {
       if (fTipo !== "todos" && m.tipo !== fTipo) return false;
       if (fEstado === "conciliado" && !m.conciliado) return false;
       if (fEstado === "pendiente" && m.conciliado) return false;
+      if (fEstado === "revision" && (m.conciliado || m.tipo !== "debito" || !m.revision_motivo)) return false;
       if (fEstado === "con-sugerencia" && !(sugerencias.get(m.id)?.length)) return false;
       if (fEstado === "sin-coincidencia" && (m.conciliado || m.tipo !== "debito" || (sugerencias.get(m.id)?.length ?? 0) > 0)) return false;
       return true;
@@ -360,22 +368,57 @@ function ConciliacionBancariaPage() {
         hashesUsados.add(h);
         return { ...f, hash_linea: h };
       });
+      const insertados: string[] = [];
       for (let i = 0; i < nuevas.length; i += 500) {
-        const { error } = await supabase.from("banco_movimientos").insert(nuevas.slice(i, i + 500) as never);
+        const { data, error } = await supabase.from("banco_movimientos").insert(nuevas.slice(i, i + 500) as never).select("id");
         if (error) throw error;
+        insertados.push(...((data ?? []) as { id: string }[]).map((r) => r.id));
       }
-      await qc.invalidateQueries({ queryKey: ["banco_movimientos"] });
       toast.success(
         `${nuevas.length} movimientos nuevos importados, ${actual.omitidas} ya existían (omitidos)` +
         (previa.invalidas ? ` · ${previa.invalidas} líneas ignoradas` : ""),
       );
+      const archivo = previa.nombre;
       setPrevia(null);
+      await conciliarAutomatico(insertados, archivo);
     } catch (e) {
       toast.error(`Error al importar: ${(e as Error).message}`);
     } finally {
       setImportando(false);
     }
   }
+
+  // Después de importar: concilia sola lo exacto (y crea la entrada con el siguiente TF si no existe);
+  // lo dudoso queda en «Pendientes de revisión» con su motivo. Se puede deshacer el lote completo.
+  async function conciliarAutomatico(ids: string[], archivo: string) {
+    if (ids.length === 0) { invalidarConciliacion(); return; }
+    try {
+      const [movs, entradas, cuentasAct, reglasAct] = await Promise.all([
+        leerMovimientos(), leerEntradasDiario(), leerCuentasBeneficiario(), leerReglasBanco(),
+      ]);
+      const setIds = new Set(ids);
+      const todos = movs.map((x) => ({ ...x, monto: Number(x.monto) }));
+      const nuevos = todos.filter((x) => setIds.has(x.id));
+      const creditos = nuevos.filter((x) => x.tipo !== "debito").length;
+      if (nuevos.length === creditos) { invalidarConciliacion(); return; }
+      const plan = planConciliacionAutomatica(nuevos, todos, entradas, cuentasAct, reglasAct, inicioDiario(entradas));
+      const { data, error } = await supabase.rpc("conciliar_automatico_importacion", {
+        p_items: plan.acciones.map((a) => a.tipo === "conciliar"
+          ? { movimiento_id: a.movimiento.id, accion: "conciliar", origen_tipo: a.entrada.origen_tipo, solicitud_id: a.entrada.id }
+          : { movimiento_id: a.movimiento.id, accion: "crear", categoria: a.categoria, beneficiario: a.beneficiario, concepto: a.concepto }),
+        p_revision: plan.revision.map((r) => ({ movimiento_id: r.movimiento.id, motivo: r.motivo })),
+        p_archivo: archivo,
+      });
+      if (error) throw error;
+      setResultadoAuto({ ...(data as unknown as Omit<ResultadoAutomatico, "creditos" | "archivo">), creditos, archivo });
+    } catch (e) {
+      toast.error(`Los movimientos se importaron, pero la conciliación automática no se completó: ${(e as Error).message}. Puedes conciliarlos a mano.`);
+    } finally {
+      invalidarConciliacion();
+    }
+  }
+
+  const movPorId = useMemo(() => new Map(movimientos.map((x) => [x.id, { ...x, monto: Number(x.monto) }])), [movimientos]);
 
   const desvincular = useMutation({
     mutationFn: async (id: string) => {
@@ -416,6 +459,7 @@ function ConciliacionBancariaPage() {
             <DropdownMenuItem onSelect={() => setBloque("anteriores")}>No aplica (anterior al Diario) · {conteoBloque.anteriores}</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setBloque("comisiones")}>Vincular comisiones con su pago · {conteoBloque.comisiones}</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setBloque("lote")}>Crear entradas por lote (retroactivas) · {conteoBloque.lote}</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setBloque("automaticos")}>Conciliaciones automáticas (deshacer)</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <Button variant="outline" onClick={() => setReglasOpen(true)}>
@@ -499,6 +543,7 @@ function ConciliacionBancariaPage() {
                 <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="conciliado">Conciliado</SelectItem>
                 <SelectItem value="pendiente">Pendiente</SelectItem>
+                <SelectItem value="revision">Pendientes de revisión</SelectItem>
                 <SelectItem value="con-sugerencia">Débito con sugerencia</SelectItem>
                 <SelectItem value="sin-coincidencia">Débito sin coincidencia</SelectItem>
               </SelectContent>
@@ -568,6 +613,7 @@ function ConciliacionBancariaPage() {
                     {m.conciliado ? (
                       <div className="space-y-0.5">
                         <Badge className="bg-emerald-600 hover:bg-emerald-600">Conciliado ✓</Badge>
+                        {m.conciliado_auto && <Badge variant="outline" className="ml-1 text-[11px] font-normal">Automática</Badge>}
                         <div className="text-[11px] text-muted-foreground">
                           {TIPO_LABEL[m.conciliado_tipo ?? ""] ?? m.conciliado_tipo}
                           {m.notas ? ` · ${m.notas}` : ""}
@@ -581,6 +627,9 @@ function ConciliacionBancariaPage() {
                     ) : (
                       <div className="space-y-0.5">
                         <Badge variant="secondary">Pendiente</Badge>
+                        {m.tipo === "debito" && m.revision_motivo && (
+                          <div className="text-[11px] font-medium text-amber-700 dark:text-amber-400">Revisar: {m.revision_motivo}</div>
+                        )}
                         {m.notas && (
                           <div className="text-[11px] text-amber-700 dark:text-amber-400 max-w-[220px]">Nota: {m.notas}</div>
                         )}
@@ -635,6 +684,13 @@ function ConciliacionBancariaPage() {
       <ComisionesLoteDialog open={bloque === "comisiones"} onClose={() => setBloque(null)} movimientos={movsNum} />
       <EntradasLoteDialog open={bloque === "lote"} onClose={() => setBloque(null)} movimientos={movsNum} inicio={inicio} conSugerencia={conSugerencia} />
       <ExactasLoteDialog open={bloque === "exactas"} onClose={() => setBloque(null)} movimientos={movsNum} sugerencias={sugerencias} />
+      <LotesAutomaticosDialog open={bloque === "automaticos"} onClose={() => setBloque(null)} />
+      <ResultadoAutomaticoDialog
+        resultado={resultadoAuto}
+        movimientos={movPorId}
+        onClose={() => setResultadoAuto(null)}
+        onVerRevision={() => { setFEstado("revision"); setResultadoAuto(null); }}
+      />
     </div>
   );
 }
@@ -989,6 +1045,16 @@ function PreviaImportacionDialog({ previa, importando, onConfirmar, onClose }: {
                   {previa.repetidasEnArchivo.length} de las nuevas son líneas idénticas que el archivo trae más de una vez el mismo día
                   (mismo monto, referencia y descripción). Entran solo las que faltan: si el archivo trae dos y ya hay una guardada, entra una.
                   Verifica en el estado de cuenta que sean pagos reales antes de confirmar.
+                </span>
+              </div>
+            )}
+            {previa.nuevas.some((f) => f.tipo === "debito") && (
+              <div className="flex gap-2 rounded-md border p-2 text-[12px] text-muted-foreground">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
+                <span>
+                  Al importar, los débitos nuevos con coincidencia exacta (mismo monto, fecha a ±3 días y beneficiario conocido por cuenta o regla)
+                  se concilian solos; si no tienen entrada en el Diario se crea con el siguiente TF. Lo dudoso queda en «Pendientes de revisión».
+                  Todo se puede deshacer.
                 </span>
               </div>
             )}

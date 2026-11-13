@@ -3,7 +3,7 @@ import {
   beneficiarioCoincide, claveImportacion, resumenImportacion, cuentaDestino, diferenciaSeleccion, filasNuevas,
   pagoDeComision, prellenarEntrada, anterioresAlDiario, beneficiarioProbable, comisionesConPago,
   gruposParaLote, inicioDiario, resumenCuentasPendientes, expectativaMovimiento, requiereMotivo, sugerirEntradas, sugerenciasExactas, validarBalance,
-  tieneTf, ordenAsignacionTf, normalizarTfManual, tfManualesRepetidos, cuentasConVariosBeneficiarios, estadoBeneficiario, titularesDe,
+  tieneTf, ordenAsignacionTf, normalizarTfManual, tfManualesRepetidos, cuentasConVariosBeneficiarios, estadoBeneficiario, titularesDe, planConciliacionAutomatica,
   type CuentaBeneficiario, type EntradaDiario, type MovimientoBanco, type ReglaBanco,
 } from "./conciliacion-diario";
 
@@ -354,5 +354,85 @@ describe("TF de registro anterior (Excel) escrito a mano", () => {
   it("el mismo TF en dos filas del lote se marca repetido en la segunda", () => {
     const r = tfManualesRepetidos({ a: "TF-12777", b: "tf0012777", c: "TF-0012790", d: "" });
     expect([...r.entries()]).toEqual([["b", "TF-0012777"]]);
+  });
+});
+
+describe("conciliación automática tras importar", () => {
+  const alex: CuentaBeneficiario = { cuenta: "769744160", beneficiario: "Transporte Alex Espinal", activo: true, tipo: "transportista" };
+  const gestor: CuentaBeneficiario = { cuenta: "717722458", beneficiario: "JUAN PEREZ GESTOR", activo: true, tipo: "gestor" };
+  const compartida: CuentaBeneficiario = { cuenta: "114101033", beneficiario: "JEFRY M. DE LEON y/o FRANCISCO LOPEZ", activo: true, titulares: ["JEFRY M. DE LEON", "FRANCISCO LOPEZ"] };
+  const cuentasAuto = [asocapu, alex, gestor, compartida];
+  const inicio = "2026-07-30";
+  const plan = (nuevos: MovimientoBanco[], entradas: EntradaDiario[], todos: MovimientoBanco[] = nuevos) =>
+    planConciliacionAutomatica(nuevos, todos, entradas, cuentasAuto, reglas, inicio);
+
+  it("cuenta conocida con una sola entrada exacta (mismo monto, ±3 días) se concilia sola", () => {
+    const p = plan([mov({ id: "a" })], [ent({ secuencia: "TF-0012780", fecha: "2026-09-27" })]);
+    expect(p.acciones).toHaveLength(1);
+    expect(p.acciones[0].tipo).toBe("conciliar");
+    expect(p.revision).toHaveLength(0);
+  });
+
+  it("cuenta desconocida queda en revisión", () => {
+    const p = plan([mov({ id: "a", descripcion: "IB a 999999999" })], [ent({})]);
+    expect(p.acciones).toHaveLength(0);
+    expect(p.revision[0].motivo).toBe("Cuenta desconocida");
+  });
+
+  it("cuenta compartida queda en revisión aunque haya entrada exacta de un titular", () => {
+    const p = plan([mov({ id: "a", descripcion: "IB a 114101033", monto: 5000 })], [ent({ beneficiario: "FRANCISCO LOPEZ", neto: 5000, origen_tipo: "transferencia" })]);
+    expect(p.acciones).toHaveLength(0);
+    expect(p.revision[0].motivo).toBe("Cuenta compartida");
+  });
+
+  it("monto con diferencia (retención) queda en revisión, no se crea entrada", () => {
+    const p = plan([mov({ id: "a", monto: 25392 })], [ent({ neto: 27600 })]);
+    expect(p.acciones).toHaveLength(0);
+    expect(p.revision[0].motivo).toBe("Monto con diferencia");
+  });
+
+  it("dos entradas posibles quedan en revisión", () => {
+    const p = plan([mov({ id: "a" })], [ent({ secuencia: "TF-1" }), ent({ secuencia: "TF-2", id: "e2" })]);
+    expect(p.revision[0].motivo).toBe("Varias coincidencias posibles");
+  });
+
+  it("una entrada que también encaja con otro débito pendiente queda en revisión", () => {
+    const otro = mov({ id: "b", fecha: "2026-09-30" });
+    const p = plan([mov({ id: "a" })], [ent({})], [mov({ id: "a" }), otro]);
+    expect(p.revision[0].motivo).toBe("Varias coincidencias posibles");
+  });
+
+  it("regla con beneficiario y sin entrada: se crea la entrada con su categoría", () => {
+    const p = plan([mov({ id: "a", descripcion: "EXI PAG DGA DB7E137 68823121", monto: 1000, referencia: "68823121" })], []);
+    expect(p.acciones).toEqual([expect.objectContaining({ tipo: "crear", categoria: "Impuestos", beneficiario: "DIRECCION GENERAL DE ADUANAS" })]);
+  });
+
+  it("cuenta de gestor con nombre y sin entrada: se crea la entrada", () => {
+    const p = plan([mov({ id: "a", descripcion: "IB a 717722458", monto: 3500 })], []);
+    expect(p.acciones[0]).toEqual(expect.objectContaining({ tipo: "crear", beneficiario: "JUAN PEREZ GESTOR" }));
+  });
+
+  it("pago a transportista sin viaje exacto nunca crea entrada", () => {
+    const p = plan([mov({ id: "a", descripcion: "IB a 769744160", monto: 7000 })], []);
+    expect(p.acciones).toHaveLength(0);
+    expect(p.revision[0].motivo).toBe("Pago de transporte sin viaje exacto");
+  });
+
+  it("débitos anteriores al Diario y comisiones de un pago quedan en revisión", () => {
+    const pago = mov({ id: "p", descripcion: "EXI PAG DGA X", monto: 1000, referencia: "555" });
+    const com = mov({ id: "c", descripcion: "EXI COM DGA X", monto: 50, referencia: "555" });
+    const viejo = mov({ id: "v", fecha: "2026-07-10" });
+    const p = plan([com, viejo], [], [pago, com, viejo]);
+    expect(p.revision.map((r) => r.motivo).sort()).toEqual(["Anterior al Diario", "Comisión de un pago (vincular)"]);
+  });
+
+  it("créditos se ignoran y las acciones salen en orden de fecha (TF cronológicos)", () => {
+    const p = plan([
+      mov({ id: "b", descripcion: "IB a 717722458", monto: 200, fecha: "2026-09-10" }),
+      mov({ id: "a", descripcion: "IB a 717722458", monto: 100, fecha: "2026-09-01" }),
+      mov({ id: "cr", tipo: "credito" }),
+    ], []);
+    expect(p.acciones.map((x) => x.movimiento.id)).toEqual(["a", "b"]);
+    expect(p.revision).toHaveLength(0);
   });
 });

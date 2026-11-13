@@ -44,7 +44,7 @@ export type ReglaBanco = {
 };
 
 /** beneficiario vacío = cuenta precargada pendiente de nombre (no sirve para verificar). */
-export type CuentaBeneficiario = { cuenta: string; beneficiario: string | null; activo: boolean; titulares?: string[] | null };
+export type CuentaBeneficiario = { cuenta: string; beneficiario: string | null; activo: boolean; titulares?: string[] | null; tipo?: string | null };
 
 const cuentaSinCeros = (c: string) => c.replace(/^0+/, "");
 
@@ -571,4 +571,91 @@ export function estadoBeneficiario(entradaBeneficiario: string, opciones: string
   if (!opciones || opciones.length < 2) return "sin-conflicto";
   if (!elegido) return "falta-elegir";
   return mismoBeneficiario(elegido, entradaBeneficiario) ? "corresponde" : "no-corresponde";
+}
+
+// ---------- Conciliación automática tras importar ----------
+
+export const MOTIVOS_REVISION = {
+  cuentaDesconocida: "Cuenta desconocida",
+  cuentaCompartida: "Cuenta compartida",
+  montoDiferencia: "Monto con diferencia",
+  varias: "Varias coincidencias posibles",
+  anterior: "Anterior al Diario",
+  comision: "Comisión de un pago (vincular)",
+  transporteSinViaje: "Pago de transporte sin viaje exacto",
+} as const;
+
+export type AccionAutomatica<T> =
+  | { tipo: "conciliar"; movimiento: T; entrada: EntradaDiario }
+  | { tipo: "crear"; movimiento: T; categoria: string; beneficiario: string; concepto: string };
+
+export type PlanAutomatico<T> = {
+  /** En orden de fecha: así los TF nuevos salen en orden cronológico. */
+  acciones: AccionAutomatica<T>[];
+  revision: { movimiento: T; motivo: string }[];
+};
+
+/** Decide qué débitos NUEVOS de una importación se concilian solos y cuáles quedan para revisión.
+ * Automático solo si el beneficiario se conoce (cuenta con nombre no compartida, o regla con beneficiario) y:
+ * - hay UNA sola entrada libre con el mismo monto neto a ±3 días que ningún otro débito pendiente comparte → conciliar;
+ * - no hay ninguna entrada libre de ese beneficiario a ±3 días → crear la entrada (siguiente TF).
+ * Todo lo demás va a revisión con su motivo. `todos` son todos los movimientos (para comisiones y entradas compartidas). */
+export function planConciliacionAutomatica<T extends MovimientoBanco>(
+  nuevos: T[],
+  todos: T[],
+  entradas: EntradaDiario[],
+  cuentas: CuentaBeneficiario[],
+  reglas: ReglaBanco[],
+  inicio: string | null,
+): PlanAutomatico<T> {
+  const pendientes = todos.filter((m) => m.tipo === "debito" && !m.conciliado);
+  const sugerencias = new Map<string, Sugerencia[]>();
+  for (const m of pendientes) sugerencias.set(m.id, sugerirEntradas(m, entradas, cuentas, reglas));
+  const usosEntrada = new Map<string, number>();
+  for (const lista of sugerencias.values()) {
+    const vistas = new Set<string>();
+    for (const s of lista) for (const e of s.entradas) vistas.add(claveEntrada(e));
+    for (const k of vistas) usosEntrada.set(k, (usosEntrada.get(k) ?? 0) + 1);
+  }
+
+  const acciones: AccionAutomatica<T>[] = [];
+  const revision: { movimiento: T; motivo: string }[] = [];
+  const orden = [...nuevos]
+    .filter((m) => m.tipo === "debito" && !m.conciliado)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.id.localeCompare(b.id));
+
+  for (const m of orden) {
+    const aRevision = (motivo: string) => revision.push({ movimiento: m, motivo });
+    if (!inicio || m.fecha < inicio) { aRevision(MOTIVOS_REVISION.anterior); continue; }
+    if (pagoDeComision(m, todos)) { aRevision(MOTIVOS_REVISION.comision); continue; }
+
+    const cuenta = cuentaDestino(m.descripcion);
+    const reg = cuenta ? cuentaConNombre(cuenta, cuentas) : null;
+    if (cuenta && !reg) { aRevision(MOTIVOS_REVISION.cuentaDesconocida); continue; }
+    if (reg && titularesDe(reg)) { aRevision(MOTIVOS_REVISION.cuentaCompartida); continue; }
+    const regla = cuenta ? null : reglaAplicable(m.descripcion, reglas);
+    if (!cuenta && !(regla?.beneficiario ?? "").trim()) { aRevision(MOTIVOS_REVISION.cuentaDesconocida); continue; }
+
+    const lista = sugerencias.get(m.id) ?? [];
+    if (lista.length > 1 || (lista.length === 1 && lista[0].entradas.length !== 1)) { aRevision(MOTIVOS_REVISION.varias); continue; }
+    if (lista.length === 1) {
+      const e = lista[0].entradas[0];
+      if ((usosEntrada.get(claveEntrada(e)) ?? 0) > 1) { aRevision(MOTIVOS_REVISION.varias); continue; }
+      acciones.push({ tipo: "conciliar", movimiento: m, entrada: e });
+      continue;
+    }
+
+    // Sin entrada exacta: si el beneficiario tiene entradas libres cercanas con otro monto, hay diferencia que revisar.
+    const exp = expectativaMovimiento(m, cuentas, reglas);
+    const cercana = entradas.some((e) => !e.conciliado && e.estado !== "anulada"
+      && diasEntre(e.fecha, m.fecha) <= DIAS_TOLERANCIA && entradaCompatible(e, exp));
+    if (cercana) { aRevision(MOTIVOS_REVISION.montoDiferencia); continue; }
+    // Un pago a transportista corresponde a un viaje: nunca se inventa una entrada nueva.
+    if (reg?.tipo === "transportista") { aRevision(MOTIVOS_REVISION.transporteSinViaje); continue; }
+
+    const p = prellenarEntrada(m, cuentas, reglas);
+    if (!p.beneficiario.trim()) { aRevision(MOTIVOS_REVISION.cuentaDesconocida); continue; }
+    acciones.push({ tipo: "crear", movimiento: m, categoria: p.categoria, beneficiario: p.beneficiario, concepto: p.concepto });
+  }
+  return { acciones, revision };
 }

@@ -363,10 +363,56 @@ export type Database = {
         }
         Relationships: []
       }
+      banco_lotes_automaticos: {
+        Row: {
+          archivo: string | null
+          conciliados: number
+          creadas: number
+          creado_en: string
+          creado_por: string | null
+          deshecho_en: string | null
+          deshecho_por: string | null
+          deshechos: number | null
+          detalle: Json
+          id: string
+          revision: number
+          total: number
+        }
+        Insert: {
+          archivo?: string | null
+          conciliados?: number
+          creadas?: number
+          creado_en?: string
+          creado_por?: string | null
+          deshecho_en?: string | null
+          deshecho_por?: string | null
+          deshechos?: number | null
+          detalle?: Json
+          id?: string
+          revision?: number
+          total?: number
+        }
+        Update: {
+          archivo?: string | null
+          conciliados?: number
+          creadas?: number
+          creado_en?: string
+          creado_por?: string | null
+          deshecho_en?: string | null
+          deshecho_por?: string | null
+          deshechos?: number | null
+          detalle?: Json
+          id?: string
+          revision?: number
+          total?: number
+        }
+        Relationships: []
+      }
       banco_movimientos: {
         Row: {
           codigo_transaccion: string | null
           conciliado: boolean
+          conciliado_auto: boolean
           conciliado_en: string | null
           conciliado_id: string | null
           conciliado_por: string | null
@@ -385,12 +431,14 @@ export type Database = {
           notas: string | null
           numero_cheque: string | null
           referencia: string | null
+          revision_motivo: string | null
           tipo: string
           vinculado_movimiento_id: string | null
         }
         Insert: {
           codigo_transaccion?: string | null
           conciliado?: boolean
+          conciliado_auto?: boolean
           conciliado_en?: string | null
           conciliado_id?: string | null
           conciliado_por?: string | null
@@ -409,12 +457,14 @@ export type Database = {
           notas?: string | null
           numero_cheque?: string | null
           referencia?: string | null
+          revision_motivo?: string | null
           tipo: string
           vinculado_movimiento_id?: string | null
         }
         Update: {
           codigo_transaccion?: string | null
           conciliado?: boolean
+          conciliado_auto?: boolean
           conciliado_en?: string | null
           conciliado_id?: string | null
           conciliado_por?: string | null
@@ -433,6 +483,7 @@ export type Database = {
           notas?: string | null
           numero_cheque?: string | null
           referencia?: string | null
+          revision_motivo?: string | null
           tipo?: string
           vinculado_movimiento_id?: string | null
         }
@@ -9158,6 +9209,10 @@ export type Database = {
         Args: { p_expediente: string; p_solicitud: string }
         Returns: boolean
       }
+      conciliar_automatico_importacion: {
+        Args: { p_archivo?: string; p_items: Json; p_revision?: Json }
+        Returns: Json
+      }
       conciliar_exactas_lote: {
         Args: { p_asignar_tf?: boolean; p_pares: Json; p_tf_previstos?: Json }
         Returns: Json
@@ -9209,6 +9264,10 @@ export type Database = {
           p_motivo?: string
           p_movimiento: string
         }
+        Returns: Json
+      }
+      deshacer_lote_automatico: {
+        Args: { p_lote: string; p_motivo?: string }
         Returns: Json
       }
       deshacer_lote_conciliacion: { Args: { p_lote: string }; Returns: number }

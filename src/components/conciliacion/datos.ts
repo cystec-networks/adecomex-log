@@ -10,41 +10,38 @@ export type CuentaFila = CuentaBeneficiario & { id: string; tipo: string; origen
 export const fmtRD = (n: number) =>
   new Intl.NumberFormat("es-DO", { style: "currency", currency: "DOP" }).format(n || 0);
 
+export async function leerEntradasDiario() {
+  const { data, error } = await supabase
+    .from("vista_registro_diario")
+    .select("id, origen_tipo, fecha, secuencia, categoria, referencia, beneficiario, concepto, neto, conciliado, origen, estado, movimiento_id, retroactiva")
+    .order("fecha", { ascending: false })
+    .limit(5000);
+  if (error) throw error;
+  return (data ?? []).map((r) => ({ ...r, neto: Number(r.neto) })) as unknown as EntradaDiarioFila[];
+}
+
+export async function leerReglasBanco() {
+  const { data, error } = await supabase.from("banco_reglas").select("*").order("orden").order("palabra_clave");
+  if (error) throw error;
+  return (data ?? []) as unknown as ReglaFila[];
+}
+
+export async function leerCuentasBeneficiario() {
+  const { data, error } = await supabase.from("banco_cuentas_beneficiario").select("*").order("beneficiario");
+  if (error) throw error;
+  return (data ?? []) as unknown as CuentaFila[];
+}
+
 export function useEntradasDiario() {
-  return useQuery({
-    queryKey: ["conciliacion-entradas-diario"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vista_registro_diario")
-        .select("id, origen_tipo, fecha, secuencia, categoria, referencia, beneficiario, concepto, neto, conciliado, origen, estado, movimiento_id, retroactiva")
-        .order("fecha", { ascending: false })
-        .limit(5000);
-      if (error) throw error;
-      return (data ?? []).map((r) => ({ ...r, neto: Number(r.neto) })) as unknown as EntradaDiarioFila[];
-    },
-  });
+  return useQuery({ queryKey: ["conciliacion-entradas-diario"], queryFn: leerEntradasDiario });
 }
 
 export function useReglasBanco() {
-  return useQuery({
-    queryKey: ["banco-reglas"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("banco_reglas").select("*").order("orden").order("palabra_clave");
-      if (error) throw error;
-      return (data ?? []) as unknown as ReglaFila[];
-    },
-  });
+  return useQuery({ queryKey: ["banco-reglas"], queryFn: leerReglasBanco });
 }
 
 export function useCuentasBeneficiario() {
-  return useQuery({
-    queryKey: ["banco-cuentas-beneficiario"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("banco_cuentas_beneficiario").select("*").order("beneficiario");
-      if (error) throw error;
-      return (data ?? []) as unknown as CuentaFila[];
-    },
-  });
+  return useQuery({ queryKey: ["banco-cuentas-beneficiario"], queryFn: leerCuentasBeneficiario });
 }
 
 /** Refresca movimientos, Diario y catálogos tras cualquier conciliación. */
@@ -59,6 +56,7 @@ export function useInvalidarConciliacion() {
     qc.invalidateQueries({ queryKey: ["siguiente-tf"] });
     qc.invalidateQueries({ queryKey: ["previsualizar-tf"] });
     qc.invalidateQueries({ queryKey: ["tf-sin-uso"] });
+    qc.invalidateQueries({ queryKey: ["banco-lotes-automaticos"] });
   };
 }
 
