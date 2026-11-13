@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { Landmark, Upload, Link2, Unlink, Settings2, Sparkles, FilePlus2, AlertTriangle, CheckCircle2, Layers, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { fmtLocalDate } from "@/lib/dates";
-import { anterioresAlDiario, comisionesConPago, filasNuevas, gruposParaLote, inicioDiario, pagoDeComision, reglaAplicable, sugerirEntradas, validarBalance, type Sugerencia } from "@/lib/conciliacion-diario";
+import { anterioresAlDiario, comisionesConPago, gruposParaLote, inicioDiario, pagoDeComision, reglaAplicable, resumenImportacion, sugerirEntradas, validarBalance, type Sugerencia } from "@/lib/conciliacion-diario";
 import { useConciliarDiario, useCuentasBeneficiario, useEntradasDiario, useMarcarMovimiento, useReglasBanco } from "@/components/conciliacion/datos";
 import { DebitoDialog, type PestanaDebito } from "@/components/conciliacion/debito-dialog";
 import { DeshacerConciliacionDialog } from "@/components/conciliacion/deshacer-dialog";
@@ -123,6 +123,15 @@ type ParsedLinea = {
   hash_linea: string;
 };
 
+type PreviaImportacion = {
+  nombre: string;
+  filas: ParsedLinea[];
+  invalidas: number;
+  nuevas: ParsedLinea[];
+  omitidas: number;
+  repetidasEnArchivo: ParsedLinea[];
+};
+
 function parseLinea(linea: string): ParsedLinea | null {
   const raw = linea.replace(/\r$/, "");
   if (!raw.trim()) return null;
@@ -167,6 +176,7 @@ function ConciliacionBancariaPage() {
   const [fEstado, setFEstado] = useState("todos");
   const [balanceBanco, setBalanceBanco] = useState("");
   const [importando, setImportando] = useState(false);
+  const [previa, setPrevia] = useState<PreviaImportacion | null>(null);
   const [movSel, setMovSel] = useState<Movimiento | null>(null);
   const [debSel, setDebSel] = useState<{ mov: Movimiento; pestana: PestanaDebito } | null>(null);
   const [deshacerSel, setDeshacerSel] = useState<Movimiento | null>(null);
@@ -284,66 +294,84 @@ function ConciliacionBancariaPage() {
   }, [movimientos, config]);
 
 
+  /** Movimientos ya guardados en el rango de fechas del archivo. */
+  async function existentesEnRango(filas: ParsedLinea[]) {
+    const fechas = filas.map((f) => f.fecha).sort();
+    const existentes: Array<{ fecha: string; referencia: string | null; monto: number; descripcion: string | null; hash_linea: string }> = [];
+    for (let desdeFila = 0; ; desdeFila += 1000) {
+      const { data, error } = await supabase
+        .from("banco_movimientos")
+        .select("fecha, referencia, monto, descripcion, hash_linea")
+        .gte("fecha", fechas[0]).lte("fecha", fechas[fechas.length - 1])
+        .range(desdeFila, desdeFila + 999);
+      if (error) throw error;
+      existentes.push(...((data ?? []) as typeof existentes).map((r) => ({ ...r, monto: Number(r.monto) })));
+      if (!data || data.length < 1000) break;
+    }
+    return existentes;
+  }
+
+  // Paso 1: leer el archivo y mostrar la vista previa; no se guarda nada todavía.
   async function onImportar(file: File) {
     setImportando(true);
     try {
       const texto = await file.text();
-      const lineas = texto.split("\n");
       const filas: ParsedLinea[] = [];
       let invalidas = 0;
-      for (const l of lineas) {
+      for (const l of texto.split("\n")) {
         if (!l.trim()) continue;
         const p = parseLinea(l);
         if (!p) { invalidas++; continue; }
         filas.push(p);
       }
-
       if (filas.length === 0) {
         toast.error("No se encontraron movimientos válidos en el archivo.");
         return;
       }
+      const existentes = await existentesEnRango(filas);
+      setPrevia({ nombre: file.name, filas, invalidas, ...resumenImportacion(filas, existentes) });
+    } catch (e) {
+      toast.error(`Error al leer el archivo: ${(e as Error).message}`);
+    } finally {
+      setImportando(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
 
-      // Duplicado = misma fecha + referencia + monto + descripción (ya guardado).
-      const fechas = filas.map((f) => f.fecha).sort();
-      const existentes: Array<{ fecha: string; referencia: string | null; monto: number; descripcion: string | null; hash_linea: string }> = [];
-      for (let desdeFila = 0; ; desdeFila += 1000) {
-        const { data, error } = await supabase
-          .from("banco_movimientos")
-          .select("fecha, referencia, monto, descripcion, hash_linea")
-          .gte("fecha", fechas[0]).lte("fecha", fechas[fechas.length - 1])
-          .range(desdeFila, desdeFila + 999);
-        if (error) throw error;
-        existentes.push(...((data ?? []) as typeof existentes).map((r) => ({ ...r, monto: Number(r.monto) })));
-        if (!data || data.length < 1000) break;
+  // Paso 2: al confirmar, se recalcula contra lo guardado en ese momento; si cambió, se actualiza la vista previa sin importar.
+  async function confirmarImportacion() {
+    if (!previa) return;
+    setImportando(true);
+    try {
+      const existentes = await existentesEnRango(previa.filas);
+      const actual = resumenImportacion(previa.filas, existentes);
+      if (actual.nuevas.length !== previa.nuevas.length) {
+        setPrevia({ ...previa, ...actual });
+        toast.warning("Los movimientos guardados cambiaron mientras revisabas. Revisa la vista previa actualizada y confirma de nuevo.");
+        return;
       }
       const hashesUsados = new Set(existentes.map((e) => e.hash_linea));
-      const nuevas = filasNuevas(filas, existentes).map((f) => {
+      const nuevas = actual.nuevas.map((f) => {
         let n = 1;
         let h = `${f.hash_linea}-${n}`;
         while (hashesUsados.has(h)) h = `${f.hash_linea}-${++n}`;
         hashesUsados.add(h);
         return { ...f, hash_linea: h };
       });
-
-      if (nuevas.length > 0) {
-        for (let i = 0; i < nuevas.length; i += 500) {
-          const { error } = await supabase
-            .from("banco_movimientos")
-            .insert(nuevas.slice(i, i + 500) as never);
-          if (error) throw error;
-        }
+      for (let i = 0; i < nuevas.length; i += 500) {
+        const { error } = await supabase.from("banco_movimientos").insert(nuevas.slice(i, i + 500) as never);
+        if (error) throw error;
       }
-
       await qc.invalidateQueries({ queryKey: ["banco_movimientos"] });
       toast.success(
-        `${nuevas.length} movimientos nuevos importados, ${filas.length - nuevas.length} ya existían (omitidos)` +
-        (invalidas ? ` · ${invalidas} líneas ignoradas` : ""),
+        `${nuevas.length} movimientos nuevos importados, ${actual.omitidas} ya existían (omitidos)` +
+        (previa.invalidas ? ` · ${previa.invalidas} líneas ignoradas` : ""),
       );
+      setPrevia(null);
     } catch (e) {
       toast.error(`Error al importar: ${(e as Error).message}`);
     } finally {
       setImportando(false);
-      if (fileRef.current) fileRef.current.value = "";
     }
   }
 
@@ -392,7 +420,7 @@ function ConciliacionBancariaPage() {
         </Button>
         <Button onClick={() => fileRef.current?.click()} disabled={importando}>
           <Upload className="h-4 w-4 mr-2" />
-          {importando ? "Importando…" : "Importar movimientos (.txt)"}
+          {importando && !previa ? "Leyendo archivo…" : "Importar movimientos (.txt)"}
         </Button>
       </div>
 
@@ -580,6 +608,7 @@ function ConciliacionBancariaPage() {
         </CardContent>
       </Card>
 
+      <PreviaImportacionDialog previa={previa} importando={importando} onConfirmar={confirmarImportacion} onClose={() => setPrevia(null)} />
       <ConciliarDialog mov={movSel} onClose={() => setMovSel(null)} />
       <DebitoDialog
         mov={debSel ? { ...debSel.mov, monto: Number(debSel.mov.monto) } : null}
@@ -910,6 +939,78 @@ function ConciliarDialog({ mov, onClose }: { mov: Movimiento | null; onClose: ()
             onClick={() => conciliar.mutate({ tipo: "manual", id: null, notas: nota.trim() })}
           >
             Conciliar sin vincular
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PreviaImportacionDialog({ previa, importando, onConfirmar, onClose }: {
+  previa: PreviaImportacion | null; importando: boolean; onConfirmar: () => void; onClose: () => void;
+}) {
+  const repetidas = useMemo(() => new Set(previa?.repetidasEnArchivo ?? []), [previa]);
+  const fechas = previa ? previa.filas.map((f) => f.fecha).sort() : [];
+  return (
+    <Dialog open={!!previa} onOpenChange={(o) => { if (!o && !importando) onClose(); }}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Vista previa de la importación</DialogTitle>
+          <DialogDescription>
+            {previa?.nombre} · {fechas.length ? `${fmtLocalDate(fechas[0])} – ${fmtLocalDate(fechas[fechas.length - 1])}` : ""}. Todavía no se ha guardado nada.
+          </DialogDescription>
+        </DialogHeader>
+        {previa && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="rounded-md border p-2"><div className="text-[11px] text-muted-foreground">Líneas en el archivo</div><div className="text-[16px] font-semibold">{previa.filas.length}</div></div>
+              <div className="rounded-md border p-2 border-primary"><div className="text-[11px] text-muted-foreground">Entrarían (nuevas)</div><div className="text-[16px] font-semibold text-primary">{previa.nuevas.length}</div></div>
+              <div className="rounded-md border p-2"><div className="text-[11px] text-muted-foreground">Ya guardadas (se omiten)</div><div className="text-[16px] font-semibold">{previa.omitidas}</div></div>
+              <div className="rounded-md border p-2"><div className="text-[11px] text-muted-foreground">Líneas no reconocidas</div><div className="text-[16px] font-semibold">{previa.invalidas}</div></div>
+            </div>
+            {previa.repetidasEnArchivo.length > 0 && (
+              <div className="flex gap-2 rounded-md border border-amber-500/60 bg-amber-500/10 p-2 text-[12px]">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+                <span>
+                  {previa.repetidasEnArchivo.length} de las nuevas son líneas idénticas que el archivo trae más de una vez el mismo día
+                  (mismo monto, referencia y descripción). Entran solo las que faltan: si el archivo trae dos y ya hay una guardada, entra una.
+                  Verifica en el estado de cuenta que sean pagos reales antes de confirmar.
+                </span>
+              </div>
+            )}
+            {previa.nuevas.length > 0 ? (
+              <div className="max-h-[50vh] overflow-auto rounded-md border">
+                <table className="w-full text-[12px]">
+                  <thead className="sticky top-0 bg-muted">
+                    <tr className="text-left">
+                      <th className="px-2 py-1">Fecha</th><th className="px-2 py-1">Descripción</th><th className="px-2 py-1">Referencia</th>
+                      <th className="px-2 py-1">Tipo</th><th className="px-2 py-1 text-right">Monto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {previa.nuevas.map((f, i) => (
+                      <tr key={i} className={`border-t ${repetidas.has(f) ? "bg-amber-500/10" : ""}`}>
+                        <td className="px-2 py-1 whitespace-nowrap">{fmtLocalDate(f.fecha)}</td>
+                        <td className="px-2 py-1">{f.descripcion ?? "—"}{repetidas.has(f) && <Badge variant="outline" className="ml-2 border-amber-500 text-amber-700 dark:text-amber-400">Repetida en el archivo</Badge>}</td>
+                        <td className="px-2 py-1 font-mono">{f.referencia ?? "—"}</td>
+                        <td className="px-2 py-1">{f.tipo === "credito" ? "Crédito" : "Débito"}</td>
+                        <td className="px-2 py-1 text-right whitespace-nowrap">{fmtRD(f.monto)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-md border p-3 text-[13px]">
+                <CheckCircle2 className="h-4 w-4 text-primary" /> Todas las líneas de este archivo ya están guardadas. No entraría nada.
+              </div>
+            )}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={importando}>Cancelar</Button>
+          <Button onClick={onConfirmar} disabled={importando || !previa || previa.nuevas.length === 0}>
+            {importando ? "Importando…" : `Importar ${previa?.nuevas.length ?? 0} movimientos`}
           </Button>
         </DialogFooter>
       </DialogContent>

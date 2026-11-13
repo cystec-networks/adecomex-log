@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  beneficiarioCoincide, claveImportacion, cuentaDestino, diferenciaSeleccion, filasNuevas,
+  beneficiarioCoincide, claveImportacion, resumenImportacion, cuentaDestino, diferenciaSeleccion, filasNuevas,
   pagoDeComision, prellenarEntrada, anterioresAlDiario, beneficiarioProbable, comisionesConPago,
   gruposParaLote, inicioDiario, resumenCuentasPendientes, expectativaMovimiento, requiereMotivo, sugerirEntradas, validarBalance,
   type CuentaBeneficiario, type EntradaDiario, type MovimientoBanco, type ReglaBanco,
@@ -117,6 +117,18 @@ describe("importación sin duplicados", () => {
   });
   it("reimportar el mismo archivo con dos líneas idénticas ya guardadas no agrega nada", () => {
     expect(filasNuevas([f, f], [f, f])).toHaveLength(0);
+  });
+  it("vista previa: reimportar un archivo anterior donde faltaba la segunda línea idéntica muestra 1 nueva, repetida en el archivo", () => {
+    const otra = { ...f, monto: 2500 };
+    const r = resumenImportacion([f, f, otra], [f, otra]);
+    expect(r.nuevas).toHaveLength(1);
+    expect(r.omitidas).toBe(2);
+    expect(r.repetidasEnArchivo).toHaveLength(1);
+  });
+  it("vista previa: reimportar el mismo archivo completo no agrega nada", () => {
+    const r = resumenImportacion([f, f], [f, f]);
+    expect(r.nuevas).toHaveLength(0);
+    expect(r.omitidas).toBe(2);
   });
   it("ceros a la izquierda y espacios no crean duplicados", () => {
     expect(claveImportacion({ ...f, referencia: "827077256", descripcion: "IB  a 827077256" })).toBe(claveImportacion(f));

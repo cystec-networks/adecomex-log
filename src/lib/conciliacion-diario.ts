@@ -277,6 +277,25 @@ export function filasNuevas<T extends FilaImportable>(archivo: T[], existentes: 
   return out;
 }
 
+/** Vista previa de una importación: qué líneas entrarían, cuántas se omiten por
+ * existir ya y cuáles de las nuevas son líneas idénticas repetidas dentro del
+ * mismo archivo (pagos iguales del mismo día que el control anterior descartaba). */
+export function resumenImportacion<T extends FilaImportable>(archivo: T[], existentes: FilaImportable[]) {
+  const nuevas = filasNuevas(archivo, existentes);
+  const enArchivo = new Map<string, number>();
+  for (const f of archivo) {
+    const k = claveImportacion(f);
+    enArchivo.set(k, (enArchivo.get(k) ?? 0) + 1);
+  }
+  const repetidas = new Set(nuevas.filter((f) => (enArchivo.get(claveImportacion(f)) ?? 0) > 1));
+  return {
+    nuevas,
+    omitidas: archivo.length - nuevas.length,
+    /** Nuevas cuya línea aparece más de una vez idéntica en el archivo. */
+    repetidasEnArchivo: nuevas.filter((f) => repetidas.has(f)),
+  };
+}
+
 // ---------- Balance ----------
 
 export function validarBalance(balanceBanco: number | null, balanceCalculado: number | null):
