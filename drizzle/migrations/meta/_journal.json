@@ -904,6 +904,13 @@
       "when": 1794528170406,
       "tag": "0128_conciliacion_lotes_cuentas_tf",
       "breakpoints": true
+    },
+    {
+      "idx": 129,
+      "version": "7",
+      "when": 1794530039554,
+      "tag": "0129_diario_excluir_transportes_papelera",
+      "breakpoints": true
     }
   ]
 }
