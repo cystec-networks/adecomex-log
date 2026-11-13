@@ -1,16 +1,17 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CATEGORIAS_TRANSFERENCIA, beneficiarioProbable, resumenCuentasPendientes, type EntradaDiario, type MovimientoBanco, type ResumenCuenta } from "@/lib/conciliacion-diario";
+import { CATEGORIAS_TRANSFERENCIA, titularesDe, beneficiarioProbable, resumenCuentasPendientes, type EntradaDiario, type MovimientoBanco, type ResumenCuenta } from "@/lib/conciliacion-diario";
 import { fmtLocalDate } from "@/lib/dates";
 import { fmtRD } from "./datos";
 import { useCuentasBeneficiario, useReglasBanco, type CuentaFila, type ReglaFila } from "./datos";
@@ -191,29 +192,67 @@ function FilaCuenta({ c, guardar, resumen, probable }: {
   resumen?: ResumenCuenta;
   probable: { nombre: string; coincidencias: number } | null;
 }) {
-  const [f, setF] = useState({ beneficiario: c.beneficiario ?? "", tipo: c.tipo });
-  const cambio = f.beneficiario.trim() !== (c.beneficiario ?? "") || f.tipo !== c.tipo;
+  const titularesGuardados = titularesDe(c);
+  const inicial = () => ({
+    beneficiario: c.beneficiario ?? "", tipo: c.tipo, compartida: !!titularesGuardados,
+    titulares: titularesGuardados ?? (c.beneficiario ? [c.beneficiario, ""] : ["", ""]),
+  });
+  const [f, setF] = useState(inicial);
+  const titularesLimpios = [...new Set(f.titulares.map((t) => t.trim()).filter(Boolean))];
+  const cambio = f.tipo !== c.tipo || (f.compartida
+    ? !titularesGuardados || titularesLimpios.join("|") !== titularesGuardados.join("|")
+    : !!titularesGuardados || f.beneficiario.trim() !== (c.beneficiario ?? ""));
+  const valido = f.compartida ? titularesLimpios.length >= 2 : !!f.beneficiario.trim();
   const vacia = !c.beneficiario;
+  const datos = () => f.compartida
+    ? { titulares: titularesLimpios, beneficiario: titularesLimpios.join(" y/o "), tipo: f.tipo, origen: "manual" }
+    : { titulares: [], beneficiario: f.beneficiario.trim(), tipo: f.tipo, origen: "manual" };
   return (
     <tr className={vacia ? "border-b bg-amber-500/5" : "border-b"}>
-      <td className="py-1 pr-2 font-mono">{c.cuenta}</td>
-      <td className="py-1 pr-2 text-right">{resumen?.cantidad ?? 0}</td>
-      <td className="py-1 pr-2 text-right font-mono whitespace-nowrap">{resumen ? fmtRD(resumen.total) : "—"}</td>
-      <td className="py-1 pr-2 whitespace-nowrap">{resumen ? `${fmtLocalDate(resumen.desde)} – ${fmtLocalDate(resumen.hasta)}` : "—"}</td>
-      <td className="py-1 pr-2 min-w-[200px]">
-        <Input className="h-8" placeholder="Sin nombre" value={f.beneficiario} onChange={(e) => setF({ ...f, beneficiario: e.target.value })} />
-        {vacia && probable && (
-          <button type="button" className="mt-0.5 text-left text-[11px] text-primary underline" title="Pista del Diario: entradas con el mismo monto a ±3 días. No se guarda sola."
-            onClick={() => setF({ ...f, beneficiario: probable.nombre })}>
-            Probable: {probable.nombre} ({probable.coincidencias} de {resumen?.cantidad ?? 0})
-          </button>
+      <td className="py-1 pr-2 font-mono align-top">{c.cuenta}</td>
+      <td className="py-1 pr-2 text-right align-top">{resumen?.cantidad ?? 0}</td>
+      <td className="py-1 pr-2 text-right font-mono whitespace-nowrap align-top">{resumen ? fmtRD(resumen.total) : "—"}</td>
+      <td className="py-1 pr-2 whitespace-nowrap align-top">{resumen ? `${fmtLocalDate(resumen.desde)} – ${fmtLocalDate(resumen.hasta)}` : "—"}</td>
+      <td className="py-1 pr-2 min-w-[240px] align-top">
+        {f.compartida ? (
+          <div className="space-y-1">
+            <Badge variant="outline" className="border-warning text-[11px]">Cuenta compartida</Badge>
+            {f.titulares.map((t, i) => (
+              <div key={i} className="flex items-center gap-1">
+                <Input className="h-7 text-[12px]" placeholder={`Titular ${i + 1}`} value={t}
+                  onChange={(e) => setF({ ...f, titulares: f.titulares.map((x, j) => (j === i ? e.target.value : x)) })} />
+                {f.titulares.length > 2 && (
+                  <Button size="icon" variant="ghost" className="h-7 w-7" title="Quitar titular"
+                    onClick={() => setF({ ...f, titulares: f.titulares.filter((_, j) => j !== i) })}><X className="h-3.5 w-3.5" /></Button>
+                )}
+              </div>
+            ))}
+            <button type="button" className="flex items-center gap-1 text-[11px] text-primary underline" onClick={() => setF({ ...f, titulares: [...f.titulares, ""] })}>
+              <Plus className="h-3 w-3" /> Agregar titular
+            </button>
+            {!valido && <div className="text-[11px] text-destructive">Escribe al menos dos titulares.</div>}
+          </div>
+        ) : (
+          <>
+            <Input className="h-8" placeholder="Sin nombre" value={f.beneficiario} onChange={(e) => setF({ ...f, beneficiario: e.target.value })} />
+            {vacia && probable && (
+              <button type="button" className="mt-0.5 text-left text-[11px] text-primary underline" title="Pista del Diario: entradas con el mismo monto a ±3 días. No se guarda sola."
+                onClick={() => setF({ ...f, beneficiario: probable.nombre })}>
+                Probable: {probable.nombre} ({probable.coincidencias} de {resumen?.cantidad ?? 0})
+              </button>
+            )}
+          </>
         )}
+        <label className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <Checkbox checked={f.compartida} onCheckedChange={(v) => setF({ ...f, compartida: v === true })} />
+          Varios titulares (cuenta compartida)
+        </label>
       </td>
-      <td className="py-1 pr-2"><SelectTipo value={f.tipo} onChange={(v) => setF({ ...f, tipo: v })} /></td>
-      <td className="py-1 pr-2"><Badge variant="outline" className="font-normal">{ORIGEN_CUENTA[c.origen] ?? c.origen}</Badge></td>
-      <td className="py-1 pr-2"><Switch checked={c.activo} onCheckedChange={(v) => guardar({ id: c.id, datos: { activo: v } })} /></td>
-      <td className="py-1 text-right whitespace-nowrap">
-        {cambio && f.beneficiario.trim() && <Button size="sm" className="mr-1" onClick={() => guardar({ id: c.id, datos: { beneficiario: f.beneficiario.trim(), tipo: f.tipo, origen: "manual" } })}>Guardar</Button>}
+      <td className="py-1 pr-2 align-top"><SelectTipo value={f.tipo} onChange={(v) => setF({ ...f, tipo: v })} /></td>
+      <td className="py-1 pr-2 align-top"><Badge variant="outline" className="font-normal">{ORIGEN_CUENTA[c.origen] ?? c.origen}</Badge></td>
+      <td className="py-1 pr-2 align-top"><Switch checked={c.activo} onCheckedChange={(v) => guardar({ id: c.id, datos: { activo: v } })} /></td>
+      <td className="py-1 text-right whitespace-nowrap align-top">
+        {cambio && valido && <Button size="sm" className="mr-1" onClick={() => guardar({ id: c.id, datos: datos() })}>Guardar</Button>}
         <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" title="Eliminar cuenta" onClick={() => guardar({ id: c.id, borrar: true })}><Trash2 className="h-4 w-4" /></Button>
       </td>
     </tr>
