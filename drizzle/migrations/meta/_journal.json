@@ -932,6 +932,13 @@
       "when": 1794534051098,
       "tag": "0132_cuentas_compartidas_tf_retroactivo",
       "breakpoints": true
+    },
+    {
+      "idx": 133,
+      "version": "7",
+      "when": 1794534648795,
+      "tag": "0133_tf_manual_registro_excel",
+      "breakpoints": true
     }
   ]
 }

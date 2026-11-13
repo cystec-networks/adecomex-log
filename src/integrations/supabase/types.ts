@@ -8039,6 +8039,7 @@ export type Database = {
           retroactiva: boolean
           secuencia: string
           solicitud_transporte_id: string | null
+          tf_excel: boolean
           tf_retroactivo: boolean
         }
         Insert: {
@@ -8062,6 +8063,7 @@ export type Database = {
           retroactiva?: boolean
           secuencia?: string
           solicitud_transporte_id?: string | null
+          tf_excel?: boolean
           tf_retroactivo?: boolean
         }
         Update: {
@@ -8085,6 +8087,7 @@ export type Database = {
           retroactiva?: boolean
           secuencia?: string
           solicitud_transporte_id?: string | null
+          tf_excel?: boolean
           tf_retroactivo?: boolean
         }
         Relationships: [
@@ -8130,6 +8133,7 @@ export type Database = {
           precio_viaje: number | null
           referencia_viaje: string | null
           telefono: string | null
+          tf_excel: boolean
           tf_retroactivo: boolean
           transporte_id: string | null
           transportista_nombre: string
@@ -8160,6 +8164,7 @@ export type Database = {
           precio_viaje?: number | null
           referencia_viaje?: string | null
           telefono?: string | null
+          tf_excel?: boolean
           tf_retroactivo?: boolean
           transporte_id?: string | null
           transportista_nombre: string
@@ -8190,6 +8195,7 @@ export type Database = {
           precio_viaje?: number | null
           referencia_viaje?: string | null
           telefono?: string | null
+          tf_excel?: boolean
           tf_retroactivo?: boolean
           transporte_id?: string | null
           transportista_nombre?: string
@@ -9031,6 +9037,7 @@ export type Database = {
           retroactiva: boolean | null
           secuencia: string | null
           solicitud_id: string | null
+          tf_excel: boolean | null
           tf_retroactivo: boolean | null
         }
         Relationships: []
