@@ -12,12 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { fmtLocalDate } from "@/lib/dates";
 import {
-  CATEGORIAS_TRANSFERENCIA, anterioresAlDiario, comisionesConPago, gruposParaLote, prellenarEntrada,
-  type MovimientoBanco,
+  CATEGORIAS_TRANSFERENCIA, anterioresAlDiario, comisionesConPago, gruposParaLote, prellenarEntrada, sugerenciasExactas,
+  type MovimientoBanco, type Sugerencia,
 } from "@/lib/conciliacion-diario";
 import { fmtRD, useCuentasBeneficiario, useInvalidarConciliacion, useReglasBanco } from "./datos";
 
-type Mov = MovimientoBanco & { notas?: string | null; conciliado_tipo?: string | null; lote_marcado?: string | null };
+type Mov = MovimientoBanco & { notas?: string | null; conciliado_tipo?: string | null; lote_marcado?: string | null; lote_conciliacion?: string | null; conciliado_en?: string | null };
 
 const sumar = (l: { monto: number }[]) => l.reduce((s, m) => s + Math.round(Number(m.monto) * 100), 0) / 100;
 
@@ -313,6 +313,126 @@ export function EntradasLoteDialog({
             {crear.isPending ? "Creando…" : elegidos.length
               ? `Confirmar y crear ${elegidos.length} (${previstos?.[0] ?? "…"}${elegidos.length > 1 ? ` a ${previstos?.[elegidos.length - 1] ?? "…"}` : ""}) · ${fmtRD(sumar(elegidos))}`
               : "Confirmar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Conciliar en bloque los débitos con una única sugerencia exacta (una entrada, mismo monto, ±3 días). */
+export function ExactasLoteDialog({
+  open, onClose, movimientos, sugerencias,
+}: { open: boolean; onClose: () => void; movimientos: Mov[]; sugerencias: Map<string, Sugerencia[]> }) {
+  const invalidar = useInvalidarConciliacion();
+  const { exactas, conVariasOpciones, entradaCompartida } = useMemo(() => sugerenciasExactas(movimientos, sugerencias), [movimientos, sugerencias]);
+  const [sel, setSel] = useState<string[]>([]);
+  // Al abrir: marcados los de beneficiario verificado; los no verificados se revisan y marcan a mano.
+  useEffect(() => {
+    if (open) setSel(exactas.filter((x) => x.beneficiarioVerificado).map((x) => x.movimiento.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+  const elegidos = exactas.filter((x) => sel.includes(x.movimiento.id));
+
+  const lotes = useMemo(() => {
+    const mapa = new Map<string, { lote: string; n: number; total: number; fecha: string }>();
+    for (const m of movimientos) {
+      if (!m.conciliado || m.conciliado_tipo !== "diario" || !m.lote_conciliacion) continue;
+      const l = mapa.get(m.lote_conciliacion) ?? { lote: m.lote_conciliacion, n: 0, total: 0, fecha: m.conciliado_en ?? "" };
+      l.n++;
+      l.total = (Math.round(l.total * 100) + Math.round(Number(m.monto) * 100)) / 100;
+      mapa.set(m.lote_conciliacion, l);
+    }
+    return [...mapa.values()].sort((a, b) => b.fecha.localeCompare(a.fecha));
+  }, [movimientos]);
+
+  const conciliar = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("conciliar_exactas_lote", {
+        p_pares: elegidos.map((x) => ({ movimiento_id: x.movimiento.id, origen_tipo: x.entrada.origen_tipo, solicitud_id: x.entrada.id })),
+      });
+      if (error) throw error;
+      return data as { cantidad: number; total: number };
+    },
+    onSuccess: (r) => { toast.success(`${r.cantidad} débitos conciliados en un lote (${fmtRD(Number(r.total))})`); invalidar(); onClose(); },
+    onError: (e: Error) => { toast.error(`No se concilió ninguno: ${e.message}`); invalidar(); },
+  });
+  const deshacer = useMutation({
+    mutationFn: async (lote: string) => {
+      const { data, error } = await supabase.rpc("deshacer_lote_conciliacion", { p_lote: lote });
+      if (error) throw error;
+      return Number(data ?? 0);
+    },
+    onSuccess: (n) => { toast.success(`Lote deshecho: ${n} débitos volvieron a Pendiente`); invalidar(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const fmtHora = (iso: string) => iso
+    ? new Intl.DateTimeFormat("es-DO", { timeZone: "America/Santo_Domingo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(iso))
+    : "—";
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Conciliar sugerencias exactas</DialogTitle>
+          <DialogDescription>
+            Débitos con una sola entrada posible del Diario: mismo monto neto, fecha a 3 días o menos y sin diferencia. Cada débito se concilia con su propia entrada; los montos del Diario no cambian. Nada se concilia hasta que confirmes.
+          </DialogDescription>
+        </DialogHeader>
+        {(conVariasOpciones > 0 || entradaCompartida > 0) && (
+          <div className="text-[11px] text-muted-foreground">
+            Fuera de este bloque: {conVariasOpciones} con dos o más entradas posibles (o pago agrupado){entradaCompartida > 0 ? ` · ${entradaCompartida} cuya entrada también sirve a otro débito` : ""}. Concílialos uno a uno.
+          </div>
+        )}
+        {exactas.length === 0 ? (
+          <div className="text-[13px] text-muted-foreground">No hay débitos con sugerencia exacta única.</div>
+        ) : (
+          <div className="max-h-[50vh] overflow-auto rounded-md border">
+            <table className="w-full text-[12px]">
+              <thead className="sticky top-0 bg-background">
+                <tr className="border-b text-left text-[11px] uppercase text-muted-foreground">
+                  <th className="px-2 py-1"><Checkbox checked={elegidos.length === exactas.length} onCheckedChange={(v) => setSel(v ? exactas.map((x) => x.movimiento.id) : [])} /></th>
+                  <th className="px-2 py-1">Fecha banco</th><th className="px-2 py-1">Descripción banco</th><th className="px-2 py-1 text-right">Monto</th>
+                  <th className="px-2 py-1">Entrada del Diario</th><th className="px-2 py-1">TF</th>
+                </tr>
+              </thead>
+              <tbody>
+                {exactas.map(({ movimiento: m, entrada: e, dias, beneficiarioVerificado }) => (
+                  <tr key={m.id} className="border-b last:border-0 align-top">
+                    <td className="px-2 py-1"><Checkbox checked={sel.includes(m.id)} onCheckedChange={(v) => setSel((s) => (v ? [...s, m.id] : s.filter((x) => x !== m.id)))} /></td>
+                    <td className="whitespace-nowrap px-2 py-1">{fmtLocalDate(m.fecha)}</td>
+                    <td className="px-2 py-1">{m.descripcion}</td>
+                    <td className="whitespace-nowrap px-2 py-1 text-right font-mono">{fmtRD(Number(m.monto))}</td>
+                    <td className="px-2 py-1">
+                      <div>{fmtLocalDate(e.fecha)} · {e.beneficiario}{dias > 0 ? <span className="text-muted-foreground"> · {dias} {dias === 1 ? "día" : "días"}</span> : null}</div>
+                      <div className="text-[11px] text-muted-foreground">{e.origen_tipo === "transporte" && e.referencia ? `${e.referencia} · ` : ""}{e.categoria}{e.concepto ? ` · ${e.concepto}` : ""}</div>
+                      {!beneficiarioVerificado && <Badge variant="outline" className="mt-0.5 text-[11px]">Beneficiario sin verificar</Badge>}
+                    </td>
+                    <td className="whitespace-nowrap px-2 py-1 font-mono">{/^TF/i.test(e.secuencia) ? e.secuencia : <span className="font-sans text-muted-foreground">Sin TF</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {exactas.some((x) => !x.beneficiarioVerificado) && (
+          <div className="text-[11px] text-muted-foreground">Los de «Beneficiario sin verificar» (cuenta sin nombre y sin regla) empiezan desmarcados: revísalos y márcalos si corresponden.</div>
+        )}
+        {lotes.length > 0 && (
+          <div className="space-y-1 rounded-md border p-2">
+            <div className="text-[11px] uppercase text-muted-foreground">Lotes conciliados</div>
+            {lotes.map((l) => (
+              <div key={l.lote} className="flex flex-wrap items-center justify-between gap-2 text-[12px]">
+                <span>{fmtHora(l.fecha)} · {l.n} débitos · {fmtRD(l.total)}</span>
+                <Button size="sm" variant="outline" disabled={deshacer.isPending} onClick={() => deshacer.mutate(l.lote)}>Deshacer lote completo</Button>
+              </div>
+            ))}
+          </div>
+        )}
+        <DialogFooter>
+          <Button disabled={elegidos.length === 0 || conciliar.isPending} onClick={() => conciliar.mutate()}>
+            {conciliar.isPending ? "Conciliando…" : `Confirmar y conciliar ${elegidos.length} (${fmtRD(sumar(elegidos.map((x) => x.movimiento)))})`}
           </Button>
         </DialogFooter>
       </DialogContent>

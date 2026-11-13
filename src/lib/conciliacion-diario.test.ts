@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   beneficiarioCoincide, claveImportacion, resumenImportacion, cuentaDestino, diferenciaSeleccion, filasNuevas,
   pagoDeComision, prellenarEntrada, anterioresAlDiario, beneficiarioProbable, comisionesConPago,
-  gruposParaLote, inicioDiario, resumenCuentasPendientes, expectativaMovimiento, requiereMotivo, sugerirEntradas, validarBalance,
+  gruposParaLote, inicioDiario, resumenCuentasPendientes, expectativaMovimiento, requiereMotivo, sugerirEntradas, sugerenciasExactas, validarBalance,
   type CuentaBeneficiario, type EntradaDiario, type MovimientoBanco, type ReglaBanco,
 } from "./conciliacion-diario";
 
@@ -198,5 +198,50 @@ describe("acciones en bloque", () => {
       ["cuenta:827077256", "FRANCISCO MATOS", ["1"]],
     ]);
     expect(sinAgrupar.map((m) => m.id)).toEqual(["5"]);
+  });
+});
+
+describe("conciliar sugerencias exactas en bloque", () => {
+  const sugs = (movs: MovimientoBanco[], entradas: EntradaDiario[]) =>
+    new Map(movs.map((m) => [m.id, sugerirEntradas(m, entradas, [asocapu], reglas)]));
+
+  it("un débito con una sola entrada de monto igual a ±3 días entra al bloque", () => {
+    const m = mov({ id: "a" });
+    const e = ent({ secuencia: "TF-0012774", fecha: "2026-10-01" });
+    const r = sugerenciasExactas([m], sugs([m], [e]));
+    expect(r.exactas.map((x) => x.entrada.secuencia)).toEqual(["TF-0012774"]);
+    expect(r.exactas[0].dias).toBe(2);
+  });
+
+  it("un débito con dos entradas posibles queda fuera", () => {
+    const m = mov({ id: "a" });
+    const r = sugerenciasExactas([m], sugs([m], [ent({ secuencia: "TF-1" }), ent({ secuencia: "TF-2" })]));
+    expect(r.exactas).toHaveLength(0);
+    expect(r.conVariasOpciones).toBe(1);
+  });
+
+  it("un pago agrupado (dos entradas que suman el débito) queda fuera", () => {
+    const m = mov({ id: "a", monto: 30000 });
+    const r = sugerenciasExactas([m], sugs([m], [ent({ secuencia: "TF-1", neto: 10000 }), ent({ secuencia: "TF-2", neto: 20000 })]));
+    expect(r.exactas).toHaveLength(0);
+  });
+
+  it("una entrada que es la opción de dos débitos queda fuera de ambos (uno a uno)", () => {
+    const a = mov({ id: "a" });
+    const b = mov({ id: "b", fecha: "2026-09-30" });
+    const r = sugerenciasExactas([a, b], sugs([a, b], [ent({ secuencia: "TF-1" })]));
+    expect(r.exactas).toHaveLength(0);
+    expect(r.entradaCompartida).toBe(2);
+  });
+
+  it("con diferencia de monto no hay sugerencia exacta", () => {
+    const m = mov({ id: "a", monto: 25392 });
+    expect(sugerenciasExactas([m], sugs([m], [ent({ neto: 27600 })])).exactas).toHaveLength(0);
+  });
+
+  it("débitos ya conciliados no se proponen", () => {
+    const m = mov({ id: "a" });
+    const mapa = sugs([m], [ent({})]);
+    expect(sugerenciasExactas([{ ...m, conciliado: true }], mapa).exactas).toHaveLength(0);
   });
 });

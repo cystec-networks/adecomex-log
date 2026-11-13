@@ -436,3 +436,39 @@ export function gruposParaLote<T extends MovimientoBanco>(
     .sort((a, b) => b.movimientos.length - a.movimientos.length || a.etiqueta.localeCompare(b.etiqueta));
   return { grupos, sinAgrupar };
 }
+
+// ---------- Conciliar sugerencias exactas en bloque ----------
+
+export type SugerenciaExacta<T> = { movimiento: T; entrada: EntradaDiario; dias: number; beneficiarioVerificado: boolean };
+
+const claveEntrada = (e: Pick<EntradaDiario, "origen_tipo" | "id">) => `${e.origen_tipo}:${e.id}`;
+
+/** Débitos pendientes cuya ÚNICA sugerencia es una sola entrada del Diario con el mismo monto
+ * neto, a ±3 días y sin diferencia. Se excluyen los débitos con dos o más opciones (o pagos
+ * agrupados) y las entradas que también son opción de otro débito, para conciliar uno a uno. */
+export function sugerenciasExactas<T extends MovimientoBanco>(
+  movimientos: T[],
+  sugerencias: Map<string, Sugerencia[]>,
+): { exactas: SugerenciaExacta<T>[]; conVariasOpciones: number; entradaCompartida: number } {
+  const usosEntrada = new Map<string, number>();
+  for (const lista of sugerencias.values()) {
+    const vistas = new Set<string>();
+    for (const s of lista) for (const e of s.entradas) vistas.add(claveEntrada(e));
+    for (const k of vistas) usosEntrada.set(k, (usosEntrada.get(k) ?? 0) + 1);
+  }
+  const exactas: SugerenciaExacta<T>[] = [];
+  let conVariasOpciones = 0;
+  let entradaCompartida = 0;
+  for (const m of movimientos) {
+    if (m.tipo !== "debito" || m.conciliado) continue;
+    const lista = sugerencias.get(m.id) ?? [];
+    if (lista.length === 0) continue;
+    if (lista.length > 1 || lista[0].entradas.length !== 1) { conVariasOpciones++; continue; }
+    const e = lista[0].entradas[0];
+    if (centavos(e.neto) !== centavos(m.monto) || diasEntre(e.fecha, m.fecha) > DIAS_TOLERANCIA) continue;
+    if ((usosEntrada.get(claveEntrada(e)) ?? 0) > 1) { entradaCompartida++; continue; }
+    exactas.push({ movimiento: m, entrada: e, dias: diasEntre(e.fecha, m.fecha), beneficiarioVerificado: lista[0].beneficiarioVerificado });
+  }
+  exactas.sort((a, b) => a.movimiento.fecha.localeCompare(b.movimiento.fecha));
+  return { exactas, conVariasOpciones, entradaCompartida };
+}

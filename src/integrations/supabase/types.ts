@@ -375,6 +375,7 @@ export type Database = {
           fecha: string
           hash_linea: string
           id: string
+          lote_conciliacion: string | null
           lote_marcado: string | null
           monto: number
           motivo_diferencia: string | null
@@ -398,6 +399,7 @@ export type Database = {
           fecha: string
           hash_linea: string
           id?: string
+          lote_conciliacion?: string | null
           lote_marcado?: string | null
           monto: number
           motivo_diferencia?: string | null
@@ -421,6 +423,7 @@ export type Database = {
           fecha?: string
           hash_linea?: string
           id?: string
+          lote_conciliacion?: string | null
           lote_marcado?: string | null
           monto?: number
           motivo_diferencia?: string | null
@@ -9138,6 +9141,7 @@ export type Database = {
         Args: { p_expediente: string; p_solicitud: string }
         Returns: boolean
       }
+      conciliar_exactas_lote: { Args: { p_pares: Json }; Returns: Json }
       conciliar_movimiento_diario: {
         Args: { p_entradas: Json; p_motivo?: string; p_movimiento: string }
         Returns: Json
@@ -9186,6 +9190,7 @@ export type Database = {
         }
         Returns: Json
       }
+      deshacer_lote_conciliacion: { Args: { p_lote: string }; Returns: number }
       deshacer_lote_hitos: { Args: { p_lote: string }; Returns: Json }
       deshacer_lote_no_aplica: { Args: { p_lote: string }; Returns: number }
       estado_presupuesto_ia: {
