@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,13 +13,15 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Landmark, Upload, Link2, Unlink, Settings2, Sparkles, FilePlus2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Landmark, Upload, Link2, Unlink, Settings2, Sparkles, FilePlus2, AlertTriangle, CheckCircle2, Layers, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { fmtLocalDate } from "@/lib/dates";
-import { filasNuevas, pagoDeComision, reglaAplicable, sugerirEntradas, validarBalance, type Sugerencia } from "@/lib/conciliacion-diario";
+import { anterioresAlDiario, comisionesConPago, filasNuevas, gruposParaLote, inicioDiario, pagoDeComision, reglaAplicable, sugerirEntradas, validarBalance, type Sugerencia } from "@/lib/conciliacion-diario";
 import { useConciliarDiario, useCuentasBeneficiario, useEntradasDiario, useMarcarMovimiento, useReglasBanco } from "@/components/conciliacion/datos";
 import { DebitoDialog, type PestanaDebito } from "@/components/conciliacion/debito-dialog";
 import { DeshacerConciliacionDialog } from "@/components/conciliacion/deshacer-dialog";
 import { ReglasCuentasDialog } from "@/components/conciliacion/reglas-cuentas-dialog";
+import { AnterioresDiarioDialog, ComisionesLoteDialog, EntradasLoteDialog } from "@/components/conciliacion/lotes-dialogs";
 
 export const Route = createFileRoute("/_authenticated/admin/conciliacion-bancaria")({
   ssr: false,
@@ -72,6 +74,7 @@ type Movimiento = {
   diferencia_diario?: number | null;
   motivo_diferencia?: string | null;
   vinculado_movimiento_id?: string | null;
+  lote_marcado?: string | null;
 };
 
 type Candidato = {
@@ -168,6 +171,7 @@ function ConciliacionBancariaPage() {
   const [debSel, setDebSel] = useState<{ mov: Movimiento; pestana: PestanaDebito } | null>(null);
   const [deshacerSel, setDeshacerSel] = useState<Movimiento | null>(null);
   const [reglasOpen, setReglasOpen] = useState(false);
+  const [bloque, setBloque] = useState<null | "anteriores" | "comisiones" | "lote">(null);
 
   const { data: entradasDiario = [] } = useEntradasDiario();
   const { data: reglas = [] } = useReglasBanco();
@@ -198,6 +202,15 @@ function ConciliacionBancariaPage() {
     }
     return map;
   }, [movimientos, entradasDiario, cuentas, reglas]);
+
+  const inicio = useMemo(() => inicioDiario(entradasDiario), [entradasDiario]);
+  const conSugerencia = useCallback((m: { id: string }) => (sugerencias.get(m.id)?.length ?? 0) > 0, [sugerencias]);
+  const movsNum = useMemo(() => movimientos.map((x) => ({ ...x, monto: Number(x.monto) })), [movimientos]);
+  const conteoBloque = useMemo(() => ({
+    anteriores: anterioresAlDiario(movsNum, inicio).length,
+    comisiones: comisionesConPago(movsNum).length,
+    lote: gruposParaLote(movsNum, conSugerencia, cuentas, reglas, inicio).grupos.reduce((t, g) => t + g.movimientos.length, 0),
+  }), [movsNum, inicio, conSugerencia, cuentas, reglas]);
 
   const filtrados = useMemo(() => {
     return movimientos.filter((m) => {
@@ -364,6 +377,16 @@ function ConciliacionBancariaPage() {
           ref={fileRef} type="file" accept=".txt,text/plain" className="hidden"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) onImportar(f); }}
         />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline"><Layers className="h-4 w-4 mr-2" /> Acciones en bloque <ChevronDown className="h-4 w-4 ml-1" /></Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => setBloque("anteriores")}>No aplica (anterior al Diario) · {conteoBloque.anteriores}</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setBloque("comisiones")}>Vincular comisiones con su pago · {conteoBloque.comisiones}</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setBloque("lote")}>Crear entradas por lote (retroactivas) · {conteoBloque.lote}</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button variant="outline" onClick={() => setReglasOpen(true)}>
           <Settings2 className="h-4 w-4 mr-2" /> Reglas y cuentas
         </Button>
@@ -560,7 +583,10 @@ function ConciliacionBancariaPage() {
         onClose={() => setDebSel(null)}
       />
       <DeshacerConciliacionDialog mov={deshacerSel} onClose={() => setDeshacerSel(null)} />
-      <ReglasCuentasDialog open={reglasOpen} onOpenChange={setReglasOpen} />
+      <ReglasCuentasDialog open={reglasOpen} onOpenChange={setReglasOpen} movimientos={movsNum} entradas={entradasDiario} />
+      <AnterioresDiarioDialog open={bloque === "anteriores"} onClose={() => setBloque(null)} movimientos={movsNum} inicio={inicio} />
+      <ComisionesLoteDialog open={bloque === "comisiones"} onClose={() => setBloque(null)} movimientos={movsNum} />
+      <EntradasLoteDialog open={bloque === "lote"} onClose={() => setBloque(null)} movimientos={movsNum} inicio={inicio} conSugerencia={conSugerencia} />
     </div>
   );
 }

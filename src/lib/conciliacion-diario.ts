@@ -43,7 +43,16 @@ export type ReglaBanco = {
   orden?: number | null;
 };
 
-export type CuentaBeneficiario = { cuenta: string; beneficiario: string; activo: boolean };
+/** beneficiario vacío = cuenta precargada pendiente de nombre (no sirve para verificar). */
+export type CuentaBeneficiario = { cuenta: string; beneficiario: string | null; activo: boolean };
+
+const cuentaSinCeros = (c: string) => c.replace(/^0+/, "");
+
+/** Cuenta registrada y con nombre para un número de cuenta destino. */
+export function cuentaConNombre(cuenta: string | null, cuentas: CuentaBeneficiario[]): CuentaBeneficiario | null {
+  if (!cuenta) return null;
+  return cuentas.find((c) => c.activo && (c.beneficiario ?? "").trim() !== "" && cuentaSinCeros(c.cuenta) === cuentaSinCeros(cuenta)) ?? null;
+}
 
 const PALABRAS_VACIAS = new Set(["SRL", "SAS", "S", "A", "DE", "DEL", "LA", "LAS", "LOS", "Y", "EL", "INC", "EIRL", "CXA", "C", "POR"]);
 
@@ -62,13 +71,15 @@ function tokens(s: string): string[] {
     .filter((t) => t.length >= 4 && !PALABRAS_VACIAS.has(t));
 }
 
-/** Beneficiarios equivalentes si comparten alguna palabra significativa
- * ("ASOCAPU/Richeily jimenez" = "ASOCAPU / RICHEILY JIMENEZ" = "Richeily Jiménez"). */
+/** Beneficiarios equivalentes si comparten dos palabras significativas, o todas las del
+ * nombre más corto cuando tiene una sola ("ASOCAPU/Richeily jimenez" = "Richeily Jiménez"),
+ * pero "FRANCISCO LOPEZ" ≠ "FRANCISCO MATOS" (solo comparten el nombre de pila). */
 export function beneficiarioCoincide(a: string | null | undefined, b: string | null | undefined): boolean {
-  const ta = tokens(a ?? "");
+  const ta = [...new Set(tokens(a ?? ""))];
   const tb = new Set(tokens(b ?? ""));
   if (ta.length === 0 || tb.size === 0) return false;
-  return ta.some((t) => tb.has(t));
+  const comunes = ta.filter((t) => tb.has(t)).length;
+  return comunes >= Math.min(2, ta.length, tb.size);
 }
 
 export function clavebeneficiario(s: string): string {
@@ -111,10 +122,8 @@ export function expectativaMovimiento(
   reglas: ReglaBanco[],
 ): Expectativa {
   const cuenta = cuentaDestino(mov.descripcion);
-  if (cuenta) {
-    const c = cuentas.find((x) => x.activo && x.cuenta.replace(/^0+/, "") === cuenta.replace(/^0+/, ""));
-    if (c) return { beneficiario: c.beneficiario, categoria: null, fuente: "cuenta" };
-  }
+  const c = cuentaConNombre(cuenta, cuentas);
+  if (c) return { beneficiario: c.beneficiario, categoria: null, fuente: "cuenta" };
   const r = reglaAplicable(mov.descripcion, reglas);
   if (r && (r.beneficiario || r.categoria)) {
     return { beneficiario: r.beneficiario, categoria: r.categoria, fuente: "regla" };
@@ -208,9 +217,7 @@ export function prellenarEntrada(
 ): { fecha: string; categoria: string; beneficiario: string; concepto: string } {
   const regla = reglaAplicable(mov.descripcion, reglas);
   const cuenta = cuentaDestino(mov.descripcion);
-  const benefCuenta = cuenta
-    ? cuentas.find((c) => c.activo && c.cuenta.replace(/^0+/, "") === cuenta.replace(/^0+/, ""))?.beneficiario
-    : undefined;
+  const benefCuenta = cuentaConNombre(cuenta, cuentas)?.beneficiario ?? undefined;
   return {
     fecha: mov.fecha,
     categoria: regla?.categoria || (benefCuenta ? "Gastos Menores" : "Otro"),
@@ -283,3 +290,130 @@ export function validarBalance(balanceBanco: number | null, balanceCalculado: nu
 
 /** Categorías de las Solicitudes de Pago por Transferencia (alimentan el Diario). */
 export const CATEGORIAS_TRANSFERENCIA = ["Gastos Menores", "Impuestos", "Comisión bancaria", "Nómina", "Compras con NCF", "Pago Transportes", "Otro"];
+
+// ---------- Catálogo de cuentas destino ----------
+
+export type ResumenCuenta = { cuenta: string; cantidad: number; total: number; desde: string; hasta: string };
+
+/** Débitos «IB a» pendientes agrupados por cuenta destino (sin ceros a la izquierda). */
+export function resumenCuentasPendientes(movimientos: MovimientoBanco[]): Map<string, ResumenCuenta> {
+  const out = new Map<string, ResumenCuenta>();
+  for (const m of movimientos) {
+    if (m.tipo !== "debito" || m.conciliado) continue;
+    const c = cuentaDestino(m.descripcion);
+    if (!c) continue;
+    const k = cuentaSinCeros(c);
+    const r = out.get(k);
+    if (!r) out.set(k, { cuenta: k, cantidad: 1, total: centavos(m.monto) / 100, desde: m.fecha, hasta: m.fecha });
+    else {
+      r.cantidad++;
+      r.total = (centavos(r.total) + centavos(m.monto)) / 100;
+      if (m.fecha < r.desde) r.desde = m.fecha;
+      if (m.fecha > r.hasta) r.hasta = m.fecha;
+    }
+  }
+  return out;
+}
+
+/** Beneficiario más frecuente del Diario entre los débitos de una cuenta con entrada de
+ * monto igual (±3 días). Solo es una pista para nombrar la cuenta; nunca se guarda sola. */
+export function beneficiarioProbable(
+  cuenta: string,
+  movimientos: MovimientoBanco[],
+  entradas: EntradaDiario[],
+): { nombre: string; coincidencias: number } | null {
+  const conteo = new Map<string, { nombre: string; n: number }>();
+  for (const m of movimientos) {
+    if (m.tipo !== "debito" || m.conciliado) continue;
+    const c = cuentaDestino(m.descripcion);
+    if (!c || cuentaSinCeros(c) !== cuentaSinCeros(cuenta)) continue;
+    const vistos = new Set<string>();
+    for (const e of entradas) {
+      if (e.conciliado || e.estado === "anulada") continue;
+      if (centavos(e.neto) !== centavos(m.monto) || diasEntre(e.fecha, m.fecha) > DIAS_TOLERANCIA) continue;
+      const k = clavebeneficiario(e.beneficiario);
+      if (!k || vistos.has(k)) continue;
+      vistos.add(k);
+      const x = conteo.get(k);
+      if (x) x.n++;
+      else conteo.set(k, { nombre: e.beneficiario, n: 1 });
+    }
+  }
+  const mejor = [...conteo.values()].sort((a, b) => b.n - a.n)[0];
+  return mejor ? { nombre: mejor.nombre, coincidencias: mejor.n } : null;
+}
+
+// ---------- Acciones en bloque ----------
+
+/** Fecha de la primera entrada propia del Diario (no creada desde el banco). */
+export function inicioDiario(entradas: Pick<EntradaDiario, "fecha" | "origen">[]): string | null {
+  let min: string | null = null;
+  for (const e of entradas) {
+    if (e.origen && e.origen !== "manual") continue;
+    if (!min || e.fecha < min) min = e.fecha;
+  }
+  return min;
+}
+
+/** Débitos pendientes anteriores al inicio del Diario. */
+export function anterioresAlDiario<T extends MovimientoBanco>(movimientos: T[], inicio: string | null): T[] {
+  if (!inicio) return [];
+  return movimientos
+    .filter((m) => m.tipo === "debito" && !m.conciliado && m.fecha < inicio)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+
+/** Comisiones pendientes con su pago de la misma referencia (se vinculan, sin TF propio). */
+export function comisionesConPago<T extends MovimientoBanco>(movimientos: T[]): { comision: T; pago: T }[] {
+  const out: { comision: T; pago: T }[] = [];
+  for (const m of movimientos) {
+    if (m.tipo !== "debito" || m.conciliado) continue;
+    const pago = pagoDeComision(m, movimientos);
+    if (pago) out.push({ comision: m, pago });
+  }
+  return out.sort((a, b) => a.comision.fecha.localeCompare(b.comision.fecha));
+}
+
+export type GrupoLote<T> = { clave: string; etiqueta: string; beneficiario: string; nombrado: boolean; movimientos: T[]; total: number };
+
+/** Débitos desde el inicio del Diario sin entrada (sin sugerencia ni comisión de un pago),
+ * agrupados por cuenta destino o por regla, para crear entradas por lote de un mismo beneficiario. */
+export function gruposParaLote<T extends MovimientoBanco>(
+  movimientos: T[],
+  conSugerencia: (m: T) => boolean,
+  cuentas: CuentaBeneficiario[],
+  reglas: ReglaBanco[],
+  inicio: string | null,
+): { grupos: GrupoLote<T>[]; sinAgrupar: T[] } {
+  if (!inicio) return { grupos: [], sinAgrupar: [] };
+  const mapa = new Map<string, GrupoLote<T>>();
+  const sinAgrupar: T[] = [];
+  for (const m of movimientos) {
+    if (m.tipo !== "debito" || m.conciliado || m.fecha < inicio) continue;
+    if (conSugerencia(m) || pagoDeComision(m, movimientos)) continue;
+    const c = cuentaDestino(m.descripcion);
+    let clave: string, etiqueta: string, beneficiario: string, nombrado: boolean;
+    if (c) {
+      const reg = cuentaConNombre(c, cuentas);
+      clave = `cuenta:${cuentaSinCeros(c)}`;
+      beneficiario = reg?.beneficiario ?? "";
+      nombrado = !!reg;
+      etiqueta = reg ? `${reg.beneficiario} · cuenta ${cuentaSinCeros(c)}` : `Cuenta ${cuentaSinCeros(c)} (sin nombre)`;
+    } else {
+      const r = reglaAplicable(m.descripcion, reglas);
+      if (!r) { sinAgrupar.push(m); continue; }
+      clave = `regla:${normalizarTexto(r.palabra_clave)}`;
+      beneficiario = r.beneficiario ?? "";
+      nombrado = !!r.beneficiario;
+      etiqueta = `${r.beneficiario || r.palabra_clave} · regla «${r.palabra_clave}»`;
+    }
+    const g = mapa.get(clave) ?? { clave, etiqueta, beneficiario, nombrado, movimientos: [], total: 0 };
+    g.movimientos.push(m);
+    g.total = (centavos(g.total) + centavos(m.monto)) / 100;
+    mapa.set(clave, g);
+  }
+  const grupos = [...mapa.values()]
+    .map((g) => ({ ...g, movimientos: g.movimientos.sort((a, b) => a.fecha.localeCompare(b.fecha)) }))
+    .sort((a, b) => b.movimientos.length - a.movimientos.length || a.etiqueta.localeCompare(b.etiqueta));
+  return { grupos, sinAgrupar };
+}

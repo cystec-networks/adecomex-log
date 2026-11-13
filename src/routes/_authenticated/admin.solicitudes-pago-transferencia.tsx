@@ -60,6 +60,7 @@ type Row = {
   solicitud_transporte_id: string | null;
   created_at: string;
   origen?: string | null;
+  retroactiva?: boolean | null;
   estado?: string | null;
   anulado_motivo?: string | null;
 };
@@ -282,7 +283,7 @@ function SolicitudesPagoTransferenciaPage() {
                 <tr key={r.id} className={cn("border-b last:border-0 whitespace-nowrap", r.estado === "anulada" && "text-muted-foreground line-through decoration-muted-foreground/50")}>
                   <td className="py-1.5 pr-3 font-mono font-medium">
                     {r.secuencia}
-                    {r.origen === "banco" && <Badge variant="outline" className="ml-1 px-1 py-0 text-[11px] font-normal no-underline">Desde banco</Badge>}
+                    {r.origen === "banco" && <Badge variant="outline" className="ml-1 px-1 py-0 text-[11px] font-normal no-underline">{r.retroactiva ? "Desde banco (retroactiva)" : "Desde banco"}</Badge>}
                     {r.estado === "anulada" && <Badge variant="secondary" className="ml-1 px-1 py-0 text-[11px] font-normal" title={r.anulado_motivo ?? undefined}>Anulada</Badge>}
                   </td>
                   <td className="py-1.5 pr-3">{fmtLocalDate(r.fecha)}</td>

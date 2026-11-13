@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { CuentaBeneficiario, EntradaDiario, ReglaBanco } from "@/lib/conciliacion-diario";
 
-export type EntradaDiarioFila = EntradaDiario & { movimiento_id: string | null };
+export type EntradaDiarioFila = EntradaDiario & { movimiento_id: string | null; retroactiva?: boolean | null };
 export type ReglaFila = ReglaBanco & { id: string };
 export type CuentaFila = CuentaBeneficiario & { id: string; tipo: string; origen: string; notas: string | null };
 
@@ -16,7 +16,7 @@ export function useEntradasDiario() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vista_registro_diario")
-        .select("id, origen_tipo, fecha, secuencia, categoria, referencia, beneficiario, concepto, neto, conciliado, origen, estado, movimiento_id")
+        .select("id, origen_tipo, fecha, secuencia, categoria, referencia, beneficiario, concepto, neto, conciliado, origen, estado, movimiento_id, retroactiva")
         .order("fecha", { ascending: false })
         .limit(5000);
       if (error) throw error;
@@ -57,6 +57,8 @@ export function useInvalidarConciliacion() {
     qc.invalidateQueries({ queryKey: ["registro-diario"] });
     qc.invalidateQueries({ queryKey: ["solicitudes-pago-transferencia"] });
     qc.invalidateQueries({ queryKey: ["siguiente-tf"] });
+    qc.invalidateQueries({ queryKey: ["previsualizar-tf"] });
+    qc.invalidateQueries({ queryKey: ["tf-sin-uso"] });
   };
 }
 

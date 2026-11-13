@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
@@ -10,15 +10,19 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CATEGORIAS_TRANSFERENCIA } from "@/lib/conciliacion-diario";
+import { CATEGORIAS_TRANSFERENCIA, beneficiarioProbable, resumenCuentasPendientes, type EntradaDiario, type MovimientoBanco, type ResumenCuenta } from "@/lib/conciliacion-diario";
+import { fmtLocalDate } from "@/lib/dates";
+import { fmtRD } from "./datos";
 import { useCuentasBeneficiario, useReglasBanco, type CuentaFila, type ReglaFila } from "./datos";
 
 const TIPOS_BENEF: Record<string, string> = { transportista: "Transportista", gestor: "Gestor", otro: "Otro" };
 
-export function ReglasCuentasDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+type DatosCuentas = { movimientos: MovimientoBanco[]; entradas: EntradaDiario[] };
+
+export function ReglasCuentasDialog({ open, onOpenChange, movimientos, entradas }: { open: boolean; onOpenChange: (o: boolean) => void } & DatosCuentas) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Reglas y cuentas de beneficiarios</DialogTitle>
           <DialogDescription>Sirven para sugerir y prellenar; nunca concilian por sí solas.</DialogDescription>
@@ -29,7 +33,7 @@ export function ReglasCuentasDialog({ open, onOpenChange }: { open: boolean; onO
             <TabsTrigger value="cuentas">Cuentas de beneficiarios</TabsTrigger>
           </TabsList>
           <TabsContent value="reglas"><Reglas /></TabsContent>
-          <TabsContent value="cuentas"><Cuentas /></TabsContent>
+          <TabsContent value="cuentas"><Cuentas movimientos={movimientos} entradas={entradas} /></TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>
@@ -110,23 +114,51 @@ function FilaRegla({ r, guardar }: { r: ReglaFila; guardar: (p: { id?: string; d
   );
 }
 
-function Cuentas() {
+function Cuentas({ movimientos, entradas }: DatosCuentas) {
   const { data: cuentas = [] } = useCuentasBeneficiario();
   const guardar = useGuardar("banco_cuentas_beneficiario", "banco-cuentas-beneficiario");
+  const qc = useQueryClient();
   const vacia = { cuenta: "", beneficiario: "", tipo: "transportista" };
   const [nueva, setNueva] = useState(vacia);
+  const resumen = useMemo(() => resumenCuentasPendientes(movimientos), [movimientos]);
+  const sinCeros = (c: string) => c.replace(/^0+/, "");
+  const faltan = [...resumen.keys()].filter((k) => !cuentas.some((c) => sinCeros(c.cuenta) === k));
+  const ordenadas = [...cuentas].sort((a, b) =>
+    Number(!!a.beneficiario) - Number(!!b.beneficiario)
+    || (resumen.get(sinCeros(b.cuenta))?.cantidad ?? 0) - (resumen.get(sinCeros(a.cuenta))?.cantidad ?? 0)
+    || (a.beneficiario ?? "").localeCompare(b.beneficiario ?? ""));
+  const sinNombre = cuentas.filter((c) => !c.beneficiario).length;
+  const precargar = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("precargar_cuentas_banco");
+      if (error) throw error;
+      return Number(data ?? 0);
+    },
+    onSuccess: (n) => { qc.invalidateQueries({ queryKey: ["banco-cuentas-beneficiario"] }); toast.success(`${n} cuentas nuevas agregadas sin nombre`); },
+    onError: (e: Error) => toast.error(e.message),
+  });
   return (
     <div className="space-y-3 pt-2">
-      <div className="text-[12px] text-muted-foreground">El banco solo muestra la cuenta destino («IB a 815697610»). Cada cuenta se aprende al conciliar; aquí puedes corregirla o cargarla a mano.</div>
-      <table className="w-full text-[13px]">
+      <div className="flex flex-wrap items-center gap-2 text-[12px] text-muted-foreground">
+        <span className="flex-1">El banco solo muestra la cuenta destino («IB a 815697610»). Asigna el nombre una vez; también se aprende al conciliar. {sinNombre > 0 && <strong className="text-amber-700 dark:text-amber-400">{sinNombre} sin nombre.</strong>}</span>
+        {faltan.length > 0 && (
+          <Button size="sm" variant="outline" disabled={precargar.isPending} onClick={() => precargar.mutate()}>Precargar {faltan.length} cuenta(s) nueva(s)</Button>
+        )}
+      </div>
+      <table className="w-full text-[12px]">
         <thead><tr className="border-b text-left text-[11px] uppercase text-muted-foreground">
-          <th className="py-1 pr-2">Cuenta</th><th className="py-1 pr-2">Beneficiario</th><th className="py-1 pr-2">Tipo</th><th className="py-1 pr-2">Origen</th><th className="py-1 pr-2">Activa</th><th />
+          <th className="py-1 pr-2">Cuenta</th><th className="py-1 pr-2 text-right">Pendientes</th><th className="py-1 pr-2 text-right">Total</th><th className="py-1 pr-2">Fechas</th>
+          <th className="py-1 pr-2">Beneficiario</th><th className="py-1 pr-2">Tipo</th><th className="py-1 pr-2">Origen</th><th className="py-1 pr-2">Activa</th><th />
         </tr></thead>
         <tbody>
-          {cuentas.length === 0 && <tr><td colSpan={6} className="py-3 text-muted-foreground">Aún no hay cuentas registradas.</td></tr>}
-          {cuentas.map((c) => <FilaCuenta key={c.id} c={c} guardar={guardar.mutate} />)}
+          {cuentas.length === 0 && <tr><td colSpan={9} className="py-3 text-muted-foreground">Aún no hay cuentas registradas.</td></tr>}
+          {ordenadas.map((c) => (
+            <FilaCuenta key={c.id} c={c} guardar={guardar.mutate} resumen={resumen.get(sinCeros(c.cuenta))}
+              probable={c.beneficiario ? null : beneficiarioProbable(c.cuenta, movimientos, entradas)} />
+          ))}
           <tr>
             <td className="py-1 pr-2"><Input className="h-8 font-mono" inputMode="numeric" placeholder="815697610" value={nueva.cuenta} onChange={(e) => setNueva({ ...nueva, cuenta: e.target.value.replace(/\D/g, "") })} /></td>
+            <td colSpan={3} />
             <td className="py-1 pr-2"><Input className="h-8" value={nueva.beneficiario} onChange={(e) => setNueva({ ...nueva, beneficiario: e.target.value })} /></td>
             <td className="py-1 pr-2"><SelectTipo value={nueva.tipo} onChange={(v) => setNueva({ ...nueva, tipo: v })} /></td>
             <td colSpan={3} className="py-1 text-right">
@@ -151,18 +183,37 @@ function SelectTipo({ value, onChange }: { value: string; onChange: (v: string) 
   );
 }
 
-function FilaCuenta({ c, guardar }: { c: CuentaFila; guardar: (p: { id?: string; datos?: Record<string, unknown>; borrar?: boolean }) => void }) {
-  const [f, setF] = useState({ beneficiario: c.beneficiario, tipo: c.tipo });
-  const cambio = f.beneficiario !== c.beneficiario || f.tipo !== c.tipo;
+const ORIGEN_CUENTA: Record<string, string> = { aprendida: "Aprendida", manual: "Manual", precargada: "Precargada" };
+
+function FilaCuenta({ c, guardar, resumen, probable }: {
+  c: CuentaFila;
+  guardar: (p: { id?: string; datos?: Record<string, unknown>; borrar?: boolean }) => void;
+  resumen?: ResumenCuenta;
+  probable: { nombre: string; coincidencias: number } | null;
+}) {
+  const [f, setF] = useState({ beneficiario: c.beneficiario ?? "", tipo: c.tipo });
+  const cambio = f.beneficiario.trim() !== (c.beneficiario ?? "") || f.tipo !== c.tipo;
+  const vacia = !c.beneficiario;
   return (
-    <tr className="border-b">
+    <tr className={vacia ? "border-b bg-amber-500/5" : "border-b"}>
       <td className="py-1 pr-2 font-mono">{c.cuenta}</td>
-      <td className="py-1 pr-2"><Input className="h-8" value={f.beneficiario} onChange={(e) => setF({ ...f, beneficiario: e.target.value })} /></td>
+      <td className="py-1 pr-2 text-right">{resumen?.cantidad ?? 0}</td>
+      <td className="py-1 pr-2 text-right font-mono whitespace-nowrap">{resumen ? fmtRD(resumen.total) : "—"}</td>
+      <td className="py-1 pr-2 whitespace-nowrap">{resumen ? `${fmtLocalDate(resumen.desde)} – ${fmtLocalDate(resumen.hasta)}` : "—"}</td>
+      <td className="py-1 pr-2 min-w-[200px]">
+        <Input className="h-8" placeholder="Sin nombre" value={f.beneficiario} onChange={(e) => setF({ ...f, beneficiario: e.target.value })} />
+        {vacia && probable && (
+          <button type="button" className="mt-0.5 text-left text-[11px] text-primary underline" title="Pista del Diario: entradas con el mismo monto a ±3 días. No se guarda sola."
+            onClick={() => setF({ ...f, beneficiario: probable.nombre })}>
+            Probable: {probable.nombre} ({probable.coincidencias} de {resumen?.cantidad ?? 0})
+          </button>
+        )}
+      </td>
       <td className="py-1 pr-2"><SelectTipo value={f.tipo} onChange={(v) => setF({ ...f, tipo: v })} /></td>
-      <td className="py-1 pr-2"><Badge variant="outline" className="font-normal">{c.origen === "aprendida" ? "Aprendida" : "Manual"}</Badge></td>
+      <td className="py-1 pr-2"><Badge variant="outline" className="font-normal">{ORIGEN_CUENTA[c.origen] ?? c.origen}</Badge></td>
       <td className="py-1 pr-2"><Switch checked={c.activo} onCheckedChange={(v) => guardar({ id: c.id, datos: { activo: v } })} /></td>
       <td className="py-1 text-right whitespace-nowrap">
-        {cambio && <Button size="sm" className="mr-1" onClick={() => guardar({ id: c.id, datos: { beneficiario: f.beneficiario.trim(), tipo: f.tipo, origen: "manual" } })}>Guardar</Button>}
+        {cambio && f.beneficiario.trim() && <Button size="sm" className="mr-1" onClick={() => guardar({ id: c.id, datos: { beneficiario: f.beneficiario.trim(), tipo: f.tipo, origen: "manual" } })}>Guardar</Button>}
         <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" title="Eliminar cuenta" onClick={() => guardar({ id: c.id, borrar: true })}><Trash2 className="h-4 w-4" /></Button>
       </td>
     </tr>

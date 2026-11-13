@@ -53,7 +53,9 @@ export function DebitoDialog({
               <TabsTrigger value="otros">No aplica / comisión</TabsTrigger>
             </TabsList>
             <TabsContent value="diario"><PagoExistente mov={mov} onDone={onClose} /></TabsContent>
-            <TabsContent value="crear"><CrearEntrada mov={mov} activo={tab === "crear"} onDone={onClose} /></TabsContent>
+            <TabsContent value="crear">{pagoDeComision(mov, movimientos) ? (
+              <div className="rounded-md border bg-muted/40 p-3 text-[13px]">Es la comisión de un pago con la misma referencia: se vincula a ese pago en «No aplica / comisión», sin crear un TF propio.</div>
+            ) : <CrearEntrada mov={mov} activo={tab === "crear"} onDone={onClose} />}</TabsContent>
             <TabsContent value="otros"><Otros mov={mov} movimientos={movimientos} onDone={onClose} /></TabsContent>
           </Tabs>
         )}
@@ -225,7 +227,7 @@ function CrearEntrada({ mov, activo, onDone }: { mov: MovimientoBanco; activo: b
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const beneficiarios = useMemo(() => [...new Set([...cuentas.map((c) => c.beneficiario), ...reglas.map((r) => r.beneficiario ?? "")].filter(Boolean))].sort(), [cuentas, reglas]);
+  const beneficiarios = useMemo(() => [...new Set([...cuentas.map((c) => c.beneficiario ?? ""), ...reglas.map((r) => r.beneficiario ?? "")].filter(Boolean))].sort(), [cuentas, reglas]);
   const valido = form.categoria && form.beneficiario.trim() && form.concepto.trim() && form.fecha;
 
   return (

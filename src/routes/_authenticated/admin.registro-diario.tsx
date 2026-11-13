@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import { fmtLocalDate, parseLocalDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { TfSinUsoBoton } from "@/components/conciliacion/tf-sin-uso-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/registro-diario")({
   ssr: false,
@@ -56,6 +57,7 @@ type Fila = {
   diferencia_banco?: number | null;
   motivo_diferencia?: string | null;
   conciliado?: boolean | null;
+  retroactiva?: boolean | null;
 };
 
 const fmtMoney = (n: number) =>
@@ -156,9 +158,12 @@ function RegistroDiarioPage() {
             Vista consolidada de pagos por transporte y por transferencia (solo lectura).
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <TfSinUsoBoton />
         <div className="rounded-lg border bg-muted/30 px-4 py-2 text-right">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Neto del período</div>
           <div className="text-xl font-bold">{fmtMoney(totalPeriodo.neto)}</div>
+        </div>
         </div>
       </div>
 
@@ -274,7 +279,7 @@ function FilaDatos({ f }: { f: Fila }) {
         <div className="font-mono font-medium">{f.secuencia}</div>
         {(f.origen === "banco" || f.conciliado) && (
           <div className="flex flex-wrap gap-1 pt-0.5 text-[11px] font-normal">
-            {f.origen === "banco" && <Badge variant="outline" className="px-1 py-0 text-[11px] font-normal">Creada desde banco</Badge>}
+            {f.origen === "banco" && <Badge variant="outline" className="px-1 py-0 text-[11px] font-normal">{f.retroactiva ? "Creada desde banco (retroactiva)" : "Creada desde banco"}</Badge>}
             {f.conciliado && (
               <span className="text-muted-foreground" title={f.motivo_diferencia ? `Diferencia ${fmtMoney(Number(f.diferencia_banco))} · ${f.motivo_diferencia}` : undefined}>
                 Banco {f.referencia_bancaria ?? ""}{f.fecha_banco ? ` · ${fmtLocalDate(f.fecha_banco)}` : ""}

@@ -338,7 +338,7 @@ export type Database = {
         }
         Insert: {
           activo?: boolean
-          beneficiario: string
+          beneficiario?: string
           created_at?: string
           cuenta: string
           id?: string
@@ -375,6 +375,7 @@ export type Database = {
           fecha: string
           hash_linea: string
           id: string
+          lote_marcado: string | null
           monto: number
           motivo_diferencia: string | null
           notas: string | null
@@ -397,6 +398,7 @@ export type Database = {
           fecha: string
           hash_linea: string
           id?: string
+          lote_marcado?: string | null
           monto: number
           motivo_diferencia?: string | null
           notas?: string | null
@@ -419,6 +421,7 @@ export type Database = {
           fecha?: string
           hash_linea?: string
           id?: string
+          lote_marcado?: string | null
           monto?: number
           motivo_diferencia?: string | null
           notas?: string | null
@@ -8027,6 +8030,7 @@ export type Database = {
           id: string
           monto: number
           origen: string
+          retroactiva: boolean
           secuencia: string
           solicitud_transporte_id: string | null
         }
@@ -8048,6 +8052,7 @@ export type Database = {
           id?: string
           monto: number
           origen?: string
+          retroactiva?: boolean
           secuencia?: string
           solicitud_transporte_id?: string | null
         }
@@ -8069,6 +8074,7 @@ export type Database = {
           id?: string
           monto?: number
           origen?: string
+          retroactiva?: boolean
           secuencia?: string
           solicitud_transporte_id?: string | null
         }
@@ -8237,6 +8243,27 @@ export type Database = {
         Update: {
           hasta?: string
           nombre?: string
+        }
+        Relationships: []
+      }
+      tf_sin_uso_notas: {
+        Row: {
+          actualizado_por: string | null
+          nota: string
+          secuencia: string
+          updated_at: string
+        }
+        Insert: {
+          actualizado_por?: string | null
+          nota?: string
+          secuencia: string
+          updated_at?: string
+        }
+        Update: {
+          actualizado_por?: string | null
+          nota?: string
+          secuencia?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -8989,8 +9016,19 @@ export type Database = {
           origen_tipo: string | null
           referencia: string | null
           referencia_bancaria: string | null
+          retroactiva: boolean | null
           secuencia: string | null
           solicitud_id: string | null
+        }
+        Relationships: []
+      }
+      vista_tf_sin_uso: {
+        Row: {
+          actualizado_por: string | null
+          nota: string | null
+          secuencia: string | null
+          transportes_que_lo_mencionan: string | null
+          updated_at: string | null
         }
         Relationships: []
       }
@@ -9126,6 +9164,16 @@ export type Database = {
         }
         Returns: Json
       }
+      crear_entradas_diario_lote: {
+        Args: {
+          p_beneficiario: string
+          p_categoria: string
+          p_concepto: string
+          p_movimientos: string[]
+          p_tf_previstos?: string[]
+        }
+        Returns: Json
+      }
       crear_solicitud_correo_sin_duplicado: {
         Args: { p_solicitud: Json }
         Returns: string
@@ -9139,6 +9187,7 @@ export type Database = {
         Returns: Json
       }
       deshacer_lote_hitos: { Args: { p_lote: string }; Returns: Json }
+      deshacer_lote_no_aplica: { Args: { p_lote: string }; Returns: number }
       estado_presupuesto_ia: {
         Args: never
         Returns: {
@@ -9241,6 +9290,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      marcar_no_aplica_lote: {
+        Args: { p_hasta: string; p_movimientos: string[] }
+        Returns: Json
+      }
       marcar_password_cambiada_cliente: { Args: never; Returns: undefined }
       marcar_password_cambiada_estudiante: { Args: never; Returns: undefined }
       normativa_guardar_embeddings: { Args: { p_lote: Json }; Returns: number }
@@ -9248,6 +9301,8 @@ export type Database = {
       novedad_url_clave: { Args: { p_url: string }; Returns: string }
       novedades_token_valido: { Args: { p_token: string }; Returns: boolean }
       novedades_tomar_lock: { Args: { p_minutos?: number }; Returns: boolean }
+      precargar_cuentas_banco: { Args: never; Returns: number }
+      previsualizar_tf: { Args: { p_cantidad: number }; Returns: string[] }
       recalcular_hito_factura_venta: {
         Args: { p_expediente: string }
         Returns: boolean

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   beneficiarioCoincide, claveImportacion, cuentaDestino, diferenciaSeleccion, filasNuevas,
-  pagoDeComision, prellenarEntrada, requiereMotivo, sugerirEntradas, validarBalance,
+  pagoDeComision, prellenarEntrada, anterioresAlDiario, beneficiarioProbable, comisionesConPago,
+  gruposParaLote, inicioDiario, resumenCuentasPendientes, expectativaMovimiento, requiereMotivo, sugerirEntradas, validarBalance,
   type CuentaBeneficiario, type EntradaDiario, type MovimientoBanco, type ReglaBanco,
 } from "./conciliacion-diario";
 
@@ -76,7 +77,9 @@ describe("beneficiario y reglas", () => {
   });
   it("variantes del mismo nombre coinciden", () => {
     expect(beneficiarioCoincide("ASOCAPU / RICHEILY JIMENEZ", "Richeily jimenez")).toBe(true);
-    expect(beneficiarioCoincide("FRANCISCO LOPEZ", "FRANCISCO MATOS")).toBe(true); // comparten FRANCISCO
+    expect(beneficiarioCoincide("FRANCISCO LOPEZ", "FRANCISCO MATOS")).toBe(false); // solo comparten FRANCISCO
+    expect(beneficiarioCoincide("MARIA LOPEZ", "FRANCISCO LOPEZ")).toBe(false);
+    expect(beneficiarioCoincide("ASOCAPU/Richeily jimene", "ASOCAPU/Richeily jimenez")).toBe(true);
     expect(beneficiarioCoincide("MARCOS BERAS", "FRANCISCO MATOS")).toBe(false);
   });
   it("PAG DGA se prellena como Impuestos y COM DGA como Comisión bancaria", () => {
@@ -122,5 +125,63 @@ describe("balance del estado de cuenta", () => {
     expect(validarBalance(6905883.27, 6905883.27)).toEqual({ estado: "coincide", diferencia: 0 });
     expect(validarBalance(6905883.27, 6905800)).toEqual({ estado: "no-coincide", diferencia: 83.27 });
     expect(validarBalance(null, 10).estado).toBe("sin-datos");
+  });
+});
+
+describe("cuentas precargadas", () => {
+  const sinNombre: CuentaBeneficiario = { cuenta: "815697610", beneficiario: "", activo: true };
+  it("una cuenta sin nombre no verifica beneficiario ni prellena", () => {
+    expect(expectativaMovimiento(mov({}), [sinNombre], reglas).fuente).toBeNull();
+    expect(prellenarEntrada(mov({}), [sinNombre], reglas).beneficiario).toBe("");
+  });
+  it("resume cantidad, total y rango de fechas por cuenta (ceros a la izquierda iguales)", () => {
+    const r = resumenCuentasPendientes([
+      mov({ id: "1", fecha: "2026-07-03", monto: 1000 }),
+      mov({ id: "2", fecha: "2026-11-10", monto: 2000.5, descripcion: "IB a 0815697610" }),
+      mov({ id: "3", conciliado: true }),
+      mov({ id: "4", descripcion: "EXI PAG DGA X 1" }),
+    ]);
+    expect(r.get("815697610")).toEqual({ cuenta: "815697610", cantidad: 2, total: 3000.5, desde: "2026-07-03", hasta: "2026-11-10" });
+    expect(r.size).toBe(1);
+  });
+  it("beneficiario probable: el más repetido entre entradas de monto igual a ±3 días", () => {
+    const p = beneficiarioProbable("815697610", [mov({ id: "1" }), mov({ id: "2", monto: 41400, fecha: "2026-10-10" })], [
+      ent({ secuencia: "A" }), ent({ secuencia: "B", neto: 41400, fecha: "2026-10-11" }), ent({ secuencia: "C", beneficiario: "MARIA LOPEZ", neto: 41400, fecha: "2026-10-20" }),
+    ]);
+    expect(p).toEqual({ nombre: "ASOCAPU/Richeily jimenez", coincidencias: 2 });
+  });
+});
+
+describe("acciones en bloque", () => {
+  it("el Diario empieza en su primera entrada propia, no en las creadas desde banco", () => {
+    expect(inicioDiario([{ fecha: "2026-07-30", origen: "manual" }, { fecha: "2026-07-01", origen: "banco" }])).toBe("2026-07-30");
+  });
+  it("anteriores al Diario: solo débitos pendientes con fecha < 30/07/2026", () => {
+    const l = anterioresAlDiario([
+      mov({ id: "a", fecha: "2026-07-29" }), mov({ id: "b", fecha: "2026-07-30" }),
+      mov({ id: "c", fecha: "2026-07-01", tipo: "credito" }), mov({ id: "d", fecha: "2026-07-02", conciliado: true }),
+    ], "2026-07-30");
+    expect(l.map((m) => m.id)).toEqual(["a"]);
+  });
+  it("las comisiones con pago de la misma referencia se proponen para vincular", () => {
+    const pag = mov({ id: "p", descripcion: "PAG      DPW 2828173  64598651", referencia: "0000002828173" });
+    const com = mov({ id: "c", descripcion: "COM      DPW 2828173  64598651", referencia: "0000002828173", monto: 30 });
+    expect(comisionesConPago([pag, com]).map((x) => [x.comision.id, x.pago.id])).toEqual([["c", "p"]]);
+  });
+  it("lote: agrupa por cuenta destino desde el inicio del Diario, sin sugeridos ni comisiones", () => {
+    const cuentas: CuentaBeneficiario[] = [{ cuenta: "827077256", beneficiario: "FRANCISCO MATOS", activo: true }];
+    const movs = [
+      mov({ id: "1", descripcion: "IB a 827077256", fecha: "2026-08-01" }),
+      mov({ id: "2", descripcion: "IB a 827077256", fecha: "2026-07-20" }), // anterior al Diario
+      mov({ id: "3", descripcion: "IB a 827077256", fecha: "2026-08-02" }), // tiene sugerencia
+      mov({ id: "4", descripcion: "IB a 815697610", fecha: "2026-08-03" }),
+      mov({ id: "5", descripcion: "Pgo Trnf a Tarj/Serv.Cta Cte 15526402", fecha: "2026-08-04" }),
+    ];
+    const { grupos, sinAgrupar } = gruposParaLote(movs, (m) => m.id === "3", cuentas, reglas, "2026-07-30");
+    expect(grupos.map((g) => [g.clave, g.beneficiario, g.movimientos.map((m) => m.id)])).toEqual([
+      ["cuenta:815697610", "", ["4"]],
+      ["cuenta:827077256", "FRANCISCO MATOS", ["1"]],
+    ]);
+    expect(sinAgrupar.map((m) => m.id)).toEqual(["5"]);
   });
 });
