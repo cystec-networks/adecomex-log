@@ -918,6 +918,13 @@
       "when": 1794532612769,
       "tag": "0130_conciliar_sugerencias_exactas_lote",
       "breakpoints": true
+    },
+    {
+      "idx": 131,
+      "version": "7",
+      "when": 1794533163693,
+      "tag": "0131_conciliar_exactas_asignar_tf",
+      "breakpoints": true
     }
   ]
 }

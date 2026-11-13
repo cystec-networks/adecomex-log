@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { fmtLocalDate } from "@/lib/dates";
 import {
-  CATEGORIAS_TRANSFERENCIA, anterioresAlDiario, comisionesConPago, gruposParaLote, prellenarEntrada, sugerenciasExactas,
+  CATEGORIAS_TRANSFERENCIA, anterioresAlDiario, comisionesConPago, compararParaTf, cuentaDeMovimiento, cuentasConVariosBeneficiarios,
+  estadoBeneficiario, gruposParaLote, ordenAsignacionTf, prellenarEntrada, sugerenciasExactas, tieneTf,
   type MovimientoBanco, type Sugerencia,
 } from "@/lib/conciliacion-diario";
 import { fmtRD, useCuentasBeneficiario, useInvalidarConciliacion, useReglasBanco } from "./datos";
@@ -326,13 +327,45 @@ export function ExactasLoteDialog({
 }: { open: boolean; onClose: () => void; movimientos: Mov[]; sugerencias: Map<string, Sugerencia[]> }) {
   const invalidar = useInvalidarConciliacion();
   const { exactas, conVariasOpciones, entradaCompartida } = useMemo(() => sugerenciasExactas(movimientos, sugerencias), [movimientos, sugerencias]);
+  const conflictos = useMemo(() => cuentasConVariosBeneficiarios(exactas), [exactas]);
   const [sel, setSel] = useState<string[]>([]);
-  // Al abrir: marcados los de beneficiario verificado; los no verificados se revisan y marcan a mano.
+  const [elegidoPor, setElegidoPor] = useState<Record<string, string>>({});
+  const [asignarTf, setAsignarTf] = useState(false);
+
+  const opcionesDe = (m: Mov) => { const c = cuentaDeMovimiento(m); return c ? conflictos.get(c) : undefined; };
+  const estadoDe = (x: (typeof exactas)[number]) => estadoBeneficiario(x.entrada.beneficiario, opcionesDe(x.movimiento), elegidoPor[x.movimiento.id]);
+  const conciliable = (x: (typeof exactas)[number]) => { const st = estadoDe(x); return st === "sin-conflicto" || st === "corresponde"; };
+
+  // Al abrir: marcados solo los de beneficiario verificado, con TF y sin cuenta en conflicto; el resto se revisa a mano.
   useEffect(() => {
-    if (open) setSel(exactas.filter((x) => x.beneficiarioVerificado).map((x) => x.movimiento.id));
+    if (!open) return;
+    setElegidoPor({});
+    setAsignarTf(false);
+    setSel(exactas.filter((x) => x.beneficiarioVerificado && tieneTf(x.entrada.secuencia) && !opcionesDe(x.movimiento)).map((x) => x.movimiento.id));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
-  const elegidos = exactas.filter((x) => sel.includes(x.movimiento.id));
+  const elegidos = useMemo(
+    () => exactas.filter((x) => sel.includes(x.movimiento.id) && conciliable(x)).sort(compararParaTf),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [exactas, sel, elegidoPor, conflictos],
+  );
+  const sinTfElegidos = useMemo(() => ordenAsignacionTf(elegidos), [elegidos]);
+  const hayResolver = exactas.some((x) => opcionesDe(x.movimiento));
+
+  const entradasTf = sinTfElegidos.map((x) => ({ origen_tipo: x.entrada.origen_tipo, solicitud_id: x.entrada.id }));
+  const { data: previstos, isFetching: calculandoTf, error: errorTf } = useQuery({
+    queryKey: ["previsualizar-tf", "exactas", entradasTf.map((e) => e.solicitud_id).join(",")],
+    enabled: open && asignarTf && entradasTf.length > 0,
+    staleTime: 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("previsualizar_tf_exactas", { p_entradas: entradasTf });
+      if (error) throw error;
+      return (data ?? []) as unknown as { solicitud_id: string; tf: string; fuente: "nuevo" | "viaje" }[];
+    },
+  });
+  const tfDe = useMemo(() => new Map((previstos ?? []).map((p) => [p.solicitud_id, p])), [previstos]);
+  const tfListo = !asignarTf || sinTfElegidos.length === 0
+    || (!calculandoTf && sinTfElegidos.every((x) => tfDe.has(x.entrada.id)) && tfDe.size === sinTfElegidos.length);
 
   const lotes = useMemo(() => {
     const mapa = new Map<string, { lote: string; n: number; total: number; fecha: string }>();
@@ -348,13 +381,25 @@ export function ExactasLoteDialog({
 
   const conciliar = useMutation({
     mutationFn: async () => {
+      const usarTf = asignarTf && sinTfElegidos.length > 0;
       const { data, error } = await supabase.rpc("conciliar_exactas_lote", {
-        p_pares: elegidos.map((x) => ({ movimiento_id: x.movimiento.id, origen_tipo: x.entrada.origen_tipo, solicitud_id: x.entrada.id })),
+        p_pares: elegidos.map((x) => ({
+          movimiento_id: x.movimiento.id, origen_tipo: x.entrada.origen_tipo, solicitud_id: x.entrada.id,
+          beneficiario_confirmado: estadoDe(x) === "corresponde" ? x.entrada.beneficiario : null,
+        })),
+        p_asignar_tf: usarTf,
+        p_tf_previstos: usarTf ? (previstos ?? []).map((p) => ({ solicitud_id: p.solicitud_id, tf: p.tf })) : undefined,
       });
       if (error) throw error;
-      return data as { cantidad: number; total: number };
+      return data as unknown as { cantidad: number; total: number; tf_asignados?: { tf: string }[] };
     },
-    onSuccess: (r) => { toast.success(`${r.cantidad} débitos conciliados en un lote (${fmtRD(Number(r.total))})`); invalidar(); onClose(); },
+    onSuccess: (r) => {
+      const tfs = (r.tf_asignados ?? []).map((t) => t.tf);
+      const extra = tfs.length ? ` · ${tfs.length} TF asignados (${tfs[0]}${tfs.length > 1 ? ` a ${tfs[tfs.length - 1]}` : ""})` : "";
+      toast.success(`${r.cantidad} débitos conciliados en un lote (${fmtRD(Number(r.total))})${extra}`);
+      invalidar();
+      onClose();
+    },
     onError: (e: Error) => { toast.error(`No se concilió ninguno: ${e.message}`); invalidar(); },
   });
   const deshacer = useMutation({
@@ -370,6 +415,16 @@ export function ExactasLoteDialog({
   const fmtHora = (iso: string) => iso
     ? new Intl.DateTimeFormat("es-DO", { timeZone: "America/Santo_Domingo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(iso))
     : "—";
+  const marcar = (id: string, v: boolean) => setSel((s) => (v ? [...new Set([...s, id])] : s.filter((x) => x !== id)));
+  const elegirBeneficiario = (x: (typeof exactas)[number], nombre: string) => {
+    setElegidoPor((p) => ({ ...p, [x.movimiento.id]: nombre }));
+    marcar(x.movimiento.id, estadoBeneficiario(x.entrada.beneficiario, opcionesDe(x.movimiento), nombre) === "corresponde");
+  };
+  const conciliables = exactas.filter(conciliable);
+  const totalSinTf = exactas.filter((x) => !tieneTf(x.entrada.secuencia)).length;
+  const tfsPrevistos = asignarTf && tfListo ? sinTfElegidos.map((x) => tfDe.get(x.entrada.id)?.tf ?? "") : [];
+  const rangoTf = tfsPrevistos.length === 0 ? ""
+    : ` · ${tfsPrevistos.length} TF: ${tfsPrevistos.length <= 3 ? tfsPrevistos.join(", ") : `${tfsPrevistos.slice(0, 2).join(", ")}… ${tfsPrevistos[tfsPrevistos.length - 1]}`}`;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -385,39 +440,86 @@ export function ExactasLoteDialog({
             Fuera de este bloque: {conVariasOpciones} con dos o más entradas posibles (o pago agrupado){entradaCompartida > 0 ? ` · ${entradaCompartida} cuya entrada también sirve a otro débito` : ""}. Concílialos uno a uno.
           </div>
         )}
+        {totalSinTf > 0 && (
+          <div className="flex flex-wrap items-start gap-2 rounded-md border border-warning/60 bg-warning/10 p-2 text-[12px]">
+            <Checkbox id="asignar-tf" checked={asignarTf} onCheckedChange={(v) => setAsignarTf(v === true)} className="mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <Label htmlFor="asignar-tf" className="text-[13px]">Asignar TF al conciliar</Label>
+              <div className="text-[11px] text-muted-foreground">
+                {totalSinTf} {totalSinTf === 1 ? "entrada no tiene" : "entradas no tienen"} TF y empiezan desmarcadas. Con esta opción, cada fila marcada sin TF recibe al confirmar el siguiente número disponible (último guardado + 1, saltando los ocupados), en orden de fecha; si el viaje ya anota un TF libre, se usa ese. Si cancelas, no se usa ningún número.
+              </div>
+              {asignarTf && sinTfElegidos.length === 0 && <div className="mt-1 text-[11px]">Marca las filas «Sin TF» que quieras conciliar para ver el TF que recibiría cada una.</div>}
+              {asignarTf && errorTf && <div className="mt-1 text-[11px] text-destructive">No se pudo calcular la vista previa de TF: {(errorTf as Error).message}</div>}
+            </div>
+          </div>
+        )}
         {exactas.length === 0 ? (
           <div className="text-[13px] text-muted-foreground">No hay débitos con sugerencia exacta única.</div>
         ) : (
           <div className="max-h-[50vh] overflow-auto rounded-md border">
             <table className="w-full text-[12px]">
-              <thead className="sticky top-0 bg-background">
+              <thead className="sticky top-0 z-10 bg-background">
                 <tr className="border-b text-left text-[11px] uppercase text-muted-foreground">
-                  <th className="px-2 py-1"><Checkbox checked={elegidos.length === exactas.length} onCheckedChange={(v) => setSel(v ? exactas.map((x) => x.movimiento.id) : [])} /></th>
+                  <th className="px-2 py-1"><Checkbox checked={conciliables.length > 0 && elegidos.length === conciliables.length} onCheckedChange={(v) => setSel(v ? conciliables.map((x) => x.movimiento.id) : [])} /></th>
                   <th className="px-2 py-1">Fecha banco</th><th className="px-2 py-1">Descripción banco</th><th className="px-2 py-1 text-right">Monto</th>
                   <th className="px-2 py-1">Entrada del Diario</th><th className="px-2 py-1">TF</th>
                 </tr>
               </thead>
               <tbody>
-                {exactas.map(({ movimiento: m, entrada: e, dias, beneficiarioVerificado }) => (
-                  <tr key={m.id} className="border-b last:border-0 align-top">
-                    <td className="px-2 py-1"><Checkbox checked={sel.includes(m.id)} onCheckedChange={(v) => setSel((s) => (v ? [...s, m.id] : s.filter((x) => x !== m.id)))} /></td>
-                    <td className="whitespace-nowrap px-2 py-1">{fmtLocalDate(m.fecha)}</td>
-                    <td className="px-2 py-1">{m.descripcion}</td>
-                    <td className="whitespace-nowrap px-2 py-1 text-right font-mono">{fmtRD(Number(m.monto))}</td>
-                    <td className="px-2 py-1">
-                      <div>{fmtLocalDate(e.fecha)} · {e.beneficiario}{dias > 0 ? <span className="text-muted-foreground"> · {dias} {dias === 1 ? "día" : "días"}</span> : null}</div>
-                      <div className="text-[11px] text-muted-foreground">{e.origen_tipo === "transporte" && e.referencia ? `${e.referencia} · ` : ""}{e.categoria}{e.concepto ? ` · ${e.concepto}` : ""}</div>
-                      {!beneficiarioVerificado && <Badge variant="outline" className="mt-0.5 text-[11px]">Beneficiario sin verificar</Badge>}
-                    </td>
-                    <td className="whitespace-nowrap px-2 py-1 font-mono">{/^TF/i.test(e.secuencia) ? e.secuencia : <span className="font-sans text-muted-foreground">Sin TF</span>}</td>
-                  </tr>
-                ))}
+                {exactas.map((x) => {
+                  const { movimiento: m, entrada: e, dias, beneficiarioVerificado } = x;
+                  const conTf = tieneTf(e.secuencia);
+                  const opciones = opcionesDe(m);
+                  const estado = estadoDe(x);
+                  const marcado = sel.includes(m.id) && conciliable(x);
+                  const previsto = !conTf && asignarTf && marcado ? tfDe.get(e.id) : undefined;
+                  return (
+                    <tr key={m.id} className={`border-b last:border-0 align-top ${!conTf || opciones ? "bg-warning/10" : ""}`}>
+                      <td className="px-2 py-1">
+                        <Checkbox checked={marcado} disabled={!conciliable(x)} onCheckedChange={(v) => marcar(m.id, v === true)}
+                          title={conciliable(x) ? undefined : "Elige primero el beneficiario correcto"} />
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-1">{fmtLocalDate(m.fecha)}</td>
+                      <td className="px-2 py-1">{m.descripcion}</td>
+                      <td className="whitespace-nowrap px-2 py-1 text-right font-mono">{fmtRD(Number(m.monto))}</td>
+                      <td className="min-w-0 px-2 py-1">
+                        <div>{fmtLocalDate(e.fecha)} · {e.beneficiario}{dias > 0 ? <span className="text-muted-foreground"> · {dias} {dias === 1 ? "día" : "días"}</span> : null}</div>
+                        <div className="text-[11px] text-muted-foreground">{e.origen_tipo === "transporte" && e.referencia ? `${e.referencia} · ` : ""}{e.categoria}{e.concepto ? ` · ${e.concepto}` : ""}</div>
+                        {!beneficiarioVerificado && !opciones && <Badge variant="outline" className="mt-0.5 text-[11px]">Beneficiario sin verificar</Badge>}
+                        {opciones && (
+                          <div className="mt-1 space-y-1 rounded border border-warning/60 bg-background p-1.5">
+                            <div className="text-[11px] font-medium">⚠ La cuenta {cuentaDeMovimiento(m)} aparece con dos beneficiarios: {opciones.join(" / ")}. Elige a quién corresponde este débito.</div>
+                            <Select value={elegidoPor[m.id] ?? ""} onValueChange={(v) => elegirBeneficiario(x, v)}>
+                              <SelectTrigger className="h-7 text-[12px]" title={elegidoPor[m.id]}><SelectValue placeholder="Elegir beneficiario" /></SelectTrigger>
+                              <SelectContent>{opciones.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                            </Select>
+                            {estado === "no-corresponde" && (
+                              <div className="text-[11px] text-destructive">La entrada es de {e.beneficiario}: no se concilia en este lote. Concílialo a mano con la entrada correcta.</div>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-1 font-mono">
+                        {conTf ? e.secuencia : (
+                          <div className="space-y-0.5 font-sans">
+                            <Badge variant="outline" className="border-warning bg-warning/20 text-[11px] text-warning-foreground">Sin TF</Badge>
+                            <div className="text-[11px] text-muted-foreground">{e.secuencia}</div>
+                            {previsto && <div className="font-mono text-[12px]">→ {previsto.tf}{previsto.fuente === "viaje" ? <span className="font-sans text-[11px] text-muted-foreground"> (anotado en el viaje)</span> : null}</div>}
+                            {!conTf && asignarTf && marcado && !previsto && <div className="text-[11px] text-muted-foreground">{calculandoTf ? "Calculando…" : "—"}</div>}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
-        {exactas.some((x) => !x.beneficiarioVerificado) && (
-          <div className="text-[11px] text-muted-foreground">Los de «Beneficiario sin verificar» (cuenta sin nombre y sin regla) empiezan desmarcados: revísalos y márcalos si corresponden.</div>
+        {(exactas.some((x) => !x.beneficiarioVerificado) || hayResolver) && (
+          <div className="text-[11px] text-muted-foreground">
+            Empiezan desmarcados los de «Beneficiario sin verificar» (cuenta sin nombre y sin regla), los «Sin TF» y los de cuentas con dos beneficiarios: revísalos y márcalos si corresponden.
+          </div>
         )}
         {lotes.length > 0 && (
           <div className="space-y-1 rounded-md border p-2">
@@ -428,11 +530,12 @@ export function ExactasLoteDialog({
                 <Button size="sm" variant="outline" disabled={deshacer.isPending} onClick={() => deshacer.mutate(l.lote)}>Deshacer lote completo</Button>
               </div>
             ))}
+            <div className="text-[11px] text-muted-foreground">Deshacer un lote devuelve los débitos a Pendiente; los TF asignados al conciliar se conservan en sus entradas para no dejar huecos.</div>
           </div>
         )}
         <DialogFooter>
-          <Button disabled={elegidos.length === 0 || conciliar.isPending} onClick={() => conciliar.mutate()}>
-            {conciliar.isPending ? "Conciliando…" : `Confirmar y conciliar ${elegidos.length} (${fmtRD(sumar(elegidos.map((x) => x.movimiento)))})`}
+          <Button disabled={elegidos.length === 0 || conciliar.isPending || !tfListo} onClick={() => conciliar.mutate()}>
+            {conciliar.isPending ? "Conciliando…" : `Confirmar y conciliar ${elegidos.length} (${fmtRD(sumar(elegidos.map((x) => x.movimiento)))})${rangoTf}`}
           </Button>
         </DialogFooter>
       </DialogContent>

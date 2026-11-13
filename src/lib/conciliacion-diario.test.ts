@@ -3,6 +3,7 @@ import {
   beneficiarioCoincide, claveImportacion, resumenImportacion, cuentaDestino, diferenciaSeleccion, filasNuevas,
   pagoDeComision, prellenarEntrada, anterioresAlDiario, beneficiarioProbable, comisionesConPago,
   gruposParaLote, inicioDiario, resumenCuentasPendientes, expectativaMovimiento, requiereMotivo, sugerirEntradas, sugerenciasExactas, validarBalance,
+  tieneTf, ordenAsignacionTf, cuentasConVariosBeneficiarios, estadoBeneficiario,
   type CuentaBeneficiario, type EntradaDiario, type MovimientoBanco, type ReglaBanco,
 } from "./conciliacion-diario";
 
@@ -243,5 +244,54 @@ describe("conciliar sugerencias exactas en bloque", () => {
     const m = mov({ id: "a" });
     const mapa = sugs([m], [ent({})]);
     expect(sugerenciasExactas([{ ...m, conciliado: true }], mapa).exactas).toHaveLength(0);
+  });
+});
+
+describe("sugerencias exactas: Sin TF y cuentas con dos beneficiarios", () => {
+  const exacta = (id: string, fecha: string, p: Partial<EntradaDiario> = {}, descripcion = "IB a 114101033") => ({
+    movimiento: mov({ id, fecha, descripcion }), entrada: ent({ id: `e${id}`, fecha, ...p }), dias: 0, beneficiarioVerificado: false,
+  });
+
+  it("TR-000028 no tiene TF; TF-0012774 y TF0012755 sí", () => {
+    expect(tieneTf("TR-000028")).toBe(false);
+    expect(tieneTf("TF-0012774")).toBe(true);
+    expect(tieneTf("TF0012755")).toBe(true);
+  });
+
+  it("solo las filas sin TF reciben número, en orden de fecha", () => {
+    const filas = [
+      exacta("c", "2026-09-12", { secuencia: "TR-000031" }),
+      exacta("a", "2026-09-08", { secuencia: "TR-000028" }),
+      exacta("b", "2026-09-09", { secuencia: "TF-0012774" }),
+      exacta("d", "2026-09-09", { secuencia: "TR-000030" }),
+    ];
+    expect(ordenAsignacionTf(filas).map((x) => x.entrada.secuencia)).toEqual(["TR-000028", "TR-000030", "TR-000031"]);
+  });
+
+  it("la cuenta 114101033 con Jefry M. De León y Francisco López queda en conflicto", () => {
+    const filas = [
+      exacta("a", "2026-09-08", { beneficiario: "Jefry M. De León" }),
+      exacta("b", "2026-09-10", { beneficiario: "FRANCISCO LOPEZ" }),
+      exacta("c", "2026-09-11", { beneficiario: "Asocapu / Richeily Jimenez" }, "IB a 815697610"),
+    ];
+    const r = cuentasConVariosBeneficiarios(filas);
+    expect([...r.keys()]).toEqual(["114101033"]);
+    expect(r.get("114101033")).toEqual(["FRANCISCO LOPEZ", "Jefry M. De León"]);
+  });
+
+  it("el mismo beneficiario escrito distinto no cuenta como dos", () => {
+    const filas = [
+      exacta("a", "2026-09-08", { beneficiario: "ASOCAPU / RICHEILY JIMENEZ" }),
+      exacta("b", "2026-09-10", { beneficiario: "Richeily Jiménez" }),
+    ];
+    expect(cuentasConVariosBeneficiarios(filas).size).toBe(0);
+  });
+
+  it("con conflicto hay que elegir, y solo se concilia si el elegido es el de la entrada", () => {
+    const opciones = ["FRANCISCO LOPEZ", "Jefry M. De León"];
+    expect(estadoBeneficiario("Jefry M. De León", opciones, null)).toBe("falta-elegir");
+    expect(estadoBeneficiario("Jefry M. De León", opciones, "Jefry M. De León")).toBe("corresponde");
+    expect(estadoBeneficiario("Jefry M. De León", opciones, "FRANCISCO LOPEZ")).toBe("no-corresponde");
+    expect(estadoBeneficiario("Jefry M. De León", undefined, null)).toBe("sin-conflicto");
   });
 });

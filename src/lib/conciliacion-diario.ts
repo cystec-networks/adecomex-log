@@ -472,3 +472,50 @@ export function sugerenciasExactas<T extends MovimientoBanco>(
   exactas.sort((a, b) => a.movimiento.fecha.localeCompare(b.movimiento.fecha));
   return { exactas, conVariasOpciones, entradaCompartida };
 }
+
+/** La entrada ya tiene número TF (TF-0012774, TF0012774). Los pagos de transporte antiguos llevan TR-…: «Sin TF». */
+export const tieneTf = (secuencia: string | null | undefined) => /^TF-?\d+$/i.test((secuencia ?? "").trim());
+
+/** Orden de fecha para asignar TF: fecha del banco, luego de la entrada y el id (igual en vista previa y confirmación). */
+export function compararParaTf<T extends MovimientoBanco>(a: SugerenciaExacta<T>, b: SugerenciaExacta<T>): number {
+  return a.movimiento.fecha.localeCompare(b.movimiento.fecha)
+    || a.entrada.fecha.localeCompare(b.entrada.fecha)
+    || a.movimiento.id.localeCompare(b.movimiento.id);
+}
+
+/** Filas elegidas sin TF, en el orden en que recibirían su número. */
+export function ordenAsignacionTf<T extends MovimientoBanco>(elegidas: SugerenciaExacta<T>[]): SugerenciaExacta<T>[] {
+  return elegidas.filter((x) => !tieneTf(x.entrada.secuencia)).sort(compararParaTf);
+}
+
+const mismoBeneficiario = (a: string, b: string) => clavebeneficiario(a) === clavebeneficiario(b) || beneficiarioCoincide(a, b);
+
+/** Cuenta destino («IB a …») sin ceros a la izquierda, o null. */
+export function cuentaDeMovimiento(m: Pick<MovimientoBanco, "descripcion">): string | null {
+  const c = cuentaDestino(m.descripcion);
+  return c ? cuentaSinCeros(c) : null;
+}
+
+/** Cuentas destino que aparecen con dos o más beneficiarios distintos entre las sugerencias exactas
+ * (p. ej. 114101033 con Jefry M. De León y con Francisco López): cuenta → nombres. */
+export function cuentasConVariosBeneficiarios<T extends MovimientoBanco>(exactas: SugerenciaExacta<T>[]): Map<string, string[]> {
+  const porCuenta = new Map<string, string[]>();
+  for (const x of exactas) {
+    const c = cuentaDeMovimiento(x.movimiento);
+    const b = (x.entrada.beneficiario ?? "").trim();
+    if (!c || !b) continue;
+    const lista = porCuenta.get(c) ?? [];
+    if (!lista.some((y) => mismoBeneficiario(y, b))) lista.push(b);
+    porCuenta.set(c, lista);
+  }
+  return new Map([...porCuenta].filter(([, l]) => l.length > 1).map(([c, l]) => [c, [...l].sort((a, b) => a.localeCompare(b))]));
+}
+
+export type EstadoBeneficiario = "sin-conflicto" | "falta-elegir" | "corresponde" | "no-corresponde";
+
+/** Si la cuenta tiene dos beneficiarios, la fila solo se concilia cuando el usuario elige uno y es el de la entrada. */
+export function estadoBeneficiario(entradaBeneficiario: string, opciones: string[] | undefined, elegido: string | null | undefined): EstadoBeneficiario {
+  if (!opciones || opciones.length < 2) return "sin-conflicto";
+  if (!elegido) return "falta-elegir";
+  return mismoBeneficiario(elegido, entradaBeneficiario) ? "corresponde" : "no-corresponde";
+}

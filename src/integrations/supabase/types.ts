@@ -9141,7 +9141,10 @@ export type Database = {
         Args: { p_expediente: string; p_solicitud: string }
         Returns: boolean
       }
-      conciliar_exactas_lote: { Args: { p_pares: Json }; Returns: Json }
+      conciliar_exactas_lote: {
+        Args: { p_asignar_tf?: boolean; p_pares: Json; p_tf_previstos?: Json }
+        Returns: Json
+      }
       conciliar_movimiento_diario: {
         Args: { p_entradas: Json; p_motivo?: string; p_movimiento: string }
         Returns: Json
@@ -9308,6 +9311,7 @@ export type Database = {
       novedades_tomar_lock: { Args: { p_minutos?: number }; Returns: boolean }
       precargar_cuentas_banco: { Args: never; Returns: number }
       previsualizar_tf: { Args: { p_cantidad: number }; Returns: string[] }
+      previsualizar_tf_exactas: { Args: { p_entradas: Json }; Returns: Json }
       recalcular_hito_factura_venta: {
         Args: { p_expediente: string }
         Returns: boolean
