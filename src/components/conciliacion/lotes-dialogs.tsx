@@ -197,10 +197,14 @@ export function EntradasLoteDialog({
   const grupo = grupos.find((g) => g.clave === clave) ?? null;
   const [sel, setSel] = useState<string[]>([]);
   const [form, setForm] = useState({ categoria: "Otro", beneficiario: "", concepto: "" });
+  // Cuenta compartida: titular elegido por movimiento (nunca se asume).
+  const [benefPor, setBenefPor] = useState<Record<string, string>>({});
+  const titulares = grupo?.titulares ?? null;
 
   useEffect(() => { if (!open) setClave(""); }, [open]);
   useEffect(() => {
     if (!grupo) return;
+    setBenefPor({});
     setSel(grupo.movimientos.map((m) => m.id));
     const p = prellenarEntrada(grupo.movimientos[0], cuentas, reglas);
     setForm({ categoria: p.categoria, beneficiario: grupo.beneficiario || p.beneficiario, concepto: grupo.clave.startsWith("cuenta:") ? `Transferencia a cuenta ${grupo.clave.slice(7)}` : p.concepto });
@@ -222,8 +226,9 @@ export function EntradasLoteDialog({
   const crear = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.rpc("crear_entradas_diario_lote", {
-        p_movimientos: elegidos.map((m) => m.id), p_categoria: form.categoria, p_beneficiario: form.beneficiario.trim(),
+        p_movimientos: elegidos.map((m) => m.id), p_categoria: form.categoria, p_beneficiario: titulares ? "" : form.beneficiario.trim(),
         p_concepto: form.concepto.trim(), p_tf_previstos: previstos ?? undefined,
+        p_beneficiarios: titulares ? Object.fromEntries(elegidos.map((m) => [m.id, benefPor[m.id]])) : undefined,
       });
       if (error) throw error;
       return data as { secuencias: string[]; total: number; cambio_numero: boolean };
@@ -238,7 +243,8 @@ export function EntradasLoteDialog({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const valido = elegidos.length > 0 && form.categoria && form.beneficiario.trim() && form.concepto.trim() && previstos?.length === elegidos.length;
+  const beneficiarioListo = titulares ? elegidos.every((m) => !!benefPor[m.id]) : !!form.beneficiario.trim();
+  const valido = elegidos.length > 0 && form.categoria && beneficiarioListo && form.concepto.trim() && previstos?.length === elegidos.length;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -275,7 +281,14 @@ export function EntradasLoteDialog({
               </div>
               <div className="space-y-1 min-w-0 sm:col-span-2">
                 <Label>Beneficiario</Label>
-                <Input value={form.beneficiario} placeholder={grupo.nombrado ? "" : "Escribe el nombre; la cuenta lo aprenderá"} onChange={(e) => setForm({ ...form, beneficiario: e.target.value })} />
+                {titulares ? (
+                  <div className="rounded-md border border-warning/60 bg-warning/10 px-2 py-1.5 text-[12px]">
+                    <Badge variant="outline" className="mr-1 text-[11px]">Cuenta compartida</Badge>
+                    {titulares.join(" y/o ")}. Elige el titular en cada movimiento.
+                  </div>
+                ) : (
+                  <Input value={form.beneficiario} placeholder={grupo.nombrado ? "" : "Escribe el nombre; la cuenta lo aprenderá"} onChange={(e) => setForm({ ...form, beneficiario: e.target.value })} />
+                )}
               </div>
               <div className="space-y-1 min-w-0 sm:col-span-3">
                 <Label>Concepto (común a todas)</Label>
@@ -287,7 +300,9 @@ export function EntradasLoteDialog({
                 <thead className="sticky top-0 bg-background">
                   <tr className="border-b text-left text-[11px] uppercase text-muted-foreground">
                     <th className="px-2 py-1"><Checkbox checked={elegidos.length === grupo.movimientos.length} onCheckedChange={(v) => setSel(v ? grupo.movimientos.map((m) => m.id) : [])} /></th>
-                    <th className="px-2 py-1">Fecha</th><th className="px-2 py-1">Descripción</th><th className="px-2 py-1 text-right">Monto</th><th className="px-2 py-1">TF que se asignará</th>
+                    <th className="px-2 py-1">Fecha</th><th className="px-2 py-1">Descripción</th><th className="px-2 py-1 text-right">Monto</th>
+                    {titulares && <th className="px-2 py-1">Beneficiario</th>}
+                    <th className="px-2 py-1">TF que se asignará</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -299,6 +314,16 @@ export function EntradasLoteDialog({
                         <td className="whitespace-nowrap px-2 py-1">{fmtLocalDate(m.fecha)}</td>
                         <td className="px-2 py-1">{m.descripcion}</td>
                         <td className="whitespace-nowrap px-2 py-1 text-right font-mono">{fmtRD(Number(m.monto))}</td>
+                        {titulares && (
+                          <td className="min-w-[180px] px-2 py-1">
+                            <Select value={benefPor[m.id] ?? ""} onValueChange={(v) => setBenefPor((p) => ({ ...p, [m.id]: v }))}>
+                              <SelectTrigger className={`h-7 text-[12px] ${i >= 0 && !benefPor[m.id] ? "border-warning" : ""}`} title={benefPor[m.id] || titulares.join(" y/o ")}>
+                                <SelectValue placeholder={`Elegir: ${titulares.join(" / ")}`} />
+                              </SelectTrigger>
+                              <SelectContent>{titulares.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </td>
+                        )}
                         <td className="px-2 py-1 font-mono">{i >= 0 ? (isFetching ? "…" : previstos?.[i] ?? "—") : ""}</td>
                       </tr>
                     );
@@ -307,6 +332,7 @@ export function EntradasLoteDialog({
               </table>
             </div>
             <div className="text-[11px] text-muted-foreground">Los números se asignan en orden de fecha. Si cancelas, no se consume ninguno; si alguien usa uno mientras confirmas, se avisa con los números reales.</div>
+            {titulares && !beneficiarioListo && elegidos.length > 0 && <div className="text-[11px] text-destructive">Falta elegir el titular en {elegidos.filter((m) => !benefPor[m.id]).length} movimiento(s) marcado(s).</div>}
           </>
         )}
         <DialogFooter>
@@ -321,13 +347,37 @@ export function EntradasLoteDialog({
   );
 }
 
+type TfVecino = { tf: string; fecha: string } | null;
+type TfPrevisto = {
+  solicitud_id: string; tf: string; fuente: "nuevo" | "viaje";
+  /** TF anotado en los viajes y si encaja entre el TF guardado anterior y el siguiente. */
+  viaje: { mencionado: string; fecha_referencia: string; encaja: boolean; anterior: TfVecino; siguiente: TfVecino } | null;
+};
+
+const vecinoTf = (v: TfVecino, lado: string) => (v ? `${v.tf} del ${fmtLocalDate(v.fecha)}` : `sin TF ${lado} guardado`);
+
+/** Explica por qué se usa (o no) el TF anotado en el viaje: debe encajar entre el TF anterior y el siguiente. */
+function NotaTfViaje({ p }: { p: TfPrevisto }) {
+  const v = p.viaje;
+  if (!v) return null;
+  const rango = `anterior: ${vecinoTf(v.anterior, "anterior")}; siguiente: ${vecinoTf(v.siguiente, "siguiente")}; débito del ${fmtLocalDate(v.fecha_referencia)}`;
+  return (
+    <div className="max-w-[260px] whitespace-normal font-sans text-[11px] text-muted-foreground">
+      {p.fuente === "viaje"
+        ? <>Anotado en el viaje y encaja en orden ({rango}).</>
+        : <>El viaje anota {v.mencionado} en «N° Ref. Pago», pero {v.encaja ? "ese número ya está ocupado" : "no se pudo comprobar que encaje en orden"} ({rango}); recibe el siguiente disponible.</>}
+    </div>
+  );
+}
+
 /** Conciliar en bloque los débitos con una única sugerencia exacta (una entrada, mismo monto, ±3 días). */
 export function ExactasLoteDialog({
   open, onClose, movimientos, sugerencias,
 }: { open: boolean; onClose: () => void; movimientos: Mov[]; sugerencias: Map<string, Sugerencia[]> }) {
   const invalidar = useInvalidarConciliacion();
   const { exactas, conVariasOpciones, entradaCompartida } = useMemo(() => sugerenciasExactas(movimientos, sugerencias), [movimientos, sugerencias]);
-  const conflictos = useMemo(() => cuentasConVariosBeneficiarios(exactas), [exactas]);
+  const { data: cuentasCat = [] } = useCuentasBeneficiario();
+  const conflictos = useMemo(() => cuentasConVariosBeneficiarios(exactas, cuentasCat), [exactas, cuentasCat]);
   const [sel, setSel] = useState<string[]>([]);
   const [elegidoPor, setElegidoPor] = useState<Record<string, string>>({});
   const [asignarTf, setAsignarTf] = useState(false);
@@ -352,7 +402,7 @@ export function ExactasLoteDialog({
   const sinTfElegidos = useMemo(() => ordenAsignacionTf(elegidos), [elegidos]);
   const hayResolver = exactas.some((x) => opcionesDe(x.movimiento));
 
-  const entradasTf = sinTfElegidos.map((x) => ({ origen_tipo: x.entrada.origen_tipo, solicitud_id: x.entrada.id }));
+  const entradasTf = sinTfElegidos.map((x) => ({ origen_tipo: x.entrada.origen_tipo, solicitud_id: x.entrada.id, movimiento_id: x.movimiento.id }));
   const { data: previstos, isFetching: calculandoTf, error: errorTf } = useQuery({
     queryKey: ["previsualizar-tf", "exactas", entradasTf.map((e) => e.solicitud_id).join(",")],
     enabled: open && asignarTf && entradasTf.length > 0,
@@ -360,7 +410,7 @@ export function ExactasLoteDialog({
     queryFn: async () => {
       const { data, error } = await supabase.rpc("previsualizar_tf_exactas", { p_entradas: entradasTf });
       if (error) throw error;
-      return (data ?? []) as unknown as { solicitud_id: string; tf: string; fuente: "nuevo" | "viaje" }[];
+      return (data ?? []) as unknown as TfPrevisto[];
     },
   });
   const tfDe = useMemo(() => new Map((previstos ?? []).map((p) => [p.solicitud_id, p])), [previstos]);
@@ -446,7 +496,7 @@ export function ExactasLoteDialog({
             <div className="min-w-0 flex-1">
               <Label htmlFor="asignar-tf" className="text-[13px]">Asignar TF al conciliar</Label>
               <div className="text-[11px] text-muted-foreground">
-                {totalSinTf} {totalSinTf === 1 ? "entrada no tiene" : "entradas no tienen"} TF y empiezan desmarcadas. Con esta opción, cada fila marcada sin TF recibe al confirmar el siguiente número disponible (último guardado + 1, saltando los ocupados), en orden de fecha; si el viaje ya anota un TF libre, se usa ese. Si cancelas, no se usa ningún número.
+                {totalSinTf} {totalSinTf === 1 ? "entrada no tiene" : "entradas no tienen"} TF y empiezan desmarcadas. Con esta opción, cada fila marcada sin TF recibe al confirmar el siguiente número disponible (último guardado + 1, saltando los ocupados), en orden de fecha. Un TF anotado en el viaje solo se usa si encaja entre el TF guardado anterior y el siguiente según la fecha del débito. Quedan marcadas «TF asignado retroactivamente». Si cancelas, no se usa ningún número.
               </div>
               {asignarTf && sinTfElegidos.length === 0 && <div className="mt-1 text-[11px]">Marca las filas «Sin TF» que quieras conciliar para ver el TF que recibiría cada una.</div>}
               {asignarTf && errorTf && <div className="mt-1 text-[11px] text-destructive">No se pudo calcular la vista previa de TF: {(errorTf as Error).message}</div>}
@@ -504,7 +554,8 @@ export function ExactasLoteDialog({
                           <div className="space-y-0.5 font-sans">
                             <Badge variant="outline" className="border-warning bg-warning/20 text-[11px] text-warning-foreground">Sin TF</Badge>
                             <div className="text-[11px] text-muted-foreground">{e.secuencia}</div>
-                            {previsto && <div className="font-mono text-[12px]">→ {previsto.tf}{previsto.fuente === "viaje" ? <span className="font-sans text-[11px] text-muted-foreground"> (anotado en el viaje)</span> : null}</div>}
+                            {previsto && <div className="font-mono text-[12px]">→ {previsto.tf}</div>}
+                            {previsto && <NotaTfViaje p={previsto} />}
                             {!conTf && asignarTf && marcado && !previsto && <div className="text-[11px] text-muted-foreground">{calculandoTf ? "Calculando…" : "—"}</div>}
                           </div>
                         )}

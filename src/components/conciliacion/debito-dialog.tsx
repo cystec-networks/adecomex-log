@@ -112,7 +112,9 @@ function PagoExistente({ mov, onDone }: { mov: MovimientoBanco; onDone: () => vo
     <div className="space-y-4 pt-2">
       <div className="space-y-2">
         <div className="text-[13px] font-medium">Sugerencias (monto neto igual, ±3 días, beneficiario)</div>
-        {exp.fuente === "cuenta" && <div className="text-[11px] text-muted-foreground">Cuenta destino registrada como <strong>{exp.beneficiario}</strong>.</div>}
+        {exp.fuente === "cuenta" && (exp.titulares?.length
+          ? <div className="text-[11px] text-muted-foreground">Cuenta compartida de <strong>{exp.titulares.join(" y/o ")}</strong>: sirve una entrada de cualquiera de los titulares.</div>
+          : <div className="text-[11px] text-muted-foreground">Cuenta destino registrada como <strong>{exp.beneficiario}</strong>.</div>)}
         {exp.fuente === null && /IB a/i.test(mov.descripcion ?? "") && (
           <div className="text-[11px] text-muted-foreground">Esta cuenta destino aún no tiene beneficiario registrado; se aprenderá al conciliar.</div>
         )}
@@ -253,8 +255,22 @@ function CrearEntrada({ mov, activo, onDone }: { mov: MovimientoBanco; activo: b
         </div>
         <div className="space-y-1 min-w-0 sm:col-span-3">
           <Label>Beneficiario</Label>
-          <Input list="beneficiarios-banco" value={form.beneficiario} onChange={(e) => setForm({ ...form, beneficiario: e.target.value })} />
-          <datalist id="beneficiarios-banco">{beneficiarios.map((b) => <option key={b} value={b} />)}</datalist>
+          {inicial.titulares ? (
+            <>
+              <Select value={form.beneficiario} onValueChange={(v) => setForm({ ...form, beneficiario: v })}>
+                <SelectTrigger title={form.beneficiario || undefined} className={!form.beneficiario ? "border-warning" : undefined}>
+                  <SelectValue placeholder="Elegir titular" />
+                </SelectTrigger>
+                <SelectContent>{inicial.titulares.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+              </Select>
+              <div className="text-[11px] text-muted-foreground">Cuenta compartida de {inicial.titulares.join(" y/o ")}: elige a cuál de los titulares corresponde este movimiento.</div>
+            </>
+          ) : (
+            <>
+              <Input list="beneficiarios-banco" value={form.beneficiario} onChange={(e) => setForm({ ...form, beneficiario: e.target.value })} />
+              <datalist id="beneficiarios-banco">{beneficiarios.map((b) => <option key={b} value={b} />)}</datalist>
+            </>
+          )}
         </div>
         <div className="space-y-1 min-w-0 sm:col-span-3">
           <Label>Concepto</Label>

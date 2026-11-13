@@ -3,7 +3,7 @@ import {
   beneficiarioCoincide, claveImportacion, resumenImportacion, cuentaDestino, diferenciaSeleccion, filasNuevas,
   pagoDeComision, prellenarEntrada, anterioresAlDiario, beneficiarioProbable, comisionesConPago,
   gruposParaLote, inicioDiario, resumenCuentasPendientes, expectativaMovimiento, requiereMotivo, sugerirEntradas, sugerenciasExactas, validarBalance,
-  tieneTf, ordenAsignacionTf, cuentasConVariosBeneficiarios, estadoBeneficiario,
+  tieneTf, ordenAsignacionTf, cuentasConVariosBeneficiarios, estadoBeneficiario, titularesDe,
   type CuentaBeneficiario, type EntradaDiario, type MovimientoBanco, type ReglaBanco,
 } from "./conciliacion-diario";
 
@@ -293,5 +293,46 @@ describe("sugerencias exactas: Sin TF y cuentas con dos beneficiarios", () => {
     expect(estadoBeneficiario("Jefry M. De León", opciones, "Jefry M. De León")).toBe("corresponde");
     expect(estadoBeneficiario("Jefry M. De León", opciones, "FRANCISCO LOPEZ")).toBe("no-corresponde");
     expect(estadoBeneficiario("Jefry M. De León", undefined, null)).toBe("sin-conflicto");
+  });
+});
+
+describe("cuenta compartida 114101033 (Jefry M. De León y/o Francisco López)", () => {
+  const compartida: CuentaBeneficiario = {
+    cuenta: "114101033", beneficiario: "JEFRY M. DE LEON y/o FRANCISCO LOPEZ", activo: true, titulares: ["JEFRY M. DE LEON", "FRANCISCO LOPEZ"],
+  };
+  const debito = mov({ id: "x", descripcion: "IB a 114101033", monto: 18880 });
+
+  it("una entrada de cualquiera de los titulares es sugerencia verificada", () => {
+    for (const b of ["FRANCISCO LOPEZ", "Jefry M. De León"]) {
+      const s = sugerirEntradas(debito, [ent({ beneficiario: b, neto: 18880, origen_tipo: "transferencia" })], [compartida], reglas);
+      expect(s).toHaveLength(1);
+      expect(s[0].beneficiarioVerificado).toBe(true);
+    }
+  });
+
+  it("una entrada de otra persona no se sugiere", () => {
+    expect(sugerirEntradas(debito, [ent({ beneficiario: "MARIA LOPEZ", neto: 18880 })], [compartida], reglas)).toHaveLength(0);
+  });
+
+  it("no muestra el aviso de cuenta con dos beneficiarios", () => {
+    const filas = ["Jefry M. De León", "FRANCISCO LOPEZ"].map((b, i) => ({
+      movimiento: mov({ id: String(i), descripcion: "IB a 114101033" }), entrada: ent({ id: `e${i}`, beneficiario: b }), dias: 0, beneficiarioVerificado: true,
+    }));
+    expect(cuentasConVariosBeneficiarios(filas).size).toBe(1);
+    expect(cuentasConVariosBeneficiarios(filas, [compartida]).size).toBe(0);
+  });
+
+  it("al crear una entrada no se asume el beneficiario: se elige entre los titulares", () => {
+    const p = prellenarEntrada(debito, [compartida], reglas);
+    expect(p.beneficiario).toBe("");
+    expect(p.titulares).toEqual(["JEFRY M. DE LEON", "FRANCISCO LOPEZ"]);
+    const { grupos } = gruposParaLote([debito], () => false, [compartida], reglas, "2026-07-30");
+    expect(grupos[0].beneficiario).toBe("");
+    expect(grupos[0].titulares).toEqual(["JEFRY M. DE LEON", "FRANCISCO LOPEZ"]);
+  });
+
+  it("una cuenta con un solo titular sigue igual", () => {
+    expect(titularesDe({ titulares: ["ASOCAPU"] })).toBeNull();
+    expect(prellenarEntrada(mov({}), [asocapu], reglas).beneficiario).toBe("ASOCAPU / RICHEILY JIMENEZ");
   });
 });

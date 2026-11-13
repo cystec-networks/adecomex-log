@@ -334,6 +334,7 @@ export type Database = {
           notas: string | null
           origen: string
           tipo: string
+          titulares: string[]
           updated_at: string
         }
         Insert: {
@@ -345,6 +346,7 @@ export type Database = {
           notas?: string | null
           origen?: string
           tipo?: string
+          titulares?: string[]
           updated_at?: string
         }
         Update: {
@@ -356,6 +358,7 @@ export type Database = {
           notas?: string | null
           origen?: string
           tipo?: string
+          titulares?: string[]
           updated_at?: string
         }
         Relationships: []
@@ -8036,6 +8039,7 @@ export type Database = {
           retroactiva: boolean
           secuencia: string
           solicitud_transporte_id: string | null
+          tf_retroactivo: boolean
         }
         Insert: {
           anulado_en?: string | null
@@ -8058,6 +8062,7 @@ export type Database = {
           retroactiva?: boolean
           secuencia?: string
           solicitud_transporte_id?: string | null
+          tf_retroactivo?: boolean
         }
         Update: {
           anulado_en?: string | null
@@ -8080,6 +8085,7 @@ export type Database = {
           retroactiva?: boolean
           secuencia?: string
           solicitud_transporte_id?: string | null
+          tf_retroactivo?: boolean
         }
         Relationships: [
           {
@@ -8124,6 +8130,7 @@ export type Database = {
           precio_viaje: number | null
           referencia_viaje: string | null
           telefono: string | null
+          tf_retroactivo: boolean
           transporte_id: string | null
           transportista_nombre: string
           transportista_rnc: string | null
@@ -8153,6 +8160,7 @@ export type Database = {
           precio_viaje?: number | null
           referencia_viaje?: string | null
           telefono?: string | null
+          tf_retroactivo?: boolean
           transporte_id?: string | null
           transportista_nombre: string
           transportista_rnc?: string | null
@@ -8182,6 +8190,7 @@ export type Database = {
           precio_viaje?: number | null
           referencia_viaje?: string | null
           telefono?: string | null
+          tf_retroactivo?: boolean
           transporte_id?: string | null
           transportista_nombre?: string
           transportista_rnc?: string | null
@@ -9022,6 +9031,7 @@ export type Database = {
           retroactiva: boolean | null
           secuencia: string | null
           solicitud_id: string | null
+          tf_retroactivo: boolean | null
         }
         Relationships: []
       }
@@ -9174,6 +9184,7 @@ export type Database = {
       crear_entradas_diario_lote: {
         Args: {
           p_beneficiario: string
+          p_beneficiarios?: Json
           p_categoria: string
           p_concepto: string
           p_movimientos: string[]

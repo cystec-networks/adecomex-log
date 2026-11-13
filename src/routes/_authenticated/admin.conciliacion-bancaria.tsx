@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { Landmark, Upload, Link2, Unlink, Settings2, Sparkles, FilePlus2, AlertTriangle, CheckCircle2, Layers, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { fmtLocalDate } from "@/lib/dates";
-import { anterioresAlDiario, comisionesConPago, gruposParaLote, sugerenciasExactas, inicioDiario, pagoDeComision, reglaAplicable, resumenImportacion, sugerirEntradas, validarBalance, type Sugerencia } from "@/lib/conciliacion-diario";
+import { cuentaCompartida, cuentaDestino, anterioresAlDiario, comisionesConPago, gruposParaLote, sugerenciasExactas, inicioDiario, pagoDeComision, reglaAplicable, resumenImportacion, sugerirEntradas, validarBalance, type Sugerencia } from "@/lib/conciliacion-diario";
 import { useConciliarDiario, useCuentasBeneficiario, useEntradasDiario, useMarcarMovimiento, useReglasBanco } from "@/components/conciliacion/datos";
 import { DebitoDialog, type PestanaDebito } from "@/components/conciliacion/debito-dialog";
 import { DeshacerConciliacionDialog } from "@/components/conciliacion/deshacer-dialog";
@@ -539,7 +539,17 @@ function ConciliacionBancariaPage() {
               {filtrados.map((m) => (
                 <tr key={m.id} className="border-b last:border-0 align-top">
                   <td className="py-2 pr-3 whitespace-nowrap">{fmtLocalDate(m.fecha)}</td>
-                  <td className="py-2 pr-3 max-w-[320px]">{m.descripcion ?? "—"}</td>
+                  <td className="py-2 pr-3 max-w-[320px]">
+                    {m.descripcion ?? "—"}
+                    {(() => {
+                      const t = m.tipo === "debito" ? cuentaCompartida(cuentaDestino(m.descripcion), cuentas) : null;
+                      return t ? (
+                        <div className="text-[11px] text-muted-foreground" title="Cuenta compartida: al crear una entrada se elige el titular">
+                          <Badge variant="outline" className="mr-1 px-1 py-0 text-[11px] font-normal">Cuenta compartida</Badge>{t.join(" y/o ")}
+                        </div>
+                      ) : null;
+                    })()}
+                  </td>
                   <td className="py-2 pr-3 font-mono text-xs">{m.referencia ?? "—"}</td>
                   <td className="py-2 pr-3">
                     <Badge variant="outline" className={m.tipo === "credito"

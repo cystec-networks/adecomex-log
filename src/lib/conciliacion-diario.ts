@@ -44,7 +44,7 @@ export type ReglaBanco = {
 };
 
 /** beneficiario vacío = cuenta precargada pendiente de nombre (no sirve para verificar). */
-export type CuentaBeneficiario = { cuenta: string; beneficiario: string | null; activo: boolean };
+export type CuentaBeneficiario = { cuenta: string; beneficiario: string | null; activo: boolean; titulares?: string[] | null };
 
 const cuentaSinCeros = (c: string) => c.replace(/^0+/, "");
 
@@ -52,6 +52,17 @@ const cuentaSinCeros = (c: string) => c.replace(/^0+/, "");
 export function cuentaConNombre(cuenta: string | null, cuentas: CuentaBeneficiario[]): CuentaBeneficiario | null {
   if (!cuenta) return null;
   return cuentas.find((c) => c.activo && (c.beneficiario ?? "").trim() !== "" && cuentaSinCeros(c.cuenta) === cuentaSinCeros(cuenta)) ?? null;
+}
+
+/** Titulares de una cuenta compartida (dos o más); null si la cuenta tiene un solo beneficiario. */
+export function titularesDe(c: Pick<CuentaBeneficiario, "titulares"> | null | undefined): string[] | null {
+  const t = (c?.titulares ?? []).map((x) => (x ?? "").trim()).filter(Boolean);
+  return t.length >= 2 ? t : null;
+}
+
+/** Titulares de la cuenta destino si es compartida (p. ej. 114101033: Jefry M. De León y/o Francisco López). */
+export function cuentaCompartida(cuenta: string | null, cuentas: CuentaBeneficiario[]): string[] | null {
+  return titularesDe(cuentaConNombre(cuenta, cuentas));
 }
 
 const PALABRAS_VACIAS = new Set(["SRL", "SAS", "S", "A", "DE", "DEL", "LA", "LAS", "LOS", "Y", "EL", "INC", "EIRL", "CXA", "C", "POR"]);
@@ -86,6 +97,10 @@ export function clavebeneficiario(s: string): string {
   return normalizarTexto(s).replace(/[^A-Z]/g, "");
 }
 
+function mismoBeneficiario(a: string, b: string): boolean {
+  return clavebeneficiario(a) === clavebeneficiario(b) || beneficiarioCoincide(a, b);
+}
+
 /** Cuenta destino de una transferencia "IB a 815697610". */
 export function cuentaDestino(descripcion: string | null | undefined): string | null {
   const m = /\bIB a (\d+)/i.exec(descripcion ?? "");
@@ -113,6 +128,8 @@ export type Expectativa = {
   beneficiario: string | null;
   categoria: string | null;
   fuente: "cuenta" | "regla" | null;
+  /** Cuenta compartida: cualquiera de estos titulares es válido. */
+  titulares?: string[] | null;
 };
 
 /** Qué beneficiario/categoría se espera para un débito según su cuenta destino o una regla. */
@@ -123,7 +140,7 @@ export function expectativaMovimiento(
 ): Expectativa {
   const cuenta = cuentaDestino(mov.descripcion);
   const c = cuentaConNombre(cuenta, cuentas);
-  if (c) return { beneficiario: c.beneficiario, categoria: null, fuente: "cuenta" };
+  if (c) return { beneficiario: c.beneficiario, categoria: null, fuente: "cuenta", titulares: titularesDe(c) };
   const r = reglaAplicable(mov.descripcion, reglas);
   if (r && (r.beneficiario || r.categoria)) {
     return { beneficiario: r.beneficiario, categoria: r.categoria, fuente: "regla" };
@@ -134,7 +151,10 @@ export function expectativaMovimiento(
 /** La entrada es compatible con lo esperado del débito (beneficiario de la cuenta,
  * o beneficiario/categoría de la regla). Sin expectativa no se puede comprobar. */
 export function entradaCompatible(e: EntradaDiario, exp: Expectativa): boolean {
-  if (exp.fuente === "cuenta") return beneficiarioCoincide(e.beneficiario, exp.beneficiario);
+  if (exp.fuente === "cuenta") {
+    if (exp.titulares?.length) return exp.titulares.some((t) => mismoBeneficiario(t, e.beneficiario));
+    return beneficiarioCoincide(e.beneficiario, exp.beneficiario);
+  }
   if (exp.fuente === "regla") {
     if (exp.beneficiario && beneficiarioCoincide(e.beneficiario, exp.beneficiario)) return true;
     if (exp.categoria && normalizarTexto(e.categoria) === normalizarTexto(exp.categoria)) return true;
@@ -214,15 +234,19 @@ export function prellenarEntrada(
   mov: Pick<MovimientoBanco, "descripcion" | "fecha">,
   cuentas: CuentaBeneficiario[],
   reglas: ReglaBanco[],
-): { fecha: string; categoria: string; beneficiario: string; concepto: string } {
+): { fecha: string; categoria: string; beneficiario: string; concepto: string; titulares: string[] | null } {
   const regla = reglaAplicable(mov.descripcion, reglas);
   const cuenta = cuentaDestino(mov.descripcion);
-  const benefCuenta = cuentaConNombre(cuenta, cuentas)?.beneficiario ?? undefined;
+  const reg = cuentaConNombre(cuenta, cuentas);
+  const titulares = titularesDe(reg);
+  const benefCuenta = reg?.beneficiario ?? undefined;
   return {
     fecha: mov.fecha,
     categoria: regla?.categoria || (benefCuenta ? "Gastos Menores" : "Otro"),
-    beneficiario: regla?.beneficiario || benefCuenta || "",
+    // Cuenta compartida: nunca se asume el titular; el usuario elige uno por movimiento.
+    beneficiario: titulares ? "" : regla?.beneficiario || benefCuenta || "",
     concepto: regla?.concepto || (mov.descripcion ?? "").trim(),
+    titulares,
   };
 }
 
@@ -393,7 +417,7 @@ export function comisionesConPago<T extends MovimientoBanco>(movimientos: T[]): 
   return out.sort((a, b) => a.comision.fecha.localeCompare(b.comision.fecha));
 }
 
-export type GrupoLote<T> = { clave: string; etiqueta: string; beneficiario: string; nombrado: boolean; movimientos: T[]; total: number };
+export type GrupoLote<T> = { clave: string; etiqueta: string; beneficiario: string; nombrado: boolean; movimientos: T[]; total: number; titulares: string[] | null };
 
 /** Débitos desde el inicio del Diario sin entrada (sin sugerencia ni comisión de un pago),
  * agrupados por cuenta destino o por regla, para crear entradas por lote de un mismo beneficiario. */
@@ -412,12 +436,16 @@ export function gruposParaLote<T extends MovimientoBanco>(
     if (conSugerencia(m) || pagoDeComision(m, movimientos)) continue;
     const c = cuentaDestino(m.descripcion);
     let clave: string, etiqueta: string, beneficiario: string, nombrado: boolean;
+    let titulares: string[] | null = null;
     if (c) {
       const reg = cuentaConNombre(c, cuentas);
+      titulares = titularesDe(reg);
       clave = `cuenta:${cuentaSinCeros(c)}`;
-      beneficiario = reg?.beneficiario ?? "";
+      beneficiario = titulares ? "" : reg?.beneficiario ?? "";
       nombrado = !!reg;
-      etiqueta = reg ? `${reg.beneficiario} · cuenta ${cuentaSinCeros(c)}` : `Cuenta ${cuentaSinCeros(c)} (sin nombre)`;
+      etiqueta = titulares
+        ? `Cuenta compartida (${titulares.join(" y/o ")}) · cuenta ${cuentaSinCeros(c)}`
+        : reg ? `${reg.beneficiario} · cuenta ${cuentaSinCeros(c)}` : `Cuenta ${cuentaSinCeros(c)} (sin nombre)`;
     } else {
       const r = reglaAplicable(m.descripcion, reglas);
       if (!r) { sinAgrupar.push(m); continue; }
@@ -426,7 +454,7 @@ export function gruposParaLote<T extends MovimientoBanco>(
       nombrado = !!r.beneficiario;
       etiqueta = `${r.beneficiario || r.palabra_clave} · regla «${r.palabra_clave}»`;
     }
-    const g = mapa.get(clave) ?? { clave, etiqueta, beneficiario, nombrado, movimientos: [], total: 0 };
+    const g = mapa.get(clave) ?? { clave, etiqueta, beneficiario, nombrado, movimientos: [], total: 0, titulares };
     g.movimientos.push(m);
     g.total = (centavos(g.total) + centavos(m.monto)) / 100;
     mapa.set(clave, g);
@@ -488,8 +516,6 @@ export function ordenAsignacionTf<T extends MovimientoBanco>(elegidas: Sugerenci
   return elegidas.filter((x) => !tieneTf(x.entrada.secuencia)).sort(compararParaTf);
 }
 
-const mismoBeneficiario = (a: string, b: string) => clavebeneficiario(a) === clavebeneficiario(b) || beneficiarioCoincide(a, b);
-
 /** Cuenta destino («IB a …») sin ceros a la izquierda, o null. */
 export function cuentaDeMovimiento(m: Pick<MovimientoBanco, "descripcion">): string | null {
   const c = cuentaDestino(m.descripcion);
@@ -498,10 +524,15 @@ export function cuentaDeMovimiento(m: Pick<MovimientoBanco, "descripcion">): str
 
 /** Cuentas destino que aparecen con dos o más beneficiarios distintos entre las sugerencias exactas
  * (p. ej. 114101033 con Jefry M. De León y con Francisco López): cuenta → nombres. */
-export function cuentasConVariosBeneficiarios<T extends MovimientoBanco>(exactas: SugerenciaExacta<T>[]): Map<string, string[]> {
+export function cuentasConVariosBeneficiarios<T extends MovimientoBanco>(
+  exactas: SugerenciaExacta<T>[],
+  cuentas: CuentaBeneficiario[] = [],
+): Map<string, string[]> {
   const porCuenta = new Map<string, string[]>();
   for (const x of exactas) {
     const c = cuentaDeMovimiento(x.movimiento);
+    // Cuenta compartida registrada: cualquiera de sus titulares es válido, sin aviso.
+    if (c && cuentaCompartida(c, cuentas)) continue;
     const b = (x.entrada.beneficiario ?? "").trim();
     if (!c || !b) continue;
     const lista = porCuenta.get(c) ?? [];
