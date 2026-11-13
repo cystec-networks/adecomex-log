@@ -115,6 +115,9 @@ describe("importación sin duplicados", () => {
   it("dos líneas idénticas en el archivo y una guardada → se importa solo la segunda", () => {
     expect(filasNuevas([f, f], [f])).toHaveLength(1);
   });
+  it("reimportar el mismo archivo con dos líneas idénticas ya guardadas no agrega nada", () => {
+    expect(filasNuevas([f, f], [f, f])).toHaveLength(0);
+  });
   it("ceros a la izquierda y espacios no crean duplicados", () => {
     expect(claveImportacion({ ...f, referencia: "827077256", descripcion: "IB  a 827077256" })).toBe(claveImportacion(f));
   });
