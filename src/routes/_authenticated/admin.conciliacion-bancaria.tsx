@@ -538,7 +538,12 @@ function ConciliacionBancariaPage() {
                         )}
                       </div>
                     ) : (
-                      <Badge variant="secondary">Pendiente</Badge>
+                      <div className="space-y-0.5">
+                        <Badge variant="secondary">Pendiente</Badge>
+                        {m.notas && (
+                          <div className="text-[11px] text-amber-700 dark:text-amber-400 max-w-[220px]">Nota: {m.notas}</div>
+                        )}
+                      </div>
                     )}
                   </td>
                   <td className="py-2 pr-3 min-w-[220px]">
