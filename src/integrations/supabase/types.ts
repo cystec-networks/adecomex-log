@@ -366,6 +366,7 @@ export type Database = {
       banco_lotes_automaticos: {
         Row: {
           archivo: string | null
+          comisiones: number
           conciliados: number
           creadas: number
           creado_en: string
@@ -375,11 +376,15 @@ export type Database = {
           deshechos: number | null
           detalle: Json
           id: string
+          no_aplica: number
+          origen: string
           revision: number
+          tf_liberados: string[]
           total: number
         }
         Insert: {
           archivo?: string | null
+          comisiones?: number
           conciliados?: number
           creadas?: number
           creado_en?: string
@@ -389,11 +394,15 @@ export type Database = {
           deshechos?: number | null
           detalle?: Json
           id?: string
+          no_aplica?: number
+          origen?: string
           revision?: number
+          tf_liberados?: string[]
           total?: number
         }
         Update: {
           archivo?: string | null
+          comisiones?: number
           conciliados?: number
           creadas?: number
           creado_en?: string
@@ -403,7 +412,10 @@ export type Database = {
           deshechos?: number | null
           detalle?: Json
           id?: string
+          no_aplica?: number
+          origen?: string
           revision?: number
+          tf_liberados?: string[]
           total?: number
         }
         Relationships: []
@@ -8318,19 +8330,28 @@ export type Database = {
       tf_sin_uso_notas: {
         Row: {
           actualizado_por: string | null
+          liberado_de: string | null
+          liberado_en: string | null
           nota: string
+          reutilizar: boolean
           secuencia: string
           updated_at: string
         }
         Insert: {
           actualizado_por?: string | null
+          liberado_de?: string | null
+          liberado_en?: string | null
           nota?: string
+          reutilizar?: boolean
           secuencia: string
           updated_at?: string
         }
         Update: {
           actualizado_por?: string | null
+          liberado_de?: string | null
+          liberado_en?: string | null
           nota?: string
+          reutilizar?: boolean
           secuencia?: string
           updated_at?: string
         }
@@ -9097,6 +9118,7 @@ export type Database = {
         Row: {
           actualizado_por: string | null
           nota: string | null
+          reutilizable: boolean | null
           secuencia: string | null
           transportes_que_lo_mencionan: string | null
           updated_at: string | null
@@ -9210,7 +9232,14 @@ export type Database = {
         Returns: boolean
       }
       conciliar_automatico_importacion: {
-        Args: { p_archivo?: string; p_items: Json; p_revision?: Json }
+        Args: {
+          p_archivo?: string
+          p_items: Json
+          p_origen?: string
+          p_previsto?: Json
+          p_revision?: Json
+          p_simular?: boolean
+        }
         Returns: Json
       }
       conciliar_exactas_lote: {
@@ -9448,6 +9477,7 @@ export type Database = {
       siguiente_numero_operacion: { Args: { p_tipo: string }; Returns: string }
       siguiente_tf: { Args: never; Returns: string }
       soltar_turno_tarea: { Args: { p_nombre: string }; Returns: undefined }
+      tf_nuevo_numero: { Args: never; Returns: string }
       tomar_turno_tarea: {
         Args: { p_nombre: string; p_segundos: number }
         Returns: boolean

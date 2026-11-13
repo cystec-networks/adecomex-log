@@ -3,7 +3,7 @@ import {
   beneficiarioCoincide, claveImportacion, resumenImportacion, cuentaDestino, diferenciaSeleccion, filasNuevas,
   pagoDeComision, prellenarEntrada, anterioresAlDiario, beneficiarioProbable, comisionesConPago,
   gruposParaLote, inicioDiario, resumenCuentasPendientes, expectativaMovimiento, requiereMotivo, sugerirEntradas, sugerenciasExactas, validarBalance,
-  tieneTf, ordenAsignacionTf, normalizarTfManual, tfManualesRepetidos, cuentasConVariosBeneficiarios, estadoBeneficiario, titularesDe, planConciliacionAutomatica,
+  tieneTf, ordenAsignacionTf, normalizarTfManual, tfManualesRepetidos, cuentasConVariosBeneficiarios, estadoBeneficiario, titularesDe, planConciliacionAutomatica, pagoComisionMismoDia, resumenLoteAutomatico, itemsRpcAutomatico,
   type CuentaBeneficiario, type EntradaDiario, type MovimientoBanco, type ReglaBanco,
 } from "./conciliacion-diario";
 
@@ -418,12 +418,66 @@ describe("conciliación automática tras importar", () => {
     expect(p.revision[0].motivo).toBe("Pago de transporte sin viaje exacto");
   });
 
-  it("débitos anteriores al Diario y comisiones de un pago quedan en revisión", () => {
-    const pago = mov({ id: "p", descripcion: "EXI PAG DGA X", monto: 1000, referencia: "555" });
-    const com = mov({ id: "c", descripcion: "EXI COM DGA X", monto: 50, referencia: "555" });
-    const viejo = mov({ id: "v", fecha: "2026-07-10" });
-    const p = plan([com, viejo], [], [pago, com, viejo]);
-    expect(p.revision.map((r) => r.motivo).sort()).toEqual(["Anterior al Diario", "Comisión de un pago (vincular)"]);
+  it("débitos anteriores al inicio del Diario se marcan «No aplica» solos", () => {
+    const viejo = mov({ id: "v", fecha: "2026-07-10", descripcion: "IB a 999999999" });
+    const comVieja = mov({ id: "cv", fecha: "2026-07-07", descripcion: "EXI COM DGA 7877A65", referencia: "7877", monto: 75 });
+    const p = plan([viejo, comVieja], []);
+    expect(p.acciones.map((a) => [a.movimiento.id, a.tipo])).toEqual([["cv", "no_aplica"], ["v", "no_aplica"]]);
+    expect(p.revision).toHaveLength(0);
+    expect(itemsRpcAutomatico(p).p_items[0]).toEqual({ movimiento_id: "cv", accion: "no_aplica" });
+  });
+
+  it("la comisión se vincula sola al pago del mismo día y la misma referencia, sin TF propio", () => {
+    const pago = mov({ id: "p", descripcion: "EXI PAG DGA 9D84678", monto: 1500, referencia: "0000000000009", fecha: "2026-11-11" });
+    const pagoOtroDia = mov({ id: "p2", descripcion: "EXI PAG DGA 9A9E323", monto: 900, referencia: "0000000000009", fecha: "2026-09-28" });
+    const com = mov({ id: "c", descripcion: "EXI COM DGA 9D84678", monto: 75, referencia: "0000000000009", fecha: "2026-11-11" });
+    const p = plan([com], [], [pagoOtroDia, pago, com]);
+    expect(p.acciones).toEqual([expect.objectContaining({ tipo: "comision", pago: pago })]);
+    expect(itemsRpcAutomatico(p).p_items[0]).toEqual({ movimiento_id: "c", accion: "comision", pago_id: "p" });
+  });
+
+  it("comisión sin pago del mismo día (solo otro día) o con dos pagos ese día queda en revisión", () => {
+    const pagoOtroDia = mov({ id: "p2", descripcion: "EXI PAG DGA X", monto: 900, referencia: "9", fecha: "2026-09-28" });
+    const com = mov({ id: "c", descripcion: "EXI COM DGA X", monto: 75, referencia: "9", fecha: "2026-11-11" });
+    expect(plan([com], [], [pagoOtroDia, com]).revision[0].motivo).toBe("Comisión sin pago del mismo día");
+    const a = mov({ id: "a", descripcion: "EXI PAG DGA A", monto: 900, referencia: "9", fecha: "2026-11-11" });
+    const b = mov({ id: "b", descripcion: "EXI PAG DGA B", monto: 1000, referencia: "9", fecha: "2026-11-11" });
+    expect(pagoComisionMismoDia(com, [a, b, com])).toBeNull();
+    expect(plan([com], [], [a, b, com]).revision[0].motivo).toBe("Comisión sin pago del mismo día");
+    // Sin ningún pago de su referencia tampoco se crea una entrada con TF para la comisión.
+    expect(plan([com], [], [com]).acciones).toHaveLength(0);
+  });
+
+  it("TR-000028, TR-000030 y TR-000031 se excluyen hasta que se indique su TF", () => {
+    const d = mov({ id: "a", monto: 28440, fecha: "2026-09-08" });
+    const tr28 = ent({ secuencia: "TR-000028", id: "feb2", neto: 28440, fecha: "2026-09-08" });
+    const p = plan([d], [tr28]);
+    expect(p.acciones).toHaveLength(0);
+    expect(p.revision).toHaveLength(0);
+    expect(p.excluidos).toEqual([expect.objectContaining({ secuencias: ["TR-000028"] })]);
+    // Con su TF ya indicado deja de estar excluido y se concilia.
+    const conTf = plan([d], [{ ...tr28, secuencia: "TF-0012777" }]);
+    expect(conTf.acciones[0].tipo).toBe("conciliar");
+    // Otro viaje sin TF no está excluido.
+    expect(plan([d], [{ ...tr28, secuencia: "TR-000029" }]).acciones[0].tipo).toBe("conciliar");
+  });
+
+  it("resumen de la vista previa: cantidades, montos, TF a usar y revisión por motivo", () => {
+    const r = resumenLoteAutomatico([
+      { movimiento_id: "1", accion: "conciliar", monto: "27600.00", secuencia: "TF-0012806", tf_asignado: true },
+      { movimiento_id: "2", accion: "conciliar", monto: 1000, secuencia: "TF-0012700", tf_asignado: false },
+      { movimiento_id: "3", accion: "crear", monto: 1500.5, secuencia: "TF-0012807", tf_asignado: true },
+      { movimiento_id: "4", accion: "no_aplica", monto: 200 },
+      { movimiento_id: "5", accion: "comision", monto: 75 },
+      { movimiento_id: "6", accion: "revision", monto: 7000, motivo: "Pago de transporte sin viaje exacto" },
+      { movimiento_id: "7", accion: "revision", monto: 3000, motivo: "Pago de transporte sin viaje exacto" },
+    ]);
+    expect(r.conciliar).toEqual({ cantidad: 2, total: 28600 });
+    expect(r.crear).toEqual({ cantidad: 1, total: 1500.5 });
+    expect(r.no_aplica.cantidad).toBe(1);
+    expect(r.comision.total).toBe(75);
+    expect(r.tf).toEqual(["TF-0012806", "TF-0012807"]);
+    expect(r.porMotivo.get("Pago de transporte sin viaje exacto")).toEqual({ cantidad: 2, total: 10000 });
   });
 
   it("créditos se ignoran y las acciones salen en orden de fecha (TF cronológicos)", () => {

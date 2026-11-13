@@ -16,9 +16,9 @@ import { toast } from "sonner";
 import { Landmark, Upload, Link2, Unlink, Settings2, Sparkles, FilePlus2, AlertTriangle, CheckCircle2, Layers, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { fmtLocalDate } from "@/lib/dates";
-import { planConciliacionAutomatica, cuentaCompartida, cuentaDestino, anterioresAlDiario, comisionesConPago, gruposParaLote, sugerenciasExactas, inicioDiario, pagoDeComision, reglaAplicable, resumenImportacion, sugerirEntradas, validarBalance, type Sugerencia } from "@/lib/conciliacion-diario";
-import { leerCuentasBeneficiario, leerEntradasDiario, leerReglasBanco, useConciliarDiario, useCuentasBeneficiario, useEntradasDiario, useInvalidarConciliacion, useMarcarMovimiento, useReglasBanco } from "@/components/conciliacion/datos";
-import { LotesAutomaticosDialog, ResultadoAutomaticoDialog, type ResultadoAutomatico } from "@/components/conciliacion/automatica-dialogs";
+import { cuentaCompartida, cuentaDestino, anterioresAlDiario, comisionesConPago, gruposParaLote, sugerenciasExactas, inicioDiario, pagoDeComision, reglaAplicable, resumenImportacion, sugerirEntradas, validarBalance, type Sugerencia } from "@/lib/conciliacion-diario";
+import { ejecutarConciliacionAutomatica, useConciliarDiario, useCuentasBeneficiario, useEntradasDiario, useInvalidarConciliacion, useMarcarMovimiento, useReglasBanco } from "@/components/conciliacion/datos";
+import { LotesAutomaticosDialog, PendientesAutomaticaDialog, ResultadoAutomaticoDialog, type ResultadoAutomatico } from "@/components/conciliacion/automatica-dialogs";
 import { DebitoDialog, type PestanaDebito } from "@/components/conciliacion/debito-dialog";
 import { DeshacerConciliacionDialog } from "@/components/conciliacion/deshacer-dialog";
 import { ReglasCuentasDialog } from "@/components/conciliacion/reglas-cuentas-dialog";
@@ -196,7 +196,7 @@ function ConciliacionBancariaPage() {
   const [debSel, setDebSel] = useState<{ mov: Movimiento; pestana: PestanaDebito } | null>(null);
   const [deshacerSel, setDeshacerSel] = useState<Movimiento | null>(null);
   const [reglasOpen, setReglasOpen] = useState(false);
-  const [bloque, setBloque] = useState<null | "anteriores" | "comisiones" | "lote" | "exactas" | "automaticos">(null);
+  const [bloque, setBloque] = useState<null | "anteriores" | "comisiones" | "lote" | "exactas" | "automaticos" | "pendientes-auto">(null);
   const [resultadoAuto, setResultadoAuto] = useState<ResultadoAutomatico | null>(null);
   const invalidarConciliacion = useInvalidarConciliacion();
 
@@ -393,24 +393,13 @@ function ConciliacionBancariaPage() {
   async function conciliarAutomatico(ids: string[], archivo: string) {
     if (ids.length === 0) { invalidarConciliacion(); return; }
     try {
-      const [movs, entradas, cuentasAct, reglasAct] = await Promise.all([
-        leerMovimientos(), leerEntradasDiario(), leerCuentasBeneficiario(), leerReglasBanco(),
-      ]);
       const setIds = new Set(ids);
-      const todos = movs.map((x) => ({ ...x, monto: Number(x.monto) }));
-      const nuevos = todos.filter((x) => setIds.has(x.id));
-      const creditos = nuevos.filter((x) => x.tipo !== "debito").length;
-      if (nuevos.length === creditos) { invalidarConciliacion(); return; }
-      const plan = planConciliacionAutomatica(nuevos, todos, entradas, cuentasAct, reglasAct, inicioDiario(entradas));
-      const { data, error } = await supabase.rpc("conciliar_automatico_importacion", {
-        p_items: plan.acciones.map((a) => a.tipo === "conciliar"
-          ? { movimiento_id: a.movimiento.id, accion: "conciliar", origen_tipo: a.entrada.origen_tipo, solicitud_id: a.entrada.id }
-          : { movimiento_id: a.movimiento.id, accion: "crear", categoria: a.categoria, beneficiario: a.beneficiario, concepto: a.concepto }),
-        p_revision: plan.revision.map((r) => ({ movimiento_id: r.movimiento.id, motivo: r.motivo })),
-        p_archivo: archivo,
+      const { resultado, plan } = await ejecutarConciliacionAutomatica({
+        elegir: (pendientes) => pendientes.filter((x) => setIds.has(x.id)), archivo, origen: "importacion",
       });
-      if (error) throw error;
-      setResultadoAuto({ ...(data as unknown as Omit<ResultadoAutomatico, "creditos" | "archivo">), creditos, archivo });
+      const debitos = plan.acciones.length + plan.revision.length + plan.excluidos.length;
+      const creditos = Math.max(0, ids.length - debitos);
+      if (resultado) setResultadoAuto({ ...resultado, creditos, archivo });
     } catch (e) {
       toast.error(`Los movimientos se importaron, pero la conciliación automática no se completó: ${(e as Error).message}. Puedes conciliarlos a mano.`);
     } finally {
@@ -455,6 +444,9 @@ function ConciliacionBancariaPage() {
             <Button variant="outline"><Layers className="h-4 w-4 mr-2" /> Acciones en bloque <ChevronDown className="h-4 w-4 ml-1" /></Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => setBloque("pendientes-auto")}>
+              <Sparkles className="mr-2 h-4 w-4 text-primary" /> Ejecutar conciliación automática sobre pendientes existentes
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setBloque("exactas")}>Conciliar sugerencias exactas · {conteoBloque.exactas}</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setBloque("anteriores")}>No aplica (anterior al Diario) · {conteoBloque.anteriores}</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setBloque("comisiones")}>Vincular comisiones con su pago · {conteoBloque.comisiones}</DropdownMenuItem>
@@ -685,6 +677,12 @@ function ConciliacionBancariaPage() {
       <EntradasLoteDialog open={bloque === "lote"} onClose={() => setBloque(null)} movimientos={movsNum} inicio={inicio} conSugerencia={conSugerencia} />
       <ExactasLoteDialog open={bloque === "exactas"} onClose={() => setBloque(null)} movimientos={movsNum} sugerencias={sugerencias} />
       <LotesAutomaticosDialog open={bloque === "automaticos"} onClose={() => setBloque(null)} />
+      <PendientesAutomaticaDialog
+        open={bloque === "pendientes-auto"}
+        onClose={() => setBloque(null)}
+        movimientos={movPorId}
+        onResultado={setResultadoAuto}
+      />
       <ResultadoAutomaticoDialog
         resultado={resultadoAuto}
         movimientos={movPorId}
@@ -1053,7 +1051,8 @@ function PreviaImportacionDialog({ previa, importando, onConfirmar, onClose }: {
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
                 <span>
                   Al importar, los débitos nuevos con coincidencia exacta (mismo monto, fecha a ±3 días y beneficiario conocido por cuenta o regla)
-                  se concilian solos; si no tienen entrada en el Diario se crea con el siguiente TF. Lo dudoso queda en «Pendientes de revisión».
+                  se concilian solos; si no tienen entrada en el Diario se crea con el siguiente TF. Los anteriores al Diario quedan «No aplica» y las
+                  comisiones se vinculan al pago del mismo día. Lo dudoso queda en «Pendientes de revisión».
                   Todo se puede deshacer.
                 </span>
               </div>

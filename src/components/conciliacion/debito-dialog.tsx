@@ -204,9 +204,10 @@ function CrearEntrada({ mov, activo, onDone }: { mov: MovimientoBanco; activo: b
     enabled: activo,
     staleTime: 0,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("siguiente_tf");
+      // Mismo orden que al crear: primero un TF liberado de «Números TF sin uso», luego el siguiente.
+      const { data, error } = await supabase.rpc("previsualizar_tf", { p_cantidad: 1 });
       if (error) throw error;
-      return data as string;
+      return (data as string[])[0];
     },
   });
   useEffect(() => { if (activo) void refetch(); }, [activo, refetch]);

@@ -946,6 +946,27 @@
       "when": 1794535799378,
       "tag": "0134_conciliacion_automatica_importacion",
       "breakpoints": true
+    },
+    {
+      "idx": 135,
+      "version": "7",
+      "when": 1794536901897,
+      "tag": "0135_conciliacion_automatica_reglas_tf_reutilizable",
+      "breakpoints": true
+    },
+    {
+      "idx": 136,
+      "version": "7",
+      "when": 1794537169050,
+      "tag": "0136_previsualizar_tf_sin_repetidos",
+      "breakpoints": true
+    },
+    {
+      "idx": 137,
+      "version": "7",
+      "when": 1794537263102,
+      "tag": "0137_conciliacion_automatica_secuencia_al_guardar",
+      "breakpoints": true
     }
   ]
 }

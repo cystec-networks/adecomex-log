@@ -250,20 +250,30 @@ export function prellenarEntrada(
   };
 }
 
-/** Pago con la misma referencia que una comisión (p. ej. COM DGA ↔ PAG DGA). */
-export function pagoDeComision<T extends MovimientoBanco>(com: T, movimientos: T[]): T | null {
-  if (!/\bCOM\b/i.test(com.descripcion ?? "")) return null;
+/** Débito de comisión bancaria («EXI COM DGA …», «COM DPW …»). */
+export const esComision = (descripcion: string | null | undefined) => /\bCOM\b/i.test(descripcion ?? "");
+
+/** Pagos (no comisiones) con la misma referencia que una comisión. */
+function pagosMismaReferencia<T extends MovimientoBanco>(com: T, movimientos: T[]): T[] {
+  if (!esComision(com.descripcion)) return [];
   const ref = (com.referencia ?? "").replace(/^0+/, "");
-  if (!ref) return null;
-  return (
-    movimientos.find(
-      (m) =>
-        m.id !== com.id &&
-        m.tipo === "debito" &&
-        (m.referencia ?? "").replace(/^0+/, "") === ref &&
-        !/\bCOM\b/i.test(m.descripcion ?? ""),
-    ) ?? null
+  if (!ref) return [];
+  return movimientos.filter(
+    (m) => m.id !== com.id && m.tipo === "debito" && (m.referencia ?? "").replace(/^0+/, "") === ref && !esComision(m.descripcion),
   );
+}
+
+/** Pago con la misma referencia que una comisión (p. ej. COM DGA ↔ PAG DGA). El banco trunca referencias
+ * («0000000000009» se repite en días distintos), así que se prefiere el pago del mismo día. */
+export function pagoDeComision<T extends MovimientoBanco>(com: T, movimientos: T[]): T | null {
+  const pagos = pagosMismaReferencia(com, movimientos);
+  return pagos.find((m) => m.fecha === com.fecha) ?? pagos[0] ?? null;
+}
+
+/** Pago ÚNICO del mismo día y la misma referencia de una comisión; null si no hay o hay varios (revisión). */
+export function pagoComisionMismoDia<T extends MovimientoBanco>(com: T, movimientos: T[]): T | null {
+  const mismoDia = pagosMismaReferencia(com, movimientos).filter((m) => m.fecha === com.fecha);
+  return mismoDia.length === 1 ? mismoDia[0] : null;
 }
 
 // ---------- Importación sin duplicados ----------
@@ -573,33 +583,43 @@ export function estadoBeneficiario(entradaBeneficiario: string, opciones: string
   return mismoBeneficiario(elegido, entradaBeneficiario) ? "corresponde" : "no-corresponde";
 }
 
-// ---------- Conciliación automática tras importar ----------
+// ---------- Conciliación automática (tras importar y sobre pendientes existentes) ----------
 
 export const MOTIVOS_REVISION = {
   cuentaDesconocida: "Cuenta desconocida",
   cuentaCompartida: "Cuenta compartida",
   montoDiferencia: "Monto con diferencia",
   varias: "Varias coincidencias posibles",
-  anterior: "Anterior al Diario",
-  comision: "Comisión de un pago (vincular)",
+  comisionSinPago: "Comisión sin pago del mismo día",
   transporteSinViaje: "Pago de transporte sin viaje exacto",
 } as const;
 
+/** Entradas del Diario que la conciliación automática no toca hasta que el usuario indique su TF
+ * (pagos de transporte sin TF de ASOCAPU). Al recibir su TF la secuencia deja de ser TR-… y salen solas de aquí. */
+export const SECUENCIAS_EXCLUIDAS_AUTOMATICA = ["TR-000028", "TR-000030", "TR-000031"] as const;
+
 export type AccionAutomatica<T> =
   | { tipo: "conciliar"; movimiento: T; entrada: EntradaDiario }
-  | { tipo: "crear"; movimiento: T; categoria: string; beneficiario: string; concepto: string };
+  | { tipo: "crear"; movimiento: T; categoria: string; beneficiario: string; concepto: string }
+  | { tipo: "no_aplica"; movimiento: T }
+  | { tipo: "comision"; movimiento: T; pago: T };
 
 export type PlanAutomatico<T> = {
   /** En orden de fecha: así los TF nuevos salen en orden cronológico. */
   acciones: AccionAutomatica<T>[];
   revision: { movimiento: T; motivo: string }[];
+  /** Débitos que no se tocan porque su entrada espera el TF que indique el usuario. */
+  excluidos: { movimiento: T; secuencias: string[] }[];
 };
 
-/** Decide qué débitos NUEVOS de una importación se concilian solos y cuáles quedan para revisión.
- * Automático solo si el beneficiario se conoce (cuenta con nombre no compartida, o regla con beneficiario) y:
- * - hay UNA sola entrada libre con el mismo monto neto a ±3 días que ningún otro débito pendiente comparte → conciliar;
- * - no hay ninguna entrada libre de ese beneficiario a ±3 días → crear la entrada (siguiente TF).
- * Todo lo demás va a revisión con su motivo. `todos` son todos los movimientos (para comisiones y entradas compartidas). */
+/** Decide qué débitos (los nuevos de una importación o los pendientes elegidos) se resuelven solos:
+ * - anterior al inicio del Diario → «No aplica (anterior al Diario)»;
+ * - comisión con UN pago del mismo día y la misma referencia → se vincula a ese pago, sin TF propio
+ *   (sin pago que cuadre → revisión);
+ * - beneficiario conocido (cuenta con nombre no compartida, o regla con beneficiario) y UNA sola entrada libre
+ *   con el mismo monto neto a ±3 días que ningún otro débito pendiente comparte → conciliar;
+ * - beneficiario conocido sin ninguna entrada libre cercana → crear la entrada (siguiente TF), nunca a transportistas.
+ * Todo lo demás va a revisión con su motivo. `todos` son todos los movimientos (comisiones y entradas compartidas). */
 export function planConciliacionAutomatica<T extends MovimientoBanco>(
   nuevos: T[],
   todos: T[],
@@ -607,6 +627,7 @@ export function planConciliacionAutomatica<T extends MovimientoBanco>(
   cuentas: CuentaBeneficiario[],
   reglas: ReglaBanco[],
   inicio: string | null,
+  excluirSecuencias: readonly string[] = SECUENCIAS_EXCLUIDAS_AUTOMATICA,
 ): PlanAutomatico<T> {
   const pendientes = todos.filter((m) => m.tipo === "debito" && !m.conciliado);
   const sugerencias = new Map<string, Sugerencia[]>();
@@ -617,17 +638,30 @@ export function planConciliacionAutomatica<T extends MovimientoBanco>(
     for (const s of lista) for (const e of s.entradas) vistas.add(claveEntrada(e));
     for (const k of vistas) usosEntrada.set(k, (usosEntrada.get(k) ?? 0) + 1);
   }
+  const excluidas = new Set(excluirSecuencias.map((x) => normalizarTexto(x)));
 
   const acciones: AccionAutomatica<T>[] = [];
   const revision: { movimiento: T; motivo: string }[] = [];
+  const excluidos: { movimiento: T; secuencias: string[] }[] = [];
   const orden = [...nuevos]
     .filter((m) => m.tipo === "debito" && !m.conciliado)
     .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.id.localeCompare(b.id));
 
   for (const m of orden) {
     const aRevision = (motivo: string) => revision.push({ movimiento: m, motivo });
-    if (!inicio || m.fecha < inicio) { aRevision(MOTIVOS_REVISION.anterior); continue; }
-    if (pagoDeComision(m, todos)) { aRevision(MOTIVOS_REVISION.comision); continue; }
+    if (!inicio || m.fecha < inicio) { acciones.push({ tipo: "no_aplica", movimiento: m }); continue; }
+    if (esComision(m.descripcion)) {
+      const pago = pagoComisionMismoDia(m, todos);
+      if (pago) acciones.push({ tipo: "comision", movimiento: m, pago });
+      else aRevision(MOTIVOS_REVISION.comisionSinPago);
+      continue;
+    }
+
+    const lista = sugerencias.get(m.id) ?? [];
+    const conExcluida = [...new Set(lista.flatMap((s) => s.entradas)
+      .filter((e) => !tieneTf(e.secuencia) && excluidas.has(normalizarTexto(e.secuencia)))
+      .map((e) => e.secuencia))];
+    if (conExcluida.length) { excluidos.push({ movimiento: m, secuencias: conExcluida }); continue; }
 
     const cuenta = cuentaDestino(m.descripcion);
     const reg = cuenta ? cuentaConNombre(cuenta, cuentas) : null;
@@ -636,7 +670,6 @@ export function planConciliacionAutomatica<T extends MovimientoBanco>(
     const regla = cuenta ? null : reglaAplicable(m.descripcion, reglas);
     if (!cuenta && !(regla?.beneficiario ?? "").trim()) { aRevision(MOTIVOS_REVISION.cuentaDesconocida); continue; }
 
-    const lista = sugerencias.get(m.id) ?? [];
     if (lista.length > 1 || (lista.length === 1 && lista[0].entradas.length !== 1)) { aRevision(MOTIVOS_REVISION.varias); continue; }
     if (lista.length === 1) {
       const e = lista[0].entradas[0];
@@ -657,5 +690,55 @@ export function planConciliacionAutomatica<T extends MovimientoBanco>(
     if (!p.beneficiario.trim()) { aRevision(MOTIVOS_REVISION.cuentaDesconocida); continue; }
     acciones.push({ tipo: "crear", movimiento: m, categoria: p.categoria, beneficiario: p.beneficiario, concepto: p.concepto });
   }
-  return { acciones, revision };
+  return { acciones, revision, excluidos };
+}
+
+/** Ítems para `conciliar_automatico_importacion` (mismo orden del plan). */
+export function itemsRpcAutomatico<T extends MovimientoBanco>(plan: PlanAutomatico<T>) {
+  return {
+    p_items: plan.acciones.map((a) => {
+      switch (a.tipo) {
+        case "conciliar": return { movimiento_id: a.movimiento.id, accion: "conciliar", origen_tipo: a.entrada.origen_tipo, solicitud_id: a.entrada.id };
+        case "crear": return { movimiento_id: a.movimiento.id, accion: "crear", categoria: a.categoria, beneficiario: a.beneficiario, concepto: a.concepto };
+        case "no_aplica": return { movimiento_id: a.movimiento.id, accion: "no_aplica" };
+        case "comision": return { movimiento_id: a.movimiento.id, accion: "comision", pago_id: a.pago.id };
+      }
+    }),
+    p_revision: plan.revision.map((r) => ({ movimiento_id: r.movimiento.id, motivo: r.motivo })),
+  };
+}
+
+export type DetalleLoteAutomatico = {
+  movimiento_id: string;
+  accion: "conciliar" | "crear" | "no_aplica" | "comision" | "revision";
+  monto?: number | string | null;
+  secuencia?: string | null;
+  tf_asignado?: boolean;
+  motivo?: string | null;
+};
+
+type Bloque = { cantidad: number; total: number };
+
+/** Totales de la vista previa / resultado: cantidad y monto por acción, TF que se usarían y revisión por motivo. */
+export function resumenLoteAutomatico(detalle: DetalleLoteAutomatico[]) {
+  const vacio = (): Bloque => ({ cantidad: 0, total: 0 });
+  const r = {
+    conciliar: vacio(), crear: vacio(), no_aplica: vacio(), comision: vacio(), revision: vacio(),
+    porMotivo: new Map<string, Bloque>(),
+    /** TF que se asignarían (entradas existentes sin TF y entradas nuevas), en orden. */
+    tf: [] as string[],
+  };
+  const sumar = (b: Bloque, monto: number) => { b.cantidad++; b.total = (centavos(b.total) + centavos(monto)) / 100; };
+  for (const d of detalle) {
+    const monto = Number(d.monto ?? 0);
+    sumar(r[d.accion], monto);
+    if (d.accion === "revision") {
+      const k = d.motivo || "Revisar";
+      const b = r.porMotivo.get(k) ?? vacio();
+      sumar(b, monto);
+      r.porMotivo.set(k, b);
+    }
+    if ((d.accion === "crear" || (d.accion === "conciliar" && d.tf_asignado)) && d.secuencia) r.tf.push(d.secuencia);
+  }
+  return r;
 }

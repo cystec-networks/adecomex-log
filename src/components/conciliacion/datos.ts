@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import type { CuentaBeneficiario, EntradaDiario, ReglaBanco } from "@/lib/conciliacion-diario";
+import {
+  inicioDiario, itemsRpcAutomatico, planConciliacionAutomatica,
+  type CuentaBeneficiario, type DetalleLoteAutomatico, type EntradaDiario, type MovimientoBanco, type PlanAutomatico, type ReglaBanco,
+} from "@/lib/conciliacion-diario";
 
 export type EntradaDiarioFila = EntradaDiario & { movimiento_id: string | null; retroactiva?: boolean | null };
 export type ReglaFila = ReglaBanco & { id: string };
@@ -101,4 +104,66 @@ export function useMarcarMovimiento(onDone?: () => void) {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+}
+
+/** Movimientos del banco (todos) para planificar la conciliación automática con datos frescos. */
+export async function leerMovimientosBanco(): Promise<MovimientoBanco[]> {
+  const out: MovimientoBanco[] = [];
+  for (let desde = 0; ; desde += 1000) {
+    const { data, error } = await supabase.from("banco_movimientos")
+      .select("id, fecha, monto, tipo, descripcion, referencia, conciliado")
+      .order("fecha").order("created_at").order("id")
+      .range(desde, desde + 999);
+    if (error) throw error;
+    out.push(...((data ?? []) as unknown as MovimientoBanco[]).map((m) => ({ ...m, monto: Number(m.monto) })));
+    if (!data || data.length < 1000) break;
+  }
+  return out;
+}
+
+export type DetalleAutomaticoFila = DetalleLoteAutomatico & {
+  fecha?: string | null;
+  beneficiario?: string | null;
+  categoria?: string | null;
+  pago?: string | null;
+  fuente_tf?: string | null;
+};
+
+export type ResultadoRpcAutomatico = {
+  lote: string | null;
+  conciliados: number;
+  creadas: number;
+  no_aplica: number;
+  comisiones: number;
+  revision: number;
+  total: number;
+  detalle: DetalleAutomaticoFila[];
+  simulado?: boolean;
+};
+
+/** Planifica con datos frescos y ejecuta (o simula, sin guardar nada) la conciliación automática.
+ * `elegir` decide qué débitos pendientes se evalúan (los recién importados o los del rango de fechas). */
+export async function ejecutarConciliacionAutomatica(opts: {
+  elegir: (pendientes: MovimientoBanco[]) => MovimientoBanco[];
+  archivo: string;
+  origen: "importacion" | "pendientes";
+  simular?: boolean;
+  previsto?: DetalleAutomaticoFila[] | null;
+}): Promise<{ resultado: ResultadoRpcAutomatico | null; plan: PlanAutomatico<MovimientoBanco>; evaluados: number }> {
+  const [todos, entradas, cuentas, reglas] = await Promise.all([
+    leerMovimientosBanco(), leerEntradasDiario(), leerCuentasBeneficiario(), leerReglasBanco(),
+  ]);
+  const pendientes = todos.filter((m) => m.tipo === "debito" && !m.conciliado);
+  const elegidos = opts.elegir(pendientes);
+  const plan = planConciliacionAutomatica(elegidos, todos, entradas, cuentas, reglas, inicioDiario(entradas));
+  if (plan.acciones.length + plan.revision.length === 0) return { resultado: null, plan, evaluados: elegidos.length };
+  const { data, error } = await supabase.rpc("conciliar_automatico_importacion", {
+    ...itemsRpcAutomatico(plan),
+    p_archivo: opts.archivo,
+    p_simular: !!opts.simular,
+    p_origen: opts.origen,
+    p_previsto: (opts.previsto ?? undefined) as never,
+  } as never);
+  if (error) throw error;
+  return { resultado: data as unknown as ResultadoRpcAutomatico, plan, evaluados: elegidos.length };
 }
