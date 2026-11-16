@@ -162,7 +162,16 @@ export function RevisionSeguimientoSiga({ expedienteId, lectura, onClose }: { ex
                     <ul className="space-y-0.5 text-[12px]">
                       {lectura.datos.procesos.map((p) => {
                         const nuevo = ev.procesosNuevos.includes(p);
-                        return <li key={`${p.proceso}${p.numero_solicitud}${p.fecha}`}>{PROCESOS_SIGA[p.proceso]}{p.doc_embarque ? ` (${p.doc_embarque})` : ""} · {p.numero_solicitud ?? "sin número"} · {fmtFechaSiga(p.fecha)}{p.estado ? ` · ${p.estado}` : ""}{p.localizacion ? ` · ${p.localizacion}` : ""} <span className={nuevo ? "text-primary" : "text-muted-foreground"}>{nuevo ? "(nuevo)" : "(ya registrado)"}</span></li>;
+                        return (
+                          <li key={`${p.proceso}${p.numero_solicitud}${p.fecha}`}>
+                            {PROCESOS_SIGA[p.proceso]}{p.doc_embarque ? ` (${p.doc_embarque})` : ""} · {p.numero_solicitud ?? "sin número"}
+                            {p.fecha_creacion ? ` · Creado ${fmtFechaSiga(p.fecha_creacion)}` : ""} · Procesado {fmtFechaSiga(p.fecha)}
+                            {p.estado ? ` · ${p.estado}` : ""}{p.localizacion ? ` · ${p.localizacion}` : ""}{" "}
+                            <span className={nuevo ? "text-primary" : "text-muted-foreground"}>{nuevo ? "(nuevo)" : "(ya registrado)"}</span>
+                            {p.numero_completado && <div className="pl-3 text-[11px] text-muted-foreground">Número cortado en SIGA, completado con el No. de Control de Carga (principio y final coinciden).</div>}
+                            {p.numero_truncado && <div className="pl-3 text-[11px] text-destructive">Número cortado en SIGA: no coincide con el No. de Control de Carga; se guarda cortado. Verifícalo en SIGA.</div>}
+                          </li>
+                        );
                       })}
                     </ul>
                   )}
@@ -303,7 +312,7 @@ export function DatosSigaBlock({ form, set, exp, disabled }: { form: Record<stri
 export function HistorialProcesosSiga({ expedienteId }: { expedienteId: string }) {
   const { data } = useQuery({
     queryKey: ["siga-procesos", expedienteId],
-    queryFn: async () => (await supabase.from("expediente_siga_procesos").select("*").eq("expediente_id", expedienteId).order("fecha", { ascending: true, nullsFirst: false }).order("created_at")).data ?? [],
+    queryFn: async () => (await supabase.from("expediente_siga_procesos").select("*").eq("expediente_id", expedienteId).order("fecha", { ascending: true, nullsFirst: false }).order("fecha_creacion", { ascending: true, nullsFirst: false }).order("created_at")).data ?? [],
   });
   if (!data?.length) return null;
   return (
@@ -311,12 +320,17 @@ export function HistorialProcesosSiga({ expedienteId }: { expedienteId: string }
       <div className="border-b px-3 py-2 text-sm font-semibold">Procesos SIGA <span className="font-normal text-[11px] text-muted-foreground">· historial desde el Seguimiento SIGA</span></div>
       <div className="overflow-x-auto">
         <table className="w-full text-[12px]">
-          <thead><tr className="text-left text-muted-foreground"><th className="px-3 py-1.5 font-normal">Proceso</th><th className="px-3 py-1.5 font-normal">No. de solicitud</th><th className="px-3 py-1.5 font-normal">Fecha</th><th className="px-3 py-1.5 font-normal">Estado</th><th className="px-3 py-1.5 font-normal">Origen</th></tr></thead>
+          <thead><tr className="text-left text-muted-foreground"><th className="px-3 py-1.5 font-normal">Proceso</th><th className="px-3 py-1.5 font-normal">Doc. embarque</th><th className="px-3 py-1.5 font-normal">No. de solicitud</th><th className="px-3 py-1.5 font-normal">Creado</th><th className="px-3 py-1.5 font-normal">Procesado</th><th className="px-3 py-1.5 font-normal">Estado</th><th className="px-3 py-1.5 font-normal">Origen</th></tr></thead>
           <tbody>
             {data.map((p: any) => (
               <tr key={p.id} className="border-t">
                 <td className="px-3 py-1.5 whitespace-nowrap">{PROCESOS_SIGA[p.proceso as keyof typeof PROCESOS_SIGA] ?? p.etiqueta ?? p.proceso}</td>
-                <td className="px-3 py-1.5 whitespace-nowrap">{p.numero_solicitud ?? "—"}</td>
+                <td className="px-3 py-1.5 whitespace-nowrap">{p.doc_embarque ?? "—"}</td>
+                <td className="px-3 py-1.5 whitespace-nowrap">
+                  {p.numero_solicitud ?? "—"}
+                  {String(p.numero_solicitud ?? "").includes("…") && <div className="text-[11px] text-destructive" title="El portal SIGA mostró el número cortado y no coincide con el No. de Control de Carga.">Cortado en SIGA: verificar</div>}
+                </td>
+                <td className="px-3 py-1.5 whitespace-nowrap">{p.fecha_creacion_texto ? fmtFechaSiga(p.fecha_creacion_texto) : "—"}</td>
                 <td className="px-3 py-1.5 whitespace-nowrap">{fmtFechaSiga(p.fecha_texto)}</td>
                 <td className="px-3 py-1.5">{p.estado ?? "—"}</td>
                 <td className="px-3 py-1.5 text-muted-foreground">{p.origen === "correo" ? "Correo automático" : "Carga manual"}</td>

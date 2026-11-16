@@ -4167,11 +4167,14 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          doc_embarque: string | null
           documento_id: string | null
           estado: string | null
           etiqueta: string | null
           expediente_id: string
           fecha: string | null
+          fecha_creacion: string | null
+          fecha_creacion_texto: string | null
           fecha_texto: string | null
           id: string
           numero_solicitud: string | null
@@ -4181,11 +4184,14 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          doc_embarque?: string | null
           documento_id?: string | null
           estado?: string | null
           etiqueta?: string | null
           expediente_id: string
           fecha?: string | null
+          fecha_creacion?: string | null
+          fecha_creacion_texto?: string | null
           fecha_texto?: string | null
           id?: string
           numero_solicitud?: string | null
@@ -4195,11 +4201,14 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          doc_embarque?: string | null
           documento_id?: string | null
           estado?: string | null
           etiqueta?: string | null
           expediente_id?: string
           fecha?: string | null
+          fecha_creacion?: string | null
+          fecha_creacion_texto?: string | null
           fecha_texto?: string | null
           id?: string
           numero_solicitud?: string | null
