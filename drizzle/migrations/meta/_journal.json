@@ -981,6 +981,13 @@
       "when": 1794864420794,
       "tag": "0139_seguimiento_siga",
       "breakpoints": true
+    },
+    {
+      "idx": 140,
+      "version": "7",
+      "when": 1794867343688,
+      "tag": "0140_lectura_declaracion_dua",
+      "breakpoints": true
     }
   ]
 }

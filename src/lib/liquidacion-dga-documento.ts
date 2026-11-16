@@ -1,11 +1,14 @@
 import { campoDgaVacio, type CamposResultadoDga, type ResultadoDgaExtraido } from "./resultado-dga-documentos";
 import { construirObservaciones, normalizarRemarkSiga, type ObservacionesEstructura } from "./observaciones-expediente";
+import { expDesdeTexto, leerNumeroDeclaracion } from "./declaracion-dua";
 
 export type LiquidacionDga = ResultadoDgaExtraido & {
   declaracion?: string | null; fecha_declaracion?: string | null; bl?: string | null;
   llegada?: string | null; puerto?: string | null; puerto_codigo?: string | null;
   peso_neto?: number | null; manifiesto?: string | null; resultado_inspeccion?: string | null;
   impuestos?: number | null; servicio?: number | null; dua?: number | null; observaciones?: string | null;
+  /** Solo lectura por texto: motivo cuando no se halló el número junto a «Declaración». */
+  declaracion_motivo?: string | null; exp?: string | null; importador?: string | null; lectura_texto?: boolean;
 };
 export type CambiosLiquidacion = Partial<Record<"numero_dua" | "fecha_presentacion_real" | "bl_awb" | "fecha_llegada_real" | "puerto_arribo" | "puerto_arribo_codigo" | "liq_dga_manifiesto" | "liq_dga_resultado_inspeccion", string>> & { peso_neto?: number };
 /** One payload and one optimistic guard set: never leave a partially written document mapping. */
@@ -24,17 +27,28 @@ export function fechaLiquidacion(v: unknown): string | null {
   return Number.isFinite(d.getTime()) && d.toISOString().slice(0, 10) === iso ? iso : null;
 }
 export function leerLiquidacionDga(text: string): LiquidacionDga | null {
-  if (!/Reporte de Liquidaci[oó]n de Impuestos/i.test(text)) return null;
-  const valor = (label: string) => texto(text.match(new RegExp(`(?:^|\\n)\\s*${label}\\s*:[ \\t]*([^\\n]*)`, "i"))?.[1]);
+  if (!/Reporte\s*de\s*Liquidaci[oó]n\s*de\s*Impuestos/i.test(text)) return null;
+  // Etiquetas partidas en dos líneas y «:» en su propia línea (formato LCL): el valor pasa a la línea
+  // siguiente solo si el «:» quedó aislado o si esa línea no es otra etiqueta.
+  const valor = (label: string) => {
+    const re = new RegExp(`(?:^|\\n)[ \\t]*${label.replace(/ /g, "\\s+")}[ \\t]*(\\n[ \\t]*)?:[ \\t]*([^\\n]*)(?:\\n([^\\n:]*)(?=\\n|$))?`, "i");
+    const m = text.match(re);
+    if (!m) return null;
+    return texto(m[2]) ?? texto(m[3]);
+  };
   const dinero = (label: string) => {
     const raw = valor(label)?.match(/^\$?\s*([\d,]+(?:\.\d+)?)/)?.[1];
     return raw ? Number(raw.replace(/,/g, "")) : null;
   };
-  const puerto = valor("Dep[oó]sito de Destino");
-  const codigo = puerto?.match(/^\[([^\]]+)\]/)?.[1];
-  const obs = text.match(/(?:^|\n)OBSERVACIONES\s*\n([\s\S]*?)(?=\n\s*ITEM\s+ARANCEL)/i)?.[1]?.replace(/^Declaraci[oó]n de Siga Interno\s*\n/i, "").trim();
+  // En LCL el Depósito de Destino es un almacén ([EMWH…]), no el puerto: solo se usa con código de puerto DO***.
+  const deposito = valor("Dep[oó]sito de Destino");
+  const codigo = deposito?.match(/^\[(DO[A-Z]{3})\]/)?.[1];
+  const puerto = codigo ? deposito : null;
+  const obs = text.match(/(?:^|\n)OBSERVACIONES\s*\n([\s\S]*?)(?=\n\s*ITEM\s+ARANCEL)/i)?.[1]?.replace(/^Declaraci[oó]n (?:de Siga Interno|Web)\s*\n/i, "").trim();
   const numero = valor("Liquidaci[oó]n")?.match(/^([\w]+-CL\d+-[\w-]+)/i)?.[1] ?? null;
-  return { numero, estado: valor("Estado"), declaracion: valor("Declaraci[oó]n")?.replace(/\s*\([^)]*\)\s*$/, "") ?? null,
+  const declaracion = leerNumeroDeclaracion(text);
+  return { numero, estado: valor("Estado"), declaracion: declaracion.numero, declaracion_motivo: declaracion.motivo, lectura_texto: true,
+    exp: expDesdeTexto(obs ?? text), importador: valor("Importador") ?? valor("Consignatario"),
     fecha_declaracion: fechaLiquidacion(valor("Fecha Decl\\.")), bl: valor("N[uú]mero B/L"), llegada: fechaLiquidacion(valor("Fecha Llegada")),
     puerto: puerto?.replace(/^\[[^\]]+\]\s*/, "") ?? null, puerto_codigo: codigo ?? null,
     peso_neto: dinero("Peso Neto KG"), manifiesto: valor("Manifiesto"), resultado_inspeccion: valor("ResuInsp"),
@@ -47,7 +61,7 @@ export function decidirLiquidacionDga(actual: Record<string, unknown>, datos: Li
     if (campoDgaVacio(actual[campo]) || (incluirCoincidente && String(actual[campo]) === String(valor))) Object.assign(cambios, { [campo]: valor });
     else if (String(actual[campo]) !== String(valor)) avisos.push(`${label}: documento ${valor}; expediente ${actual[campo]}. Se conserva el dato del expediente.`);
   };
-  completar("numero_dua", texto(datos.declaracion), "Declaración DUA", true);
+  // «Declaración DUA» la decide `declaracion-dua` (solo si está vacía, con etiqueta Automático y Auditoría).
   completar("fecha_presentacion_real", fechaLiquidacion(datos.fecha_declaracion), "Fecha de Presentación", true);
   completar("bl_awb", texto(datos.bl), "BL/AWB"); completar("fecha_llegada_real", fechaLiquidacion(datos.llegada), "Llegada");
   completar("puerto_arribo", texto(datos.puerto), "Puerto");

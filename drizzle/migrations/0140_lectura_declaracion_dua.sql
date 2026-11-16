@@ -1,0 +1,4 @@
+ALTER TABLE public.expedientes ADD COLUMN IF NOT EXISTS dga_auto jsonb NOT NULL DEFAULT '{}'::jsonb;
+COMMENT ON COLUMN public.expedientes.dga_auto IS 'Campos completados desde la Liquidación de Impuestos o el DUA: {campo: {valor, documento_id, tipo_documento, fuente, fecha, origen}}. La etiqueta Automático solo se muestra mientras el valor actual coincide.';
+ALTER TABLE public.documentos ADD COLUMN IF NOT EXISTS lectura_dua jsonb;
+COMMENT ON COLUMN public.documentos.lectura_dua IS 'Lectura del número de Declaración (DUA) de este archivo: {archivo, tipo, estado, numero, fuente, motivo, alertas, procesado_en, origen}. Si archivo difiere de storage_path, el documento está sin leer.';

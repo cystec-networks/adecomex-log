@@ -42,7 +42,7 @@ import {
   DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, CheckCircle2, Circle, Clock, Upload, Plus, FileText, AlertTriangle, DollarSign, Pencil, Trash2, Copy, ExternalLink, Search, Scale, ShieldCheck, LayoutGrid, FileCheck, Download, Check, FileOutput, ChevronDown, ChevronRight, RefreshCw, Globe, Ship, Container, MoreVertical, Printer, Repeat2, Mail, Undo2 } from "lucide-react";
-import { Dispatch, Fragment, SetStateAction, useEffect, useMemo, useRef, useState } from "react";
+import { Dispatch, Fragment, SetStateAction, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { fmtLocalDate, parseLocalDate, daysFromToday, hoyRD, hoyRDISO } from "@/lib/dates";
@@ -68,7 +68,9 @@ import { TIPO_CARTA_RUTA, TIPO_SOLICITUD_DESPACHO, decidirDespachoCartaRuta, gua
 import { extractSolicitudFromDocument } from "@/lib/ai-ocr.functions";
 import { DeclaracionOrigenProvider, useDeclaracionOrigen } from "@/components/declaracion-origen-context";
 import { LiquidacionDgaProvider, useLiquidacionDga } from "@/components/liquidacion-dga-context";
-import { decidirLiquidacionDga, prepararGuardadoLiquidacion, type CambiosLiquidacion } from "@/lib/liquidacion-dga-documento";
+import { prepararGuardadoLiquidacion, type CambiosLiquidacion } from "@/lib/liquidacion-dga-documento";
+import { EtiquetaAutoDua, LecturaDuaDocumento, avisarLecturaDua, useProcesarLecturaDua } from "@/components/lectura-dua";
+import { TIPO_DUA, TIPO_LIQUIDACION, esTipoLecturaDua } from "@/lib/declaracion-dua";
 import { TIPO_SEGUIMIENTO_SIGA, type SeguimientoSiga } from "@/lib/seguimiento-siga";
 import { aplicarSeguimientoSiga, evaluarSeguimientoSiga, type EvaluacionSiga } from "@/lib/seguimiento-siga-evaluar";
 import { AvisosSeguimientoSiga, DatosSigaBlock, EtiquetaAutoSiga, HistorialProcesosSiga, RevisionSeguimientoSiga, useLeerSeguimientoSiga, type LecturaSigaPendiente } from "@/components/seguimiento-siga";
@@ -310,8 +312,8 @@ const BLOQUE_LIQUIDACION: { tipo: string; label: string }[] = [
 const TIPO_OTROS_DECLARACION = "Otro";
 const TIPO_OTROS_LIQUIDACION = "Otro (Liquidación)";
 
-function FilaDocumento({ label, obligatorio, doc, nombres = {}, onUpload, onMarcarRecibido, onEstado, onEliminar }: {
-  label: string; obligatorio?: boolean; doc?: any; nombres?: Record<string, string>;
+function FilaDocumento({ label, obligatorio, doc, nombres = {}, onUpload, onMarcarRecibido, onEstado, onEliminar, extra }: {
+  label: string; obligatorio?: boolean; doc?: any; nombres?: Record<string, string>; extra?: ReactNode;
   onUpload: () => void; onMarcarRecibido?: () => void; onEstado: (v: string) => void; onEliminar: () => void;
 }) {
   const st = DOC_ESTADO_STYLE[doc?.estado ?? "pendiente"] ?? DOC_ESTADO_STYLE.pendiente;
@@ -331,6 +333,7 @@ function FilaDocumento({ label, obligatorio, doc, nombres = {}, onUpload, onMarc
         </div>
         {doc?.tipo === TIPO_CARTA_RUTA && leerReferenciaCartaRuta(doc.observaciones) && <div className="text-[11px] whitespace-normal break-words">{leerReferenciaCartaRuta(doc.observaciones)}</div>}
         {doc?.tipo === TIPO_SOLICITUD_DESPACHO && leerReferenciaSolicitudDespacho(doc.observaciones) && <div className="text-[11px] whitespace-normal break-words">No. de Solicitud: {leerReferenciaSolicitudDespacho(doc.observaciones)}</div>}
+        {extra}
       </div>
       <span className="w-16 shrink-0 font-mono text-[11px] text-primary">{doc?.storage_path && doc?.codigo_siga ? doc.codigo_siga : ""}</span>
       {doc ? (
@@ -3061,7 +3064,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               </SelectContent>
             </Select>
           </div>
-          <AutoField label="Declaración DUA" value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} req />
+          <AutoField label="Declaración DUA" labelExtra={!isNuevo ? <EtiquetaAutoDua exp={exp} valor={form.numero_dua} /> : undefined} value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} req />
           <div className="grid gap-1.5"><Label>N° de Manifiesto</Label><div className="min-h-9 flex items-center text-sm break-all" aria-label="N° de Manifiesto">{exp?.liq_dga_manifiesto || "—"}</div></div>
           <div className="grid gap-1.5"><Label>N° Resultado de Inspección</Label><div className="min-h-9 flex items-center text-sm break-all" aria-label="N° Resultado de Inspección">{exp?.liq_dga_resultado_inspeccion || "—"}</div></div>
           <div className="grid gap-1.5">
@@ -3523,6 +3526,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const [pagoDoc, setPagoDoc] = useState<DocumentoPagoSubido | null>(null);
   const [revisionSiga, setRevisionSiga] = useState<LecturaSigaPendiente | null>(null);
   const leerSiga = useLeerSeguimientoSiga();
+  const procesarDua = useProcesarLecturaDua();
   const [confirmacion, setConfirmacion] = useState<{ titulo: string; mensaje: string; requiereCheck?: boolean; resolve: (v: boolean) => void } | null>(null);
   const [confirmAck, setConfirmAck] = useState(false);
   const cerrarConfirmacion = (v: boolean) => { confirmacion?.resolve(v); setConfirmacion(null); };
@@ -3753,7 +3757,13 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       const tipoPago = TIPO_DOCUMENTO_PAGO[tipo];
       if (file && tipoPago && codigo && file.size <= 15 * 1024 * 1024) setPagoDoc({ file, tipo: tipoPago, codigo });
       if (file && tipoPago && file.size > 15 * 1024 * 1024) toast.warning("PDF guardado; supera 15 MB para lectura. Captura el costo manualmente en Costos.");
-      if (file && esDocumentoResultadoDga(tipo)) {
+      if (file && (tipo === TIPO_LIQUIDACION || tipo === TIPO_DUA)) {
+        try {
+          avisarLecturaDua(await procesarDua({ expedienteId, documentoId: docGuardadoId, archivo: pathGuardado, blob: file, nombre: file.name, tipo, origen: "manual" }));
+        } catch (e: unknown) {
+          toast.warning(`PDF guardado, pero no se pudo leer la Declaración: ${e instanceof Error ? e.message : "revisa los datos manualmente"}. Usa «Leer ahora» en el documento.`, { duration: 10000 });
+        }
+      } else if (file && esDocumentoResultadoDga(tipo)) {
         try {
           if (file.size > 15 * 1024 * 1024) throw new Error("el archivo supera 15MB para lectura automática; completa los campos manualmente");
           const bytes = new Uint8Array(await file.arrayBuffer());
@@ -3764,7 +3774,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           if (readError) throw readError;
           const visible = { ...actual, ...editorLiquidacion?.current?.leer() };
           const campos = completarResultadoDga(visible, camposDesdeDocumentoDga(tipo, res.resultado_dga ?? {}));
-          const decision = tipo === "Reporte de Liquidación de Impuestos" ? decidirLiquidacionDga(visible, res.resultado_dga ?? {}) : { cambios: {}, avisos: [] };
+          const decision: { cambios: CambiosLiquidacion; avisos: string[] } = { cambios: {}, avisos: [] };
           for (const aviso of decision.avisos) toast.warning(aviso, { duration: 12000 });
           const { cambios, previos } = prepararGuardadoLiquidacion(actual, decision.cambios, campos);
           const completados = Object.keys(cambios).length;
@@ -3878,6 +3888,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       onMarcarRecibido={() => marcarRecibido(item.tipo, latestByTipo.get(item.tipo))}
       onEstado={(v) => { const d = latestByTipo.get(item.tipo); if (d) cambiarEstado(d.id, v); }}
       onEliminar={() => { const d = latestByTipo.get(item.tipo); if (d) eliminar(d); }}
+      extra={esTipoLecturaDua(item.tipo) && latestByTipo.get(item.tipo) ? <LecturaDuaDocumento expedienteId={expedienteId} doc={latestByTipo.get(item.tipo)} /> : undefined}
     />
   );
 

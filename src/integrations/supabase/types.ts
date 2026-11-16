@@ -3101,6 +3101,7 @@ export type Database = {
           fecha_vencimiento: string | null
           file_hash: string | null
           id: string
+          lectura_dua: Json | null
           lectura_siga: Json | null
           observaciones: string | null
           origen_cambio: string | null
@@ -3122,6 +3123,7 @@ export type Database = {
           fecha_vencimiento?: string | null
           file_hash?: string | null
           id?: string
+          lectura_dua?: Json | null
           lectura_siga?: Json | null
           observaciones?: string | null
           origen_cambio?: string | null
@@ -3143,6 +3145,7 @@ export type Database = {
           fecha_vencimiento?: string | null
           file_hash?: string | null
           id?: string
+          lectura_dua?: Json | null
           lectura_siga?: Json | null
           observaciones?: string | null
           origen_cambio?: string | null
@@ -4279,6 +4282,7 @@ export type Database = {
           deposito_destino: string | null
           deposito_destino_codigo: string | null
           descripcion_mercancia: string | null
+          dga_auto: Json
           eliminado_en: string | null
           eliminado_por: string | null
           estado: Database["public"]["Enums"]["expediente_estado"]
@@ -4425,6 +4429,7 @@ export type Database = {
           deposito_destino?: string | null
           deposito_destino_codigo?: string | null
           descripcion_mercancia?: string | null
+          dga_auto?: Json
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["expediente_estado"]
@@ -4571,6 +4576,7 @@ export type Database = {
           deposito_destino?: string | null
           deposito_destino_codigo?: string | null
           descripcion_mercancia?: string | null
+          dga_auto?: Json
           eliminado_en?: string | null
           eliminado_por?: string | null
           estado?: Database["public"]["Enums"]["expediente_estado"]

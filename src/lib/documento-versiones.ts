@@ -90,5 +90,11 @@ export function describirAuditoria(a: FilaAuditoria): string {
     const dif = Array.isArray(c.diferencias) ? c.diferencias.length : 0;
     return `Seguimiento SIGA aplicado${via}: ${campos.length ? `completó ${campos.join(", ")}` : "sin campos vacíos que completar"}${procesos ? ` · ${procesos} proceso(s) SIGA nuevo(s)` : ""}${dif ? ` · ${dif} diferencia(s) sin sobrescribir` : ""}`;
   }
+  if (a.accion === "dua_automatico" || a.accion === "dua_no_aplicado") {
+    const desde = c.tipo_documento === "Declaración Única Aduanera (DUA)" ? "el DUA" : "la Liquidación de Impuestos";
+    const via = c.origen === "retroactivo" ? " (completado retroactivamente)" : c.origen === "leer_ahora" ? " · Leer ahora" : "";
+    if (a.accion === "dua_no_aplicado") return `Declaración DUA no aplicada desde ${desde}${via}${typeof c.motivo === "string" && c.motivo ? `: ${c.motivo}` : ""}`;
+    return `Declaración DUA automática: ${String(c.numero_dua ?? "")} desde ${desde}${c.fuente === "archivo" ? " (nombre del archivo)" : ""}${via}`;
+  }
   return a.accion;
 }

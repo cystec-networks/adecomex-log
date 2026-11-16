@@ -106,6 +106,10 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
     const num = (v: unknown) => (v != null && v !== "" && !isNaN(Number(v)) ? Number(v) : null);
 
     let parsed = parsearJson(raw) as Partial<OcrExtraction>;
+    // El número de Declaración solo se toma por reglas fijas del texto (o del nombre del archivo), nunca de la IA.
+    if (data.resultado_dga === "Reporte de Liquidación de Impuestos" && !liquidacionTexto && parsed.resultado_dga) {
+      parsed.resultado_dga = { ...parsed.resultado_dga, declaracion: null, lectura_texto: false } as typeof parsed.resultado_dga;
+    }
 
     if (isPdf && !data.pago_puerto && !data.resultado_dga && !data.certificado_origen_dga && !data.carta_ruta) {
       try {

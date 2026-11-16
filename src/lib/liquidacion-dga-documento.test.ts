@@ -8,13 +8,14 @@ describe("Liquidación DGA documental", () => {
     const datos = leerLiquidacionDga(`Reporte de Liquidación de Impuestos\nDeclaración : 10150-IC01-2610-003868 (1.00)\nFecha Decl. : 22/10/2026\nManifiesto : IGMM2026101327\nResuInsp : 10150-IC10-2610-00260E (1.00)`);
     assert.ok(datos);
     const plan = prepararGuardadoLiquidacion(actual, decidirLiquidacionDga(actual, datos).cambios, {});
-    assert.deepEqual(plan.cambios, { numero_dua: "10150-IC01-2610-003868", fecha_presentacion_real: "2026-10-22", liq_dga_manifiesto: "IGMM2026101327", liq_dga_resultado_inspeccion: "10150-IC10-2610-00260E (1.00)" });
-    assert.deepEqual(plan.previos, actual);
+    assert.deepEqual(plan.cambios, { fecha_presentacion_real: "2026-10-22", liq_dga_manifiesto: "IGMM2026101327", liq_dga_resultado_inspeccion: "10150-IC10-2610-00260E (1.00)" });
+    assert.equal(datos.declaracion, "10150-IC01-2610-003868");
   });
-  it("Temporal completa solo DUA fecha puerto y peso, nunca identificadores vacíos", () => {
+  it("Temporal completa solo fecha puerto y peso, nunca identificadores vacíos", () => {
     const datos = leerLiquidacionDga(temporal); assert.ok(datos);
     assert.equal(datos.numero, null);
-    assert.deepEqual(decidirLiquidacionDga({}, datos).cambios, { numero_dua: "10150-IC01-2610-004156", fecha_presentacion_real: "2026-10-26", puerto_arribo: "CAUCEDO", puerto_arribo_codigo: "DOCAU", peso_neto: 50000 });
+    assert.equal(datos.declaracion, "10150-IC01-2610-004156");
+    assert.deepEqual(decidirLiquidacionDga({}, datos).cambios, { fecha_presentacion_real: "2026-10-26", puerto_arribo: "CAUCEDO", puerto_arribo_codigo: "DOCAU", peso_neto: 50000 });
   });
   it("definitiva extrae número BL llegada manifiesto e inspección", () => {
     const datos = leerLiquidacionDga(temporal.replace("Temporal ()", "10150-CL11-2610-0031A5").replace("Manifiesto :", "Manifiesto : MAN-123").replace("ResuInsp : ()", "ResuInsp : RI-456").replace("Número B/L :", "Número B/L : MEDUDB736269").replace("Fecha Llegada : //", "Fecha Llegada : 23/10/2026")); assert.ok(datos);
