@@ -28,6 +28,10 @@ describe("documentos combinados", () => {
       ["Certificado de origen", [5]],
     ]);
   });
+  it("la constancia SIGA «Recepción de Prueba de Origen» es Certificado de Origen DGA, no el comercial", () => {
+    assert.equal(detectarTipoPagina("SOLICITUD DE TRATAMIENTO ARANCELARIO PREFERENCIAL BAJO TLC - RECEPCIÓN DE PRUEBA DE ORIGEN")?.tipo, "Certificado de Origen DGA");
+    assert.equal(detectarTipoPagina("CERTIFICATE OF ORIGIN FORM A")?.tipo, "Certificado de origen");
+  });
   it("una página inicial sin encabezado queda sin clasificar", () => {
     assert.deepEqual(segmentarPaginas([null, detectarTipoPagina("BILL OF LADING")]).map((s) => s.tipo), [null, "Bill of Lading"]);
   });

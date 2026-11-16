@@ -967,6 +967,13 @@
       "when": 1794537263102,
       "tag": "0137_conciliacion_automatica_secuencia_al_guardar",
       "breakpoints": true
+    },
+    {
+      "idx": 138,
+      "version": "7",
+      "when": 1794846789259,
+      "tag": "0138_hito_preferencia_certificado_dga",
+      "breakpoints": true
     }
   ]
 }

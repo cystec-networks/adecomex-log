@@ -107,7 +107,7 @@ function HitosRetroactivos() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-[16px] font-semibold flex items-center gap-2"><History className="h-4 w-4" />Hitos retroactivos del Checklist</h1>
-          <p className="text-[12px] text-muted-foreground">Completa los hitos 1, 2, 4 y 8 vacíos con la fecha de su regla automática. Nunca toca fechas puestas a mano.</p>
+          <p className="text-[12px] text-muted-foreground">Completa los hitos 1, 2, 3, 4 y 8 vacíos con la fecha de su regla automática. Nunca toca fechas puestas a mano.</p>
         </div>
         <Button onClick={() => setConfirmarAplicar(true)} disabled={!total || aplicar.isPending}>
           {aplicar.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Wand2 className="mr-1 h-4 w-4" />}Aplicar lote ({total} hitos)
@@ -158,7 +158,7 @@ function HitosRetroactivos() {
                 <tr key={c.hito_id} className="border-t">
                   <td className="py-1.5"><Link to="/expedientes/$id" params={{ id: c.expediente_id }} className="expediente-numero font-medium hover:underline">{c.numero}</Link></td>
                   <td>{HITOS_LOTE[c.hito_codigo]}</td><td>{estadoExpedienteLabel(c.estado_expediente)}</td>
-                  <td className="tabular-nums">{["documentos", "vuce_carga", "correo_dga", "correo"].includes(c.origen) ? fmtFechaHora(c.evento_fecha) : fmtFechaDia(c.evento_fecha)}</td>
+                  <td className="tabular-nums">{["documentos", "vuce_carga", "correo_dga", "correo", "certificado_dga"].includes(c.origen) ? fmtFechaHora(c.evento_fecha) : fmtFechaDia(c.evento_fecha)}</td>
                   <td>{fuenteCandidato(c)}</td>
                 </tr>))}</tbody>
             </table>

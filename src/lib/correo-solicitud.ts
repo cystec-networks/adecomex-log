@@ -1,4 +1,5 @@
 /** Recepción de solicitudes de servicio por correo: aislar el mensaje nuevo y extraer datos sin inventar. */
+import { TIPO_CERTIFICADO_DGA } from "./certificado-origen-dga";
 
 const MARCADORES: RegExp[] = [
   /^\s*-{2,}\s*(forwarded message|mensaje reenviado|original message|mensaje original)\s*-{2,}/im,
@@ -169,8 +170,15 @@ export const TIPOS_ADJUNTO_CORREO = [
  */
 export const TIPOS_PAGO_CORREO = ["Recibo Pago de Impuestos", "PIN de Pago de Impuestos"] as const;
 
-/** Todo tipo que la lectura de un adjunto de correo puede reconocer (embarque + pagos de impuestos). */
-export const TIPOS_RECONOCIDOS_CORREO: readonly string[] = [...TIPOS_ADJUNTO_CORREO, ...TIPOS_PAGO_CORREO];
+/**
+ * Documentos que solo van a la casilla de un Expediente existente y nunca crean solicitud:
+ * pagos de impuestos y la constancia oficial «Certificado de Origen DGA» (se obtiene en SIGA
+ * para un Expediente ya abierto; no es un embarque nuevo).
+ */
+export const TIPOS_SOLO_EXPEDIENTE_CORREO: readonly string[] = [...TIPOS_PAGO_CORREO, TIPO_CERTIFICADO_DGA];
+
+/** Todo tipo que la lectura de un adjunto de correo puede reconocer (embarque + pagos + constancia DGA). */
+export const TIPOS_RECONOCIDOS_CORREO: readonly string[] = [...TIPOS_ADJUNTO_CORREO, ...TIPOS_SOLO_EXPEDIENTE_CORREO];
 
 /** Normaliza el tipo propuesto por la IA; lo no reconocido queda en «Otro». */
 export function tipoAdjuntoCorreo(v: unknown): string {
@@ -182,6 +190,8 @@ export function tipoAdjuntoCorreo(v: unknown): string {
   if (/VUCE/.test(n) && /PIN|PAGO|RECIBO|COMPROBANTE/.test(n)) return "Otro";
   if (/PIN/.test(n) && /PAGO|IMPUESTO|DGA|ADUANA/.test(n)) return "PIN de Pago de Impuestos";
   if (/RECIBO|COMPROBANTE/.test(n) && /IMPUESTO|DGA|ADUANA/.test(n)) return "Recibo Pago de Impuestos";
+  // Constancia oficial SIGA de origen (DGA) antes que el certificado comercial: nunca al revés.
+  if (/PRUEBADEORIGEN|TRATAMIENTOARANCELARIO/.test(n) || (/ORIGIN|ORIGEN/.test(n) && /DGA|SIGA|ADUANA/.test(n))) return TIPO_CERTIFICADO_DGA;
   if (/BILLOFLADING|^BL$|CONOCIMIENTO/.test(n)) return "Bill of Lading";
   if (/VUCE|PERMISOPREVIO|IMPORTPERMIT|PERMISODEIMPORTACION/.test(n)) return "Permiso VUCE previo";
   if (/AIRWAYBILL|AIRWAYBILL|AWB|GUIAAEREA/.test(n)) return "Guía aérea";

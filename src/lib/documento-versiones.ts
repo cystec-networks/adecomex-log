@@ -48,7 +48,7 @@ type FilaAuditoria = { accion: string; entidad: string; cambios?: unknown };
 const ORIGEN_HITO: Record<string, string> = {
   correo: "correo recibido", documentos: "primera carga de documentos", vuce_pdf: "PDF del permiso VUCE",
   vuce_ficha: "ficha del permiso VUCE", vuce_carga: "carga del PDF del permiso VUCE", correo_dga: "correo a DGA preparado",
-  gestor: "envío al gestor", ecf: "emisión e-CF",
+  gestor: "envío al gestor", ecf: "emisión e-CF", certificado_dga: "Certificado de Origen DGA",
 };
 
 /** Texto legible de la Bitácora; las acciones sin descripción propia se muestran tal cual. */
@@ -64,7 +64,16 @@ export function describirAuditoria(a: FilaAuditoria): string {
   if (a.accion === "hito_automatico") {
     const f = typeof c.fecha === "string" ? c.fecha.split("-").reverse().join("/") : "";
     const retro = c.detalle && typeof c.detalle === "object" && (c.detalle as Record<string, unknown>).retroactivo === true;
-    return `Fecha automática del hito «${hito}»${f ? `: ${f}` : ""}${ORIGEN_HITO[String(c.origen)] ? ` · ${ORIGEN_HITO[String(c.origen)]}` : ""}${retro ? " (completado retroactivamente)" : ""}`;
+    const det = (c.detalle && typeof c.detalle === "object" ? c.detalle : {}) as Record<string, unknown>;
+    const extra = c.origen === "certificado_dga"
+      ? `${typeof det.codigo_siga === "string" && det.codigo_siga ? ` (${det.codigo_siga})` : ""}${typeof det.usuario === "string" && det.usuario ? ` · ${det.usuario}` : ""}`
+      : "";
+    return `Fecha automática del hito «${hito}»${f ? `: ${f}` : ""}${ORIGEN_HITO[String(c.origen)] ? ` · ${ORIGEN_HITO[String(c.origen)]}` : ""}${extra}${retro ? " (completado retroactivamente)" : ""}`;
+  }
+  if (a.accion === "hito_documento_origen_eliminado") {
+    const f = typeof c.fecha === "string" ? c.fecha.split("-").reverse().join("/") : "";
+    const accion = c.motivo === "reclasificado" ? "cambió de tipo o de Expediente" : "se eliminó";
+    return `${doc || "Documento"} ${accion}; la fecha del hito «${hito}»${f ? ` (${f})` : ""} se conserva`;
   }
   if (a.accion === "hito_automatico_retirado") return `Fecha automática retirada del hito «${hito}» (su origen ya no existe)`;
   if (a.accion === "enviado_gestor") return `Expediente enviado al gestor${typeof c.gestor === "string" && c.gestor ? ` ${c.gestor}` : ""}`;

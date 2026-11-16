@@ -28,6 +28,7 @@ describe("tipo por encabezado", () => {
     assert.equal(tipoPorEncabezado("Exporter | Bill of Lading No | Pages\nExport Invoice No & Date"), null);
     assert.equal(tipoPorEncabezado("Farmel B.V.\nCERTIFICAAT VAN OORSPRONG\nCERTIFICATE OF ORIGIN\nCERTIFICADO DE ORIGEN"), "Certificado de origen");
     assert.equal(tipoPorEncabezado("MSC\nBILL OF LADING NON-NEGOTIABLE\nShipper"), "Bill of Lading");
+    assert.equal(tipoPorEncabezado("DIRECCION GENERAL DE ADUANAS\nSolicitud de Tratamiento Arancelario Preferencial bajo TLC\nRecepción de Prueba de Origen\nNúmero 10150-IC13-2610-000949"), "Certificado de Origen DGA");
     assert.equal(tipoPorEncabezado("MINISTERIO DE AGRICULTURA\nA U T O R I Z A C I O N\n1) Certificado de no objeción\n2) Factura Comercial."), null);
   });
 });

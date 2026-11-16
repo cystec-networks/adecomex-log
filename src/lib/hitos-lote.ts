@@ -4,6 +4,7 @@ import { ESTADO_LABEL } from "@/lib/estados-expediente";
 export const HITOS_LOTE: Record<string, string> = {
   documentos_recibidos: "1 · Documentos digitales recibidos",
   permiso_vuce_solicitado: "2 · Permiso VUCE solicitado",
+  preferencia_arancelaria_siga: "3 · Preferencia arancelaria en SIGA",
   solicitud_oficio_dga: "4 · Solicitud de oficio a DGA",
   factura_venta_enviada: "8 · Factura de venta enviada",
 };
@@ -17,7 +18,7 @@ export type CandidatoHito = {
 const ORIGEN: Record<string, string> = {
   correo: "Correo original", documentos: "Primera carga de documentos", vuce_pdf: "PDF del permiso VUCE",
   vuce_ficha: "Fecha de Solicitud de la ficha", vuce_carga: "Carga del PDF del permiso", correo_dga: "Correo a DGA preparado",
-  ecf: "Emisión e-CF",
+  ecf: "Emisión e-CF", certificado_dga: "Carga del Certificado de Origen DGA",
 };
 
 /** «De dónde sale» la fecha, con el dato concreto (tipo de documento, permiso, e-NCF o usuario). */

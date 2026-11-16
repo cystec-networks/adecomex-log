@@ -9149,7 +9149,7 @@ export type Database = {
         Returns: boolean
       }
       aplicar_lote_hitos_retroactivos: {
-        Args: { p_excluir?: string[] }
+        Args: { p_codigos?: string[]; p_excluir?: string[] }
         Returns: string
       }
       aprender_cuenta_beneficiario: {

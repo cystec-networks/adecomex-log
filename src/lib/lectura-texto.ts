@@ -36,6 +36,8 @@ export function tipoPorEncabezado(texto: string): string | null {
   const pagina1 = texto.replace(/^--- Página 1 ---\n/, "").split(/\n--- Página \d+ ---\n/)[0];
   const normal = pagina1.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
   const renglones = normal.split("\n").slice(0, 30);
+  // Constancia oficial SIGA «Recepción de Prueba de Origen»: es el Certificado de Origen DGA, no el comercial.
+  if (renglones.some((r) => /RECEPCION\s+DE\s+PRUEBA\s+DE\s+ORIGEN|TRATAMIENTO\s+ARANCELARIO\s+PREFERENCIAL/.test(r))) return "Certificado de Origen DGA";
   if (renglones.some((r) => /\b(STATEMENT|ESTADO\s+DE\s+CUENTA|QUOTATION|COTIZACION|DEBIT\s+NOTE|ARRIVAL\s+NOTICE|AVISO\s+DE\s+LLEGADA|VUCE|PIN|RECIBO|COMPROBANTE)\b/.test(r))) return null;
   // Solo celdas que son únicamente palabras (sin numeración, puntos ni cifras: «2) Factura Comercial.» no es un título).
   const celdas = renglones.flatMap((r) => r.split(" | ")).map((c) => c.trim()).filter((c) => /^[A-Z][A-Z\s-]*$/.test(c)).map((c) => c.replace(/\s+/g, " ").replace(ADORNOS, "").trim());

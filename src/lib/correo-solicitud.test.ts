@@ -71,7 +71,7 @@ describe("asunto del correo", () => {
   });
 });
 
-import { fusionarAdjuntos, tipoAdjuntoCorreo } from "./correo-solicitud";
+import { fusionarAdjuntos, tipoAdjuntoCorreo, TIPOS_ADJUNTO_CORREO, TIPOS_SOLO_EXPEDIENTE_CORREO } from "./correo-solicitud";
 describe("adjuntos del correo", () => {
   const correo = { bl_awb: "MEDUAFV97440", eta: "2026-10-26", producto: "LECHE", cantidad: null, cliente_nombre: null };
   it("el documento adjunto gana sobre asunto/cuerpo y deja aviso verificar", () => {
@@ -101,6 +101,16 @@ describe("adjuntos del correo", () => {
     expect(tipoAdjuntoCorreo("PIN de pago DGA")).toBe("PIN de Pago de Impuestos");
     expect(tipoAdjuntoCorreo("PIN de Pago Permiso VUCE")).toBe("Otro");
     expect(tipoAdjuntoCorreo("Recibo Pago Permiso VUCE")).toBe("Otro");
+  });
+  it("la constancia SIGA de origen es «Certificado de Origen DGA», nunca el certificado comercial", () => {
+    expect(tipoAdjuntoCorreo("Certificado de Origen DGA")).toBe("Certificado de Origen DGA");
+    expect(tipoAdjuntoCorreo("Recepción de Prueba de Origen")).toBe("Certificado de Origen DGA");
+    expect(tipoAdjuntoCorreo("Certificate of Origin")).toBe("Certificado de origen");
+    expect(tipoAdjuntoCorreo("Certificado de origen")).toBe("Certificado de origen");
+  });
+  it("el Certificado de Origen DGA solo va a un Expediente existente y nunca crea solicitud", () => {
+    expect(TIPOS_SOLO_EXPEDIENTE_CORREO.includes("Certificado de Origen DGA")).toBe(true);
+    expect((TIPOS_ADJUNTO_CORREO as readonly string[]).includes("Certificado de Origen DGA")).toBe(false);
   });
 });
 

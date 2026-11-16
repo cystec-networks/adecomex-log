@@ -35,6 +35,23 @@ describe("hitos automáticos del Checklist", () => {
     expect(textoHitoAutomatico(h)).toBe("Emisión de la e-CF E310000000123 el 16/10/2026");
   });
 
+  it("hito 3: Certificado de Origen DGA con código, hora de subida y quién lo originó", () => {
+    const h = { auto_origen: "certificado_dga", auto_fecha: "2026-10-26T02:39:00Z", auto_detalle: { codigo_siga: "CEO-002", evento: "subido", usuario: "Correo automático" } };
+    expect(esHitoAutomatico(h)).toBe(true);
+    expect(etiquetaHitoAutomatico(h)).toBe("Automático");
+    // Hora real de subida en Santo Domingo: 25/10 22:39, no el día UTC.
+    expect(textoHitoAutomatico(h)).toBe("Certificado de Origen DGA (CEO-002) subido el 25/10/2026 22:39 por Correo automático");
+    expect(textoHitoAutomatico({ ...h, auto_detalle: { evento: "marcado_recibido", usuario: "Ana" } }))
+      .toBe("Certificado de Origen DGA marcado recibido el 25/10/2026 22:39 por Ana");
+  });
+
+  it("Auditoría: autocompletado del hito 3 y documento eliminado sin borrar la fecha", () => {
+    expect(describirAuditoria({ entidad: "expedientes", accion: "hito_automatico", cambios: { nombre: "Preferencia arancelaria presentada en SIGA (si aplica)", fecha: "2026-10-25", origen: "certificado_dga", detalle: { codigo_siga: "CEO-002", usuario: "Francisco López" } } }))
+      .toBe("Fecha automática del hito «Preferencia arancelaria presentada en SIGA (si aplica)»: 25/10/2026 · Certificado de Origen DGA (CEO-002) · Francisco López");
+    expect(describirAuditoria({ entidad: "expedientes", accion: "hito_documento_origen_eliminado", cambios: { nombre: "Preferencia arancelaria presentada en SIGA (si aplica)", fecha: "2026-10-25", tipo: "Certificado de Origen DGA", codigo_siga: "CEO-002", motivo: "eliminado" } }))
+      .toBe("Certificado de Origen DGA (CEO-002) se eliminó; la fecha del hito «Preferencia arancelaria presentada en SIGA (si aplica)» (25/10/2026) se conserva");
+  });
+
   it("una fecha manual nunca lleva etiqueta y editar a mano borra el origen automático", () => {
     expect(esHitoAutomatico({ auto_origen: "manual", auto_fecha: null })).toBe(false);
     expect(esHitoAutomatico({ auto_origen: "ecf", auto_fecha: DIA })).toBe(true);

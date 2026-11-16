@@ -5,7 +5,7 @@
  */
 import { fmtFechaHora } from "@/lib/documento-versiones";
 
-export const ORIGENES_AUTOMATICOS = ["correo", "documentos", "vuce_pdf", "vuce_ficha", "vuce_carga", "correo_dga", "gestor", "ecf"] as const;
+export const ORIGENES_AUTOMATICOS = ["correo", "documentos", "vuce_pdf", "vuce_ficha", "vuce_carga", "correo_dga", "gestor", "ecf", "certificado_dga"] as const;
 export type OrigenAutomatico = (typeof ORIGENES_AUTOMATICOS)[number];
 
 export type HitoAuto = {
@@ -74,6 +74,11 @@ export function textoHitoAutomatico(h: HitoAuto): string {
     case "ecf": {
       const encf = detalle(h, "encf");
       return `Emisión de la e-CF${encf ? ` ${encf}` : ""} el ${fmtFechaDia(f)}`;
+    }
+    case "certificado_dga": {
+      const codigo = detalle(h, "codigo_siga");
+      const accion = detalle(h, "evento") === "marcado_recibido" ? "marcado recibido" : "subido";
+      return `Certificado de Origen DGA${codigo ? ` (${codigo})` : ""} ${accion} el ${fmtFechaHora(f)}${por}`;
     }
     default: return "";
   }

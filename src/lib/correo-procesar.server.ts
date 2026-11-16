@@ -7,7 +7,7 @@ import { z } from "zod";
 import { aislarMensajeReciente, avisoFechaLlegada, combinarDatos, extraerPorEtiquetas, fusionarAsunto, fusionarAdjuntos } from "@/lib/correo-solicitud";
 import { adjuntoCorreoSchema, normalizarAdjuntosCorreo, mimeAdjuntoCorreo, deduplicarAdjuntosCorreo } from "@/lib/correo-adjuntos";
 import { decidirCorreo, DESCARTE_BREVE, esDocumentoImportacion, esPdfAdjunto, extraerNumeroVuce, normalizarBl, numerosExpedienteCorreo, pdfsFaltantes, propuestasParaExpediente, remitenteIgnorado, sha256Bytes, ubicarDocumentosExpediente, type CategoriaDescarte, type ConflictoDocumento } from "@/lib/correo-expediente";
-import { TIPOS_ADJUNTO_CORREO, TIPOS_PAGO_CORREO } from "@/lib/correo-solicitud";
+import { TIPOS_ADJUNTO_CORREO, TIPOS_SOLO_EXPEDIENTE_CORREO } from "@/lib/correo-solicitud";
 import { contextoExpediente, expedientesPorBl, expedientesPorNumero, expedientesPorVuce, verificarRemitente, type ExpedienteCorreo } from "@/lib/correo-recepcion.server";
 import { leerArchivoCorreo, MIME_OK, type AdjuntoProcesado } from "@/lib/correo-adjunto-lectura.server";
 import { contarPaginasPdf } from "@/lib/correo-documento-combinado.server";
@@ -277,8 +277,9 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
     return encolar(causa, e instanceof Error ? e.message : undefined);
   }
   const esImportacion = (a: AdjuntoProcesado) => esDocumentoImportacion(a, TIPOS_ADJUNTO_CORREO);
-  // Recibo/PIN de pago de impuestos: van a su casilla de un Expediente existente, nunca crean solicitud.
-  const esPago = (a: AdjuntoProcesado) => !a.combinado && (TIPOS_PAGO_CORREO as readonly string[]).includes(a.tipo);
+  // Recibo/PIN de pago de impuestos y Certificado de Origen DGA: van a su casilla de un Expediente
+  // existente, nunca crean solicitud.
+  const esPago = (a: AdjuntoProcesado) => !a.combinado && TIPOS_SOLO_EXPEDIENTE_CORREO.includes(a.tipo);
   const documentos = adjuntos.filter(esImportacion);
   const pagos = adjuntos.filter(esPago);
   const reconocido = (a: AdjuntoProcesado) => esImportacion(a) || esPago(a);

@@ -182,7 +182,7 @@ export const AVISO_CREADA_MANUAL = "Creada manualmente desde el registro de corr
 export function decidirCorreo(c: {
   forzado?: boolean; ignorado?: string | null; faltantes?: PdfsFaltantes | null; pdfs: number;
   documentos: number | null; ilegibles?: string[]; otros?: string[]; expediente?: string | null; ambiguos?: string | null;
-  /** PDF reconocidos como pago de impuestos (Recibo/PIN): solo se adjuntan a un Expediente existente. */
+  /** PDF que solo se adjuntan a un Expediente existente (Recibo/PIN de impuestos, Certificado de Origen DGA). */
   pagos?: number;
 }): DecisionCorreo {
   const pagos = c.pagos ?? 0;
@@ -200,8 +200,8 @@ export function decidirCorreo(c: {
   if (c.documentos == null) return { accion: "leer" };
   if (exp && c.documentos + pagos > 0) return { accion: "adjuntar" };
   if (c.documentos === 0 && pagos > 0) {
-    if (c.ambiguos) return { accion: "descartar", categoria: "ambiguo", motivo: `Pago de impuestos de varios Expedientes posibles (${c.ambiguos}); revisar y adjuntarlo a mano.` };
-    return { accion: "descartar", categoria: "sin_documentos", motivo: `Solo trae ${pagos === 1 ? "un pago" : `${pagos} pagos`} de impuestos y no corresponde a ningún Expediente registrado; un pago no crea solicitud.` };
+    if (c.ambiguos) return { accion: "descartar", categoria: "ambiguo", motivo: `Pago de impuestos o Certificado de Origen DGA de varios Expedientes posibles (${c.ambiguos}); revisar y adjuntarlo a mano.` };
+    return { accion: "descartar", categoria: "sin_documentos", motivo: `Solo trae ${pagos === 1 ? "un documento" : `${pagos} documentos`} de pago de impuestos o Certificado de Origen DGA y no corresponde a ningún Expediente registrado; estos documentos no crean solicitud.` };
   }
   if (c.documentos === 0) {
     const ilegibles = c.ilegibles ?? [];

@@ -7,12 +7,13 @@ export const MAX_SEGMENTOS_COMBINADO = 15;
 
 type Encabezado = { tipo: string; etiqueta: string; re: RegExp };
 
-// Orden importa: proforma antes que factura comercial.
+// Orden importa: proforma antes que factura comercial; constancia DGA antes que certificado comercial.
 const ENCABEZADOS: Encabezado[] = [
   { tipo: "Factura proforma", etiqueta: "Proforma Invoice", re: /PRO\s*-?\s*FORMA\s+INVOICE|FACTURA\s+PRO\s*-?\s*FORMA/ },
   { tipo: "Factura comercial", etiqueta: "Commercial Invoice", re: /COMMERCIAL\s+INVOICE|FACTURA\s+COMERCIAL/ },
   { tipo: "Lista de empaque", etiqueta: "Packing List", re: /PACKING\s+LIST|LISTA\s+DE\s+EMPAQUE/ },
   { tipo: "Otro", etiqueta: "Certificate of Production", re: /CERTIFICATE\s+OF\s+PRODUCTION|CERTIFICADO\s+DE\s+PRODUCCI[OÓ]N/ },
+  { tipo: "Certificado de Origen DGA", etiqueta: "Certificado de Origen DGA", re: /RECEPCI[OÓ]N\s+DE\s+PRUEBA\s+DE\s+ORIGEN|TRATAMIENTO\s+ARANCELARIO\s+PREFERENCIAL/ },
   { tipo: "Certificado de origen", etiqueta: "Certificate of Origin", re: /CERTIFICATE\s+OF\s+ORIGIN|CERTIFICADO\s+DE\s+ORIGEN|CAFTA|EUR\.?\s*1\b/ },
   { tipo: "Certificado de análisis", etiqueta: "Certificate of Analysis", re: /CERTIFICATE\s+OF\s+ANALYSIS|CERTIFICADO\s+DE\s+AN[AÁ]LISIS/ },
   { tipo: "Certificado Sanitario/Fitosanitario", etiqueta: "Certificado Sanitario/Fitosanitario", re: /PHYTOSANITARY|FITOSANITARIO|SANITARY\s+CERTIFICATE|HEALTH\s+CERTIFICATE|CERTIFICADO\s+SANITARIO/ },
