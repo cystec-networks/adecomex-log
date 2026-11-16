@@ -47,7 +47,7 @@ export function EtiquetaAutoSiga({ exp, campo, valor }: { exp: Record<string, un
 }
 
 const IconoCheck = ({ estado }: { estado: "coincide" | "no_coincide" | "sin_dato" }) =>
-  estado === "coincide" ? <CheckCircle2 className="h-4 w-4 text-primary" /> : estado === "no_coincide" ? <XCircle className="h-4 w-4 text-destructive" /> : <AlertTriangle className="h-4 w-4 text-muted-foreground" />;
+  estado === "coincide" ? <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" /> : estado === "no_coincide" ? <XCircle className="h-4 w-4 shrink-0 text-destructive" /> : <AlertTriangle className="h-4 w-4 shrink-0 text-muted-foreground" />;
 
 /**
  * Vista previa (simulación) antes de guardar: qué se completa, qué se conserva y qué procesos entran
@@ -127,9 +127,9 @@ export function RevisionSeguimientoSiga({ expedienteId, lectura, onClose }: { ex
           <div className="space-y-4 text-[13px]">
             <div className="grid gap-1.5 rounded-md border p-3">
               <div className="font-semibold">Emparejamiento</div>
-              <div className="flex items-center gap-2"><IconoCheck estado={ev.validacion.bl} />Doc.Embarque Hijo: <span className="font-medium break-all">{lectura.datos.bl_hijo ?? "—"}</span> <span className="text-muted-foreground">(el BL madre no se usa para emparejar)</span></div>
-              <div className="flex items-center gap-2"><IconoCheck estado={ev.validacion.cliente} />Cliente: <span className="font-medium">{[lectura.datos.consignatario, lectura.datos.consignatario_rnc].filter(Boolean).join(" · ") || "—"}</span></div>
-              <div className="flex items-center gap-2"><IconoCheck estado={ev.validacion.puerto} />Puerto de desembarque: <span className="font-medium">{lectura.datos.puerto_desembarque ?? "—"}</span></div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5"><IconoCheck estado={ev.validacion.bl} />Doc.Embarque Hijo: <span className="font-medium break-all">{lectura.datos.bl_hijo ?? "—"}</span><span className="basis-full pl-6 text-[11px] text-muted-foreground">(el BL madre no se usa para emparejar)</span></div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5"><IconoCheck estado={ev.validacion.cliente} />Cliente: <span className="font-medium">{[lectura.datos.consignatario, lectura.datos.consignatario_rnc].filter(Boolean).join(" · ") || "—"}</span></div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5"><IconoCheck estado={ev.validacion.puerto} />Puerto de desembarque: <span className="font-medium">{lectura.datos.puerto_desembarque ?? "—"}</span></div>
               {ev.validacion.errores.map((e) => <div key={e} className="text-destructive">{e}</div>)}
               {ev.validacion.avisos.map((e) => <div key={e} className="text-muted-foreground text-[12px]">{e}</div>)}
             </div>
@@ -315,8 +315,8 @@ export function HistorialProcesosSiga({ expedienteId }: { expedienteId: string }
           <tbody>
             {data.map((p: any) => (
               <tr key={p.id} className="border-t">
-                <td className="px-3 py-1.5">{PROCESOS_SIGA[p.proceso as keyof typeof PROCESOS_SIGA] ?? p.etiqueta ?? p.proceso}</td>
-                <td className="px-3 py-1.5 break-all">{p.numero_solicitud ?? "—"}</td>
+                <td className="px-3 py-1.5 whitespace-nowrap">{PROCESOS_SIGA[p.proceso as keyof typeof PROCESOS_SIGA] ?? p.etiqueta ?? p.proceso}</td>
+                <td className="px-3 py-1.5 whitespace-nowrap">{p.numero_solicitud ?? "—"}</td>
                 <td className="px-3 py-1.5 whitespace-nowrap">{fmtFechaSiga(p.fecha_texto)}</td>
                 <td className="px-3 py-1.5">{p.estado ?? "—"}</td>
                 <td className="px-3 py-1.5 text-muted-foreground">{p.origen === "correo" ? "Correo automático" : "Carga manual"}</td>
