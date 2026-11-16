@@ -148,7 +148,7 @@ export function RevisionSeguimientoSiga({ expedienteId, lectura, onClose }: { ex
                   {cambios.length === 0 ? <div className="text-muted-foreground">No hay campos vacíos que completar.</div> : (
                     <table className="w-full text-[12px]"><tbody>
                       {cambios.map(([k, v]) => (
-                        <tr key={k} className="border-b last:border-0"><td className="py-1 pr-2 text-muted-foreground">{LABEL_CAMPO_SIGA[k] ?? k}</td><td className="py-1 font-medium break-all">{k === "area_aduanera" ? `${v} (${ev.decision.cambios.area_aduanera_codigo})` : fmtValor(k, v)}</td></tr>
+                        <tr key={k} className="border-b last:border-0"><td className="py-1 pr-2 text-muted-foreground">{LABEL_CAMPO_SIGA[k] ?? k}</td><td className="py-1 font-medium break-words">{k === "area_aduanera" ? `${v} (${ev.decision.cambios.area_aduanera_codigo})` : fmtValor(k, v)}</td></tr>
                       ))}
                     </tbody></table>
                   )}
@@ -295,10 +295,13 @@ export function LecturaSigaDocumento({ expedienteId, doc }: { expedienteId: stri
   else if (l.estado === "rechazado") linea = <><span className="text-destructive">No aplicado: {l.validacion?.errores?.join(" ") || "no corresponde a este Expediente."}</span>{boton}</>;
   else if (l.estado === "pendiente") linea = <><span>Leído, sin aplicar.</span><Button size="sm" variant="outline" className="h-5 px-1.5 text-[11px]" onClick={() => revisar(doc, l)}>Revisar</Button></>;
   else if (l.estado === "aplicado") {
-    const partes = [`${l.completados?.length ?? 0} campo(s) completado(s)`, `${l.procesos_nuevos ?? 0} proceso(s) nuevo(s)`];
-    if (l.procesos_actualizados) partes.push(`${l.procesos_actualizados} actualizado(s)`);
+    const partes: string[] = [];
+    if (l.completados?.length) partes.push(`${l.completados.length} campo(s) completado(s)`);
+    if (l.procesos_nuevos) partes.push(`${l.procesos_nuevos} proceso(s) nuevo(s)`);
+    if (l.procesos_actualizados) partes.push(`${l.procesos_actualizados} proceso(s) actualizado(s)`);
     if (l.hitos?.length) partes.push("fecha de despacho completo en el Checklist");
-    linea = <><span>Aplicado: {partes.join(", ")}.</span>{boton}</>;
+    const cuando = l.procesado_en ? new Date(l.procesado_en).toLocaleString("es-DO", { timeZone: "America/Santo_Domingo", dateStyle: "short", timeStyle: "short" }) : "";
+    linea = <><span>Aplicado{cuando ? ` el ${cuando}` : ""}: {partes.length ? partes.join(", ") : "sin datos nuevos; lo demás ya coincidía"}.</span>{boton}</>;
   } else linea = <><span>Seguimiento SIGA sin leer.</span>{boton}</>;
   return (
     <div className="text-[11px] whitespace-normal break-words">
