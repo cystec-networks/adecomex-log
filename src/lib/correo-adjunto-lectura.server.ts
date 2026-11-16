@@ -4,7 +4,8 @@ import { callGateway } from "@/lib/ai-gateway.server";
 import { tipoPaginaConfiable } from "./juego-documentos-confianza";
 import { MODELO_ECONOMICO, MODELO_EXTRACCION } from "./ia-consumo";
 import { INSTRUCCION_CANTIDAD, tipoPorEncabezado } from "./lectura-texto";
-import { textoPdfDigital } from "./pdf-texto.server";
+import { textoPdfDigital, textoPdfRenglones } from "./pdf-texto.server";
+import { esSeguimientoSiga, leerSeguimientoSiga, TIPO_SEGUIMIENTO_SIGA } from "./seguimiento-siga";
 import { causaPausaIa } from "./ia-consumo.server";
 import { TIPO_CERTIFICADO_DGA } from "./certificado-origen-dga";
 
@@ -29,7 +30,7 @@ export const bytesABase64 = (bytes: Uint8Array) => {
 const OTROS_CORREO = "Son 'Otro': estados de cuenta, facturas o cotizaciones de servicios locales (agencia, naviera, transporte, almacén, puerto), tarifas, presentaciones comerciales, reportes o tickets de sistemas (p. ej. DPH, sys_Rep_Release), cartas y notificaciones.";
 const LISTA_TIPOS = () => TIPOS_RECONOCIDOS_CORREO.map((t) => `'${t}'`).join(", ");
 /** Distingue la constancia oficial SIGA del certificado comercial (EUR-1, CAFTA, etc.). */
-const CERTIFICADO_DGA = "'Certificado de Origen DGA' es solo la constancia oficial de SIGA/DGA «Solicitud de Tratamiento Arancelario Preferencial bajo TLC — Recepción de Prueba de Origen» (con Número tipo 10150-IC13-2610-000949); el certificado emitido por el exportador o una cámara (EUR-1, CAFTA-DR, Form A, etc.) es 'Certificado de origen'.";
+const CERTIFICADO_DGA = "'Seguimiento SIGA (Estado de Desaduanización)' es el reporte de SIGA/DGA del estado del embarque con Doc.Embarque Hijo, No. Control de Carga y procesos (manifiesto, entrada, transportación). 'Certificado de Origen DGA' es solo la constancia oficial de SIGA/DGA «Solicitud de Tratamiento Arancelario Preferencial bajo TLC — Recepción de Prueba de Origen» (con Número tipo 10150-IC13-2610-000949); el certificado emitido por el exportador o una cámara (EUR-1, CAFTA-DR, Form A, etc.) es 'Certificado de origen'.";
 const PROMPT_COMBINADO = () => PROMPT_DOCUMENTO_IMPORTACION + ` Agrega también la clave 'tipo_documento': exactamente uno de ${LISTA_TIPOS()} u 'Otro' si el documento no es ninguno de ellos. 'Factura comercial' es solo la factura del proveedor o exportador por la mercancía importada. ${PAGOS_IMPUESTOS} ${CERTIFICADO_DGA} ${OTROS_CORREO}` + INSTRUCCION_CANTIDAD;
 
 type Contenido = Parameters<typeof callGateway>[0]["messages"][number]["content"];
@@ -67,6 +68,12 @@ export async function leerArchivoCorreo(nombre: string, mime: string, base64: st
   const texto = esPdf ? await textoPdfDigital(bytes) : null;
   const contenidoTexto = texto ? `Texto del PDF digital renglón por renglón (" | " separa columnas):\n${texto}` : "";
 
+  // Seguimiento SIGA: se reconoce y se lee con reglas fijas, sin IA (el respaldo corre al ubicarlo).
+  const renglones = esPdf ? texto ?? await textoPdfRenglones(bytes) : null;
+  if (renglones && esSeguimientoSiga(renglones)) {
+    const siga = leerSeguimientoSiga(renglones);
+    return { ...base, tipo: TIPO_SEGUIMIENTO_SIGA, bl_awb: siga?.bl_hijo ?? null, datos: siga ? { seguimiento_siga: siga } : {} };
+  }
   let tipo = texto ? tipoPorEncabezado(texto) : null;
   let j: Record<string, any> = {};
   if (!tipo) {
@@ -75,7 +82,7 @@ export async function leerArchivoCorreo(nombre: string, mime: string, base64: st
     else if (c.confianza === "alta") return base;
   }
   // La constancia DGA solo va a su casilla del Expediente: no hay datos de embarque que extraer.
-  if (tipo === TIPO_CERTIFICADO_DGA) return { ...base, tipo };
+  if (tipo === TIPO_CERTIFICADO_DGA || tipo === TIPO_SEGUIMIENTO_SIGA) return { ...base, tipo };
 
   let error: string | undefined;
   if (tipo === "Factura comercial" || tipo === "Factura proforma") {

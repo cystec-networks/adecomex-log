@@ -1,5 +1,6 @@
 /** Recepción de solicitudes de servicio por correo: aislar el mensaje nuevo y extraer datos sin inventar. */
 import { TIPO_CERTIFICADO_DGA } from "./certificado-origen-dga";
+import { TIPO_SEGUIMIENTO_SIGA } from "./seguimiento-siga";
 
 const MARCADORES: RegExp[] = [
   /^\s*-{2,}\s*(forwarded message|mensaje reenviado|original message|mensaje original)\s*-{2,}/im,
@@ -175,7 +176,7 @@ export const TIPOS_PAGO_CORREO = ["Recibo Pago de Impuestos", "PIN de Pago de Im
  * pagos de impuestos y la constancia oficial «Certificado de Origen DGA» (se obtiene en SIGA
  * para un Expediente ya abierto; no es un embarque nuevo).
  */
-export const TIPOS_SOLO_EXPEDIENTE_CORREO: readonly string[] = [...TIPOS_PAGO_CORREO, TIPO_CERTIFICADO_DGA];
+export const TIPOS_SOLO_EXPEDIENTE_CORREO: readonly string[] = [...TIPOS_PAGO_CORREO, TIPO_CERTIFICADO_DGA, TIPO_SEGUIMIENTO_SIGA];
 
 /** Todo tipo que la lectura de un adjunto de correo puede reconocer (embarque + pagos + constancia DGA). */
 export const TIPOS_RECONOCIDOS_CORREO: readonly string[] = [...TIPOS_ADJUNTO_CORREO, ...TIPOS_SOLO_EXPEDIENTE_CORREO];
@@ -190,6 +191,8 @@ export function tipoAdjuntoCorreo(v: unknown): string {
   if (/VUCE/.test(n) && /PIN|PAGO|RECIBO|COMPROBANTE/.test(n)) return "Otro";
   if (/PIN/.test(n) && /PAGO|IMPUESTO|DGA|ADUANA/.test(n)) return "PIN de Pago de Impuestos";
   if (/RECIBO|COMPROBANTE/.test(n) && /IMPUESTO|DGA|ADUANA/.test(n)) return "Recibo Pago de Impuestos";
+  // Reporte SIGA de seguimiento del embarque (Estado de Desaduanización): solo para su Expediente.
+  if (/DESADUANIZACION|SEGUIMIENTOSIGA/.test(n)) return TIPO_SEGUIMIENTO_SIGA;
   // Constancia oficial SIGA de origen (DGA) antes que el certificado comercial: nunca al revés.
   if (/PRUEBADEORIGEN|TRATAMIENTOARANCELARIO/.test(n) || (/ORIGIN|ORIGEN/.test(n) && /DGA|SIGA|ADUANA/.test(n))) return TIPO_CERTIFICADO_DGA;
   if (/BILLOFLADING|^BL$|CONOCIMIENTO/.test(n)) return "Bill of Lading";

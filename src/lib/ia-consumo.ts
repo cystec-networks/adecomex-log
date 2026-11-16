@@ -7,6 +7,7 @@ export const FUNCIONES_IA = {
   correo_texto: "Correos: datos del texto del mensaje",
   factura_venta: "Facturas e-CF",
   permiso_vuce: "Permisos VUCE",
+  seguimiento_siga: "Seguimiento SIGA (respaldo cuando el texto no se lee)",
   gasto: "Gastos",
   cuenta_por_pagar: "Cuentas por pagar",
   copiloto: "Copiloto arancelario",

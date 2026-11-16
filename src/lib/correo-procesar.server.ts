@@ -3,6 +3,8 @@
  * Solo servidor: usa el cliente de servicio que recibe como parámetro.
  */
 import { MODELO_ECONOMICO } from "@/lib/ia-consumo";
+import { TIPO_SEGUIMIENTO_SIGA, type SeguimientoSiga } from "./seguimiento-siga";
+import { aplicarSeguimientoSiga, evaluarSeguimientoSiga } from "./seguimiento-siga-evaluar";
 import { z } from "zod";
 import { aislarMensajeReciente, avisoFechaLlegada, combinarDatos, extraerPorEtiquetas, fusionarAsunto, fusionarAdjuntos } from "@/lib/correo-solicitud";
 import { adjuntoCorreoSchema, normalizarAdjuntosCorreo, mimeAdjuntoCorreo, deduplicarAdjuntosCorreo } from "@/lib/correo-adjuntos";
@@ -290,6 +292,8 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
   // registrado tiene prioridad sobre crear o fusionar una solicitud.
   const blDocumento = documentos.find((a) => (a.tipo === "Bill of Lading" || a.tipo === "Guía aérea") && a.bl_awb)?.bl_awb;
   await probarBl(blDocumento);
+  // Seguimiento SIGA: solo el Doc.Embarque Hijo identifica el Expediente (nunca el BL madre).
+  await probarBl(pagos.find((a) => a.tipo === TIPO_SEGUIMIENTO_SIGA && a.bl_awb)?.bl_awb);
 
   const decision = decidirCorreo({ forzado: opciones.forzado, ignorado, faltantes, pdfs: adjuntosIn.length, documentos: documentos.length, pagos: pagos.length, ilegibles, otros, expediente: numeroDestino(), ambiguos });
   if (decision.accion === "descartar") return descartar(decision.motivo, decision.categoria);
@@ -331,10 +335,14 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
       file_hash: hashes[sueltos.indexOf(a)] ?? null,
       observaciones: `Adjunto de correo: ${a.nombre}${notaRemitente}`.slice(0, 500),
     }));
+    let insertados: Array<{ id: string; tipo: string; storage_path: string | null }> = [];
     if (filas.length) {
-      const { error: e2 } = await db.from("documentos").insert(filas);
+      const { data: filasIns, error: e2 } = await db.from("documentos").insert(filas).select("id,tipo,storage_path");
       if (e2) return fallo(500, `No se pudieron registrar los documentos en el Expediente: ${e2.message}`);
+      insertados = filasIns ?? [];
     }
+    // Seguimiento SIGA: valida BL hijo, cliente y puerto y completa solo campos vacíos (Auditoría en la base).
+    const avisosSiga = await aplicarSeguimientosCorreo(db, exp.id, insertados, insertar);
     // Casilla ocupada: el PDF queda guardado en el Registro hasta que una persona decida.
     const conflictos: ConflictoDocumento[] = [];
     for (const [i, { a, hash }] of enConflicto.entries()) {
@@ -358,6 +366,7 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
       ...prop.advertencias,
       ...(otros.length ? [`No se agregaron ${otros.length} PDF de «Otros documentos»: ${otros.slice(0, 5).join(", ")}.`] : []),
       ...ilegibles.map((n) => `${n}: no se pudo leer; no se agregó al Expediente.`),
+      ...avisosSiga,
     ];
     const v = vinculo as "numero" | "bl" | "vuce" | null;
     const como = v === "bl" ? "por BL" : v === "vuce" ? "por trámite VUCE" : "por número en el correo";
@@ -411,4 +420,31 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
     { resultado: "creada", motivo: `Solicitud nueva creada: ${documentos.length} documento${documentos.length === 1 ? "" : "s"} de importación${avisos.length ? `. ${avisos[0]}` : ""}`, solicitud_id: guardado.id, advertencias: advertenciasFinales },
     { id: guardado.id, datos, advertencias: advertenciasFinales, adjuntos: listaAdjuntos.map((a) => ({ nombre: a.nombre, tipo: a.tipo })) },
   );
+}
+
+
+/** Lee y aplica cada Seguimiento SIGA recién ubicado; un fallo nunca rompe el correo (queda «sin leer»). */
+async function aplicarSeguimientosCorreo(db: any, expedienteId: string, insertados: Array<{ id: string; tipo: string; storage_path: string | null }>, adjuntos: AdjuntoProcesado[]): Promise<string[]> {
+  const avisos: string[] = [];
+  for (const fila of insertados.filter((f) => f.tipo === TIPO_SEGUIMIENTO_SIGA)) {
+    const a = adjuntos.find((x) => x.storage_path === fila.storage_path);
+    if (!a) continue;
+    try {
+      let datos = (a.datos?.seguimiento_siga ?? null) as SeguimientoSiga | null;
+      let metodo: "texto" | "ia" = "texto";
+      if (!datos) {
+        const { leerSeguimientoSigaPdf } = await import("./seguimiento-siga.server");
+        const r = await leerSeguimientoSigaPdf(a.bytes, a.nombre);
+        datos = r.datos; metodo = r.metodo;
+      }
+      if (!datos) { avisos.push(`${a.nombre}: Seguimiento SIGA guardado, pero no se pudo leer el Doc.Embarque Hijo; revísalo en el Expediente.`); continue; }
+      const evaluacion = await evaluarSeguimientoSiga(db, expedienteId, datos);
+      const r = await aplicarSeguimientoSiga(db, { expedienteId, documentoId: fila.id, datos, metodo, evaluacion, origen: "correo", archivo: fila.storage_path });
+      if (!evaluacion.validacion.ok) avisos.push(`Seguimiento SIGA no aplicado: ${evaluacion.validacion.errores.join(" ")}`);
+      else avisos.push(`Seguimiento SIGA: ${r.completados.length} campo${r.completados.length === 1 ? "" : "s"} completado${r.completados.length === 1 ? "" : "s"}, ${r.procesos_nuevos} proceso${r.procesos_nuevos === 1 ? "" : "s"} nuevo${r.procesos_nuevos === 1 ? "" : "s"}${evaluacion.decision.diferencias.length ? `; ${evaluacion.decision.diferencias.length} diferencia(s) con el Expediente, sin sobrescribir` : ""}.`);
+    } catch (e) {
+      avisos.push(`${a.nombre}: Seguimiento SIGA guardado; lectura pendiente (${String(e instanceof Error ? e.message : e).slice(0, 140)}).`);
+    }
+  }
+  return avisos;
 }

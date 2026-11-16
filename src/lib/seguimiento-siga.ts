@@ -125,7 +125,9 @@ export function leerSeguimientoSiga(text: string): SeguimientoSiga | null {
   // Posiciones de todas las etiquetas, sin solapes (gana la que empieza antes y es más larga).
   const hallazgos: Array<{ campo: keyof SeguimientoSiga; ini: number; fin: number }> = [];
   for (const [campo, re] of ETIQUETAS) {
-    const g = new RegExp(`(?<![A-Za-zÁÉÍÓÚáéíóúÑñ])(?:${re.source})(?![A-Za-zÁÉÍÓÚáéíóúÑñ])`, "gi");
+    // Solo cuenta como etiqueta si la sigue «:», una columna o el fin del renglón: así un valor como
+    // «ADMINISTRACION MULTIMODAL CAUCEDO» no se confunde con la etiqueta Administración.
+    const g = new RegExp(`(?<![A-Za-zÁÉÍÓÚáéíóúÑñ])(?:${re.source})(?=[ \\t]*(?::|\\||\\n|$))`, "gim");
     for (const m of limpio.matchAll(g)) hallazgos.push({ campo, ini: m.index!, fin: m.index! + m[0].length });
   }
   hallazgos.sort((a, b) => a.ini - b.ini || (b.fin - b.ini) - (a.fin - a.ini));
@@ -167,7 +169,7 @@ export function leerProcesosSiga(text: string): ProcesoSiga[] {
     const sol = linea.match(RE_SOLICITUD)?.[0] ?? null;
     const fecha = fechaHoraSiga(linea.match(RE_FECHA)?.[0] ?? (sol ? ventana.match(RE_FECHA)?.[0] : null));
     if (!sol && !fecha) return;
-    const etiqueta = linea.split(" | ").find((c) => codigoProceso(c) === codigo)?.replace(RE_SOLICITUD, "").replace(RE_FECHA, "").trim() || PROCESOS_SIGA[codigo];
+    const etiqueta = linea.split(" | ").find((c) => codigoProceso(c) === codigo)?.replace(RE_SOLICITUD, "").replace(RE_FECHA, "").replace(RE_ESTADO, "").replace(/\s+/g, " ").trim() || PROCESOS_SIGA[codigo];
     out.push({ proceso: codigo, etiqueta: etiqueta.slice(0, 80), numero_solicitud: sol, fecha, estado: linea.match(RE_ESTADO)?.[1] ?? null });
   });
   return dedupeProcesos(out);
@@ -327,4 +329,6 @@ export type LecturaSigaGuardada = {
   datos: SeguimientoSiga; metodo: "texto" | "ia"; validacion: ValidacionSiga; diferencias?: DiferenciaSiga[];
   estado?: "pendiente" | "aplicado" | "rechazado"; completados?: string[]; sugerencia_descartada?: boolean;
   procesado_en?: string; origen?: string;
+  /** Archivo leído: si el documento se reemplaza, la lectura deja de valer y se pide leer de nuevo. */
+  archivo?: string | null;
 };

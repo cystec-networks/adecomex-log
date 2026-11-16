@@ -37,6 +37,8 @@ export function tipoPorEncabezado(texto: string): string | null {
   const normal = pagina1.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
   const renglones = normal.split("\n").slice(0, 30);
   // Constancia oficial SIGA «Recepción de Prueba de Origen»: es el Certificado de Origen DGA, no el comercial.
+  // Reporte SIGA «Estado de Desaduanización» (seguimiento del embarque).
+  if (renglones.some((r) => /ESTADO\s+DE\s+DESADUANIZACION/.test(r))) return "Seguimiento SIGA (Estado de Desaduanización)";
   if (renglones.some((r) => /RECEPCION\s+DE\s+PRUEBA\s+DE\s+ORIGEN|TRATAMIENTO\s+ARANCELARIO\s+PREFERENCIAL/.test(r))) return "Certificado de Origen DGA";
   if (renglones.some((r) => /\b(STATEMENT|ESTADO\s+DE\s+CUENTA|QUOTATION|COTIZACION|DEBIT\s+NOTE|ARRIVAL\s+NOTICE|AVISO\s+DE\s+LLEGADA|VUCE|PIN|RECIBO|COMPROBANTE)\b/.test(r))) return null;
   // Solo celdas que son únicamente palabras (sin numeración, puntos ni cifras: «2) Factura Comercial.» no es un título).

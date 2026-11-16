@@ -3,6 +3,19 @@
 import { textoDigitalSuficiente, MAX_CARACTERES_TEXTO } from "./lectura-texto";
 
 export async function textoPdfDigital(bytes: Uint8Array): Promise<string | null> {
+  const paginas = await paginasPdfRenglones(bytes);
+  return paginas && textoDigitalSuficiente(paginas) ? unirPaginas(paginas) : null;
+}
+
+/** Texto por renglones aunque alguna página tenga poco texto (reportes cortos como el Seguimiento SIGA). */
+export async function textoPdfRenglones(bytes: Uint8Array): Promise<string | null> {
+  const paginas = await paginasPdfRenglones(bytes);
+  return paginas && paginas.some((p) => p.trim()) ? unirPaginas(paginas) : null;
+}
+
+const unirPaginas = (paginas: string[]) => paginas.map((p, i) => `--- Página ${i + 1} ---\n${p}`).join("\n").slice(0, MAX_CARACTERES_TEXTO);
+
+async function paginasPdfRenglones(bytes: Uint8Array): Promise<string[] | null> {
   try {
     const { getDocumentProxy } = await import("unpdf");
     const pdf = await getDocumentProxy(new Uint8Array(bytes));
@@ -39,7 +52,7 @@ export async function textoPdfDigital(bytes: Uint8Array): Promise<string | null>
       }).filter(Boolean);
       paginas.push(lineas.join("\n"));
     }
-    return textoDigitalSuficiente(paginas) ? paginas.map((p, i) => `--- Página ${i + 1} ---\n${p}`).join("\n").slice(0, MAX_CARACTERES_TEXTO) : null;
+    return paginas;
   } catch {
     return null;
   }

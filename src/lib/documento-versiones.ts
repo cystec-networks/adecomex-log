@@ -1,3 +1,4 @@
+import { LABEL_CAMPO_SIGA } from "./seguimiento-siga";
 /**
  * Versiones de documentos del Expediente: el trigger `documentos_versionar_archivo`
  * guarda la versión anterior y sella `actualizado_en/por` en cada reemplazo de archivo.
@@ -78,5 +79,16 @@ export function describirAuditoria(a: FilaAuditoria): string {
   if (a.accion === "hito_automatico_retirado") return `Fecha automática retirada del hito «${hito}» (su origen ya no existe)`;
   if (a.accion === "enviado_gestor") return `Expediente enviado al gestor${typeof c.gestor === "string" && c.gestor ? ` ${c.gestor}` : ""}`;
   if (a.accion === "correo_dga_preparado") return "Correo a DGA preparado";
+  if (a.accion === "seguimiento_siga_aplicado" || a.accion === "seguimiento_siga_rechazado") {
+    const via = c.origen === "correo" ? " · correo automático" : "";
+    if (a.accion === "seguimiento_siga_rechazado") {
+      const errores = Array.isArray(c.errores) ? c.errores.filter((e) => typeof e === "string").join(" ") : "";
+      return `Seguimiento SIGA no aplicado${via}${errores ? `: ${errores}` : ""}`;
+    }
+    const campos = Array.isArray(c.completados) ? c.completados.map((k) => LABEL_CAMPO_SIGA[String(k)] ?? String(k)) : [];
+    const procesos = Number(c.procesos_nuevos ?? 0);
+    const dif = Array.isArray(c.diferencias) ? c.diferencias.length : 0;
+    return `Seguimiento SIGA aplicado${via}: ${campos.length ? `completó ${campos.join(", ")}` : "sin campos vacíos que completar"}${procesos ? ` · ${procesos} proceso(s) SIGA nuevo(s)` : ""}${dif ? ` · ${dif} diferencia(s) sin sobrescribir` : ""}`;
+  }
   return a.accion;
 }

@@ -69,6 +69,9 @@ import { extractSolicitudFromDocument } from "@/lib/ai-ocr.functions";
 import { DeclaracionOrigenProvider, useDeclaracionOrigen } from "@/components/declaracion-origen-context";
 import { LiquidacionDgaProvider, useLiquidacionDga } from "@/components/liquidacion-dga-context";
 import { decidirLiquidacionDga, prepararGuardadoLiquidacion, type CambiosLiquidacion } from "@/lib/liquidacion-dga-documento";
+import { TIPO_SEGUIMIENTO_SIGA, type SeguimientoSiga } from "@/lib/seguimiento-siga";
+import { aplicarSeguimientoSiga, evaluarSeguimientoSiga, type EvaluacionSiga } from "@/lib/seguimiento-siga-evaluar";
+import { AvisosSeguimientoSiga, DatosSigaBlock, EtiquetaAutoSiga, HistorialProcesosSiga, RevisionSeguimientoSiga, useLeerSeguimientoSiga, type LecturaSigaPendiente } from "@/components/seguimiento-siga";
 import { TIPO_CERTIFICADO_DGA, decidirCertificadoDga, guardarReferenciaCertificado, leerReferenciaCertificado, type CertificadoDga } from "@/lib/certificado-origen-dga";
 
 import { CatalogCombobox } from "@/components/catalog-combobox";
@@ -258,7 +261,7 @@ const CAMPOS_FECHA_EXPEDIENTE = [
 const TIPOS_DOC = [
   "Factura proforma","Factura comercial","Bill of Lading","Guía aérea","Lista de empaque",
   "Certificado de origen",TIPO_CERTIFICADO_DGA,"Certificado Sanitario/Fitosanitario","Certificado de análisis",
-  "Declaración Única Aduanera (DUA)","Reporte de Liquidación de Impuestos",
+  TIPO_SEGUIMIENTO_SIGA,"Declaración Única Aduanera (DUA)","Reporte de Liquidación de Impuestos",
   "Recibo Pago de Impuestos","PIN de Pago de Impuestos",TIPO_SOLICITUD_DESPACHO,TIPO_CARTA_RUTA,"Recibo Pago de Contenedor","Factura Pago de Almacenaje","Factura Pago Cargos Locales","PIN de Pago Permiso VUCE","Recibo Pago Permiso VUCE",
   "Permiso VUCE previo","Orden de compra",
   "Carta de instrucción","Póliza de seguro","DUA","Evidencia de entrega","Otro (Liquidación)","Otro",
@@ -290,6 +293,7 @@ const BLOQUE_DECLARACION: { tipo: string; label: string; obligatorio?: boolean }
 ];
 
 const BLOQUE_LIQUIDACION: { tipo: string; label: string }[] = [
+  { tipo: TIPO_SEGUIMIENTO_SIGA, label: TIPO_SEGUIMIENTO_SIGA },
   { tipo: "Declaración Única Aduanera (DUA)", label: "Declaración Única Aduanera (DUA)" },
   { tipo: "Reporte de Liquidación de Impuestos", label: "Liquidación de Impuestos" },
   { tipo: "Recibo Pago de Impuestos", label: "Recibo Pago de Impuestos" },
@@ -1488,6 +1492,7 @@ function DetalleExpediente() {
             {alertasHeader.map((alerta) => <span key={alerta} className="break-words">{alerta}</span>)}
           </div>
         )}
+        {!isNuevo && <AvisosSeguimientoSiga exp={expData} onAvanzarManifestado={() => updateEstado.mutate("manifestado")} />}
         {!isNuevo && (
           <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs md:text-sm" role="status" aria-label="Estado de la confirmación al cliente">
             <span className="text-muted-foreground">Confirmación al cliente:</span>
@@ -1618,6 +1623,7 @@ function DetalleExpediente() {
         <>
         <TabsContent value="checklist" forceMount={fichasVisitadas.includes("checklist") ? true : undefined} className="data-[state=inactive]:hidden">
           <ChecklistHitos expedienteId={id} />
+          <HistorialProcesosSiga expedienteId={id} />
         </TabsContent>
 
         
@@ -1859,6 +1865,15 @@ function construirFormInicial(data: any, nuevo: boolean, tipoDefault = "") {
     puerto_arribo_codigo: d.puerto_arribo_codigo ?? "",
     area_aduanera: d.area_aduanera ?? "",
     area_aduanera_codigo: d.area_aduanera_codigo ?? "",
+    siga_control_carga: d.siga_control_carga ?? "",
+    siga_bl_madre: d.siga_bl_madre ?? "",
+    siga_buque: d.siga_buque ?? "",
+    siga_viaje: d.siga_viaje ?? "",
+    siga_empresa_transportista: d.siga_empresa_transportista ?? "",
+    siga_bandera: d.siga_bandera ?? "",
+    siga_terminal: d.siga_terminal ?? "",
+    siga_administracion: d.siga_administracion ?? "",
+    cantidad_bultos: d.cantidad_bultos ?? "",
     deposito_destino: d.deposito_destino ?? "",
     deposito_destino_codigo: d.deposito_destino_codigo ?? "",
     liq_siga_numero: d.liq_siga_numero ?? "",
@@ -2358,6 +2373,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       if (!payload.fecha_aprobacion_despacho) payload.fecha_aprobacion_despacho = null;
       payload.peso_neto = payload.peso_neto === "" ? null : Number(payload.peso_neto);
       payload.peso_bruto = payload.peso_bruto === "" ? null : Number(payload.peso_bruto);
+      payload.cantidad_bultos = payload.cantidad_bultos === "" || payload.cantidad_bultos == null ? null : Number(payload.cantidad_bultos);
       const toNum = (v: any) => (v === "" || v == null ? null : Number(v));
       payload.total_fob = sumFob || 0;
       payload.seguro = toNum(payload.seguro);
@@ -2541,6 +2557,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
       const toNum = (v: any) => (v === "" || v == null ? null : Number(v));
       payload.peso_neto = toNum(payload.peso_neto);
       payload.peso_bruto = toNum(payload.peso_bruto);
+      payload.cantidad_bultos = toNum(payload.cantidad_bultos);
       payload.total_fob = productosNuevos.length ? sumFob : toNum(payload.total_fob);
       payload.seguro = toNum(payload.seguro);
       payload.flete = toNum(payload.flete);
@@ -2872,10 +2889,15 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         <Field label="Fecha Estimada de Llegada (ETA)" value={form.fecha_compromiso} onChange={(v) => set("fecha_compromiso", v)} type="date" disabled={!editable} />
         <div className="grid gap-1">
           <Field label="Fecha de Llegada Real" value={form.fecha_llegada_real} onChange={(v) => set("fecha_llegada_real", v)} type="date" disabled={!editable} req />
+          {!isNuevo && <EtiquetaAutoSiga exp={exp} campo="fecha_llegada_real" valor={form.fecha_llegada_real} />}
+          {!isNuevo && exp?.siga_fecha_llegada && String(form.fecha_llegada_real ?? "") === new Date(exp.siga_fecha_llegada).toLocaleDateString("en-CA", { timeZone: "America/Santo_Domingo" }) && (
+            <p className="text-[11px] leading-tight text-muted-foreground">Hora según SIGA: {new Date(exp.siga_fecha_llegada).toLocaleTimeString("es-DO", { timeZone: "America/Santo_Domingo", hour: "2-digit", minute: "2-digit" })}</p>
+          )}
           <p className="text-[11px] leading-tight text-muted-foreground">
             Se llena cuando el embarque ya arribó de verdad — a partir de esta fecha corre el plazo legal de presentación (5 días hábiles).
           </p>
         </div>
+        {!isNuevo && <DatosSigaBlock form={form} set={(k, v) => set(k as any, v)} exp={exp} disabled={!editable} />}
       </Section>
       {!isNuevo && <EndosoSection expedienteId={id} clienteOriginal={exp?.clientes ? { id: exp.cliente_id, nombre: exp.clientes.nombre } : null} editable={canEdit} solicitudApertura={solicitudEndoso} />}
 
@@ -2997,7 +3019,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
             )}
           </div>
           <div className={cn("grid gap-1.5", camposFaltantes.has("req-area_aduanera") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-area_aduanera">
-            <Label><ReqMark />Área / Administración aduanera</Label>
+            <Label className="flex flex-wrap items-center"><ReqMark />Área / Administración aduanera{!isNuevo && <EtiquetaAutoSiga exp={exp} campo="area_aduanera" valor={form.area_aduanera} />}</Label>
             <DgaCombobox
               table="dga_areas"
               value={form.area_aduanera}
@@ -3181,7 +3203,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               />
             </div>
             <div className="grid gap-1.5">
-              <Label><ReqMark />Peso bruto (kg)</Label>
+              <Label className="flex flex-wrap items-center"><ReqMark />Peso bruto (kg){!isNuevo && <EtiquetaAutoSiga exp={exp} campo="peso_bruto" valor={form.peso_bruto} />}</Label>
               <Input
                 type="text"
                 inputMode="decimal"
@@ -3191,6 +3213,17 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
                   if (v === "" || /^\d*\.?\d*$/.test(v)) set("peso_bruto", v);
                 }}
                 placeholder="0.00"
+                disabled={!editable}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="flex flex-wrap items-center">Cantidad de bultos{!isNuevo && <EtiquetaAutoSiga exp={exp} campo="cantidad_bultos" valor={form.cantidad_bultos} />}</Label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                value={form.cantidad_bultos ?? ""}
+                onChange={(e) => { const v = e.target.value.replace(",", "."); if (v === "" || /^\d*\.?\d*$/.test(v)) set("cantidad_bultos", v); }}
+                placeholder="0"
                 disabled={!editable}
               />
             </div>
@@ -3488,6 +3521,8 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const [uploading, setUploading] = useState(false);
   const [documentoGuardado, setDocumentoGuardado] = useState(0);
   const [pagoDoc, setPagoDoc] = useState<DocumentoPagoSubido | null>(null);
+  const [revisionSiga, setRevisionSiga] = useState<LecturaSigaPendiente | null>(null);
+  const leerSiga = useLeerSeguimientoSiga();
   const [confirmacion, setConfirmacion] = useState<{ titulo: string; mensaje: string; requiereCheck?: boolean; resolve: (v: boolean) => void } | null>(null);
   const [confirmAck, setConfirmAck] = useState(false);
   const cerrarConfirmacion = (v: boolean) => { confirmacion?.resolve(v); setConfirmacion(null); };
@@ -3518,7 +3553,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const fileSeleccionado = file;
   const upload = async () => {
     let file = fileSeleccionado;
-    if (file && (tipo === TIPO_CARTA_RUTA || tipo === TIPO_SOLICITUD_DESPACHO || tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && !(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
+    if (file && (tipo === TIPO_CARTA_RUTA || tipo === TIPO_SOLICITUD_DESPACHO || tipo === TIPO_CERTIFICADO_DGA || tipo === TIPO_SEGUIMIENTO_SIGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && !(file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"))) {
       toast.error("Este documento del Checklist de Recepción solo acepta archivos PDF.");
       return;
     }
@@ -3577,6 +3612,26 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           toast.warning(`El PDF se guardará sin autocompletar: ${e instanceof Error ? e.message : "lectura no disponible"}`, { duration: 10000 });
         }
       }
+      // Seguimiento SIGA: se lee antes de guardar para avisar si no corresponde a este Expediente.
+      let lecturaSiga: { datos: SeguimientoSiga; metodo: "texto" | "ia"; evaluacion: EvaluacionSiga } | null = null;
+      if (file && tipo === TIPO_SEGUIMIENTO_SIGA) {
+        try {
+          const r = await leerSiga(file, file.name);
+          if (!r.datos) toast.warning("No se pudo leer el Doc.Embarque Hijo del Seguimiento SIGA; el PDF se guardará sin autocompletar.", { duration: 10000 });
+          else {
+            const evaluacion = await evaluarSeguimientoSiga(supabase, expedienteId, r.datos, editorLiquidacion?.current?.leer() ?? null);
+            if (!evaluacion.validacion.ok) {
+              const seguir = await pedirConfirmacion({ titulo: "El Seguimiento SIGA no corresponde", mensaje: `${evaluacion.validacion.errores.join(" ")} No se aplicará ningún dato al Expediente. ¿Guardar el PDF aquí de todos modos?` });
+              if (!seguir) return;
+            }
+            lecturaSiga = { datos: r.datos, metodo: r.metodo, evaluacion };
+          }
+        } catch (e) {
+          toast.warning(`El Seguimiento SIGA se guardará sin autocompletar: ${e instanceof Error ? e.message : "lectura no disponible"}`, { duration: 10000 });
+        }
+      }
+      let docGuardadoId: string | null = editId;
+      let pathGuardado: string | null = null;
       const docActual: any = editId ? (docs ?? []).find((d: any) => d.id === editId) : null;
       const codigo = file
         ? (docActual?.codigo_siga && prefijoSiga(docActual.tipo) === prefijoSiga(tipo)
@@ -3598,6 +3653,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           fecha_vencimiento: venc || null, observaciones: observacionesDoc || null,
         }).eq("id", editId);
         if (e2) throw e2;
+        pathGuardado = path;
         toast.success(codigo && file ? `Documento actualizado · ${codigo}` : "Documento actualizado");
       } else {
         let path: string | null = null;
@@ -3606,18 +3662,30 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           const { error } = await supabase.storage.from("documentos").upload(path, file);
           if (error) throw error;
         }
-        const { error: e2 } = await supabase.from("documentos").insert({
+        const { data: insertado, error: e2 } = await supabase.from("documentos").insert({
           expediente_id: expedienteId, tipo, storage_path: path,
           estado: file ? "recibido" : "pendiente",
           fecha_recepcion: file ? new Date().toISOString().slice(0, 10) : null,
           fecha_vencimiento: venc || null, observaciones: observacionesDoc || null,
           file_hash: fileHash, codigo_siga: codigo,
-        });
+        }).select("id").single();
         if (e2) throw e2;
+        docGuardadoId = insertado?.id ?? null;
+        pathGuardado = path;
         toast.success(codigo ? `Documento agregado · ${codigo}` : "Documento agregado");
       }
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
       qc.invalidateQueries({ queryKey: ["auditoria", expedienteId] });
+      if (lecturaSiga && docGuardadoId) {
+        if (lecturaSiga.evaluacion.validacion.ok) setRevisionSiga({ documentoId: docGuardadoId, archivo: pathGuardado, datos: lecturaSiga.datos, metodo: lecturaSiga.metodo });
+        else {
+          try {
+            await aplicarSeguimientoSiga(supabase, { expedienteId, documentoId: docGuardadoId, datos: lecturaSiga.datos, metodo: lecturaSiga.metodo, evaluacion: lecturaSiga.evaluacion, origen: "manual", archivo: pathGuardado });
+            toast.warning("Seguimiento SIGA guardado sin aplicar datos: no corresponde a este Expediente. Quedó el aviso y el registro en Auditoría.", { duration: 10000 });
+          } catch (e) { toast.error(`No se pudo registrar el aviso del Seguimiento SIGA: ${e instanceof Error ? e.message : String(e)}`); }
+        }
+      }
+      if (tipo === TIPO_SEGUIMIENTO_SIGA) window.dispatchEvent(new Event("seguimiento-siga-actualizado"));
       if (cartaRuta?.solicitud) {
         try {
           const solicitudRegistrada = tipo === TIPO_CARTA_RUTA ? leerReferenciaSolicitudDespacho((docs ?? []).find((d: any) => d.tipo === TIPO_SOLICITUD_DESPACHO)?.observaciones) : "";
@@ -3815,6 +3883,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
 
   return (
     <div className="space-y-3">
+      <RevisionSeguimientoSiga expedienteId={expedienteId} lectura={revisionSiga} onClose={() => setRevisionSiga(null)} />
       {pagoDoc && <EscanearPagoPuerto key={pagoDoc.codigo + pagoDoc.file.name + pagoDoc.file.lastModified} expedienteId={expedienteId} documento={pagoDoc} onDone={() => setPagoDoc(null)} />}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
@@ -3842,12 +3911,12 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                   <SelectContent>{TIPOS_DOC.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}{(tipo === TIPO_CARTA_RUTA || tipo === TIPO_SOLICITUD_DESPACHO || tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && <span className="text-xs text-muted-foreground ml-1">(solo PDF)</span>}</Label><Input type="file" accept={(tipo === TIPO_CARTA_RUTA || tipo === TIPO_SOLICITUD_DESPACHO || tipo === TIPO_CERTIFICADO_DGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) ? "application/pdf,.pdf" : undefined} onChange={(e) => setFile(e.target.files?.[0] ?? null)} disabled={uploading} /></div>
+              <div className="grid gap-1.5"><Label>{editId ? "Reemplazar archivo (opcional)" : "Archivo"}{(tipo === TIPO_CARTA_RUTA || tipo === TIPO_SOLICITUD_DESPACHO || tipo === TIPO_CERTIFICADO_DGA || tipo === TIPO_SEGUIMIENTO_SIGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) && <span className="text-xs text-muted-foreground ml-1">(solo PDF)</span>}</Label><Input type="file" accept={(tipo === TIPO_CARTA_RUTA || tipo === TIPO_SOLICITUD_DESPACHO || tipo === TIPO_CERTIFICADO_DGA || tipo === TIPO_SEGUIMIENTO_SIGA || CHECKLIST_DOCUMENTOS_BASE.includes(tipo) || esDocumentoResultadoDga(tipo) || TIPO_DOCUMENTO_PAGO[tipo]) ? "application/pdf,.pdf" : undefined} onChange={(e) => setFile(e.target.files?.[0] ?? null)} disabled={uploading} /></div>
               <div className="grid gap-1.5"><Label>Fecha vencimiento</Label><Input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} /></div>
               <div className="grid gap-1.5"><Label>Observaciones</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
               {tipo === TIPO_CERTIFICADO_DGA && editId && leerReferenciaCertificado((docs ?? []).find((d) => d.id === editId)?.observaciones) && <div className="text-xs whitespace-pre-wrap break-words max-h-56 overflow-y-auto text-muted-foreground">{leerReferenciaCertificado((docs ?? []).find((d) => d.id === editId)?.observaciones)}</div>}
             </div>
-            <DialogFooter><Button onClick={upload} disabled={uploading}>{uploading ? (tipo === TIPO_CARTA_RUTA || tipo === TIPO_SOLICITUD_DESPACHO || tipo === TIPO_CERTIFICADO_DGA || esDocumentoResultadoDga(tipo) ? "Guardando y leyendo…" : "Guardando…") : "Guardar"}</Button></DialogFooter>
+            <DialogFooter><Button onClick={upload} disabled={uploading}>{uploading ? (tipo === TIPO_CARTA_RUTA || tipo === TIPO_SOLICITUD_DESPACHO || tipo === TIPO_CERTIFICADO_DGA || tipo === TIPO_SEGUIMIENTO_SIGA || esDocumentoResultadoDga(tipo) ? "Guardando y leyendo…" : "Guardando…") : "Guardar"}</Button></DialogFooter>
           </DialogContent>
         </Dialog>
         </div>

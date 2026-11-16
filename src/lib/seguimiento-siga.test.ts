@@ -91,3 +91,22 @@ describe("Seguimiento SIGA: solo completa vacíos y avisa diferencias", () => {
     expect(esAutomaticoSiga(exp, "peso_bruto", "2000")).toBe(false);
   });
 });
+
+import { tipoAdjuntoCorreo, TIPOS_ADJUNTO_CORREO, TIPOS_SOLO_EXPEDIENTE_CORREO } from "./correo-solicitud";
+import { tipoPorEncabezado } from "./lectura-texto";
+import { buildImportDUAXml } from "./siga-xml";
+import { TIPO_SEGUIMIENTO_SIGA } from "./seguimiento-siga";
+
+describe("Seguimiento SIGA por correo y en el XML de la DUA", () => {
+  it("se reconoce por el título sin IA", () => expect(tipoPorEncabezado(TEXTO)).toBe(TIPO_SEGUIMIENTO_SIGA));
+  it("solo va a un Expediente existente; nunca crea solicitud", () => {
+    expect(TIPOS_SOLO_EXPEDIENTE_CORREO.includes(TIPO_SEGUIMIENTO_SIGA)).toBe(true);
+    expect((TIPOS_ADJUNTO_CORREO as readonly string[]).includes(TIPO_SEGUIMIENTO_SIGA)).toBe(false);
+    expect(tipoAdjuntoCorreo("Estado de Desaduanización")).toBe(TIPO_SEGUIMIENTO_SIGA);
+  });
+  it("el XML usa No. Control de Carga (CargoControlNo) y BL madre (ManifestNo)", () => {
+    const xml = buildImportDUAXml({ bl_awb: "HBL1", siga_control_carga: "10150-CC01-2611-000321", siga_bl_madre: "MEDUXX772205", clientes: { nombre: "X", rnc: "1" } }, [], {} as never);
+    expect(xml).toContain("<CargoControlNo>10150-CC01-2611-000321</CargoControlNo>");
+    expect(xml).toContain("<ManifestNo>MEDUXX772205</ManifestNo>");
+  });
+});
