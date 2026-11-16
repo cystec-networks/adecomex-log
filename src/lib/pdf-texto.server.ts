@@ -13,9 +13,17 @@ export async function textoPdfRenglones(bytes: Uint8Array): Promise<string | nul
   return paginas && paginas.some((p) => p.trim()) ? unirPaginas(paginas) : null;
 }
 
+export type ItemPdf = { str: string; x: number; y: number; w: number; h: number };
+/** Texto por renglones y, además, cada fragmento con su posición (para leer tablas por celdas). */
+export async function textoEItemsPdf(bytes: Uint8Array): Promise<{ texto: string; items: ItemPdf[][] } | null> {
+  const items: ItemPdf[][] = [];
+  const paginas = await paginasPdfRenglones(bytes, items);
+  return paginas && paginas.some((p) => p.trim()) ? { texto: unirPaginas(paginas), items } : null;
+}
+
 const unirPaginas = (paginas: string[]) => paginas.map((p, i) => `--- Página ${i + 1} ---\n${p}`).join("\n").slice(0, MAX_CARACTERES_TEXTO);
 
-async function paginasPdfRenglones(bytes: Uint8Array): Promise<string[] | null> {
+async function paginasPdfRenglones(bytes: Uint8Array, conPosiciones?: ItemPdf[][]): Promise<string[] | null> {
   try {
     const { getDocumentProxy } = await import("unpdf");
     const pdf = await getDocumentProxy(new Uint8Array(bytes));
@@ -25,10 +33,13 @@ async function paginasPdfRenglones(bytes: Uint8Array): Promise<string[] | null> 
       const contenido = await page.getTextContent();
       type Item = { str: string; x: number; y: number; w: number };
       const items: Item[] = [];
-      for (const it of contenido.items as Array<{ str?: string; transform?: number[]; width?: number }>) {
+      const posiciones: ItemPdf[] = [];
+      for (const it of contenido.items as Array<{ str?: string; transform?: number[]; width?: number; height?: number }>) {
         if (!it.str || !it.transform) continue;
         items.push({ str: it.str, x: it.transform[4], y: it.transform[5], w: it.width ?? 0 });
+        if (it.str.trim()) posiciones.push({ str: it.str, x: it.transform[4], y: it.transform[5], w: it.width ?? 0, h: Math.abs(it.transform[3]) || it.height || 8 });
       }
+      conPosiciones?.push(posiciones);
       // Agrupa por renglón visual (tolerancia de 3 pt) y ordena por columna.
       items.sort((a, b) => b.y - a.y || a.x - b.x);
       const renglones: Item[][] = [];

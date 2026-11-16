@@ -1,8 +1,8 @@
-// Lectura del PDF «Seguimiento SIGA»: reglas fijas sobre el texto; solo si fallan, el modelo económico.
+// Lectura del PDF «Seguimiento SIGA»: reglas fijas (celdas por posición, luego renglones); solo si fallan, el modelo económico.
 import { callGateway } from "./ai-gateway.server";
 import { MODELO_ECONOMICO, type FuncionIa } from "./ia-consumo";
-import { textoPdfRenglones } from "./pdf-texto.server";
-import { leerSeguimientoSiga, normalizarSeguimientoSiga, PROMPT_SEGUIMIENTO_SIGA, type SeguimientoSiga } from "./seguimiento-siga";
+import { textoEItemsPdf } from "./pdf-texto.server";
+import { leerSeguimientoSiga, leerSeguimientoSigaCeldas, normalizarSeguimientoSiga, PROMPT_SEGUIMIENTO_SIGA, type SeguimientoSiga } from "./seguimiento-siga";
 
 const bytesABase64 = (bytes: Uint8Array) => {
   let s = "";
@@ -13,8 +13,10 @@ const bytesABase64 = (bytes: Uint8Array) => {
 export type ResultadoLecturaSiga = { datos: SeguimientoSiga | null; metodo: "texto" | "ia" };
 
 export async function leerSeguimientoSigaPdf(bytes: Uint8Array, filename: string, funcion: FuncionIa = "seguimiento_siga"): Promise<ResultadoLecturaSiga> {
-  const texto = await textoPdfRenglones(bytes);
-  const porReglas = texto ? leerSeguimientoSiga(texto) : null;
+  const pdf = await textoEItemsPdf(bytes);
+  const texto = pdf?.texto ?? null;
+  // 1) Tabla por celdas (formato real del portal SIGA, columnas mezcladas en el texto plano); 2) renglones; 3) IA.
+  const porReglas = pdf ? leerSeguimientoSigaCeldas(pdf.items, pdf.texto) ?? leerSeguimientoSiga(pdf.texto) : null;
   if (porReglas) return { datos: porReglas, metodo: "texto" };
   const contenido = texto
     ? `Texto del PDF renglón por renglón (" | " separa columnas):\n${texto}`

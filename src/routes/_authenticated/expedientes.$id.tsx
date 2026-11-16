@@ -35,7 +35,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ActualizadoBadge, HistorialDocumentoButton, useNombresUsuarios } from "@/components/documento-historial";
-import { describirAuditoria, fmtFechaHora } from "@/lib/documento-versiones";
+import { describirAuditoria, fmtFechaHora, fueReemplazado } from "@/lib/documento-versiones";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -327,11 +327,18 @@ function FilaDocumento({ label, obligatorio, doc, nombres = {}, onUpload, onMarc
         {obligatorio && <span className="text-destructive mr-0.5" title="Obligatorio para pasar a Presentado">*</span>}
         {label}
       </span>
-      <div className="flex-1 min-w-0 text-muted-foreground">
+      {/* Ancho mínimo propio: el nombre se recorta con «…» pero nunca queda en cero, así el tamaño no se monta encima. */}
+      <div className="flex-1 min-w-[10rem] overflow-hidden text-muted-foreground">
         <div className="flex items-center gap-1 min-w-0" title={[doc?.storage_path ? nombreArchivo(doc.storage_path) : "", doc?.tipo === TIPO_CARTA_RUTA ? leerReferenciaCartaRuta(doc.observaciones) : doc?.tipo === TIPO_SOLICITUD_DESPACHO ? leerReferenciaSolicitudDespacho(doc.observaciones) : ""].filter(Boolean).join("\n")}>
           <span className="truncate min-w-0">{doc?.storage_path ? nombreArchivo(doc.storage_path) : doc ? <span className="text-[10px]">(sin archivo)</span> : ""}</span>
           {doc?.storage_path && <DocumentoTamano path={doc.storage_path} />}
         </div>
+        {doc && fueReemplazado(doc) && (
+          <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5">
+            <ActualizadoBadge doc={doc} nombres={nombres} />
+            <HistorialDocumentoButton doc={doc} nombres={nombres} />
+          </div>
+        )}
         {doc?.tipo === TIPO_CARTA_RUTA && leerReferenciaCartaRuta(doc.observaciones) && <div className="text-[11px] whitespace-normal break-words">{leerReferenciaCartaRuta(doc.observaciones)}</div>}
         {doc?.tipo === TIPO_SOLICITUD_DESPACHO && leerReferenciaSolicitudDespacho(doc.observaciones) && <div className="text-[11px] whitespace-normal break-words">No. de Solicitud: {leerReferenciaSolicitudDespacho(doc.observaciones)}</div>}
       </div>
@@ -346,7 +353,6 @@ function FilaDocumento({ label, obligatorio, doc, nombres = {}, onUpload, onMarc
       )}
       <span className="shrink-0 whitespace-nowrap text-[11px] text-muted-foreground inline-flex items-center gap-1">
         <span title="Recibido (primera carga)">{doc?.fecha_recepcion ? fmtLocalDate(doc.fecha_recepcion) : "—"}</span>
-        {doc && <ActualizadoBadge doc={doc} nombres={nombres} />}
         {doc?.fecha_vencimiento && (
           <span className={`ml-1 ${vencido ? "text-destructive font-medium" : "text-[10px]"}`} title="Vencimiento">
             {fmtLocalDate(doc.fecha_vencimiento)}
@@ -360,7 +366,6 @@ function FilaDocumento({ label, obligatorio, doc, nombres = {}, onUpload, onMarc
           </Popover>
         )}
         {doc?.storage_path && <DocumentoPreviewButton path={doc.storage_path} variant="ghost" size="sm" label="Ver" />}
-        {doc && <HistorialDocumentoButton doc={doc} nombres={nombres} />}
         <Button variant="outline" size="sm" className="h-6 px-1.5 text-[11px]" onClick={onUpload}>
           <Upload className="h-3 w-3 mr-0.5" />{doc?.storage_path ? "Reemplazar" : "Subir"}
         </Button>
@@ -393,7 +398,7 @@ function FilaOtros({ archivos, nombres = {}, onAgregar, onEditar, onEstado, onEl
         {archivos.map((o) => (
           <div key={o.id} className="flex items-center gap-2 py-[1px] text-[11px]">
             <span className="w-16 shrink-0 font-mono text-primary">{o.codigo_siga ?? ""}</span>
-            <div className="flex items-center gap-1 flex-1 min-w-0" title={o.storage_path ? nombreArchivo(o.storage_path) : undefined}>
+            <div className="flex items-center gap-1 flex-1 min-w-[8rem] overflow-hidden" title={o.storage_path ? nombreArchivo(o.storage_path) : undefined}>
               <span className="truncate min-w-0">{o.storage_path ? nombreArchivo(o.storage_path) : "(sin archivo)"}</span>
               {o.storage_path && <DocumentoTamano path={o.storage_path} />}
             </div>

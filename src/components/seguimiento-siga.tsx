@@ -129,7 +129,7 @@ export function RevisionSeguimientoSiga({ expedienteId, lectura, onClose }: { ex
               <div className="font-semibold">Emparejamiento</div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5"><IconoCheck estado={ev.validacion.bl} />Doc.Embarque Hijo: <span className="font-medium break-all">{lectura.datos.bl_hijo ?? "—"}</span><span className="basis-full pl-6 text-[11px] text-muted-foreground">(el BL madre no se usa para emparejar)</span></div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5"><IconoCheck estado={ev.validacion.cliente} />Cliente: <span className="font-medium">{[lectura.datos.consignatario, lectura.datos.consignatario_rnc].filter(Boolean).join(" · ") || "—"}</span></div>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5"><IconoCheck estado={ev.validacion.puerto} />Puerto de desembarque: <span className="font-medium">{lectura.datos.puerto_desembarque ?? "—"}</span></div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5"><IconoCheck estado={ev.validacion.puerto} />Puerto de desembarque: <span className="font-medium">{lectura.datos.puerto_desembarque ?? "—"}</span>{lectura.datos.puerto_descarga && <span className="basis-full pl-6 text-[11px] text-muted-foreground">Puerto de descarga {lectura.datos.puerto_descarga}: solo referencia, no se usa para validar.</span>}</div>
               {ev.validacion.errores.map((e) => <div key={e} className="text-destructive">{e}</div>)}
               {ev.validacion.avisos.map((e) => <div key={e} className="text-muted-foreground text-[12px]">{e}</div>)}
             </div>
@@ -162,7 +162,7 @@ export function RevisionSeguimientoSiga({ expedienteId, lectura, onClose }: { ex
                     <ul className="space-y-0.5 text-[12px]">
                       {lectura.datos.procesos.map((p) => {
                         const nuevo = ev.procesosNuevos.includes(p);
-                        return <li key={`${p.proceso}${p.numero_solicitud}${p.fecha}`}>{PROCESOS_SIGA[p.proceso]} · {p.numero_solicitud ?? "sin número"} · {fmtFechaSiga(p.fecha)}{p.estado ? ` · ${p.estado}` : ""} <span className={nuevo ? "text-primary" : "text-muted-foreground"}>{nuevo ? "(nuevo)" : "(ya registrado)"}</span></li>;
+                        return <li key={`${p.proceso}${p.numero_solicitud}${p.fecha}`}>{PROCESOS_SIGA[p.proceso]}{p.doc_embarque ? ` (${p.doc_embarque})` : ""} · {p.numero_solicitud ?? "sin número"} · {fmtFechaSiga(p.fecha)}{p.estado ? ` · ${p.estado}` : ""}{p.localizacion ? ` · ${p.localizacion}` : ""} <span className={nuevo ? "text-primary" : "text-muted-foreground"}>{nuevo ? "(nuevo)" : "(ya registrado)"}</span></li>;
                       })}
                     </ul>
                   )}
