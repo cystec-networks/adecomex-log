@@ -320,7 +320,8 @@ function FilaDocumento({ label, obligatorio, doc, nombres = {}, onUpload, onMarc
   const vd = doc?.fecha_vencimiento ? daysFromToday(doc.fecha_vencimiento) : NaN;
   const vencido = !isNaN(vd) && vd < 0;
   return (
-    <div className="flex items-center gap-2 py-[3px] text-[12px] border-b border-border/40 last:border-0">
+    <div className="border-b border-border/40 last:border-0">
+    <div className="flex items-center gap-2 py-[3px] text-[12px]">
       <span className={`h-2 w-2 rounded-full shrink-0 ${st.dot}`} />
       <span className="w-52 shrink-0 truncate font-medium" title={label}>
         {obligatorio && <span className="text-destructive mr-0.5" title="Obligatorio para pasar a Presentado">*</span>}
@@ -333,7 +334,6 @@ function FilaDocumento({ label, obligatorio, doc, nombres = {}, onUpload, onMarc
         </div>
         {doc?.tipo === TIPO_CARTA_RUTA && leerReferenciaCartaRuta(doc.observaciones) && <div className="text-[11px] whitespace-normal break-words">{leerReferenciaCartaRuta(doc.observaciones)}</div>}
         {doc?.tipo === TIPO_SOLICITUD_DESPACHO && leerReferenciaSolicitudDespacho(doc.observaciones) && <div className="text-[11px] whitespace-normal break-words">No. de Solicitud: {leerReferenciaSolicitudDespacho(doc.observaciones)}</div>}
-        {extra}
       </div>
       <span className="w-16 shrink-0 font-mono text-[11px] text-primary">{doc?.storage_path && doc?.codigo_siga ? doc.codigo_siga : ""}</span>
       {doc ? (
@@ -376,6 +376,8 @@ function FilaDocumento({ label, obligatorio, doc, nombres = {}, onUpload, onMarc
           </>
         )}
       </div>
+    </div>
+    {extra && <div className="sticky left-0 max-w-[calc(100vw-5rem)] pb-1 pl-4 sm:max-w-none sm:pl-[14.5rem]">{extra}</div>}
     </div>
   );
 }
