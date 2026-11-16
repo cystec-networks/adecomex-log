@@ -3101,6 +3101,7 @@ export type Database = {
           fecha_vencimiento: string | null
           file_hash: string | null
           id: string
+          lectura_siga: Json | null
           observaciones: string | null
           origen_cambio: string | null
           responsable_id: string | null
@@ -3121,6 +3122,7 @@ export type Database = {
           fecha_vencimiento?: string | null
           file_hash?: string | null
           id?: string
+          lectura_siga?: Json | null
           observaciones?: string | null
           origen_cambio?: string | null
           responsable_id?: string | null
@@ -3141,6 +3143,7 @@ export type Database = {
           fecha_vencimiento?: string | null
           file_hash?: string | null
           id?: string
+          lectura_siga?: Json | null
           observaciones?: string | null
           origen_cambio?: string | null
           responsable_id?: string | null
@@ -4157,6 +4160,94 @@ export type Database = {
           },
         ]
       }
+      expediente_siga_procesos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          documento_id: string | null
+          estado: string | null
+          etiqueta: string | null
+          expediente_id: string
+          fecha: string | null
+          fecha_texto: string | null
+          id: string
+          numero_solicitud: string | null
+          origen: string | null
+          proceso: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          documento_id?: string | null
+          estado?: string | null
+          etiqueta?: string | null
+          expediente_id: string
+          fecha?: string | null
+          fecha_texto?: string | null
+          id?: string
+          numero_solicitud?: string | null
+          origen?: string | null
+          proceso: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          documento_id?: string | null
+          estado?: string | null
+          etiqueta?: string | null
+          expediente_id?: string
+          fecha?: string | null
+          fecha_texto?: string | null
+          id?: string
+          numero_solicitud?: string | null
+          origen?: string | null
+          proceso?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expediente_siga_procesos_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_siga_procesos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_siga_procesos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_siga_procesos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "expediente_siga_procesos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "expediente_siga_procesos_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+        ]
+      }
       expedientes: {
         Row: {
           acuerdo_codigo: string | null
@@ -4168,6 +4259,7 @@ export type Database = {
           buyer_nacionalidad: string | null
           buyer_nombre: string | null
           canal_riesgo: string | null
+          cantidad_bultos: number | null
           cantidad_despacho: number | null
           certificado_emisor_codigo: string | null
           certificado_periodo_desde: string | null
@@ -4269,6 +4361,16 @@ export type Database = {
           regimen_codigo_exportacion: string | null
           responsable_id: string | null
           seguro: number | null
+          siga_administracion: string | null
+          siga_auto: Json
+          siga_bandera: string | null
+          siga_bl_madre: string | null
+          siga_buque: string | null
+          siga_control_carga: string | null
+          siga_empresa_transportista: string | null
+          siga_fecha_llegada: string | null
+          siga_terminal: string | null
+          siga_viaje: string | null
           sin_codigo_dga: boolean
           sla_dias: number | null
           solicitud_id: string | null
@@ -4303,6 +4405,7 @@ export type Database = {
           buyer_nacionalidad?: string | null
           buyer_nombre?: string | null
           canal_riesgo?: string | null
+          cantidad_bultos?: number | null
           cantidad_despacho?: number | null
           certificado_emisor_codigo?: string | null
           certificado_periodo_desde?: string | null
@@ -4404,6 +4507,16 @@ export type Database = {
           regimen_codigo_exportacion?: string | null
           responsable_id?: string | null
           seguro?: number | null
+          siga_administracion?: string | null
+          siga_auto?: Json
+          siga_bandera?: string | null
+          siga_bl_madre?: string | null
+          siga_buque?: string | null
+          siga_control_carga?: string | null
+          siga_empresa_transportista?: string | null
+          siga_fecha_llegada?: string | null
+          siga_terminal?: string | null
+          siga_viaje?: string | null
           sin_codigo_dga?: boolean
           sla_dias?: number | null
           solicitud_id?: string | null
@@ -4438,6 +4551,7 @@ export type Database = {
           buyer_nacionalidad?: string | null
           buyer_nombre?: string | null
           canal_riesgo?: string | null
+          cantidad_bultos?: number | null
           cantidad_despacho?: number | null
           certificado_emisor_codigo?: string | null
           certificado_periodo_desde?: string | null
@@ -4539,6 +4653,16 @@ export type Database = {
           regimen_codigo_exportacion?: string | null
           responsable_id?: string | null
           seguro?: number | null
+          siga_administracion?: string | null
+          siga_auto?: Json
+          siga_bandera?: string | null
+          siga_bl_madre?: string | null
+          siga_buque?: string | null
+          siga_control_carga?: string | null
+          siga_empresa_transportista?: string | null
+          siga_fecha_llegada?: string | null
+          siga_terminal?: string | null
+          siga_viaje?: string | null
           sin_codigo_dga?: boolean
           sla_dias?: number | null
           solicitud_id?: string | null
@@ -9151,6 +9275,18 @@ export type Database = {
       aplicar_lote_hitos_retroactivos: {
         Args: { p_codigos?: string[]; p_excluir?: string[] }
         Returns: string
+      }
+      aplicar_seguimiento_siga: {
+        Args: {
+          p_campos: Json
+          p_documento: string
+          p_estado: string
+          p_expediente: string
+          p_lectura: Json
+          p_origen: string
+          p_procesos: Json
+        }
+        Returns: Json
       }
       aprender_cuenta_beneficiario: {
         Args: { p_beneficiario: string; p_descripcion: string; p_tipo: string }

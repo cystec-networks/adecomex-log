@@ -974,6 +974,13 @@
       "when": 1794846789259,
       "tag": "0138_hito_preferencia_certificado_dga",
       "breakpoints": true
+    },
+    {
+      "idx": 139,
+      "version": "7",
+      "when": 1794864420794,
+      "tag": "0139_seguimiento_siga",
+      "breakpoints": true
     }
   ]
 }
