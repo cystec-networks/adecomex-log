@@ -9287,6 +9287,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      aplicar_hito_despacho_siga: {
+        Args: {
+          p_detalle: Json
+          p_expediente: string
+          p_fecha: string
+          p_ref: string
+        }
+        Returns: string[]
+      }
       aplicar_lote_hitos_retroactivos: {
         Args: { p_codigos?: string[]; p_excluir?: string[] }
         Returns: string

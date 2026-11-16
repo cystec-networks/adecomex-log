@@ -4,8 +4,8 @@ import { callGateway } from "@/lib/ai-gateway.server";
 import { tipoPaginaConfiable } from "./juego-documentos-confianza";
 import { MODELO_ECONOMICO, MODELO_EXTRACCION } from "./ia-consumo";
 import { INSTRUCCION_CANTIDAD, tipoPorEncabezado } from "./lectura-texto";
-import { textoPdfDigital, textoPdfRenglones } from "./pdf-texto.server";
-import { esSeguimientoSiga, leerSeguimientoSiga, TIPO_SEGUIMIENTO_SIGA } from "./seguimiento-siga";
+import { textoEItemsPdf, textoPdfDigital, textoPdfRenglones } from "./pdf-texto.server";
+import { blParaEmparejar, esSeguimientoSiga, leerSeguimientoSiga, leerSeguimientoSigaCeldas, TIPO_SEGUIMIENTO_SIGA } from "./seguimiento-siga";
 import { causaPausaIa } from "./ia-consumo.server";
 import { TIPO_CERTIFICADO_DGA } from "./certificado-origen-dga";
 
@@ -71,8 +71,10 @@ export async function leerArchivoCorreo(nombre: string, mime: string, base64: st
   // Seguimiento SIGA: se reconoce y se lee con reglas fijas, sin IA (el respaldo corre al ubicarlo).
   const renglones = esPdf ? texto ?? await textoPdfRenglones(bytes) : null;
   if (renglones && esSeguimientoSiga(renglones)) {
-    const siga = leerSeguimientoSiga(renglones);
-    return { ...base, tipo: TIPO_SEGUIMIENTO_SIGA, bl_awb: siga?.bl_hijo ?? null, datos: siga ? { seguimiento_siga: siga } : {} };
+    // Formato del portal (celdas por posición) primero; luego renglones. El BL es el hijo, o el del documento si el Tipo de BL es Simple.
+    const conPosicion = await textoEItemsPdf(bytes).catch(() => null);
+    const siga = (conPosicion ? leerSeguimientoSigaCeldas(conPosicion.items, conPosicion.texto) : null) ?? leerSeguimientoSiga(renglones);
+    return { ...base, tipo: TIPO_SEGUIMIENTO_SIGA, bl_awb: siga ? blParaEmparejar(siga).bl : null, datos: siga ? { seguimiento_siga: siga } : {} };
   }
   let tipo = texto ? tipoPorEncabezado(texto) : null;
   let j: Record<string, any> = {};

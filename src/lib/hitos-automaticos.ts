@@ -5,7 +5,7 @@
  */
 import { fmtFechaHora } from "@/lib/documento-versiones";
 
-export const ORIGENES_AUTOMATICOS = ["correo", "documentos", "vuce_pdf", "vuce_ficha", "vuce_carga", "correo_dga", "gestor", "ecf", "certificado_dga"] as const;
+export const ORIGENES_AUTOMATICOS = ["correo", "documentos", "vuce_pdf", "vuce_ficha", "vuce_carga", "correo_dga", "gestor", "ecf", "certificado_dga", "siga"] as const;
 export type OrigenAutomatico = (typeof ORIGENES_AUTOMATICOS)[number];
 
 export type HitoAuto = {
@@ -79,6 +79,10 @@ export function textoHitoAutomatico(h: HitoAuto): string {
       const codigo = detalle(h, "codigo_siga");
       const accion = detalle(h, "evento") === "marcado_recibido" ? "marcado recibido" : "subido";
       return `Certificado de Origen DGA${codigo ? ` (${codigo})` : ""} ${accion} el ${fmtFechaHora(f)}${por}`;
+    }
+    case "siga": {
+      const igra = detalle(h, "numero_despacho");
+      return `Despacho completo en SIGA${igra ? ` (${igra})` : ""} procesado el ${fmtFechaHora(f)} · Seguimiento SIGA${detalle(h, "origen") === "correo" ? " recibido por correo" : ""}`;
     }
     default: return "";
   }

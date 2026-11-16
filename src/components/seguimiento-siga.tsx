@@ -1,6 +1,6 @@
 // UI del Seguimiento SIGA: vista previa antes de guardar, avisos del encabezado, bloque «Datos SIGA»
 // en Información General e historial de procesos en Seguimientos.
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -14,8 +14,8 @@ import { useLiquidacionDga } from "@/components/liquidacion-dga-context";
 import { leerSeguimientoSigaDocumento } from "@/lib/seguimiento-siga.functions";
 import { aplicarSeguimientoSiga, evaluarSeguimientoSiga, lecturaParaGuardar, type EvaluacionSiga } from "@/lib/seguimiento-siga-evaluar";
 import {
-  CAMPOS_SIGA, ETIQUETA_AUTO_SIGA, LABEL_CAMPO_SIGA, PROCESOS_SIGA, TIPO_SEGUIMIENTO_SIGA, diferenciasAlertaSiga, esAutomaticoSiga,
-  type LecturaSigaGuardada, type SeguimientoSiga,
+  CAMPOS_SIGA, ETIQUETA_AUTO_SIGA, LABEL_CAMPO_SIGA, PROCESOS_SIGA, TIPO_SEGUIMIENTO_SIGA, blParaEmparejar, descripcionInformativaSiga, diferenciasAlertaSiga, esAutomaticoSiga,
+  esLecturaSigaFallida, type LecturaSigaFallida, type LecturaSigaGuardada, type SeguimientoSiga,
 } from "@/lib/seguimiento-siga";
 import { cn } from "@/lib/utils";
 
@@ -89,8 +89,8 @@ export function RevisionSeguimientoSiga({ expedienteId, lectura, onClose }: { ex
         // Solo lo que la base completó llega al formulario: los borradores del usuario se conservan.
         const aplicados = Object.fromEntries(r.completados.filter((k) => k in ev.decision.cambios).map((k) => [k, String(ev.decision.cambios[k])]));
         if (Object.keys(aplicados).length) editor?.current?.aplicar(aplicados as never);
-        toast.success(r.completados.length || r.procesos_nuevos
-          ? `Seguimiento SIGA aplicado: ${r.completados.length} campo(s) completado(s), ${r.procesos_nuevos} proceso(s) nuevo(s).`
+        toast.success(r.completados.length || r.procesos_nuevos || r.procesos_actualizados || r.hitos.length
+          ? `Seguimiento SIGA aplicado: ${r.completados.length} campo(s) completado(s), ${r.procesos_nuevos} proceso(s) nuevo(s)${r.procesos_actualizados ? `, ${r.procesos_actualizados} actualizado(s)` : ""}${r.hitos.length ? ", fecha de despacho completo en el Checklist" : ""}.`
           : "Seguimiento SIGA guardado; no había campos vacíos que completar.");
         if (ev.decision.diferencias.length) toast.warning(`${ev.decision.diferencias.length} diferencia(s) con SIGA; se conservaron los datos del Expediente.`, { duration: 10000 });
       } else toast.warning("Seguimiento SIGA registrado sin aplicar datos: no corresponde a este Expediente.", { duration: 10000 });
@@ -127,7 +127,15 @@ export function RevisionSeguimientoSiga({ expedienteId, lectura, onClose }: { ex
           <div className="space-y-4 text-[13px]">
             <div className="grid gap-1.5 rounded-md border p-3">
               <div className="font-semibold">Emparejamiento</div>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5"><IconoCheck estado={ev.validacion.bl} />Doc.Embarque Hijo: <span className="font-medium break-all">{lectura.datos.bl_hijo ?? "—"}</span><span className="basis-full pl-6 text-[11px] text-muted-foreground">(el BL madre no se usa para emparejar)</span></div>
+              {(() => {
+                const emp = blParaEmparejar(lectura.datos);
+                return (
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5"><IconoCheck estado={ev.validacion.bl} />
+                    {emp.fuente === "simple" ? "BL (Tipo de BL Simple, sin BL hijo):" : "Doc.Embarque Hijo:"} <span className="font-medium break-all">{emp.bl ?? "—"}</span>
+                    <span className="basis-full pl-6 text-[11px] text-muted-foreground">{emp.fuente === "simple" ? "Se empareja con el BL del documento porque SIGA indica Tipo de BL Simple." : "El BL madre de un consolidado no se usa para emparejar."}{lectura.datos.tipo_bl ? ` Tipo de BL: ${lectura.datos.tipo_bl}.` : ""}</span>
+                  </div>
+                );
+              })()}
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5"><IconoCheck estado={ev.validacion.cliente} />Cliente: <span className="font-medium">{[lectura.datos.consignatario, lectura.datos.consignatario_rnc].filter(Boolean).join(" · ") || "—"}</span></div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5"><IconoCheck estado={ev.validacion.puerto} />Puerto de desembarque: <span className="font-medium">{lectura.datos.puerto_desembarque ?? "—"}</span>{lectura.datos.puerto_descarga && <span className="basis-full pl-6 text-[11px] text-muted-foreground">Puerto de descarga {lectura.datos.puerto_descarga}: solo referencia, no se usa para validar.</span>}</div>
               {ev.validacion.errores.map((e) => <div key={e} className="text-destructive">{e}</div>)}
@@ -155,19 +163,39 @@ export function RevisionSeguimientoSiga({ expedienteId, lectura, onClose }: { ex
                     </tbody></table>
                   </div>
                 )}
-                {ev.decision.coincidentes.length > 0 && <div className="text-muted-foreground text-[12px]">Ya coinciden: {ev.decision.coincidentes.map((k) => LABEL_CAMPO_SIGA[k] ?? k).join(", ")}.</div>}
+                {ev.decision.coincidentes.length > 0 && <div className="text-muted-foreground text-[12px]">Ya coinciden (sin cambios): {ev.decision.coincidentes.map((k) => LABEL_CAMPO_SIGA[k] ?? k).join(", ")}.</div>}
+                {ev.decision.informativos.length > 0 && (
+                  <div className="rounded-md bg-muted/40 p-2 text-[12px] text-muted-foreground">
+                    <div className="mb-0.5 font-medium">Solo informativo (no se guarda)</div>
+                    {ev.decision.informativos.map((i) => (
+                      <div key={i.campo} className="break-words">{i.label}: {i.siga}{i.campo === "descripcion_mercancia" ? " · puede estar en otro idioma; la descripción del Expediente no cambia" : i.campo === "siga_bandera" ? " · poco confiable en SIGA, no se completa" : i.campo === "puerto_descarga" ? " · puerto de referencia, no es el del Expediente" : ""}</div>
+                    ))}
+                  </div>
+                )}
+                {lectura.datos.despacho_fecha && (
+                  <div>
+                    <div className="font-semibold mb-1">Despacho completo</div>
+                    <div className="text-[12px]">Fecha de proceso en SIGA: <span className="font-medium">{fmtFechaSiga(lectura.datos.despacho_fecha)}</span>{lectura.datos.numero_despacho ? ` · ${lectura.datos.numero_despacho}` : ""}</div>
+                    {ev.hitosDespacho.length === 0
+                      ? <div className="text-[12px] text-muted-foreground">El Checklist de este Expediente no tiene un hito de levante o despacho completo; la fecha queda en el historial de procesos.</div>
+                      : ev.hitosDespacho.map((h) => (
+                        <div key={h.codigo} className="text-[12px]">Checklist «{h.nombre}»: {h.resultado === "se_completara" ? <span className="text-primary">se completará con etiqueta Automático</span> : h.resultado === "manual" ? "tiene fecha manual; se conserva" : h.resultado === "no_aplica" ? "marcado No aplica; no se toca" : "ya tiene fecha; se conserva"}</div>
+                      ))}
+                  </div>
+                )}
                 <div>
                   <div className="font-semibold mb-1">Procesos SIGA para Seguimientos</div>
                   {lectura.datos.procesos.length === 0 ? <div className="text-muted-foreground">El reporte no trae procesos legibles.</div> : (
                     <ul className="space-y-0.5 text-[12px]">
                       {lectura.datos.procesos.map((p) => {
                         const nuevo = ev.procesosNuevos.includes(p);
+                        const actualizado = ev.procesosActualizados.includes(p);
                         return (
                           <li key={`${p.proceso}${p.numero_solicitud}${p.fecha}`}>
                             {PROCESOS_SIGA[p.proceso]}{p.doc_embarque ? ` (${p.doc_embarque})` : ""} · {p.numero_solicitud ?? "sin número"}
                             {p.fecha_creacion ? ` · Creado ${fmtFechaSiga(p.fecha_creacion)}` : ""} · Procesado {fmtFechaSiga(p.fecha)}
                             {p.estado ? ` · ${p.estado}` : ""}{p.localizacion ? ` · ${p.localizacion}` : ""}{" "}
-                            <span className={nuevo ? "text-primary" : "text-muted-foreground"}>{nuevo ? "(nuevo)" : "(ya registrado)"}</span>
+                            <span className={nuevo || actualizado ? "text-primary" : "text-muted-foreground"}>{nuevo ? "(nuevo)" : actualizado ? "(se actualiza estado/fechas)" : "(ya registrado)"}</span>
                             {p.numero_completado && <div className="pl-3 text-[11px] text-muted-foreground">Número cortado en SIGA, completado con el No. de Control de Carga (principio y final coinciden).</div>}
                             {p.numero_truncado && <div className="pl-3 text-[11px] text-destructive">Número cortado en SIGA: no coincide con el No. de Control de Carga; se guarda cortado. Verifícalo en SIGA.</div>}
                           </li>
@@ -211,12 +239,79 @@ export function useLeerSeguimientoSiga() {
   };
 }
 
-/** Avisos del encabezado: lectura pendiente, rechazo, diferencias y sugerencia de etapa. */
-export function AvisosSeguimientoSiga({ exp, onAvanzarManifestado }: { exp: Record<string, any>; onAvanzarManifestado: () => void }) {
+type DocSiga = { id: string; storage_path: string | null; lectura_siga?: unknown };
+
+/** Guarda el motivo de una lectura fallida para mostrarlo bajo el documento (nunca en silencio). */
+export async function guardarLecturaSigaFallida(documentoId: string, archivo: string | null, motivo: string, origen = "manual") {
+  const fallida: LecturaSigaFallida = { estado: "sin_lectura", motivo, archivo, procesado_en: new Date().toISOString(), origen };
+  await supabase.from("documentos").update({ lectura_siga: fallida as never }).eq("id", documentoId);
+}
+
+/** «Leer ahora» compartido (encabezado y fila del documento): lee y abre la vista previa sin guardar nada en el Expediente. */
+export function useLeerAhoraSiga(expedienteId: string) {
   const qc = useQueryClient();
   const leer = useLeerSeguimientoSiga();
   const [revision, setRevision] = useState<LecturaSigaPendiente | null>(null);
   const [leyendo, setLeyendo] = useState(false);
+  const leerAhora = async (doc: DocSiga) => {
+    if (!doc.storage_path) return;
+    setLeyendo(true);
+    try {
+      const { data: blob, error } = await supabase.storage.from("documentos").download(doc.storage_path);
+      if (error || !blob) throw new Error(`No se pudo leer el PDF: ${error?.message ?? "descarga fallida"}`);
+      const r = await leer(blob, doc.storage_path.split("/").pop() ?? "seguimiento.pdf");
+      if (!r.datos) {
+        const motivo = r.motivo ?? "No se encontró el BL (Doc.Embarque) en el reporte.";
+        await guardarLecturaSigaFallida(doc.id, doc.storage_path, motivo);
+        toast.warning(`Seguimiento SIGA sin leer: ${motivo}`, { duration: 10000 });
+        return;
+      }
+      setRevision({ documentoId: doc.id, archivo: doc.storage_path, datos: r.datos, metodo: r.metodo });
+    } catch (e) {
+      const motivo = e instanceof Error ? e.message : String(e);
+      await guardarLecturaSigaFallida(doc.id, doc.storage_path, motivo.startsWith("No se pudo") ? motivo : `No se pudo leer el PDF: ${motivo}`).catch(() => undefined);
+      toast.error(`Lectura no disponible: ${motivo}`);
+    } finally {
+      setLeyendo(false);
+      qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
+      qc.invalidateQueries({ queryKey: ["seguimiento-siga", expedienteId] });
+    }
+  };
+  const revisar = (doc: DocSiga, l: LecturaSigaGuardada) => setRevision({ documentoId: doc.id, archivo: doc.storage_path, datos: l.datos, metodo: l.metodo });
+  const dialogo = <RevisionSeguimientoSiga expedienteId={expedienteId} lectura={revision} onClose={() => setRevision(null)} />;
+  return { leerAhora, revisar, leyendo, dialogo };
+}
+
+/** Estado de la lectura bajo el archivo del documento: resultado, motivo si no se pudo y «Leer ahora». */
+export function LecturaSigaDocumento({ expedienteId, doc }: { expedienteId: string; doc: DocSiga }) {
+  const { leerAhora, revisar, leyendo, dialogo } = useLeerAhoraSiga(expedienteId);
+  if (!doc.storage_path) return null;
+  const l = doc.lectura_siga as LecturaSigaGuardada | LecturaSigaFallida | null | undefined;
+  const vigente = !!l && (l.archivo === undefined || l.archivo === doc.storage_path);
+  const boton = <Button size="sm" variant="outline" className="h-5 px-1.5 text-[11px]" onClick={() => leerAhora(doc)} disabled={leyendo}>{leyendo ? "Leyendo…" : "Leer ahora"}</Button>;
+  let linea: ReactNode;
+  if (!vigente || !l) linea = <><span>Seguimiento SIGA sin leer.</span>{boton}</>;
+  else if (esLecturaSigaFallida(l)) linea = <><span className="text-destructive">No se leyó: {l.motivo}</span>{boton}</>;
+  else if (l.estado === "rechazado") linea = <><span className="text-destructive">No aplicado: {l.validacion?.errores?.join(" ") || "no corresponde a este Expediente."}</span>{boton}</>;
+  else if (l.estado === "pendiente") linea = <><span>Leído, sin aplicar.</span><Button size="sm" variant="outline" className="h-5 px-1.5 text-[11px]" onClick={() => revisar(doc, l)}>Revisar</Button></>;
+  else if (l.estado === "aplicado") {
+    const partes = [`${l.completados?.length ?? 0} campo(s) completado(s)`, `${l.procesos_nuevos ?? 0} proceso(s) nuevo(s)`];
+    if (l.procesos_actualizados) partes.push(`${l.procesos_actualizados} actualizado(s)`);
+    if (l.hitos?.length) partes.push("fecha de despacho completo en el Checklist");
+    linea = <><span>Aplicado: {partes.join(", ")}.</span>{boton}</>;
+  } else linea = <><span>Seguimiento SIGA sin leer.</span>{boton}</>;
+  return (
+    <div className="text-[11px] whitespace-normal break-words">
+      {dialogo}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">{linea}</div>
+    </div>
+  );
+}
+
+/** Avisos del encabezado: lectura pendiente, rechazo, diferencias y sugerencia de etapa. */
+export function AvisosSeguimientoSiga({ exp, onAvanzarManifestado }: { exp: Record<string, any>; onAvanzarManifestado: () => void }) {
+  const qc = useQueryClient();
+  const { leerAhora, revisar, leyendo, dialogo } = useLeerAhoraSiga(exp.id);
   const { data: doc } = useQuery({
     queryKey: ["seguimiento-siga", exp.id],
     queryFn: async () => (await supabase.from("documentos").select("id,storage_path,lectura_siga,created_at").eq("expediente_id", exp.id).eq("tipo", TIPO_SEGUIMIENTO_SIGA).order("created_at", { ascending: false }).limit(1).maybeSingle()).data,
@@ -228,44 +323,40 @@ export function AvisosSeguimientoSiga({ exp, onAvanzarManifestado }: { exp: Reco
     return () => window.removeEventListener("seguimiento-siga-actualizado", h);
   }, [qc, exp.id]);
   if (!doc) return null;
-  const lectura = doc.lectura_siga as LecturaSigaGuardada | null;
-  const vigente = lectura && (lectura.archivo === undefined || lectura.archivo === doc.storage_path);
+  const bruta = doc.lectura_siga as LecturaSigaGuardada | LecturaSigaFallida | null;
+  const fallida = esLecturaSigaFallida(bruta) ? bruta : null;
+  const lectura = fallida ? null : bruta as LecturaSigaGuardada | null;
+  const vigente = !!bruta && (bruta.archivo === undefined || bruta.archivo === doc.storage_path);
 
-  const leerAhora = async () => {
-    if (!doc.storage_path) return;
-    setLeyendo(true);
-    try {
-      const { data: blob, error } = await supabase.storage.from("documentos").download(doc.storage_path);
-      if (error || !blob) throw new Error(error?.message ?? "no se pudo descargar el PDF");
-      const r = await leer(blob, doc.storage_path.split("/").pop() ?? "seguimiento.pdf");
-      if (!r.datos) { toast.warning("No se pudo leer el Doc.Embarque Hijo del Seguimiento SIGA; revisa el PDF."); return; }
-      setRevision({ documentoId: doc.id, archivo: doc.storage_path, datos: r.datos, metodo: r.metodo });
-    } catch (e) {
-      toast.error(`Lectura no disponible: ${e instanceof Error ? e.message : String(e)}`);
-    } finally { setLeyendo(false); }
-  };
   const descartarSugerencia = async () => {
     await supabase.from("documentos").update({ lectura_siga: { ...(lectura ?? {}), sugerencia_descartada: true } as never }).eq("id", doc.id);
     qc.invalidateQueries({ queryKey: ["seguimiento-siga", exp.id] });
   };
 
   const fila = "expediente-header-alertas mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs md:text-sm";
-  const diferencias = vigente && lectura?.estado === "aplicado" ? diferenciasAlertaSiga(exp, lectura.datos) : [];
-  const sugerir = vigente && lectura?.estado === "aplicado" && !lectura.sugerencia_descartada && !!lectura.datos.fecha_llegada
+  const aplicado = vigente && lectura?.estado === "aplicado" && !!lectura.datos;
+  const diferencias = aplicado ? diferenciasAlertaSiga(exp, lectura!.datos) : [];
+  const descripcionSiga = aplicado ? descripcionInformativaSiga(exp, lectura!.datos) : null;
+  const sugerir = aplicado && !lectura!.sugerencia_descartada && !!lectura!.datos.fecha_llegada
     && !!exp.fecha_llegada_real && ["digitar", "en_transito"].includes(exp.estado);
+  const botonLeer = <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => leerAhora(doc)} disabled={leyendo}>{leyendo ? "Leyendo…" : "Leer ahora"}</Button>;
   return (
     <>
-      <RevisionSeguimientoSiga expedienteId={exp.id} lectura={revision} onClose={() => setRevision(null)} />
+      {dialogo}
       {doc.storage_path && !vigente && (
         <div className={fila} role="status">
-          <span className="font-semibold">Seguimiento SIGA sin leer.</span>
-          <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={leerAhora} disabled={leyendo}>{leyendo ? "Leyendo…" : "Leer ahora"}</Button>
+          <span className="font-semibold">Seguimiento SIGA sin leer.</span>{botonLeer}
+        </div>
+      )}
+      {vigente && fallida && (
+        <div className={cn(fila, "text-destructive")} role="status">
+          <span className="font-semibold">Seguimiento SIGA sin leer:</span><span className="break-words">{fallida.motivo}</span>{botonLeer}
         </div>
       )}
       {vigente && lectura?.estado === "pendiente" && (
         <div className={fila} role="status">
           <span className="font-semibold">Seguimiento SIGA leído, sin aplicar.</span>
-          <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => setRevision({ documentoId: doc.id, archivo: doc.storage_path, datos: lectura.datos, metodo: lectura.metodo })}>Revisar</Button>
+          <Button size="sm" variant="outline" className="h-6 px-2 text-xs" onClick={() => revisar(doc, lectura)}>Revisar</Button>
         </div>
       )}
       {vigente && lectura?.estado === "rechazado" && (
@@ -278,6 +369,11 @@ export function AvisosSeguimientoSiga({ exp, onAvanzarManifestado }: { exp: Reco
         <div className={cn(fila, "text-destructive")} role="status" aria-label="Diferencias con SIGA">
           <span className="font-semibold">Diferencias con SIGA:</span>
           {diferencias.map((d) => <span key={d.campo} className="break-words">{d.label}: Expediente {d.expediente.length > 60 ? `${d.expediente.slice(0, 60)}…` : d.expediente} · SIGA {d.siga.length > 60 ? `${d.siga.slice(0, 60)}…` : d.siga}</span>)}
+        </div>
+      )}
+      {descripcionSiga && (
+        <div className={cn(fila, "text-[11px] md:text-[11px] text-muted-foreground")} role="note" title="Informativo: la descripción de SIGA puede estar en otro idioma; la del Expediente no cambia.">
+          <span>Descripción en SIGA (informativo): {descripcionSiga.length > 80 ? `${descripcionSiga.slice(0, 80)}…` : descripcionSiga}</span>
         </div>
       )}
       {sugerir && (
@@ -299,7 +395,7 @@ export function DatosSigaBlock({ form, set, exp, disabled }: { form: Record<stri
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 [&>*]:min-w-0">
         {Object.entries(CAMPOS_SIGA).map(([campo, def]) => (
           <div key={campo} className="grid gap-1.5">
-            <Label className="flex flex-wrap items-center">{def.label}<EtiquetaAutoSiga exp={exp} campo={campo} valor={form[campo]} /></Label>
+            <Label className="flex flex-wrap items-center" title={campo === "siga_bandera" ? "No se completa sola: SIGA trae la bandera poco confiable." : undefined}>{def.label}<EtiquetaAutoSiga exp={exp} campo={campo} valor={form[campo]} /></Label>
             <Input value={form[campo] ?? ""} onChange={(e) => set(campo, e.target.value)} disabled={disabled} title={form[campo] ?? ""} />
           </div>
         ))}

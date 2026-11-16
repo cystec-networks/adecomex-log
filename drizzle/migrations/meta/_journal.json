@@ -995,6 +995,13 @@
       "when": 1794869592609,
       "tag": "0141_siga_procesos_fecha_creacion",
       "breakpoints": true
+    },
+    {
+      "idx": 142,
+      "version": "7",
+      "when": 1794870928617,
+      "tag": "0142_siga_despacho_procesos_actualizables",
+      "breakpoints": true
     }
   ]
 }

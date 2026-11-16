@@ -42,7 +42,12 @@ describe("Seguimiento SIGA: lectura con reglas fijas", () => {
       ["transportacion", "10150-TR01-2611-000444", "2026-11-11T07:45"],
     ]);
   });
-  it("sin BL hijo no hay lectura (decide el respaldo)", () => expect(leerSeguimientoSiga(TEXTO.replace(/Doc\.Embarque Hijo: \| HBLIWF10012026 \| /, ""))).toBeNull());
+  it("sin BL hijo ni Tipo de BL Simple se lee, pero el BL madre no empareja", () => {
+    const sinHijo = leerSeguimientoSiga(TEXTO.replace(/Doc\.Embarque Hijo: \| HBLIWF10012026 \| /, ""))!;
+    expect(sinHijo.bl_madre).toBe("MEDUXX772205");
+    const v = validarSeguimientoSiga({ bl_awb: "MEDUXX772205", puerto_arribo: "CAUCEDO", puerto_arribo_codigo: "DOCAU" }, [{ nombre: "AGROLACTEOS IMANFA SRL" }], sinHijo);
+    expect(v.ok).toBe(false); expect(v.bl).toBe("sin_dato");
+  });
   it("otro documento no se lee", () => expect(leerSeguimientoSiga("COMMERCIAL INVOICE\nBuque: X")).toBeNull());
   it("fecha con a.m./p.m.", () => expect(fechaHoraSiga("10/11/2026 02:35 p.m.")).toBe("2026-11-10T14:35"));
 });
@@ -72,12 +77,13 @@ describe("Seguimiento SIGA: solo completa vacíos y avisa diferencias", () => {
     const d = decidirSeguimientoSiga({ naviera: "", descripcion_mercancia: "" }, base);
     expect(d.cambios).not.toHaveProperty("naviera"); expect(d.cambios).not.toHaveProperty("descripcion_mercancia");
   });
-  it("no sobrescribe manuales y avisa diferencias de llegada, peso, bultos y descripción", () => {
+  it("no sobrescribe manuales; llegada, peso y bultos en rojo y la descripción solo informativa", () => {
     const exp = { fecha_llegada_real: "2026-11-09", peso_bruto: 2000, cantidad_bultos: 41, descripcion_mercancia: "FUNDAS DE QUESO", siga_buque: "MSC ANNA" };
     const d = decidirSeguimientoSiga(exp, base);
     expect(d.cambios).not.toHaveProperty("fecha_llegada_real"); expect(d.cambios).not.toHaveProperty("peso_bruto");
     expect(d.cambios).not.toHaveProperty("cantidad_bultos"); expect(d.cambios).not.toHaveProperty("siga_buque");
-    expect(diferenciasAlertaSiga(exp, base).map((x) => x.campo)).toEqual(["fecha_llegada_real", "peso_bruto", "cantidad_bultos", "descripcion_mercancia"]);
+    expect(diferenciasAlertaSiga(exp, base).map((x) => x.campo)).toEqual(["fecha_llegada_real", "peso_bruto", "cantidad_bultos"]);
+    expect(d.informativos.map((x) => x.campo)).toContain("descripcion_mercancia");
   });
   it("no sugiere etapa si ya pasó de En tránsito", () => expect(decidirSeguimientoSiga({ estado: "presentar", fecha_llegada_real: "2026-11-10" }, base).sugerirEstado).toBeNull());
   it("Administración alimenta el Área solo con coincidencia única del catálogo", () => {

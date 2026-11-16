@@ -3,7 +3,7 @@
  * Solo servidor: usa el cliente de servicio que recibe como parámetro.
  */
 import { MODELO_ECONOMICO } from "@/lib/ia-consumo";
-import { TIPO_SEGUIMIENTO_SIGA, type SeguimientoSiga } from "./seguimiento-siga";
+import { TIPO_SEGUIMIENTO_SIGA, type LecturaSigaFallida, type SeguimientoSiga } from "./seguimiento-siga";
 import { aplicarSeguimientoSiga, evaluarSeguimientoSiga } from "./seguimiento-siga-evaluar";
 import { z } from "zod";
 import { aislarMensajeReciente, avisoFechaLlegada, combinarDatos, extraerPorEtiquetas, fusionarAsunto, fusionarAdjuntos } from "@/lib/correo-solicitud";
@@ -292,7 +292,7 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
   // registrado tiene prioridad sobre crear o fusionar una solicitud.
   const blDocumento = documentos.find((a) => (a.tipo === "Bill of Lading" || a.tipo === "Guía aérea") && a.bl_awb)?.bl_awb;
   await probarBl(blDocumento);
-  // Seguimiento SIGA: solo el Doc.Embarque Hijo identifica el Expediente (nunca el BL madre).
+  // Seguimiento SIGA: el Doc.Embarque Hijo (o el BL del documento si el Tipo de BL es Simple) identifica el Expediente; nunca el madre de un consolidado.
   await probarBl(pagos.find((a) => a.tipo === TIPO_SEGUIMIENTO_SIGA && a.bl_awb)?.bl_awb);
 
   const decision = decidirCorreo({ forzado: opciones.forzado, ignorado, faltantes, pdfs: adjuntosIn.length, documentos: documentos.length, pagos: pagos.length, ilegibles, otros, expediente: numeroDestino(), ambiguos });
@@ -432,16 +432,23 @@ async function aplicarSeguimientosCorreo(db: any, expedienteId: string, insertad
     try {
       let datos = (a.datos?.seguimiento_siga ?? null) as SeguimientoSiga | null;
       let metodo: "texto" | "ia" = "texto";
+      let motivo: string | null = null;
       if (!datos) {
         const { leerSeguimientoSigaPdf } = await import("./seguimiento-siga.server");
         const r = await leerSeguimientoSigaPdf(a.bytes, a.nombre);
-        datos = r.datos; metodo = r.metodo;
+        datos = r.datos; metodo = r.metodo; motivo = r.motivo ?? null;
       }
-      if (!datos) { avisos.push(`${a.nombre}: Seguimiento SIGA guardado, pero no se pudo leer el Doc.Embarque Hijo; revísalo en el Expediente.`); continue; }
+      if (!datos) {
+        // Nunca en silencio: el motivo queda bajo el documento con «Leer ahora».
+        const fallida: LecturaSigaFallida = { estado: "sin_lectura", motivo: motivo ?? "No se encontró el BL (Doc.Embarque) en el reporte.", archivo: fila.storage_path, procesado_en: new Date().toISOString(), origen: "correo" };
+        await db.from("documentos").update({ lectura_siga: fallida }).eq("id", fila.id);
+        avisos.push(`${a.nombre}: Seguimiento SIGA guardado sin leer: ${fallida.motivo}`);
+        continue;
+      }
       const evaluacion = await evaluarSeguimientoSiga(db, expedienteId, datos);
       const r = await aplicarSeguimientoSiga(db, { expedienteId, documentoId: fila.id, datos, metodo, evaluacion, origen: "correo", archivo: fila.storage_path });
       if (!evaluacion.validacion.ok) avisos.push(`Seguimiento SIGA no aplicado: ${evaluacion.validacion.errores.join(" ")}`);
-      else avisos.push(`Seguimiento SIGA: ${r.completados.length} campo${r.completados.length === 1 ? "" : "s"} completado${r.completados.length === 1 ? "" : "s"}, ${r.procesos_nuevos} proceso${r.procesos_nuevos === 1 ? "" : "s"} nuevo${r.procesos_nuevos === 1 ? "" : "s"}${evaluacion.decision.diferencias.length ? `; ${evaluacion.decision.diferencias.length} diferencia(s) con el Expediente, sin sobrescribir` : ""}.`);
+      else avisos.push(`Seguimiento SIGA: ${r.completados.length} campo${r.completados.length === 1 ? "" : "s"} completado${r.completados.length === 1 ? "" : "s"}, ${r.procesos_nuevos} proceso${r.procesos_nuevos === 1 ? "" : "s"} nuevo${r.procesos_nuevos === 1 ? "" : "s"}${r.procesos_actualizados ? `, ${r.procesos_actualizados} actualizado${r.procesos_actualizados === 1 ? "" : "s"}` : ""}${r.hitos.length ? `, fecha de despacho completo en el Checklist` : ""}${evaluacion.decision.diferencias.length ? `; ${evaluacion.decision.diferencias.length} diferencia(s) con el Expediente, sin sobrescribir` : ""}.`);
     } catch (e) {
       avisos.push(`${a.nombre}: Seguimiento SIGA guardado; lectura pendiente (${String(e instanceof Error ? e.message : e).slice(0, 140)}).`);
     }

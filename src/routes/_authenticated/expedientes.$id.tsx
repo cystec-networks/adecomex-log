@@ -73,7 +73,7 @@ import { EtiquetaAutoDua, LecturaDuaDocumento, avisarLecturaDua, useProcesarLect
 import { TIPO_DUA, TIPO_LIQUIDACION, esTipoLecturaDua } from "@/lib/declaracion-dua";
 import { TIPO_SEGUIMIENTO_SIGA, type SeguimientoSiga } from "@/lib/seguimiento-siga";
 import { aplicarSeguimientoSiga, evaluarSeguimientoSiga, type EvaluacionSiga } from "@/lib/seguimiento-siga-evaluar";
-import { AvisosSeguimientoSiga, DatosSigaBlock, EtiquetaAutoSiga, HistorialProcesosSiga, RevisionSeguimientoSiga, useLeerSeguimientoSiga, type LecturaSigaPendiente } from "@/components/seguimiento-siga";
+import { AvisosSeguimientoSiga, DatosSigaBlock, EtiquetaAutoSiga, HistorialProcesosSiga, LecturaSigaDocumento, RevisionSeguimientoSiga, guardarLecturaSigaFallida, useLeerSeguimientoSiga, type LecturaSigaPendiente } from "@/components/seguimiento-siga";
 import { TIPO_CERTIFICADO_DGA, decidirCertificadoDga, guardarReferenciaCertificado, leerReferenciaCertificado, type CertificadoDga } from "@/lib/certificado-origen-dga";
 
 import { CatalogCombobox } from "@/components/catalog-combobox";
@@ -3071,7 +3071,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               </SelectContent>
             </Select>
           </div>
-          <AutoField label="Declaración DUA" labelExtra={!isNuevo ? <EtiquetaAutoDua exp={exp} valor={form.numero_dua} /> : undefined} value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} req />
+          <AutoField label="Declaración DUA" labelExtra={!isNuevo ? <><EtiquetaAutoDua exp={exp} valor={form.numero_dua} /><EtiquetaAutoSiga exp={exp} campo="numero_dua" valor={form.numero_dua} /></> : undefined} value={form.numero_dua} onChange={(v) => set("numero_dua", v)} suggestion={sug.numero_dua ?? []} disabled={!editable} req />
           <div className="grid gap-1.5"><Label>N° de Manifiesto</Label><div className="min-h-9 flex items-center text-sm break-all" aria-label="N° de Manifiesto">{exp?.liq_dga_manifiesto || "—"}</div></div>
           <div className="grid gap-1.5"><Label>N° Resultado de Inspección</Label><div className="min-h-9 flex items-center text-sm break-all" aria-label="N° Resultado de Inspección">{exp?.liq_dga_resultado_inspeccion || "—"}</div></div>
           <div className="grid gap-1.5">
@@ -3088,7 +3088,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               onFocus={() => { if (!form.fecha_presentacion_real && !sugeridaPresentacion.current) { sugeridaPresentacion.current = true; set("fecha_presentacion_real", hoyRDISO()); } }}
               onChange={(e) => set("fecha_presentacion_real", e.target.value)} />
           </div>
-          <AutoField label="Número de despacho" value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} req />
+          <AutoField label="Número de despacho" labelExtra={!isNuevo ? <EtiquetaAutoSiga exp={exp} campo="numero_igra" valor={form.numero_igra} /> : undefined} value={form.numero_igra} onChange={(v) => set("numero_igra", v)} suggestion={sug.numero_igra ?? []} disabled={!editable} req />
           <Field label="Fecha de Aprobación" value={form.fecha_aprobacion_despacho} onChange={(v) => set("fecha_aprobacion_despacho", v)} type="date" disabled={!editable} />
           <AutoField label="Número de permiso" value={form.numero_vuce} onChange={(v) => set("numero_vuce", v)} suggestion={sug.numero_vuce ?? []} disabled={!editable} />
           <div className="grid gap-1.5">
@@ -3625,11 +3625,14 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       }
       // Seguimiento SIGA: se lee antes de guardar para avisar si no corresponde a este Expediente.
       let lecturaSiga: { datos: SeguimientoSiga; metodo: "texto" | "ia"; evaluacion: EvaluacionSiga } | null = null;
+      let motivoSinLecturaSiga: string | null = null;
       if (file && tipo === TIPO_SEGUIMIENTO_SIGA) {
         try {
           const r = await leerSiga(file, file.name);
-          if (!r.datos) toast.warning("No se pudo leer el Doc.Embarque Hijo del Seguimiento SIGA; el PDF se guardará sin autocompletar.", { duration: 10000 });
-          else {
+          if (!r.datos) {
+            motivoSinLecturaSiga = r.motivo ?? "No se encontró el BL (Doc.Embarque) en el reporte.";
+            toast.warning(`Seguimiento SIGA sin leer: ${motivoSinLecturaSiga} El PDF se guardará; usa «Leer ahora» en el documento.`, { duration: 10000 });
+          } else {
             const evaluacion = await evaluarSeguimientoSiga(supabase, expedienteId, r.datos, editorLiquidacion?.current?.leer() ?? null);
             if (!evaluacion.validacion.ok) {
               const seguir = await pedirConfirmacion({ titulo: "El Seguimiento SIGA no corresponde", mensaje: `${evaluacion.validacion.errores.join(" ")} No se aplicará ningún dato al Expediente. ¿Guardar el PDF aquí de todos modos?` });
@@ -3638,7 +3641,8 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
             lecturaSiga = { datos: r.datos, metodo: r.metodo, evaluacion };
           }
         } catch (e) {
-          toast.warning(`El Seguimiento SIGA se guardará sin autocompletar: ${e instanceof Error ? e.message : "lectura no disponible"}`, { duration: 10000 });
+          motivoSinLecturaSiga = `No se pudo leer el PDF: ${e instanceof Error ? e.message : "lectura no disponible"}`;
+          toast.warning(`El Seguimiento SIGA se guardará sin autocompletar: ${motivoSinLecturaSiga}`, { duration: 10000 });
         }
       }
       let docGuardadoId: string | null = editId;
@@ -3696,7 +3700,9 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           } catch (e) { toast.error(`No se pudo registrar el aviso del Seguimiento SIGA: ${e instanceof Error ? e.message : String(e)}`); }
         }
       }
-      if (tipo === TIPO_SEGUIMIENTO_SIGA) window.dispatchEvent(new Event("seguimiento-siga-actualizado"));
+      // Nunca en silencio: el motivo queda bajo el documento con «Leer ahora».
+      if (motivoSinLecturaSiga && docGuardadoId) await guardarLecturaSigaFallida(docGuardadoId, pathGuardado, motivoSinLecturaSiga).catch(() => undefined);
+      if (tipo === TIPO_SEGUIMIENTO_SIGA) { qc.invalidateQueries({ queryKey: ["documentos", expedienteId] }); window.dispatchEvent(new Event("seguimiento-siga-actualizado")); }
       if (cartaRuta?.solicitud) {
         try {
           const solicitudRegistrada = tipo === TIPO_CARTA_RUTA ? leerReferenciaSolicitudDespacho((docs ?? []).find((d: any) => d.tipo === TIPO_SOLICITUD_DESPACHO)?.observaciones) : "";
@@ -3895,7 +3901,8 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       onMarcarRecibido={() => marcarRecibido(item.tipo, latestByTipo.get(item.tipo))}
       onEstado={(v) => { const d = latestByTipo.get(item.tipo); if (d) cambiarEstado(d.id, v); }}
       onEliminar={() => { const d = latestByTipo.get(item.tipo); if (d) eliminar(d); }}
-      extra={esTipoLecturaDua(item.tipo) && latestByTipo.get(item.tipo) ? <LecturaDuaDocumento expedienteId={expedienteId} doc={latestByTipo.get(item.tipo)} /> : undefined}
+      extra={esTipoLecturaDua(item.tipo) && latestByTipo.get(item.tipo) ? <LecturaDuaDocumento expedienteId={expedienteId} doc={latestByTipo.get(item.tipo)} />
+        : item.tipo === TIPO_SEGUIMIENTO_SIGA && latestByTipo.get(item.tipo) ? <LecturaSigaDocumento expedienteId={expedienteId} doc={latestByTipo.get(item.tipo)} /> : undefined}
     />
   );
 
