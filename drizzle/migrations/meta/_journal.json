@@ -1002,6 +1002,20 @@
       "when": 1794870928617,
       "tag": "0142_siga_despacho_procesos_actualizables",
       "breakpoints": true
+    },
+    {
+      "idx": 143,
+      "version": "7",
+      "when": 1794926473525,
+      "tag": "0143_expediente_estado_completado",
+      "breakpoints": true
+    },
+    {
+      "idx": 144,
+      "version": "7",
+      "when": 1794926763898,
+      "tag": "0144_expediente_cierre_completado",
+      "breakpoints": true
     }
   ]
 }

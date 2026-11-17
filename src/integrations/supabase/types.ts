@@ -3756,6 +3756,106 @@ export type Database = {
           },
         ]
       }
+      expediente_cierre_lote_items: {
+        Row: {
+          created_at: string
+          expediente_id: string
+          hitos: Json
+          id: string
+          lote_id: string
+          revertido: boolean
+        }
+        Insert: {
+          created_at?: string
+          expediente_id: string
+          hitos?: Json
+          id?: string
+          lote_id: string
+          revertido?: boolean
+        }
+        Update: {
+          created_at?: string
+          expediente_id?: string
+          hitos?: Json
+          id?: string
+          lote_id?: string
+          revertido?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expediente_cierre_lote_items_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_cierre_lote_items_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_cierre_lote_items_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "expediente_cierre_lote_items_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "expediente_cierre_lote_items_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "expediente_cierre_lote_items_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "expediente_cierre_lotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expediente_cierre_lotes: {
+        Row: {
+          cantidad: number
+          creado_por: string | null
+          created_at: string
+          deshecho_en: string | null
+          deshecho_por: string | null
+          hitos_no_aplica: number
+          id: string
+        }
+        Insert: {
+          cantidad?: number
+          creado_por?: string | null
+          created_at?: string
+          deshecho_en?: string | null
+          deshecho_por?: string | null
+          hitos_no_aplica?: number
+          id?: string
+        }
+        Update: {
+          cantidad?: number
+          creado_por?: string | null
+          created_at?: string
+          deshecho_en?: string | null
+          deshecho_por?: string | null
+          hitos_no_aplica?: number
+          id?: string
+        }
+        Relationships: []
+      }
       expediente_contenedores: {
         Row: {
           created_at: string
@@ -4281,6 +4381,7 @@ export type Database = {
           certificado_transporte_desc: string | null
           certificado_tratamiento_codigo: string | null
           certificado_uso_codigo: string | null
+          cierre_snapshot: Json | null
           cliente_id: string | null
           contacto_solicitud: string | null
           created_at: string
@@ -4428,6 +4529,7 @@ export type Database = {
           certificado_transporte_desc?: string | null
           certificado_tratamiento_codigo?: string | null
           certificado_uso_codigo?: string | null
+          cierre_snapshot?: Json | null
           cliente_id?: string | null
           contacto_solicitud?: string | null
           created_at?: string
@@ -4575,6 +4677,7 @@ export type Database = {
           certificado_transporte_desc?: string | null
           certificado_tratamiento_codigo?: string | null
           certificado_uso_codigo?: string | null
+          cierre_snapshot?: Json | null
           cliente_id?: string | null
           contacto_solicitud?: string | null
           created_at?: string
@@ -9296,6 +9399,7 @@ export type Database = {
         }
         Returns: string[]
       }
+      aplicar_lote_cierre: { Args: { p_items: Json }; Returns: string }
       aplicar_lote_hitos_retroactivos: {
         Args: { p_codigos?: string[]; p_excluir?: string[] }
         Returns: string
@@ -9387,6 +9491,10 @@ export type Database = {
         Args: { _dias_tomados_ultimo_anio: number; _fecha_ingreso: string }
         Returns: number
       }
+      completar_expediente: {
+        Args: { p_id: string; p_motivo?: string; p_snapshot?: Json }
+        Returns: Json
+      }
       completar_hito_documentos_correo: {
         Args: { p_expediente: string; p_solicitud: string }
         Returns: boolean
@@ -9459,6 +9567,7 @@ export type Database = {
         Args: { p_lote: string; p_motivo?: string }
         Returns: Json
       }
+      deshacer_lote_cierre: { Args: { p_lote: string }; Returns: number }
       deshacer_lote_conciliacion: { Args: { p_lote: string }; Returns: number }
       deshacer_lote_hitos: { Args: { p_lote: string }; Returns: Json }
       deshacer_lote_no_aplica: { Args: { p_lote: string }; Returns: number }
@@ -9501,6 +9610,13 @@ export type Database = {
       guardar_solicitud_correo_pendiente: {
         Args: { p_solicitud: Json }
         Returns: Json
+      }
+      hechos_cierre_expedientes: {
+        Args: { p_ids: string[] }
+        Returns: {
+          expediente_id: string
+          hechos: Json
+        }[]
       }
       hitos_documentos_correo_pendientes: {
         Args: never
@@ -9575,9 +9691,17 @@ export type Database = {
       novedad_url_clave: { Args: { p_url: string }; Returns: string }
       novedades_token_valido: { Args: { p_token: string }; Returns: boolean }
       novedades_tomar_lock: { Args: { p_minutos?: number }; Returns: boolean }
+      pendientes_cierre_desde_hechos: {
+        Args: { h: Json; p_omitir_checklist?: boolean }
+        Returns: string[]
+      }
       precargar_cuentas_banco: { Args: never; Returns: number }
       previsualizar_tf: { Args: { p_cantidad: number }; Returns: string[] }
       previsualizar_tf_exactas: { Args: { p_entradas: Json }; Returns: Json }
+      reabrir_expediente: {
+        Args: { p_id: string; p_motivo: string }
+        Returns: undefined
+      }
       recalcular_hito_factura_venta: {
         Args: { p_expediente: string }
         Returns: boolean
@@ -9712,6 +9836,7 @@ export type Database = {
         | "facturar"
         | "despachado"
         | "entregado"
+        | "completado"
       gasto_categoria:
         | "nomina"
         | "gastos_menores_ncf"
@@ -9971,6 +10096,7 @@ export const Constants = {
         "facturar",
         "despachado",
         "entregado",
+        "completado",
       ],
       gasto_categoria: [
         "nomina",
