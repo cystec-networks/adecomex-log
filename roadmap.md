@@ -157,3 +157,5 @@
 - [x] Permisos en Completado (respuesta 17/11): Operaciones y Finanzas (y Administrador) completan; solo el Administrador reabre.
 - [x] Fecha de cobro en Completado (respuesta 17/11): obligatorio para facturas e-CF emitidas desde 01/11/2026. Simulación final: 25 cerrables, 16 bloqueados solo por cobro; plan presentado para aprobación.
 - [x] Estado Completado construido (17/11): panel Requisitos de cierre, Marcar Completado con motivo, Reabrir solo Admin, bloqueo en base de datos, pestaña Completados y lote histórico con vista previa/deshacer. Lote NO aplicado: espera confirmación del usuario.
+
+- [ ] Validar recibo DGA contra Liquidación (en análisis; espera recibo de 202610I377 y respuestas: Aceptar diferencia, cruce bancario, recibos cargados). Decidido: fecha de pago solo en la ficha, sin hito.

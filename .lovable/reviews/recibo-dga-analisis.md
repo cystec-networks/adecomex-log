@@ -47,7 +47,7 @@ Propuesta: si no hay «COMPROBANTE DE PAGO» + «Recibo No.», mostrar «No es u
 6. **Pago después del vencimiento del PIN**: comparar fecha y hora del recibo con el término del PIN. Hoy hay 1 caso así (202609I350: pagado 12/10, PIN vencía 11/10), sin recibo cargado.
 7. **PIN del recibo distinto del PIN guardado** (nuevo PIN tras vencer): aviso, sin sobrescribir.
 8. **Requisitos de cierre**: «Recibo DGA validado» como advertencia ámbar, nunca obligatorio.
-9. **Checklist**: no hay ningún hito activo de «Impuestos pagados»; la fecha de pago hoy no puede completar ninguno.
+9. **Checklist** (decidido): la fecha de pago queda solo en la ficha y quita el aviso del PIN; no completa ningún hito ni se crea uno nuevo.
 
 ## Cruce con el banco (opcional)
 - Los débitos de la DGA en tu cuenta se ven así: «EXI PAG DGA 163F2A2 72353573» + «EXI COM DGA …» RD$75 el mismo día. Traen un código y el **N.º de transacción**, que también trae el recibo: es un cruce más seguro que monto + fecha.
