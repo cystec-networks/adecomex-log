@@ -195,10 +195,14 @@ export const PATRON_CAMPO_BLOQUEADO =
   /^(numero_dua|numero_igra|regimen_aduanero|cliente_id|factura_ecf_id|bl_awb|tasa_cambio_usada|tasa_cambio_congelada|liq_oficial_total|total_fob|total_cif|seguro|flete|otros|peso_neto|peso_bruto|cierre_snapshot|liq_siga_.*|pin_.*|fecha_.*)$/;
 
 const vacio = (v: unknown) => v === null || v === undefined || v === "";
+const conHora = (v: unknown) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v);
 const igual = (a: unknown, b: unknown) => {
   if (vacio(a) && vacio(b)) return true;
+  if (vacio(a) !== vacio(b)) return false;
   if (typeof a === "number" || typeof b === "number") return Number(a) === Number(b);
-  return String(a) === String(b);
+  // Fechas con hora: el formulario guarda al minuto; mismo instante al minuto = sin cambio.
+  if (conHora(a) && conHora(b)) return Math.floor(Date.parse(String(a)) / 60_000) === Math.floor(Date.parse(String(b)) / 60_000);
+  return String(a).trim() === String(b).trim();
 };
 
 /** Campos ya guardados que el cambio alteraría (vacío → valor está permitido). */
@@ -206,3 +210,18 @@ export function camposBloqueadosCambiados(original: Record<string, unknown>, cam
   return Object.keys(cambios).filter((k) =>
     PATRON_CAMPO_BLOQUEADO.test(k) && k in original && !vacio(original[k]) && !igual(original[k], cambios[k]));
 }
+
+/**
+ * Prepara el guardado de un Expediente Completado: falla si cambia un dato bloqueado y
+ * quita del envío los datos bloqueados ya guardados (sin cambio), para no reescribirlos.
+ */
+export function payloadGuardadoCompletado<T extends Record<string, unknown>>(original: Record<string, unknown>, payload: T): T {
+  const bloqueados = camposBloqueadosCambiados(original, payload);
+  if (bloqueados.length) {
+    throw new Error(`Expediente Completado: no se pueden cambiar datos ya guardados (${bloqueados.join(", ")}). Un Administrador debe reabrirlo.`);
+  }
+  const limpio: Record<string, unknown> = { ...payload };
+  for (const k of Object.keys(limpio)) if (PATRON_CAMPO_BLOQUEADO.test(k) && k in original && !vacio(original[k])) delete limpio[k];
+  return limpio as T;
+}
+

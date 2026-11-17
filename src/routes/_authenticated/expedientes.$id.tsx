@@ -1,4 +1,6 @@
 import { sincronizarCobroDesdeEcf } from "@/lib/factura-ecf-vinculacion";
+import { RequisitosCierrePanel } from "@/components/cierre-expediente";
+import { payloadGuardadoCompletado } from "@/lib/expediente-cierre";
 import { optimizarArchivo, optimizarDocumento } from "@/lib/documento-optimizacion";
 import { ExpedienteGuardadoProvider, useGuardadoExpediente, useEditorExpediente, useBorradorExpediente } from "@/components/expediente-guardado";
 import { TransporteForm } from "@/components/transporte-form";
@@ -1189,7 +1191,7 @@ function DetalleExpediente() {
           {!isNuevo && (
             <div className="expediente-header-state grid min-w-0 grid-cols-[auto_minmax(0,1fr)_2rem] items-center gap-1.5">
               <Label className="mb-0 whitespace-nowrap text-xs text-muted-foreground md:text-sm">Estado:</Label>
-              <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion) || updateEstado.isPending}>
+              <Select value={expData.estado} onValueChange={(v) => updateEstado.mutate(v)} disabled={!(canEditExpediente && modoEdicion) || updateEstado.isPending || expData.estado === "completado"}>
                 <SelectTrigger aria-label="Estado del expediente" className="h-8 w-full min-w-0 text-xs text-foreground disabled:opacity-100 [&>svg]:shrink-0 [&>svg]:opacity-100 md:text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ESTADO_ORDEN.map((e) => (
@@ -1197,9 +1199,10 @@ function DetalleExpediente() {
                       {ESTADO_LABEL[e]}
                     </SelectItem>
                   ))}
+                  {expData.estado === "completado" && <SelectItem value="completado" disabled>{ESTADO_LABEL.completado}</SelectItem>}
                 </SelectContent>
               </Select>
-              <div className={cn("w-8", !(puedeForzarRegreso && estadoIndex(expData.estado) > 0) && "invisible")}>
+              <div className={cn("w-8", !(puedeForzarRegreso && estadoIndex(expData.estado) > 0 && expData.estado !== "completado") && "invisible")}>
                 <ForzarRegresoEstadoDialog
                   estadoActual={expData.estado}
                   pendiente={forzarRegreso.isPending}
@@ -1441,7 +1444,7 @@ function DetalleExpediente() {
               <span className="text-muted-foreground">ETA:</span>
               <span className="min-w-0 truncate font-medium">{expData.fecha_compromiso ? fmtLocalDate(expData.fecha_compromiso) : "—"}
               {(() => {
-                if (["despachado", "entregado", "facturar"].includes(expData.estado) || !expData.fecha_compromiso) return null;
+                if (["despachado", "entregado", "facturar", "completado"].includes(expData.estado) || !expData.fecha_compromiso) return null;
                 const eta = parseLocalDate(expData.fecha_compromiso);
                 if (!eta) return null;
                 const today = hoyRD();
@@ -1604,6 +1607,7 @@ function DetalleExpediente() {
         )}
       </div>
       <div className="px-6">
+        {!isNuevo && <div className="pt-2"><RequisitosCierrePanel exp={expData} onIrFicha={activarFicha} /></div>}
         <TabsContent value="info" forceMount={fichasVisitadas.includes("info") ? true : undefined} className="data-[state=inactive]:hidden">
           <div id="ficha-generales-print">
             <div className="hidden print:block mb-4">
@@ -2445,7 +2449,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         }
       }
       aplicarObservaciones(payload, payload.numero || exp.numero);
-      const { error } = await supabase.from("expedientes").update(payload).eq("id", exp.id);
+      const envio = exp.estado === "completado" ? payloadGuardadoCompletado(exp as any, payload) : payload;
+      const { error } = await supabase.from("expedientes").update(envio).eq("id", exp.id);
       if (error) throw error;
       await supabase.from("expediente_contenedores").delete().eq("expediente_id", exp.id);
       if (contValidos.length) {
@@ -2545,7 +2550,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     }
     if (save.isError) {
       setEstadoGuardado("error");
-      toast.error("✗ No se pudo guardar, intenta de nuevo");
+      const msg = String((save.error as any)?.message ?? "");
+      toast.error(msg.startsWith("Expediente Completado") ? msg : "✗ No se pudo guardar, intenta de nuevo");
       const t = setTimeout(() => setEstadoGuardado(null), 6000);
       return () => clearTimeout(t);
     }

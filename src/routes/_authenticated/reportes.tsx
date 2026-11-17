@@ -31,7 +31,7 @@ const REGIMENES = [
   "Otros",
 ];
 const PREFERENCIAS = ["Ninguna", "DR-CAFTA", "EPA"];
-const ESTADOS = ["digitar", "presentar", "verificar", "facturar", "despachado"];
+const ESTADOS = ["digitar", "presentar", "verificar", "facturar", "despachado", "completado"];
 const AGRUPAR_POR = [
   { v: "cliente", l: "Cliente" },
   { v: "regimen", l: "Régimen Aduanero" },
@@ -51,6 +51,7 @@ const estadoBadge: Record<string, string> = {
   verificar: "bg-amber-500/15 text-amber-700 border-amber-500/30",
   facturar: "bg-violet-500/15 text-violet-700 border-violet-500/30",
   despachado: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
+  completado: "bg-[var(--success)]/15 text-foreground border-[var(--success)]/40",
 };
 
 function ReportesPage() {

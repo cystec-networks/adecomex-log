@@ -135,7 +135,8 @@ function PortalExpedienteDetalle() {
     );
   }
 
-  const currentIdx = TIMELINE.findIndex((s) => s.key === (expediente.estado as EstadoKey));
+  // Completado es el cierre posterior a Facturado: en la línea del cliente cuenta como el último paso.
+  const currentIdx = TIMELINE.findIndex((s) => s.key === ((expediente.estado === "completado" ? "facturar" : expediente.estado) as EstadoKey));
 
   return (
     <div className="space-y-5">

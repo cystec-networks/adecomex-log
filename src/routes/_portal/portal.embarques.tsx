@@ -27,6 +27,7 @@ const ESTADO_COLOR: Record<string, string> = {
   facturar: "bg-purple-500/15 text-purple-700 border-purple-500/30",
   despachado: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
   entregado: "bg-teal-500/15 text-teal-700 border-teal-500/30",
+  completado: "bg-[var(--success)]/15 text-foreground border-[var(--success)]/40",
 };
 
 const ESTADO_GRUPO_1 = ["digitar", "manifestado", "presentar", "verificar"];
@@ -114,7 +115,7 @@ function PortalListado() {
   const g1 = filtered.filter((e) => ESTADO_GRUPO_1.includes(e.estado ?? ""));
   const transito = filtered.filter((e) => e.estado === "en_transito");
   const g3 = filtered.filter((e) => ESTADO_GRUPO_3.includes(e.estado ?? ""));
-  const facturados = filtered.filter((e) => e.estado === "facturar");
+  const facturados = filtered.filter((e) => e.estado === "facturar" || e.estado === "completado");
 
   const renderFila = (exp: any) => {
     const dias = exp.fecha_compromiso ? daysFromToday(exp.fecha_compromiso) : null;

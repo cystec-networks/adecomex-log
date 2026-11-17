@@ -156,3 +156,4 @@
 - [x] Simulación Completado 2 (17/11): los 41 con los cuatro documentos tienen N.º de despacho y fecha de aprobación, así que la regla de SIGA no bloquea a ninguno (39 muestran aviso por falta de Seguimiento SIGA). El único bloqueo entre las reglas confirmadas es el cobro: 25 cerrables con fecha 01/11, 2 con 01/10, 0 con 01/01.
 - [x] Permisos en Completado (respuesta 17/11): Operaciones y Finanzas (y Administrador) completan; solo el Administrador reabre.
 - [x] Fecha de cobro en Completado (respuesta 17/11): obligatorio para facturas e-CF emitidas desde 01/11/2026. Simulación final: 25 cerrables, 16 bloqueados solo por cobro; plan presentado para aprobación.
+- [x] Estado Completado construido (17/11): panel Requisitos de cierre, Marcar Completado con motivo, Reabrir solo Admin, bloqueo en base de datos, pestaña Completados y lote histórico con vista previa/deshacer. Lote NO aplicado: espera confirmación del usuario.

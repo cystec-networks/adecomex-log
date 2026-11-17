@@ -20,14 +20,15 @@ import { EmailButton } from "@/components/email-button";
 import { TruncatedCell } from "@/components/truncated-cell";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ESTADO_LABEL, ESTADO_ORDEN } from "@/lib/estados-expediente";
+import { ESTADO_LABEL, ESTADOS_FILTRO } from "@/lib/estados-expediente";
+import { CierreLoteBoton } from "@/components/cierre-expediente";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
 import { alertasExpedienteCompartidas } from "@/lib/alertas-expediente-compartidas";
 import { useDatosAlertasListado } from "@/lib/use-alertas-expediente";
 import { usePlazosRegimen, plazoEfectivo } from "@/lib/plazo-presentacion";
 import { daysFromToday, habilesRestantesPlazo } from "@/lib/dates";
 
-type TipoFilter = "importacion" | "exportacion" | "facturados" | "todos";
+type TipoFilter = "importacion" | "exportacion" | "facturados" | "completados" | "todos";
 
 export const Route = createFileRoute("/_authenticated/expedientes/")({
   head: () => ({ meta: [
@@ -40,8 +41,8 @@ export const Route = createFileRoute("/_authenticated/expedientes/")({
   ] }),
   validateSearch: (s: Record<string, unknown>): { tipo?: TipoFilter; estado?: string; eta?: number } => {
     const t = s.tipo;
-    const tipo = t === "importacion" || t === "exportacion" || t === "facturados" || t === "todos" ? t : undefined;
-    const estadosValidos = new Set<string>(ESTADO_ORDEN);
+    const tipo = t === "importacion" || t === "exportacion" || t === "facturados" || t === "completados" || t === "todos" ? t : undefined;
+    const estadosValidos = new Set<string>(ESTADOS_FILTRO);
     const estado = typeof s.estado === "string"
       ? s.estado.split(",").filter((value) => estadosValidos.has(value)).join(",") || undefined
       : undefined;
@@ -132,7 +133,7 @@ function Expedientes() {
   };
 
   const diasRestantes = (e: any) => {
-    if (e.estado === "despachado" || e.estado === "entregado" || e.estado === "facturar" || !e.fecha_compromiso) return null;
+    if (e.estado === "despachado" || e.estado === "entregado" || e.estado === "facturar" || e.estado === "completado" || !e.fecha_compromiso) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const eta = parseLocalDate(e.fecha_compromiso);
@@ -144,7 +145,8 @@ function Expedientes() {
     return { text: `${diff}`, full: `${Math.abs(diff)} días de atraso`, tone: "danger" as const };
   };
 
-  const detectTipo = (e: any): "importacion" | "exportacion" | "facturados" | "otros" => {
+  const detectTipo = (e: any): "importacion" | "exportacion" | "facturados" | "completados" | "otros" => {
+    if (e.estado === "completado") return "completados";
     if (e.estado === "facturar") return "facturados";
     const t = norm(e.tipo_operacion ?? "");
     if (t.includes("import")) return "importacion";
@@ -154,7 +156,7 @@ function Expedientes() {
 
   type Nivel = "critico" | "urgente" | "atencion";
   const nivelUrgencia = (e: any): Nivel | null => {
-    if (["despachado", "entregado", "facturar"].includes(e.estado)) return null;
+    if (["despachado", "entregado", "facturar", "completado"].includes(e.estado)) return null;
     if (e.fecha_llegada_real) {
       const restantes = habilesRestantesPlazo(e.fecha_llegada_real, 5);
       if (restantes <= 1) return "critico";
@@ -172,10 +174,12 @@ function Expedientes() {
   const filtered = (data ?? []).filter((e: any) => {
     const estados = estado === "todos" ? [] : estado.split(",");
     if (estados.length > 0 && !estados.includes(e.estado)) return false;
+    // Completados: fuera de las listas activas salvo en su pestaña o filtrando ese estado.
+    if (e.estado === "completado" && tipo !== "completados" && !estados.includes("completado")) return false;
     if (tipo !== "todos" && detectTipo(e) !== tipo) return false;
     if (soloUrgentes && !esUrgente(e)) return false;
     if (etaParam === 7) {
-      if (!e.fecha_compromiso || ["facturar", "entregado"].includes(e.estado)) return false;
+      if (!e.fecha_compromiso || ["facturar", "entregado", "completado"].includes(e.estado)) return false;
       const d = daysFromToday(e.fecha_compromiso);
       if (isNaN(d) || d < 0 || d > 7) return false;
     }
@@ -183,7 +187,7 @@ function Expedientes() {
     return true;
   });
 
-  const tipoLabel = tipo === "importacion" ? "Importaciones" : tipo === "exportacion" ? "Exportaciones" : tipo === "facturados" ? "Facturados" : "Todos los expedientes";
+  const tipoLabel = tipo === "importacion" ? "Importaciones" : tipo === "exportacion" ? "Exportaciones" : tipo === "facturados" ? "Facturados" : tipo === "completados" ? "Completados" : "Todos los expedientes";
 
   type SortKey = "numero" | "cliente" | "numero_dua" | "bl_awb" | "fecha_compromiso" | "puerto_arribo" | "numero_vuce" | "numero_igra" | "estado";
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
@@ -197,8 +201,9 @@ function Expedientes() {
   const activeSort = sort ?? { key: "fecha_compromiso" as SortKey, dir: "asc" as const };
   const getVal = (e: any, k: SortKey) => k === "cliente" ? (e.clientes?.nombre ?? "") : (e[k] ?? "");
   const cmp = (a: any, b: any) => {
-    const aD = (a.estado === "despachado" || a.estado === "entregado" || a.estado === "facturar") ? 1 : 0;
-    const bD = (b.estado === "despachado" || b.estado === "entregado" || b.estado === "facturar") ? 1 : 0;
+    const terminado = (x: any) => ["despachado", "entregado", "facturar", "completado"].includes(x.estado);
+    const aD = terminado(a) ? 1 : 0;
+    const bD = terminado(b) ? 1 : 0;
     if (aD !== bD) return aD - bD;
     if (soloUrgentes) {
       const an = nivelUrgencia(a); const bn = nivelUrgencia(b);
@@ -219,7 +224,7 @@ function Expedientes() {
     return activeSort.dir === "asc" ? r : -r;
   };
 
-  const grupos: Record<string, any[]> = { importacion: [], exportacion: [], facturados: [], otros: [] };
+  const grupos: Record<string, any[]> = { importacion: [], exportacion: [], facturados: [], completados: [], otros: [] };
   filtered.forEach((e: any) => grupos[detectTipo(e)].push(e));
   // no se ordena aquí; cada subgrupo por estado se ordena dentro del render
 
@@ -249,17 +254,20 @@ function Expedientes() {
     tipo === "importacion" ? ["importacion"] :
     tipo === "exportacion" ? ["exportacion"] :
     tipo === "facturados" ? ["facturados"] :
-    ["importacion", "exportacion", "facturados", "otros"]
+    tipo === "completados" ? ["completados"] :
+    ["importacion", "exportacion", "facturados", "otros", "completados"]
   ) as Array<keyof typeof grupos>;
 
   const grupoLabel: Record<string, string> = {
     importacion: "Importaciones",
     exportacion: "Exportaciones",
     facturados: "Facturados",
+    completados: "Completados",
     otros: "Otros",
   };
 
-  const countAll = (data ?? []).length;
+  const countAll = (data ?? []).filter((e: any) => e.estado !== "completado").length;
+  const countComp = (data ?? []).filter((e: any) => e.estado === "completado").length;
   const countImp = (data ?? []).filter((e: any) => detectTipo(e) === "importacion").length;
   const countExp = (data ?? []).filter((e: any) => detectTipo(e) === "exportacion").length;
   const countFact = (data ?? []).filter((e: any) => detectTipo(e) === "facturados").length;
@@ -275,6 +283,7 @@ function Expedientes() {
       despachado: "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900",
       entregado: "bg-teal-50 text-teal-700 border-teal-100 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-900",
       facturar: "bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900",
+      completado: "bg-[var(--success)]/15 text-foreground border-[var(--success)]/40",
     };
     return (
       <span
@@ -303,6 +312,7 @@ function Expedientes() {
       despachado: "bg-slate-200 dark:bg-slate-900/60 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-slate-600 dark:[&>td:first-child]:border-l-slate-500",
       entregado: "bg-emerald-50 dark:bg-emerald-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-emerald-500",
       facturar: "bg-teal-50 dark:bg-teal-950/30 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-teal-500",
+      completado: "bg-muted/40 [&>td:first-child]:border-l-4 [&>td:first-child]:border-l-[var(--success)]",
     };
 
     return porEstado[e.estado] ?? "";
@@ -548,6 +558,7 @@ function Expedientes() {
           <div className="flex items-center justify-end gap-1">
             <HerramientasDgaVuceMenu compacto className="px-2.5" />
             <RastreosEnvioMenu compacto className="px-2.5" />
+            <CierreLoteBoton className="px-2.5" />
             <Button size="sm" className="px-2.5" asChild>
               <Link to="/expedientes/$id" params={{ id: "nuevo" }} search={{ nuevo: "", solicitud: "", tipo: tipo === "exportacion" ? "exportacion" : "" }}><Plus className="h-4 w-4 mr-1" />{tipo === "exportacion" ? "Nuevo Expediente de Exportación" : "Nuevo Expediente"}</Link>
             </Button>
@@ -560,6 +571,7 @@ function Expedientes() {
             <Link to="/expedientes" search={{ tipo: "importacion", estado: estadoParam, eta: etaParam }} className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
             <Link to="/expedientes" search={{ tipo: "exportacion", estado: estadoParam, eta: etaParam }} className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
             <Link to="/expedientes" search={{ tipo: "facturados", estado: estadoParam, eta: etaParam }} className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
+            <Link to="/expedientes" search={{ tipo: "completados", estado: estadoParam, eta: etaParam }} className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "completados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Completados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countComp}</Badge></Link>
             </div>
             <Link to="/expedientes/correo" className={`px-2 py-1 text-xs rounded border inline-flex items-center gap-1.5 hover:bg-muted ${pendientesCorreo > 0 ? "border-destructive/40 bg-destructive/5 text-destructive" : "bg-card text-muted-foreground"}`} title="Solicitudes recibidas por correo (borradores por confirmar)">Por correo <Badge variant={pendientesCorreo > 0 ? "destructive" : "secondary"} className="text-[10px] h-4 px-1">{pendientesCorreo}</Badge></Link>
             <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">{filtered.length} expedientes</span>
@@ -570,7 +582,7 @@ function Expedientes() {
               <SelectContent>
                 <SelectItem value="todos">Todos los estados</SelectItem>
                 {estado.includes(",") && <SelectItem value={estado}>Estados del Dashboard</SelectItem>}
-                {ESTADO_ORDEN.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
+                {ESTADOS_FILTRO.map((e) => <SelectItem key={e} value={e}>{ESTADO_LABEL[e]}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={etaFilter} onValueChange={(v) => {
@@ -637,6 +649,7 @@ function Expedientes() {
                       const transito = rows.filter((e: any) => e.estado === "en_transito").sort(cmp);
                       const g3 = rows.filter((e: any) => ESTADO_GRUPO_3.includes(e.estado)).sort(cmp);
                       const facturar = rows.filter((e: any) => e.estado === "facturar").sort(cmp);
+                      const completados = rows.filter((e: any) => e.estado === "completado").sort(cmp);
                       return (
                       <tbody className="divide-y">
                         {g1.length > 0 && <EstadoDivider label="Por Procesar" groupKey="digitar_g1" count={g1.length} />}
@@ -647,6 +660,8 @@ function Expedientes() {
                         {!colapsados["despachado_g3"] && g3.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
                         {facturar.length > 0 && <EstadoDivider label="Facturados" groupKey="facturados" count={facturar.length} />}
                         {!colapsados["facturados"] && facturar.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
+                        {completados.length > 0 && <EstadoDivider label="Completados" groupKey="completados" count={completados.length} />}
+                        {!colapsados["completados"] && completados.map((e: any) => <ExpedienteRow key={e.id} e={e} />)}
                       </tbody>
                       );
                     })()}

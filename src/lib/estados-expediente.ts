@@ -7,6 +7,7 @@ export const ESTADO_LABEL: Record<string, string> = {
   despachado: "Despachado",
   entregado: "Entregado",
   facturar: "Facturado",
+  completado: "Completado",
 };
 
 export const ESTADO_ORDEN = [
@@ -23,8 +24,13 @@ export const ESTADO_ORDEN = [
 export const estadoLabel = (e: string | null | undefined): string =>
   (e && ESTADO_LABEL[e]) || (e ?? "");
 
+/** Completado es el cierre final: va después de Facturado, pero no forma parte del avance normal (solo «Marcar Completado»). */
+export const ESTADO_FINAL = "completado" as const;
+/** Estados para filtros de listas: el avance normal más Completado. */
+export const ESTADOS_FILTRO = [...ESTADO_ORDEN, ESTADO_FINAL] as const;
+
 export const estadoIndex = (e: string | null | undefined): number =>
-  ESTADO_ORDEN.indexOf((e ?? "") as (typeof ESTADO_ORDEN)[number]);
+  e === ESTADO_FINAL ? ESTADO_ORDEN.length : ESTADO_ORDEN.indexOf((e ?? "") as (typeof ESTADO_ORDEN)[number]);
 
 type Ctx = {
   exp: any;

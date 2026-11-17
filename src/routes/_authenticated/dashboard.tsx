@@ -114,7 +114,7 @@ function Dashboard() {
   const expedientesEnTransito = stats?.expedientes.filter((e) => e.estado === "en_transito").length ?? 0;
   const expedientesPorLlegar = stats?.expedientes.filter((e) => {
     if (!e.fecha_compromiso) return false;
-    if (["facturar", "entregado"].includes(e.estado)) return false;
+    if (["facturar", "entregado", "completado"].includes(e.estado)) return false;
     const d = daysFromToday(e.fecha_compromiso);
     return d >= 0 && d <= 7;
   }).length ?? 0;
@@ -262,6 +262,7 @@ function EstadoBadge({ value, className }: { value: string; className?: string }
     despachado: "bg-[var(--success)]/15 text-[var(--success)] border-transparent",
     entregado: "bg-[var(--success)]/15 text-[var(--success)] border-transparent",
     facturar: "bg-accent/20 text-accent-foreground border-transparent",
+    completado: "bg-[var(--success)]/15 text-foreground border-transparent",
   };
   const label = ESTADO_LABEL[value] ?? value?.replace("_", " ");
   return <Badge className={`text-[10px] ${map[value] ?? "bg-muted text-muted-foreground border-transparent"} ${className ?? ""}`}>{label}</Badge>;
