@@ -76,6 +76,8 @@ import { TIPO_DUA, TIPO_LIQUIDACION, esTipoLecturaDua } from "@/lib/declaracion-
 import { TIPO_SEGUIMIENTO_SIGA, type SeguimientoSiga } from "@/lib/seguimiento-siga";
 import { aplicarSeguimientoSiga, evaluarSeguimientoSiga, type EvaluacionSiga } from "@/lib/seguimiento-siga-evaluar";
 import { AvisosSeguimientoSiga, DatosSigaBlock, EtiquetaAutoSiga, HistorialProcesosSiga, LecturaSigaDocumento, RevisionSeguimientoSiga, guardarLecturaSigaFallida, useLeerSeguimientoSiga, type LecturaSigaPendiente } from "@/components/seguimiento-siga";
+import { LecturaReciboDocumento, avisarLecturaRecibo, useProcesarLecturaRecibo } from "@/components/recibo-dga-lectura";
+import { TIPO_RECIBO_DGA } from "@/lib/recibo-dga";
 import { TIPO_CERTIFICADO_DGA, decidirCertificadoDga, guardarReferenciaCertificado, leerReferenciaCertificado, type CertificadoDga } from "@/lib/certificado-origen-dga";
 
 import { CatalogCombobox } from "@/components/catalog-combobox";
@@ -3540,6 +3542,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const [revisionSiga, setRevisionSiga] = useState<LecturaSigaPendiente | null>(null);
   const leerSiga = useLeerSeguimientoSiga();
   const procesarDua = useProcesarLecturaDua();
+  const procesarRecibo = useProcesarLecturaRecibo();
   const [confirmacion, setConfirmacion] = useState<{ titulo: string; mensaje: string; requiereCheck?: boolean; resolve: (v: boolean) => void } | null>(null);
   const [confirmAck, setConfirmAck] = useState(false);
   const cerrarConfirmacion = (v: boolean) => { confirmacion?.resolve(v); setConfirmacion(null); };
@@ -3782,6 +3785,12 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
         } catch (e: unknown) {
           toast.warning(`PDF guardado, pero no se pudo leer la Declaración: ${e instanceof Error ? e.message : "revisa los datos manualmente"}. Usa «Leer ahora» en el documento.`, { duration: 10000 });
         }
+      } else if (file && tipo === TIPO_RECIBO_DGA && docGuardadoId) {
+        try {
+          avisarLecturaRecibo(await procesarRecibo({ expedienteId, documentoId: docGuardadoId, archivo: pathGuardado, blob: file, nombre: file.name, origen: "manual" }));
+        } catch (e: unknown) {
+          toast.warning(`PDF guardado, pero no se pudo leer el recibo: ${e instanceof Error ? e.message : "revisa los datos manualmente"}. Usa «Leer ahora» en el documento.`, { duration: 10000 });
+        }
       } else if (file && esDocumentoResultadoDga(tipo)) {
         try {
           if (file.size > 15 * 1024 * 1024) throw new Error("el archivo supera 15MB para lectura automática; completa los campos manualmente");
@@ -3908,7 +3917,8 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       onEstado={(v) => { const d = latestByTipo.get(item.tipo); if (d) cambiarEstado(d.id, v); }}
       onEliminar={() => { const d = latestByTipo.get(item.tipo); if (d) eliminar(d); }}
       extra={esTipoLecturaDua(item.tipo) && latestByTipo.get(item.tipo) ? <LecturaDuaDocumento expedienteId={expedienteId} doc={latestByTipo.get(item.tipo)} />
-        : item.tipo === TIPO_SEGUIMIENTO_SIGA && latestByTipo.get(item.tipo) ? <LecturaSigaDocumento expedienteId={expedienteId} doc={latestByTipo.get(item.tipo)} /> : undefined}
+        : item.tipo === TIPO_SEGUIMIENTO_SIGA && latestByTipo.get(item.tipo) ? <LecturaSigaDocumento expedienteId={expedienteId} doc={latestByTipo.get(item.tipo)} />
+          : item.tipo === TIPO_RECIBO_DGA && latestByTipo.get(item.tipo) ? <LecturaReciboDocumento expedienteId={expedienteId} doc={latestByTipo.get(item.tipo)} /> : undefined}
     />
   );
 

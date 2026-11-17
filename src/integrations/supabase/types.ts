@@ -3102,6 +3102,7 @@ export type Database = {
           file_hash: string | null
           id: string
           lectura_dua: Json | null
+          lectura_recibo: Json | null
           lectura_siga: Json | null
           observaciones: string | null
           origen_cambio: string | null
@@ -3124,6 +3125,7 @@ export type Database = {
           file_hash?: string | null
           id?: string
           lectura_dua?: Json | null
+          lectura_recibo?: Json | null
           lectura_siga?: Json | null
           observaciones?: string | null
           origen_cambio?: string | null
@@ -3146,6 +3148,7 @@ export type Database = {
           file_hash?: string | null
           id?: string
           lectura_dua?: Json | null
+          lectura_recibo?: Json | null
           lectura_siga?: Json | null
           observaciones?: string | null
           origen_cambio?: string | null
@@ -4423,6 +4426,9 @@ export type Database = {
           liq_dga_manifiesto: string | null
           liq_dga_resultado_inspeccion: string | null
           liq_oficial_total: number | null
+          liq_recibo_banco: string | null
+          liq_recibo_numero: string | null
+          liq_recibo_transaccion: string | null
           liq_siga_estado: string | null
           liq_siga_fecha_pago: string | null
           liq_siga_fecha_registro: string | null
@@ -4571,6 +4577,9 @@ export type Database = {
           liq_dga_manifiesto?: string | null
           liq_dga_resultado_inspeccion?: string | null
           liq_oficial_total?: number | null
+          liq_recibo_banco?: string | null
+          liq_recibo_numero?: string | null
+          liq_recibo_transaccion?: string | null
           liq_siga_estado?: string | null
           liq_siga_fecha_pago?: string | null
           liq_siga_fecha_registro?: string | null
@@ -4719,6 +4728,9 @@ export type Database = {
           liq_dga_manifiesto?: string | null
           liq_dga_resultado_inspeccion?: string | null
           liq_oficial_total?: number | null
+          liq_recibo_banco?: string | null
+          liq_recibo_numero?: string | null
+          liq_recibo_transaccion?: string | null
           liq_siga_estado?: string | null
           liq_siga_fecha_pago?: string | null
           liq_siga_fecha_registro?: string | null
