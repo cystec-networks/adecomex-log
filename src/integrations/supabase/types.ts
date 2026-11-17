@@ -3102,6 +3102,7 @@ export type Database = {
           file_hash: string | null
           id: string
           lectura_dua: Json | null
+          lectura_operativa: Json | null
           lectura_recibo: Json | null
           lectura_siga: Json | null
           observaciones: string | null
@@ -3125,6 +3126,7 @@ export type Database = {
           file_hash?: string | null
           id?: string
           lectura_dua?: Json | null
+          lectura_operativa?: Json | null
           lectura_recibo?: Json | null
           lectura_siga?: Json | null
           observaciones?: string | null
@@ -3148,6 +3150,7 @@ export type Database = {
           file_hash?: string | null
           id?: string
           lectura_dua?: Json | null
+          lectura_operativa?: Json | null
           lectura_recibo?: Json | null
           lectura_siga?: Json | null
           observaciones?: string | null
@@ -4450,6 +4453,7 @@ export type Database = {
           acuerdo_comercial: string | null
           area_aduanera: string | null
           area_aduanera_codigo: string | null
+          auto_documento: Json
           bl_awb: string | null
           buyer_codigo: string | null
           buyer_nacionalidad: string | null
@@ -4601,6 +4605,7 @@ export type Database = {
           acuerdo_comercial?: string | null
           area_aduanera?: string | null
           area_aduanera_codigo?: string | null
+          auto_documento?: Json
           bl_awb?: string | null
           buyer_codigo?: string | null
           buyer_nacionalidad?: string | null
@@ -4752,6 +4757,7 @@ export type Database = {
           acuerdo_comercial?: string | null
           area_aduanera?: string | null
           area_aduanera_codigo?: string | null
+          auto_documento?: Json
           bl_awb?: string | null
           buyer_codigo?: string | null
           buyer_nacionalidad?: string | null
@@ -9470,6 +9476,17 @@ export type Database = {
           _transporte_id: string
         }
         Returns: boolean
+      }
+      aplicar_autocompletado_operativo: {
+        Args: {
+          p_campos: Json
+          p_documento: string
+          p_estado: string
+          p_expediente: string
+          p_lectura: Json
+          p_origen: string
+        }
+        Returns: Json
       }
       aplicar_hito_automatico: {
         Args: {
