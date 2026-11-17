@@ -223,7 +223,8 @@ export function RequisitosCierrePanel({ exp, onIrFicha }: { exp: ExpCierre; onIr
           )}
           {ev && ev.avisos.length > 0 && (
             <ul className="space-y-0.5 text-[12px] text-muted-foreground">
-              {ev.avisos.map((a) => <li key={a} className="flex gap-1.5"><AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{a}</li>)}
+              {/* El aviso de saldo (fila ámbar del panel) conserva su color aquí. */}
+              {ev.avisos.map((a) => <li key={a} className={cn("flex gap-1.5", !ev.avisosSueltos.includes(a) && "text-warning-text")}><AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{a}</li>)}
             </ul>
           )}
           <p className="text-[12px] text-muted-foreground">Después de completar, la DUA, el N.º de despacho, la Liquidación SIGA, los montos y las fechas quedan bloqueados. Solo el Administrador puede reabrirlo.</p>
