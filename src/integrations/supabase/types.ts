@@ -3319,6 +3319,87 @@ export type Database = {
         }
         Relationships: []
       }
+      documentos_papelera: {
+        Row: {
+          codigo_siga: string | null
+          documento: Json
+          documento_id: string
+          eliminado_en: string
+          eliminado_por: string | null
+          expediente_id: string
+          id: string
+          motivo: string | null
+          storage_path: string | null
+          tipo: string
+          versiones: Json
+          vinculos: Json
+        }
+        Insert: {
+          codigo_siga?: string | null
+          documento: Json
+          documento_id: string
+          eliminado_en?: string
+          eliminado_por?: string | null
+          expediente_id: string
+          id?: string
+          motivo?: string | null
+          storage_path?: string | null
+          tipo: string
+          versiones?: Json
+          vinculos?: Json
+        }
+        Update: {
+          codigo_siga?: string | null
+          documento?: Json
+          documento_id?: string
+          eliminado_en?: string
+          eliminado_por?: string | null
+          expediente_id?: string
+          id?: string
+          motivo?: string | null
+          storage_path?: string | null
+          tipo?: string
+          versiones?: Json
+          vinculos?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_papelera_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_papelera_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_papelera_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "documentos_papelera_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "documentos_papelera_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+        ]
+      }
       empleado_documentos: {
         Row: {
           created_by: string | null
@@ -9583,6 +9664,28 @@ export type Database = {
       deshacer_lote_conciliacion: { Args: { p_lote: string }; Returns: number }
       deshacer_lote_hitos: { Args: { p_lote: string }; Returns: Json }
       deshacer_lote_no_aplica: { Args: { p_lote: string }; Returns: number }
+      documento_cambiar_tipo: {
+        Args: {
+          _codigo_siga?: string
+          _documento_id: string
+          _motivo?: string
+          _tipo: string
+        }
+        Returns: undefined
+      }
+      documento_enviar_papelera: {
+        Args: { _documento_id: string; _motivo?: string }
+        Returns: string
+      }
+      documento_nombre_archivo: { Args: { _path: string }; Returns: string }
+      documento_purgar_papelera: {
+        Args: { _papelera_id: string }
+        Returns: string[]
+      }
+      documento_restaurar_papelera: {
+        Args: { _papelera_id: string }
+        Returns: string
+      }
       estado_presupuesto_ia: {
         Args: never
         Returns: {

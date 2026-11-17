@@ -26,14 +26,19 @@ const bytesABase64 = (bytes: Uint8Array) => {
   return btoa(s);
 };
 
-export type ResultadoLecturaDua = { lectura: LecturaDuaGuardada; completados: string[]; avisos: string[] };
+/** `propuestos`: campos y valores que la lectura completa (en simulación, lo que completaría sin guardar). */
+export type ResultadoLecturaDua = { lectura: LecturaDuaGuardada; completados: string[]; avisos: string[]; propuestos: Record<string, unknown> };
 
 export function useProcesarLecturaDua() {
   const qc = useQueryClient();
   const editor = useLiquidacionDga();
   const extraer = useServerFn(extractSolicitudFromDocument);
   const leerDua = useServerFn(leerDuaDocumentoPdf);
-  return async (p: { expedienteId: string; documentoId: string | null; archivo: string | null; blob: Blob; nombre: string; tipo: typeof TIPO_LIQUIDACION | typeof TIPO_DUA; origen: "manual" | "leer_ahora" }): Promise<ResultadoLecturaDua> => {
+  return async (p: { expedienteId: string; documentoId: string | null; archivo: string | null; blob: Blob; nombre: string; tipo: typeof TIPO_LIQUIDACION | typeof TIPO_DUA; origen: "manual" | "leer_ahora" | "cambio_tipo";
+    /** Solo calcula lo que completaría: no escribe Expediente, Auditoría ni lectura del documento. */
+    simular?: boolean;
+    /** Limita los campos a completar (la Declaración DUA sigue su propia regla y siempre se incluye). */
+    soloCampos?: string[] }): Promise<ResultadoLecturaDua> => {
     if (p.blob.size > 15 * 1024 * 1024) throw new Error("el archivo supera 15 MB para lectura automática; completa los campos manualmente");
     const base64 = bytesABase64(new Uint8Array(await p.blob.arrayBuffer()));
     let liq: LiquidacionDga = {};
@@ -73,7 +78,15 @@ export function useProcesarLecturaDua() {
       if (decision.numero_dua) documentales.numero_dua = decision.numero_dua;
     }
     const { cambios, previos } = prepararGuardadoLiquidacion(actual as Record<string, unknown>, documentales, campos);
+    if (p.soloCampos) {
+      const permitidos = new Set([...p.soloCampos, "numero_dua"]);
+      for (const k of Object.keys(cambios)) if (!permitidos.has(k)) { delete (cambios as Record<string, unknown>)[k]; delete previos[k]; }
+    }
     const completados = Object.keys(cambios);
+    const escribeDua = Boolean(decision.numero_dua) && "numero_dua" in cambios;
+    const alertas = [...decision.alertas, ...avisos];
+    const lectura: LecturaDuaGuardada = { archivo: p.archivo, tipo: p.tipo, estado: decision.estado, numero: resuelto.numero, fuente: resuelto.fuente, motivo: decision.motivo, alertas, procesado_en: new Date().toISOString(), origen: p.origen };
+    if (p.simular) return { lectura, completados, avisos, propuestos: { ...cambios } };
     if (completados.length) {
       const payload: Record<string, unknown> = { ...cambios };
       if (decision.numero_dua) payload.dga_auto = { ...((actual as any).dga_auto ?? {}), numero_dua: { valor: decision.numero_dua, documento_id: p.documentoId, tipo_documento: p.tipo, fuente: resuelto.fuente, fecha: new Date().toISOString(), origen: p.origen } };
@@ -83,17 +96,23 @@ export function useProcesarLecturaDua() {
       const { data: updated, error } = await query.select("id");
       if (error) throw error;
       if (!updated?.length) throw new Error("el expediente cambió durante la lectura; vuelve a leer el documento. No se guardó ningún campo parcial");
-      editor?.current?.aplicar(documentales);
+      editor?.current?.aplicar(Object.fromEntries(Object.entries(documentales).filter(([k]) => k in cambios)) as CambiosLiquidacion);
     }
-    const alertas = [...decision.alertas, ...avisos];
-    if (decision.numero_dua || decision.estado === "rechazado") {
+    const usuarioId = (await supabase.auth.getSession()).data.session?.user.id ?? null;
+    if (escribeDua || decision.estado === "rechazado") {
       const { error: audErr } = await supabase.from("auditoria").insert({
-        entidad: "expedientes", entidad_id: p.expedienteId, accion: decision.numero_dua ? "dua_automatico" : "dua_no_aplicado",
+        entidad: "expedientes", entidad_id: p.expedienteId, accion: escribeDua ? "dua_automatico" : "dua_no_aplicado", usuario_id: usuarioId,
         cambios: { numero_dua: decision.numero_dua ?? null, documento_id: p.documentoId, tipo_documento: p.tipo, fuente: resuelto.fuente, origen: p.origen, completados, alertas, motivo: decision.motivo } as never,
       });
       if (audErr) alertas.push(`No se pudo registrar en Auditoría: ${audErr.message}`);
+    } else if (completados.length) {
+      // Campos del documento sin Declaración nueva (p. ej. solo el manifiesto): también quedan en Auditoría.
+      const { error: audErr } = await supabase.from("auditoria").insert({
+        entidad: "expedientes", entidad_id: p.expedienteId, accion: "liquidacion_dga_completada", usuario_id: usuarioId,
+        cambios: { completados, valores: cambios, documento_id: p.documentoId, tipo_documento: p.tipo, origen: p.origen, alertas } as never,
+      });
+      if (audErr) alertas.push(`No se pudo registrar en Auditoría: ${audErr.message}`);
     }
-    const lectura: LecturaDuaGuardada = { archivo: p.archivo, tipo: p.tipo, estado: decision.estado, numero: resuelto.numero, fuente: resuelto.fuente, motivo: decision.motivo, alertas, procesado_en: new Date().toISOString(), origen: p.origen };
     if (p.documentoId) await supabase.from("documentos").update({ lectura_dua: lectura as never }).eq("id", p.documentoId);
     await Promise.all([
       qc.invalidateQueries({ queryKey: ["expediente", p.expedienteId] }),
@@ -101,7 +120,7 @@ export function useProcesarLecturaDua() {
       qc.invalidateQueries({ queryKey: ["auditoria", p.expedienteId] }),
     ]);
     qc.invalidateQueries({ queryKey: ["expedientes"] });
-    return { lectura, completados, avisos };
+    return { lectura, completados, avisos, propuestos: { ...cambios } };
   };
 }
 

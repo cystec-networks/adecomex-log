@@ -44,6 +44,12 @@ export function tooltipActualizado(doc: { actualizado_en?: string | null; actual
   return `Reemplazado por ${quien}${origen ? ` (${origen})` : ""} el ${fmtFechaHora(doc.actualizado_en)}`;
 }
 
+const ETIQUETA_CAMPO_LIQUIDACION: Record<string, string> = {
+  liq_dga_manifiesto: "N° de Manifiesto", liq_dga_resultado_inspeccion: "N° Resultado de Inspección", fecha_presentacion_real: "Fecha de Presentación",
+  fecha_llegada_real: "Fecha de llegada", puerto_arribo: "Puerto", puerto_arribo_codigo: "Código de puerto", peso_neto: "Peso neto", bl_awb: "BL/AWB",
+  liq_siga_numero: "N° de Liquidación", liq_siga_estado: "Estado de la Liquidación",
+};
+
 type FilaAuditoria = { accion: string; entidad: string; cambios?: unknown };
 
 const ORIGEN_HITO: Record<string, string> = {
@@ -59,6 +65,22 @@ export function describirAuditoria(a: FilaAuditoria): string {
   if (a.accion === "documento_reemplazado") {
     const origen = textoOrigen(typeof c.origen === "string" ? c.origen : null);
     return `Documento reemplazado: ${doc || "documento"}${origen ? ` · ${origen}` : ""}`;
+  }
+  const archivo = typeof c.archivo === "string" && c.archivo ? ` «${c.archivo}»` : "";
+  const motivo = typeof c.motivo === "string" && c.motivo ? ` · Motivo: ${c.motivo}` : "";
+  if (a.accion === "documento_enviado_papelera") return `Documento enviado a la Papelera: ${doc || "documento"}${archivo}${motivo}`;
+  if (a.accion === "documento_restaurado") return `Documento restaurado desde la Papelera: ${doc || "documento"}${archivo}`;
+  if (a.accion === "documento_borrado_definitivo") return `Documento borrado definitivamente de la Papelera: ${doc || "documento"}${archivo}`;
+  if (a.accion === "documento_tipo_cambiado") {
+    const antes = [c.tipo_anterior, c.codigo_anterior ? `(${c.codigo_anterior})` : ""].filter(Boolean).join(" ");
+    return `Tipo de documento cambiado: ${antes || "—"} → ${doc || "—"}${archivo} · sin versión nueva${motivo}`;
+  }
+  if (a.accion === "documento_ruta_corregida") return `Nombre de archivo corregido: ${doc || "documento"} · sin versión nueva`;
+  if (a.accion === "liquidacion_dga_completada") {
+    const campos = Array.isArray(c.completados) ? c.completados.map((k) => ETIQUETA_CAMPO_LIQUIDACION[String(k)] ?? String(k)).join(", ") : "";
+    const desde = c.tipo_documento === "Declaración Única Aduanera (DUA)" ? "el DUA" : "la Liquidación de Impuestos";
+    const via = c.origen === "cambio_tipo" ? " · tras cambiar el tipo" : c.origen === "confirmado" ? " · aplicado tras confirmación" : "";
+    return `Datos completados desde ${desde}${campos ? `: ${campos}` : ""}${via}`;
   }
   if (a.accion === "documento_reemplazo_revertido") return `Reemplazo revertido (guardado fallido): ${doc || "documento"}`;
   const hito = typeof c.nombre === "string" && c.nombre ? c.nombre : typeof c.hito === "string" ? c.hito : "hito";

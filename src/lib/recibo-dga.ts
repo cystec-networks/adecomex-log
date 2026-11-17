@@ -359,7 +359,7 @@ export const ETIQUETA_AUTO_RECIBO = "Automático";
 export type LecturaReciboGuardada = {
   archivo: string | null;
   leido_en: string;
-  origen: "manual" | "leer_ahora";
+  origen: "manual" | "leer_ahora" | "cambio_tipo";
   recibo: ReciboDga | null;
   motivo: string | null;
   validacion: ValidacionRecibo | null;

@@ -119,7 +119,7 @@ export function emparejarDua(exp: { numero?: unknown; bl_awb?: unknown; clientes
 export type EstadoLecturaDua = "aplicado" | "coincide" | "conservado" | "sin_numero" | "rechazado";
 export type LecturaDuaGuardada = {
   archivo: string | null; tipo: string; estado: EstadoLecturaDua; numero: string | null; fuente: "texto" | "archivo" | null;
-  motivo: string | null; alertas: string[]; procesado_en?: string; origen?: "manual" | "leer_ahora" | "retroactivo";
+  motivo: string | null; alertas: string[]; procesado_en?: string; origen?: "manual" | "leer_ahora" | "retroactivo" | "cambio_tipo";
 };
 
 /** Llena «Declaración DUA» solo si está vacía; si ya tiene otro número, lo conserva y avisa. */

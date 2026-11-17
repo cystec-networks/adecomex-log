@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
 import { fmtRD } from "@/lib/facturas-ecf";
 import { useMyRoles } from "@/lib/auth-hooks";
+import { TablaPapeleraDocumentos } from "@/components/documentos-papelera";
 
 type Kind = "expedientes" | "solicitudes" | "permisos" | "transportes" | "cotizaciones" | "ordenes" | "facturas_ecf" | "operaciones_logistica" | "gastos";
 
@@ -29,7 +30,7 @@ function Papelera() {
   const { data: roles, isLoading: rolesLoading } = useMyRoles();
   const isAdmin = roles?.includes("admin");
 
-  const [tab, setTab] = useState<Kind>("expedientes");
+  const [tab, setTab] = useState<Kind | "documentos">("expedientes");
   const [toRestore, setToRestore] = useState<{ kind: Kind; id: string; numero: string } | null>(null);
   const [toDelete, setToDelete] = useState<{ kind: Kind; id: string; numero: string } | null>(null);
   const [confirmText, setConfirmText] = useState("");
@@ -209,7 +210,7 @@ function Papelera() {
         </p>
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as Kind)}>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as Kind | "documentos")}>
         <TabsList>
           <TabsTrigger value="expedientes">Expedientes ({expRows.length})</TabsTrigger>
           <TabsTrigger value="solicitudes">Solicitudes ({solRows.length})</TabsTrigger>
@@ -220,6 +221,7 @@ function Papelera() {
           <TabsTrigger value="facturas_ecf">Facturas ({facRows.length})</TabsTrigger>
           <TabsTrigger value="operaciones_logistica">Logística ({logRows.length})</TabsTrigger>
           <TabsTrigger value="gastos">Gastos ({gasRows.length})</TabsTrigger>
+          <TabsTrigger value="documentos">Documentos</TabsTrigger>
 
         </TabsList>
 
@@ -621,6 +623,17 @@ function Papelera() {
                   </tbody>
                 </table>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="documentos">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Documentos de Expedientes eliminados</CardTitle>
+              <p className="text-xs text-muted-foreground">Se pueden restaurar durante 30 días; solo el Administrador los borra definitivamente.</p>
+            </CardHeader>
+            <CardContent className="p-0">
+              <TablaPapeleraDocumentos />
             </CardContent>
           </Card>
         </TabsContent>

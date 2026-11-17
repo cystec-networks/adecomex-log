@@ -113,6 +113,8 @@ import { duplicarExpediente } from "@/lib/duplicar-expediente";
 import { alertasExpedienteCompartidas } from "@/lib/alertas-expediente-compartidas";
 import { useDatosAlertasExpediente } from "@/lib/use-alertas-expediente";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
+import { EnviarPapeleraDialog, PapeleraDocumentosButton } from "@/components/documentos-papelera";
+import { CambiarTipoDocumentoDialog } from "@/components/cambiar-tipo-documento";
 import { DocumentoTamano } from "@/components/documento-tamano";
 import { SubirJuegoDocumentos } from "@/components/subir-juego-documentos";
 import { DescargarDocumentosZip } from "@/components/descargar-documentos-zip";
@@ -317,9 +319,9 @@ const BLOQUE_LIQUIDACION: { tipo: string; label: string }[] = [
 const TIPO_OTROS_DECLARACION = "Otro";
 const TIPO_OTROS_LIQUIDACION = "Otro (Liquidación)";
 
-function FilaDocumento({ label, obligatorio, doc, nombres = {}, onUpload, onMarcarRecibido, onEstado, onEliminar, extra }: {
+function FilaDocumento({ label, obligatorio, doc, nombres = {}, onUpload, onMarcarRecibido, onEstado, onEliminar, onCambiarTipo, extra }: {
   label: string; obligatorio?: boolean; doc?: any; nombres?: Record<string, string>; extra?: ReactNode;
-  onUpload: () => void; onMarcarRecibido?: () => void; onEstado: (v: string) => void; onEliminar: () => void;
+  onUpload: () => void; onMarcarRecibido?: () => void; onEstado: (v: string) => void; onEliminar: () => void; onCambiarTipo?: () => void;
 }) {
   const st = DOC_ESTADO_STYLE[doc?.estado ?? "pendiente"] ?? DOC_ESTADO_STYLE.pendiente;
   const vd = doc?.fecha_vencimiento ? daysFromToday(doc.fecha_vencimiento) : NaN;
@@ -382,6 +384,7 @@ function FilaDocumento({ label, obligatorio, doc, nombres = {}, onUpload, onMarc
         {doc && (
           <>
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onUpload} title="Editar datos"><Pencil className="h-3 w-3" /></Button>
+            {onCambiarTipo && <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onCambiarTipo} title="Cambiar tipo de documento" aria-label="Cambiar tipo de documento"><Repeat2 className="h-3 w-3" /></Button>}
             <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onEliminar} title="Eliminar"><Trash2 className="h-3 w-3" /></Button>
           </>
         )}
@@ -392,8 +395,8 @@ function FilaDocumento({ label, obligatorio, doc, nombres = {}, onUpload, onMarc
   );
 }
 
-function FilaOtros({ archivos, nombres = {}, onAgregar, onEditar, onEstado, onEliminar }: {
-  archivos: any[]; nombres?: Record<string, string>; onAgregar: () => void; onEditar: (d: any) => void; onEstado: (id: string, v: string) => void; onEliminar: (d: any) => void;
+function FilaOtros({ archivos, nombres = {}, onAgregar, onEditar, onEstado, onEliminar, onCambiarTipo }: {
+  archivos: any[]; nombres?: Record<string, string>; onAgregar: () => void; onEditar: (d: any) => void; onEstado: (id: string, v: string) => void; onEliminar: (d: any) => void; onCambiarTipo?: (d: any) => void;
 }) {
   return (
     <div className="flex items-start gap-2 py-[3px] text-[12px]">
@@ -415,6 +418,7 @@ function FilaOtros({ archivos, nombres = {}, onAgregar, onEditar, onEstado, onEl
             </Select>
             <span className="shrink-0 whitespace-nowrap text-muted-foreground inline-flex items-center gap-1"><span title="Recibido (primera carga)">{o.fecha_recepcion ? fmtLocalDate(o.fecha_recepcion) : "—"}</span><ActualizadoBadge doc={o} nombres={nombres} /></span>
             <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onEditar(o)} title="Editar datos"><Pencil className="h-3 w-3" /></Button>
+            {onCambiarTipo && <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => onCambiarTipo(o)} title="Cambiar tipo de documento" aria-label="Cambiar tipo de documento"><Repeat2 className="h-3 w-3" /></Button>}
             <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => onEliminar(o)} title="Eliminar"><Trash2 className="h-3 w-3" /></Button>
           </div>
         ))}
@@ -3839,20 +3843,10 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
     const ok = await upload(); if (!ok) throw new Error("Documento pendiente");
   }, documentoGuardado, () => { setOpen(false); resetForm(); });
 
-  const eliminar = async (d: any) => {
-    if (!confirm("¿Eliminar este documento? Esta acción no se puede deshacer.")) return;
-    try {
-      const { data: versiones } = await supabase.from("documento_versiones").select("storage_path").eq("documento_id", d.id);
-      const { error } = await supabase.from("documentos").delete().eq("id", d.id);
-      if (error) throw error;
-      const rutas = [d.storage_path, ...(versiones ?? []).map((v) => v.storage_path)].filter((x): x is string => Boolean(x));
-      if (rutas.length) await supabase.storage.from("documentos").remove(rutas);
-      toast.success("Documento eliminado");
-      qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
-    } catch (e: any) {
-      toast.error(e.message);
-    }
-  };
+  // «Eliminar» envía a la Papelera (restaurable 30 días, Auditoría y motivo); «Cambiar tipo» mueve el mismo archivo.
+  const [aEliminar, setAEliminar] = useState<any | null>(null);
+  const [aMover, setAMover] = useState<any | null>(null);
+  const eliminar = (d: any) => setAEliminar(d);
 
   const cambiarEstado = async (docId: string, estado: string) => {
     await supabase.from("documentos").update({ estado: estado as any }).eq("id", docId);
@@ -3906,6 +3900,9 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   }).length;
   const pct = Math.round((recibidos / CHECKLIST_DOCUMENTOS_BASE.length) * 100);
 
+  const casillasUnicas = new Set<string>([...BLOQUE_DECLARACION, ...BLOQUE_LIQUIDACION].map((b) => b.tipo));
+  const tiposConDocumento = new Set<string>(latestByTipo.keys());
+  const etiquetasTipo: Record<string, string> = Object.fromEntries([...BLOQUE_DECLARACION, ...BLOQUE_LIQUIDACION].filter((b) => b.label !== b.tipo).map((b) => [b.tipo, b.label]));
   const filaBloque = (item: { tipo: string; label: string; obligatorio?: boolean }) => (
     <FilaDocumento
       key={item.tipo}
@@ -3917,6 +3914,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       onMarcarRecibido={() => marcarRecibido(item.tipo, latestByTipo.get(item.tipo))}
       onEstado={(v) => { const d = latestByTipo.get(item.tipo); if (d) cambiarEstado(d.id, v); }}
       onEliminar={() => { const d = latestByTipo.get(item.tipo); if (d) eliminar(d); }}
+      onCambiarTipo={() => { const d = latestByTipo.get(item.tipo); if (d) setAMover(d); }}
       extra={esTipoLecturaDua(item.tipo) && latestByTipo.get(item.tipo) ? <LecturaDuaDocumento expedienteId={expedienteId} doc={latestByTipo.get(item.tipo)} />
         : item.tipo === TIPO_SEGUIMIENTO_SIGA && latestByTipo.get(item.tipo) ? <LecturaSigaDocumento expedienteId={expedienteId} doc={latestByTipo.get(item.tipo)} />
           : item.tipo === TIPO_RECIBO_DGA && latestByTipo.get(item.tipo) ? <LecturaReciboDocumento expedienteId={expedienteId} doc={latestByTipo.get(item.tipo)} /> : undefined}
@@ -3926,6 +3924,9 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   return (
     <div className="space-y-3">
       <RevisionSeguimientoSiga expedienteId={expedienteId} lectura={revisionSiga} onClose={() => setRevisionSiga(null)} />
+      <EnviarPapeleraDialog expedienteId={expedienteId} doc={aEliminar} onClose={() => setAEliminar(null)} />
+      <CambiarTipoDocumentoDialog expedienteId={expedienteId} doc={aMover} tipos={TIPOS_DOC} etiquetas={etiquetasTipo}
+        casillasUnicas={casillasUnicas} tiposConDocumento={tiposConDocumento} onClose={() => setAMover(null)} />
       {pagoDoc && <EscanearPagoPuerto key={pagoDoc.codigo + pagoDoc.file.name + pagoDoc.file.lastModified} expedienteId={expedienteId} documento={pagoDoc} onDone={() => setPagoDoc(null)} />}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
@@ -3938,6 +3939,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+        <PapeleraDocumentosButton expedienteId={expedienteId} />
         <SubirJuegoDocumentos expedienteId={expedienteId} />
         <DescargarDocumentosZip expedienteId={expedienteId} documentos={docs ?? []}
           declaracion={[...BLOQUE_DECLARACION.map((d) => d.tipo), TIPO_OTROS_DECLARACION]}
@@ -3979,6 +3981,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                 onEditar={(d) => openEdit(d)}
                 onEstado={(id, v) => cambiarEstado(id, v)}
                 onEliminar={(d) => eliminar(d)}
+                onCambiarTipo={(d) => setAMover(d)}
               />
             </div>
           </div>
@@ -4000,6 +4003,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                 onEditar={(d) => openEdit(d)}
                 onEstado={(id, v) => cambiarEstado(id, v)}
                 onEliminar={(d) => eliminar(d)}
+                onCambiarTipo={(d) => setAMover(d)}
               />
             </div>
           </div>
@@ -4025,6 +4029,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                     onMarcarRecibido={() => marcarRecibido(d.tipo, d)}
                     onEstado={(v) => cambiarEstado(d.id, v)}
                     onEliminar={() => eliminar(d)}
+                    onCambiarTipo={() => setAMover(d)}
                   />
                 ))}
               </div>

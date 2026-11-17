@@ -44,7 +44,8 @@ const ICONO_ESTADO = {
   sin_datos: null,
 } as const;
 
-export type ResultadoLecturaRecibo = { lectura: LecturaReciboGuardada; completados: string[]; avisos: string[] };
+/** `propuestos`: campos y valores que completa (en simulación, lo que completaría sin guardar). */
+export type ResultadoLecturaRecibo = { lectura: LecturaReciboGuardada; completados: string[]; avisos: string[]; propuestos: Record<string, unknown> };
 
 /**
  * Lee el comprobante, lo compara con la Liquidación del Expediente y completa solo lo vacío.
@@ -57,7 +58,11 @@ export function useProcesarLecturaRecibo() {
   const leerBalance = useServerFn(leerBalanceLiquidacionDocumento);
   return async (p: {
     expedienteId: string; documentoId: string; archivo: string | null;
-    blob: Blob; nombre: string; origen: "manual" | "leer_ahora"; previa?: LecturaReciboGuardada | null;
+    blob: Blob; nombre: string; origen: "manual" | "leer_ahora" | "cambio_tipo"; previa?: LecturaReciboGuardada | null;
+    /** Solo calcula lo que completaría: no escribe Expediente, Auditoría ni lectura del documento. */
+    simular?: boolean;
+    /** Limita los campos a completar. */
+    soloCampos?: string[];
   }): Promise<ResultadoLecturaRecibo> => {
     if (p.blob.size > LIMITE_LECTURA) throw new Error("el archivo supera 15 MB para lectura automática; captura la fecha de pago manualmente");
     const base64 = await base64DeBlob(p.blob);
@@ -82,15 +87,22 @@ export function useProcesarLecturaRecibo() {
       completados: [], diferencia_aceptada: p.previa?.diferencia_aceptada ?? null,
     };
     let completados: string[] = [];
+    let propuestos: Record<string, unknown> = {};
     const avisos: string[] = [];
     if (res.recibo && validacion) {
       const { data: actual, error: readError } = await supabase.from("expedientes").select("*").eq("id", p.expedienteId).single();
       if (readError || !actual) throw readError ?? new Error("Expediente no encontrado");
       const decision = decidirGuardadoRecibo(actual as Record<string, unknown>, res.recibo, validacion);
+      if (p.soloCampos) {
+        const permitidos = new Set(p.soloCampos);
+        for (const k of Object.keys(decision.cambios)) if (!permitidos.has(k)) delete (decision.cambios as Record<string, unknown>)[k];
+      }
       completados = Object.keys(decision.cambios);
+      propuestos = { ...decision.cambios };
       avisos.push(...decision.avisos);
       const tardio = estadoPagoTardio(res.recibo, actual.liq_siga_termino_at);
       if (tardio === "tardio") avisos.push("El pago se registró después del vencimiento del PIN.");
+      if (p.simular) return { lectura: { ...lectura, completados }, completados, avisos, propuestos };
       if (completados.length) {
         const dga_auto = { ...((actual as Record<string, unknown>).dga_auto as Record<string, unknown> ?? {}) };
         for (const campo of completados) {
@@ -117,6 +129,7 @@ export function useProcesarLecturaRecibo() {
       });
       lectura.completados = completados;
     }
+    if (p.simular) return { lectura, completados, avisos, propuestos };
     const { error: upErr } = await supabase.from("documentos").update({ lectura_recibo: lectura as never }).eq("id", p.documentoId);
     if (upErr) toast.warning(`No se pudo guardar la lectura del recibo: ${upErr.message}`);
     await Promise.all([
@@ -125,7 +138,7 @@ export function useProcesarLecturaRecibo() {
       qc.invalidateQueries({ queryKey: ["auditoria", p.expedienteId] }),
     ]);
     qc.invalidateQueries({ queryKey: ["expedientes"] });
-    return { lectura, completados, avisos };
+    return { lectura, completados, avisos, propuestos };
   };
 }
 
