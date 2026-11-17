@@ -555,7 +555,7 @@ function Expedientes() {
             <h1 className="font-display text-lg font-bold leading-tight truncate">Expedientes · {tipoLabel}</h1>
             <p className="expediente-nuevo-subtitle">Expedientes aduanales agrupados por tipo de solicitud.</p>
           </div>
-          <div className="flex items-center justify-end gap-1">
+          <div className="flex items-center justify-end gap-1 flex-wrap">
             <HerramientasDgaVuceMenu compacto className="px-2.5" />
             <RastreosEnvioMenu compacto className="px-2.5" />
             <CierreLoteBoton className="px-2.5" />
@@ -565,18 +565,18 @@ function Expedientes() {
           </div>
         </div>
         <div className="flex items-center justify-between gap-1 flex-wrap">
-          <div className="flex items-center gap-1 min-w-0">
-            <div className="flex gap-0.5 rounded-md border p-0.5 bg-card">
-            <Link to="/expedientes" search={{ tipo: "todos", estado: estadoParam, eta: etaParam }} className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos <Badge variant="secondary" className="text-[10px] h-4 px-1">{countAll}</Badge></Link>
-            <Link to="/expedientes" search={{ tipo: "importacion", estado: estadoParam, eta: etaParam }} className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
-            <Link to="/expedientes" search={{ tipo: "exportacion", estado: estadoParam, eta: etaParam }} className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
-            <Link to="/expedientes" search={{ tipo: "facturados", estado: estadoParam, eta: etaParam }} className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
-            <Link to="/expedientes" search={{ tipo: "completados", estado: estadoParam, eta: etaParam }} className={`px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "completados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Completados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countComp}</Badge></Link>
+          <div className="flex items-center gap-1 min-w-0 max-w-full flex-wrap">
+            <div className="flex gap-0.5 rounded-md border p-0.5 bg-card overflow-x-auto max-w-full">
+            <Link to="/expedientes" search={{ tipo: "todos", estado: estadoParam, eta: etaParam }} className={`shrink-0 whitespace-nowrap px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "todos" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Todos <Badge variant="secondary" className="text-[10px] h-4 px-1">{countAll}</Badge></Link>
+            <Link to="/expedientes" search={{ tipo: "importacion", estado: estadoParam, eta: etaParam }} className={`shrink-0 whitespace-nowrap px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "importacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Importación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countImp}</Badge></Link>
+            <Link to="/expedientes" search={{ tipo: "exportacion", estado: estadoParam, eta: etaParam }} className={`shrink-0 whitespace-nowrap px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "exportacion" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Exportación <Badge variant="secondary" className="text-[10px] h-4 px-1">{countExp}</Badge></Link>
+            <Link to="/expedientes" search={{ tipo: "facturados", estado: estadoParam, eta: etaParam }} className={`shrink-0 whitespace-nowrap px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "facturados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Facturados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countFact}</Badge></Link>
+            <Link to="/expedientes" search={{ tipo: "completados", estado: estadoParam, eta: etaParam }} className={`shrink-0 whitespace-nowrap px-2 py-1 text-xs rounded inline-flex items-center gap-1.5 ${tipo === "completados" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>Completados <Badge variant="secondary" className="text-[10px] h-4 px-1">{countComp}</Badge></Link>
             </div>
             <Link to="/expedientes/correo" className={`px-2 py-1 text-xs rounded border inline-flex items-center gap-1.5 hover:bg-muted ${pendientesCorreo > 0 ? "border-destructive/40 bg-destructive/5 text-destructive" : "bg-card text-muted-foreground"}`} title="Solicitudes recibidas por correo (borradores por confirmar)">Por correo <Badge variant={pendientesCorreo > 0 ? "destructive" : "secondary"} className="text-[10px] h-4 px-1">{pendientesCorreo}</Badge></Link>
             <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">{filtered.length} expedientes</span>
           </div>
-          <div className="flex items-center gap-0.5 flex-wrap justify-end flex-1 min-w-0">
+          <div className="flex items-center gap-0.5 flex-wrap justify-end flex-1 min-w-[min(100%,520px)]">
             <Select value={estado} onValueChange={setEstado}>
               <SelectTrigger className="w-[136px] px-2 h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -613,7 +613,7 @@ function Expedientes() {
       <Card className="overflow-hidden flex-1 min-h-0 flex flex-col">
         <CardContent className="p-0 flex-1 min-h-0">
           {filtered.length === 0 && (
-            <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin expedientes. Crea uno con "Nuevo Expediente" o súbelo por OCR.</div>
+            <div className="px-4 py-8 text-center text-muted-foreground text-sm">{tipo === "completados" ? "Aún no hay Expedientes Completados. Se completan desde «Requisitos de cierre» en un Facturado o con «Completar en lote»." : "Sin expedientes. Crea uno con \"Nuevo Expediente\" o súbelo por OCR."}</div>
           )}
           <div className="expedientes-tabla-wrap overflow-auto h-full">
             {gruposVisibles.map((g) => {
