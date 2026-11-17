@@ -13,7 +13,7 @@ Hay una columna «Fecha de cierre» que nunca se ha usado (0 valores): sirve par
 | Requisito | Dato del sistema | En los 101 Facturados | ¿Se puede verificar? |
 |---|---|---|---|
 | Despacho completo en SIGA | Procesos del Seguimiento SIGA (proceso «Despacho», estado «Completo») | Solo **2** tienen Seguimiento SIGA cargado (ambos Completo) | Sí, pero casi ningún histórico lo tiene |
-| Documentos requeridos | Documentos recibidos por tipo | Factura comercial 77, BL 77, DUA 42, Liquidación 42. **41** tienen los cuatro | Sí. El número DUA está escrito en los 101; falta el PDF en 59 |
+| Documentos requeridos | Documentos recibidos por tipo | Factura comercial 77, BL 77, DUA 42, Liquidación 42. **41** tienen los cuatro | Sí. El número DUA está escrito en los 101; falta el PDF en 59 | **Elegido: los cuatro básicos.**
 | Checklist completo o «No aplica» | 8 pasos activos del Checklist | Solo **10** cumplen. Pendientes: Documentos físicos 77, Enviado al gestor 79, Turno de verificación 69, Preferencia 57, Oficio DGA 47, Factura enviada 39 | Sí |
 | Viajes entregados | Estado del viaje | Solo **9** tienen viajes; los 9 están Entregado/Facturado. 92 sin viaje (N/A) | Sí |
 | Pagos de transporte registrados | Solicitud de pago del viaje y TF | 8 de 9 tienen TF; 1 sin solicitud de pago | Sí |
