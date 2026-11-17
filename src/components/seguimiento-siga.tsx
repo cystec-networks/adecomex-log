@@ -311,14 +311,31 @@ export function LecturaSigaDocumento({ expedienteId, doc }: { expedienteId: stri
   );
 }
 
+const consultaSeguimientoSiga = (expedienteId: string) => ({
+  queryKey: ["seguimiento-siga", expedienteId],
+  queryFn: async () => (await supabase.from("documentos").select("id,storage_path,lectura_siga,created_at").eq("expediente_id", expedienteId).eq("tipo", TIPO_SEGUIMIENTO_SIGA).order("created_at", { ascending: false }).limit(1).maybeSingle()).data,
+});
+
+/** Lectura SIGA aplicada y vigente (del archivo actual), o null. */
+const lecturaSigaAplicada = (doc: DocSiga | null | undefined): LecturaSigaGuardada | null => {
+  const bruta = doc?.lectura_siga as LecturaSigaGuardada | LecturaSigaFallida | null | undefined;
+  if (!doc || !bruta || esLecturaSigaFallida(bruta)) return null;
+  const vigente = bruta.archivo === undefined || bruta.archivo === doc.storage_path;
+  return vigente && bruta.estado === "aplicado" && bruta.datos ? bruta : null;
+};
+
+/** Diferencias con SIGA del encabezado (mismas reglas), para que otros paneles las reutilicen. */
+export function useDiferenciasSiga(exp: Record<string, any>) {
+  const { data: doc } = useQuery(consultaSeguimientoSiga(exp.id));
+  const lectura = lecturaSigaAplicada(doc);
+  return lectura ? diferenciasAlertaSiga(exp, lectura.datos) : [];
+}
+
 /** Avisos del encabezado: lectura pendiente, rechazo, diferencias y sugerencia de etapa. */
 export function AvisosSeguimientoSiga({ exp, onAvanzarManifestado }: { exp: Record<string, any>; onAvanzarManifestado: () => void }) {
   const qc = useQueryClient();
   const { leerAhora, revisar, leyendo, dialogo } = useLeerAhoraSiga(exp.id);
-  const { data: doc } = useQuery({
-    queryKey: ["seguimiento-siga", exp.id],
-    queryFn: async () => (await supabase.from("documentos").select("id,storage_path,lectura_siga,created_at").eq("expediente_id", exp.id).eq("tipo", TIPO_SEGUIMIENTO_SIGA).order("created_at", { ascending: false }).limit(1).maybeSingle()).data,
-  });
+  const { data: doc } = useQuery(consultaSeguimientoSiga(exp.id));
   useEffect(() => {
     // La subida desde Documentos refresca este aviso.
     const h = () => qc.invalidateQueries({ queryKey: ["seguimiento-siga", exp.id] });
@@ -337,7 +354,7 @@ export function AvisosSeguimientoSiga({ exp, onAvanzarManifestado }: { exp: Reco
   };
 
   const fila = "expediente-header-alertas mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs md:text-sm";
-  const aplicado = vigente && lectura?.estado === "aplicado" && !!lectura.datos;
+  const aplicado = !!lecturaSigaAplicada(doc);
   const diferencias = aplicado ? diferenciasAlertaSiga(exp, lectura!.datos) : [];
   const descripcionSiga = aplicado ? descripcionInformativaSiga(exp, lectura!.datos) : null;
   const sugerir = aplicado && !lectura!.sugerencia_descartada && !!lectura!.datos.fecha_llegada

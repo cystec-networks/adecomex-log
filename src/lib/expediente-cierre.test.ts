@@ -101,4 +101,28 @@ describe("Bloqueo en Completado", () => {
     expect(limpio).toEqual({ observaciones: "b" });
     expect(() => payloadGuardadoCompletado(original, { numero_dua: "Y" })).toThrow(/Expediente Completado/);
   });
+
+  it("factura anterior al 01/11/2026 con saldo: advertencia ámbar con el monto, sin impedir completar", () => {
+    const ev = evaluarCierre(base({ facturas: [
+      { id: "a", encf: "E310000000100", emision: "2026-10-05", vencimiento: "2026-10-20", monto: 7000, pagado: 0 },
+      { id: "b", encf: "E310000000101", emision: "2026-10-10", vencimiento: "2026-12-30", monto: 1500, pagado: 500 },
+    ] }), { hoy: "2026-11-17" });
+    const cobro = ev.requisitos.find((r) => r.clave === "cobro")!;
+    expect(cobro.estado).toBe("aviso");
+    expect(cobro.detalle).toContain("RD$8,000.00");
+    expect(cobro.detalle).toContain("1 en mora");
+    expect(ev.listo).toBe(true);
+  });
+
+  it("factura anterior al 01/11/2026 sin saldo: «No aplica»", () => {
+    const ev = evaluarCierre(base({ facturas: [{ id: "a", emision: "2026-10-05", monto: 7000, pagado: 7000 }] }), { hoy: "2026-11-17" });
+    expect(ev.requisitos.find((r) => r.clave === "cobro")!.estado).toBe("na");
+  });
+});
+
+describe("Línea de tiempo", () => {
+  it("avisa cuando la DUA presentada es anterior a la llegada real", () => {
+    expect(lineaTiempoCierre({ llegada: "2026-10-17", presentado: "2026-10-15" }).avisos).toHaveLength(1);
+    expect(lineaTiempoCierre({ llegada: "2026-10-17", presentado: "2026-10-17" }).avisos).toHaveLength(0);
+  });
 });

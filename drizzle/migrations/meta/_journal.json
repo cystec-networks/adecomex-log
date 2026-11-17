@@ -1016,6 +1016,13 @@
       "when": 1794926763898,
       "tag": "0144_expediente_cierre_completado",
       "breakpoints": true
+    },
+    {
+      "idx": 145,
+      "version": "7",
+      "when": 1794938872921,
+      "tag": "0145_cierre_saldo_facturas_ecf",
+      "breakpoints": true
     }
   ]
 }

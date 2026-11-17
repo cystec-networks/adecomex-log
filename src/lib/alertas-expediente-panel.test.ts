@@ -23,4 +23,8 @@ test("sin evidencias no se inventan alertas; mora y recepción conservan sus cat
   assert.equal(recordatoriosAlertasExpedientes([exp], [], {}).length, 0);
   const rows = recordatoriosAlertasExpedientes([exp], [], { [exp.id]: { facturas: [{ monto_total: 100, fecha_vencimiento_pago: "2020-01-01", cxc_pagos: [] }], tieneRecepcion: true, incidencias: [{ tipo: "Diferencia de peso/cantidad", estado: "abierta", severidad: "critica" }] } });
   assert.deepEqual(rows.map(r => r.kind), ["expediente_mora", "expediente_recepcion"]);
+});test("un Expediente Completado con factura en mora sigue en «Facturas en mora» del Panel", () => {
+  const exp = { id: "c1", numero: "202608I312", updated_at: "2026-11-17T00:00:00Z", clientes: { nombre: "Cliente" }, estado: "completado", fecha_llegada_real: null, fecha_compromiso: null, fecha_presentacion_real: "2026-09-25" };
+  const rows = recordatoriosAlertasExpedientes([exp], [], { c1: { facturas: [{ monto_total: 7000, fecha_vencimiento_pago: "2020-01-01", cxc_pagos: [] }] } });
+  assert.deepEqual(rows.map(r => r.kind), ["expediente_mora"]);
 });

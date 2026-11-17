@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { fmtLocalDate } from "@/lib/dates";
 import { useMyRoles } from "@/lib/auth-hooks";
 import { cn } from "@/lib/utils";
+import { useDiferenciasSiga } from "@/components/seguimiento-siga";
 import {
   evaluarCierre, lineaTiempoCierre, puedeCompletar, puedeReabrir, snapshotCierre,
   type EvaluacionCierre, type HechosCierre, type LineaTiempoCierre, type RequisitoCierre,
@@ -33,6 +34,7 @@ export const useHechosCierre = (id: string | undefined, habilitado: boolean) =>
 const IconoEstado = ({ estado }: { estado: RequisitoCierre["estado"] }) =>
   estado === "ok" ? <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--success)]" aria-label="Cumple" />
   : estado === "na" ? <CircleSlash className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="No aplica" />
+  : estado === "aviso" ? <AlertTriangle className="h-4 w-4 shrink-0 text-warning-text" aria-label="Advertencia" />
   : <XCircle className="h-4 w-4 shrink-0 text-destructive" aria-label="Falta" />;
 
 export function LineaTiempoCierreVista({ linea }: { linea: LineaTiempoCierre }) {
@@ -47,6 +49,11 @@ export function LineaTiempoCierreVista({ linea }: { linea: LineaTiempoCierre }) 
           </li>
         ))}
       </ol>
+      {(linea.avisos ?? []).length > 0 && (
+        <ul className="space-y-0.5 text-[12px] text-warning-text" role="status">
+          {linea.avisos!.map((a) => <li key={a} className="flex gap-1.5"><AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{a}</li>)}
+        </ul>
+      )}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px]">
         <span>Llegada → despacho: <b>{dia(linea.dias.llegada_despacho)}</b></span>
         <span>Despacho → entrega: <b>{dia(linea.dias.despacho_entrega)}</b></span>
@@ -64,9 +71,9 @@ function ListaRequisitos({ ev, onIrFicha }: { ev: EvaluacionCierre; onIrFicha?: 
           <IconoEstado estado={r.estado} />
           <div className="min-w-0">
             <div className="font-medium">{r.titulo}</div>
-            <div className={cn("break-words text-[12px]", r.estado === "falta" ? "text-destructive" : "text-muted-foreground")}>
+            <div className={cn("break-words text-[12px]", r.estado === "falta" ? "text-destructive" : r.estado === "aviso" ? "text-warning-text" : "text-muted-foreground")}>
               {r.detalle}
-              {r.estado === "falta" && onIrFicha && (
+              {(r.estado === "falta" || r.estado === "aviso") && onIrFicha && (
                 <button type="button" className="ml-1 underline underline-offset-2" onClick={() => onIrFicha(r.ficha)}>Ir a la pestaña</button>
               )}
             </div>
@@ -77,7 +84,7 @@ function ListaRequisitos({ ev, onIrFicha }: { ev: EvaluacionCierre; onIrFicha?: 
   );
 }
 
-type ExpCierre = { id: string; numero?: string | null; estado: string; fecha_cierre?: string | null; cierre_snapshot?: any };
+type ExpCierre = { id: string; numero?: string | null; estado: string; fecha_cierre?: string | null; cierre_snapshot?: any; [campo: string]: any };
 
 /** Panel «Requisitos de cierre»: visible desde Facturado y en Completado. */
 export function RequisitosCierrePanel({ exp, onIrFicha }: { exp: ExpCierre; onIrFicha?: (ficha: string) => void }) {
@@ -88,6 +95,11 @@ export function RequisitosCierrePanel({ exp, onIrFicha }: { exp: ExpCierre; onIr
   const [abierto, setAbierto] = useState(false);
   const [dialogo, setDialogo] = useState<null | "completar" | "reabrir">(null);
   const [motivo, setMotivo] = useState("");
+  // Misma diferencia de llegada que «Diferencias con SIGA» del encabezado.
+  const llegadaSiga = useDiferenciasSiga(exp).find((d) => d.campo === "fecha_llegada_real") ?? null;
+  const avisoLlegadaSiga = llegadaSiga
+    ? `La fecha de llegada difiere de SIGA (Expediente ${llegadaSiga.expediente} · SIGA ${llegadaSiga.siga}); al completar se bloqueará.`
+    : null;
 
   const invalidar = () => {
     qc.invalidateQueries({ queryKey: ["expediente", exp.id] });
@@ -97,8 +109,10 @@ export function RequisitosCierrePanel({ exp, onIrFicha }: { exp: ExpCierre; onIr
   const completar = useMutation({
     mutationFn: async () => {
       if (!hechos) throw new Error("Aún no se cargaron los requisitos");
+      // La foto del cierre se toma de datos recién leídos, no de lo que la pantalla tenía en memoria.
+      const frescos = (await leerHechosCierre([exp.id]))[exp.id] ?? hechos;
       const { error } = await supabase.rpc("completar_expediente", {
-        p_id: exp.id, p_motivo: motivo.trim() || undefined, p_snapshot: snapshotCierre(hechos) as any,
+        p_id: exp.id, p_motivo: motivo.trim() || undefined, p_snapshot: snapshotCierre(frescos) as any,
       });
       if (error) throw error;
     },
@@ -118,9 +132,9 @@ export function RequisitosCierrePanel({ exp, onIrFicha }: { exp: ExpCierre; onIr
   const ev = hechos ? evaluarCierre(hechos) : null;
   const completado = exp.estado === "completado";
   const snap = exp.cierre_snapshot ?? null;
-  const linea: LineaTiempoCierre | null = completado
-    ? (snap?.linea_tiempo ?? null)
-    : hechos ? lineaTiempoCierre(hechos.fechas ?? {}) : null;
+  // Con los datos bloqueados, la línea actual coincide con la del cierre y además refleja cobros posteriores.
+  const linea: LineaTiempoCierre | null = hechos ? lineaTiempoCierre(hechos.fechas ?? {}) : (snap?.linea_tiempo ?? null);
+  const cobroCompletado = completado && ev ? ev.requisitos.find((r) => r.clave === "cobro" && (r.estado === "aviso" || r.estado === "falta")) : undefined;
   const cumplen = ev ? ev.requisitos.filter((r) => r.estado !== "falta").length : 0;
   const permiteCompletar = puedeCompletar(roles);
   const permiteReabrir = puedeReabrir(roles);
@@ -166,14 +180,23 @@ export function RequisitosCierrePanel({ exp, onIrFicha }: { exp: ExpCierre; onIr
             <>
               {snap?.motivo && <p className="text-[12px]"><b>Motivo del cierre con pendientes:</b> {snap.motivo}</p>}
               {pendientesSnap.length > 0 && <p className="text-[12px] text-muted-foreground">Pendientes aceptados: {pendientesSnap.join("; ")}</p>}
+              {cobroCompletado && (
+                <p className="flex gap-1.5 text-[12px] text-warning-text" role="status">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>{cobroCompletado.detalle.replace(/\. No impide completar; sigue en Cuentas por Cobrar\.$/, "")}. Sigue en Cuentas por Cobrar y en las alertas de mora.</span>
+                </p>
+              )}
               {snap?.lote_id && <p className="text-[12px] text-muted-foreground">Completado en el lote histórico ({snap.hitos_no_aplica ?? 0} paso(s) del Checklist pasaron a «No aplica»).</p>}
             </>
           ) : ev && (
             <>
               <ListaRequisitos ev={ev} onIrFicha={onIrFicha} />
-              {ev.avisos.length > 0 && (
+              {avisoLlegadaSiga && (
+                <p className="flex gap-1.5 text-[12px] text-warning-text" role="status"><AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{avisoLlegadaSiga}</p>
+              )}
+              {ev.avisosSueltos.length > 0 && (
                 <ul className="space-y-0.5 text-[12px] text-muted-foreground">
-                  {ev.avisos.map((a) => <li key={a} className="flex gap-1.5"><AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{a}</li>)}
+                  {ev.avisosSueltos.map((a) => <li key={a} className="flex gap-1.5"><AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{a}</li>)}
                 </ul>
               )}
             </>
@@ -194,6 +217,9 @@ export function RequisitosCierrePanel({ exp, onIrFicha }: { exp: ExpCierre; onIr
             <ul className="list-disc space-y-0.5 pl-5 text-[13px] text-destructive">
               {ev.pendientes.map((p) => <li key={p}>{p}</li>)}
             </ul>
+          )}
+          {avisoLlegadaSiga && (
+            <p className="flex gap-1.5 text-[12px] text-warning-text"><AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{avisoLlegadaSiga}</p>
           )}
           {ev && ev.avisos.length > 0 && (
             <ul className="space-y-0.5 text-[12px] text-muted-foreground">

@@ -16,7 +16,7 @@ export const puedeCompletar = (roles: readonly string[] | null | undefined) =>
 export const puedeReabrir = (roles: readonly string[] | null | undefined) =>
   (roles ?? []).some((r) => (ROLES_REABRIR as readonly string[]).includes(r));
 
-export type FacturaCierre = { id: string; encf?: string | null; emision?: string | null; monto: number; pagado: number };
+export type FacturaCierre = { id: string; encf?: string | null; emision?: string | null; vencimiento?: string | null; monto: number; pagado: number };
 export type HitoPendienteCierre = { id: string; codigo: string; nombre: string; estado?: string };
 export type TransporteCierre = { id: string; numero?: string | null; estado?: string | null; solicitud_pago_id?: string | null; conciliado?: boolean };
 export type FechasCierre = {
@@ -39,9 +39,17 @@ export type HechosCierre = {
 };
 
 export type FichaCierre = "docs" | "info" | "cost" | "checklist" | "transportes" | "inc";
-export type EstadoRequisito = "ok" | "falta" | "na";
+/** «aviso»: no impide completar, pero hay algo que revisar (se muestra en ámbar). */
+export type EstadoRequisito = "ok" | "falta" | "na" | "aviso";
 export type RequisitoCierre = { clave: string; titulo: string; estado: EstadoRequisito; detalle: string; ficha: FichaCierre; pendientes: string[] };
-export type EvaluacionCierre = { requisitos: RequisitoCierre[]; avisos: string[]; pendientes: string[]; listo: boolean };
+export type EvaluacionCierre = {
+  requisitos: RequisitoCierre[];
+  /** Todos los avisos (confirmación, lote y foto del cierre). */
+  avisos: string[];
+  /** Avisos que no se ven ya en una fila de requisito en ámbar (para no repetirlos en el panel). */
+  avisosSueltos: string[];
+  pendientes: string[]; listo: boolean;
+};
 
 const soloFecha = (v: string | null | undefined) => (v ? String(v).slice(0, 10) : null);
 
@@ -52,8 +60,21 @@ export const facturaExigeCobro = (f: Pick<FacturaCierre, "emision">) => {
 };
 export const facturaCobrada = (f: Pick<FacturaCierre, "monto" | "pagado">) =>
   Number(f.pagado ?? 0) >= Number(f.monto ?? 0) - TOLERANCIA_COBRO;
+export const saldoFactura = (f: Pick<FacturaCierre, "monto" | "pagado">) =>
+  Math.max(0, Math.round((Number(f.monto ?? 0) - Number(f.pagado ?? 0)) * 100) / 100);
+/** Mora: misma regla que las alertas del Expediente (vencida y sin ningún pago registrado). */
+export const facturaEnMora = (f: Pick<FacturaCierre, "monto" | "pagado" | "vencimiento">, hoy: string) => {
+  const v = soloFecha(f.vencimiento);
+  return !!v && v < hoy && Number(f.monto ?? 0) > 0 && Number(f.pagado ?? 0) <= 0;
+};
+export const fmtRD = (n: number) =>
+  `RD$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmtFechaCorta = (iso: string) => iso.split("-").reverse().join("/");
+/** Hoy en Santo Domingo (AAAA-MM-DD). */
+const hoySantoDomingo = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santo_Domingo" }).format(new Date());
 
-export function evaluarCierre(h: HechosCierre, opciones: { omitirChecklist?: boolean } = {}): EvaluacionCierre {
+export function evaluarCierre(h: HechosCierre, opciones: { omitirChecklist?: boolean; hoy?: string } = {}): EvaluacionCierre {
+  const hoy = opciones.hoy ?? hoySantoDomingo();
   const req: RequisitoCierre[] = [];
   const avisos: string[] = [];
 
@@ -89,14 +110,26 @@ export function evaluarCierre(h: HechosCierre, opciones: { omitirChecklist?: boo
 
   const exigibles = (h.facturas ?? []).filter(facturaExigeCobro);
   const sinCobrar = exigibles.filter((f) => !facturaCobrada(f));
+  // Facturas anteriores al corte: no impiden completar, pero su saldo se advierte (sigue en Cuentas por Cobrar).
+  const anterioresConSaldo = (h.facturas ?? []).filter((f) => !facturaExigeCobro(f) && !facturaCobrada(f));
+  const saldoAnterior = anterioresConSaldo.reduce((t, f) => t + saldoFactura(f), 0);
+  const enMoraAnterior = anterioresConSaldo.filter((f) => facturaEnMora(f, hoy)).length;
+  const corte = fmtFechaCorta(FECHA_CORTE_COBRO);
+  const textoAnterior = anterioresConSaldo.length
+    ? `Saldo pendiente ${fmtRD(saldoAnterior)} en ${anterioresConSaldo.length} factura(s) anterior(es) al ${corte}${enMoraAnterior ? ` · ${enMoraAnterior} en mora` : ""}`
+    : "";
   req.push({
     clave: "cobro", titulo: "Saldo cobrado", ficha: "cost",
-    estado: exigibles.length === 0 ? "na" : sinCobrar.length ? "falta" : "ok",
-    detalle: exigibles.length === 0
-      ? `No aplica: facturas anteriores al ${FECHA_CORTE_COBRO.split("-").reverse().join("/")}`
-      : sinCobrar.length ? `Saldo pendiente en ${sinCobrar.length} factura(s)` : "Cobrado",
+    estado: sinCobrar.length ? "falta" : anterioresConSaldo.length ? "aviso" : exigibles.length === 0 ? "na" : "ok",
+    detalle: sinCobrar.length
+      ? `Saldo pendiente ${fmtRD(sinCobrar.reduce((t, f) => t + saldoFactura(f), 0))} en ${sinCobrar.length} factura(s)${textoAnterior ? ` · ${textoAnterior}` : ""}`
+      : anterioresConSaldo.length ? `${textoAnterior}. No impide completar; sigue en Cuentas por Cobrar.`
+      : (h.facturas ?? []).length === 0 ? "No aplica: sin facturas e-CF"
+      : exigibles.length === 0 ? `No aplica: facturas anteriores al ${corte} sin saldo pendiente` : "Cobrado",
     pendientes: sinCobrar.map((f) => `Saldo sin cobrar en factura ${f.encf ?? `emitida el ${soloFecha(f.emision)}`}`),
   });
+  const avisoCobro = anterioresConSaldo.length ? `${textoAnterior}: no impide completar y sigue en Cuentas por Cobrar y en las alertas de mora.` : null;
+  if (avisoCobro) avisos.push(avisoCobro);
 
   const nHitos = (h.hitos_pendientes ?? []).length;
   req.push({
@@ -146,7 +179,7 @@ export function evaluarCierre(h: HechosCierre, opciones: { omitirChecklist?: boo
     if (c === "pago_transporte") return [];
     return r.pendientes;
   });
-  return { requisitos: req, avisos, pendientes, listo: pendientes.length === 0 };
+  return { requisitos: req, avisos, avisosSueltos: avisos.filter((a) => a !== avisoCobro), pendientes, listo: pendientes.length === 0 };
 }
 
 const diasEntre = (a?: string | null, b?: string | null): number | null => {
@@ -159,6 +192,8 @@ const diasEntre = (a?: string | null, b?: string | null): number | null => {
 export type HitoLinea = { clave: string; titulo: string; fecha: string | null };
 export type LineaTiempoCierre = {
   hitos: HitoLinea[];
+  /** Fechas incoherentes que conviene revisar (las líneas guardadas antes pueden no traerlo). */
+  avisos?: string[];
   dias: { llegada_despacho: number | null; despacho_entrega: number | null; almacenaje: number | null };
 };
 
@@ -166,7 +201,13 @@ export type LineaTiempoCierre = {
 export function lineaTiempoCierre(f: FechasCierre): LineaTiempoCierre {
   const despacho = soloFecha(f.despacho_siga) ?? soloFecha(f.aprobacion) ?? soloFecha(f.despachado);
   const retiro = soloFecha(f.retiro) ?? soloFecha(f.entregado);
+  const llegada = soloFecha(f.llegada); const presentado = soloFecha(f.presentado);
+  const avisos: string[] = [];
+  if (llegada && presentado && presentado < llegada) {
+    avisos.push(`La DUA presentada (${fmtFechaCorta(presentado)}) es anterior a la llegada real (${fmtFechaCorta(llegada)}); revísala.`);
+  }
   return {
+    avisos,
     hitos: [
       { clave: "llegada", titulo: "Llegada", fecha: soloFecha(f.llegada) },
       { clave: "presentado", titulo: "DUA presentada", fecha: soloFecha(f.presentado) },
