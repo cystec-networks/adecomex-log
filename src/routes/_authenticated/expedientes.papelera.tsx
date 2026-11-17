@@ -211,7 +211,8 @@ function Papelera() {
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as Kind | "documentos")}>
-        <TabsList>
+        {/* Diez pestañas: bajan de línea en vez de ensanchar la página. */}
+        <TabsList className="h-auto max-w-full flex-wrap justify-start">
           <TabsTrigger value="expedientes">Expedientes ({expRows.length})</TabsTrigger>
           <TabsTrigger value="solicitudes">Solicitudes ({solRows.length})</TabsTrigger>
           <TabsTrigger value="permisos">Permisos VUCE ({perRows.length})</TabsTrigger>
