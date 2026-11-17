@@ -5,6 +5,7 @@ import { hoyRDISO } from "./dates";
 import { documentoPagoPuerto, esConceptoPagoPuerto, guardarPagoExclusivo, validarPagoPuerto, type TipoPagoPuerto } from "./pago-puerto";
 import { esPagoVuce, costoDelPermiso, costoPorPinVuce, permisoDelCostoVuce, numeroTramite, observacionesPagoVuce, acumularPagoVuce } from "./pago-vuce";
 
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 export type BorradorPagoPuerto = { tipo: TipoPagoPuerto | ""; monto: string; moneda: string; fecha: string; referencia: string; concepto: string; permiso_numero?: string; documentos_vuce?: string[] };
 
 async function validarPermisoVinculado(expedienteId: string, borrador: BorradorPagoPuerto) {
@@ -56,7 +57,7 @@ async function guardarGestion(expedienteId: string, file: File, borrador: Borrad
     observaciones: [borrador.fecha && `Fecha de factura: ${borrador.fecha}`, borrador.referencia && `Factura/NCF: ${borrador.referencia}`, marcador].filter(Boolean).join(" · ") };
   let path: string | undefined;
   if (factura) {
-    path = `facturas-ecf/${factura.id}/${crypto.randomUUID()}_${file.name}`;
+    path = `facturas-ecf/${factura.id}/${crypto.randomUUID()}_${nombreArchivoStorage(file.name)}`;
     const { error: upload } = await supabase.storage.from("documentos").upload(path, await optimizarArchivo(file), { contentType: "application/pdf" });
     if (upload) throw upload;
     const { data: updated, error } = await supabase.from("facturas_ecf").update({ pdf_url: path }).eq("id", factura.id).is("eliminado_en", null).select("id").single();
@@ -120,7 +121,7 @@ export async function guardarComprobantePuerto(expedienteId: string, file: File,
     const codigo = anterior?.codigo_siga ?? await siguienteCodigoSiga(expedienteId, "OTD");
     const marcador = `Documento SIGA: ${codigo}`;
     const observaciones = [borrador.fecha && `Fecha de pago: ${borrador.fecha}`, borrador.referencia && `PIN/Referencia: ${borrador.referencia}`, marcador].filter(Boolean).join(" · ");
-    const path = `${expedienteId}/${crypto.randomUUID()}_${file.name}`;
+    const path = `${expedienteId}/${crypto.randomUUID()}_${nombreArchivoStorage(file.name)}`;
     const { error: upload } = await supabase.storage.from("documentos").upload(path, await optimizarArchivo(file), { contentType: "application/pdf" });
     if (upload) throw upload;
     let documentoId = anterior?.id;

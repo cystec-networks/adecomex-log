@@ -19,6 +19,7 @@ import { ArrowLeft, Save, Trash2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 export const Route = createFileRoute("/_authenticated/rrhh/empleados/$id")({
   component: EmpleadoDetalle,
 });
@@ -219,7 +220,7 @@ function DocumentosTab({ empleadoId }: { empleadoId: string }) {
     if (!file) { toast.error("Selecciona un archivo"); return; }
     setUploading(true);
     try {
-      const path = `empleados/${empleadoId}/${Date.now()}-${file.name}`;
+      const path = `empleados/${empleadoId}/${Date.now()}-${nombreArchivoStorage(file.name)}`;
       const { error: upErr } = await supabase.storage.from("documentos").upload(path, file, { upsert: false });
       if (upErr) throw upErr;
       const { data: u } = await supabase.auth.getUser();

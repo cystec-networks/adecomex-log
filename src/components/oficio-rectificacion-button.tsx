@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { conConsignatarioEfectivo } from "@/lib/consignatario-efectivo";
 import { hoyRDISO } from "@/lib/dates";
 import { generarPaqueteExclusivo, reemplazarPaquete } from "@/lib/paquete-rectificacion";
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 import {
   OFICIO_RECTIFICACION,
   descargarWord,
@@ -88,7 +89,7 @@ export function OficioRectificacionButton({ expedienteId, disabled }: { expedien
       await generarPaqueteExclusivo(`oficio:${expedienteId}`, async () => {
       const doc = await pdf();
       const blob: Blob = doc.output("blob");
-      const path = `${expedienteId}/${Date.now()}_${nombre.replace(/\s+/g, "_")}.pdf`;
+      const path = `${expedienteId}/${Date.now()}_${nombreArchivoStorage(nombre).replace(/\s+/g, "_")}.pdf`;
       const up = await supabase.storage.from("documentos").upload(path, blob, { contentType: "application/pdf" });
       if (up.error) throw up.error;
       const registro = {

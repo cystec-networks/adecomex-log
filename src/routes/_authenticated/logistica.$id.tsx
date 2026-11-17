@@ -35,6 +35,7 @@ import { ManifiestoXmlDialog } from "@/components/generar-xml-manifiesto";
 import { ManifiestoConsolidadoXmlDialog } from "@/components/generar-xml-manifiesto-consolidado";
 import { useQuery as useCatalogoQuery } from "@tanstack/react-query";
 
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 /** Registro de auditoría de la operación logística (mismo patrón que Expedientes). */
 const logAuditoria = async (operacionId: string, accion: string, cambios?: Record<string, unknown>) => {
   const { data: u } = await supabase.auth.getUser();
@@ -450,7 +451,7 @@ function DetalleLogistica() {
     await guardarContenedores(newId);
     // Documentos en borrador: subir a storage y registrar.
     for (const doc of documentosNuevos) {
-      const safeName = doc.nombre_archivo.replace(/[^a-zA-Z0-9._-]/g, "-");
+      const safeName = nombreArchivoStorage(doc.nombre_archivo).replace(/[^a-zA-Z0-9._-]/g, "-");
       const path = `logistica/${newId}/${crypto.randomUUID()}-${safeName}`;
       const { error: upError } = await supabase.storage.from("documentos").upload(path, doc.file);
       if (upError) { toast.error(`No se pudo subir ${doc.nombre_archivo}`); continue; }
@@ -1069,7 +1070,7 @@ function DocumentosLogistica({ id, canEdit }: { id: string; canEdit: boolean }) 
   }});
 
   const uploadMut = useMutation({ mutationFn: async ({ tipo, file }: { tipo: string; file: File }) => {
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+    const safeName = nombreArchivoStorage(file.name).replace(/[^a-zA-Z0-9._-]/g, "-");
     const path = `logistica/${id}/${crypto.randomUUID()}-${safeName}`;
     const { error } = await supabase.storage.from("documentos").upload(path, file); if (error) throw error;
     const { data: u } = await supabase.auth.getUser();

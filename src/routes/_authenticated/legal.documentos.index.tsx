@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { useMyRoles } from "@/lib/auth-hooks";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 export const Route = createFileRoute("/_authenticated/legal/documentos/")({
   component: DocumentosLegales,
 });
@@ -155,7 +156,7 @@ function DocumentosLegales() {
       }
 
       if (file && id) {
-        const safe = file.name.replace(/[^\w.\-]+/g, "_");
+        const safe = nombreArchivoStorage(file.name).replace(/[^\w.\-]+/g, "_");
         const path = `legal-empresa/${id}/${Date.now()}-${safe}`;
         const { error: upErr } = await supabase.storage.from("documentos").upload(path, file, { upsert: true });
         if (upErr) throw upErr;

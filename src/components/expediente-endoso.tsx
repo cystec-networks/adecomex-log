@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ChevronDown, ChevronRight, FileText, Repeat2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 export type EndosoActivo = {
   id: string;
   expediente_id: string;
@@ -124,7 +125,7 @@ export function EndosoSection({ expedienteId, clienteOriginal, editable, solicit
       if (endosadoId === clienteOriginal?.id) throw new Error("El endosado no puede ser el mismo consignatario original");
       let documento_id = endoso?.documento_id ?? null;
       if (file) {
-        const path = `${expedienteId}/${Date.now()}_${file.name}`;
+        const path = `${expedienteId}/${Date.now()}_${nombreArchivoStorage(file.name)}`;
         const { error: upErr } = await supabase.storage.from("documentos").upload(path, await optimizarArchivo(file));
         if (upErr) throw upErr;
         const { data: doc, error: dErr } = await supabase.from("documentos").insert({

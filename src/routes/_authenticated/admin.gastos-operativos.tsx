@@ -22,6 +22,7 @@ import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from "recharts";
@@ -455,7 +456,7 @@ function EditDialog({ row, onClose, onSaved }: { row: Row; onClose: () => void; 
       }
 
       if (file) {
-        const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+        const safeName = nombreArchivoStorage(file.name).replace(/[^\w.\-]+/g, "_");
         const path = `gastos-operativos/${gastoId}/${safeName}`;
         const { error: upErr } = await supabase.storage.from("documentos").upload(path, file, { upsert: true });
         if (upErr) throw new Error(`Gasto guardado, pero falló la subida del comprobante: ${upErr.message}`);

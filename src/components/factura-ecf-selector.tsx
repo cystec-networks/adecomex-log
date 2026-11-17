@@ -25,6 +25,7 @@ import { detectarReferenciasFactura, decidirVinculoFactura, coincideFacturaExped
 import { sincronizarCobroDesdeEcf, buscarTransportesFactura, vincularTransporteDesdeEcf } from "@/lib/factura-ecf-vinculacion";
 import { detectarContenedoresFactura, guardarContenedoresOcr, contenedoresOcrGuardados, detectarTransportesFactura, guardarTransportesOcr, transportesOcrGuardados } from "@/lib/factura-venta-contenedores";
 
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 const TERMINOS_PAGO = [
   { value: "0", label: "Contado" },
   { value: "15", label: "15 días" },
@@ -292,7 +293,7 @@ export function FacturaEcfFormDialog({
       }
 
       if (pdfFile) {
-        const path = `facturas-ecf/${data.id}/${pdfFile.name}`;
+        const path = `facturas-ecf/${data.id}/${nombreArchivoStorage(pdfFile.name)}`;
         const { error: upErr } = await supabase.storage.from("documentos").upload(path, await optimizarArchivo(pdfFile), { upsert: true });
         if (!upErr) {
           await supabase.from("facturas_ecf").update({ pdf_url: path }).eq("id", data.id);

@@ -135,6 +135,7 @@ import { acumularValoresFactura } from "@/lib/factura-comercial-cif";
 import { sumarOtrosDocumentos, mismoImporteOcr } from '@/lib/bl-collect-charges';
 import { classifyArancelLote } from "@/lib/ai-arancel.functions";
 import { confirmacionPendienteSolicitud, correoConfirmacionSolicitud, faltantesConfirmacion, cuerpoHtmlConfirmacion } from "@/lib/correo-confirmacion";
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 import {
   HerramientasDgaVuceItems,
   HerramientasDgaVuceMenu,
@@ -3665,7 +3666,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       if (editId) {
         let path = editPath;
         if (file) {
-          const newPath = `${expedienteId}/${Date.now()}_${file.name}`;
+          const newPath = `${expedienteId}/${Date.now()}_${nombreArchivoStorage(file.name)}`;
           const { error } = await supabase.storage.from("documentos").upload(newPath, file);
           if (error) throw error;
           // El archivo anterior se conserva: el trigger lo guarda como versión (Historial).
@@ -3682,7 +3683,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       } else {
         let path: string | null = null;
         if (file) {
-          path = `${expedienteId}/${Date.now()}_${file.name}`;
+          path = `${expedienteId}/${Date.now()}_${nombreArchivoStorage(file.name)}`;
           const { error } = await supabase.storage.from("documentos").upload(path, file);
           if (error) throw error;
         }
@@ -4785,7 +4786,7 @@ function GastosBlock({ expedienteId, gastos }: { expedienteId: string; gastos: a
     mutationFn: async () => {
       let adjunto_path: string | null | undefined = undefined;
       if (file) {
-        const path = `expedientes/${expedienteId}/gastos/${Date.now()}-${file.name}`;
+        const path = `expedientes/${expedienteId}/gastos/${Date.now()}-${nombreArchivoStorage(file.name)}`;
         const { error: upErr } = await supabase.storage.from("documentos").upload(path, await optimizarArchivo(file));
         if (upErr) throw upErr;
         adjunto_path = path;

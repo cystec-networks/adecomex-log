@@ -19,6 +19,7 @@ import { esTimeoutGateway, UMBRAL_PAGINAS_COMBINADO, AVISO_PROCESANDO_COMBINADO 
 import { causaPausaIa } from "@/lib/ia-consumo.server";
 import { textoCola, type CausaCola } from "@/lib/correos-cola";
 
+import { nombreArchivoStorage } from "./nombre-archivo-storage";
 const adjuntoSchema = adjuntoCorreoSchema;
 
 /** PDFs largos o que agotan el tiempo del gateway se aceptan y se separan en segundo plano. */
@@ -65,7 +66,7 @@ async function encolarCombinados(db: any, adjuntos: AdjuntoProcesado[], destino:
   if (error) console.error("No se pudo encolar documento combinado", error.message);
 }
 
-const nombreSeguro = (n: string) => n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w.\- ]+/g, "_").slice(-120);
+const nombreSeguro = (n: string) => nombreArchivoStorage(n).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w.\- ]+/g, "_").slice(-120);
 
 const texto = (max: number) => z.preprocess((v) => (v == null ? "" : typeof v === "string" ? v : String(v)), z.string().trim().max(max));
 

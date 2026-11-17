@@ -22,6 +22,7 @@ import { EscanearBlButton, EscanearFacturaButton } from "@/components/escanear-d
 import type { OcrExtraction } from "@/lib/ai-ocr.functions";
 
 
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 export const Route = createFileRoute("/_authenticated/cotizaciones/nueva")({
   head: () => ({ meta: [
     { title: 'Nueva cotización de compra | ADECOMEX' },
@@ -53,7 +54,7 @@ function NuevaCotizacion() {
   const uploadFile = async (file: File) => {
     setUploading(true);
     try {
-      const path = `cotizaciones/${crypto.randomUUID()}-${file.name}`;
+      const path = `cotizaciones/${crypto.randomUUID()}-${nombreArchivoStorage(file.name)}`;
       const { error } = await supabase.storage.from("documentos").upload(path, file, { upsert: false });
       if (error) throw error;
       set("documento_url", path);

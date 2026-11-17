@@ -23,6 +23,7 @@ import { fmtLocalDate } from "@/lib/dates";
 import { CalcularEstimadoButton, PreLiquidacionPdfButtonCotizacion } from "@/components/preliquidacion-cotizacion";
 import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { tipoDocumentoCompra } from '@/lib/correo-cotizacion';
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 import {
   COTIZACION_ESTADOS, COTIZACION_ESTADO_CLASS, cotizacionEstadoLabel, TIPOS_MERCANCIA,
 } from "@/lib/estados-cotizacion";
@@ -115,7 +116,7 @@ function DetalleCotizacion() {
   const uploadFile = async (file: File) => {
     setUploading(true);
     try {
-      const path = `cotizaciones/${crypto.randomUUID()}-${file.name}`;
+      const path = `cotizaciones/${crypto.randomUUID()}-${nombreArchivoStorage(file.name)}`;
       const { error } = await supabase.storage.from("documentos").upload(path, file, { upsert: false });
       if (error) throw error;
       set("documento_url", path);

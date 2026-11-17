@@ -3,6 +3,7 @@
 // escaneado y bloque de datos para el asistente. Sin dependencias de servidor.
 import { enlaceCitaNormativa } from "./normativa-visor";
 
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 export const TIPOS_NORMATIVA = [
   "Ley",
   "Reglamento",
@@ -239,7 +240,7 @@ export function formatearNormativaParaPrompt(fragmentos: FragmentoContexto[] | n
 
 /** Nombre de archivo seguro para el almacenamiento. */
 export function nombreArchivoSeguro(nombre: string): string {
-  const base = nombre
+  const base = nombreArchivoStorage(nombre)
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-zA-Z0-9._-]+/g, "_")

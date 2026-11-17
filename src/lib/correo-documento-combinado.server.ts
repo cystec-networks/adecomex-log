@@ -6,6 +6,7 @@ import { tipoAdjuntoCorreo } from "@/lib/correo-solicitud";
 import { bytesABase64, clasificarPaginaEscaneada, leerArchivoCorreo, type AdjuntoProcesado } from "@/lib/correo-adjunto-lectura.server";
 import { prefijoSiga, nombreDocumentoSiga } from "@/lib/codigo-siga";
 
+import { nombreArchivoStorage } from "./nombre-archivo-storage";
 /** Cuenta páginas sin IA; null si no se puede abrir. */
 export async function contarPaginasPdf(bytes: Uint8Array): Promise<number | null> {
   try { return (await PDFDocument.load(bytes, { password: "", updateMetadata: false } as any)).getPageCount(); }
@@ -15,7 +16,7 @@ export async function contarPaginasPdf(bytes: Uint8Array): Promise<number | null
 type Job = { id: string; solicitud_id: string | null; expediente_id: string | null; documento_id: string | null; nombre: string; storage_path: string; intentos: number };
 type Db = any;
 
-const nombreSeguro = (n: string) => n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w.\- ]+/g, "_").slice(-120);
+const nombreSeguro = (n: string) => nombreArchivoStorage(n).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w.\- ]+/g, "_").slice(-120);
 
 async function siguienteCodigo(db: Db, expedienteId: string, prefijo: string) {
   const [d, p] = await Promise.all([

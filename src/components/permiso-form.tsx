@@ -19,6 +19,7 @@ import { DocumentoPreviewButton } from "@/components/documento-preview-dialog";
 import { PermisoVuceProductos } from "@/components/permiso-vuce-productos";
 import { productosVuceGuardados, type ProductoVuce } from "@/lib/permiso-vuce-productos";
 
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 export const PERMISO_TIPOS = [
   { v: "sanitario", l: "Sanitario" },
   { v: "fitosanitario", l: "Fitosanitario" },
@@ -160,7 +161,7 @@ export function PermisoForm({ mode, id, expedienteId, ordenId, embedded = false,
     setUploading(true);
     try {
       file = await optimizarArchivo(file);
-      const path = `permisos/${crypto.randomUUID()}-${file.name}`;
+      const path = `permisos/${crypto.randomUUID()}-${nombreArchivoStorage(file.name)}`;
       const { error } = await supabase.storage.from("documentos").upload(path, file, { upsert: false });
       if (error) throw error;
       set("documento_url", path);

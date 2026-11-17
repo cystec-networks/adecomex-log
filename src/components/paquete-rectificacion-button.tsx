@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { OFICIO_RECTIFICACION } from "@/lib/oficios";
 import { generarPaqueteExclusivo, reemplazarPaquete, PAQUETE_TIPO_DOCUMENTO } from "@/lib/paquete-rectificacion";
 
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 export { PAQUETE_TIPO_DOCUMENTO } from "@/lib/paquete-rectificacion";
 
 /** Orden fijo del paquete. `tipos` = tipos de documento aceptados (el primero es el oficial). */
@@ -76,7 +77,7 @@ export function PaqueteRectificacionButton({ expedienteId }: { expedienteId: str
       const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
       const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Santo_Domingo" });
       const nombre = `Paquete Rectificacion Tecnica ${expRes.data?.numero ?? ""} ${hoy}`.replace(/\s+/g, " ").trim();
-      const path = `${expedienteId}/${Date.now()}_${nombre.replace(/\s+/g, "_")}.pdf`;
+      const path = `${expedienteId}/${Date.now()}_${nombreArchivoStorage(nombre).replace(/\s+/g, "_")}.pdf`;
       const up = await supabase.storage.from("documentos").upload(path, blob, { contentType: "application/pdf" });
       if (up.error) throw up.error;
       const registro = {

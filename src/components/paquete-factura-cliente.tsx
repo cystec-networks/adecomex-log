@@ -10,6 +10,7 @@ import { conConsignatarioEfectivo } from "@/lib/consignatario-efectivo";
 import { generarPaqueteExclusivo, reemplazarPaquete } from "@/lib/paquete-rectificacion";
 import { PAQUETE_FACTURA_CLIENTE, CORREO_CONTABILIDAD, FACTURA_PDF_OBLIGATORIA, fuentesFacturaCliente, combinarFacturaCliente, correoFacturaCliente } from "@/lib/paquete-factura-cliente";
 
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 async function facturaVinculada(expedienteId: string, facturaEcfId: string | null) {
   let fid = facturaEcfId;
   if (!fid) {
@@ -49,7 +50,7 @@ export function PaqueteFacturaCliente({ expedienteId, menu = false }: { expedien
         });
         if (!combinado.bytes) { setResultado({ faltantes: combinado.faltantes, generado: false }); return; }
         const nombre = `Paquete_Envio_Factura_Cliente_${expRes.data.numero}.pdf`;
-        const path = `${expedienteId}/${Date.now()}_${nombre}`;
+        const path = `${expedienteId}/${Date.now()}_${nombreArchivoStorage(nombre)}`;
         const blob = new Blob([combinado.bytes as BlobPart], { type: "application/pdf" });
         const { error: uploadError } = await supabase.storage.from("documentos").upload(path, blob, { contentType: "application/pdf" });
         if (uploadError) throw uploadError;

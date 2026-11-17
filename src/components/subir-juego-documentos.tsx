@@ -15,6 +15,7 @@ import { optimizarArchivo, pdfProtegido } from "@/lib/documento-optimizacion";
 import { revisarArchivosCarpeta, type RevisionCarpeta } from "@/lib/juego-documentos-carpeta";
 import { formatoTamanoArchivo } from "@/lib/documento-tamano";
 
+import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
 export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string }) {
   const [open, setOpen] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
@@ -67,7 +68,7 @@ export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string })
       // Only confirmed recognized folder sources can ever reach persistence.
       for (const listo of revision?.listos ?? []) {
         const file = listo.file;
-        const path = `${carpeta}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\- ]/g, "_")}`;
+        const path = `${carpeta}/${crypto.randomUUID()}-${nombreArchivoStorage(file.name).replace(/[^\w.\- ]/g, "_")}`;
         setProgress(`Guardando ${file.name}…`);
         try {
           const compartido = listo.documentos.some((d) => !d.firmado && (revision?.listos.flatMap((a) => a.documentos).filter((s) => s.tipo === d.tipo && !s.firmado).length ?? 0) > 1);
@@ -89,7 +90,7 @@ export function SubirJuegoDocumentos({ expedienteId }: { expedienteId: string })
         let originalId: string | undefined;
         let path = "";
         try {
-          path = `${carpeta}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\- ]/g, "_")}`;
+          path = `${carpeta}/${crypto.randomUUID()}-${nombreArchivoStorage(file.name).replace(/[^\w.\- ]/g, "_")}`;
           const { error } = await supabase.storage.from("documentos").upload(path, file);
           if (error) throw error;
           // Durable fallback before recognition: an interruption cannot discard a file.
