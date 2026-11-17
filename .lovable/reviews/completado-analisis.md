@@ -51,3 +51,15 @@ Días calculables: llegada → despacho completo, despacho → entrega, y almace
 - **Reabrir**: botón con motivo obligatorio y línea en Auditoría; vuelve a Facturado.
 - **Listas**: Completados ocultos por defecto en Expedientes, con filtro «Completados». **Dashboards** los siguen contando (igual que Facturado).
 - **Lote**: vista previa por Expediente con motivo, desmarcar filas, aplicar solo con tu confirmación y deshacer el lote completo.
+
+## 5. Actualización 17/11 con las reglas ya confirmadas
+
+Reglas fijas: cuatro documentos básicos (Factura comercial, BL, DUA, Liquidación); en el lote histórico los pasos pendientes del Checklist pasan a «No aplica» con vista previa y deshacer; despacho completo se acepta con N.º de despacho y fecha de aprobación, con aviso si falta el Seguimiento SIGA; saldo cobrado obligatorio solo para facturas emitidas desde una fecha por definir.
+
+Sobre los 41 Expedientes con los cuatro documentos:
+
+- **Despacho completo:** los 41 tienen N.º de despacho y fecha de aprobación → 0 bloqueados. 39 muestran aviso por no tener Seguimiento SIGA cargado.
+- **Checklist:** 2 ya estaban completos; a los 39 restantes se les marcarían «No aplica» 152 filas en 7 pasos (Enviado al gestor 38, Documentos físicos 35, Turno 28, Preferencia 26, Oficio DGA 16, Documentos digitales 6, Permiso VUCE 3).
+- **Cobro:** ninguno tiene un pago registrado (saldo total RD$590,947.46). Según la fecha elegida: 01/11/2026 → 25 cerrables y 16 bloqueados; 01/10/2026 → 2 cerrables; 01/01/2026 → ninguno.
+
+Pendiente del usuario: fecha del cobro y quién puede completar o reabrir.
