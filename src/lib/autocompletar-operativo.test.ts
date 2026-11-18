@@ -107,6 +107,14 @@ describe("autocompletado operativo: alerta visible o nota gris", () => {
   });
 });
 
+describe("autocompletado operativo: mismo texto con otra escritura", () => {
+  it("mayúsculas y tildes no cuentan como diferencia", () => {
+    const r = bl({ medio_transporte: "maritimo" }, { medio_transporte: "Marítimo" });
+    expect(r.notas).toHaveLength(0);
+    expect(r.coincidencias).toContain("medio_transporte");
+  });
+});
+
 describe("autocompletado operativo: solo Expedientes nuevos", () => {
   it("corre en los creados desde el 18/11/2026 (Santo Domingo 17/11 20:00) y no en los anteriores", () => {
     expect(esExpedienteNuevoOperativo("2026-11-18T00:30:00Z")).toBe(true);

@@ -166,6 +166,11 @@ const numero = (v: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
+/** Mismo texto sin importar mayúsculas, tildes ni espacios repetidos («maritimo» = «Marítimo»). */
+const normalTexto = (v: string | null) =>
+  (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/\s+/g, " ").trim();
+const mismoTexto = (a: string | null, b: string | null) => !!a && !!b && normalTexto(a) === normalTexto(b);
+
 /** Valor del Expediente considerado «sin dato» según la regla de la columna. */
 function vacioEn(actual: Actual, columna: string): boolean {
   return esVacioOperativo(columna, actual[columna]);
@@ -221,7 +226,7 @@ export function decidirAutocompletadoOperativo(p: {
         else destino.push(`${campo.etiqueta}: el Expediente tiene ${a} y el documento ${valor}.`);
       } else {
         const destino = esDiferenciaAlerta(campo.columna) ? alertas : notas;
-        if (texto(previo) === valor) coincidencias.push(campo.columna);
+        if (mismoTexto(texto(previo), valor as string)) coincidencias.push(campo.columna);
         else if (campo.tipo === "fecha") destino.push(`${campo.etiqueta}: el Expediente tiene ${fechaVisible(texto(previo))} y el documento ${fechaVisible(valor as string)}.`);
         else destino.push(`${campo.etiqueta}: el Expediente tiene «${texto(previo)}» y el documento «${valor}».`);
       }
