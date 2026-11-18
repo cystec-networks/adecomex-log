@@ -21,6 +21,7 @@ import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { RegistroCorreos } from "@/components/correos/registro-correos";
 import { RemitentesIgnorados } from "@/components/correos/remitentes-ignorados";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ClienteConversionCorreo, clienteInicialConversion, useClientesConversion } from "@/components/correos/cliente-conversion";
 
 const searchSchema = z.object({
   registro: fallback(z.string(), "").default(""),
@@ -49,11 +50,17 @@ function BandejaCorreo() {
   const canCompra = roles.some(r => r === 'admin' || r === 'vendedor');
   const [compra, setCompra] = useState<any>(null);
   const [destino, setDestino] = useState('nueva');
+  const puedeCrearCliente = roles.some(r => r === 'admin' || r === 'operaciones' || r === 'ejecutivo');
+  const { data: clientesCatalogo = [] } = useClientesConversion(canCompra);
+  // Cliente de la cotización: el identificado, uno sugerido, buscado o recién creado (se envía al convertir).
+  const [clienteElegido, setClienteElegido] = useState<string | null>(null);
+  const abrirConversion = (s: any) => { setCompra(s); setDestino('nueva'); setClienteElegido(clienteInicialConversion(s, clientesCatalogo)); };
+  const elegirCliente = (id: string | null) => { setClienteElegido(id); setDestino('nueva'); };
   const { data: cotizaciones = [] } = useQuery({
-    queryKey: ['cotizaciones-correo-cliente', compra?.cliente_id],
-    enabled: !!compra?.cliente_id,
+    queryKey: ['cotizaciones-correo-cliente', clienteElegido],
+    enabled: !!clienteElegido,
     queryFn: async () => {
-      const { data, error } = await supabase.from('cotizaciones').select('id,numero,estado').eq('cliente_id', compra.cliente_id).is('eliminado_en', null).order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('cotizaciones').select('id,numero,estado').eq('cliente_id', clienteElegido!).is('eliminado_en', null).order('created_at', { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
@@ -61,6 +68,7 @@ function BandejaCorreo() {
   const convertir = useMutation({
     mutationFn: async () => {
       if (!compra) throw new Error('Selecciona una solicitud');
+      if (!clienteElegido) throw new Error('Elige el cliente de la cotización');
       // Legacy requests predate invoice total/currency extraction. Read their source
       // before the atomic conversion; linking never alters an existing quote.
       if (destino === 'nueva') {
@@ -87,7 +95,7 @@ function BandejaCorreo() {
           if (error || !guardado) throw error ?? new Error('La solicitud cambió; vuelve a abrirla');
         }
       }
-      const { data, error } = await supabase.rpc('convertir_correo_cotizacion', { p_solicitud_id: compra.id, p_cotizacion_id: destino === 'nueva' ? undefined : destino });
+      const { data, error } = await supabase.rpc('convertir_correo_cotizacion', { p_solicitud_id: compra.id, p_cotizacion_id: destino === 'nueva' ? undefined : destino, p_cliente_id: clienteElegido });
       if (error) throw error;
       if (!data) throw new Error('No se pudo crear o vincular la cotización');
       return data;
@@ -177,7 +185,9 @@ function BandejaCorreo() {
                         <td className="px-2 py-1.5"><Checkbox aria-label={`Seleccionar ${s.asunto ?? "solicitud"}`} checked={seleccion.has(s.id)} onCheckedChange={(v) => alternar(s.id, v === true)} /></td>
                         <td className="px-2 py-1.5 whitespace-nowrap">{new Date(s.created_at).toLocaleString("es-DO", { timeZone: "America/Santo_Domingo" })}</td>
                         <td className="px-2 py-1.5">
-                          <div>{s.clientes?.nombre ?? s.cliente_nombre ?? "—"}</div>
+                          {s.cliente_id
+                            ? <div>{s.clientes?.nombre ?? s.cliente_nombre ?? "—"}</div>
+                            : <div><span className="font-medium text-warning-text">Cliente sin registrar</span>{s.cliente_nombre && <span className="block text-[11px] text-muted-foreground">Leído: {s.cliente_nombre}</span>}</div>}
                           <div className="text-[11px] text-muted-foreground">{s.remitente_correo ?? s.remitente}</div>
                           {s.asunto && <button className="text-[11px] text-primary underline" onClick={() => setAbierto(abierto === s.id ? null : s.id)}>{s.asunto}</button>}
                         </td>
@@ -204,7 +214,7 @@ function BandejaCorreo() {
                           <Button size="sm" className="h-7 px-2 mr-1" asChild>
                             <Link to="/expedientes/$id" params={{ id: "nuevo" }} search={{ nuevo: "", solicitud: "", correo: s.id }}><CheckCircle2 className="h-3.5 w-3.5 mr-1" />Confirmar y activar</Link>
                           </Button>
-                          <Button size="sm" variant="outline" className={sugerirCotizacionCorreo(s) ? 'h-7 px-2 border-warning/40 bg-warning/10' : 'h-7 px-2'} disabled={!canCompra} title={!canCompra ? 'Solo Administrador o Gestor de Compra' : undefined} onClick={() => { setCompra(s); setDestino('nueva'); }}><FilePlus2 className="h-3.5 w-3.5 mr-1" />Convertir en Cotización de Compra</Button>
+                          <Button size="sm" variant="outline" className={sugerirCotizacionCorreo(s) ? 'h-7 px-2 border-warning/40 bg-warning/10' : 'h-7 px-2'} disabled={!canCompra} title={!canCompra ? 'Solo Administrador o Gestor de Compra' : undefined} onClick={() => abrirConversion(s)}><FilePlus2 className="h-3.5 w-3.5 mr-1" />Convertir en Cotización de Compra</Button>
                           <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="Descartar" disabled={descartar.isPending} onClick={() => descartar.mutate([s.id])}><Trash2 className="h-4 w-4" /></Button>
                           </div>
                           {sugerirCotizacionCorreo(s) && <Badge variant="outline" className="mt-1 text-[11px] border-warning/40 text-warning-foreground">Sugerido: aún no hay embarque</Badge>}
@@ -227,18 +237,18 @@ function BandejaCorreo() {
       </Card>
       <RegistroCorreos key={`${registro}|${correo}`} filtroInicial={registro || undefined} correoDestacado={correo || undefined} />
       <Dialog open={!!compra} onOpenChange={(open) => { if (!open && !convertir.isPending) setCompra(null); }}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-xl max-h-[90vh] overflow-y-auto overflow-x-hidden [&>*]:min-w-0">
           <DialogHeader><DialogTitle>Convertir en Cotización de Compra</DialogTitle></DialogHeader>
-          <div className="space-y-3 text-[13px]">
-            <div className="font-medium">{compra?.clientes?.nombre ?? compra?.cliente_nombre}</div>
+          <div className="space-y-3 text-[13px] min-w-0">
+            {compra && <ClienteConversionCorreo solicitud={compra} clientes={clientesCatalogo} value={clienteElegido} onChange={elegirCliente} puedeCrear={puedeCrearCliente} disabled={convertir.isPending} />}
             <div>{compra?.producto} · {compra?.cantidad ?? 'Cantidad pendiente'}</div>
             {(compra?.adjuntos ?? []).filter((a: any) => tipoDocumentoCompra(a) === 'Factura proforma').map((a: any, i: number) => <div key={i} className="text-muted-foreground">Factura Proforma: {a.nombre}</div>)}
             <Select value={destino} onValueChange={setDestino} disabled={convertir.isPending}>
               <SelectTrigger aria-label="Destino de la conversión"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="nueva">Crear nueva Cotización de Compra</SelectItem>{cotizaciones.map(c => <SelectItem key={c.id} value={c.id}>Vincular a {c.numero} · {c.estado}</SelectItem>)}</SelectContent>
             </Select>
-            {!compra?.cliente_id && <div className="text-destructive">Falta identificar un cliente registrado. No se creará la cotización.</div>}
-            <div className="flex justify-end gap-2"><Button variant="outline" disabled={convertir.isPending} onClick={() => setCompra(null)}>Cancelar</Button><Button disabled={convertir.isPending || !compra?.cliente_id} onClick={() => convertir.mutate()}>{destino === 'nueva' ? <FilePlus2 className="h-4 w-4 mr-1" /> : <Link2 className="h-4 w-4 mr-1" />}{convertir.isPending ? 'Procesando…' : destino === 'nueva' ? 'Crear Cotización de Compra' : 'Vincular a cotización'}</Button></div>
+            {!clienteElegido && <div className="text-destructive">Elige o crea el cliente para poder crear la cotización.</div>}
+            <div className="flex flex-wrap justify-end gap-2"><Button variant="outline" disabled={convertir.isPending} onClick={() => setCompra(null)}>Cancelar</Button><Button disabled={convertir.isPending || !clienteElegido} onClick={() => convertir.mutate()}>{destino === 'nueva' ? <FilePlus2 className="h-4 w-4 mr-1" /> : <Link2 className="h-4 w-4 mr-1" />}{convertir.isPending ? 'Procesando…' : destino === 'nueva' ? 'Crear Cotización de Compra' : 'Vincular a cotización'}</Button></div>
           </div>
         </DialogContent>
       </Dialog>

@@ -9814,7 +9814,11 @@ export type Database = {
         Returns: Json
       }
       convertir_correo_cotizacion: {
-        Args: { p_cotizacion_id?: string; p_solicitud_id: string }
+        Args: {
+          p_cliente_id?: string
+          p_cotizacion_id?: string
+          p_solicitud_id: string
+        }
         Returns: string
       }
       correo_original_solicitud: {
