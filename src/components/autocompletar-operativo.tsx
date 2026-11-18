@@ -187,7 +187,7 @@ export function RevisionAutocompletado({ expedienteId, lectura, onClose }: {
                         <span className="min-w-0">
                           <span className="font-medium">{etiquetaCampoOperativo(campo)}</span>
                           <span className="text-muted-foreground"> → </span>
-                          <span className="break-all">{fmt(valor)}</span>
+                          <span className="[overflow-wrap:anywhere]">{fmt(valor)}</span>
                         </span>
                       </span>
                     </label>
@@ -207,7 +207,7 @@ export function RevisionAutocompletado({ expedienteId, lectura, onClose }: {
                       <span className="min-w-0">
                         <span className="font-medium">Contenedores</span>
                         <span className="text-muted-foreground"> → </span>
-                        <span className="break-all">{contenedores.length} contenedor(es) con sus sellos</span>
+                        <span className="break-words">{contenedores.length} contenedor(es) con sus sellos</span>
                       </span>
                     </span>
                   </label>
@@ -227,7 +227,7 @@ export function RevisionAutocompletado({ expedienteId, lectura, onClose }: {
                 {ev.decision.coincidencias.map((campo) => (
                   <div key={campo} className="flex items-start gap-2">
                     <Icono estado="coincide" />
-                    <span className="min-w-0 break-all">{etiquetaCampoOperativo(campo)}: el documento dice lo mismo que el Expediente.</span>
+                    <span className="min-w-0 break-words">{etiquetaCampoOperativo(campo)}: el documento dice lo mismo que el Expediente.</span>
                   </div>
                 ))}
               </div>
