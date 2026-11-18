@@ -31,6 +31,31 @@ export function fuenteOperativa(tipo: string | null | undefined): FuenteOperativ
 
 export const ETIQUETA_AUTO_OPERATIVO = "Automático";
 
+/**
+ * El autocompletado al subir o recibir el BL/Factura solo corre en Expedientes creados desde
+ * este momento (convertidos desde Orden de compra o creados en espera de documentos).
+ * Los anteriores solo se leen uno por uno con «Leer ahora» en su documento.
+ */
+export const AUTOCOMPLETADO_OPERATIVO_DESDE = "2026-11-18T00:00:00Z";
+
+export function esExpedienteNuevoOperativo(createdAt: string | null | undefined): boolean {
+  if (!createdAt) return false;
+  const t = new Date(createdAt).getTime();
+  return Number.isFinite(t) && t >= new Date(AUTOCOMPLETADO_OPERATIVO_DESDE).getTime();
+}
+
+/**
+ * Diferencias que se muestran como alerta visible: N.º de BL, pesos, bultos, montos y fechas
+ * (el cliente se valida aparte). Las de texto (naviera, puertos, medio de transporte,
+ * descripción, etc.) son solo una nota gris informativa.
+ */
+const CAMPOS_ALERTA = new Set([
+  "bl_awb", "peso_bruto", "peso_neto", "cantidad_bultos",
+  "total_fob", "seguro", "flete", "otros", "fecha_cargado",
+]);
+
+export const esDiferenciaAlerta = (columna: string): boolean => CAMPOS_ALERTA.has(columna);
+
 /** Diferencias aceptadas antes de mostrar una alerta (confirmadas por el usuario). */
 export const TOLERANCIAS_OPERATIVO = {
   /** Porcentaje de diferencia admitido en pesos (1 %). */
@@ -108,19 +133,24 @@ export type LecturaOperativaGuardada = {
   leido_en: string;
   origen: "manual" | "correo" | "leer_ahora" | "lote";
   fuente: FuenteOperativa;
+  /** pendiente = leído, esperando la vista previa; aplicado / rechazado tras decidir. */
+  estado?: "pendiente" | "aplicado" | "rechazado";
   /** Copia de los valores leídos que interesan, para no volver a leer el archivo. */
   datos: Record<string, unknown>;
   motivo: string | null;
   completados: string[];
   alertas: string[];
+  notas?: string[];
 };
 
 export type DecisionOperativa = {
   cambios: Record<string, unknown>;
   completados: string[];
   avisos: string[];
-  /** Diferencias con otros documentos: solo alertas, nunca bloquean ni corrigen. */
+  /** Diferencias en BL, cliente, pesos, bultos, montos o fechas: alerta visible, nunca bloquea ni corrige. */
   alertas: string[];
+  /** Diferencias de texto (naviera, puertos, medio, descripción…): nota gris informativa. */
+  notas: string[];
   /** Campos donde el documento y el Expediente dicen lo mismo. */
   coincidencias: string[];
 };
@@ -159,6 +189,7 @@ export function decidirAutocompletadoOperativo(p: {
   const completados: string[] = [];
   const avisos: string[] = [];
   const alertas: string[] = [];
+  const notas: string[] = [];
   const coincidencias: string[] = [];
   const datos = p.datos ?? {};
 
@@ -185,11 +216,14 @@ export function decidirAutocompletadoOperativo(p: {
       if (campo.tipo === "numero") {
         const a = numero(previo);
         if (a === null) continue;
+        const destino = esDiferenciaAlerta(campo.columna) ? alertas : notas;
         if (a === valor) coincidencias.push(campo.columna);
-        else alertas.push(`${campo.etiqueta}: el Expediente tiene ${a} y el documento ${valor}.`);
+        else destino.push(`${campo.etiqueta}: el Expediente tiene ${a} y el documento ${valor}.`);
       } else {
+        const destino = esDiferenciaAlerta(campo.columna) ? alertas : notas;
         if (texto(previo) === valor) coincidencias.push(campo.columna);
-        else alertas.push(`${campo.etiqueta}: el Expediente tiene «${texto(previo)}» y el documento «${valor}».`);
+        else if (campo.tipo === "fecha") destino.push(`${campo.etiqueta}: el Expediente tiene ${fechaVisible(texto(previo))} y el documento ${fechaVisible(valor as string)}.`);
+        else destino.push(`${campo.etiqueta}: el Expediente tiene «${texto(previo)}» y el documento «${valor}».`);
       }
       continue;
     }
@@ -215,7 +249,13 @@ export function decidirAutocompletadoOperativo(p: {
     if (validos.length) cambios.contenedores = validos;
   }
 
-  return { cambios, completados, avisos, alertas, coincidencias };
+  return { cambios, completados, avisos, alertas, notas, coincidencias };
+}
+
+/** AAAA-MM-DD → DD/MM/AAAA para los mensajes (siempre día/mes/año). */
+function fechaVisible(v: string | null): string {
+  const m = v?.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : (v ?? "—");
 }
 
 /* ------------------------------------------------------------------ *
@@ -247,11 +287,19 @@ export function alertasBlContraFactura(p: {
   if (bultosBl !== null && bultosFac !== null && bultosBl !== bultosFac) {
     out.push(`Bultos distintos: BL ${bultosBl}, factura ${bultosFac}.`);
   }
-  const dB = t(p.bl.descripcion_mercancia), dF = t(p.factura.descripcion_mercancia);
-  if (dB && dF && dB.toUpperCase() !== dF.toUpperCase() && !dB.toUpperCase().includes(dF.toUpperCase()) && !dF.toUpperCase().includes(dB.toUpperCase())) {
-    out.push("Descripción de la mercancía distinta entre BL y factura.");
-  }
   return out;
+}
+
+/** BL contra Factura, solo texto: la descripción distinta es una nota informativa. */
+export function notasBlContraFactura(p: {
+  bl: Partial<OcrExtraction> & Record<string, unknown>;
+  factura: Partial<OcrExtraction> & Record<string, unknown>;
+}): string[] {
+  const dB = texto(p.bl.descripcion_mercancia), dF = texto(p.factura.descripcion_mercancia);
+  if (dB && dF && dB.toUpperCase() !== dF.toUpperCase() && !dB.toUpperCase().includes(dF.toUpperCase()) && !dF.toUpperCase().includes(dB.toUpperCase())) {
+    return ["Descripción de la mercancía distinta entre BL y factura."];
+  }
+  return [];
 }
 
 export type LineaComparables = { descripcion: string | null; cantidad: number | null; valor: number | null };
@@ -266,8 +314,6 @@ export function alertasFacturaContraOrden(p: {
   const out: string[] = [];
   if (!p.orden) return out;
   const o = p.orden;
-  const s = texto(p.suplidor), so = texto(o.suplidor);
-  if (s && so && s.toUpperCase() !== so.toUpperCase()) out.push(`El suplidor de la factura «${s}» no es el de la Orden «${so}».`);
   if (difiere(p.totalFob, o.total, TOLERANCIAS_OPERATIVO.montoPct, TOLERANCIAS_OPERATIVO.montoMinimo)) {
     out.push(`Total distinto: factura US$${p.totalFob}, Orden US$${o.total}.`);
   }
@@ -286,6 +332,12 @@ export function alertasFacturaContraOrden(p: {
     }
   }
   return out;
+}
+
+/** Factura contra la Orden, solo texto: el suplidor distinto es una nota informativa. */
+export function notasFacturaContraOrden(p: { suplidor: string | null; orden: { suplidor: string | null } | null }): string[] {
+  const s = texto(p.suplidor), so = texto(p.orden?.suplidor);
+  return s && so && s.toUpperCase() !== so.toUpperCase() ? [`El suplidor de la factura «${s}» no es el de la Orden «${so}».`] : [];
 }
 
 /* ------------------------------------------------------------------ *

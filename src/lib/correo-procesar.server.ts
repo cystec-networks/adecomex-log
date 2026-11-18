@@ -5,8 +5,8 @@
 import { MODELO_ECONOMICO } from "@/lib/ia-consumo";
 import { TIPO_SEGUIMIENTO_SIGA, type LecturaSigaFallida, type SeguimientoSiga } from "./seguimiento-siga";
 import { aplicarSeguimientoSiga, evaluarSeguimientoSiga } from "./seguimiento-siga-evaluar";
-import { TIPOS_OPERATIVOS, fuenteOperativa } from "./autocompletar-operativo";
-import { aplicarAutocompletadoOperativo, evaluarAutocompletadoOperativo, lecturaOperativaParaGuardar } from "./autocompletar-operativo-evaluar";
+import { TIPOS_OPERATIVOS, esExpedienteNuevoOperativo, fuenteOperativa } from "./autocompletar-operativo";
+import { evaluarAutocompletadoOperativo, lecturaOperativaParaGuardar } from "./autocompletar-operativo-evaluar";
 import { z } from "zod";
 import { aislarMensajeReciente, avisoFechaLlegada, combinarDatos, extraerPorEtiquetas, fusionarAsunto, fusionarAdjuntos } from "@/lib/correo-solicitud";
 import { adjuntoCorreoSchema, normalizarAdjuntosCorreo, mimeAdjuntoCorreo, deduplicarAdjuntosCorreo } from "@/lib/correo-adjuntos";
@@ -429,10 +429,11 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
 }
 
 
-/** Lee y aplica cada Seguimiento SIGA recién ubicado; un fallo nunca rompe el correo (queda «sin leer»). */
 /**
- * BL/AWB o Factura comercial recibidos por correo: la lectura que ya se hizo al clasificar el
- * archivo se guarda junto al documento y completa solo campos vacíos. No se vuelve a leer.
+ * BL/AWB o Factura comercial recibidos por correo: solo en Expedientes nuevos (creados desde
+ * `AUTOCOMPLETADO_OPERATIVO_DESDE`). La lectura que ya se hizo al clasificar el archivo se guarda
+ * junto al documento como «pendiente» (sin volver a leer ni gastar IA) y espera la vista previa
+ * «Datos detectados» en el Expediente: el correo nunca escribe campos por su cuenta.
  */
 async function aplicarOperativosCorreo(
   db: any,
@@ -441,7 +442,11 @@ async function aplicarOperativosCorreo(
   adjuntos: AdjuntoProcesado[],
 ): Promise<string[]> {
   const avisos: string[] = [];
-  for (const fila of insertados.filter((f) => (TIPOS_OPERATIVOS as readonly string[]).includes(f.tipo))) {
+  const filas = insertados.filter((f) => (TIPOS_OPERATIVOS as readonly string[]).includes(f.tipo));
+  if (!filas.length) return avisos;
+  const { data: exp } = await db.from("expedientes").select("created_at").eq("id", expedienteId).maybeSingle();
+  if (!esExpedienteNuevoOperativo(exp?.created_at)) return avisos;
+  for (const fila of filas) {
     const a = adjuntos.find((x) => x.storage_path === fila.storage_path);
     const fuente = fuenteOperativa(fila.tipo);
     if (!a || !fuente) continue;
@@ -457,17 +462,18 @@ async function aplicarOperativosCorreo(
     try {
       const evaluacion = await evaluarAutocompletadoOperativo(db, { expedienteId, tipo: fila.tipo, datos });
       const lectura = lecturaOperativaParaGuardar({ datos, fuente, origen: "correo", archivo: fila.storage_path }, evaluacion.decision);
-      const r = await aplicarAutocompletadoOperativo(db, { expedienteId, documentoId: fila.id, origen: "correo", evaluacion, lectura });
-      if (!evaluacion.validacion.ok) avisos.push(`${a.nombre}: ${evaluacion.validacion.errores.join(" ")} No se completó ningún campo.`);
-      else if (r.completados.length || r.contenedores) avisos.push(`${a.nombre}: completó ${r.completados.length} campo(s)${r.contenedores ? ` y ${r.contenedores} contenedor(es)` : ""} del Expediente.`);
-      if (evaluacion.decision.alertas.length) avisos.push(`${a.nombre}: ${evaluacion.decision.alertas.length} diferencia(s) con el Expediente; se conservaron sus valores.`);
+      const { error } = await db.from("documentos").update({ lectura_operativa: { ...lectura, estado: "pendiente" } }).eq("id", fila.id);
+      if (error) throw new Error(error.message);
+      if (!evaluacion.validacion.ok) avisos.push(`${a.nombre}: ${evaluacion.validacion.errores.join(" ")} Revisa los datos detectados en el Expediente; no se completará ningún campo.`);
+      else avisos.push(`${a.nombre}: datos detectados listos para revisar en el Expediente (Documentos → «Revisar datos detectados»)${evaluacion.decision.completados.length ? `; ${evaluacion.decision.completados.length} campo(s) vacío(s) se podrían completar` : ""}.`);
     } catch (e) {
-      avisos.push(`${a.nombre}: no se pudo autocompletar (${String(e instanceof Error ? e.message : e).slice(0, 140)}).`);
+      avisos.push(`${a.nombre}: no se pudo preparar el autocompletado (${String(e instanceof Error ? e.message : e).slice(0, 140)}).`);
     }
   }
   return avisos;
 }
 
+/** Lee y aplica cada Seguimiento SIGA recién ubicado; un fallo nunca rompe el correo (queda «sin leer»). */
 async function aplicarSeguimientosCorreo(db: any, expedienteId: string, insertados: Array<{ id: string; tipo: string; storage_path: string | null }>, adjuntos: AdjuntoProcesado[]): Promise<string[]> {
   const avisos: string[] = [];
   for (const fila of insertados.filter((f) => f.tipo === TIPO_SEGUIMIENTO_SIGA)) {

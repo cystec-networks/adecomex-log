@@ -1,4 +1,6 @@
 // Simulación, aplicación en lote y deshacer del autocompletado desde BL/AWB o Factura comercial.
+// EN DESUSO por decisión del usuario (18/11/2026): no hay botón que lo llame. Los Expedientes
+// existentes se leen uno por uno con «Leer ahora» en su documento.
 // Solo usa lecturas ya guardadas en el documento (no vuelve a pagar IA) y nunca toca los Completados.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -146,51 +148,6 @@ export const listarLotesOperativo = createServerFn({ method: "GET" })
       por.set(f.lote_id, g);
     }
     return [...por.values()].slice(0, 20);
-  });
-
-/**
- * Lee con el modelo económico los BL/AWB o Facturas que aún no tienen lectura guardada,
- * pocos por vez para no agotar el tiempo de la petición. Solo guarda la lectura: no llena nada.
- */
-export const prepararLecturasOperativo = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ limite: z.number().int().min(1).max(5).default(3) }).parse(data))
-  .handler(async ({ context, data }): Promise<{ leidos: number; restantes: number; avisos: string[] }> => {
-    const db = context.supabase;
-    const { data: docs, error } = await db.from("documentos")
-      .select("id, expediente_id, tipo, storage_path, lectura_operativa")
-      .in("tipo", [...TIPOS]).not("storage_path", "is", null)
-      .order("fecha_recepcion", { ascending: false }).limit(400);
-    if (error) throw new Error(error.message);
-    const pendientes = (docs ?? []).filter((d: any) => d.lectura_operativa?.archivo !== d.storage_path);
-    const { leerDocumentoImportacion } = await import("./ai-ocr.server");
-    const { MODELO_ECONOMICO } = await import("./ia-consumo");
-    const avisos: string[] = [];
-    let leidos = 0;
-    for (const d of pendientes.slice(0, data.limite) as any[]) {
-      try {
-        const { data: blob, error: de } = await db.storage.from("documentos").download(d.storage_path);
-        if (de || !blob) throw new Error(de?.message ?? "archivo no disponible");
-        const bytes = new Uint8Array(await blob.arrayBuffer());
-        let bin = "";
-        for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-        const res = await leerDocumentoImportacion({
-          filename: d.storage_path, mime: "application/pdf", base64: btoa(bin),
-          ...(d.tipo === "Factura comercial" ? { lineas_factura: true } : {}),
-          modelo: MODELO_ECONOMICO,
-        });
-        const fuente = fuenteOperativa(d.tipo)!;
-        const decision: DecisionOperativa = { cambios: {}, completados: [], avisos: [], alertas: [], coincidencias: [] };
-        const lectura = lecturaOperativaParaGuardar({ datos: res, fuente, origen: "lote", archivo: d.storage_path }, decision);
-        const { error: ue } = await db.from("documentos")
-          .update({ lectura_operativa: { ...lectura, estado: "pendiente" } as never }).eq("id", d.id);
-        if (ue) throw new Error(ue.message);
-        leidos += 1;
-      } catch (e) {
-        avisos.push(`${d.storage_path}: ${String(e instanceof Error ? e.message : e).slice(0, 160)}`);
-      }
-    }
-    return { leidos, restantes: Math.max(0, pendientes.length - leidos), avisos };
   });
 
 export type { LecturaOperativaGuardada };

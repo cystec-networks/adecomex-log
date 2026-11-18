@@ -74,8 +74,9 @@ import { prepararGuardadoLiquidacion, type CambiosLiquidacion } from "@/lib/liqu
 import { EtiquetaAutoDua, LecturaDuaDocumento, avisarLecturaDua, useProcesarLecturaDua } from "@/components/lectura-dua";
 import { TIPO_DUA, TIPO_LIQUIDACION, esTipoLecturaDua } from "@/lib/declaracion-dua";
 import { TIPO_SEGUIMIENTO_SIGA, type SeguimientoSiga } from "@/lib/seguimiento-siga";
-import { RevisionAutocompletado, tipoOperativo, type LecturaOperativaPendiente } from "@/components/autocompletar-operativo";
-import { TIPO_FACTURA_COMERCIAL } from "@/lib/autocompletar-operativo";
+import { EtiquetaAutoOperativo, LecturaOperativaDocumento, RevisionAutocompletado, tipoOperativo, type LecturaOperativaPendiente } from "@/components/autocompletar-operativo";
+import { esExpedienteNuevoOperativo } from "@/lib/autocompletar-operativo";
+import { leerDocumentoOperativo } from "@/lib/autocompletar-operativo.functions";
 import { aplicarSeguimientoSiga, evaluarSeguimientoSiga, type EvaluacionSiga } from "@/lib/seguimiento-siga-evaluar";
 import { AvisosSeguimientoSiga, DatosSigaBlock, EtiquetaAutoSiga, HistorialProcesosSiga, LecturaSigaDocumento, RevisionSeguimientoSiga, guardarLecturaSigaFallida, useLeerSeguimientoSiga, type LecturaSigaPendiente } from "@/components/seguimiento-siga";
 import { LecturaReciboDocumento, avisarLecturaRecibo, useProcesarLecturaRecibo } from "@/components/recibo-dga-lectura";
@@ -1795,10 +1796,10 @@ function ReqMark() {
   return <span className="text-destructive mr-0.5">*</span>;
 }
 
-function Field({ label, value, onChange, type = "text", className = "", disabled = false, req = false, fieldId, highlight = false }: { label: string; value: any; onChange: (v: string) => void; type?: string; className?: string; disabled?: boolean; req?: boolean; fieldId?: string; highlight?: boolean }) {
+function Field({ label, labelExtra, value, onChange, type = "text", className = "", disabled = false, req = false, fieldId, highlight = false }: { label: string; labelExtra?: React.ReactNode; value: any; onChange: (v: string) => void; type?: string; className?: string; disabled?: boolean; req?: boolean; fieldId?: string; highlight?: boolean }) {
   return (
     <div className={cn("grid gap-1.5", highlight && "ring-2 ring-destructive rounded-md p-2 -m-2", className)} id={fieldId}>
-      <Label>{req && <ReqMark />}{label}</Label>
+      <Label className={labelExtra ? "flex flex-wrap items-center" : undefined}>{req && <ReqMark />}{label}{labelExtra}</Label>
       <Input type={type} value={value ?? ""} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
     </div>
   );
@@ -2907,10 +2908,10 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
         ) : (
           <Field label="Número / ID" value={form.numero} onChange={(v) => set("numero", v)} disabled={!editable} className="[&_input]:text-brand-red [&_input]:font-bold [&_input:disabled]:opacity-100" />
         )}
-        <Field label="BL / AWB / Guía" value={form.bl_awb} onChange={(v) => { set("bl_awb", v); limpiarFaltante("req-bl_awb"); }} disabled={!editable} req fieldId="req-bl_awb" highlight={camposFaltantes.has("req-bl_awb")} />
-        <AutoField label="Medio de transporte" value={form.medio_transporte} onChange={(v) => set("medio_transporte", v)} suggestion={sug.medio_transporte ?? []} disabled={!editable} />
-        <AutoField label="Naviera" value={form.naviera} onChange={(v) => set("naviera", v)} suggestion={sug.naviera ?? []} disabled={!editable} />
-        <Field label="Fecha de Cargado" value={form.fecha_cargado} onChange={(v) => set("fecha_cargado", v)} type="date" disabled={!editable} />
+        <Field label="BL / AWB / Guía" labelExtra={!isNuevo ? <EtiquetaAutoOperativo exp={exp} campo="bl_awb" valor={form.bl_awb} /> : undefined} value={form.bl_awb} onChange={(v) => { set("bl_awb", v); limpiarFaltante("req-bl_awb"); }} disabled={!editable} req fieldId="req-bl_awb" highlight={camposFaltantes.has("req-bl_awb")} />
+        <AutoField label="Medio de transporte" labelExtra={!isNuevo ? <EtiquetaAutoOperativo exp={exp} campo="medio_transporte" valor={form.medio_transporte} /> : undefined} value={form.medio_transporte} onChange={(v) => set("medio_transporte", v)} suggestion={sug.medio_transporte ?? []} disabled={!editable} />
+        <AutoField label="Naviera" labelExtra={!isNuevo ? <EtiquetaAutoOperativo exp={exp} campo="naviera" valor={form.naviera} /> : undefined} value={form.naviera} onChange={(v) => set("naviera", v)} suggestion={sug.naviera ?? []} disabled={!editable} />
+        <Field label="Fecha de Cargado" labelExtra={!isNuevo ? <EtiquetaAutoOperativo exp={exp} campo="fecha_cargado" valor={form.fecha_cargado} /> : undefined} value={form.fecha_cargado} onChange={(v) => set("fecha_cargado", v)} type="date" disabled={!editable} />
         <Field label="Fecha Estimada de Llegada (ETA)" value={form.fecha_compromiso} onChange={(v) => set("fecha_compromiso", v)} type="date" disabled={!editable} />
         <div className="grid gap-1">
           <Field label="Fecha de Llegada Real" value={form.fecha_llegada_real} onChange={(v) => set("fecha_llegada_real", v)} type="date" disabled={!editable} req />
@@ -2931,7 +2932,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           <>
             <div className={cn("grid gap-1.5", camposFaltantes.has("req-suplidor") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-suplidor">
               <div className="flex items-center justify-between gap-2">
-                <Label><ReqMark />Exportador / Suplidor</Label>
+                <Label className="flex flex-wrap items-center"><ReqMark />Exportador / Suplidor{!isNuevo && <EtiquetaAutoOperativo exp={exp} campo="suplidor" valor={form.suplidor} />}</Label>
                 {editable && (
                   <TerceroExtranjeroPicker
                     onSelect={(t) => { setForm((f) => ({ ...f, ...camposProveedorCatalogo(t) })); limpiarFaltante("req-suplidor"); }}
@@ -2947,7 +2948,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           </>
         )}
         <div className="grid gap-1.5">
-          <Label><ReqMark />País de origen</Label>
+          <Label className="flex flex-wrap items-center"><ReqMark />País de origen{!isNuevo && <EtiquetaAutoOperativo exp={exp} campo="pais_origen" valor={form.pais_origen} />}</Label>
           <DgaCombobox
             table="dga_paises"
             value={form.pais_origen}
@@ -2961,7 +2962,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           )}
         </div>
         <div className="grid gap-1.5">
-          <Label>País de procedencia</Label>
+          <Label className="flex flex-wrap items-center">País de procedencia{!isNuevo && <EtiquetaAutoOperativo exp={exp} campo="pais_procedencia" valor={form.pais_procedencia} />}</Label>
           <DgaCombobox
             table="dga_paises"
             value={form.pais_procedencia}
@@ -2975,10 +2976,10 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           )}
         </div>
 
-        <AutoField label="Factura comercial" value={form.factura_comercial} onChange={(v) => { set("factura_comercial", v); limpiarFaltante("req-factura_comercial"); }} suggestion={sug.factura_comercial ?? []} disabled={!editable} req fieldId="req-factura_comercial" highlight={camposFaltantes.has("req-factura_comercial")} />
-        <AutoField label="Incoterm" value={form.incoterm} onChange={(v) => set("incoterm", v)} suggestion={sug.incoterm ?? []} disabled={!editable} />
+        <AutoField label="Factura comercial" labelExtra={!isNuevo ? <EtiquetaAutoOperativo exp={exp} campo="factura_comercial" valor={form.factura_comercial} /> : undefined} value={form.factura_comercial} onChange={(v) => { set("factura_comercial", v); limpiarFaltante("req-factura_comercial"); }} suggestion={sug.factura_comercial ?? []} disabled={!editable} req fieldId="req-factura_comercial" highlight={camposFaltantes.has("req-factura_comercial")} />
+        <AutoField label="Incoterm" labelExtra={!isNuevo ? <EtiquetaAutoOperativo exp={exp} campo="incoterm" valor={form.incoterm} /> : undefined} value={form.incoterm} onChange={(v) => set("incoterm", v)} suggestion={sug.incoterm ?? []} disabled={!editable} />
         <div className="grid gap-1.5">
-          <Label>Puerto de salida</Label>
+          <Label className="flex flex-wrap items-center">Puerto de salida{!isNuevo && <EtiquetaAutoOperativo exp={exp} campo="puerto_salida" valor={form.puerto_salida} />}</Label>
           <DgaCombobox
             table="dga_puertos"
             value={form.puerto_salida}
@@ -3025,7 +3026,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
       <Section id="declaracion" title="3. Declaración" subtitle="Documentos oficiales ante DGA y VUCE">
           <div className={cn("grid gap-1.5", camposFaltantes.has("req-puerto_arribo") && "ring-2 ring-destructive rounded-md p-2 -m-2")} id="req-puerto_arribo">
-            <Label><ReqMark />Puerto de arribo</Label>
+            <Label className="flex flex-wrap items-center"><ReqMark />Puerto de arribo{!isNuevo && <EtiquetaAutoOperativo exp={exp} campo="puerto_arribo" valor={form.puerto_arribo} />}</Label>
             <DgaCombobox
               table="dga_puertos"
               value={form.puerto_arribo}
@@ -3209,12 +3210,12 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
 
       <Section id="descripcion-mercancia" title="4. Descripción de mercancía" subtitle="Detalle físico y clasificación de la carga">
           <div className="grid gap-1.5 md:col-span-2 lg:col-span-3">
-            <Label>Descripción</Label>
+            <Label className="flex flex-wrap items-center">Descripción{!isNuevo && <EtiquetaAutoOperativo exp={exp} campo="descripcion_mercancia" valor={form.descripcion_mercancia} />}</Label>
             <Textarea rows={3} value={form.descripcion_mercancia} onChange={(e) => set("descripcion_mercancia", e.target.value)} disabled={!editable} />
           </div>
           <div className="grid gap-4 content-start">
             <div className="grid gap-1.5">
-              <Label><ReqMark />Peso neto (kg)</Label>
+              <Label className="flex flex-wrap items-center"><ReqMark />Peso neto (kg){!isNuevo && <EtiquetaAutoOperativo exp={exp} campo="peso_neto" valor={form.peso_neto} />}</Label>
               <Input
                 type="text"
                 inputMode="decimal"
@@ -3228,7 +3229,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               />
             </div>
             <div className="grid gap-1.5">
-              <Label className="flex flex-wrap items-center"><ReqMark />Peso bruto (kg){!isNuevo && <EtiquetaAutoSiga exp={exp} campo="peso_bruto" valor={form.peso_bruto} />}</Label>
+              <Label className="flex flex-wrap items-center"><ReqMark />Peso bruto (kg){!isNuevo && <EtiquetaAutoSiga exp={exp} campo="peso_bruto" valor={form.peso_bruto} />}{!isNuevo && <EtiquetaAutoOperativo exp={exp} campo="peso_bruto" valor={form.peso_bruto} />}</Label>
               <Input
                 type="text"
                 inputMode="decimal"
@@ -3242,7 +3243,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               />
             </div>
             <div className="grid gap-1.5">
-              <Label className="flex flex-wrap items-center">Cantidad de bultos{!isNuevo && <EtiquetaAutoSiga exp={exp} campo="cantidad_bultos" valor={form.cantidad_bultos} />}</Label>
+              <Label className="flex flex-wrap items-center">Cantidad de bultos{!isNuevo && <EtiquetaAutoSiga exp={exp} campo="cantidad_bultos" valor={form.cantidad_bultos} />}{!isNuevo && <EtiquetaAutoOperativo exp={exp} campo="cantidad_bultos" valor={form.cantidad_bultos} />}</Label>
               <Input
                 type="text"
                 inputMode="numeric"
@@ -3359,7 +3360,7 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
               const reqId = req ? `req-${k}` : undefined;
               return (
                 <div className={cn("grid gap-1.5", reqId && camposFaltantes.has(reqId) && "ring-2 ring-destructive rounded-md p-2 -m-2")} key={k} id={reqId}>
-                  <Label>{req && isNuevo && <ReqMark />}{label} (US$)</Label>
+                  <Label className="flex flex-wrap items-center">{req && isNuevo && <ReqMark />}{label} (US$){!isNuevo && <EtiquetaAutoOperativo exp={exp} campo={k} valor={raw} />}</Label>
                   <Input
                     type="text"
                     inputMode="decimal"
@@ -3536,6 +3537,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const editorOrigen = useDeclaracionOrigen();
   const editorLiquidacion = useLiquidacionDga();
   const extraer = useServerFn(extractSolicitudFromDocument);
+  const leerOperativo = useServerFn(leerDocumentoOperativo);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editPath, setEditPath] = useState<string | null>(null);
@@ -3720,19 +3722,18 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       // Nunca en silencio: el motivo queda bajo el documento con «Leer ahora».
       if (motivoSinLecturaSiga && docGuardadoId) await guardarLecturaSigaFallida(docGuardadoId, pathGuardado, motivoSinLecturaSiga).catch(() => undefined);
       if (tipo === TIPO_SEGUIMIENTO_SIGA) { qc.invalidateQueries({ queryKey: ["documentos", expedienteId] }); window.dispatchEvent(new Event("seguimiento-siga-actualizado")); }
-      // BL/AWB o Factura comercial: se lee una sola vez por versión del archivo y se ofrece la vista previa.
+      // BL/AWB o Factura comercial: solo en Expedientes nuevos se lee al subir (una vez por versión,
+      // modelo económico) y se ofrece la vista previa. Los anteriores usan «Leer ahora» en el documento.
       if (file && docGuardadoId && tipoOperativo(tipo)) {
-        try {
-          const bytes = new Uint8Array(await file.arrayBuffer());
-          let binary = "";
-          for (const b of bytes) binary += String.fromCharCode(b);
-          const res = await extraer({ data: {
-            filename: file.name, mime: file.type || "application/pdf", base64: btoa(binary),
-            ...(tipo === TIPO_FACTURA_COMERCIAL ? { lineas_factura: true } : {}),
-          } });
-          setRevisionOperativo({ documentoId: docGuardadoId, archivo: pathGuardado, tipo, datos: res });
-        } catch (e) {
-          toast.warning(`El documento se guardó sin autocompletar: ${e instanceof Error ? e.message : "lectura no disponible"}`, { duration: 10000 });
+        const { data: expRow } = await supabase.from("expedientes").select("created_at").eq("id", expedienteId).maybeSingle();
+        if (esExpedienteNuevoOperativo(expRow?.created_at)) {
+          try {
+            const r = await leerOperativo({ data: { documentoId: docGuardadoId, origen: "manual" } });
+            qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
+            setRevisionOperativo({ documentoId: docGuardadoId, archivo: r.archivo, tipo, datos: JSON.parse(r.datos), origen: "manual" });
+          } catch (e) {
+            toast.warning(`El documento se guardó sin autocompletar: ${e instanceof Error ? e.message : "lectura no disponible"}. Usa «Leer ahora» en el documento.`, { duration: 10000 });
+          }
         }
       }
       if (cartaRuta?.solicitud) {
@@ -3935,7 +3936,8 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       onCambiarTipo={() => { const d = latestByTipo.get(item.tipo); if (d) setAMover(d); }}
       extra={esTipoLecturaDua(item.tipo) && latestByTipo.get(item.tipo) ? <LecturaDuaDocumento expedienteId={expedienteId} doc={latestByTipo.get(item.tipo)} />
         : item.tipo === TIPO_SEGUIMIENTO_SIGA && latestByTipo.get(item.tipo) ? <LecturaSigaDocumento expedienteId={expedienteId} doc={latestByTipo.get(item.tipo)} />
-          : item.tipo === TIPO_RECIBO_DGA && latestByTipo.get(item.tipo) ? <LecturaReciboDocumento expedienteId={expedienteId} doc={latestByTipo.get(item.tipo)} /> : undefined}
+          : item.tipo === TIPO_RECIBO_DGA && latestByTipo.get(item.tipo) ? <LecturaReciboDocumento expedienteId={expedienteId} doc={latestByTipo.get(item.tipo)} />
+            : tipoOperativo(item.tipo) && latestByTipo.get(item.tipo) ? <LecturaOperativaDocumento doc={latestByTipo.get(item.tipo)} onRevisar={setRevisionOperativo} /> : undefined}
     />
   );
 
@@ -4049,6 +4051,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
                     onEstado={(v) => cambiarEstado(d.id, v)}
                     onEliminar={() => eliminar(d)}
                     onCambiarTipo={() => setAMover(d)}
+                    extra={tipoOperativo(d.tipo) ? <LecturaOperativaDocumento doc={d} onRevisar={setRevisionOperativo} /> : undefined}
                   />
                 ))}
               </div>

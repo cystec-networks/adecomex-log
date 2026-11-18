@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   TIPO_BL, TIPO_FACTURA_COMERCIAL,
   alertasBlContraFactura, alertasFacturaContraOrden,
-  decidirAutocompletadoOperativo, esAutomaticoOperativo, esVacioOperativo,
-  etiquetaCampoOperativo, fuenteOperativa,
+  decidirAutocompletadoOperativo, esAutomaticoOperativo, esExpedienteNuevoOperativo, esVacioOperativo,
+  etiquetaCampoOperativo, fuenteOperativa, notasBlContraFactura, notasFacturaContraOrden,
 } from "./autocompletar-operativo";
 
 const bl = (datos: Record<string, unknown>, actual: Record<string, unknown> = {}, extra: Record<string, unknown> = {}) =>
@@ -20,17 +20,15 @@ describe("autocompletado operativo: qué se llena", () => {
     expect(fuenteOperativa("Certificado de origen")).toBeNull();
   });
 
-  it("completa un campo vacío y avisa del que ya tiene valor", () => {
+  it("completa un campo vacío y no toca el que ya tiene valor", () => {
     const vacio = bl({ naviera: "MAERSK LINE" }, { naviera: "" });
     expect(vacio.cambios.naviera).toBe("MAERSK LINE");
     expect(vacio.completados).toContain("naviera");
 
     const lleno = bl({ naviera: "MAERSK LINE" }, { naviera: "CLAUDE" });
     expect(lleno.cambios.naviera).toBeUndefined();
-    expect(lleno.alertas).toHaveLength(1);
-    expect(lleno.alertas[0]).toContain("CLAUDE");
-    expect(lleno.alertas[0]).toContain("MAERSK LINE");
   });
+
 
   it("un 0 en importes, pesos o bultos cuenta como vacío; en texto no", () => {
     expect(esVacioOperativo("total_fob", 0)).toBe(true);
@@ -77,6 +75,47 @@ describe("autocompletado operativo: qué se llena", () => {
   });
 });
 
+describe("autocompletado operativo: alerta visible o nota gris", () => {
+  it("naviera, puertos, medio de transporte y descripción distintos son solo nota informativa", () => {
+    const r = bl(
+      { naviera: "MAERSK LINE", puerto_salida: "Amberes", medio_transporte: "maritimo", descripcion_mercancia: "SILLAS" },
+      { naviera: "CLAUDE", puerto_salida: "Rotterdam", medio_transporte: "Aéreo", descripcion_mercancia: "MESAS" },
+    );
+    expect(r.alertas).toHaveLength(0);
+    expect(r.notas).toHaveLength(4);
+    expect(r.notas.join(" ")).toContain("CLAUDE");
+  });
+
+  it("N.º de BL, pesos, bultos, montos y fechas distintos son alerta visible", () => {
+    const r = bl(
+      { bl: "MSCU1", peso_bruto_kg: 12000, cantidad: "40", fecha_cargado: "2026-11-03" },
+      { bl_awb: "MSCU2", peso_bruto: 11000, cantidad_bultos: 41, fecha_cargado: "2026-03-11" },
+    );
+    expect(r.notas).toHaveLength(0);
+    expect(r.alertas).toHaveLength(4);
+    // Las fechas se muestran siempre día/mes/año.
+    expect(r.alertas.join(" ")).toContain("11/03/2026 y el documento 03/11/2026");
+    const f = factura({ fob_total: 1000, flete: 50 }, { total_fob: 900, flete: 60 });
+    expect(f.alertas).toHaveLength(2);
+  });
+
+  it("descripción distinta entre BL y factura y suplidor distinto de la Orden son notas", () => {
+    expect(alertasBlContraFactura({ bl: { descripcion_mercancia: "SILLAS" }, factura: { descripcion_mercancia: "MESAS" }, consignatarioCoincide: true })).toHaveLength(0);
+    expect(notasBlContraFactura({ bl: { descripcion_mercancia: "SILLAS" }, factura: { descripcion_mercancia: "MESAS" } })).toHaveLength(1);
+    expect(alertasFacturaContraOrden({ suplidor: "OTRO", totalFob: 100, lineas: [], orden: { suplidor: "ACME", total: 100, lineas: [] } })).toHaveLength(0);
+    expect(notasFacturaContraOrden({ suplidor: "OTRO", orden: { suplidor: "ACME" } }).join(" ")).toContain("no es el de la Orden");
+  });
+});
+
+describe("autocompletado operativo: solo Expedientes nuevos", () => {
+  it("corre en los creados desde el 18/11/2026 (Santo Domingo 17/11 20:00) y no en los anteriores", () => {
+    expect(esExpedienteNuevoOperativo("2026-11-18T00:30:00Z")).toBe(true);
+    expect(esExpedienteNuevoOperativo("2026-11-17T23:59:00Z")).toBe(false);
+    expect(esExpedienteNuevoOperativo("2026-10-02T12:00:00Z")).toBe(false);
+    expect(esExpedienteNuevoOperativo(null)).toBe(false);
+  });
+});
+
 describe("autocompletado operativo: tolerancias de las diferencias", () => {
   it("admite hasta 1% en pesos y alerta a partir de ahí", () => {
     expect(alertasBlContraFactura({ bl: { peso_bruto_kg: 1000 }, factura: { peso_bruto_kg: 1005 }, consignatarioCoincide: true })).toHaveLength(0);
@@ -107,9 +146,7 @@ describe("autocompletado operativo: tolerancias de las diferencias", () => {
       .toContain("Precio unitario distinto");
   });
 
-  it("avisa del suplidor distinto y guarda el de la factura sin tocarlo", () => {
-    const a = alertasFacturaContraOrden({ suplidor: "OTRO SUPPLIER", totalFob: 100, lineas: [], orden: { suplidor: "ACME", total: 100, lineas: [] } });
-    expect(a.join(" ")).toContain("no es el de la Orden");
+  it("llena el suplidor vacío con el de la factura", () => {
     const r = factura({ suplidor: "OTRO SUPPLIER" }, { suplidor: "" });
     expect(r.cambios.suplidor).toBe("OTRO SUPPLIER");
   });

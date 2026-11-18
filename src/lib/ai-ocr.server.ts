@@ -14,6 +14,7 @@ import { totalDesdeTexto } from "./pago-puerto-texto";
 import { leerPagoVuceTexto, esPagoVuce } from "./pago-vuce";
 import { normalizarCertificadoDga, type CertificadoDga } from "./certificado-origen-dga";
 import { leerLiquidacionDga, type LiquidacionDga } from "./liquidacion-dga-documento";
+import { normalizarFechasLectura } from "./fecha-documento";
 
 import type { OcrExtraction } from "./ai-ocr.functions";
 import { leerCartaRuta, leerSolicitudDespacho, normalizarCartaRuta, PROMPT_CARTA_RUTA, PROMPT_SOLICITUD_DESPACHO, type CartaRuta } from "./carta-ruta";
@@ -122,6 +123,8 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
     }
     parsed = normalizarFacturaCif(parsed);
     parsed = resolverConfianzaCarga(parsed);
+    // Día/mes/año siempre, desde la copia literal impresa (nunca mes/día).
+    parsed = normalizarFechasLectura(parsed as Record<string, any>) as Partial<OcrExtraction>;
     if (parsed.collect_charges_texto != null) parsed.otros_gastos = leerCollectCharges(parsed.collect_charges_texto);
     return {
       ...(data.carta_ruta ? { carta_ruta: normalizarCartaRuta(parsed.carta_ruta) } : {}),

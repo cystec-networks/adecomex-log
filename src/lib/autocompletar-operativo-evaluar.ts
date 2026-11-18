@@ -8,7 +8,7 @@ import {
   type LecturaOperativaGuardada,
   type LineaComparables,
 } from "./autocompletar-operativo";
-import { alertasBlContraFactura, alertasFacturaContraOrden } from "./autocompletar-operativo";
+import { alertasBlContraFactura, alertasFacturaContraOrden, notasBlContraFactura, notasFacturaContraOrden } from "./autocompletar-operativo";
 import { nombreBaseCliente } from "./cliente-documento";
 import type { OcrExtraction } from "./ai-ocr.functions";
 
@@ -127,7 +127,10 @@ export async function evaluarAutocompletadoOperativo(
       .in("tipo", ["Bill of Lading", "Guía aérea"]).not("storage_path", "is", null)
       .order("fecha_recepcion", { ascending: false }).limit(1).maybeSingle();
     const lecturaBl = (otroBl?.lectura_operativa as { datos?: Datos } | null)?.datos ?? null;
-    if (lecturaBl) decision.alertas.push(...alertasBlContraFactura({ bl: lecturaBl, factura: p.datos, consignatarioCoincide: coincide }));
+    if (lecturaBl) {
+      decision.alertas.push(...alertasBlContraFactura({ bl: lecturaBl, factura: p.datos, consignatarioCoincide: coincide }));
+      decision.notas.push(...notasBlContraFactura({ bl: lecturaBl, factura: p.datos }));
+    }
     if (exp.orden_id) {
       const { data: orden } = await db.from("ordenes").select("cot_suplidor,tarifa_propuesta,moneda").eq("id", exp.orden_id).maybeSingle();
       const { data: ordenLineas } = await db.from("orden_productos")
@@ -142,6 +145,7 @@ export async function evaluarAutocompletadoOperativo(
       }));
       // Total de la Orden: la suma de sus líneas de mercancía; si no tiene, el total Propuesto.
       const sumaLineas = lineasOrden.reduce((s, l) => s + (l.valor ?? 0), 0);
+      decision.notas.push(...notasFacturaContraOrden({ suplidor: texto(p.datos.suplidor), orden: orden ? { suplidor: texto(orden.cot_suplidor) } : null }));
       decision.alertas.push(...alertasFacturaContraOrden({
         suplidor: texto(p.datos.suplidor),
         totalFob: typeof p.datos.fob_total === "number" ? p.datos.fob_total : Number(p.datos.fob_total ?? 0) || null,
@@ -165,7 +169,8 @@ export function lecturaOperativaParaGuardar(
   p: { datos: Datos; fuente: FuenteOperativa; origen: LecturaOperativaGuardada["origen"]; archivo: string | null; motivo?: string | null },
   decision: DecisionOperativa,
 ): LecturaOperativaGuardada {
-  const { otros_gastos, lineas_factura, productos_factura, ...resto } = p.datos as any;
+  // Las líneas de la factura se conservan para comparar con la Orden al revisar después.
+  const { otros_gastos, productos_factura, ...resto } = p.datos as any;
   return {
     archivo: p.archivo,
     leido_en: new Date().toISOString(),
@@ -175,6 +180,7 @@ export function lecturaOperativaParaGuardar(
     motivo: p.motivo ?? null,
     completados: decision.completados,
     alertas: decision.alertas,
+    notas: decision.notas,
   };
 }
 

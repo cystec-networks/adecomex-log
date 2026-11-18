@@ -1,5 +1,6 @@
 import { tipoAdjuntoCorreo, TIPOS_RECONOCIDOS_CORREO, type DatosAdjunto } from "@/lib/correo-solicitud";
 import { PROMPT_DOCUMENTO_IMPORTACION } from "@/lib/ocr-documento-prompt";
+import { normalizarFechasLectura } from "@/lib/fecha-documento";
 import { callGateway } from "@/lib/ai-gateway.server";
 import { tipoPaginaConfiable } from "./juego-documentos-confianza";
 import { MODELO_ECONOMICO, MODELO_EXTRACCION } from "./ia-consumo";
@@ -110,6 +111,8 @@ export async function leerArchivoCorreo(nombre: string, mime: string, base64: st
     j = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? "{}");
     if (!tipo) tipo = tipoAdjuntoCorreo(j.tipo_documento);
   }
+  // Día/mes/año siempre, desde la copia literal impresa (nunca mes/día).
+  j = normalizarFechasLectura(j);
   const txt = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
   return {
     ...base,
