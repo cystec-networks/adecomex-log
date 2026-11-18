@@ -31,16 +31,16 @@ export function fuenteOperativa(tipo: string | null | undefined): FuenteOperativ
 
 export const ETIQUETA_AUTO_OPERATIVO = "Automático";
 
-/** Diferencias aceptadas antes de mostrar una alerta. Son los valores por defecto del equipo. */
+/** Diferencias aceptadas antes de mostrar una alerta (confirmadas por el usuario). */
 export const TOLERANCIAS_OPERATIVO = {
-  /** Porcentaje de diferencia admitido en pesos (0.5 %). */
-  pesoPct: 0.005,
-  /** Bultos: sin tolerancia, cualquier diferencia alerta. */
+  /** Porcentaje de diferencia admitido en pesos (1 %). */
+  pesoPct: 0.01,
+  /** Bultos y cantidades: sin tolerancia, cualquier diferencia alerta. */
   bultos: 0,
-  /** Porcentaje de diferencia admitido en montos (0.5 %). */
-  montoPct: 0.005,
-  /** Diferencia absoluta mínima en el mismo antes de alertar (evita alertas por centavos). */
-  montoMinimo: 1,
+  /** Montos: exactos. */
+  montoPct: 0,
+  /** Diferencia absoluta mínima en el mismo antes de alertar: solo se ignora el redondeo de centavos. */
+  montoMinimo: 0.01,
 };
 
 /** Columnas donde un 0 significa «sin dato» (así lo confirmó el usuario). */
@@ -97,11 +97,16 @@ export const CAMPOS_OPERATIVOS: CampoOperativo[] = [
   { columna: "descripcion_mercancia", etiqueta: "Descripción de la mercancía", fuentes: ["factura", "bl"], clave: "descripcion_mercancia", tipo: "texto" },
 ];
 
+/** Nombre visible de una columna, para la vista previa y la etiqueta. */
+export function etiquetaCampoOperativo(columna: string): string {
+  return CAMPOS_OPERATIVOS.find((c) => c.columna === columna || c.codigo === columna)?.etiqueta ?? columna;
+}
+
 /** Lo que queda en `documentos.lectura_operativa`, ligado al archivo que se leyó. */
 export type LecturaOperativaGuardada = {
   archivo: string | null;
   leido_en: string;
-  origen: "manual" | "correo" | "leer_ahora";
+  origen: "manual" | "correo" | "leer_ahora" | "lote";
   fuente: FuenteOperativa;
   /** Copia de los valores leídos que interesan, para no volver a leer el archivo. */
   datos: Record<string, unknown>;
@@ -154,6 +159,7 @@ export function decidirAutocompletadoOperativo(p: {
   const completados: string[] = [];
   const avisos: string[] = [];
   const alertas: string[] = [];
+  const coincidencias: string[] = [];
   const datos = p.datos ?? {};
 
   for (const campo of CAMPOS_OPERATIVOS) {
@@ -178,9 +184,12 @@ export function decidirAutocompletadoOperativo(p: {
       const previo = p.actual[campo.columna];
       if (campo.tipo === "numero") {
         const a = numero(previo);
-        if (a !== null && valor !== a) alertas.push(`${campo.etiqueta}: el Expediente tiene ${a} y el documento ${valor}.`);
-      } else if (texto(previo) !== valor) {
-        alertas.push(`${campo.etiqueta}: el Expediente tiene «${texto(previo)}» y el documento «${valor}».`);
+        if (a === null) continue;
+        if (a === valor) coincidencias.push(campo.columna);
+        else alertas.push(`${campo.etiqueta}: el Expediente tiene ${a} y el documento ${valor}.`);
+      } else {
+        if (texto(previo) === valor) coincidencias.push(campo.columna);
+        else alertas.push(`${campo.etiqueta}: el Expediente tiene «${texto(previo)}» y el documento «${valor}».`);
       }
       continue;
     }
@@ -206,7 +215,7 @@ export function decidirAutocompletadoOperativo(p: {
     if (validos.length) cambios.contenedores = validos;
   }
 
-  return { cambios, completados, avisos, alertas };
+  return { cambios, completados, avisos, alertas, coincidencias };
 }
 
 /* ------------------------------------------------------------------ *
@@ -233,7 +242,7 @@ export function alertasBlContraFactura(p: {
   if (difiere(numero(p.bl.peso_bruto_kg), numero(p.factura.peso_bruto_kg), TOLERANCIAS_OPERATIVO.pesoPct)) {
     out.push(`Peso bruto distinto: BL ${numero(p.bl.peso_bruto_kg)} kg, factura ${numero(p.factura.peso_bruto_kg)} kg.`);
   }
-  const bultosBl = numero(p.bl.cantidad ?? p.bl.peso_neto_kg);
+  const bultosBl = numero(p.bl.cantidad);
   const bultosFac = numero(p.factura.cantidad);
   if (bultosBl !== null && bultosFac !== null && bultosBl !== bultosFac) {
     out.push(`Bultos distintos: BL ${bultosBl}, factura ${bultosFac}.`);

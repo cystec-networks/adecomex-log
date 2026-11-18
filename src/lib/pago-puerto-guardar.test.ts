@@ -110,7 +110,9 @@ for (const tipo of ["almacenaje", "contenedor", "cargos_locales"] as const) {
     expect(docs).toHaveLength(1); expect(docs[0].id).toBe("tradicional"); expect(docs[0].codigo_siga).toBe("OTD-012"); expect(docs[0].estado).toBe("recibido"); expect(docs[0].tipo).toBe(casilla);
     expect(costos).toHaveLength(1); expect(costos[0].monto_real).toBe(2500.50); expect(costos[0].observaciones).toContain(draft.referencia); expect(costos[0].observaciones).toContain("2026-10-24");
     await guardarComprobantePuerto("exp", file, { ...draft, monto: "3100.25" });
-    expect(docs).toHaveLength(1); expect(costos).toHaveLength(1); expect(costos[0].monto_real).toBe(3100.25); expect(archivos.size).toBe(1);
+    // El PDF reemplazado se conserva como versión (Historial), así que quedan los tres archivos: el
+    // original de la casilla, el del primer pago y el del segundo.
+    expect(docs).toHaveLength(1); expect(costos).toHaveLength(1); expect(costos[0].monto_real).toBe(3100.25); expect(archivos.size).toBe(3);
   });
 }
 test("costo fallido restaura el PDF previo y no deja una carga incompleta", async () => {

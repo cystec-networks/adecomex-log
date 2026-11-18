@@ -35,15 +35,33 @@ function consignatarioCoincide(conDocumento: string | null, conocidos: (string |
   return conocidos.some((n) => n && nombreBaseCliente(n) === base);
 }
 
-async function resolverCatalogo(db: Db, tabla: "dga_paises" | "dga_puertos", campo: "pais" | "puerto", valor: string | null) {
+/** Catálogos DGA resueltos una sola vez por corrida (el lote evalúa muchos Expedientes). */
+export type CatalogoOperativoCache = {
+  paises?: Array<{ codigo: string; pais: string }>;
+  res: Map<string, { nombre: string | null; codigo: string | null }>;
+};
+
+async function resolverCatalogo(
+  db: Db, tabla: "dga_paises" | "dga_puertos", campo: "pais" | "puerto", valor: string | null,
+  cache?: CatalogoOperativoCache,
+) {
   if (!valor) return { nombre: null as string | null, codigo: null as string | null };
+  const clave = `${tabla}|${campo}|${valor.toUpperCase()}`;
+  if (cache?.res.has(clave)) return cache.res.get(clave)!;
+  let salida: { nombre: string | null; codigo: string | null };
   if (tabla === "dga_paises") {
-    const { data } = await db.from("dga_paises").select("codigo, pais");
+    if (!cache?.paises) {
+      const { data } = await db.from("dga_paises").select("codigo, pais");
+      if (cache) cache.paises = data ?? [];
+    }
     const { resolverPaisDocumento } = await import("./pais-documento");
-    return resolverPaisDocumento(valor, data ?? []);
+    salida = resolverPaisDocumento(valor, cache?.paises ?? []);
+  } else {
+    const { data } = await db.from(tabla).select(`codigo, ${campo}`).ilike(campo, `%${valor}%`).limit(1).maybeSingle();
+    salida = data ? { nombre: data[campo] as string, codigo: data.codigo as string } : { nombre: valor, codigo: null };
   }
-  const { data } = await db.from(tabla).select(`codigo, ${campo}`).ilike(campo, `%${valor}%`).limit(1).maybeSingle();
-  return data ? { nombre: data[campo] as string, codigo: data.codigo as string } : { nombre: valor, codigo: null };
+  cache?.res.set(clave, salida);
+  return salida;
 }
 
 /**
@@ -52,7 +70,7 @@ async function resolverCatalogo(db: Db, tabla: "dga_paises" | "dga_puertos", cam
  */
 export async function evaluarAutocompletadoOperativo(
   db: Db,
-  p: { expedienteId: string; tipo: string; datos: Datos; visible?: Record<string, unknown> | null },
+  p: { expedienteId: string; tipo: string; datos: Datos; visible?: Record<string, unknown> | null; cache?: CatalogoOperativoCache },
 ): Promise<EvaluacionOperativa> {
   const fuente = fuenteOperativa(p.tipo);
   if (!fuente) throw new Error(`El tipo «${p.tipo}» no autocompleta campos operativos.`);
@@ -83,10 +101,10 @@ export async function evaluarAutocompletadoOperativo(
 
   const catalogo: Record<string, { nombre: string | null; codigo: string | null }> = {};
   const [ps, pa, po, pp] = await Promise.all([
-    resolverCatalogo(db, "dga_puertos", "puerto", texto(p.datos.puerto_salida)),
-    resolverCatalogo(db, "dga_puertos", "puerto", texto(p.datos.puerto_arribo)),
-    resolverCatalogo(db, "dga_paises", "pais", texto(p.datos.pais_origen)),
-    resolverCatalogo(db, "dga_paises", "pais", texto(p.datos.pais_procedencia)),
+    resolverCatalogo(db, "dga_puertos", "puerto", texto(p.datos.puerto_salida), p.cache),
+    resolverCatalogo(db, "dga_puertos", "puerto", texto(p.datos.puerto_arribo), p.cache),
+    resolverCatalogo(db, "dga_paises", "pais", texto(p.datos.pais_origen), p.cache),
+    resolverCatalogo(db, "dga_paises", "pais", texto(p.datos.pais_procedencia), p.cache),
   ]);
   catalogo.puerto_salida = ps;
   catalogo.puerto_arribo = pa;
@@ -122,11 +140,13 @@ export async function evaluarAutocompletadoOperativo(
       const lineasOrden: LineaComparables[] = (ordenLineas ?? []).map((l: any) => ({
         descripcion: texto(l.detalle_producto), cantidad: l.cantidad ?? null, valor: l.valor_fob ?? null,
       }));
+      // Total de la Orden: la suma de sus líneas de mercancía; si no tiene, el total Propuesto.
+      const sumaLineas = lineasOrden.reduce((s, l) => s + (l.valor ?? 0), 0);
       decision.alertas.push(...alertasFacturaContraOrden({
         suplidor: texto(p.datos.suplidor),
         totalFob: typeof p.datos.fob_total === "number" ? p.datos.fob_total : Number(p.datos.fob_total ?? 0) || null,
         lineas: lineasFactura,
-        orden: orden ? { suplidor: texto(orden.cot_suplidor), total: orden.tarifa_propuesta ?? null, lineas: lineasOrden } : null,
+        orden: orden ? { suplidor: texto(orden.cot_suplidor), total: sumaLineas || (orden.tarifa_propuesta ?? null), lineas: lineasOrden } : null,
       }));
     }
   }
@@ -164,7 +184,7 @@ export type ResultadoAplicarOperativo = { completados: string[]; contenedores: n
 export async function aplicarAutocompletadoOperativo(
   db: Db,
   p: {
-    expedienteId: string; documentoId: string | null; origen: "manual" | "correo" | "leer_ahora";
+    expedienteId: string; documentoId: string | null; origen: "manual" | "correo" | "leer_ahora" | "lote";
     evaluacion: EvaluacionOperativa; lectura: LecturaOperativaGuardada;
   },
 ): Promise<ResultadoAplicarOperativo> {

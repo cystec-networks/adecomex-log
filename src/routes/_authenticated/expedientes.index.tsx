@@ -22,6 +22,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ESTADO_LABEL, ESTADOS_FILTRO } from "@/lib/estados-expediente";
 import { CierreLoteBoton } from "@/components/cierre-expediente";
+import { AutocompletadoLoteBoton } from "@/components/autocompletar-operativo-lote";
 import { alertaDeclaracionTardia } from "@/lib/alerta-168-21";
 import { alertasExpedienteCompartidas } from "@/lib/alertas-expediente-compartidas";
 import { useDatosAlertasListado } from "@/lib/use-alertas-expediente";
@@ -559,6 +560,7 @@ function Expedientes() {
             <HerramientasDgaVuceMenu compacto className="px-2.5" />
             <RastreosEnvioMenu compacto className="px-2.5" />
             <CierreLoteBoton className="px-2.5" />
+            <AutocompletadoLoteBoton className="px-2.5" />
             <Button size="sm" className="px-2.5" asChild>
               <Link to="/expedientes/$id" params={{ id: "nuevo" }} search={{ nuevo: "", solicitud: "", tipo: tipo === "exportacion" ? "exportacion" : "" }}><Plus className="h-4 w-4 mr-1" />{tipo === "exportacion" ? "Nuevo Expediente de Exportación" : "Nuevo Expediente"}</Link>
             </Button>

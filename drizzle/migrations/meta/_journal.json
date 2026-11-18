@@ -1044,6 +1044,13 @@
       "when": 1794958896181,
       "tag": "0148_autocompletar_operativo_bl_factura",
       "breakpoints": true
+    },
+    {
+      "idx": 149,
+      "version": "7",
+      "when": 1794959070171,
+      "tag": "0149_autocompletado_lotes_deshacer",
+      "breakpoints": true
     }
   ]
 }

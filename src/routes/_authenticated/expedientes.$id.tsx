@@ -74,6 +74,8 @@ import { prepararGuardadoLiquidacion, type CambiosLiquidacion } from "@/lib/liqu
 import { EtiquetaAutoDua, LecturaDuaDocumento, avisarLecturaDua, useProcesarLecturaDua } from "@/components/lectura-dua";
 import { TIPO_DUA, TIPO_LIQUIDACION, esTipoLecturaDua } from "@/lib/declaracion-dua";
 import { TIPO_SEGUIMIENTO_SIGA, type SeguimientoSiga } from "@/lib/seguimiento-siga";
+import { RevisionAutocompletado, tipoOperativo, type LecturaOperativaPendiente } from "@/components/autocompletar-operativo";
+import { TIPO_FACTURA_COMERCIAL } from "@/lib/autocompletar-operativo";
 import { aplicarSeguimientoSiga, evaluarSeguimientoSiga, type EvaluacionSiga } from "@/lib/seguimiento-siga-evaluar";
 import { AvisosSeguimientoSiga, DatosSigaBlock, EtiquetaAutoSiga, HistorialProcesosSiga, LecturaSigaDocumento, RevisionSeguimientoSiga, guardarLecturaSigaFallida, useLeerSeguimientoSiga, type LecturaSigaPendiente } from "@/components/seguimiento-siga";
 import { LecturaReciboDocumento, avisarLecturaRecibo, useProcesarLecturaRecibo } from "@/components/recibo-dga-lectura";
@@ -3545,6 +3547,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   const [documentoGuardado, setDocumentoGuardado] = useState(0);
   const [pagoDoc, setPagoDoc] = useState<DocumentoPagoSubido | null>(null);
   const [revisionSiga, setRevisionSiga] = useState<LecturaSigaPendiente | null>(null);
+  const [revisionOperativo, setRevisionOperativo] = useState<LecturaOperativaPendiente | null>(null);
   const leerSiga = useLeerSeguimientoSiga();
   const procesarDua = useProcesarLecturaDua();
   const procesarRecibo = useProcesarLecturaRecibo();
@@ -3717,6 +3720,21 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
       // Nunca en silencio: el motivo queda bajo el documento con «Leer ahora».
       if (motivoSinLecturaSiga && docGuardadoId) await guardarLecturaSigaFallida(docGuardadoId, pathGuardado, motivoSinLecturaSiga).catch(() => undefined);
       if (tipo === TIPO_SEGUIMIENTO_SIGA) { qc.invalidateQueries({ queryKey: ["documentos", expedienteId] }); window.dispatchEvent(new Event("seguimiento-siga-actualizado")); }
+      // BL/AWB o Factura comercial: se lee una sola vez por versión del archivo y se ofrece la vista previa.
+      if (file && docGuardadoId && tipoOperativo(tipo)) {
+        try {
+          const bytes = new Uint8Array(await file.arrayBuffer());
+          let binary = "";
+          for (const b of bytes) binary += String.fromCharCode(b);
+          const res = await extraer({ data: {
+            filename: file.name, mime: file.type || "application/pdf", base64: btoa(binary),
+            ...(tipo === TIPO_FACTURA_COMERCIAL ? { lineas_factura: true } : {}),
+          } });
+          setRevisionOperativo({ documentoId: docGuardadoId, archivo: pathGuardado, tipo, datos: res });
+        } catch (e) {
+          toast.warning(`El documento se guardó sin autocompletar: ${e instanceof Error ? e.message : "lectura no disponible"}`, { duration: 10000 });
+        }
+      }
       if (cartaRuta?.solicitud) {
         try {
           const solicitudRegistrada = tipo === TIPO_CARTA_RUTA ? leerReferenciaSolicitudDespacho((docs ?? []).find((d: any) => d.tipo === TIPO_SOLICITUD_DESPACHO)?.observaciones) : "";
@@ -3924,6 +3942,7 @@ function TabDocumentos({ expedienteId }: { expedienteId: string }) {
   return (
     <div className="space-y-3">
       <RevisionSeguimientoSiga expedienteId={expedienteId} lectura={revisionSiga} onClose={() => setRevisionSiga(null)} />
+      <RevisionAutocompletado expedienteId={expedienteId} lectura={revisionOperativo} onClose={() => setRevisionOperativo(null)} />
       <EnviarPapeleraDialog expedienteId={expedienteId} doc={aEliminar} onClose={() => setAEliminar(null)} />
       <CambiarTipoDocumentoDialog expedienteId={expedienteId} doc={aMover} tipos={TIPOS_DOC} etiquetas={etiquetasTipo}
         casillasUnicas={casillasUnicas} tiposConDocumento={tiposConDocumento} onClose={() => setAMover(null)} />

@@ -253,6 +253,88 @@ export type Database = {
         }
         Relationships: []
       }
+      autocompletado_lotes: {
+        Row: {
+          anterior: Json
+          aplicado_en: string
+          contenedores: Json
+          deshecho_en: string | null
+          deshecho_por: string | null
+          documento_id: string | null
+          expediente_id: string
+          fuente: string
+          id: string
+          lote_id: string
+        }
+        Insert: {
+          anterior?: Json
+          aplicado_en?: string
+          contenedores?: Json
+          deshecho_en?: string | null
+          deshecho_por?: string | null
+          documento_id?: string | null
+          expediente_id: string
+          fuente: string
+          id?: string
+          lote_id?: string
+        }
+        Update: {
+          anterior?: Json
+          aplicado_en?: string
+          contenedores?: Json
+          deshecho_en?: string | null
+          deshecho_por?: string | null
+          documento_id?: string | null
+          expediente_id?: string
+          fuente?: string
+          id?: string
+          lote_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "autocompletado_lotes_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "autocompletado_lotes_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "autocompletado_lotes_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "autocompletado_lotes_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "autocompletado_lotes_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "autocompletado_lotes_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+        ]
+      }
       banco_conciliaciones: {
         Row: {
           creado_por: string | null
@@ -9665,6 +9747,7 @@ export type Database = {
         Args: { p_solicitud: Json }
         Returns: string
       }
+      deshacer_autocompletado_lote: { Args: { p_lote: string }; Returns: Json }
       deshacer_conciliacion_banco: {
         Args: {
           p_anular_creada?: boolean

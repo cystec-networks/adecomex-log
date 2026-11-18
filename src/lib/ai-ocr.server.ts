@@ -38,6 +38,8 @@ async function aplicarTotalTexto(p: PagoPuerto, base64: string | null): Promise<
 export type OcrDocumentoInput = { filename: string; mime: string; base64: string; lineas_factura?: boolean; pago_puerto?: boolean; resultado_dga?: typeof TIPOS_RESULTADO_DGA[number]; certificado_origen_dga?: boolean; carta_ruta?: boolean; solicitud_despacho?: boolean;
   /** Función que se registra en Consumo de IA (por defecto, lectura de documentos del Expediente). */
   funcion?: FuncionIa;
+  /** Modelo a usar; por defecto el de extracción. Los lotes usan el económico. */
+  modelo?: string;
   /** Correo entrante: agrega la cantidad total de bultos a la misma lectura. */
   extra_correo?: boolean };
 
@@ -90,7 +92,7 @@ export async function leerDocumentoImportacion(data: OcrDocumentoInput): Promise
     if (data.extra_correo) system += INSTRUCCION_CANTIDAD;
     const pedir = (contenido: ChatContent) => callGateway({
       funcion: data.funcion ?? "documento_expediente",
-      model: MODELO_EXTRACCION,
+      model: data.modelo ?? MODELO_EXTRACCION,
       ...(data.lineas_factura || data.pago_puerto || data.certificado_origen_dga || data.resultado_dga || data.carta_ruta ? { temperature: 0 } : {}),
       response_format: { type: "json_object" },
       messages: [{ role: "system", content: system }, { role: "user", content: contenido }],

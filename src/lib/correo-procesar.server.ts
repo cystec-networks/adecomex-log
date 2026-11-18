@@ -5,6 +5,8 @@
 import { MODELO_ECONOMICO } from "@/lib/ia-consumo";
 import { TIPO_SEGUIMIENTO_SIGA, type LecturaSigaFallida, type SeguimientoSiga } from "./seguimiento-siga";
 import { aplicarSeguimientoSiga, evaluarSeguimientoSiga } from "./seguimiento-siga-evaluar";
+import { TIPOS_OPERATIVOS, fuenteOperativa } from "./autocompletar-operativo";
+import { aplicarAutocompletadoOperativo, evaluarAutocompletadoOperativo, lecturaOperativaParaGuardar } from "./autocompletar-operativo-evaluar";
 import { z } from "zod";
 import { aislarMensajeReciente, avisoFechaLlegada, combinarDatos, extraerPorEtiquetas, fusionarAsunto, fusionarAdjuntos } from "@/lib/correo-solicitud";
 import { adjuntoCorreoSchema, normalizarAdjuntosCorreo, mimeAdjuntoCorreo, deduplicarAdjuntosCorreo } from "@/lib/correo-adjuntos";
@@ -344,6 +346,8 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
     }
     // Seguimiento SIGA: valida BL hijo, cliente y puerto y completa solo campos vacíos (Auditoría en la base).
     const avisosSiga = await aplicarSeguimientosCorreo(db, exp.id, insertados, insertar);
+    // BL/AWB o Factura comercial: la lectura ya hecha se guarda y completa solo campos vacíos.
+    const avisosOperativo = await aplicarOperativosCorreo(db, exp.id, insertados, insertar);
     // Casilla ocupada: el PDF queda guardado en el Registro hasta que una persona decida.
     const conflictos: ConflictoDocumento[] = [];
     for (const [i, { a, hash }] of enConflicto.entries()) {
@@ -368,6 +372,7 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
       ...(otros.length ? [`No se agregaron ${otros.length} PDF de «Otros documentos»: ${otros.slice(0, 5).join(", ")}.`] : []),
       ...ilegibles.map((n) => `${n}: no se pudo leer; no se agregó al Expediente.`),
       ...avisosSiga,
+      ...avisosOperativo,
     ];
     const v = vinculo as "numero" | "bl" | "vuce" | null;
     const como = v === "bl" ? "por BL" : v === "vuce" ? "por trámite VUCE" : "por número en el correo";
@@ -425,6 +430,44 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
 
 
 /** Lee y aplica cada Seguimiento SIGA recién ubicado; un fallo nunca rompe el correo (queda «sin leer»). */
+/**
+ * BL/AWB o Factura comercial recibidos por correo: la lectura que ya se hizo al clasificar el
+ * archivo se guarda junto al documento y completa solo campos vacíos. No se vuelve a leer.
+ */
+async function aplicarOperativosCorreo(
+  db: any,
+  expedienteId: string,
+  insertados: Array<{ id: string; tipo: string; storage_path: string | null }>,
+  adjuntos: AdjuntoProcesado[],
+): Promise<string[]> {
+  const avisos: string[] = [];
+  for (const fila of insertados.filter((f) => (TIPOS_OPERATIVOS as readonly string[]).includes(f.tipo))) {
+    const a = adjuntos.find((x) => x.storage_path === fila.storage_path);
+    const fuente = fuenteOperativa(fila.tipo);
+    if (!a || !fuente) continue;
+    const datos: Record<string, unknown> = {
+      ...(a.datos ?? {}),
+      bl: a.bl_awb ?? null,
+      cliente: a.cliente_nombre ?? null,
+      factura_comercial: a.factura_comercial ?? null,
+      peso_bruto_kg: a.peso_bruto_kg ?? null,
+      cantidad: a.cantidad ?? null,
+      descripcion_mercancia: a.producto ?? null,
+    };
+    try {
+      const evaluacion = await evaluarAutocompletadoOperativo(db, { expedienteId, tipo: fila.tipo, datos });
+      const lectura = lecturaOperativaParaGuardar({ datos, fuente, origen: "correo", archivo: fila.storage_path }, evaluacion.decision);
+      const r = await aplicarAutocompletadoOperativo(db, { expedienteId, documentoId: fila.id, origen: "correo", evaluacion, lectura });
+      if (!evaluacion.validacion.ok) avisos.push(`${a.nombre}: ${evaluacion.validacion.errores.join(" ")} No se completó ningún campo.`);
+      else if (r.completados.length || r.contenedores) avisos.push(`${a.nombre}: completó ${r.completados.length} campo(s)${r.contenedores ? ` y ${r.contenedores} contenedor(es)` : ""} del Expediente.`);
+      if (evaluacion.decision.alertas.length) avisos.push(`${a.nombre}: ${evaluacion.decision.alertas.length} diferencia(s) con el Expediente; se conservaron sus valores.`);
+    } catch (e) {
+      avisos.push(`${a.nombre}: no se pudo autocompletar (${String(e instanceof Error ? e.message : e).slice(0, 140)}).`);
+    }
+  }
+  return avisos;
+}
+
 async function aplicarSeguimientosCorreo(db: any, expedienteId: string, insertados: Array<{ id: string; tipo: string; storage_path: string | null }>, adjuntos: AdjuntoProcesado[]): Promise<string[]> {
   const avisos: string[] = [];
   for (const fila of insertados.filter((f) => f.tipo === TIPO_SEGUIMIENTO_SIGA)) {
