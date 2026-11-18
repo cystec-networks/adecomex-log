@@ -23,6 +23,7 @@ import { RemitentesIgnorados } from "@/components/correos/remitentes-ignorados";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CLAVE_REMITENTES_RECORDADOS, ClienteConversionCorreo, clienteInicialConversion, useClientesConversion, useRemitentesRecordados } from "@/components/correos/cliente-conversion";
 import { avisoInformativoCorreo, nombreComparable } from "@/lib/correo-cliente";
+import { clienteDocumentoUnico } from "@/lib/cliente-documento";
 
 const searchSchema = z.object({
   registro: fallback(z.string(), "").default(""),
@@ -52,7 +53,7 @@ function BandejaCorreo() {
   const [compra, setCompra] = useState<any>(null);
   const [destino, setDestino] = useState('nueva');
   const puedeCrearCliente = roles.some(r => r === 'admin' || r === 'operaciones' || r === 'ejecutivo');
-  const { data: clientesCatalogo = [] } = useClientesConversion(canCompra);
+  const { data: clientesCatalogo = [] } = useClientesConversion(true);
   const { data: recordados = [] } = useRemitentesRecordados(canCompra);
   // Cliente de la cotización: el identificado, uno sugerido, buscado o recién creado (se envía al convertir).
   const [clienteElegido, setClienteElegido] = useState<string | null>(null);
@@ -190,7 +191,13 @@ function BandejaCorreo() {
                         <td className="px-2 py-1.5">
                           {s.cliente_id
                             ? <div>{s.clientes?.nombre ?? s.cliente_nombre ?? "—"}</div>
-                            : <div><span className="font-medium text-warning-text">Cliente sin registrar</span>{s.cliente_nombre && <span className="block text-[11px] text-muted-foreground">Leído: {s.cliente_nombre}</span>}</div>}
+                            : (() => {
+                              // Cliente creado después de recibir el correo: se muestra la coincidencia, se confirma al convertir.
+                              const ahora = clienteDocumentoUnico(s.cliente_nombre, clientesCatalogo.filter((c) => c.activo !== false));
+                              return ahora
+                                ? <div><span>{ahora.nombre}</span><span className="block text-[11px] text-muted-foreground">Registrado después de recibir el correo; se confirma al convertir</span></div>
+                                : <div><span className="font-medium text-warning-text">Cliente sin registrar</span>{s.cliente_nombre && <span className="block text-[11px] text-muted-foreground">Leído: {s.cliente_nombre}</span>}</div>;
+                            })()}
                           <div className="text-[11px] text-muted-foreground">{s.remitente_correo ?? s.remitente}</div>
                           {s.asunto && <button className="text-[11px] text-primary underline" onClick={() => setAbierto(abierto === s.id ? null : s.id)}>{s.asunto}</button>}
                         </td>
