@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import {
   tipoConceptoSugerido, validarAsignaciones, completarReparto, alertaMonto, montoEsperadoTransporte,
-  ordenarCandidatos, preseleccionEscaneo, prioridadCandidatos, parteAsignada, unirFilas, type Candidato,
+  ordenarCandidatos, preseleccionEscaneo, prioridadCandidatos, parteAsignada, unirFilas, cambioIngresoTransporte, type Candidato,
 } from "./factura-ecf-asignacion";
 
 const R = (importe: number, tipo: any) => ({ importe, tipo });
@@ -159,4 +159,25 @@ test("factura antigua de un Expediente: todos los renglones al Expediente", () =
     [], { expedientes: ["e"], transportes: [] },
   );
   expect(e.filas.map((f) => f.destino)).toEqual(["exp:e", "exp:e"]);
+});
+
+test("ingreso TR: primera factura: el ingreso escrito a mano pasa a la suma de facturas", () => {
+  const c = cambioIngresoTransporte({ ingresoActual: 105000, vinculadasAntes: 0, vinculadasDespues: 1, sumaDespues: 15000, cambianVinculos: true });
+  expect(c).toEqual({ antes: 105000, despues: 15000, manualAntes: true, vinculadasAntes: 0, vinculadasDespues: 1 });
+});
+test("ingreso TR: otra factura más: suma las ya vinculadas y cuenta cuántas tenía", () => {
+  const c = cambioIngresoTransporte({ ingresoActual: 15000, vinculadasAntes: 1, vinculadasDespues: 2, sumaDespues: 25000, cambianVinculos: true });
+  expect(c?.despues).toBe(25000);
+  expect(c?.manualAntes).toBe(false);
+  expect(c?.vinculadasAntes).toBe(1);
+});
+test("ingreso TR: quitar la última factura deja el ingreso en 0", () => {
+  const c = cambioIngresoTransporte({ ingresoActual: 15000, vinculadasAntes: 1, vinculadasDespues: 0, sumaDespues: 0, cambianVinculos: true });
+  expect(c?.despues).toBe(0);
+});
+test("ingreso TR: mismos vínculos y mismo monto: no pide confirmación", () => {
+  expect(cambioIngresoTransporte({ ingresoActual: 15000, vinculadasAntes: 1, vinculadasDespues: 1, sumaDespues: 15000, cambianVinculos: false })).toBe(null);
+});
+test("ingreso TR: mismos vínculos con otro monto asignado: sí avisa", () => {
+  expect(cambioIngresoTransporte({ ingresoActual: 15000, vinculadasAntes: 1, vinculadasDespues: 1, sumaDespues: 10000, cambianVinculos: false })?.despues).toBe(10000);
 });

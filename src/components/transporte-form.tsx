@@ -17,6 +17,8 @@ import { EmailButton } from "@/components/email-button";
 import { SearchEmailButton } from "@/components/search-email-button";
 import { TransporteFacturasLista } from "@/components/transporte-facturas-lista";
 import { totalFacturasTransporte } from "@/lib/transporte-facturas";
+import { cambioIngresoTransporte } from "@/lib/factura-ecf-asignacion";
+import { useConfirmarIngresoTransporte } from "@/components/confirmar-ingreso-transporte";
 import { leerFacturasTransporte } from '@/lib/transporte-facturas-queries';
 
 const NO_EXPEDIENTE = "__none__";
@@ -90,9 +92,14 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial, embedde
   });
   const [facturaIds, setFacturaIds] = useState<string[] | null>(null);
   const idsFacturas = facturaIds ?? vinculosGuardados ?? [];
-  const { data: facturasVinculadas = [] } = useQuery({
+  const { data: facturasVinculadas = [], isFetching: cargandoFacturas } = useQuery({
     queryKey: ["transporte-facturas-detalle", idsFacturas, id], enabled: idsFacturas.length > 0,
     queryFn: () => leerFacturasTransporte(idsFacturas,id),
+  });
+  // e-NCF de las facturas guardadas (incluye las que se quitan en esta edición) para el aviso de ingreso.
+  const { data: facturasGuardadas = [] } = useQuery({
+    queryKey: ["transporte-facturas-detalle", vinculosGuardados ?? [], id], enabled: (vinculosGuardados?.length ?? 0) > 0,
+    queryFn: () => leerFacturasTransporte(vinculosGuardados ?? [], id),
   });
   const totalVinculado = idsFacturas.length ? totalFacturasTransporte(facturasVinculadas.filter(f => idsFacturas.includes(f.id))) : null;
 
@@ -307,6 +314,25 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial, embedde
 
 
 
+  const ingresoTr = useConfirmarIngresoTransporte();
+  /** Al cambiar las facturas vinculadas, el ingreso pasa a su suma (o a 0 sin facturas): se avisa y se confirma antes de guardar. */
+  const intentarGuardar = () => {
+    if (mode === "edit" && vinculosGuardados === undefined) return save.mutate();
+    if (idsFacturas.length && cargandoFacturas) { toast.info("Espera a que se carguen los montos de las facturas vinculadas."); return; }
+    const antes = vinculosGuardados ?? [];
+    const cambian = antes.length !== idsFacturas.length || idsFacturas.some((f) => !antes.includes(f));
+    const n = (v: string) => (v === "" || v == null ? 0 : Number(v) || 0);
+    const c = cambioIngresoTransporte({
+      ingresoActual: antes.length ? existing?.ingreso_facturado : n(form.ingreso_facturado),
+      vinculadasAntes: antes.length,
+      vinculadasDespues: idsFacturas.length,
+      sumaDespues: totalVinculado ?? 0,
+      cambianVinculos: cambian,
+    });
+    const encfs = antes.map((fid) => [...facturasGuardadas, ...facturasVinculadas].find((f) => f.id === fid)?.encf).filter(Boolean) as string[];
+    ingresoTr.mostrar(c ? [{ ...c, clave: id ?? "nuevo", numero: form.numero_viaje || existing?.numero_viaje || "Este Transporte", facturas: encfs }] : [], () => save.mutate());
+  };
+
   const save = useMutation({
     mutationFn: async () => {
       if (mode === "edit" && vinculosGuardados === undefined) throw new Error("Espera a que se carguen las facturas vinculadas.");
@@ -513,7 +539,7 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial, embedde
         <Button variant="outline" onClick={() => nav({ to: "/transportes" })}>
           <X className="h-4 w-4 mr-1" />Cancelar
         </Button>
-        <Button onClick={() => save.mutate()} disabled={save.isPending}>
+        <Button onClick={intentarGuardar} disabled={save.isPending}>
           <Check className="h-4 w-4 mr-1" />{save.isPending ? "Guardando…" : mode === "new" ? "Crear transporte" : "Guardar cambios"}
         </Button>
       </div>
@@ -923,10 +949,11 @@ export function TransporteForm({ mode, id, expedienteId, controlInicial, embedde
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={() => embedded ? onSaved?.() : nav({ to: "/transportes" })}>Cancelar</Button>
-        <Button onClick={() => save.mutate()} disabled={save.isPending}>
+        <Button onClick={intentarGuardar} disabled={save.isPending}>
           <Check className="h-4 w-4 mr-1" />{save.isPending ? "Guardando…" : mode === "new" ? "Crear transporte" : "Guardar cambios"}
         </Button>
       </div>
+      {ingresoTr.dialogo}
     </div>
   );
 }

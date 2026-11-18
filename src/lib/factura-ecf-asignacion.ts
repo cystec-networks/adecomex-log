@@ -308,3 +308,35 @@ export function estadoInicialVinculacion(lineas: readonly LineaGuardada[], asign
   });
   return { destinos: lista, filas };
 }
+
+// ───────────────────── Cambio del ingreso del Transporte ─────────────────────
+
+export type CambioIngreso = {
+  /** Ingreso guardado hoy en el Transporte. */
+  antes: number;
+  /** Ingreso que quedará: suma de facturas vinculadas (0 si se quita la última). */
+  despues: number;
+  /** El ingreso de hoy fue escrito a mano (aún no tiene facturas vinculadas). */
+  manualAntes: boolean;
+  vinculadasAntes: number;
+  vinculadasDespues: number;
+};
+
+/**
+ * Qué pasa con el ingreso del Transporte al cambiar sus facturas: con facturas vinculadas el ingreso
+ * es su suma (lo impone la base de datos) y al quitar la última queda en 0. Devuelve null si ni los
+ * vínculos ni el monto cambian, para no pedir confirmaciones sin efecto.
+ */
+export function cambioIngresoTransporte(p: {
+  ingresoActual: number | string | null | undefined;
+  vinculadasAntes: number;
+  vinculadasDespues: number;
+  sumaDespues: number;
+  cambianVinculos: boolean;
+}): CambioIngreso | null {
+  const antes = r2(n(p.ingresoActual));
+  const despues = p.vinculadasDespues > 0 ? r2(p.sumaDespues) : p.vinculadasAntes > 0 ? 0 : antes;
+  if (!p.cambianVinculos && Math.abs(despues - antes) < 0.005) return null;
+  if (p.vinculadasAntes === 0 && p.vinculadasDespues === 0) return null;
+  return { antes, despues, manualAntes: p.vinculadasAntes === 0, vinculadasAntes: p.vinculadasAntes, vinculadasDespues: p.vinculadasDespues };
+}

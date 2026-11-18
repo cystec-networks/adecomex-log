@@ -13,8 +13,8 @@ import { detectarReferenciasFactura, descripcionesOcrGuardadas } from "@/lib/fac
 import { contenedoresOcrGuardados, detectarContenedoresFactura, detectarTransportesFactura, transportesOcrGuardados } from "@/lib/factura-venta-contenedores";
 import {
   TIPOS_CONCEPTO, alertaMonto, completarReparto, destinoPermitido, esTransporte, idDestino, montoEsperadoTransporte, parteAsignada,
-  montosPorDestino, ordenarCandidatos, preseleccionEscaneo, prioridadCandidatos, validarAsignaciones,
-  type Candidato, type FilaAsignacion, type Pistas, type RenglonReparto, type TipoConcepto,
+  montosPorDestino, ordenarCandidatos, cambioIngresoTransporte, preseleccionEscaneo, prioridadCandidatos, validarAsignaciones,
+  type CambioIngreso, type Candidato, type FilaAsignacion, type Pistas, type RenglonReparto, type TipoConcepto,
 } from "@/lib/factura-ecf-asignacion";
 
 export type EstadoVinculacion = { destinos: string[]; filas: FilaAsignacion[]; confirmados: Record<string, boolean> };
@@ -65,6 +65,48 @@ async function facturasDeDestinos(exps: readonly FilaExp[], trs: readonly FilaTr
     }
   }
   return { encfs, montos };
+}
+
+export type CambioIngresoTr = CambioIngreso & { clave: string; numero: string; facturas: string[] };
+
+/**
+ * Antes de guardar: cómo cambiará el ingreso de cada Transporte que gana, pierde o cambia el monto de
+ * esta factura. Se lee en el momento (ingreso guardado y demás facturas del viaje) para no avisar con datos viejos.
+ */
+export async function cambiosIngresoPorVinculacion(facturaId: string | undefined, v: EstadoVinculacion): Promise<CambioIngresoTr[]> {
+  const montos = montosPorDestino(v.filas);
+  const despues = new Set([...montos.entries()].filter(([k, m]) => esTransporte(k) && m > 0).map(([k]) => idDestino(k)));
+  const actuales = new Set<string>();
+  let encfEsta: string | null = null;
+  if (facturaId) {
+    const [a, l, f] = await Promise.all([
+      supabase.from("facturas_ecf_asignaciones").select("transporte_id").eq("factura_id", facturaId).not("transporte_id", "is", null),
+      supabase.from("transporte_facturas_ecf").select("transporte_id").eq("factura_ecf_id", facturaId),
+      supabase.from("facturas_ecf").select("encf").eq("id", facturaId).maybeSingle(),
+    ]);
+    for (const r of [a, l, f]) if (r.error) throw r.error;
+    for (const r of [...(a.data ?? []), ...(l.data ?? [])]) if (r.transporte_id) actuales.add(r.transporte_id);
+    encfEsta = f.data?.encf ?? null;
+  }
+  const ids = [...new Set([...despues, ...actuales])];
+  if (!ids.length) return [];
+  const { data, error } = await supabase.from("transportes").select(`${SEL_TR},ingreso_facturado`).in("id", ids);
+  if (error) throw error;
+  const trs = (data ?? []) as (FilaTr & { ingreso_facturado: number | null })[];
+  const otras = await facturasDeDestinos([], trs, facturaId);
+  return trs.flatMap((t) => {
+    const k = `tr:${t.id}`;
+    const otrasF = otras.encfs.get(k) ?? [];
+    const esta = actuales.has(t.id), queda = despues.has(t.id);
+    const c = cambioIngresoTransporte({
+      ingresoActual: t.ingreso_facturado,
+      vinculadasAntes: otrasF.length + (esta ? 1 : 0),
+      vinculadasDespues: otrasF.length + (queda ? 1 : 0),
+      sumaDespues: (otras.montos.get(k) ?? 0) + (queda ? montos.get(k) ?? 0 : 0),
+      cambianVinculos: esta !== queda,
+    });
+    return c ? [{ ...c, clave: k, numero: t.numero_viaje ?? "Transporte", facturas: [...otrasF, ...(esta && encfEsta ? [encfEsta] : [])] }] : [];
+  });
 }
 
 function aCandidatos(exps: readonly FilaExp[], trs: readonly FilaTr[], otras: Awaited<ReturnType<typeof facturasDeDestinos>>, clienteId: string | null, endosados: Set<string>, numerosExp: Map<string, string>): Candidato[] {

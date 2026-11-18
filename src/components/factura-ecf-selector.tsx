@@ -25,6 +25,7 @@ import { coincideFacturaExpediente, guardarDescripcionesOcr, descripcionesOcrGua
 import { guardarVinculacionFactura } from "@/lib/factura-ecf-vinculacion";
 import { detectarContenedoresFactura, guardarContenedoresOcr, guardarTransportesOcr } from "@/lib/factura-venta-contenedores";
 import { estadoInicialVinculacion, esTransporte, idDestino, tipoConceptoSugerido, validarAsignaciones, type Candidato, type TipoConcepto } from "@/lib/factura-ecf-asignacion";
+import { useConfirmarIngresoTransporte } from "@/components/confirmar-ingreso-transporte";
 import { VinculacionFacturaEcf, ESTADO_VINCULACION_VACIO, CLAVES_VINCULOS_FACTURA, cargarVinculacionGuardada, faltanConfirmaciones, pistasFactura, type EstadoVinculacion } from "@/components/factura-ecf-vinculacion";
 
 import { nombreArchivoStorage } from "@/lib/nombre-archivo-storage";
@@ -106,6 +107,7 @@ export function FacturaEcfFormDialog({
   const [tiposLinea, setTiposLinea] = useState<Record<number, TipoConcepto>>({});
   const [vinc, setVinc] = useState<EstadoVinculacion>(ESTADO_VINCULACION_VACIO);
   const [infoDestinos, setInfoDestinos] = useState<Map<string, Candidato>>(new Map());
+  const ingreso = useConfirmarIngresoTransporte();
   const renglones = useMemo(() => lineas.map((l, i) => ({
     importe: importeLineaDestino(l),
     tipo: tiposLinea[i] ?? tipoConceptoSugerido(l.descripcion),
@@ -408,6 +410,13 @@ export function FacturaEcfFormDialog({
   };
 
 
+  /** Antes de guardar, avisa del cambio de ingreso de los Transportes afectados por la vinculación. */
+  const intentarGuardar = (facturaActual: string | undefined, sobrescribirId: string | undefined) => {
+    const repartoValido = validarAsignaciones(renglones, vinc.filas, totales.monto_total).valida && !faltanConfirmaciones(vinc, infoDestinos).length;
+    if (!repartoValido || !encf.trim() || !clienteId) return save.mutate(sobrescribirId);
+    void ingreso.pedirPorVinculacion(facturaActual, vinc, () => save.mutate(sobrescribirId));
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden [&>*]:min-w-0">
@@ -616,8 +625,8 @@ export function FacturaEcfFormDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => save.mutate(undefined)} disabled={save.isPending}>
-            {save.isPending ? "Guardando…" : editId ? "Guardar cambios" : "Registrar factura"}
+          <Button onClick={() => intentarGuardar(editId, undefined)} disabled={save.isPending || ingreso.calculando}>
+            {save.isPending ? "Guardando…" : ingreso.calculando ? "Revisando…" : editId ? "Guardar cambios" : "Registrar factura"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -631,12 +640,13 @@ export function FacturaEcfFormDialog({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={save.isPending}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction disabled={save.isPending} onClick={(e) => { e.preventDefault(); if (duplicado) save.mutate(duplicado.id); }}>
+            <AlertDialogAction disabled={save.isPending} onClick={(e) => { e.preventDefault(); if (!duplicado) return; const id = duplicado.id; setDuplicado(null); intentarGuardar(id, id); }}>
               {save.isPending ? "Actualizando…" : "Actualizar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {ingreso.dialogo}
     </Dialog>
   );
 }

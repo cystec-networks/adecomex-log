@@ -11,6 +11,7 @@ import {
   VinculacionFacturaEcf, ESTADO_VINCULACION_VACIO, CLAVES_VINCULOS_FACTURA, agregarDestinoEstado, cargarVinculacionGuardada,
   faltanConfirmaciones, pistasFactura, quitarDestinoEstado, type EstadoVinculacion,
 } from "@/components/factura-ecf-vinculacion";
+import { useConfirmarIngresoTransporte } from "@/components/confirmar-ingreso-transporte";
 
 /** «Vincular»: reparte una factura ya registrada entre Expedientes y Transportes sin editar sus datos fiscales. */
 export function VincularFacturaDialog({ facturaId, open, onOpenChange, agregarDestino, quitarDestino, onSaved }: {
@@ -38,6 +39,7 @@ export function VincularFacturaDialog({ facturaId, open, onOpenChange, agregarDe
   const [tipos, setTipos] = useState<TipoConcepto[]>([]);
   const [estado, setEstado] = useState<EstadoVinculacion>(ESTADO_VINCULACION_VACIO);
   const [info, setInfo] = useState<Map<string, Candidato>>(new Map());
+  const ingreso = useConfirmarIngresoTransporte();
 
   const renglones = useMemo(() => (data?.lineas ?? []).map((l, i) => ({
     importe: Math.round((Number(l.valor || 0) + Number(l.itbis || 0)) * 100) / 100,
@@ -108,8 +110,17 @@ export function VincularFacturaDialog({ facturaId, open, onOpenChange, agregarDe
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => guardar.mutate()} disabled={!data || guardar.isPending}>{guardar.isPending ? "Guardando…" : "Guardar vinculación"}</Button>
+          <Button
+            onClick={() => {
+              if (!data) return;
+              // Errores de reparto o confirmaciones pendientes se muestran sin pasar por el aviso de ingreso.
+              if (!validarAsignaciones(renglones, estado.filas, total).valida || faltanConfirmaciones(estado, info).length) return guardar.mutate();
+              void ingreso.pedirPorVinculacion(data.f.id, estado, () => guardar.mutate());
+            }}
+            disabled={!data || guardar.isPending || ingreso.calculando}
+          >{guardar.isPending ? "Guardando…" : ingreso.calculando ? "Revisando…" : "Guardar vinculación"}</Button>
         </DialogFooter>
+        {ingreso.dialogo}
       </DialogContent>
     </Dialog>
   );
