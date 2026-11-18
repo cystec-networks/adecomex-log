@@ -32,3 +32,24 @@ describe("fechas de documentos: siempre día/mes/año", () => {
     expect(normalizarFechasLectura({ fecha_cargado: "2026-02-31" }).fecha_cargado).toBeNull();
   });
 });
+
+describe("Fecha de carga del BL: embarque a bordo, nunca emisión", () => {
+  it("BL 202611I403: «Shipped on Board CMA CGM FIORDLAND 08-NOV-2026» → 08/11/2026", () => {
+    const r = normalizarFechasLectura({ fecha_cargado: "2026-11-08", fecha_cargado_texto: "08-NOV-2026", fecha_cargado_etiqueta: "Shipped on Board CMA CGM FIORDLAND", medio_transporte: "maritimo" });
+    expect(r.fecha_cargado).toBe("2026-11-08");
+  });
+
+  it("si el lector tomó la fecha de emisión, la Fecha de carga queda vacía", () => {
+    const r = normalizarFechasLectura({ fecha_cargado: "2026-11-08", fecha_cargado_texto: "08 NOV 2026", fecha_cargado_etiqueta: "Place and Date of Issue ANTWERP", medio_transporte: "maritimo" });
+    expect(r.fecha_cargado).toBeNull();
+  });
+
+  it("si la tomó de «Received for shipment», también queda vacía", () => {
+    expect(normalizarFechasLectura({ fecha_cargado: "2026-11-01", fecha_cargado_etiqueta: "Received for shipment", medio_transporte: "maritimo" }).fecha_cargado).toBeNull();
+  });
+
+  it("«Laden on board» y «Fecha de embarque» se aceptan", () => {
+    expect(normalizarFechasLectura({ fecha_cargado: "2026-11-05", fecha_cargado_etiqueta: "Laden on board the vessel" }).fecha_cargado).toBe("2026-11-05");
+    expect(normalizarFechasLectura({ fecha_cargado: "2026-11-05", fecha_cargado_etiqueta: "Fecha de embarque" }).fecha_cargado).toBe("2026-11-05");
+  });
+});

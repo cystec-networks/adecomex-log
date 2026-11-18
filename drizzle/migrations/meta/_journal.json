@@ -1079,6 +1079,13 @@
       "when": 1794966774060,
       "tag": "0153_remitentes_clientes_recordados",
       "breakpoints": true
+    },
+    {
+      "idx": 154,
+      "version": "7",
+      "when": 1794968277368,
+      "tag": "0154_corregir_aplicar_y_deshacer_autocompletado",
+      "breakpoints": true
     }
   ]
 }

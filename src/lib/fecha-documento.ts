@@ -61,5 +61,22 @@ export function normalizarFechasLectura<T extends Record<string, any>>(p: T): T 
       out[campo] = ISO.test(v) ? armar(Number(v.slice(0, 4)), Number(v.slice(5, 7)), Number(v.slice(8, 10))) : fechaDocumentoIso(v);
     }
   }
+  // Fecha de carga del BL: solo la de embarque a bordo. Si el lector la tomó de la emisión o la recepción, se descarta.
+  if (out.fecha_cargado != null && !esFechaAbordo(out.fecha_cargado_etiqueta, out.medio_transporte)) out.fecha_cargado = null;
   return out as T;
+}
+
+const ETIQUETA_ABORDO = /\b(on\s*board|laden|shipped|abordo|a\s+bordo|embarque|embarcad[oa]|flight|vuelo)\b/i;
+const ETIQUETA_NO_CARGA = /\b(issue[d]?|emisi[oó]n|emitid[oa]|received|recepci[oó]n|recibid[oa])\b/i;
+
+/**
+ * ¿La etiqueta que acompaña a la fecha corresponde al embarque a bordo? Sin etiqueta (lecturas antiguas) se acepta;
+ * con etiqueta de emisión o recepción y sin mención de «a bordo» se rechaza. En guías aéreas no aplica.
+ */
+export function esFechaAbordo(etiqueta: unknown, medio?: unknown): boolean {
+  if (String(medio ?? "").toLowerCase() === "aereo") return true;
+  const t = typeof etiqueta === "string" ? etiqueta.trim() : "";
+  if (!t) return true;
+  if (ETIQUETA_ABORDO.test(t)) return true;
+  return !ETIQUETA_NO_CARGA.test(t);
 }
