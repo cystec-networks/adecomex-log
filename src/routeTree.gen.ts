@@ -34,6 +34,7 @@ import { Route as AuthenticatedAcademiaEstudiantesRouteImport } from './routes/_
 import { Route as AuthenticatedAcademiaInscripcionesRouteImport } from './routes/_authenticated/academia.inscripciones'
 import { Route as AuthenticatedAcademiaProgramasRouteImport } from './routes/_authenticated/academia.programas'
 import { Route as AuthenticatedAdminAccesosClientesRouteImport } from './routes/_authenticated/admin.accesos-clientes'
+import { Route as AuthenticatedAdminArchivosSinUsoRouteImport } from './routes/_authenticated/admin.archivos-sin-uso'
 import { Route as AuthenticatedAdminBaseNormativaRouteImport } from './routes/_authenticated/admin.base-normativa'
 import { Route as AuthenticatedAdminCatalogoProductosDgaRouteImport } from './routes/_authenticated/admin.catalogo-productos-dga'
 import { Route as AuthenticatedAdminCatalogoViajesTransporteRouteImport } from './routes/_authenticated/admin.catalogo-viajes-transporte'
@@ -241,6 +242,12 @@ const AuthenticatedAdminAccesosClientesRoute =
   AuthenticatedAdminAccesosClientesRouteImport.update({
     id: '/admin/accesos-clientes',
     path: '/admin/accesos-clientes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminArchivosSinUsoRoute =
+  AuthenticatedAdminArchivosSinUsoRouteImport.update({
+    id: '/admin/archivos-sin-uso',
+    path: '/admin/archivos-sin-uso',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminBaseNormativaRoute =
@@ -720,6 +727,7 @@ export interface FileRoutesByFullPath {
   '/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
   '/academia/programas': typeof AuthenticatedAcademiaProgramasRoute
   '/admin/accesos-clientes': typeof AuthenticatedAdminAccesosClientesRoute
+  '/admin/archivos-sin-uso': typeof AuthenticatedAdminArchivosSinUsoRoute
   '/admin/base-normativa': typeof AuthenticatedAdminBaseNormativaRoute
   '/admin/catalogo-productos-dga': typeof AuthenticatedAdminCatalogoProductosDgaRoute
   '/admin/catalogo-viajes-transporte': typeof AuthenticatedAdminCatalogoViajesTransporteRoute
@@ -821,6 +829,7 @@ export interface FileRoutesByTo {
   '/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
   '/academia/programas': typeof AuthenticatedAcademiaProgramasRoute
   '/admin/accesos-clientes': typeof AuthenticatedAdminAccesosClientesRoute
+  '/admin/archivos-sin-uso': typeof AuthenticatedAdminArchivosSinUsoRoute
   '/admin/base-normativa': typeof AuthenticatedAdminBaseNormativaRoute
   '/admin/catalogo-productos-dga': typeof AuthenticatedAdminCatalogoProductosDgaRoute
   '/admin/catalogo-viajes-transporte': typeof AuthenticatedAdminCatalogoViajesTransporteRoute
@@ -926,6 +935,7 @@ export interface FileRoutesById {
   '/_authenticated/academia/inscripciones': typeof AuthenticatedAcademiaInscripcionesRoute
   '/_authenticated/academia/programas': typeof AuthenticatedAcademiaProgramasRoute
   '/_authenticated/admin/accesos-clientes': typeof AuthenticatedAdminAccesosClientesRoute
+  '/_authenticated/admin/archivos-sin-uso': typeof AuthenticatedAdminArchivosSinUsoRoute
   '/_authenticated/admin/base-normativa': typeof AuthenticatedAdminBaseNormativaRoute
   '/_authenticated/admin/catalogo-productos-dga': typeof AuthenticatedAdminCatalogoProductosDgaRoute
   '/_authenticated/admin/catalogo-viajes-transporte': typeof AuthenticatedAdminCatalogoViajesTransporteRoute
@@ -1029,6 +1039,7 @@ export interface FileRouteTypes {
     | '/academia/inscripciones'
     | '/academia/programas'
     | '/admin/accesos-clientes'
+    | '/admin/archivos-sin-uso'
     | '/admin/base-normativa'
     | '/admin/catalogo-productos-dga'
     | '/admin/catalogo-viajes-transporte'
@@ -1130,6 +1141,7 @@ export interface FileRouteTypes {
     | '/academia/inscripciones'
     | '/academia/programas'
     | '/admin/accesos-clientes'
+    | '/admin/archivos-sin-uso'
     | '/admin/base-normativa'
     | '/admin/catalogo-productos-dga'
     | '/admin/catalogo-viajes-transporte'
@@ -1234,6 +1246,7 @@ export interface FileRouteTypes {
     | '/_authenticated/academia/inscripciones'
     | '/_authenticated/academia/programas'
     | '/_authenticated/admin/accesos-clientes'
+    | '/_authenticated/admin/archivos-sin-uso'
     | '/_authenticated/admin/base-normativa'
     | '/_authenticated/admin/catalogo-productos-dga'
     | '/_authenticated/admin/catalogo-viajes-transporte'
@@ -1516,6 +1529,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/accesos-clientes'
       fullPath: '/admin/accesos-clientes'
       preLoaderRoute: typeof AuthenticatedAdminAccesosClientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/archivos-sin-uso': {
+      id: '/_authenticated/admin/archivos-sin-uso'
+      path: '/admin/archivos-sin-uso'
+      fullPath: '/admin/archivos-sin-uso'
+      preLoaderRoute: typeof AuthenticatedAdminArchivosSinUsoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/base-normativa': {
@@ -2073,6 +2093,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAcademiaInscripcionesRoute: typeof AuthenticatedAcademiaInscripcionesRoute
   AuthenticatedAcademiaProgramasRoute: typeof AuthenticatedAcademiaProgramasRoute
   AuthenticatedAdminAccesosClientesRoute: typeof AuthenticatedAdminAccesosClientesRoute
+  AuthenticatedAdminArchivosSinUsoRoute: typeof AuthenticatedAdminArchivosSinUsoRoute
   AuthenticatedAdminBaseNormativaRoute: typeof AuthenticatedAdminBaseNormativaRoute
   AuthenticatedAdminCatalogoProductosDgaRoute: typeof AuthenticatedAdminCatalogoProductosDgaRoute
   AuthenticatedAdminCatalogoViajesTransporteRoute: typeof AuthenticatedAdminCatalogoViajesTransporteRoute
@@ -2146,6 +2167,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAcademiaProgramasRoute: AuthenticatedAcademiaProgramasRoute,
   AuthenticatedAdminAccesosClientesRoute:
     AuthenticatedAdminAccesosClientesRoute,
+  AuthenticatedAdminArchivosSinUsoRoute: AuthenticatedAdminArchivosSinUsoRoute,
   AuthenticatedAdminBaseNormativaRoute: AuthenticatedAdminBaseNormativaRoute,
   AuthenticatedAdminCatalogoProductosDgaRoute:
     AuthenticatedAdminCatalogoProductosDgaRoute,

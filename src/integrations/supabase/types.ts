@@ -193,6 +193,72 @@ export type Database = {
         }
         Relationships: []
       }
+      archivos_conservados: {
+        Row: {
+          bucket: string
+          creado_en: string
+          creado_por: string | null
+          id: string
+          motivo: string | null
+          storage_path: string
+        }
+        Insert: {
+          bucket?: string
+          creado_en?: string
+          creado_por?: string | null
+          id?: string
+          motivo?: string | null
+          storage_path: string
+        }
+        Update: {
+          bucket?: string
+          creado_en?: string
+          creado_por?: string | null
+          id?: string
+          motivo?: string | null
+          storage_path?: string
+        }
+        Relationships: []
+      }
+      archivos_papelera: {
+        Row: {
+          bucket: string
+          eliminado_en: string
+          eliminado_por: string | null
+          id: string
+          lote_id: string
+          mime: string | null
+          motivo: string | null
+          storage_path: string
+          subido_en: string | null
+          tamano: number | null
+        }
+        Insert: {
+          bucket?: string
+          eliminado_en?: string
+          eliminado_por?: string | null
+          id?: string
+          lote_id: string
+          mime?: string | null
+          motivo?: string | null
+          storage_path: string
+          subido_en?: string | null
+          tamano?: number | null
+        }
+        Update: {
+          bucket?: string
+          eliminado_en?: string
+          eliminado_por?: string | null
+          id?: string
+          lote_id?: string
+          mime?: string | null
+          motivo?: string | null
+          storage_path?: string
+          subido_en?: string | null
+          tamano?: number | null
+        }
+        Relationships: []
+      }
       asistente_preguntas_frecuentes: {
         Row: {
           activo: boolean
@@ -9766,6 +9832,27 @@ export type Database = {
         }
         Returns: string
       }
+      archivo_conservar: {
+        Args: { _motivo?: string; _ruta: string }
+        Returns: string
+      }
+      archivo_quitar_conservado: { Args: { _id: string }; Returns: undefined }
+      archivos_enviar_papelera: {
+        Args: { _motivo?: string; _rutas: string[] }
+        Returns: Json
+      }
+      archivos_purgar_papelera: { Args: { _ids: string[] }; Returns: Json }
+      archivos_restaurar_papelera: { Args: { _ids: string[] }; Returns: number }
+      archivos_sin_uso: {
+        Args: never
+        Returns: {
+          expediente_numero: string
+          mime: string
+          storage_path: string
+          subido_en: string
+          tamano: number
+        }[]
+      }
       buscar_expedientes_por_bl: {
         Args: { p_bl: string }
         Returns: {
@@ -10059,6 +10146,10 @@ export type Database = {
       novedad_url_clave: { Args: { p_url: string }; Returns: string }
       novedades_token_valido: { Args: { p_token: string }; Returns: boolean }
       novedades_tomar_lock: { Args: { p_minutos?: number }; Returns: boolean }
+      paquete_archivo_retirable: {
+        Args: { _expediente_id: string; _ruta: string }
+        Returns: boolean
+      }
       pendientes_cierre_desde_hechos: {
         Args: { h: Json; p_omitir_checklist?: boolean }
         Returns: string[]

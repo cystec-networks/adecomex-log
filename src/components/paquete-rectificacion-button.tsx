@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { retirarArchivosPaqueteAnterior } from "@/lib/paquete-archivos.functions";
 import { unirPdfsRectificacion } from "@/lib/rectificacion-pdf";
 import { FileStack, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -29,6 +31,13 @@ const esPdf = (p?: string | null) => !!p && p.toLowerCase().endsWith(".pdf");
 export function PaqueteRectificacionButton({ expedienteId }: { expedienteId: string }) {
   const qc = useQueryClient();
   const [cargando, setCargando] = useState(false);
+  const retirar = useServerFn(retirarArchivosPaqueteAnterior);
+  // Solo se conserva el último paquete: el archivo anterior se borra (se puede regenerar con los documentos).
+  const retirarAnterior = async (rutas: string[]) => {
+    if (!rutas.length) return;
+    try { await retirar({ data: { expedienteId, tipo: PAQUETE_TIPO_DOCUMENTO, rutas } }); }
+    catch (e) { console.warn("No se pudo borrar el paquete anterior", e); }
+  };
 
   const generar = async () => {
     setCargando(true);
@@ -88,8 +97,9 @@ export function PaqueteRectificacionButton({ expedienteId }: { expedienteId: str
         fecha_recepcion: hoy,
         observaciones: `${PAQUETE_TIPO_DOCUMENTO} - ${hoy} (${rutas.length} documentos)`,
       };
+      let rutasAnteriores: string[] = [];
       try {
-        await reemplazarPaquete({
+        rutasAnteriores = await reemplazarPaquete({
           listar: async () => {
             const { data, error } = await supabase.from("documentos").select("id, storage_path")
               .eq("expediente_id", expedienteId).eq("tipo", PAQUETE_TIPO_DOCUMENTO)
@@ -98,7 +108,7 @@ export function PaqueteRectificacionButton({ expedienteId }: { expedienteId: str
             return data ?? [];
           },
           actualizar: async (id) => {
-            const { error } = await supabase.from("documentos").update({ ...registro, file_hash: null, origen_cambio: "generado" })
+            const { error } = await supabase.from("documentos").update({ ...registro, file_hash: null, origen_cambio: "regenerado" })
               .eq("id", id).eq("expediente_id", expedienteId).eq("tipo", PAQUETE_TIPO_DOCUMENTO);
             if (error) throw error;
           },
@@ -111,13 +121,14 @@ export function PaqueteRectificacionButton({ expedienteId }: { expedienteId: str
               .eq("expediente_id", expedienteId).eq("tipo", PAQUETE_TIPO_DOCUMENTO);
             if (error) throw error;
           },
-        });
+        }, path);
       } catch (error) {
         // No retirar un archivo que ya pudiera haber quedado enlazado al actualizar.
         qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
         throw error;
       }
       qc.invalidateQueries({ queryKey: ["documentos", expedienteId] });
+      await retirarAnterior(rutasAnteriores);
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
       a.download = `${nombre}.pdf`;

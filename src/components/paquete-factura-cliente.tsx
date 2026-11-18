@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { retirarArchivosPaqueteAnterior } from "@/lib/paquete-archivos.functions";
 import { FileStack, Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -30,6 +32,13 @@ export function PaqueteFacturaCliente({ expedienteId, menu = false }: { expedien
   const [correoCargando, setCorreoCargando] = useState(false);
   const [resultado, setResultado] = useState<{ faltantes: string[]; generado: boolean } | null>(null);
   const [avisoCorreo, setAvisoCorreo] = useState(false);
+  const retirar = useServerFn(retirarArchivosPaqueteAnterior);
+  // Solo se conserva el último paquete: el archivo anterior se borra (se puede regenerar con los documentos).
+  const retirarAnterior = async (rutas: string[]) => {
+    if (!rutas.length) return;
+    try { await retirar({ data: { expedienteId, tipo: PAQUETE_FACTURA_CLIENTE, rutas } }); }
+    catch (e) { console.warn("No se pudo borrar el paquete anterior", e); }
+  };
 
   const generar = async () => {
     setCargando(true);
@@ -60,14 +69,14 @@ export function PaqueteFacturaCliente({ expedienteId, menu = false }: { expedien
           fecha_recepcion: new Date().toLocaleDateString("en-CA", { timeZone: "America/Santo_Domingo" }),
           observaciones: `${combinado.incluidos.length} documentos${combinado.faltantes.length ? ` · Pendientes: ${combinado.faltantes.join(", ")}` : ""}`,
         };
-        await reemplazarPaquete({
+        const rutasAnteriores = await reemplazarPaquete({
           listar: async () => {
             const { data, error } = await supabase.from("documentos").select("id, storage_path").eq("expediente_id", expedienteId).eq("tipo", PAQUETE_FACTURA_CLIENTE).order("created_at", { ascending: false }).order("id");
             if (error) throw error;
             return data ?? [];
           },
           actualizar: async (id) => {
-            const { error } = await supabase.from("documentos").update({ ...registro, origen_cambio: "generado" }).eq("id", id).eq("expediente_id", expedienteId).eq("tipo", PAQUETE_FACTURA_CLIENTE);
+            const { error } = await supabase.from("documentos").update({ ...registro, origen_cambio: "regenerado" }).eq("id", id).eq("expediente_id", expedienteId).eq("tipo", PAQUETE_FACTURA_CLIENTE);
             if (error) throw error;
           },
           insertar: async () => {
@@ -78,7 +87,8 @@ export function PaqueteFacturaCliente({ expedienteId, menu = false }: { expedien
             const { error } = await supabase.from("documentos").delete().in("id", ids).eq("expediente_id", expedienteId).eq("tipo", PAQUETE_FACTURA_CLIENTE);
             if (error) throw error;
           },
-        });
+        }, path);
+        await retirarAnterior(rutasAnteriores);
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a"); a.href = url; a.download = nombre; a.click();
         setTimeout(() => URL.revokeObjectURL(url), 5000);

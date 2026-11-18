@@ -173,3 +173,4 @@
 - [x] Lectura de prueba del BL de 202610I390 borrada (18/11); el BL muestra «Leer ahora», Expediente intacto.
 
 - [x] Vinculación de Factura e-CF: sección en crear/editar, «Vincular» y filtro «Sin vincular» en la lista, reparto por renglón con montos exactos, Auditoría.
+- [x] Almacenamiento (18/11): paquetes regenerados sin copias (se borra el PDF anterior si nada lo usa, Auditoría) y pantalla «Archivos sin uso» con vista previa, Papelera de archivos 30 días, borrado definitivo solo Admin y Conservados (2 archivos de Francisco). Puntos 2 y 4 no aprobados.

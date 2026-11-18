@@ -173,6 +173,8 @@ const GROUPS: Group[] = [
         match: (p) => p.startsWith("/admin/configuracion") },
       { to: "/admin/respaldo-datos", label: "Respaldo de Datos", icon: DatabaseBackup, adminOnly: true,
         match: (p) => p.startsWith("/admin/respaldo-datos") },
+      { to: "/admin/archivos-sin-uso", label: "Archivos sin uso", icon: Trash2, adminOnly: true,
+        match: (p) => p.startsWith("/admin/archivos-sin-uso") },
       { to: "/expedientes/papelera", label: "Papelera", icon: Trash2, adminOnly: true,
         match: (p) => p === "/expedientes/papelera" },
     ],
