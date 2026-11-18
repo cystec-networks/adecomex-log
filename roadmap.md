@@ -172,4 +172,4 @@
 - [x] Aclaración BL/Factura (18/11): automático solo en Expedientes nuevos (creados desde 17/11 20:00 SD) al subir o llegar por correo; una lectura por versión con modelo económico; todo queda «pendiente» hasta la vista previa «Datos detectados» (también correo). Expedientes anteriores: solo «Leer ahora» por documento. Botón de lote retirado; no se leyeron los 234 ni se aplicó lote. Alertas visibles solo BL/cliente/pesos/bultos/montos/fechas; texto = nota gris. Fechas día/mes/año desde la fecha impresa (202610I390 intacto). Etiqueta «Automático» visible en la ficha.
 - [x] Lectura de prueba del BL de 202610I390 borrada (18/11); el BL muestra «Leer ahora», Expediente intacto.
 
-- [ ] Vinculación de Factura e-CF (sección en crear/editar, candidatos, montos asignados, filtro «Sin vincular») — espera respuestas: varias facturas por Expediente y umbral de alerta de monto.
+- [x] Vinculación de Factura e-CF: sección en crear/editar, «Vincular» y filtro «Sin vincular» en la lista, reparto por renglón con montos exactos, Auditoría.

@@ -1,3 +1,4 @@
+import { parteAsignada } from "./factura-ecf-asignacion";
 /**
  * Cálculos del Dashboard de Transportes, alineados con la pantalla «Transportes»:
  * Ingreso = Monto a Facturar al Cliente del comprobante (bruto), Margen = Ganancia
@@ -78,7 +79,8 @@ export type FacturaCobroTransporte = {
   estado?: string | null;
   eliminado_en?: string | null;
   vinculo_por_linea?: boolean | null;
-  facturas_ecf_lineas?: { transporte_id: string | null; valor: number | string | null; itbis: number | string | null }[] | null;
+  facturas_ecf_lineas?: { id?: string; transporte_id: string | null; valor: number | string | null; itbis: number | string | null }[] | null;
+  facturas_ecf_asignaciones?: { linea_id?: string | null; transporte_id?: string | null; expediente_id?: string | null; monto: number | string | null }[] | null;
   cxc_pagos?: { monto: number | string | null }[] | null;
 };
 
@@ -99,9 +101,7 @@ export function fraccionCobrada(transporteId: string, facturas: readonly Factura
     vistas.add(f.id);
     const total = num(f.monto_total);
     if (total <= 0) continue;
-    const parte = f.vinculo_por_linea
-      ? (f.facturas_ecf_lineas ?? []).filter((l) => l.transporte_id === transporteId).reduce((a, l) => a + num(l.valor) + num(l.itbis), 0)
-      : total;
+    const parte = parteAsignada(f, { transporteId }) ?? total;
     if (parte <= 0) continue;
     const pagado = (f.cxc_pagos ?? []).reduce((a, p) => a + num(p.monto), 0);
     peso += parte;

@@ -1,4 +1,4 @@
-import { sincronizarCobroDesdeEcf } from "@/lib/factura-ecf-vinculacion";
+import { fmtRD } from "@/lib/facturas-ecf";
 import { RequisitosCierrePanel } from "@/components/cierre-expediente";
 import { payloadGuardadoCompletado } from "@/lib/expediente-cierre";
 import { optimizarArchivo, optimizarDocumento } from "@/lib/documento-optimizacion";
@@ -104,6 +104,8 @@ import { EmailButton } from "@/components/email-button";
 import { SearchEmailButton } from "@/components/search-email-button";
 import { ChecklistHitos } from "@/components/checklist-hitos";
 import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
+import { VincularFacturaDialog } from "@/components/vincular-factura-dialog";
+import { parteAsignada } from "@/lib/factura-ecf-asignacion";
 import { EscanearFacturaButton } from "@/components/escanear-factura-button";
 import { TIPOS_BIENES_SERVICIOS, TIPOS_RETENCION_ISR } from "@/lib/fiscal-606";
 import { REEMBOLSO_INICIAL_NUEVO, reembolsoPorConcepto, tieneDatosFiscales, type ConceptoGastoCatalogo } from "@/lib/gasto-formulario";
@@ -4522,7 +4524,6 @@ function LiquidacionSection({ expedienteId }: { expedienteId: string }) {
 
 
 function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; totalFact: number }) {
-  const qc = useQueryClient();
   const { data: exp } = useQuery({
     queryKey: ["expediente", expedienteId],
     queryFn: async () => (await supabase.from("expedientes").select("*").eq("id", expedienteId).maybeSingle()).data,
@@ -4534,23 +4535,39 @@ function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; to
     enabled: !!exp,
     queryFn: async () => (await fetchConsignatarioEfectivo(expedienteId, { id: (exp as any)?.cliente_id ?? null })).cliente,
   });
-  const link = useMutation({
-    mutationFn: async (fid: string | null) => {
-      const prevFid = (exp as any)?.factura_ecf_id ?? null;
-      const { error } = await supabase.from("expedientes").update({ factura_ecf_id: fid }).eq("id", expedienteId);
-      if (error) throw error;
-      return await sincronizarCobroDesdeEcf(expedienteId, fid, prevFid);
+  // Vincular/desvincular pasa siempre por «Vincular» (reparto por renglón, montos exactos y Auditoría).
+  const [vincular, setVincular] = useState<{ facturaId: string; agregar?: string; quitar?: string } | null>(null);
+  const { data: vinculadas } = useQuery({
+    queryKey: ["facturas-via-transporte", expedienteId],
+    queryFn: async () => {
+      const [{ data: asig }, { data: trs }] = await Promise.all([
+        supabase.from("facturas_ecf_asignaciones").select("factura_id,monto,facturas_ecf(id,encf,eliminado_en)").eq("expediente_id", expedienteId),
+        supabase.from("transportes").select("id,numero_viaje").eq("expediente_id", expedienteId).is("eliminado_en", null),
+      ]);
+      const propias = new Map<string, { encf: string; monto: number }>();
+      for (const a of (asig ?? []) as any[]) {
+        if (!a.facturas_ecf || a.facturas_ecf.eliminado_en) continue;
+        const prev = propias.get(a.factura_id);
+        propias.set(a.factura_id, { encf: a.facturas_ecf.encf, monto: (prev?.monto ?? 0) + Number(a.monto || 0) });
+      }
+      const trIds = (trs ?? []).map((t) => t.id);
+      const viaTr: { tr: string; trId: string; encf: string; monto: number }[] = [];
+      if (trIds.length) {
+        const { data: links } = await supabase.from("transporte_facturas_ecf").select("transporte_id,factura_ecf_id").in("transporte_id", trIds);
+        const fids = [...new Set((links ?? []).map((l) => l.factura_ecf_id))];
+        const { data: fs } = fids.length
+          ? await supabase.from("facturas_ecf").select("id,encf,monto_total,vinculo_por_linea,eliminado_en,facturas_ecf_lineas(id,transporte_id,expediente_id,valor,itbis),facturas_ecf_asignaciones(linea_id,transporte_id,expediente_id,monto)").in("id", fids)
+          : { data: [] as any[] };
+        for (const l of links ?? []) {
+          const f = (fs ?? []).find((x: any) => x.id === l.factura_ecf_id) as any;
+          if (!f || f.eliminado_en) continue;
+          viaTr.push({ tr: (trs ?? []).find((t) => t.id === l.transporte_id)?.numero_viaje ?? "Transporte", trId: l.transporte_id, encf: f.encf, monto: parteAsignada(f, { transporteId: l.transporte_id }) ?? Number(f.monto_total || 0) });
+        }
+      }
+      return { propias: [...propias.entries()].map(([id, v]) => ({ id, ...v })), viaTr };
     },
-    onSuccess: (msg) => {
-      toast.success(msg ? `Factura e-CF actualizada · ${msg}` : "Factura e-CF actualizada");
-      qc.invalidateQueries({ queryKey: ["expediente", expedienteId] });
-      qc.invalidateQueries({ queryKey: ["facturas", expedienteId] });
-      qc.invalidateQueries({ queryKey: ["ecf-vinculada", expedienteId] });
-      qc.invalidateQueries({ queryKey: ["costos_producto", expedienteId] });
-      qc.invalidateQueries({ queryKey: ["costos-producto-liq", expedienteId] });
-    },
-    onError: (e: any) => toast.error(e.message),
   });
+  const principal = (exp as any)?.factura_ecf_id ?? null;
   return (
     <Card className="border-primary/20">
       <CardHeader className="pb-2">
@@ -4558,22 +4575,57 @@ function FacturaEcfBlock({ expedienteId, totalFact }: { expedienteId: string; to
           Factura e-CF (DGII) — requerida para Despachar
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-2">
         <FacturaEcfSelector
-          value={(exp as any)?.factura_ecf_id ?? null}
+          value={principal}
           expedienteNumero={(exp as any)?.numero}
-          onChange={(id: string | null) => link.mutate(id)}
+          onChange={(id: string | null) => {
+            if (id) setVincular({ facturaId: id, agregar: `exp:${expedienteId}` });
+            else if (principal) setVincular({ facturaId: principal, quitar: `exp:${expedienteId}` });
+          }}
           preload={{
             cliente_id: clienteEfectivo?.id ?? (exp as any)?.cliente_id ?? null,
             monto_total: totalFact,
+            expediente_id: expedienteId,
           }}
         />
-        {!(exp as any)?.factura_ecf_id && (
-          <p className="text-xs text-amber-700 mt-2">
+        {!principal && (
+          <p className="text-xs text-amber-700">
             Sin factura vinculada: el expediente no podrá pasar a estado "Despachado".
           </p>
         )}
+        {!!vinculadas?.propias.length && (
+          <div className="text-xs space-y-1">
+            <p className="font-medium text-muted-foreground">Facturas de este Expediente (monto asignado)</p>
+            {vinculadas.propias.map((f) => (
+              <div key={f.id} className="flex flex-wrap items-center gap-2">
+                <span className="font-mono">{f.encf}</span>
+                <span className="tabular-nums">{fmtRD(f.monto)}</span>
+                <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => setVincular({ facturaId: f.id })}>Ver reparto</Button>
+              </div>
+            ))}
+          </div>
+        )}
+        {!!vinculadas?.viaTr.length && (
+          <div className="text-xs space-y-1">
+            <p className="font-medium text-muted-foreground">Facturas de sus Transportes (no cuentan como gestión aduanal)</p>
+            {vinculadas.viaTr.map((v) => (
+              <div key={`${v.trId}-${v.encf}`} className="flex flex-wrap items-center gap-2 text-muted-foreground">
+                <Link to="/transportes/$id" params={{ id: v.trId }} className="hover:underline">{v.tr}</Link>
+                <span className="font-mono">{v.encf}</span>
+                <span className="tabular-nums">{fmtRD(v.monto)}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
+      <VincularFacturaDialog
+        facturaId={vincular?.facturaId ?? null}
+        open={!!vincular}
+        onOpenChange={(v) => { if (!v) setVincular(null); }}
+        agregarDestino={vincular?.agregar}
+        quitarDestino={vincular?.quitar}
+      />
     </Card>
   );
 }

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { esTransporte, idDestino, unirFilas, type FilaAsignacion, type TipoConcepto } from "./factura-ecf-asignacion";
 import { resolverTransporteFactura } from "./factura-venta-contenedores";
 import { resolverTransporteAcotado } from './factura-lineas-destino';
 
@@ -32,17 +33,35 @@ export async function vincularTransporteDesdeEcf(contenedores: readonly string[]
 }
 
 /** Crea o actualiza un renglón de "Facturación (cobros)" por cada línea de la e-CF vinculada.
+ *  Con montos asignados usa solo lo asignado a este Expediente (prorrateando el ITBIS del renglón);
+ *  lo asignado a sus Transportes no cuenta como gestión aduanal del Expediente.
  *  No sobrescribe renglones editados a mano; no duplica (empareja por línea e-CF). */
-export async function sincronizarCobroDesdeEcf(expedienteId: string, fid: string | null, prevFid: string | null): Promise<string | null> {
+export async function sincronizarCobroDesdeEcf(expedienteId: string, fid: string | null, prevFid: string | null, opciones?: { desvinculado?: boolean }): Promise<string | null> {
   if (!fid) return null;
   const { data: ecf } = await supabase.from("facturas_ecf").select("id,encf,fecha_emision,monto_total,vinculo_por_linea").eq("id", fid).maybeSingle();
   if (!ecf) return null;
-  const { data: todasLineas, error: errorLineas } = await supabase.from("facturas_ecf_lineas").select("id,orden,descripcion,valor,itbis,gravado,expediente_id").eq("factura_id", fid).order("orden");
+  const [{ data: todasLineas, error: errorLineas }, { data: asignaciones, error: errorAsig }] = await Promise.all([
+    supabase.from("facturas_ecf_lineas").select("id,orden,descripcion,valor,itbis,gravado,expediente_id").eq("factura_id", fid).order("orden"),
+    supabase.from("facturas_ecf_asignaciones").select("linea_id,expediente_id,monto").eq("factura_id", fid),
+  ]);
   if (errorLineas) throw errorLineas;
-  const lineasDb = ecf.vinculo_por_linea ? (todasLineas ?? []).filter(l => l.expediente_id === expedienteId) : todasLineas;
-  const lineas: any[] = (lineasDb ?? []).length
-    ? lineasDb ?? []
-    : ecf.vinculo_por_linea ? [] : [{ id: null, descripcion: "Gestión aduanal", valor: Number(ecf.monto_total || 0), itbis: 0, gravado: null }];
+  if (errorAsig) throw errorAsig;
+  let lineas: any[];
+  if (opciones?.desvinculado) lineas = [];
+  else if ((asignaciones ?? []).length) {
+    lineas = (todasLineas ?? []).flatMap((l) => {
+      const m = (asignaciones ?? []).filter((a) => a.linea_id === l.id && a.expediente_id === expedienteId).reduce((s, a) => s + Number(a.monto || 0), 0);
+      if (!(m > 0)) return [];
+      const imp = Number(l.valor || 0) + Number(l.itbis || 0);
+      const valor = imp > 0 ? Math.round((m * Number(l.valor || 0) / imp) * 100) / 100 : m;
+      return [{ ...l, valor, itbis: Math.round((m - valor) * 100) / 100 }];
+    });
+  } else {
+    const lineasDb = ecf.vinculo_por_linea ? (todasLineas ?? []).filter(l => l.expediente_id === expedienteId) : todasLineas;
+    lineas = (lineasDb ?? []).length
+      ? lineasDb ?? []
+      : ecf.vinculo_por_linea ? [] : [{ id: null, descripcion: "Gestión aduanal", valor: Number(ecf.monto_total || 0), itbis: 0, gravado: null }];
+  }
   const ids = [fid, prevFid].filter(Boolean) as string[];
   const { data: filasDb } = await supabase.from("facturas").select("id,editada_manual,factura_ecf_id,ecf_linea_id,referencia")
     .eq("expediente_id", expedienteId).is("deleted_at", null);
@@ -79,3 +98,34 @@ export async function sincronizarCobroDesdeEcf(expedienteId: string, fid: string
   return `renglones de cobro: ${partes.join(", ")}`;
 }
 
+
+/**
+ * Guarda el reparto de la factura (tipos de renglón + montos asignados) en una sola operación
+ * del servidor —que valida sumas, tipos, Completados y escribe Auditoría— y después
+ * sincroniza los renglones de cobro de cada Expediente afectado.
+ */
+export async function guardarVinculacionFactura(facturaId: string, lineaIds: readonly string[], tipos: readonly TipoConcepto[], filas: readonly FilaAsignacion[]) {
+  const asignaciones = unirFilas(filas).map((f) => ({
+    linea_id: lineaIds[f.linea],
+    expediente_id: esTransporte(f.destino) ? null : idDestino(f.destino),
+    transporte_id: esTransporte(f.destino) ? idDestino(f.destino) : null,
+    monto: f.monto,
+    origen: f.origen ?? "manual",
+  }));
+  if (asignaciones.some((a) => !a.linea_id)) throw new Error("Los renglones cambiaron; recarga la factura antes de vincular.");
+  const { data, error } = await supabase.rpc("guardar_vinculos_factura_ecf", {
+    p_factura: facturaId,
+    p_tipos: lineaIds.map((id, i) => ({ linea_id: id, tipo: tipos[i] })),
+    p_asignaciones: asignaciones,
+  });
+  if (error) throw error;
+  const r = (data ?? {}) as { expedientes?: string[]; expedientes_quitados?: string[]; transportes?: string[]; transportes_quitados?: string[] };
+  const avisos: string[] = [];
+  for (const exp of r.expedientes ?? []) {
+    try { await sincronizarCobroDesdeEcf(exp, facturaId, null); } catch { avisos.push("No se pudieron actualizar los renglones de cobro de un Expediente; revísalos en su ficha."); }
+  }
+  for (const exp of r.expedientes_quitados ?? []) {
+    try { await sincronizarCobroDesdeEcf(exp, facturaId, null, { desvinculado: true }); } catch { avisos.push("No se pudieron retirar los renglones de cobro de un Expediente desvinculado; revísalos en su ficha."); }
+  }
+  return { ...r, avisos: [...new Set(avisos)] };
+}

@@ -5275,6 +5275,106 @@ export type Database = {
           },
         ]
       }
+      facturas_ecf_asignaciones: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expediente_id: string | null
+          factura_id: string
+          id: string
+          linea_id: string
+          monto: number
+          origen: string
+          transporte_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expediente_id?: string | null
+          factura_id: string
+          id?: string
+          linea_id: string
+          monto: number
+          origen?: string
+          transporte_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expediente_id?: string | null
+          factura_id?: string
+          id?: string
+          linea_id?: string
+          monto?: number
+          origen?: string
+          transporte_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facturas_ecf_asignaciones_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expedientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_ecf_asignaciones_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_expedientes_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_ecf_asignaciones_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "facturas_ecf_asignaciones_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_pagos_cliente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "facturas_ecf_asignaciones_expediente_id_fkey"
+            columns: ["expediente_id"]
+            isOneToOne: false
+            referencedRelation: "v_rentabilidad_expediente"
+            referencedColumns: ["expediente_id"]
+          },
+          {
+            foreignKeyName: "facturas_ecf_asignaciones_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "facturas_ecf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_ecf_asignaciones_factura_id_fkey"
+            columns: ["factura_id"]
+            isOneToOne: false
+            referencedRelation: "v_facturas_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_ecf_asignaciones_linea_id_fkey"
+            columns: ["linea_id"]
+            isOneToOne: false
+            referencedRelation: "facturas_ecf_lineas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_ecf_asignaciones_transporte_id_fkey"
+            columns: ["transporte_id"]
+            isOneToOne: false
+            referencedRelation: "transportes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       facturas_ecf_lineas: {
         Row: {
           cantidad: number
@@ -5290,6 +5390,7 @@ export type Database = {
           orden: number
           precio: number
           recargo: number
+          tipo_concepto: string | null
           transporte_id: string | null
           unidad: string | null
           valor: number
@@ -5308,6 +5409,7 @@ export type Database = {
           orden?: number
           precio?: number
           recargo?: number
+          tipo_concepto?: string | null
           transporte_id?: string | null
           unidad?: string | null
           valor?: number
@@ -5326,6 +5428,7 @@ export type Database = {
           orden?: number
           precio?: number
           recargo?: number
+          tipo_concepto?: string | null
           transporte_id?: string | null
           unidad?: string | null
           valor?: number
@@ -8806,14 +8909,14 @@ export type Database = {
           {
             foreignKeyName: "transporte_facturas_ecf_factura_ecf_id_fkey"
             columns: ["factura_ecf_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "facturas_ecf"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "transporte_facturas_ecf_factura_ecf_id_fkey"
             columns: ["factura_ecf_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "v_facturas_cliente"
             referencedColumns: ["id"]
           },
@@ -9824,6 +9927,10 @@ export type Database = {
       }
       guardar_solicitud_correo_pendiente: {
         Args: { p_solicitud: Json }
+        Returns: Json
+      }
+      guardar_vinculos_factura_ecf: {
+        Args: { p_asignaciones: Json; p_factura: string; p_tipos: Json }
         Returns: Json
       }
       hechos_cierre_expedientes: {

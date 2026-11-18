@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, ClipboardList, Plus, Trash2, ExternalLink } from "lucide-react";
+import { AlertTriangle, ClipboardList, Plus, Trash2, ExternalLink, Link2 } from "lucide-react";
+import { VincularFacturaDialog } from "@/components/vincular-factura-dialog";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
@@ -60,6 +61,8 @@ function FacturacionPage() {
   const [desde, setDesde] = useState<string>("");
   const [hasta, setHasta] = useState<string>("");
   const [q, setQ] = useState("");
+  const [vincFiltro, setVincFiltro] = useState<"__all__" | "sin" | "con">("__all__");
+  const [vincularId, setVincularId] = useState<string | null>(null);
 
   const { data: clientes } = useQuery({
     queryKey: ["clientes-lite-fac"],
@@ -71,7 +74,7 @@ function FacturacionPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("facturas_ecf")
-        .select("*, facturas_ecf_lineas(*,expedientes(id,numero)), expedientes:expedientes!expedientes_factura_ecf_id_fkey(id,numero), transportes:transportes!transportes_factura_ecf_id_fkey(id,numero_viaje)")
+        .select("*, facturas_ecf_lineas(*,expedientes(id,numero)), facturas_ecf_asignaciones(expediente_id,transporte_id,monto,expedientes(id,numero),transportes(id,numero_viaje)), expedientes:expedientes!expedientes_factura_ecf_id_fkey(id,numero), transportes:transportes!transportes_factura_ecf_id_fkey(id,numero_viaje)")
         .is("eliminado_en", null)
         .order("encf", { ascending: false });
       return data ?? [];
@@ -128,9 +131,29 @@ function FacturacionPage() {
     },
   });
 
+  /** Destinos de la factura: montos asignados, renglones, Expediente y Transportes vinculados. */
+  const destinosDe = (f: any) => {
+    const exps = [...new Map([
+      ...(f.expedientes ?? []),
+      ...(f.facturas_ecf_lineas ?? []).flatMap((l: any) => (l.expedientes ? [l.expedientes] : [])),
+      ...(f.facturas_ecf_asignaciones ?? []).flatMap((a: any) => (a.expedientes ? [a.expedientes] : [])),
+    ].map((e: any) => [e.id, e] as const)).values()] as { id: string; numero: string }[];
+    const trs = [...new Map([
+      ...((f.transportes as { id: string; numero_viaje: string }[] | null) ?? []),
+      ...(transportesPorFactura.get(f.id) ?? []),
+      ...(f.facturas_ecf_asignaciones ?? []).flatMap((a: any) => (a.transportes ? [a.transportes] : [])),
+    ].map((t: any) => [t.id, t] as const)).values()] as { id: string; numero_viaje: string }[];
+    return { exps, trs };
+  };
+
   const filtered = useMemo(() => {
     const list = facturas ?? [];
     return list.filter((f: any) => {
+      if (vincFiltro !== "__all__") {
+        const d = destinosDe(f);
+        const vinculada = d.exps.length > 0 || d.trs.length > 0;
+        if (vincFiltro === "sin" ? vinculada : !vinculada) return false;
+      }
       if (clienteFiltro !== "__all__" && f.cliente_id !== clienteFiltro) return false;
       if (tipoFiltro !== "__all__" && f.tipo_comprobante !== tipoFiltro) return false;
       if (desde && f.fecha_emision < desde) return false;
@@ -152,7 +175,7 @@ function FacturacionPage() {
       if (numeroA !== numeroB) return numeroA > numeroB ? -1 : 1;
       return String(b.encf ?? "").localeCompare(String(a.encf ?? "")) || String(a.id).localeCompare(String(b.id));
     });
-  }, [facturas, clienteFiltro, tipoFiltro, desde, hasta, q]);
+  }, [facturas, clienteFiltro, tipoFiltro, desde, hasta, q, vincFiltro, transportesPorFactura]);
 
   const grupos = useMemo(() => {
     const mapa = new Map<string, { mes: string; titulo: string; total: number; facturas: typeof filtered }>();
@@ -178,7 +201,7 @@ function FacturacionPage() {
   }, [filtered]);
 
   const [abiertos, setAbiertos] = useState<Set<string> | null>(null);
-  useEffect(() => { setAbiertos(null); }, [clienteFiltro, tipoFiltro, desde, hasta, q]);
+  useEffect(() => { setAbiertos(null); }, [clienteFiltro, tipoFiltro, desde, hasta, q, vincFiltro]);
   const estaAbierto = (mes: string) => (abiertos ? abiertos.has(mes) : grupos[0]?.mes === mes);
   const toggleGrupo = (mes: string) => {
     const base = abiertos ?? new Set(grupos[0] ? [grupos[0].mes] : []);
@@ -312,6 +335,17 @@ function FacturacionPage() {
               </Select>
             </div>
             <div className="space-y-1">
+              <Label className="text-xs">Vinculación</Label>
+              <Select value={vincFiltro} onValueChange={(v) => setVincFiltro(v as typeof vincFiltro)}>
+                <SelectTrigger className="w-40" aria-label="Filtrar por vinculación"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todas</SelectItem>
+                  <SelectItem value="sin">Sin vincular</SelectItem>
+                  <SelectItem value="con">Vinculadas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
               <Label className="text-xs">Desde</Label>
               <Input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
             </div>
@@ -356,12 +390,7 @@ function FacturacionPage() {
                     </th>
                   </tr>,
                   ...(!estaAbierto(grupo.mes) ? [] : grupo.facturas).map((f: any) => {
-                  const exps: {id:string;numero:string}[] = [...new Map([...(f.expedientes ?? []),...(f.facturas_ecf_lineas ?? []).flatMap((l:any)=>l.expedientes?[l.expedientes]:[])].map((e:any)=>[e.id,e] as const)).values()] as {id:string;numero:string}[];
-                  const trsLegado = (f.transportes as { id: string; numero_viaje: string }[] | null) ?? [];
-                  const trs = [...trsLegado];
-                  for (const t of transportesPorFactura.get(f.id) ?? []) {
-                    if (!trs.some((x) => x.id === t.id)) trs.push(t);
-                  }
+                  const { exps, trs } = destinosDe(f);
                   return (
                     <tr key={f.id} className="border-b last:border-0 hover:bg-muted/20">
                       <td className="px-3 py-2 font-mono font-medium">
@@ -407,7 +436,10 @@ function FacturacionPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-right">
+                      <td className="px-3 py-2 text-right whitespace-nowrap">
+                        <Button size="sm" variant={exps.length || trs.length ? "ghost" : "outline"} className="h-7" onClick={() => setVincularId(f.id)} title="Vincular a Expedientes o Transportes">
+                          <Link2 className="h-3.5 w-3.5 mr-1" /> Vincular
+                        </Button>
                         {(f.facturas_ecf_lineas ?? []).length > 0 && (
                           <Button
                             size="sm" variant="ghost" className="h-7"
@@ -467,6 +499,7 @@ function FacturacionPage() {
       </Dialog>
 
       <FacturaEcfFormDialog open={openNew} onOpenChange={setOpenNew} />
+      <VincularFacturaDialog facturaId={vincularId} open={!!vincularId} onOpenChange={(v) => { if (!v) setVincularId(null); }} />
       {editId && (
         <FacturaEcfFormDialog
           key={editId}

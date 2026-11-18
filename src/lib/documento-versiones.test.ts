@@ -24,3 +24,8 @@ describe("documento-versiones", () => {
     expect(describirAuditoria({ entidad: "expedientes", accion: "editado" })).toBe("editado");
   });
 });
+
+it("Auditoría legible al vincular y desvincular facturas e-CF", () => {
+  expect(describirAuditoria({ accion: "factura_ecf_vinculada", cambios: { encf: "E310000000400", monto: 5900, usuario: "Ana" } } as any)).toBe("Factura E310000000400 vinculada por RD$ 5,900.00 · Ana");
+  expect(describirAuditoria({ accion: "factura_ecf_desvinculada", cambios: { encf: "E310000000400" } } as any)).toBe("Factura E310000000400 desvinculada");
+});

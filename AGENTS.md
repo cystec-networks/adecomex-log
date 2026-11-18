@@ -16,7 +16,7 @@ Apply transitions via `estados-expediente.ts` and `validar_transicion_expediente
 - Operations KPI cards read only through their own RLS-bound helper module (e.g. `pagos-transportista-kpi.ts`) so the dashboard never invents a count the requesting screen could not see.
 Red IDs: `expediente-numero`/`--brand-red`.
 Payment slips: linked transport first, reserved TR next; TF last.
-Share expediente/quote PDF. e-CF: factura-venta-referencias keeps fiscal lines, OCR in notas; factura-ecf-vinculacion shares links.
+Share expediente/quote PDF. e-CF: factura-venta-referencias keeps fiscal lines, OCR in notas. Links go only through `factura-ecf-vinculacion.tsx` + RPC `guardar_vinculos_factura_ecf` (validated per-line amounts, Auditoría); readers use `parteAsignada`.
 Headers: desktop slots/More, mobile rows. New-expediente: two fixed action rows, portaled submits; retain validation, no floating panels.
 Detail headers: content-sized rows, client label/value together, wrap IDs, warnings below Description; shared deadlines.
 - Form grid cells need `min-w-0`; selects truncate with a `title` tooltip so long names stay in their field.
@@ -60,5 +60,5 @@ Detail headers: content-sized rows, client label/value together, wrap IDs, warni
 - AI calls go through `callGateway` with a `FuncionIa` (or call `ia-consumo.server` registrar/tope for SDK/embeddings), so every call is logged with estimated cost, honours per-function daily caps (`accionLimiteIa`: alert-only or block; email functions default to alert) and reuses identical requests from `ia_cache`; email PDFs are typed by title rules/economy model before one extraction read.
 - The assistant sends only the top related novedades/normativa results (`asistente-contexto`, vector search shared with normativa) plus fichas of cited/named documents, never full lists, to bound per-question cost.
 - Document file replacements are versioned by the `documentos_versionar_archivo` trigger (old file kept in `documento_versiones`, `actualizado_*` stamped, `fecha_recepcion` preserved, Auditoría row on the expediente); replace paths must never delete the previous file and pass `origen_cambio` in the same UPDATE, so every path (manual, email, payments, packages) gets the same history.
-- Expediente expense dialogs take the reembolso default from `catalogo_conceptos_gasto.es_reembolso_defecto` via `gasto-formulario.ts` (never hardcoded concept names) so admins change defaults without code; a new expense always starts unchecked (`REEMBOLSO_INICIAL_NUEVO`, never the last mark); header and footer Guardar share one handler.
+- Expense dialogs read reembolso defaults from `catalogo_conceptos_gasto.es_reembolso_defecto` via `gasto-formulario.ts` (no hardcoded names); new expenses start unchecked (`REEMBOLSO_INICIAL_NUEVO`); both Guardar buttons share one handler.
 - Checklist milestone dates are auto-filled only by DB triggers via `aplicar_hito_automatico` (hito 1 keeps its own), tracked in `expediente_hitos.auto_*` and audited; UI edits set `auto_origen='manual'` (`hitos-automaticos.ts`) so no event overwrites a hand-set date.

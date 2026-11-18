@@ -149,7 +149,7 @@ function TransporteDashboard() {
     queryKey: ["dash-tr-rows"],
     queryFn: async () => {
       const { data, error } = await supabase.from("transportes")
-        .select("id,estado,tipo,cliente_id,transportista,contenedores_cantidad,contenedores_detalle,placa_contenedor,fecha_salida,eta,created_at,pago_estado,solicitud_pago_id,factura_ecf_id,factura_legado:facturas_ecf!transportes_factura_ecf_id_fkey(id,monto_total,estado,eliminado_en,vinculo_por_linea,facturas_ecf_lineas(transporte_id,valor,itbis),cxc_pagos(monto))")
+        .select("id,estado,tipo,cliente_id,transportista,contenedores_cantidad,contenedores_detalle,placa_contenedor,fecha_salida,eta,created_at,pago_estado,solicitud_pago_id,factura_ecf_id,factura_legado:facturas_ecf!transportes_factura_ecf_id_fkey(id,monto_total,estado,eliminado_en,vinculo_por_linea,facturas_ecf_lineas(id,transporte_id,valor,itbis),facturas_ecf_asignaciones(linea_id,transporte_id,expediente_id,monto),cxc_pagos(monto))")
         .is("eliminado_en", null);
       if (error) throw error;
       return data ?? [];
@@ -169,7 +169,7 @@ function TransporteDashboard() {
     queryKey: ["dash-tr-facturas-ecf-cobros"],
     queryFn: async () => {
       const { data, error } = await supabase.from("transporte_facturas_ecf")
-        .select("transporte_id, factura:facturas_ecf!transporte_facturas_ecf_factura_ecf_id_fkey(id,monto_total,estado,eliminado_en,vinculo_por_linea,facturas_ecf_lineas(transporte_id,valor,itbis),cxc_pagos(monto))");
+        .select("transporte_id, factura:facturas_ecf!transporte_facturas_ecf_factura_ecf_id_fkey(id,monto_total,estado,eliminado_en,vinculo_por_linea,facturas_ecf_lineas(id,transporte_id,valor,itbis),facturas_ecf_asignaciones(linea_id,transporte_id,expediente_id,monto),cxc_pagos(monto))");
       if (error) throw error;
       return (data ?? []) as unknown as { transporte_id: string; factura: FacturaCobroTransporte | null }[];
     },

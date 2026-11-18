@@ -118,5 +118,13 @@ export function describirAuditoria(a: FilaAuditoria): string {
     if (a.accion === "dua_no_aplicado") return `Declaración DUA no aplicada desde ${desde}${via}${typeof c.motivo === "string" && c.motivo ? `: ${c.motivo}` : ""}`;
     return `Declaración DUA automática: ${String(c.numero_dua ?? "")} desde ${desde}${c.fuente === "archivo" ? " (nombre del archivo)" : ""}${via}`;
   }
+  if (a.accion === "factura_ecf_vinculada" || a.accion === "factura_ecf_desvinculada" || a.accion === "factura_ecf_monto_cambiado") {
+    const rd = (v: unknown) => (v == null || v === "" ? "" : `RD$ ${Number(v).toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    const encf = typeof c.encf === "string" && c.encf ? c.encf : "e-CF";
+    const quien = typeof c.usuario === "string" && c.usuario ? ` · ${c.usuario}` : "";
+    if (a.accion === "factura_ecf_desvinculada") return `Factura ${encf} desvinculada${rd(c.monto_anterior) ? ` (tenía ${rd(c.monto_anterior)})` : ""}${quien}`;
+    if (a.accion === "factura_ecf_monto_cambiado") return `Monto asignado de la factura ${encf}: ${rd(c.monto_anterior) || "factura completa"} → ${rd(c.monto) || "—"}${quien}`;
+    return `Factura ${encf} vinculada${rd(c.monto) ? ` por ${rd(c.monto)}` : ""}${quien}`;
+  }
   return a.accion;
 }

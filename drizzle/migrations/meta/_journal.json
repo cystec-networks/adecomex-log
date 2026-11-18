@@ -1051,6 +1051,20 @@
       "when": 1794959070171,
       "tag": "0149_autocompletado_lotes_deshacer",
       "breakpoints": true
+    },
+    {
+      "idx": 150,
+      "version": "7",
+      "when": 1794963314094,
+      "tag": "0150_factura_ecf_asignaciones",
+      "breakpoints": true
+    },
+    {
+      "idx": 151,
+      "version": "7",
+      "when": 1794963532363,
+      "tag": "0151_guardar_facturas_transporte_asignaciones",
+      "breakpoints": true
     }
   ]
 }

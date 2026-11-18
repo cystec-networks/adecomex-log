@@ -1,15 +1,15 @@
 import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, ExternalLink, Search } from "lucide-react";
-import { toast } from "sonner";
 import { fmtLocalDate } from "@/lib/dates";
 import { FacturaEcfSelector } from "@/components/factura-ecf-selector";
+import { VincularFacturaDialog } from "@/components/vincular-factura-dialog";
 import { fmtRD } from "@/lib/facturas-ecf";
 
 export const Route = createFileRoute("/_authenticated/admin/facturacion_/pendientes")({
@@ -27,7 +27,6 @@ export const Route = createFileRoute("/_authenticated/admin/facturacion_/pendien
 
 function PendientesPage() {
   const [q, setQ] = useState("");
-  const qc = useQueryClient();
 
   const { data: expedientes } = useQuery({
     queryKey: ["ecf-pendientes-exp"],
@@ -53,31 +52,8 @@ function PendientesPage() {
     ).data ?? [],
   });
 
-  const linkExp = useMutation({
-    mutationFn: async ({ id, fid }: { id: string; fid: string | null }) => {
-      const { error } = await supabase.from("expedientes").update({ factura_ecf_id: fid }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Expediente vinculado a e-CF");
-      qc.invalidateQueries({ queryKey: ["ecf-pendientes-exp"] });
-      qc.invalidateQueries({ queryKey: ["ecf-pendientes-count"] });
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const linkTr = useMutation({
-    mutationFn: async ({ id, fid }: { id: string; fid: string | null }) => {
-      const { error } = await supabase.from("transportes").update({ factura_ecf_id: fid }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Transporte vinculado a e-CF");
-      qc.invalidateQueries({ queryKey: ["ecf-pendientes-tr"] });
-      qc.invalidateQueries({ queryKey: ["ecf-pendientes-count"] });
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
+  // Vincular pasa por la misma ventana del reparto por renglón (montos exactos y Auditoría).
+  const [vincular, setVincular] = useState<{ facturaId: string; agregar: string } | null>(null);
 
   const expsFiltered = useMemo(() => {
     const s = q.toLowerCase();
@@ -195,7 +171,7 @@ function PendientesPage() {
                   <td className="py-1.5 pr-3">
                     <FacturaEcfSelector
                       value={null}
-                      onChange={(fid) => fid && linkExp.mutate({ id: e.id, fid })}
+                      onChange={(fid) => fid && setVincular({ facturaId: fid, agregar: `exp:${e.id}` })}
                       preload={{ cliente_id: e.cliente_id, encf: e.factura_comercial }}
                     />
                   </td>
@@ -243,7 +219,7 @@ function PendientesPage() {
                   <td className="py-1.5 pr-3">
                     <FacturaEcfSelector
                       value={null}
-                      onChange={(fid) => fid && linkTr.mutate({ id: t.id, fid })}
+                      onChange={(fid) => fid && setVincular({ facturaId: fid, agregar: `tr:${t.id}` })}
                       preload={{
                         cliente_id: t.cliente_id,
                         encf: t.factura_numero,
@@ -257,6 +233,12 @@ function PendientesPage() {
           </table>
         </CardContent>
       </Card>
+      <VincularFacturaDialog
+        facturaId={vincular?.facturaId ?? null}
+        open={!!vincular}
+        onOpenChange={(v) => { if (!v) setVincular(null); }}
+        agregarDestino={vincular?.agregar}
+      />
     </div>
   );
 }
