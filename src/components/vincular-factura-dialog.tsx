@@ -81,7 +81,7 @@ export function VincularFacturaDialog({ facturaId, open, onOpenChange, agregarDe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden [&>*]:min-w-0">
         <DialogHeader className="min-w-0">
           <DialogTitle>Vincular factura {data?.f.encf ?? ""}</DialogTitle>
           <DialogDescription>
