@@ -18,3 +18,14 @@ export function coincidenciasClienteDocumento<T extends Cliente>(nombre: string,
     return nombreBaseCliente(c.nombre) === base || (otros.length === tokens.length && tokens.every(t => otros.includes(t)));
   }).map(cliente => ({ cliente, exacta: false }));
 }
+/**
+ * Cliente identificado por el nombre del documento con la misma comparación flexible del Expediente:
+ * solo si hay un único cliente con el mismo nombre (exacto o sin puntos, comas, mayúsculas ni forma societaria).
+ * Los equivalentes probables (mismas palabras en otro orden) nunca identifican: requieren elección.
+ */
+export function clienteDocumentoUnico<T extends Cliente>(nombre: string | null | undefined, clientes: T[]): T | null {
+  if (!nombre?.trim()) return null;
+  const base = nombreBaseCliente(nombre);
+  const fuertes = coincidenciasClienteDocumento(nombre, clientes).filter((m) => m.exacta || nombreBaseCliente(m.cliente.nombre) === base);
+  return fuertes.length === 1 ? fuertes[0].cliente : null;
+}

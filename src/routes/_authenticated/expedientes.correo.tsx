@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useState } from "react";
 import { AvisoDocumentosCombinados, useDocumentosCombinados } from "@/components/documentos-combinados-aviso";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, Mail, Trash2, FilePlus2, Link2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Info, Mail, Trash2, FilePlus2, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,8 @@ import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { RegistroCorreos } from "@/components/correos/registro-correos";
 import { RemitentesIgnorados } from "@/components/correos/remitentes-ignorados";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ClienteConversionCorreo, clienteInicialConversion, useClientesConversion } from "@/components/correos/cliente-conversion";
+import { CLAVE_REMITENTES_RECORDADOS, ClienteConversionCorreo, clienteInicialConversion, useClientesConversion, useRemitentesRecordados } from "@/components/correos/cliente-conversion";
+import { avisoInformativoCorreo, nombreComparable } from "@/lib/correo-cliente";
 
 const searchSchema = z.object({
   registro: fallback(z.string(), "").default(""),
@@ -52,9 +53,10 @@ function BandejaCorreo() {
   const [destino, setDestino] = useState('nueva');
   const puedeCrearCliente = roles.some(r => r === 'admin' || r === 'operaciones' || r === 'ejecutivo');
   const { data: clientesCatalogo = [] } = useClientesConversion(canCompra);
+  const { data: recordados = [] } = useRemitentesRecordados(canCompra);
   // Cliente de la cotización: el identificado, uno sugerido, buscado o recién creado (se envía al convertir).
   const [clienteElegido, setClienteElegido] = useState<string | null>(null);
-  const abrirConversion = (s: any) => { setCompra(s); setDestino('nueva'); setClienteElegido(clienteInicialConversion(s, clientesCatalogo)); };
+  const abrirConversion = (s: any) => { setCompra(s); setDestino('nueva'); setClienteElegido(clienteInicialConversion(s, clientesCatalogo, recordados)); };
   const elegirCliente = (id: string | null) => { setClienteElegido(id); setDestino('nueva'); };
   const { data: cotizaciones = [] } = useQuery({
     queryKey: ['cotizaciones-correo-cliente', clienteElegido],
@@ -95,7 +97,7 @@ function BandejaCorreo() {
           if (error || !guardado) throw error ?? new Error('La solicitud cambió; vuelve a abrirla');
         }
       }
-      const { data, error } = await supabase.rpc('convertir_correo_cotizacion', { p_solicitud_id: compra.id, p_cotizacion_id: destino === 'nueva' ? undefined : destino, p_cliente_id: clienteElegido });
+      const { data, error } = await supabase.rpc('convertir_correo_cotizacion', { p_solicitud_id: compra.id, p_cotizacion_id: destino === 'nueva' ? undefined : destino, p_cliente_id: clienteElegido, p_recordar_empresa: nombreComparable(compra.cliente_nombre) || undefined });
       if (error) throw error;
       if (!data) throw new Error('No se pudo crear o vincular la cotización');
       return data;
@@ -105,6 +107,7 @@ function BandejaCorreo() {
       qc.invalidateQueries({ queryKey: ['solicitudes-correo'] });
       qc.invalidateQueries({ queryKey: ['cotizaciones'] });
       qc.invalidateQueries({ queryKey: ['correos-pendientes-kpi'] });
+      qc.invalidateQueries({ queryKey: CLAVE_REMITENTES_RECORDADOS });
       setCompra(null);
       nav({ to: '/cotizaciones/$id', params: { id } });
     },
@@ -199,7 +202,9 @@ function BandejaCorreo() {
                         <td className="px-2 py-1.5">
                           {falta.length === 0 ? <Badge variant="outline" className="text-[11px]">Completo</Badge> :
                             <div className="flex flex-wrap gap-1">{falta.map((f) => <Badge key={f} className="bg-warning/15 text-warning-foreground border-warning/40 text-[11px]" variant="outline">{f}</Badge>)}</div>}
-                          {(s.advertencias ?? []).map((a: string) => <div key={a} className="mt-1 text-[11px] text-warning-foreground">⚠ {a}</div>)}
+                          {(s.advertencias ?? []).map((a: string) => avisoInformativoCorreo(a)
+                            ? <div key={a} className="mt-1 flex gap-1 text-[11px] text-muted-foreground"><Info className="mt-px h-3 w-3 shrink-0" /><span>Informativo: {a}</span></div>
+                            : <div key={a} className="mt-1 text-[11px] text-warning-foreground">⚠ {a}</div>)}
                           {(Array.isArray(s.adjuntos) ? s.adjuntos as { nombre: string; tipo: string; storage_path?: string; error?: string; procesando?: boolean }[] : []).map((d, i) => (
                             <div key={i} className="mt-1 text-[11px] text-muted-foreground">📎 {d.tipo === "Otro" ? "Otros documentos" : d.tipo}: {d.nombre}
                               {d.storage_path && <DocumentoPreviewButton path={d.storage_path} label="Ver adjunto" className="ml-1 h-6" />}
@@ -240,7 +245,7 @@ function BandejaCorreo() {
         <DialogContent className="w-[95vw] max-w-xl max-h-[90vh] overflow-y-auto overflow-x-hidden [&>*]:min-w-0">
           <DialogHeader><DialogTitle>Convertir en Cotización de Compra</DialogTitle></DialogHeader>
           <div className="space-y-3 text-[13px] min-w-0">
-            {compra && <ClienteConversionCorreo solicitud={compra} clientes={clientesCatalogo} value={clienteElegido} onChange={elegirCliente} puedeCrear={puedeCrearCliente} disabled={convertir.isPending} />}
+            {compra && <ClienteConversionCorreo solicitud={compra} clientes={clientesCatalogo} recordados={recordados} value={clienteElegido} onChange={elegirCliente} puedeCrear={puedeCrearCliente} disabled={convertir.isPending} />}
             <div>{compra?.producto} · {compra?.cantidad ?? 'Cantidad pendiente'}</div>
             {(compra?.adjuntos ?? []).filter((a: any) => tipoDocumentoCompra(a) === 'Factura proforma').map((a: any, i: number) => <div key={i} className="text-muted-foreground">Factura Proforma: {a.nombre}</div>)}
             <Select value={destino} onValueChange={setDestino} disabled={convertir.isPending}>

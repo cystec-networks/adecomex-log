@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, ChevronsUpDown, Plus, UserCheck } from "lucide-react";
+import { Check, ChevronsUpDown, Info, Plus, UserCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { analizarClienteCorreo, nombreComparable, nombreParaCatalogo, type ClienteCatalogo } from "@/lib/correo-cliente";
+import { analizarClienteCorreo, expedientesInexistentes, nombreComparable, nombreParaCatalogo, type ClienteCatalogo, type RemitenteRecordado } from "@/lib/correo-cliente";
 
 export const CLAVE_CLIENTES_CONVERSION = ["clientes-conversion-correo"] as const;
 
@@ -24,29 +24,50 @@ export function useClientesConversion(enabled: boolean) {
   });
 }
 
-/** Valor inicial: el cliente identificado, salvo que remitente y documento sean empresas distintas (se elige). */
-export function clienteInicialConversion(s: any, clientes: readonly ClienteCatalogo[]) {
-  if (!s?.cliente_id) return null;
-  return analizarClienteCorreo(s, clientes).empresasDistintas ? null : s.cliente_id as string;
+export const CLAVE_REMITENTES_RECORDADOS = ["remitentes-clientes-recordados"] as const;
+
+/** Remitentes asociados a clientes por elecciones anteriores (un correo puede estar asociado a varios). */
+export function useRemitentesRecordados(enabled: boolean) {
+  return useQuery({
+    queryKey: CLAVE_REMITENTES_RECORDADOS,
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("remitentes_clientes").select("correo,cliente_id,empresa_documento");
+      if (error) throw error;
+      return (data ?? []) as RemitenteRecordado[];
+    },
+  });
 }
 
-export function ClienteConversionCorreo({ solicitud, clientes, value, onChange, puedeCrear, disabled }: {
+/**
+ * Valor inicial: el cliente del documento (o el recordado para este remitente y esa empresa). Si el remitente
+ * sugiere otra empresa distinta, no se preselecciona: se elige entre ambas.
+ */
+export function clienteInicialConversion(s: any, clientes: readonly ClienteCatalogo[], recordados: readonly RemitenteRecordado[] = []) {
+  const a = analizarClienteCorreo(s, clientes, recordados);
+  if (a.empresasDistintas) return null;
+  return (s?.cliente_id as string | null) ?? a.documento.coincidencia?.id ?? a.recordado?.id ?? null;
+}
+
+export function ClienteConversionCorreo({ solicitud, clientes, recordados = [], value, onChange, puedeCrear, disabled }: {
   solicitud: any;
   clientes: readonly ClienteCatalogo[];
+  recordados?: readonly RemitenteRecordado[];
   value: string | null;
   onChange: (id: string | null) => void;
   puedeCrear: boolean;
   disabled?: boolean;
 }) {
   const qc = useQueryClient();
-  const a = useMemo(() => analizarClienteCorreo(solicitud, clientes), [solicitud, clientes]);
+  const a = useMemo(() => analizarClienteCorreo(solicitud, clientes, recordados), [solicitud, clientes, recordados]);
+  const inexistente = expedientesInexistentes(solicitud?.advertencias);
   const activos = useMemo(() => clientes.filter((c) => c.activo !== false), [clientes]);
   const elegido = value ? clientes.find((c) => c.id === value) ?? null : null;
   const [abierto, setAbierto] = useState(false);
   const [creando, setCreando] = useState(false);
   const [nuevo, setNuevo] = useState({ nombre: "", rnc: "" });
   const [guardando, setGuardando] = useState(false);
-  const mostrarMotivo = !solicitud?.cliente_id || a.empresasDistintas;
+  const mostrarMotivo = (!solicitud?.cliente_id && !a.recordado) || a.empresasDistintas;
 
   const abrirCrear = () => { setNuevo({ nombre: nombreParaCatalogo(a.documento.nombre), rnc: "" }); setCreando(true); };
   const crear = async () => {
@@ -75,9 +96,15 @@ export function ClienteConversionCorreo({ solicitud, clientes, value, onChange, 
 
   return (
     <section className="space-y-2 min-w-0" aria-label="Cliente de la cotización">
+      {inexistente && (
+        <div className="flex gap-2 rounded-md border bg-muted/40 p-2 text-[12px] text-muted-foreground" role="note">
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <p><span className="font-medium text-foreground">Aviso informativo:</span> el {inexistente.origen} menciona el Expediente <span className="font-mono">{inexistente.numeros}</span>, que no existe en la plataforma. No se creó ni se vinculó ningún Expediente.</p>
+        </div>
+      )}
       {mostrarMotivo && (
         <div className="rounded-md border border-warning/50 bg-warning/10 p-2 text-[12px] space-y-1">
-          <p className="font-semibold text-warning-text">{solicitud?.cliente_id ? "El remitente y el documento son de empresas distintas" : "No se encontró un cliente registrado"}</p>
+          <p className="font-semibold text-warning-text">{a.empresasDistintas ? "El cliente del documento y el sugerido por el remitente son distintos" : "No se encontró un cliente registrado"}</p>
           <ul className="space-y-1 text-foreground">
             <li>
               <span className="font-medium">Documento:</span>{" "}
@@ -89,9 +116,9 @@ export function ClienteConversionCorreo({ solicitud, clientes, value, onChange, 
                   : <>se comparó con los {comparado(activos.length)} y ninguno se parece.</>)}
             </li>
             <li>
-              <span className="font-medium">Remitente:</span> {a.remitente.correo ?? "sin correo"}
+              <span className="font-medium">Remitente (solo sugerencia):</span> {a.remitente.correo ?? "sin correo"}
               {a.remitente.clientes.length
-                ? <>{a.remitente.clientes[0].por === "correo" ? " está registrado en la ficha de " : ` comparte el dominio @${a.remitente.dominio} con `}<strong>{a.remitente.clientes.map((r) => r.cliente.nombre).join(", ")}</strong>.</>
+                ? <>{a.remitente.clientes.every((r) => r.por === "dominio") ? ` comparte el dominio @${a.remitente.dominio} con ` : " está asociado a "}<strong>{a.remitente.clientes.map((r) => r.cliente.nombre).join(", ")}</strong>{a.remitente.clientes.some((r) => r.por === "correo") ? " (registrado en su ficha)" : ""}.</>
                 : <> no está en la ficha de ningún cliente{a.remitente.empresa ? ` (empresa del correo: ${a.remitente.empresa})` : ""}.</>}
             </li>
             {(a.asunto.nombre || a.asunto.mencionados.length > 0 || a.asunto.mencionaDocumento) && (
@@ -103,7 +130,7 @@ export function ClienteConversionCorreo({ solicitud, clientes, value, onChange, 
               </li>
             )}
           </ul>
-          {a.empresasDistintas && <p className="text-warning-text">Elige cuál de las dos es el cliente de esta cotización.</p>}
+          {a.empresasDistintas && <p className="text-warning-text">Elige cuál es el cliente de esta cotización: el del documento o el sugerido por el remitente.</p>}
         </div>
       )}
 
@@ -163,6 +190,10 @@ export function ClienteConversionCorreo({ solicitud, clientes, value, onChange, 
           <Plus className="mr-1 h-4 w-4" />Crear cliente nuevo
         </Button>
       </div>
+
+      {elegido && a.remitente.correo && a.documento.nombre && (
+        <p className="text-[11px] text-muted-foreground">Al convertir se recordará <strong>{elegido.nombre}</strong> para los próximos correos de {a.remitente.correo} con documentos de «{a.documento.nombre}».</p>
+      )}
 
       {creando && (
         <div className="space-y-2 rounded-md border p-2">

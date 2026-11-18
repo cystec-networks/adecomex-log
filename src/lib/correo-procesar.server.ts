@@ -22,6 +22,7 @@ import { causaPausaIa } from "@/lib/ia-consumo.server";
 import { textoCola, type CausaCola } from "@/lib/correos-cola";
 
 import { nombreArchivoStorage } from "./nombre-archivo-storage";
+import { avisoClienteRecordado, avisoInformativoCorreo, clienteAlRecibirCorreo, correoRemitente, type ClienteCatalogo, type RemitenteRecordado } from "./correo-cliente";
 const adjuntoSchema = adjuntoCorreoSchema;
 
 /** PDFs largos o que agotan el tiempo del gateway se aceptan y se separan en segundo plano. */
@@ -400,11 +401,20 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
   for (const a of adjuntos) if (a.combinado) advertencias.push(`${a.nombre}: ${AVISO_PROCESANDO_COMBINADO} (${a.combinado.paginas ?? "varias"} páginas); se separará por tipo en segundo plano.`);
   for (const a of adjuntos) if (a.error) advertencias.push(`${a.nombre}: no se pudo leer el documento; ${a.bytes.length ? "se conserva en Otros documentos" : "reenvía el archivo"}. ${a.error}`);
 
+  // Cliente: el del documento con la comparación flexible del Expediente o la decisión recordada para este
+  // remitente con documentos de la misma empresa. El remitente solo sugiere (en la ventana de conversión).
   let clienteId: string | null = null;
   if (datos.cliente_nombre) {
-    const nombreCliente = datos.cliente_nombre.split(",")[0].replace(/[%_]/g, "").trim();
-    const { data: c } = await db.from("clientes").select("id").ilike("nombre", `%${nombreCliente}%`).limit(2);
-    if (c?.length === 1) clienteId = c[0].id;
+    const correoLimpio = correoRemitente(remitenteCorreo);
+    const [{ data: cl }, { data: rec }] = await Promise.all([
+      db.from("clientes").select("id,nombre,activo"),
+      correoLimpio ? db.from("remitentes_clientes").select("correo,cliente_id,empresa_documento").eq("correo", correoLimpio) : Promise.resolve({ data: [] as RemitenteRecordado[] }),
+    ]);
+    const elegido = clienteAlRecibirCorreo(datos.cliente_nombre, correoLimpio, (cl ?? []) as ClienteCatalogo[], (rec ?? []) as RemitenteRecordado[]);
+    if (elegido) {
+      clienteId = elegido.cliente.id;
+      if (elegido.por === "recordado") avisos.push(avisoClienteRecordado(elegido.cliente.nombre, datos.cliente_nombre));
+    }
   }
 
   await subirAdjuntos(`correo/${crypto.randomUUID()}`, adjuntos);
@@ -423,7 +433,7 @@ export async function procesarCorreo(db: any, normal: Record<string, unknown> | 
     return ok({ resultado: "actualizada", motivo: "Borrador pendiente actualizado con el reenvío", solicitud_id: guardado.id, advertencias: advertenciasFinales }, { id: guardado.id });
   }
   return ok(
-    { resultado: "creada", motivo: `Solicitud nueva creada: ${documentos.length} documento${documentos.length === 1 ? "" : "s"} de importación${avisos.length ? `. ${avisos[0]}` : ""}`, solicitud_id: guardado.id, advertencias: advertenciasFinales },
+    { resultado: "creada", motivo: `Solicitud nueva creada: ${documentos.length} documento${documentos.length === 1 ? "" : "s"} de importación${avisos.some((a) => !avisoInformativoCorreo(a)) ? `. ${avisos.find((a) => !avisoInformativoCorreo(a))}` : ""}`, solicitud_id: guardado.id, advertencias: advertenciasFinales },
     { id: guardado.id, datos, advertencias: advertenciasFinales, adjuntos: listaAdjuntos.map((a) => ({ nombre: a.nombre, tipo: a.tipo })) },
   );
 }

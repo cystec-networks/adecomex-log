@@ -73,3 +73,50 @@ test("nombre propuesto para crear el cliente sigue el estilo del catálogo", () 
   expect(nombreParaCatalogo("Sadoca Trading, S.A.S.")).toBe("SADOCA TRADING SAS");
   expect(nombreParaCatalogo("Pinturas Popular, S.A.")).toBe("PINTURAS POPULAR SA");
 });
+
+import { avisoInformativoCorreo, clienteAlRecibirCorreo, expedientesInexistentes, motivoSinAvisoInformativo } from "./correo-cliente";
+
+const SANJUANERA = "importaciones@lasanjuanera.com.do";
+const CON_IFZ = [...CLIENTES, { id: "ifz", nombre: "IFZ COMERCIAL SRL", email: null }];
+const RECORDADO_IFZ = [{ correo: SANJUANERA, cliente_id: "ifz", empresa_documento: "IFZ COMERCIAL" }];
+
+test("al recibir: el documento identifica con la comparación flexible del Expediente", () => {
+  expect(clienteAlRecibirCorreo("Procesadora De Granos Maguana, S.R.L.", SANJUANERA, CLIENTES, [])).toEqual({ cliente: CLIENTES[0], por: "documento" });
+});
+
+test("al recibir: el remitente solo no identifica al cliente", () => {
+  expect(clienteAlRecibirCorreo("IFZ COMERCIAL, S.R.L.", SANJUANERA, CLIENTES, [])).toBe(null);
+});
+
+test("al recibir: mismas palabras en otro orden no identifican (requiere elección)", () => {
+  expect(clienteAlRecibirCorreo("Granos Maguana Procesadora SRL", SANJUANERA, CLIENTES, [])).toBe(null);
+  expect(clientesParecidos("Granos Maguana Procesadora SRL", CLIENTES)[0].cliente.id).toBe("maguana");
+});
+
+test("al recibir: decisión recordada para el mismo remitente y la misma empresa del documento", () => {
+  const otraFicha = [...CLIENTES, { id: "ifz", nombre: "IFZ DOMINICANA SRL", email: null }];
+  expect(clienteAlRecibirCorreo("IFZ Comercial, S.R.L.", "Departamento <Importaciones@LaSanjuanera.com.do>", otraFicha, RECORDADO_IFZ)?.por).toBe("recordado");
+  expect(clienteAlRecibirCorreo("IFZ Comercial, S.R.L.", "otro@lasanjuanera.com.do", otraFicha, RECORDADO_IFZ)).toBe(null);
+  expect(clienteAlRecibirCorreo("OTRA EMPRESA SRL", SANJUANERA, otraFicha, RECORDADO_IFZ)).toBe(null);
+});
+
+test("correo asociado a dos empresas relacionadas: sin conflicto y cliente del documento primero", () => {
+  const a = analizarClienteCorreo({ cliente_id: "ifz", cliente_nombre: "IFZ COMERCIAL, S.R.L.", remitente_correo: SANJUANERA, asunto: "", advertencias: [] }, CON_IFZ, RECORDADO_IFZ);
+  expect(a.empresasDistintas).toBe(false);
+  expect(a.remitente.clientes.map((r) => [r.cliente.id, r.por])).toEqual([["maguana", "correo"], ["ifz", "asociado"]]);
+  expect(a.opciones[0].cliente?.id).toBe("ifz");
+});
+
+test("sin decisión recordada: documento y remitente distintos se ofrecen ambos para elegir", () => {
+  const a = analizarClienteCorreo({ cliente_id: "ifz", cliente_nombre: "IFZ COMERCIAL, S.R.L.", remitente_correo: SANJUANERA, asunto: "", advertencias: [] }, CON_IFZ, []);
+  expect(a.empresasDistintas).toBe(true);
+  expect(a.opciones.map((o) => [o.fuente, o.cliente?.id])).toEqual([["documento", "ifz"], ["remitente", "maguana"]]);
+});
+
+test("Expediente del asunto que no existe: aviso informativo, no alerta ni parte del «creada»", () => {
+  const aviso = "El asunto menciona el Expediente 202610I380, que no existe en la plataforma.";
+  expect(avisoInformativoCorreo(aviso)).toBe(true);
+  expect(avisoInformativoCorreo("Cliente: verificar: el asunto/cuerpo sugiere un valor distinto (X); se usó el del documento adjunto (Y)")).toBe(false);
+  expect(expedientesInexistentes([aviso])).toEqual({ origen: "asunto", numeros: "202610I380" });
+  expect(motivoSinAvisoInformativo(`Solicitud nueva creada: 2 documentos de importación. ${aviso}`)).toBe("Solicitud nueva creada: 2 documentos de importación");
+});

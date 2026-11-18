@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Clock, Eye, FilePlus2, ListChecks, Loader2, Paperclip, Replace, Trash2, X } from "lucide-react";
+import { Clock, Eye, FilePlus2, Info, ListChecks, Loader2, Paperclip, Replace, Trash2, X } from "lucide-react";
+import { avisoInformativoCorreo, motivoSinAvisoInformativo } from "@/lib/correo-cliente";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -197,11 +198,13 @@ export function RegistroCorreos({ filtroInicial, correoDestacado }: { filtroInic
                       <td className="px-2 py-1.5 min-w-0 max-w-[420px]">
                         <div className="text-[11px] text-muted-foreground truncate" title={c.remitente}>{c.remitente_correo ?? c.remitente}</div>
                         <div className="break-words">{c.asunto || "(sin asunto)"}</div>
-                        {(c.advertencias ?? []).filter((a) => !a.startsWith("La casilla «")).slice(0, 3).map((a) => <div key={a} className="text-[11px] text-warning-foreground">⚠ {a}</div>)}
+                        {(c.advertencias ?? []).filter((a) => !a.startsWith("La casilla «")).slice(0, 3).map((a) => avisoInformativoCorreo(a)
+                          ? <div key={a} className="flex gap-1 text-[11px] text-muted-foreground"><Info className="mt-px h-3 w-3 shrink-0" /><span>Informativo: {a}</span></div>
+                          : <div key={a} className="text-[11px] text-warning-foreground">⚠ {a}</div>)}
                       </td>
                       <td className="px-2 py-1.5"><Badge className={`text-[11px] whitespace-nowrap ${TONO[r.tono]}`}>{r.etiqueta}</Badge></td>
                       <td className="px-2 py-1.5 max-w-[360px] break-words space-y-1">
-                        <div>{atascado ? "El proceso se interrumpió sin terminar; se reintentará." : c.motivo ?? "—"}</div>
+                        <div>{atascado ? "El proceso se interrumpió sin terminar; se reintentará." : motivoSinAvisoInformativo(c.motivo) || "—"}</div>
                         {c.resultado === "descartada" && <Retencion c={c} />}
                         {pendientes.map((p) => (
                           <div key={p.storage_path} className="rounded-md border border-warning/40 bg-warning/10 p-1.5 space-y-1">

@@ -8262,6 +8262,47 @@ export type Database = {
         }
         Relationships: []
       }
+      remitentes_clientes: {
+        Row: {
+          cliente_id: string
+          correo: string
+          created_at: string
+          created_by: string | null
+          empresa_documento: string
+          id: string
+          nombre_documento: string | null
+          origen: string
+        }
+        Insert: {
+          cliente_id: string
+          correo: string
+          created_at?: string
+          created_by?: string | null
+          empresa_documento?: string
+          id?: string
+          nombre_documento?: string | null
+          origen?: string
+        }
+        Update: {
+          cliente_id?: string
+          correo?: string
+          created_at?: string
+          created_by?: string | null
+          empresa_documento?: string
+          id?: string
+          nombre_documento?: string | null
+          origen?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "remitentes_clientes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       remitentes_ignorados: {
         Row: {
           activo: boolean
@@ -9817,6 +9858,7 @@ export type Database = {
         Args: {
           p_cliente_id?: string
           p_cotizacion_id?: string
+          p_recordar_empresa?: string
           p_solicitud_id: string
         }
         Returns: string
