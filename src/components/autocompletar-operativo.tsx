@@ -1,5 +1,6 @@
 // Vista previa «Datos detectados» al subir el BL/AWB o la Factura comercial a un Expediente
 // ya creado, y etiqueta «Automático» sobre los campos que vinieron del documento.
+import { EVENTO_AUTOCOMPLETADO_APLICADO, type DetalleAutocompletadoAplicado } from "@/lib/autocompletar-operativo-formulario";
 import { useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -114,6 +115,9 @@ export function RevisionAutocompletado({ expedienteId, lectura, onClose }: {
         toast.success(r.completados.length || r.contenedores
           ? `Datos detectados aplicados: ${r.completados.length} campo(s) completado(s)${r.contenedores ? ` y ${r.contenedores} contenedor(es)` : ""}.`
           : "No había campos vacíos que completar.");
+        window.dispatchEvent(new CustomEvent<DetalleAutocompletadoAplicado>(EVENTO_AUTOCOMPLETADO_APLICADO, {
+          detail: { expedienteId, completados: r.completados, contenedores: r.contenedores },
+        }));
         if (decision.alertas.length) toast.warning(`${decision.alertas.length} diferencia(s) con el documento; se conservaron los datos del Expediente.`, { duration: 10000 });
       } else {
         toast.warning("Documento guardado sin aplicar datos: no corresponde a este Expediente. Quedó el aviso y el registro en Auditoría.", { duration: 10000 });

@@ -1086,6 +1086,13 @@
       "when": 1794968277368,
       "tag": "0154_corregir_aplicar_y_deshacer_autocompletado",
       "breakpoints": true
+    },
+    {
+      "idx": 155,
+      "version": "7",
+      "when": 1794969853681,
+      "tag": "0155_total_cif_autocompletado",
+      "breakpoints": true
     }
   ]
 }

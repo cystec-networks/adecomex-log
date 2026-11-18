@@ -1,3 +1,4 @@
+import { camposAplicadosParaFormulario, EVENTO_AUTOCOMPLETADO_APLICADO, type DetalleAutocompletadoAplicado } from "@/lib/autocompletar-operativo-formulario";
 import { fmtRD } from "@/lib/facturas-ecf";
 import { RequisitosCierrePanel } from "@/components/cierre-expediente";
 import { payloadGuardadoCompletado } from "@/lib/expediente-cierre";
@@ -2543,6 +2544,41 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     editorOrigen.current = editor;
     return () => { if (editorOrigen.current === editor) editorOrigen.current = null; };
   }, [editorOrigen, isNuevo, form]);
+  // «Aplicar» en Datos detectados guarda en la base: se lleva a la ficha abierta sin pisar borradores.
+  const formRef = useRef(form);
+  formRef.current = form;
+  const baseRef = useRef(base);
+  baseRef.current = base;
+  useEffect(() => {
+    if (isNuevo) return;
+    const alAplicar = async (ev: Event) => {
+      const det = (ev as CustomEvent<DetalleAutocompletadoAplicado>).detail;
+      if (!det || det.expedienteId !== exp.id) return;
+      const [{ data: fresco }, { data: contsDb }] = await Promise.all([
+        supabase.from("expedientes").select("*").eq("id", exp.id).maybeSingle(),
+        det.contenedores > 0
+          ? supabase.from("expediente_contenedores").select("*").eq("expediente_id", exp.id).order("item_no")
+          : Promise.resolve({ data: null }),
+      ]);
+      if (!fresco) return;
+      const abierto = baseRef.current ? (JSON.parse(baseRef.current)[0] as Record<string, unknown>) : null;
+      const cambios = camposAplicadosParaFormulario(formRef.current, abierto, construirFormInicial(fresco, false), det.completados);
+      const conts = contsDb
+        ? contsDb.map((c: any) => ({ numero: c.numero_contenedor ?? "", sello1: c.sello1 ?? "", sello2: c.sello2 ?? "", tipo: c.tipo_contenedor ?? "" }))
+        : null;
+      if (Object.keys(cambios).length) setForm((f) => ({ ...f, ...cambios }));
+      if (conts) setContenedores(conts);
+      setBase((b) => {
+        if (!b) return b;
+        const anterior = JSON.parse(b);
+        anterior[0] = { ...anterior[0], ...cambios };
+        if (conts) anterior[1] = conts;
+        return JSON.stringify(anterior);
+      });
+    };
+    window.addEventListener(EVENTO_AUTOCOMPLETADO_APLICADO, alAplicar);
+    return () => window.removeEventListener(EVENTO_AUTOCOMPLETADO_APLICADO, alAplicar);
+  }, [exp?.id, isNuevo]);
   const [estadoGuardado, setEstadoGuardado] = useState<null | "ok" | "error">(null);
   const snapshot = JSON.stringify([form, contenedores, filasServicioAduanero]);
   useEffect(() => {
