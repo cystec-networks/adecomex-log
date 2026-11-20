@@ -20,6 +20,7 @@ import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { autoguardaProductoCorrecto, cambioProductoCorrecto } from "@/lib/producto-correcto-rectificacion";
 import { mensajeDuplicadoExpediente } from "@/lib/expediente-duplicados";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GestorHonorariosSelect } from "@/components/gestor-honorarios-select";
@@ -2587,6 +2588,40 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modoEdicion, isNuevo]);
   const hayCambios = editable && !isNuevo && base !== null && base !== snapshot;
+  // «Producto correcto» (Rectificación técnica): en un Expediente ya creado se guarda solo al salir del
+  // campo, con un UPDATE de esa única columna y sin pulsar Editar. En Nuevo se guarda con «Crear Expediente».
+  const autoguardaProducto = autoguardaProductoCorrecto(isNuevo, canEdit);
+  const productoGuardado = useRef<string>(exp?.producto_correcto_rectificacion ?? "");
+  const productoSeq = useRef(0);
+  const [estadoProducto, setEstadoProducto] = useState<"idle" | "guardando" | "ok" | "error">("idle");
+  useEffect(() => {
+    productoGuardado.current = exp?.producto_correcto_rectificacion ?? "";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, exp?.producto_correcto_rectificacion]);
+  useEffect(() => { setEstadoProducto("idle"); }, [id]);
+  const guardarProductoCorrecto = async () => {
+    if (!autoguardaProducto) return;
+    const { cambia, valor } = cambioProductoCorrecto(formRef.current?.producto_correcto_rectificacion ?? form.producto_correcto_rectificacion, productoGuardado.current);
+    if (valor !== form.producto_correcto_rectificacion) set("producto_correcto_rectificacion", valor);
+    if (!cambia) return;
+    const seq = ++productoSeq.current;
+    setEstadoProducto("guardando");
+    const { data, error } = await supabase.from("expedientes").update({ producto_correcto_rectificacion: valor }).eq("id", id).select("id");
+    if (error || !data?.length) {
+      if (seq === productoSeq.current) setEstadoProducto("error");
+      return;
+    }
+    productoGuardado.current = valor;
+    // Mantener coherentes la referencia del modo Editar y los datos ya cargados, sin recargar la ficha.
+    setBase((b) => {
+      if (!b) return b;
+      const anterior = JSON.parse(b);
+      anterior[0] = { ...anterior[0], producto_correcto_rectificacion: valor };
+      return JSON.stringify(anterior);
+    });
+    qc.setQueryData(["expediente", id], (old: any) => (old ? { ...old, producto_correcto_rectificacion: valor } : old));
+    if (seq === productoSeq.current) setEstadoProducto("ok");
+  };
   useEffect(() => {
     if (hayCambios && estadoGuardado === "ok") setEstadoGuardado(null);
   }, [hayCambios, estadoGuardado]);
@@ -3171,12 +3206,26 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
           )}
           {form.rectificacion_tecnica && (
             <div className="grid gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-              <Label>Producto correcto</Label>
+              <Label className="flex items-center gap-2" htmlFor="producto-correcto-rectificacion">
+                Producto correcto
+                {autoguardaProducto && estadoProducto === "guardando" && <span className="text-[11px] font-normal text-muted-foreground" role="status">Guardando…</span>}
+                {autoguardaProducto && estadoProducto === "ok" && <span className="text-[11px] font-normal text-success" role="status">Guardado ✓</span>}
+                {autoguardaProducto && estadoProducto === "error" && (
+                  <button type="button" className="text-[11px] font-normal text-destructive underline underline-offset-2" onClick={() => void guardarProductoCorrecto()}>
+                    Error al guardar, reintentar
+                  </button>
+                )}
+              </Label>
               <Input
+                id="producto-correcto-rectificacion"
                 value={form.producto_correcto_rectificacion}
-                onChange={(e) => set("producto_correcto_rectificacion", e.target.value)}
+                onChange={(e) => {
+                  set("producto_correcto_rectificacion", e.target.value);
+                  if (autoguardaProducto && estadoProducto === "ok") setEstadoProducto("idle");
+                }}
+                onBlur={autoguardaProducto ? () => void guardarProductoCorrecto() : undefined}
                 placeholder="Descripción real de la mercancía"
-                disabled={!editable}
+                disabled={isNuevo ? !editable : !autoguardaProducto}
               />
             </div>
           )}
