@@ -2590,7 +2590,8 @@ function TabInfo({ id, exp, modoEdicion, setModoEdicion, canEdit, nuevo, isNuevo
   const hayCambios = editable && !isNuevo && base !== null && base !== snapshot;
   // «Producto correcto» (Rectificación técnica): en un Expediente ya creado se guarda solo al salir del
   // campo, con un UPDATE de esa única columna y sin pulsar Editar. En Nuevo se guarda con «Crear Expediente».
-  const autoguardaProducto = autoguardaProductoCorrecto(isNuevo, canEdit);
+  const { data: rolesProducto } = useMyRoles();
+  const autoguardaProducto = autoguardaProductoCorrecto(isNuevo, rolesProducto);
   const productoGuardado = useRef<string>(exp?.producto_correcto_rectificacion ?? "");
   const productoSeq = useRef(0);
   const [estadoProducto, setEstadoProducto] = useState<"idle" | "guardando" | "ok" | "error">("idle");

@@ -13,10 +13,14 @@ describe("Producto correcto (Rectificación técnica)", () => {
     assert.deepEqual(cambioProductoCorrecto("   ", "Harina de trigo"), { cambia: true, valor: "" });
   });
   test("en un Expediente nuevo no se autoguarda: se guarda con Crear Expediente", () => {
-    assert.equal(autoguardaProductoCorrecto(true, true), false);
+    assert.equal(autoguardaProductoCorrecto(true, ["admin"]), false);
   });
-  test("en un Expediente creado solo autoguarda quien puede editarlo", () => {
-    assert.equal(autoguardaProductoCorrecto(false, true), true);
-    assert.equal(autoguardaProductoCorrecto(false, false), false);
+  test("en un Expediente creado autoguardan Admin, Operaciones, Ejecutivo y Agente aduanal", () => {
+    for (const r of ["admin", "operaciones", "ejecutivo", "agente_aduanal"]) assert.equal(autoguardaProductoCorrecto(false, [r]), true, r);
+  });
+  test("Finanzas y Contabilidad lo ven en solo lectura", () => {
+    assert.equal(autoguardaProductoCorrecto(false, ["finanzas"]), false);
+    assert.equal(autoguardaProductoCorrecto(false, ["contabilidad"]), false);
+    assert.equal(autoguardaProductoCorrecto(false, ["finanzas", "contabilidad"]), false);
   });
 });
